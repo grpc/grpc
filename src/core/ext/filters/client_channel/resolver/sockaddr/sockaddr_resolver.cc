@@ -31,9 +31,9 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -57,7 +57,7 @@ class SockaddrResolver : public Resolver {
 
 SockaddrResolver::SockaddrResolver(ServerAddressList addresses,
                                    ResolverArgs args)
-    : Resolver(args.combiner, std::move(args.result_handler)),
+    : Resolver(std::move(args.work_serializer), std::move(args.result_handler)),
       addresses_(std::move(addresses)),
       channel_args_(grpc_channel_args_copy(args.args)) {}
 
@@ -176,12 +176,12 @@ class UnixResolverFactory : public ResolverFactory {
 
 void grpc_resolver_sockaddr_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::MakeUnique<grpc_core::IPv4ResolverFactory>());
+      absl::make_unique<grpc_core::IPv4ResolverFactory>());
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::MakeUnique<grpc_core::IPv6ResolverFactory>());
+      absl::make_unique<grpc_core::IPv6ResolverFactory>());
 #ifdef GRPC_HAVE_UNIX_SOCKET
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::MakeUnique<grpc_core::UnixResolverFactory>());
+      absl::make_unique<grpc_core::UnixResolverFactory>());
 #endif
 }
 

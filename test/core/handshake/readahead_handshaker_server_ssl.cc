@@ -76,12 +76,12 @@ class ReadAheadHandshakerFactory : public HandshakerFactory {
 
 }  // namespace grpc_core
 
-int main(int /*argc*/, char* /*argv*/ []) {
+int main(int /*argc*/, char* /*argv*/[]) {
   using namespace grpc_core;
   grpc_init();
   HandshakerRegistry::RegisterHandshakerFactory(
       true /* at_start */, HANDSHAKER_SERVER,
-      MakeUnique<ReadAheadHandshakerFactory>());
+      absl::make_unique<ReadAheadHandshakerFactory>());
   const char* full_alpn_list[] = {"grpc-exp", "h2"};
   GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
   grpc_shutdown_blocking();

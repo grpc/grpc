@@ -163,9 +163,6 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   ///
   /// Server constructors. To be used by \a ServerBuilder only.
   ///
-  /// \param max_message_size Maximum message length that the channel can
-  /// receive.
-  ///
   /// \param args The channel args
   ///
   /// \param sync_server_cqs The completion queues to use if the server is a
@@ -182,7 +179,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   ///
   /// \param sync_cq_timeout_msec The timeout to use when calling AsyncNext() on
   /// server completion queues passed via sync_server_cqs param.
-  Server(int max_message_size, ChannelArguments* args,
+  Server(ChannelArguments* args,
          std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
              sync_server_cqs,
          int min_pollers, int max_pollers, int sync_cq_timeout_msec,
@@ -294,6 +291,13 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
   grpc_impl::ServerInitializer* initializer();
 
+  // Functions to manage the server shutdown ref count. Things that increase
+  // the ref count are the running state of the server (take a ref at start and
+  // drop it at shutdown) and each running callback RPC.
+  void Ref();
+  void UnrefWithPossibleNotify() /* LOCKS_EXCLUDED(mu_) */;
+  void UnrefAndWaitLocked() /* EXCLUSIVE_LOCKS_REQUIRED(mu_) */;
+
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
 
@@ -306,7 +310,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
       std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
       interceptor_creators_;
 
-  const int max_receive_message_size_;
+  int max_receive_message_size_;
 
   /// The following completion queues are ONLY used in case of Sync API
   /// i.e. if the server has any services with sync methods. The server uses
@@ -317,16 +321,6 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   /// List of \a ThreadManager instances (one for each cq in
   /// the \a sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
-
-  // Outstanding unmatched callback requests, indexed by method.
-  // NOTE: Using a gpr_atm rather than atomic_int because atomic_int isn't
-  //       copyable or movable and thus will cause compilation errors. We
-  //       actually only want to extend the vector before the threaded use
-  //       starts, but this is still a limitation.
-  std::vector<gpr_atm> callback_unmatched_reqs_count_;
-
-  // List of callback requests to start when server actually starts.
-  std::list<CallbackRequestBase*> callback_reqs_to_start_;
 
 #ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
   // For registering experimental callback generic service; remove when that
@@ -339,25 +333,18 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   bool started_;
   bool shutdown_;
   bool shutdown_notified_;  // Was notify called on the shutdown_cv_
+  grpc::internal::CondVar shutdown_done_cv_;
+  bool shutdown_done_ = false;
+  std::atomic_int shutdown_refs_outstanding_{1};
 
   grpc::internal::CondVar shutdown_cv_;
-
-  // It is ok (but not required) to nest callback_reqs_mu_ under mu_ .
-  // Incrementing callback_reqs_outstanding_ is ok without a lock but it must be
-  // decremented under the lock in case it is the last request and enables the
-  // server shutdown. The increment is performance-critical since it happens
-  // during periods of increasing load; the decrement happens only when memory
-  // is maxed out, during server shutdown, or (possibly in a future version)
-  // during decreasing load, so it is less performance-critical.
-  grpc::internal::Mutex callback_reqs_mu_;
-  grpc::internal::CondVar callback_reqs_done_cv_;
-  std::atomic<intptr_t> callback_reqs_outstanding_{0};
 
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 
   std::vector<grpc::string> services_;
-  bool has_async_generic_service_{false};
-  bool has_callback_generic_service_{false};
+  bool has_async_generic_service_ = false;
+  bool has_callback_generic_service_ = false;
+  bool has_callback_methods_ = false;
 
   // Pointer to the wrapped grpc_server.
   grpc_server* server_;
@@ -386,8 +373,12 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   // with this server (if any). It is set on the first call to CallbackCQ().
   // It is _not owned_ by the server; ownership belongs with its internal
   // shutdown callback tag (invoked when the CQ is fully shutdown).
-  // It is protected by mu_
-  CompletionQueue* callback_cq_ = nullptr;
+  CompletionQueue* callback_cq_ /* GUARDED_BY(mu_) */ = nullptr;
+
+  // List of CQs passed in by user that must be Shutdown only after Server is
+  // Shutdown.  Even though this is only used with NDEBUG, instantiate it in all
+  // cases since otherwise the size will be inconsistent.
+  std::vector<CompletionQueue*> cq_list_;
 };
 
 }  // namespace grpc_impl

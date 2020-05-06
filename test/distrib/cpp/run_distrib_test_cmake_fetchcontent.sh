@@ -18,13 +18,11 @@ set -ex
 cd "$(dirname "$0")/../../.."
 grpc_dir=$(pwd)
 
-echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
-sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
-apt-get update
-apt-get install -t jessie-backports -y libssl-dev wget
+# Install openssl (to use instead of boringssl)
+apt-get update && apt-get install -y libssl-dev
 
 # Install CMake 3.16
+apt-get update && apt-get install -y wget
 wget -q -O cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.16.1/cmake-3.16.1-Linux-x86_64.sh
 sh cmake-linux.sh -- --skip-license --prefix=/usr
 rm cmake-linux.sh

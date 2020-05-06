@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 proto_library(
@@ -36,6 +37,7 @@ py_binary(
     name = "client",
     testonly = 1,
     srcs = ["client.py"],
+    imports = ["."],
     python_version = "PY3",
     srcs_version = "PY3",
     deps = [
@@ -49,6 +51,7 @@ py_binary(
     name = "server",
     testonly = 1,
     srcs = ["server.py"],
+    imports = ["."],
     python_version = "PY3",
     srcs_version = "PY3",
     deps = [

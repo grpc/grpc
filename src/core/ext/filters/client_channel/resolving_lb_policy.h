@@ -21,13 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -52,16 +53,15 @@ namespace grpc_core {
 class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
   // Synchronous callback that takes the resolver result and sets
-  // lb_policy_name and lb_policy_config to point to the right data.
+  // lb_policy_config to point to the right data.
   // Returns true if the service config has changed since the last result.
-  // If the returned service_config_error is not none and lb_policy_name is
-  // empty, it means that we don't have a valid service config to use, and we
-  // should set the channel to be in TRANSIENT_FAILURE.
+  // If the returned no_valid_service_config is true, that means that we
+  // don't have a valid service config to use, and we should set the channel
+  // to be in TRANSIENT_FAILURE.
   typedef bool (*ProcessResolverResultCallback)(
       void* user_data, const Resolver::Result& result,
-      const char** lb_policy_name,
       RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config,
-      grpc_error** service_config_error);
+      grpc_error** service_config_error, bool* no_valid_service_config);
   // If error is set when this returns, then construction failed, and
   // the caller may not use the new object.
   ResolvingLoadBalancingPolicy(
@@ -81,7 +81,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  using TraceStringVector = InlinedVector<char*, 3>;
+  using TraceStringVector = absl::InlinedVector<char*, 3>;
 
   class ResolverResultHandler;
   class ResolvingControlHelper;
@@ -92,12 +92,10 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   void OnResolverError(grpc_error* error);
   void CreateOrUpdateLbPolicyLocked(
-      const char* lb_policy_name,
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-      Resolver::Result result, TraceStringVector* trace_strings);
+      Resolver::Result result);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
-      const char* lb_policy_name, const grpc_channel_args& args,
-      TraceStringVector* trace_strings);
+      const grpc_channel_args& args);
   void MaybeAddTraceMessagesForAddressChangesLocked(
       bool resolution_contains_addresses, TraceStringVector* trace_strings);
   void ConcatenateAndAddChannelTraceLocked(
@@ -118,7 +116,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  OrphanablePtr<LoadBalancingPolicy> pending_lb_policy_;
 };
 
 }  // namespace grpc_core

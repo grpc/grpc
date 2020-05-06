@@ -26,4 +26,7 @@
 - 1.24 'g' stands for ['ganges'](https://github.com/grpc/grpc/tree/v1.24.x)
 - 1.25 'g' stands for ['game'](https://github.com/grpc/grpc/tree/v1.25.x)
 - 1.26 'g' stands for ['gon'](https://github.com/grpc/grpc/tree/v1.26.x)
-- 1.27 'g' stands for ['guantao'](https://github.com/grpc/grpc/tree/master)
+- 1.27 'g' stands for ['guantao'](https://github.com/grpc/grpc/tree/v1.27.x)
+- 1.28 'g' stands for ['galactic'](https://github.com/grpc/grpc/tree/v1.28.x)
+- 1.29 'g' stands for ['gringotts'](https://github.com/grpc/grpc/tree/v1.29.x)
+- 1.30 'g' stands for ['gradius'](https://github.com/grpc/grpc/tree/master)

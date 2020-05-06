@@ -60,12 +60,11 @@ def create_server(addr, failure_rate):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--addr',
-        nargs=1,
-        type=str,
-        default='[::]:50051',
-        help='the address to listen on')
+    parser.add_argument('--addr',
+                        nargs=1,
+                        type=str,
+                        default='[::]:50051',
+                        help='the address to listen on')
     parser.add_argument(
         '--failure_rate',
         nargs=1,

@@ -13,10 +13,18 @@
 # limitations under the License.
 """Common types for gRPC Async API"""
 
-from typing import Any, AnyStr, Callable, Sequence, Text, Tuple, TypeVar
+from typing import (Any, AnyStr, AsyncIterable, Callable, Iterable, Sequence,
+                    Tuple, TypeVar, Union)
+
+from grpc._cython.cygrpc import EOF
 
 RequestType = TypeVar('RequestType')
 ResponseType = TypeVar('ResponseType')
 SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
-MetadataType = Sequence[Tuple[Text, AnyStr]]
+MetadatumType = Tuple[str, AnyStr]
+MetadataType = Sequence[MetadatumType]
+ChannelArgumentType = Sequence[Tuple[str, Any]]
+EOFType = type(EOF)
+DoneCallbackType = Callable[[Any], None]
+RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]

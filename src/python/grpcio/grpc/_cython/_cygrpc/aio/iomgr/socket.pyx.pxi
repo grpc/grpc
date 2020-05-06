@@ -16,6 +16,8 @@ import socket as native_socket
 
 from libc cimport string
 
+cdef int _ASYNCIO_STREAM_DEFAULT_SOCKET_BACKLOG = 100
+
 
 # TODO(https://github.com/grpc/grpc/issues/21348) Better flow control needed.
 cdef class _AsyncioSocket:
@@ -23,14 +25,18 @@ cdef class _AsyncioSocket:
         self._grpc_socket = NULL
         self._grpc_connect_cb = NULL
         self._grpc_read_cb = NULL
+        self._grpc_write_cb = NULL
         self._reader = None
         self._writer = None
         self._task_connect = None
         self._task_read = None
+        self._task_write = None
+        self._task_listen = None
         self._read_buffer = NULL
         self._server = None
         self._py_socket = None
         self._peername = None
+        self._closed = False
         self._loop = asyncio.get_event_loop()
 
     @staticmethod
@@ -58,54 +64,24 @@ cdef class _AsyncioSocket:
         connected = self.is_connected()
         return f"<{class_name} {id_} connected={connected}>"
 
-    def _connect_cb(self, future):
+    async def _async_connect(self, object host, object port,):
+        self._task_connect = None
         try:
-            self._reader, self._writer = future.result()
+            self._reader, self._writer = await asyncio.open_connection(host, port)
         except Exception as e:
             self._grpc_connect_cb(
                 <grpc_custom_socket*>self._grpc_socket,
-                grpc_socket_error("Socket connect failed: {}".format(e).encode())
-            )
-        finally:
-            self._task_connect = None
-
-        # gRPC default posix implementation disables nagle
-        # algorithm.
-        sock = self._writer.transport.get_extra_info('socket')
-        sock.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
-
-        self._grpc_connect_cb(
-            <grpc_custom_socket*>self._grpc_socket,
-            <grpc_error*>0
-        )
-
-    def _read_cb(self, future):
-        error = False
-        try:
-            buffer_ = future.result()
-        except Exception as e:
-            error = True
-            error_msg = "%s: %s" % (type(e), str(e))
-            _LOGGER.exception(e)
-        finally:
-            self._task_read = None
-
-        if not error:
-            string.memcpy(
-                <void*>self._read_buffer,
-                <char*>buffer_,
-                len(buffer_)
-            )
-            self._grpc_read_cb(
-                <grpc_custom_socket*>self._grpc_socket,
-                len(buffer_),
-                <grpc_error*>0
+                grpc_socket_error("Socket connect failed: {}: {}".format(type(e), str(e)).encode())
             )
         else:
-            self._grpc_read_cb(
+            # gRPC default posix implementation disables nagle
+            # algorithm.
+            sock = self._writer.transport.get_extra_info('socket')
+            sock.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
+
+            self._grpc_connect_cb(
                 <grpc_custom_socket*>self._grpc_socket,
-                -1,
-                grpc_socket_error("Read failed: {}".format(error_msg).encode())
+                <grpc_error*>0
             )
 
     cdef void connect(self,
@@ -115,22 +91,55 @@ cdef class _AsyncioSocket:
         assert not self._reader
         assert not self._task_connect
 
-        self._task_connect = asyncio.ensure_future(
-            asyncio.open_connection(host, port)
+        self._task_connect = self._loop.create_task(
+            self._async_connect(host, port)
         )
         self._grpc_connect_cb = grpc_connect_cb
-        self._task_connect.add_done_callback(self._connect_cb)
+
+    async def _async_read(self, size_t length):
+        self._task_read = None
+        try:
+            inbound_buffer = await self._reader.read(n=length)
+        except ConnectionError as e:
+            self._grpc_read_cb(
+                <grpc_custom_socket*>self._grpc_socket,
+                -1,
+                grpc_socket_error("Read failed: {}".format(e).encode())
+            )
+        else:
+            string.memcpy(
+                <void*>self._read_buffer,
+                <char*>inbound_buffer,
+                len(inbound_buffer)
+            )
+            self._grpc_read_cb(
+                <grpc_custom_socket*>self._grpc_socket,
+                len(inbound_buffer),
+                <grpc_error*>0
+            )
 
     cdef void read(self, char * buffer_, size_t length, grpc_custom_read_callback grpc_read_cb):
         assert not self._task_read
 
-        self._task_read = self._loop.create_task(
-            self._reader.read(n=length)
-        )
         self._grpc_read_cb = grpc_read_cb
-        self._task_read.add_done_callback(self._read_cb)
         self._read_buffer = buffer_
- 
+        self._task_read = self._loop.create_task(self._async_read(length))
+
+    async def _async_write(self, bytearray outbound_buffer):
+        self._writer.write(outbound_buffer)
+        self._task_write = None
+        try:
+            await self._writer.drain()
+            self._grpc_write_cb(
+                <grpc_custom_socket*>self._grpc_socket,
+                <grpc_error*>0
+            )
+        except ConnectionError as connection_error:
+            self._grpc_write_cb(
+                <grpc_custom_socket*>self._grpc_socket,
+                grpc_socket_error("Socket write failed: {}".format(connection_error).encode()),
+            )
+
     cdef void write(self, grpc_slice_buffer * g_slice_buffer, grpc_custom_write_callback grpc_write_cb):
         """Performs write to network socket in AsyncIO.
         
@@ -138,6 +147,7 @@ cdef class _AsyncioSocket:
         When the write is finished, we need to call grpc_write_cb to notify
         Core that the work is done.
         """
+        assert not self._task_write
         cdef char* start
         cdef bytearray outbound_buffer = bytearray()
         for i in range(g_slice_buffer.count):
@@ -145,18 +155,21 @@ cdef class _AsyncioSocket:
             length = grpc_slice_buffer_length(g_slice_buffer, i)
             outbound_buffer.extend(<bytes>start[:length])
 
-        self._writer.write(outbound_buffer)
-        grpc_write_cb(
-            <grpc_custom_socket*>self._grpc_socket,
-            <grpc_error*>0
-        )
+        self._grpc_write_cb = grpc_write_cb
+        self._task_write = self._loop.create_task(self._async_write(outbound_buffer))
 
     cdef bint is_connected(self):
         return self._reader and not self._reader._transport.is_closing()
 
     cdef void close(self):
+        if self._closed:
+            return
+        else:
+            self._closed = True
         if self.is_connected():
             self._writer.close()
+        if self._task_listen and not self._task_listen.done():
+            self._task_listen.close()
         if self._server:
             self._server.close()
         # NOTE(lidiz) If the asyncio.Server is created from a Python socket,
@@ -166,6 +179,15 @@ cdef class _AsyncioSocket:
             self._py_socket.close()
 
     def _new_connection_callback(self, object reader, object writer):
+        # If the socket is closed, stop.
+        if self._closed:
+            return
+
+        # Close the connection if server is not started yet.
+        if self._grpc_accept_cb == NULL:
+            writer.close()
+            return
+
         client_socket = _AsyncioSocket.create(
             self._grpc_client_socket,
             reader,
@@ -181,13 +203,14 @@ cdef class _AsyncioSocket:
         self._grpc_accept_cb(self._grpc_socket, self._grpc_client_socket, grpc_error_none())
 
     cdef listen(self):
+        self._py_socket.listen(_ASYNCIO_STREAM_DEFAULT_SOCKET_BACKLOG)
         async def create_asyncio_server():
             self._server = await asyncio.start_server(
                 self._new_connection_callback,
                 sock=self._py_socket,
             )
 
-        self._loop.create_task(create_asyncio_server())
+        self._task_listen = self._loop.create_task(create_asyncio_server())
 
     cdef accept(self,
                 grpc_custom_socket* grpc_socket_client,

@@ -115,11 +115,7 @@ Podfile.lock
 .idea/
 
 # Bazel files
-bazel-bin
-bazel-genfiles
-bazel-grpc
-bazel-out
-bazel-testlogs
+bazel-*
 bazel_format_virtual_environment/
 tools/bazel-*
 
@@ -140,7 +136,7 @@ bm_diff_old/
 bm_*.json
 
 # cmake build files
-/cmake/build
+**/cmake/build/
 
 # Visual Studio Code artifacts
 .vscode/*
@@ -154,4 +150,3 @@ BenchmarkDotNet.Artifacts/
 
 # pyenv config
 .python-version
-

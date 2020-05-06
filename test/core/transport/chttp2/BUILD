@@ -134,6 +134,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,  # TODO(b/148399919)
     language = "C++",
     deps = [
         "//:gpr",

@@ -16,25 +16,26 @@
  *
  */
 
+#include "src/core/tsi/ssl_transport_security.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "test/core/tsi/transport_security_test_lib.h"
 #include "test/core/util/test_config.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
 extern "C" {
 #include <openssl/crypto.h>
+#include <openssl/pem.h>
 }
 
 #define SSL_TSI_TEST_ALPN1 "foo"
@@ -44,6 +45,7 @@ extern "C" {
 #define SSL_TSI_TEST_SERVER_KEY_CERT_PAIRS_NUM 2
 #define SSL_TSI_TEST_BAD_SERVER_KEY_CERT_PAIRS_NUM 1
 #define SSL_TSI_TEST_CREDENTIALS_DIR "src/core/tsi/test_creds/"
+#define SSL_TSI_TEST_WRONG_SNI "test.google.cn"
 
 // OpenSSL 1.1 uses AES256 for encryption session ticket by default so specify
 // different STEK size.
@@ -187,6 +189,15 @@ static void check_alpn(ssl_tsi_test_fixture* ssl_fixture,
   }
 }
 
+static void check_security_level(const tsi_peer* peer) {
+  const tsi_peer_property* security_level =
+      tsi_peer_get_property_by_name(peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
+  GPR_ASSERT(security_level != nullptr);
+  const char* expected_match = "TSI_PRIVACY_AND_INTEGRITY";
+  GPR_ASSERT(memcmp(security_level->value.data, expected_match,
+                    security_level->value.length) == 0);
+}
+
 static const tsi_peer_property*
 check_basic_authenticated_peer_and_get_common_name(const tsi_peer* peer) {
   const tsi_peer_property* cert_type_property =
@@ -225,6 +236,9 @@ void check_server0_peer(tsi_peer* peer) {
              nullptr);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "foo.test.google.com.au") == 1);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "bar.test.google.com.au") == 1);
+  GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "BAR.TEST.GOOGLE.COM.AU") == 1);
+  GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "Bar.Test.Google.Com.Au") == 1);
+  GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "bAr.TeST.gOOgle.cOm.AU") == 1);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "bar.test.google.blah") == 0);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "foo.bar.test.google.com.au") ==
              0);
@@ -271,7 +285,7 @@ static void check_client_peer(ssl_tsi_test_fixture* ssl_fixture,
   ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib;
   if (!ssl_fixture->force_client_auth) {
     GPR_ASSERT(peer->property_count ==
-               (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ? 2 : 1));
+               (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ? 3 : 2));
   } else {
     const tsi_peer_property* property =
         check_basic_authenticated_peer_and_get_common_name(peer);
@@ -297,10 +311,15 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
                    ssl_fixture->base.client_result, &peer) == TSI_OK);
     check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
-    if (ssl_fixture->server_name_indication != nullptr) {
-      check_server1_peer(&peer);
-    } else {
+    check_security_level(&peer);
+    if (ssl_fixture->server_name_indication == nullptr ||
+        strcmp(ssl_fixture->server_name_indication, SSL_TSI_TEST_WRONG_SNI) ==
+            0) {
+      // Expect server to use default server0.pem.
       check_server0_peer(&peer);
+    } else {
+      // Expect server to use server1.pem.
+      check_server1_peer(&peer);
     }
   } else {
     GPR_ASSERT(ssl_fixture->base.client_result == nullptr);
@@ -310,6 +329,7 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
                    ssl_fixture->base.server_result, &peer) == TSI_OK);
     check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
+    check_security_level(&peer);
     check_client_peer(ssl_fixture, &peer);
   } else {
     GPR_ASSERT(ssl_fixture->base.server_result == nullptr);
@@ -539,6 +559,19 @@ void ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain() {
   tsi_test_fixture_destroy(fixture);
 }
 
+void ssl_tsi_test_do_handshake_with_wrong_server_name_indication() {
+  gpr_log(GPR_INFO,
+          "ssl_tsi_test_do_handshake_with_wrong_server_name_indication");
+  /* server certs do not contain "test.google.cn". */
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+  ssl_fixture->server_name_indication =
+      const_cast<char*>(SSL_TSI_TEST_WRONG_SNI);
+  tsi_test_do_handshake(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
 void ssl_tsi_test_do_handshake_with_bad_server_cert() {
   gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_with_bad_server_cert");
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
@@ -626,10 +659,14 @@ void ssl_tsi_test_do_round_trip_for_all_configs() {
 
 void ssl_tsi_test_do_round_trip_odd_buffer_size() {
   gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_odd_buffer_size");
-#ifndef MEMORY_SANITIZER
+#if !defined(MEMORY_SANITIZER) && !defined(GPR_ARCH_32) && !defined(__APPLE__)
   const size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
 #else
-  // avoid test being extremely slow under MSAN
+  // 1. avoid test being extremely slow under MSAN
+  // 2. on 32-bit, the test is much slower (probably due to lack of boringssl
+  // asm optimizations) so we only run a subset of tests to avoid timeout
+  // 3. on Mac OS, we have slower testing machines so we only run a subset
+  // of tests to avoid timeout
   const size_t odd_sizes[] = {1025};
 #endif
   const size_t size = sizeof(odd_sizes) / sizeof(size_t);
@@ -825,7 +862,8 @@ void ssl_tsi_test_extract_x509_subject_names() {
   tsi_peer peer;
   GPR_ASSERT(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer) ==
              TSI_OK);
-  // One for common name, one for certificate, and six for SAN fields.
+  // One for common name, one for certificate, one for security level, and six
+  // for SAN fields.
   size_t expected_property_count = 8;
   GPR_ASSERT(peer.property_count == expected_property_count);
   // Check common name
@@ -855,6 +893,42 @@ void ssl_tsi_test_extract_x509_subject_names() {
   tsi_peer_destruct(&peer);
 }
 
+void ssl_tsi_test_extract_cert_chain() {
+  gpr_log(GPR_INFO, "ssl_tsi_test_extract_cert_chain");
+  char* cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server1.pem");
+  char* ca = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
+  char* chain = static_cast<char*>(
+      gpr_zalloc(sizeof(char) * (strlen(cert) + strlen(ca) + 1)));
+  memcpy(chain, cert, strlen(cert));
+  memcpy(chain + strlen(cert), ca, strlen(ca));
+  STACK_OF(X509)* cert_chain = sk_X509_new_null();
+  GPR_ASSERT(cert_chain != nullptr);
+  BIO* bio = BIO_new_mem_buf(chain, strlen(chain));
+  GPR_ASSERT(bio != nullptr);
+  STACK_OF(X509_INFO)* certInfos =
+      PEM_X509_INFO_read_bio(bio, nullptr, nullptr, nullptr);
+  GPR_ASSERT(certInfos != nullptr);
+  for (int i = 0; i < sk_X509_INFO_num(certInfos); i++) {
+    X509_INFO* certInfo = sk_X509_INFO_value(certInfos, i);
+    if (certInfo->x509 != nullptr) {
+      GPR_ASSERT(sk_X509_push(cert_chain, certInfo->x509) != 0);
+      X509_up_ref(certInfo->x509);
+    }
+  }
+  tsi_peer_property chain_property;
+  GPR_ASSERT(tsi_ssl_get_cert_chain_contents(cert_chain, &chain_property) ==
+             TSI_OK);
+  GPR_ASSERT(memcmp(chain, chain_property.value.data,
+                    chain_property.value.length) == 0);
+  BIO_free(bio);
+  gpr_free(chain);
+  gpr_free(cert);
+  gpr_free(ca);
+  tsi_peer_property_destruct(&chain_property);
+  sk_X509_INFO_pop_free(certInfos, X509_INFO_free);
+  sk_X509_pop_free(cert_chain, X509_free);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -866,6 +940,7 @@ int main(int argc, char** argv) {
   ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
   ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
   ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
+  ssl_tsi_test_do_handshake_with_wrong_server_name_indication();
   ssl_tsi_test_do_handshake_with_bad_server_cert();
   ssl_tsi_test_do_handshake_with_bad_client_cert();
 #ifdef OPENSSL_IS_BORINGSSL
@@ -881,6 +956,7 @@ int main(int argc, char** argv) {
   ssl_tsi_test_handshaker_factory_internals();
   ssl_tsi_test_duplicate_root_certificates();
   ssl_tsi_test_extract_x509_subject_names();
+  ssl_tsi_test_extract_cert_chain();
   grpc_shutdown();
   return 0;
 }

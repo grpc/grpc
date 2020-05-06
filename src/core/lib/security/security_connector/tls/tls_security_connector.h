@@ -57,8 +57,7 @@ class TlsChannelSecurityConnector final
 
   int cmp(const grpc_security_connector* other_sc) const override;
 
-  bool check_call_host(grpc_core::StringView host,
-                       grpc_auth_context* auth_context,
+  bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error** error) override;
 
@@ -98,8 +97,8 @@ class TlsChannelSecurityConnector final
 
   grpc_core::Mutex mu_;
   grpc_closure* on_peer_checked_;
-  grpc_core::UniquePtr<char> target_name_;
-  grpc_core::UniquePtr<char> overridden_target_name_;
+  std::string target_name_;
+  std::string overridden_target_name_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   grpc_tls_server_authorization_check_arg* check_arg_;
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
@@ -144,12 +143,39 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
 };
 
-// Exposed for testing only.
+// ---- Functions below are exposed for testing only -----------------------
+
+/** The |TlsFetchKeyMaterials| API ensures that |key_materials_config| has a
+ *  non-empty pem-key-cert pair list. This is done as follows:
+ *  - if |options| is equipped with a credential reload config, then this
+ *    methods uses credential reloading to populate |key_materials_config|, and
+ *    afterwards it populates |reload_status| with the status of this operation.
+ *    In particular, any data stored in |key_materials_config| is overwritten.
+ *  - if |options| has no credential reload config, then:
+ *    - if |key_materials_config| already has a non-empty pem-key-cert pair
+ *      list or is called by a client, then the method returns |GRPC_STATUS_OK|.
+ *    - if |key_materials_config| has an empty pem-key-cert pair list and is
+ *      called by a server, then the method return an error code.
+ *
+ *  The arguments are detailed below:
+ *  - key_materials_config: a key materials config that will be populated by the
+ *    method on success; the caller should not pass in nullptr. Any data held by
+ *    the config will be overwritten.
+ *  - options: the TLS credentials options whose credential reloading config
+ *    will be used to populate |key_materials_config|.
+ *  - is_server: true denotes that this method is called by a server, and
+ *    false denotes that this method is called by a client.
+ *  - status: the status of the credential reloading after the method
+ *    returns; the caller should not pass in nullptr. **/
 grpc_status_code TlsFetchKeyMaterials(
     const grpc_core::RefCountedPtr<grpc_tls_key_materials_config>&
         key_materials_config,
-    const grpc_tls_credentials_options& options,
+    const grpc_tls_credentials_options& options, bool is_server,
     grpc_ssl_certificate_config_reload_status* status);
+
+// TlsCheckHostName checks if |peer_name| matches the identity information
+// contained in |peer|. This is AKA hostname check.
+grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer);
 
 }  // namespace grpc_core
 

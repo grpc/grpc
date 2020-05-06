@@ -1116,9 +1116,8 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
         }
         SET_KICK_STATE(next_worker, KICKED);
         goto done;
-      } else if (root_worker ==
-                     next_worker &&  // only try and wake up a poller if
-                                     // there is no next worker
+      } else if (root_worker == next_worker &&  // only try and wake up a poller
+                                                // if there is no next worker
                  root_worker == (grpc_pollset_worker*)gpr_atm_no_barrier_load(
                                     &g_active_poller)) {
         GRPC_STATS_INC_POLLSET_KICK_WAKEUP_FD();

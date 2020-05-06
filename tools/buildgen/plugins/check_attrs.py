@@ -19,7 +19,8 @@ def anything():
 
 
 def one_of(values):
-    return lambda v: ('{0} is not in [{1}]'.format(v, values) if v not in values else None)
+    return lambda v: ('{0} is not in [{1}]'.format(v, values)
+                      if v not in values else None)
 
 
 def subset_of(values):

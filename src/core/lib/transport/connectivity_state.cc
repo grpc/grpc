@@ -58,12 +58,13 @@ const char* ConnectivityStateName(grpc_connectivity_state state) {
 class AsyncConnectivityStateWatcherInterface::Notifier {
  public:
   Notifier(RefCountedPtr<AsyncConnectivityStateWatcherInterface> watcher,
-           grpc_connectivity_state state, Combiner* combiner)
+           grpc_connectivity_state state,
+           const std::shared_ptr<WorkSerializer>& work_serializer)
       : watcher_(std::move(watcher)), state_(state) {
-    if (combiner != nullptr) {
-      combiner->Run(
-          GRPC_CLOSURE_INIT(&closure_, SendNotification, this, nullptr),
-          GRPC_ERROR_NONE);
+    if (work_serializer != nullptr) {
+      work_serializer->Run(
+          [this]() { SendNotification(this, GRPC_ERROR_NONE); },
+          DEBUG_LOCATION);
     } else {
       GRPC_CLOSURE_INIT(&closure_, SendNotification, this,
                         grpc_schedule_on_exec_ctx);
@@ -89,7 +90,7 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
 
 void AsyncConnectivityStateWatcherInterface::Notify(
     grpc_connectivity_state state) {
-  new Notifier(Ref(), state, combiner_);  // Deletes itself when done.
+  new Notifier(Ref(), state, work_serializer_);  // Deletes itself when done.
 }
 
 //

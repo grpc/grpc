@@ -1,21 +1,22 @@
+# gRPC C++
 
-# Overview
-
-A C++ implementation of gRPC
+This directory contains the C++ implementation of gRPC.
 
 # To start using gRPC C++
+
+This section describes how to add gRPC as a dependency to your C++ project.
 
 In the C++ world, there's no universally accepted standard for managing project dependencies.
 Therefore, gRPC supports several major build systems, which should satisfy most users.
 
-## bazel
+## Bazel
 
-We recommend using Bazel for projects that use gRPC as it will give you the best developer experience
-(easy handling of dependencies that support bazel & fast builds).
+Bazel is the primary build system used by the core gRPC development team. Bazel
+provides fast builds and it easily handles dependencies that support bazel.
 
 To add gRPC as a dependency in bazel:
 1. determine commit SHA for the grpc release you want to use
-2. Use the [http_archive](https://docs.bazel.build/versions/master/be/workspace.html#http_archive) bazel rule to include gRPC source
+2. Use the [http_archive](https://docs.bazel.build/versions/master/repo/http.html#http_archive) bazel rule to include gRPC source
   ```
   http_archive(
       name = "com_github_grpc_grpc",
@@ -30,20 +31,90 @@ To add gRPC as a dependency in bazel:
   grpc_deps()
   ```
 
-## cmake
+## CMake
 
-`cmake` is your best option if you cannot use bazel. It supports building on Linux, MacOS and Windows (official support) but also has a good chance of working on other platforms (no promises!). `cmake` has good
-support for crosscompiling and can be used for targeting Android platform.
+`cmake` is your best option if you cannot use bazel. It supports building on Linux,
+MacOS and Windows (official support) but also has a good chance of working on
+other platforms (no promises!). `cmake` has good support for crosscompiling and
+can be used for targeting the Android platform.
 
-If your project is using cmake, there are several ways to add gRPC dependency.
-- install gRPC via cmake first and then locate it with `find_package(gRPC CONFIG)`. [Example](../../examples/cpp/helloworld/CMakeLists.txt)
-- via cmake's `ExternalProject_Add` using a technique called "superbuild". [Example](../../examples/cpp/helloworld/cmake_externalproject/CMakeLists.txt)
-- add gRPC source tree to your project (preferably as a git submodule) and add it to your CMake project with `add_subdirectory`. [Example](../../examples/cpp/helloworld/CMakeLists.txt)
+To build gRPC C++ from source, follow the [BUILDING guide](../../BUILDING.md).
 
-If your project is not using CMake (e.g. you're using `make` directly), you can first install gRPC C++ using CMake,
-and have your non-CMake project rely on the `pkgconfig` files which are provided by gRPC installation. [Example](../../test/distrib/cpp/run_distrib_test_cmake_pkgconfig.sh)
+### find_package
 
-## make
+The canonical way to discover dependencies in CMake is the
+[`find_package` command](https://cmake.org/cmake/help/latest/command/find_package.html).
+
+```cmake
+find_package(gRPC CONFIG REQUIRED)
+add_executable(my_exe my_exe.cc)
+target_link_libraries(my_exe gRPC::grpc++)
+```
+[Full example](../../examples/cpp/helloworld/CMakeLists.txt)
+
+`find_package` can only find software that has already been installed on your
+system. In practice that means you'll need to install gRPC using cmake first.
+gRPC's cmake support provides the option to install gRPC either system-wide
+(not recommended) or under a directory prefix in a way that you can later
+easily use it with the `find_package(gRPC CONFIG REQUIRED)` command.
+
+The following sections describe strategies to automatically build gRPC
+as part of your project.
+
+### FetchContent
+If you are using CMake v3.11 or newer you should use CMake's
+[FetchContent module](https://cmake.org/cmake/help/latest/module/FetchContent.html).
+The first time you run CMake in a given build directory, FetchContent will
+clone the gRPC repository and its submodules. `FetchContent_MakeAvailable()`
+also sets up an `add_subdirectory()` rule for you. This causes gRPC to be
+built as part of your project.
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(
+  gRPC
+  GIT_REPOSITORY https://github.com/grpc/grpc
+  GIT_TAG        v1.25.0
+)
+FetchContent_MakeAvailable(gRPC)
+
+add_executable(my_exe my_exe.cc)
+target_link_libraries(my_exe grpc++)
+```
+
+### git submodule
+If you cannot use FetchContent, another approach is to add the gRPC source tree
+to your project as a
+[git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules).
+You can then add it to your CMake project with `add_subdirectory()`.
+[Example](../../examples/cpp/helloworld/CMakeLists.txt)
+
+### Support system-installed gRPC
+
+If your project builds gRPC you should still consider the case where a user
+wants to build your software using a previously installed gRPC. Here's a
+code snippet showing how this is typically done.
+
+```cmake
+option(USE_SYSTEM_GRPC "Use system installed gRPC" OFF)
+if(USE_SYSTEM_GRPC)
+  # Find system-installed gRPC
+  find_package(gRPC CONFIG REQUIRED)
+else()
+  # Build gRPC using FetchContent or add_subdirectory
+endif()
+```
+
+[Full example](../../examples/cpp/helloworld/CMakeLists.txt)
+
+## pkg-config
+
+If your project does not use CMake (e.g. you're using `make` directly), you can
+first install gRPC C++ using CMake, and have your non-CMake project rely on the
+`pkgconfig` files which are provided by gRPC installation.
+[Example](../../test/distrib/cpp/run_distrib_test_cmake_pkgconfig.sh)
+
+## make (deprecated)
 
 The default choice for building on UNIX based systems used to be `make`, but we are no longer recommending it.
 You should use `bazel` or `cmake` instead.
@@ -86,12 +157,12 @@ You can find out how to build and run our simplest gRPC C++ example in our
 For more detailed documentation on using gRPC in C++ , see our main
 documentation site at [grpc.io](https://grpc.io), specifically:
 
-* [Overview](https://grpc.io/docs/): An introduction to gRPC with a simple
+* [Overview](https://grpc.io/docs): An introduction to gRPC with a simple
   Hello World example in all our supported languages, including C++.
 * [gRPC Basics - C++](https://grpc.io/docs/tutorials/basic/cpp):
   A tutorial that steps you through creating a simple gRPC C++ example
   application.
-* [Asynchronous Basics - C++](https://grpc.io/docs/tutorials/async/helloasync-cpp.html):
+* [Asynchronous Basics - C++](https://grpc.io/docs/tutorials/async/helloasync-cpp):
   A tutorial that shows you how to use gRPC C++'s asynchronous/non-blocking
   APIs.
 

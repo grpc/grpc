@@ -26,8 +26,8 @@ import sys
 
 import grpc
 
-from examples.python.multiprocessing import prime_pb2
-from examples.python.multiprocessing import prime_pb2_grpc
+import prime_pb2
+import prime_pb2_grpc
 
 _PROCESS_COUNT = 8
 _MAXIMUM_CANDIDATE = 10000
@@ -64,10 +64,9 @@ def _run_worker_query(primality_candidate):
 
 
 def _calculate_primes(server_address):
-    worker_pool = multiprocessing.Pool(
-        processes=_PROCESS_COUNT,
-        initializer=_initialize_worker,
-        initargs=(server_address,))
+    worker_pool = multiprocessing.Pool(processes=_PROCESS_COUNT,
+                                       initializer=_initialize_worker,
+                                       initargs=(server_address,))
     check_range = range(2, _MAXIMUM_CANDIDATE)
     primality = worker_pool.map(_run_worker_query, check_range)
     primes = zip(check_range, map(operator.attrgetter('isPrime'), primality))
@@ -78,9 +77,8 @@ def main():
     msg = 'Determine the primality of the first {} integers.'.format(
         _MAXIMUM_CANDIDATE)
     parser = argparse.ArgumentParser(description=msg)
-    parser.add_argument(
-        'server_address',
-        help='The address of the server (e.g. localhost:50051)')
+    parser.add_argument('server_address',
+                        help='The address of the server (e.g. localhost:50051)')
     args = parser.parse_args()
     primes = _calculate_primes(args.server_address)
     print(primes)

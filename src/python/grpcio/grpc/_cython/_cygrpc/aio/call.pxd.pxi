@@ -13,22 +13,35 @@
 # limitations under the License.
 
 
-cdef class _AioCall:
+cdef class _AioCall(GrpcCallWrapper):
     cdef:
-        AioChannel _channel
+        readonly AioChannel _channel
         list _references
-        GrpcCallWrapper _grpc_call_wrapper
+        object _deadline
+        list _done_callbacks
+
         # Caches the picked event loop, so we can avoid the 30ns overhead each
         # time we need access to the event loop.
         object _loop
 
-        # Streaming call only attributes:
-        # 
-        # A asyncio.Event that indicates if the status is received on the client side.
-        object _status_received
-        # A tuple of key value pairs representing the initial metadata sent by peer.
-        tuple _initial_metadata
+        # Flag indicates whether cancel being called or not. Cancellation from
+        # Core or peer works perfectly fine with normal procedure. However, we
+        # need this flag to clean up resources for cancellation from the
+        # application layer. Directly cancelling tasks might cause segfault
+        # because Core is holding a pointer for the callback handler.
+        bint _is_locally_cancelled
 
-    cdef grpc_call* _create_grpc_call(self, object timeout, bytes method) except *
-    cdef void _destroy_grpc_call(self)
-    cdef AioRpcStatus _cancel_and_create_status(self, object cancellation_future)
+        # Following attributes are used for storing the status of the call and
+        # the initial metadata. Waiters are used for pausing the execution of
+        # tasks that are asking for one of the field when they are not yet
+        # available.
+        readonly AioRpcStatus _status
+        readonly tuple _initial_metadata
+        list _waiters_status
+        list _waiters_initial_metadata
+
+        int _send_initial_metadata_flags
+
+    cdef void _create_grpc_call(self, object timeout, bytes method, CallCredentials credentials) except *
+    cdef void _set_status(self, AioRpcStatus status) except *
+    cdef void _set_initial_metadata(self, tuple initial_metadata) except *

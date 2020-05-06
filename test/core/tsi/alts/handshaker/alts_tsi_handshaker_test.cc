@@ -27,14 +27,17 @@
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
+#include "src/core/tsi/transport_security_grpc.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
+#include "test/core/util/test_config.h"
 
 #define ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES "Hello World"
 #define ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME "Hello Google"
 #define ALTS_TSI_HANDSHAKER_TEST_CONSUMED_BYTES "Hello "
 #define ALTS_TSI_HANDSHAKER_TEST_REMAIN_BYTES "Google"
 #define ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY "chapi@service.google.com"
+#define ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL "TSI_PRIVACY_AND_INTEGRITY"
 #define ALTS_TSI_HANDSHAKER_TEST_KEY_DATA \
   "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOPABCDEFGHIJKL"
 #define ALTS_TSI_HANDSHAKER_TEST_BUFFER_SIZE 100
@@ -47,6 +50,7 @@
 #define ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL \
   "test application protocol"
 #define ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL "test record protocol"
+#define ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE 256 * 1024
 
 using grpc_core::internal::alts_handshaker_client_check_fields_for_testing;
 using grpc_core::internal::alts_handshaker_client_get_handshaker_for_testing;
@@ -162,6 +166,8 @@ static grpc_byte_buffer* generate_handshaker_response(
           upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
       grpc_gcp_HandshakerResult_set_record_protocol(
           result, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
+      grpc_gcp_HandshakerResult_set_max_frame_size(
+          result, ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE);
       break;
     case SERVER_NEXT:
       grpc_gcp_HandshakerResp_set_bytes_consumed(
@@ -281,6 +287,17 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   GPR_ASSERT(memcmp(bytes_to_send, ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME,
                     bytes_to_send_size) == 0);
   GPR_ASSERT(result != nullptr);
+  // Validate max frame size value after Frame Size Negotiation. Here peer max
+  // frame size is greater than default value, and user specified max frame size
+  // is absent.
+  tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
+  GPR_ASSERT(tsi_handshaker_result_create_zero_copy_grpc_protector(
+                 result, nullptr, &zero_copy_protector) == TSI_OK);
+  size_t actual_max_frame_size;
+  tsi_zero_copy_grpc_protector_max_frame_size(zero_copy_protector,
+                                              &actual_max_frame_size);
+  GPR_ASSERT(actual_max_frame_size == kTsiAltsMaxFrameSize);
+  tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
   /* Validate peer identity. */
   tsi_peer peer;
   GPR_ASSERT(tsi_handshaker_result_extract_peer(result, &peer) == TSI_OK);
@@ -309,6 +326,10 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
+  /* Validate security level. */
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
+                    peer.properties[4].value.data,
+                    peer.properties[4].value.length) == 0);
   tsi_peer_destruct(&peer);
   /* Validate unused bytes. */
   const unsigned char* bytes = nullptr;
@@ -337,6 +358,20 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   GPR_ASSERT(bytes_to_send_size == 0);
   GPR_ASSERT(bytes_to_send == nullptr);
   GPR_ASSERT(result != nullptr);
+  // Validate max frame size value after Frame Size Negotiation. The negotiated
+  // frame size value equals minimum send frame size, due to the absence of peer
+  // max frame size.
+  tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
+  size_t user_specified_max_frame_size =
+      ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE;
+  GPR_ASSERT(tsi_handshaker_result_create_zero_copy_grpc_protector(
+                 result, &user_specified_max_frame_size,
+                 &zero_copy_protector) == TSI_OK);
+  size_t actual_max_frame_size;
+  tsi_zero_copy_grpc_protector_max_frame_size(zero_copy_protector,
+                                              &actual_max_frame_size);
+  GPR_ASSERT(actual_max_frame_size == kTsiAltsMinFrameSize);
+  tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
   /* Validate peer identity. */
   tsi_peer peer;
   GPR_ASSERT(tsi_handshaker_result_extract_peer(result, &peer) == TSI_OK);
@@ -365,6 +400,11 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
+  /* Check security level. */
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
+                    peer.properties[4].value.data,
+                    peer.properties[4].value.length) == 0);
+
   tsi_peer_destruct(&peer);
   /* Validate unused bytes. */
   const unsigned char* bytes = nullptr;
@@ -467,7 +507,7 @@ static tsi_handshaker* create_test_handshaker(bool is_client) {
       grpc_alts_credentials_client_options_create();
   alts_tsi_handshaker_create(options, "target_name",
                              ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING, is_client,
-                             nullptr, &handshaker);
+                             nullptr, &handshaker, 0);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   alts_tsi_handshaker_set_client_vtable_for_testing(alts_handshaker, &vtable);
@@ -956,7 +996,8 @@ void check_handshaker_success() {
   notification_destroy(&tsi_to_caller_notification);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   /* Initialization. */
   grpc_init();
   grpc_alts_shared_resource_dedicated_init();

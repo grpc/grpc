@@ -54,7 +54,7 @@ See [Experimentally supported platforms](experimental) for instructions.
 NUGET DEVELOPMENT FEED (NIGHTLY BUILDS)
 --------------
 
-In production, you should use officially released stable packages available on http://nuget.org, but if you want to test the newest upstream bug fixes and features early, you can can use the development nuget feed where new nuget builds are uploaded nightly.
+In production, you should use officially released stable packages available on http://nuget.org, but if you want to test the newest upstream bug fixes and features early, you can use the development nuget feed where new nuget builds are uploaded nightly.
 
 Feed URL (NuGet v2): https://grpc.jfrog.io/grpc/api/nuget/grpc-nuget-dev
 

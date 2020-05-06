@@ -174,8 +174,9 @@ with open(args.source) as f:
             del builder[thd]
 time_taken = time.time() - start
 
-call_stacks = sorted(
-    call_stacks.values(), key=lambda cs: cs.count, reverse=True)
+call_stacks = sorted(call_stacks.values(),
+                     key=lambda cs: cs.count,
+                     reverse=True)
 total_stacks = 0
 for cs in call_stacks:
     total_stacks += cs.count
@@ -211,9 +212,8 @@ def tidy_tag(tag):
 
 def time_string(values):
     num_values = len(values)
-    return '%.1f/%.1f/%.1f' % (1e6 * percentile(values, 0.5),
-                               1e6 * percentile(values, 0.9),
-                               1e6 * percentile(values, 0.99))
+    return '%.1f/%.1f/%.1f' % (1e6 * percentile(values, 0.5), 1e6 * percentile(
+        values, 0.9), 1e6 * percentile(values, 0.99))
 
 
 def time_format(idx):
@@ -230,9 +230,8 @@ BANNER = {'simple': 'Count: %(count)d', 'html': '<h1>Count: %(count)d</h1>'}
 
 FORMAT = [
     ('TAG', lambda line: '..' * line.indent + tidy_tag(line.tag)),
-    ('LOC',
-     lambda line: '%s:%d' % (line.filename[line.filename.rfind('/') + 1:], line.fileline)
-    ),
+    ('LOC', lambda line: '%s:%d' %
+     (line.filename[line.filename.rfind('/') + 1:], line.fileline)),
     ('IMP', lambda line: '*' if line.important else ''),
     ('FROM_IMP', time_format(TIME_FROM_LAST_IMPORTANT)),
     ('FROM_STACK_START', time_format(TIME_FROM_STACK_START)),

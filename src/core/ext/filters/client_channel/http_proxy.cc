@@ -47,6 +47,7 @@ namespace {
  */
 char* GetHttpProxyServer(char** user_cred) {
   GPR_ASSERT(user_cred != nullptr);
+  grpc_uri* uri = nullptr;
   char* proxy_name = nullptr;
   char** authority_strs = nullptr;
   size_t authority_nstrs;
@@ -58,7 +59,9 @@ char* GetHttpProxyServer(char** user_cred) {
   if (uri_str == nullptr) uri_str = gpr_getenv("https_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("http_proxy");
   if (uri_str == nullptr) return nullptr;
-  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
+  // an emtpy value means "don't use proxy"
+  if (uri_str[0] == '\0') goto done;
+  uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
   if (uri == nullptr || uri->authority == nullptr) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
     goto done;
@@ -122,8 +125,8 @@ class HttpProxyMapper : public ProxyMapperInterface {
     if (no_proxy_str != nullptr) {
       static const char* NO_PROXY_SEPARATOR = ",";
       bool use_proxy = true;
-      grpc_core::UniquePtr<char> server_host;
-      grpc_core::UniquePtr<char> server_port;
+      std::string server_host;
+      std::string server_port;
       if (!grpc_core::SplitHostPort(
               uri->path[0] == '/' ? uri->path + 1 : uri->path, &server_host,
               &server_port)) {
@@ -133,7 +136,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
                 server_uri);
         gpr_free(no_proxy_str);
       } else {
-        size_t uri_len = strlen(server_host.get());
+        size_t uri_len = server_host.size();
         char** no_proxy_hosts;
         size_t num_no_proxy_hosts;
         gpr_string_split(no_proxy_str, NO_PROXY_SEPARATOR, &no_proxy_hosts,
@@ -143,7 +146,8 @@ class HttpProxyMapper : public ProxyMapperInterface {
           size_t no_proxy_len = strlen(no_proxy_entry);
           if (no_proxy_len <= uri_len &&
               gpr_stricmp(no_proxy_entry,
-                          &(server_host.get()[uri_len - no_proxy_len])) == 0) {
+                          &(server_host.c_str()[uri_len - no_proxy_len])) ==
+                  0) {
             gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
                     server_uri);
             use_proxy = false;

@@ -66,7 +66,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python packages from PyPI
 RUN pip install --upgrade pip==19.3.1
-RUN pip install virtualenv
+RUN pip install virtualenv==16.7.9
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
 
 #=================
@@ -89,8 +89,8 @@ RUN mkdir /var/local/jenkins
 # libuv
 RUN cd /tmp     && wget http://dist.libuv.org/dist/v1.9.1/libuv-v1.9.1.tar.gz     && tar -xf libuv-v1.9.1.tar.gz     && cd libuv-v1.9.1     && sh autogen.sh && ./configure --prefix=/usr && make && make install
 
-# Install gcc-4.8 and other relevant items
-RUN apt-get update && apt-get -y install gcc-4.8 gcc-4.8-multilib g++-4.8 g++-4.8-multilib && apt-get clean
+# Install gcc-4.9 and other relevant items
+RUN apt-get update && apt-get -y install gcc gcc-multilib g++ g++-multilib && apt-get clean
 
 # Define the default command.
 CMD ["bash"]

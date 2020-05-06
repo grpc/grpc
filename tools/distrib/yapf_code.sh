@@ -15,17 +15,18 @@
 
 set -ex
 
+ACTION=${1:---in-place}
+[[ $ACTION == '--in-place' ]] || [[ $ACTION == '--diff' ]]
+
 # change to root directory
 cd "$(dirname "${0}")/../.."
 
 DIRS=(
-    'examples/python'
-    'src/python'
+    'examples'
+    'src'
+    'test'
     'tools'
-)
-EXCLUSIONS=(
-    '*protoc_lib_deps.py'  # this file is auto-generated
-    '*_pb2*.py'  # no need to format protoc generated files
+    'setup.py'
 )
 
 VIRTUALENV=yapf_virtual_environment
@@ -34,30 +35,6 @@ python3 -m virtualenv $VIRTUALENV -p $(which python3)
 PYTHON=${VIRTUALENV}/bin/python
 "$PYTHON" -m pip install --upgrade pip==19.3.1
 "$PYTHON" -m pip install --upgrade futures
-"$PYTHON" -m pip install yapf==0.20.0
+"$PYTHON" -m pip install yapf==0.28.0
 
-yapf() {
-    local exclusion exclusion_args=()
-    for exclusion in "${EXCLUSIONS[@]}"; do
-        exclusion_args+=( "--exclude" "$1/${exclusion}" )
-    done
-    $PYTHON -m yapf -i -r --style=setup.cfg -p "${exclusion_args[@]}" "${1}"
-}
-
-if [[ -z "${TEST}" ]]; then
-    for dir in "${DIRS[@]}"; do
-	yapf "${dir}"
-    done
-else
-    ok=yes
-    for dir in "${DIRS[@]}"; do
-	tempdir=$(mktemp -d)
-	cp -RT "${dir}" "${tempdir}"
-	yapf "${tempdir}"
-	diff -x '*.pyc' -ru "${dir}" "${tempdir}" || ok=no
-	rm -rf "${tempdir}"
-    done
-    if [[ ${ok} == no ]]; then
-	false
-    fi
-fi
+$PYTHON -m yapf $ACTION --recursive --style=setup.cfg "${DIRS[@]}"

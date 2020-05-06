@@ -20,6 +20,7 @@ import grpc
 import demo_pb2_grpc
 import demo_pb2
 
+__all__ = 'DemoServer'
 SERVER_ADDRESS = 'localhost:23333'
 SERVER_ID = 1
 
@@ -43,8 +44,8 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
     def ClientStreamingMethod(self, request_iterator, context):
         print("ClientStreamingMethod called by client...")
         for request in request_iterator:
-            print("recv from client(%d), message= %s" % (request.client_id,
-                                                         request.request_data))
+            print("recv from client(%d), message= %s" %
+                  (request.client_id, request.request_data))
         response = demo_pb2.Response(
             server_id=SERVER_ID,
             response_data="Python server ClientStreamingMethod ok")

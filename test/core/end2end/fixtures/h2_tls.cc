@@ -16,31 +16,34 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
-#include <stdio.h>
-#include <string.h>
-
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
 #include <grpc/support/string_util.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
-#include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-typedef grpc_core::InlinedVector<grpc_core::Thread, 1> ThreadList;
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
+
+typedef absl::InlinedVector<grpc_core::Thread, 1> ThreadList;
 
 struct fullstack_secure_fixture_data {
   ~fullstack_secure_fixture_data() {
@@ -142,20 +145,30 @@ static int client_cred_reload_sync(void* /*config_user_data*/,
     arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
     return 0;
   }
-  grpc_ssl_pem_key_cert_pair** key_cert_pair =
-      static_cast<grpc_ssl_pem_key_cert_pair**>(
-          gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair*)));
-  key_cert_pair[0] = static_cast<grpc_ssl_pem_key_cert_pair*>(
-      gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-  key_cert_pair[0]->private_key = gpr_strdup(test_server1_key);
-  key_cert_pair[0]->cert_chain = gpr_strdup(test_server1_cert);
+  grpc_slice ca_slice, cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  const char* ca_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  const char* server_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* server_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
   if (arg->key_materials_config->pem_key_cert_pair_list().empty()) {
+    const auto* pem_key_cert_pair_ptr = &pem_key_cert_pair;
     grpc_tls_key_materials_config_set_key_materials(
-        arg->key_materials_config, gpr_strdup(test_root_cert),
-        (const grpc_ssl_pem_key_cert_pair**)key_cert_pair, 1);
+        arg->key_materials_config, ca_cert, &pem_key_cert_pair_ptr, 1);
   }
   // new credential has been reloaded.
   arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  grpc_slice_unref(ca_slice);
   return 0;
 }
 
@@ -168,24 +181,34 @@ static int server_cred_reload_sync(void* /*config_user_data*/,
     arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
     return 0;
   }
-  grpc_ssl_pem_key_cert_pair** key_cert_pair =
-      static_cast<grpc_ssl_pem_key_cert_pair**>(
-          gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair*)));
-  key_cert_pair[0] = static_cast<grpc_ssl_pem_key_cert_pair*>(
-      gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-  key_cert_pair[0]->private_key = gpr_strdup(test_server1_key);
-  key_cert_pair[0]->cert_chain = gpr_strdup(test_server1_cert);
+  grpc_slice ca_slice, cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  const char* ca_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  const char* server_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* server_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
   GPR_ASSERT(arg != nullptr);
   GPR_ASSERT(arg->key_materials_config != nullptr);
   GPR_ASSERT(arg->key_materials_config->pem_key_cert_pair_list().data() !=
              nullptr);
   if (arg->key_materials_config->pem_key_cert_pair_list().empty()) {
+    const auto* pem_key_cert_pair_ptr = &pem_key_cert_pair;
     grpc_tls_key_materials_config_set_key_materials(
-        arg->key_materials_config, gpr_strdup(test_root_cert),
-        (const grpc_ssl_pem_key_cert_pair**)key_cert_pair, 1);
+        arg->key_materials_config, ca_cert, &pem_key_cert_pair_ptr, 1);
   }
   // new credential has been reloaded.
   arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  grpc_slice_unref(ca_slice);
   return 0;
 }
 
@@ -193,6 +216,7 @@ static int server_cred_reload_sync(void* /*config_user_data*/,
 static grpc_channel_credentials* create_tls_channel_credentials(
     fullstack_secure_fixture_data* ffd) {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
+  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   /* Set credential reload config. */
   grpc_tls_credential_reload_config* reload_config =
       grpc_tls_credential_reload_config_create(nullptr, client_cred_reload_sync,
@@ -275,25 +299,13 @@ static grpc_end2end_test_config configs[] = {
 };
 
 int main(int argc, char** argv) {
-  FILE* roots_file;
-  size_t roots_size = strlen(test_root_cert);
-  char* roots_filename;
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_end2end_tests_pre_init();
-  /* Set the SSL roots env var. */
-  roots_file = gpr_tmpfile("chttp2_simple_ssl_fullstack_test", &roots_filename);
-  GPR_ASSERT(roots_filename != nullptr);
-  GPR_ASSERT(roots_file != nullptr);
-  GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
-  fclose(roots_file);
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, roots_filename);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
   grpc_init();
   for (size_t ind = 0; ind < sizeof(configs) / sizeof(*configs); ind++) {
     grpc_end2end_tests(argc, argv, configs[ind]);
   }
   grpc_shutdown();
-  /* Cleanup. */
-  remove(roots_filename);
-  gpr_free(roots_filename);
   return 0;
 }

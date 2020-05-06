@@ -115,8 +115,8 @@ class TimeTest(object):
         self._time.sleep_for(_QUANTUM * 3)
 
         for test_event in test_events:
-            (self.assertFalse if test_event in cancelled else
-             self.assertTrue)(test_event.is_set())
+            (self.assertFalse if test_event in cancelled else self.assertTrue)(
+                test_event.is_set())
         for background_noise_future in background_noise_futures:
             background_noise_future.cancel()
 

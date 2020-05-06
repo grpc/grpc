@@ -84,6 +84,30 @@ const char* grpc_get_ssl_cipher_suites(void) {
   return cipher_suites;
 }
 
+grpc_security_level grpc_tsi_security_level_string_to_enum(
+    const char* security_level) {
+  if (strcmp(security_level, "TSI_INTEGRITY_ONLY") == 0) {
+    return GRPC_INTEGRITY_ONLY;
+  } else if (strcmp(security_level, "TSI_PRIVACY_AND_INTEGRITY") == 0) {
+    return GRPC_PRIVACY_AND_INTEGRITY;
+  }
+  return GRPC_SECURITY_NONE;
+}
+
+const char* grpc_security_level_to_string(grpc_security_level security_level) {
+  if (security_level == GRPC_PRIVACY_AND_INTEGRITY) {
+    return "GRPC_PRIVACY_AND_INTEGRITY";
+  } else if (security_level == GRPC_INTEGRITY_ONLY) {
+    return "GRPC_INTEGRITY_ONLY";
+  }
+  return "GRPC_SECURITY_NONE";
+}
+
+bool grpc_check_security_level(grpc_security_level channel_level,
+                               grpc_security_level call_cred_level) {
+  return static_cast<int>(channel_level) >= static_cast<int>(call_cred_level);
+}
+
 tsi_client_certificate_request_type
 grpc_get_tsi_client_certificate_request_type(
     grpc_ssl_client_certificate_request_type grpc_request_type) {
@@ -125,7 +149,7 @@ grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer) {
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_ssl_check_peer_name(grpc_core::StringView peer_name,
+grpc_error* grpc_ssl_check_peer_name(absl::string_view peer_name,
                                      const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
@@ -139,15 +163,17 @@ grpc_error* grpc_ssl_check_peer_name(grpc_core::StringView peer_name,
   return GRPC_ERROR_NONE;
 }
 
-bool grpc_ssl_check_call_host(grpc_core::StringView host,
-                              grpc_core::StringView target_name,
-                              grpc_core::StringView overridden_target_name,
+bool grpc_ssl_check_call_host(absl::string_view host,
+                              absl::string_view target_name,
+                              absl::string_view overridden_target_name,
                               grpc_auth_context* auth_context,
-                              grpc_closure* /*on_call_host_checked*/,
                               grpc_error** error) {
   grpc_security_status status = GRPC_SECURITY_ERROR;
   tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
   if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
+  /* If the target name was overridden, then the original target_name was
+   'checked' transitively during the previous peer check at the end of the
+   handshake. */
   if (!overridden_target_name.empty() && host == target_name) {
     status = GRPC_SECURITY_OK;
   }
@@ -171,24 +197,24 @@ const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
 }
 
 int grpc_ssl_host_matches_name(const tsi_peer* peer,
-                               grpc_core::StringView peer_name) {
-  grpc_core::StringView allocated_name;
-  grpc_core::StringView ignored_port;
+                               absl::string_view peer_name) {
+  absl::string_view allocated_name;
+  absl::string_view ignored_port;
   grpc_core::SplitHostPort(peer_name, &allocated_name, &ignored_port);
   if (allocated_name.empty()) return 0;
 
   // IPv6 zone-id should not be included in comparisons.
   const size_t zone_id = allocated_name.find('%');
-  if (zone_id != grpc_core::StringView::npos) {
+  if (zone_id != absl::string_view::npos) {
     allocated_name.remove_suffix(allocated_name.size() - zone_id);
   }
   return tsi_ssl_peer_matches_name(peer, allocated_name);
 }
 
-int grpc_ssl_cmp_target_name(
-    grpc_core::StringView target_name, grpc_core::StringView other_target_name,
-    grpc_core::StringView overridden_target_name,
-    grpc_core::StringView other_overridden_target_name) {
+int grpc_ssl_cmp_target_name(absl::string_view target_name,
+                             absl::string_view other_target_name,
+                             absl::string_view overridden_target_name,
+                             absl::string_view other_overridden_target_name) {
   int c = target_name.compare(other_target_name);
   if (c != 0) return c;
   return overridden_target_name.compare(other_overridden_target_name);
@@ -225,10 +251,18 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_X509_PEM_CERT_PROPERTY_NAME,
                                      prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_CHAIN_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(),
+                                     GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_SSL_SESSION_REUSED_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_SSL_SESSION_REUSED_PROPERTY,
                                      prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+          prop->value.data, prop->value.length);
     }
   }
   if (peer_identity_property_name != nullptr) {
@@ -272,6 +306,14 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
       } else if (strcmp(prop->name, GRPC_X509_PEM_CERT_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_PEM_CERT_PROPERTY);
+      } else if (strcmp(prop->name,
+                        GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_SECURITY_LEVEL_PEER_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME) ==
+                 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_X509_PEM_CERT_CHAIN_PROPERTY);
       }
     }
   }
@@ -284,6 +326,7 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
+    bool skip_server_certificate_verification,
     tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs;
@@ -314,6 +357,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   }
   options.cipher_suites = grpc_get_ssl_cipher_suites();
   options.session_cache = ssl_session_cache;
+  options.skip_server_certificate_verification =
+      skip_server_certificate_verification;
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);

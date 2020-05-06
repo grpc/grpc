@@ -1854,8 +1854,12 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
       }
       messages.push_back(big_msg);
     }
+#ifndef MEMORY_SANITIZER
+    // 4MB message processing with SSL is very slow under msan
+    // (causes timeouts) and doesn't really increase the signal from tests
     messages.push_back(
         grpc::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 10, 'a'));
+#endif
   }
 
   // TODO (sreek) Renable tests with health check service after the issue

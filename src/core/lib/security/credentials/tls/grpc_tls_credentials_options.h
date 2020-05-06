@@ -23,16 +23,29 @@
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/gprpp/inlined_vector.h"
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
+
+struct grpc_tls_error_details
+    : public grpc_core::RefCounted<grpc_tls_error_details> {
+ public:
+  grpc_tls_error_details() : error_details_("") {}
+  void set_error_details(const char* err_details) {
+    error_details_ = err_details;
+  }
+  const std::string& error_details() { return error_details_; }
+
+ private:
+  std::string error_details_;
+};
 
 /** TLS key materials config. **/
 struct grpc_tls_key_materials_config
     : public grpc_core::RefCounted<grpc_tls_key_materials_config> {
  public:
-  typedef grpc_core::InlinedVector<grpc_core::PemKeyCertPair, 1>
-      PemKeyCertPairList;
+  typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
 
   /** Getters for member fields. **/
   const char* pem_root_certs() const { return pem_root_certs_.get(); }
@@ -42,14 +55,28 @@ struct grpc_tls_key_materials_config
   int version() const { return version_; }
 
   /** Setters for member fields. **/
+  // TODO(ZhenLian): Remove this function
   void set_pem_root_certs(grpc_core::UniquePtr<char> pem_root_certs) {
     pem_root_certs_ = std::move(pem_root_certs);
+  }
+  // The ownerships of |pem_root_certs| remain with the caller.
+  void set_pem_root_certs(const char* pem_root_certs) {
+    // make a copy of pem_root_certs.
+    grpc_core::UniquePtr<char> pem_root_ptr(gpr_strdup(pem_root_certs));
+    pem_root_certs_ = std::move(pem_root_ptr);
   }
   void add_pem_key_cert_pair(grpc_core::PemKeyCertPair pem_key_cert_pair) {
     pem_key_cert_pair_list_.push_back(pem_key_cert_pair);
   }
-  void set_key_materials(grpc_core::UniquePtr<char> pem_root_certs,
-                         PemKeyCertPairList pem_key_cert_pair_list);
+  // The ownerships of |pem_root_certs| and |pem_key_cert_pairs| remain with the
+  // caller.
+  void set_key_materials(const char* pem_root_certs,
+                         const grpc_ssl_pem_key_cert_pair** pem_key_cert_pairs,
+                         size_t num_key_cert_pairs);
+  // The ownerships of |pem_root_certs| and |pem_key_cert_pair_list| remain with
+  // the caller.
+  void set_key_materials(const char* pem_root_certs,
+                         const PemKeyCertPairList& pem_key_cert_pair_list);
   void set_version(int version) { version_ = version; }
 
  private:
@@ -79,8 +106,8 @@ struct grpc_tls_credential_reload_config
       gpr_log(GPR_ERROR, "schedule API is nullptr");
       if (arg != nullptr) {
         arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL;
-        arg->error_details =
-            gpr_strdup("schedule API in credential reload config is nullptr");
+        arg->error_details->set_error_details(
+            "schedule API in credential reload config is nullptr");
       }
       return 1;
     }
@@ -94,8 +121,8 @@ struct grpc_tls_credential_reload_config
       gpr_log(GPR_ERROR, "cancel API is nullptr.");
       if (arg != nullptr) {
         arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL;
-        arg->error_details =
-            gpr_strdup("cancel API in credential reload config is nullptr");
+        arg->error_details->set_error_details(
+            "cancel API in credential reload config is nullptr");
       }
       return;
     }
@@ -155,7 +182,7 @@ struct grpc_tls_server_authorization_check_config
       gpr_log(GPR_ERROR, "schedule API is nullptr");
       if (arg != nullptr) {
         arg->status = GRPC_STATUS_NOT_FOUND;
-        arg->error_details = gpr_strdup(
+        arg->error_details->set_error_details(
             "schedule API in server authorization check config is nullptr");
       }
       return 1;
@@ -171,7 +198,7 @@ struct grpc_tls_server_authorization_check_config
       gpr_log(GPR_ERROR, "cancel API is nullptr.");
       if (arg != nullptr) {
         arg->status = GRPC_STATUS_NOT_FOUND;
-        arg->error_details = gpr_strdup(
+        arg->error_details->set_error_details(
             "schedule API in server authorization check config is nullptr");
       }
       return;
@@ -234,6 +261,9 @@ struct grpc_tls_credentials_options
   grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;
   }
+  grpc_tls_server_verification_option server_verification_option() const {
+    return server_verification_option_;
+  }
   grpc_tls_key_materials_config* key_materials_config() const {
     return key_materials_config_.get();
   }
@@ -249,6 +279,10 @@ struct grpc_tls_credentials_options
   void set_cert_request_type(
       const grpc_ssl_client_certificate_request_type type) {
     cert_request_type_ = type;
+  }
+  void set_server_verification_option(
+      const grpc_tls_server_verification_option server_verification_option) {
+    server_verification_option_ = server_verification_option;
   }
   void set_key_materials_config(
       grpc_core::RefCountedPtr<grpc_tls_key_materials_config> config) {
@@ -266,6 +300,8 @@ struct grpc_tls_credentials_options
 
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_;
+  grpc_tls_server_verification_option server_verification_option_ =
+      GRPC_TLS_SERVER_VERIFICATION;
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
   grpc_core::RefCountedPtr<grpc_tls_credential_reload_config>
       credential_reload_config_;

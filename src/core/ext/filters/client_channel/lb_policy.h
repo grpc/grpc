@@ -24,15 +24,16 @@
 #include <functional>
 #include <iterator>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/string_view.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -72,7 +73,7 @@ extern DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 /// LoadBalacingPolicy API.
 ///
 /// Note: All methods with a "Locked" suffix must be called from the
-/// combiner passed to the constructor.
+/// work_serializer passed to the constructor.
 ///
 /// Any I/O done by the LB policy should be done under the pollset_set
 /// returned by \a interested_parties().
@@ -93,11 +94,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Application-specific requests cost metrics.  Metric names are
     /// determined by the application.  Each value is an absolute cost
     /// (e.g. 3487 bytes of storage) associated with the request.
-    std::map<StringView, double, StringLess> request_cost;
+    std::map<absl::string_view, double, StringLess> request_cost;
     /// Application-specific resource utilization metrics.  Metric names
     /// are determined by the application.  Each value is expressed as a
     /// fraction of total resources available.
-    std::map<StringView, double, StringLess> utilization;
+    std::map<absl::string_view, double, StringLess> utilization;
   };
 
   /// Interface for accessing per-call state.
@@ -123,12 +124,13 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   class MetadataInterface {
    public:
     class iterator
-        : public std::iterator<std::input_iterator_tag,
-                               std::pair<StringView, StringView>,  // value_type
-                               std::ptrdiff_t,  // difference_type
-                               std::pair<StringView, StringView>*,  // pointer
-                               std::pair<StringView, StringView>&   // reference
-                               > {
+        : public std::iterator<
+              std::input_iterator_tag,
+              std::pair<absl::string_view, absl::string_view>,  // value_type
+              std::ptrdiff_t,  // difference_type
+              std::pair<absl::string_view, absl::string_view>*,  // pointer
+              std::pair<absl::string_view, absl::string_view>&   // reference
+              > {
      public:
       iterator(const MetadataInterface* md, intptr_t handle)
           : md_(md), handle_(handle) {}
@@ -155,7 +157,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Implementations must ensure that the key and value remain alive
     /// until the call ends.  If desired, they may be allocated via
     /// CallState::Alloc().
-    virtual void Add(StringView key, StringView value) = 0;
+    virtual void Add(absl::string_view key, absl::string_view value) = 0;
 
     /// Iteration interface.
     virtual iterator begin() const = 0;
@@ -172,7 +174,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     friend class iterator;
 
     virtual intptr_t IteratorHandleNext(intptr_t handle) const = 0;
-    virtual std::pair<StringView /*key*/, StringView /*value */>
+    virtual std::pair<absl::string_view /*key*/, absl::string_view /*value */>
     IteratorHandleGet(intptr_t handle) const = 0;
   };
 
@@ -242,7 +244,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// live in the LB policy object itself.
   ///
   /// Currently, pickers are always accessed from within the
-  /// client_channel data plane combiner, so they do not have to be
+  /// client_channel data plane mutex, so they do not have to be
   /// thread-safe.
   class SubchannelPicker {
    public:
@@ -276,7 +278,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
-    virtual void AddTraceEvent(TraceSeverity severity, StringView message) = 0;
+    virtual void AddTraceEvent(TraceSeverity severity,
+                               absl::string_view message) = 0;
   };
 
   /// Interface for configuration data used by an LB policy implementation.
@@ -302,19 +305,15 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     UpdateArgs() = default;
     ~UpdateArgs() { grpc_channel_args_destroy(args); }
     UpdateArgs(const UpdateArgs& other);
-    UpdateArgs(UpdateArgs&& other);
+    UpdateArgs(UpdateArgs&& other) noexcept;
     UpdateArgs& operator=(const UpdateArgs& other);
-    UpdateArgs& operator=(UpdateArgs&& other);
+    UpdateArgs& operator=(UpdateArgs&& other) noexcept;
   };
 
   /// Args used to instantiate an LB policy.
   struct Args {
-    /// The combiner under which all LB policy calls will be run.
-    /// Policy does NOT take ownership of the reference to the combiner.
-    // TODO(roth): Once we have a C++-like interface for combiners, this
-    // API should change to take a smart pointer that does pass ownership
-    // of a reference.
-    Combiner* combiner = nullptr;
+    /// The work_serializer under which all LB policy calls will be run.
+    std::shared_ptr<WorkSerializer> work_serializer;
     /// Channel control helper.
     /// Note: LB policies MUST NOT call any method on the helper from
     /// their constructor.
@@ -352,7 +351,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
-  // Note: This must be invoked while holding the combiner.
+  // Note: This must be invoked while holding the work_serializer.
   void Orphan() override;
 
   // A picker that returns PICK_QUEUE for all picks.
@@ -368,8 +367,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     PickResult Pick(PickArgs args) override;
 
    private:
-    static void CallExitIdle(void* arg, grpc_error* error);
-
     RefCountedPtr<LoadBalancingPolicy> parent_;
     bool exit_idle_called_ = false;
   };
@@ -387,7 +384,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
  protected:
-  Combiner* combiner() const { return combiner_; }
+  std::shared_ptr<WorkSerializer> work_serializer() const {
+    return work_serializer_;
+  }
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
@@ -399,8 +398,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   virtual void ShutdownLocked() = 0;
 
  private:
-  /// Combiner under which LB policy actions take place.
-  Combiner* combiner_;
+  /// Work Serializer under which LB policy actions take place.
+  std::shared_ptr<WorkSerializer> work_serializer_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.

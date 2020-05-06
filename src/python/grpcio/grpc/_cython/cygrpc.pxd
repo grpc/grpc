@@ -13,6 +13,8 @@
 # limitations under the License.
 # distutils: language=c++
 
+cimport cpython
+
 include "_cygrpc/grpc.pxi"
 
 include "_cygrpc/arguments.pxd.pxi"
@@ -43,6 +45,7 @@ IF UNAME_SYSNAME != "Windows":
 include "_cygrpc/aio/iomgr/socket.pxd.pxi"
 include "_cygrpc/aio/iomgr/timer.pxd.pxi"
 include "_cygrpc/aio/iomgr/resolver.pxd.pxi"
+include "_cygrpc/aio/completion_queue.pxd.pxi"
 include "_cygrpc/aio/rpc_status.pxd.pxi"
 include "_cygrpc/aio/grpc_aio.pxd.pxi"
 include "_cygrpc/aio/callback_common.pxd.pxi"

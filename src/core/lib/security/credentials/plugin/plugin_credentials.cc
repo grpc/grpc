@@ -42,6 +42,19 @@ grpc_plugin_credentials::~grpc_plugin_credentials() {
   }
 }
 
+std::string grpc_plugin_credentials::debug_string() {
+  char* debug_c_str = nullptr;
+  if (plugin_.debug_string != nullptr) {
+    debug_c_str = plugin_.debug_string(plugin_.state);
+  }
+  std::string debug_str(
+      debug_c_str != nullptr
+          ? debug_c_str
+          : "grpc_plugin_credentials did not provide a debug string");
+  gpr_free(debug_c_str);
+  return debug_str;
+}
+
 void grpc_plugin_credentials::pending_request_remove_locked(
     pending_request* pending_request) {
   if (pending_request->prev == nullptr) {
@@ -240,15 +253,17 @@ void grpc_plugin_credentials::cancel_get_request_metadata(
 }
 
 grpc_plugin_credentials::grpc_plugin_credentials(
-    grpc_metadata_credentials_plugin plugin)
-    : grpc_call_credentials(plugin.type), plugin_(plugin) {
+    grpc_metadata_credentials_plugin plugin,
+    grpc_security_level min_security_level)
+    : grpc_call_credentials(plugin.type, min_security_level), plugin_(plugin) {
   gpr_mu_init(&mu_);
 }
 
 grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
-    grpc_metadata_credentials_plugin plugin, void* reserved) {
+    grpc_metadata_credentials_plugin plugin,
+    grpc_security_level min_security_level, void* reserved) {
   GRPC_API_TRACE("grpc_metadata_credentials_create_from_plugin(reserved=%p)", 1,
                  (reserved));
   GPR_ASSERT(reserved == nullptr);
-  return new grpc_plugin_credentials(plugin);
+  return new grpc_plugin_credentials(plugin, min_security_level);
 }

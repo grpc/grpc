@@ -6,7 +6,7 @@ Bad credentials (badclient.* / badserver.*):
 
 These are self-signed certificates:
 
-$ openssl req -x509 -newkey rsa:1024 -keyout badserver.key -out badserver.pem \
+$ openssl req -x509 -newkey rsa:2048 -keyout badserver.key -out badserver.pem \
   -days 3650 -nodes
 
 When prompted for certificate information, everything is default except the
@@ -19,44 +19,71 @@ Valid test credentials:
 The ca is self-signed:
 ----------------------
 
-$ openssl req -x509 -new -newkey rsa:1024 -nodes -out ca.pem -config ca-openssl.cnf -days 3650 -extensions v3_req
+$ openssl req -x509 -new -newkey rsa:2048 -nodes -keyout ca.key -out ca.pem \
+  -config ca-openssl.cnf -days 3650 -extensions v3_req
 When prompted for certificate information, everything is default.
 
 client is issued by CA:
 -----------------------
 
-$ openssl genrsa -out client.key.rsa 1024
+$ openssl genrsa -out client.key.rsa 2048
 $ openssl pkcs8 -topk8 -in client.key.rsa -out client.key -nocrypt
-$ rm client.key.rsa
 $ openssl req -new -key client.key -out client.csr
 
 When prompted for certificate information, everything is default except the
 common name which is set to testclient.
 
-$ openssl ca -in client.csr -out client.pem
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client.csr \
+  -out client.pem -days 3650
 
 server0 is issued by CA:
 ------------------------
 
-$ openssl genrsa -out server0.key.rsa 1024
+$ openssl genrsa -out server0.key.rsa 2048
 $ openssl pkcs8 -topk8 -in server0.key.rsa -out server0.key -nocrypt
-$ rm server0.key.rsa
 $ openssl req -new -key server0.key -out server0.csr
 
 When prompted for certificate information, everything is default except the
 common name which is set to *.test.google.com.au.
 
-$ openssl ca -in server0.csr -out server0.pem
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in server0.csr \
+  -out server0.pem -days 3650
 
 server1 is issued by CA with a special config for subject alternative names:
 ----------------------------------------------------------------------------
 
-$ openssl genrsa -out server1.key.rsa 1024
+$ openssl genrsa -out server1.key.rsa 2048
 $ openssl pkcs8 -topk8 -in server1.key.rsa -out server1.key -nocrypt
-$ rm server1.key.rsa
 $ openssl req -new -key server1.key -out server1.csr -config server1-openssl.cnf
 
 When prompted for certificate information, everything is default except the
 common name which is set to *.test.google.com.
 
-$ openssl ca -in server1.csr -out server1.pem
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in server1.csr \
+  -out server1.pem -extensions req_ext -extfile server1-openssl.cnf -days 3650
+
+Clean up:
+---------
+$ rm *.rsa
+$ rm *.csr
+$ rm ca.srl
+
+Sync up with other repositories
+===============================
+
+Copies of these keys exist in multiple locations across all the grpc repos
+(e.g., see the following partial list). You need to be careful when updating
+the keys.
+
+grpc-dart/interop/
+grpc-dotnet/testassets/Certs/InteropTests/
+grpc-go/testdata/
+grpc-java/testing/src/main/resources/certs/
+grpc-node/test/data/
+src/csharp/Grpc.IntegrationTesting/data/
+src/objective-c/tests/TestCertificates.bundle/
+src/php/tests/data/
+src/python/grpcio_tests/tests/interop/credentials/
+src/python/grpcio_tests/tests/unit/credentials/
+src/ruby/spec/testdata/
+test/core/end2end/data/

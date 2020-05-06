@@ -26,6 +26,8 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <ares.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -33,11 +35,11 @@
 #include <grpc/support/time.h>
 
 #include <address_sorting/address_sorting.h>
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -60,6 +62,8 @@ struct grpc_ares_request {
   grpc_closure* on_done;
   /** the pointer to receive the resolved addresses */
   std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
+  /** the pointer to receive the resolved balancer addresses */
+  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out;
   /** the pointer to receive the service config in JSON */
   char** service_config_json_out;
   /** the evernt driver used by this request */
@@ -84,25 +88,32 @@ typedef struct grpc_ares_hostbyname_request {
   bool is_balancer;
 } grpc_ares_hostbyname_request;
 
-static void log_address_sorting_list(const ServerAddressList& addresses,
+static void log_address_sorting_list(const grpc_ares_request* r,
+                                     const ServerAddressList& addresses,
                                      const char* input_output_str) {
   for (size_t i = 0; i < addresses.size(); i++) {
     char* addr_str;
     if (grpc_sockaddr_to_string(&addr_str, &addresses[i].address(), true)) {
-      gpr_log(GPR_INFO, "c-ares address sorting: %s[%" PRIuPTR "]=%s",
-              input_output_str, i, addr_str);
+      gpr_log(
+          GPR_INFO,
+          "(c-ares resolver) request:%p c-ares address sorting: %s[%" PRIuPTR
+          "]=%s",
+          r, input_output_str, i, addr_str);
       gpr_free(addr_str);
     } else {
-      gpr_log(GPR_INFO,
-              "c-ares address sorting: %s[%" PRIuPTR "]=<unprintable>",
-              input_output_str, i);
+      gpr_log(
+          GPR_INFO,
+          "(c-ares resolver) request:%p c-ares address sorting: %s[%" PRIuPTR
+          "]=<unprintable>",
+          r, input_output_str, i);
     }
   }
 }
 
-void grpc_cares_wrapper_address_sorting_sort(ServerAddressList* addresses) {
+void grpc_cares_wrapper_address_sorting_sort(const grpc_ares_request* r,
+                                             ServerAddressList* addresses) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
-    log_address_sorting_list(*addresses, "input");
+    log_address_sorting_list(r, *addresses, "input");
   }
   address_sorting_sortable* sortables = (address_sorting_sortable*)gpr_zalloc(
       sizeof(address_sorting_sortable) * addresses->size());
@@ -121,7 +132,7 @@ void grpc_cares_wrapper_address_sorting_sort(ServerAddressList* addresses) {
   gpr_free(sortables);
   *addresses = std::move(sorted);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
-    log_address_sorting_list(*addresses, "output");
+    log_address_sorting_list(r, *addresses, "output");
   }
 }
 
@@ -142,7 +153,7 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
   r->ev_driver = nullptr;
   ServerAddressList* addresses = r->addresses_out->get();
   if (addresses != nullptr) {
-    grpc_cares_wrapper_address_sorting_sort(addresses);
+    grpc_cares_wrapper_address_sorting_sort(r, addresses);
     GRPC_ERROR_UNREF(r->error);
     r->error = GRPC_ERROR_NONE;
     // TODO(apolcyn): allow c-ares to return a service config
@@ -152,7 +163,7 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
 }
 
 static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
-    grpc_ares_request* parent_request, char* host, uint16_t port,
+    grpc_ares_request* parent_request, const char* host, uint16_t port,
     bool is_balancer) {
   GRPC_CARES_TRACE_LOG(
       "request:%p create_hostbyname_request_locked host:%s port:%d "
@@ -184,17 +195,17 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
     GRPC_CARES_TRACE_LOG(
         "request:%p on_hostbyname_done_locked host=%s ARES_SUCCESS", r,
         hr->host);
-    if (*r->addresses_out == nullptr) {
-      *r->addresses_out = grpc_core::MakeUnique<ServerAddressList>();
+    std::unique_ptr<ServerAddressList>* address_list_ptr =
+        hr->is_balancer ? r->balancer_addresses_out : r->addresses_out;
+    if (*address_list_ptr == nullptr) {
+      *address_list_ptr = absl::make_unique<ServerAddressList>();
     }
-    ServerAddressList& addresses = **r->addresses_out;
+    ServerAddressList& addresses = **address_list_ptr;
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
-      grpc_core::InlinedVector<grpc_arg, 2> args_to_add;
+      absl::InlinedVector<grpc_arg, 1> args_to_add;
       if (hr->is_balancer) {
-        args_to_add.emplace_back(grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_ADDRESS_IS_BALANCER), 1));
-        args_to_add.emplace_back(grpc_channel_arg_string_create(
-            const_cast<char*>(GRPC_ARG_ADDRESS_BALANCER_NAME), hr->host));
+        args_to_add.emplace_back(
+            grpc_core::CreateGrpclbBalancerNameArg(hr->host));
       }
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
           nullptr, args_to_add.data(), args_to_add.size());
@@ -350,30 +361,32 @@ done:
 void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
     grpc_ares_request* r, const char* dns_server, const char* name,
     const char* default_port, grpc_pollset_set* interested_parties,
-    bool check_grpclb, int query_timeout_ms, grpc_core::Combiner* combiner) {
+    int query_timeout_ms,
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_ares_hostbyname_request* hr = nullptr;
   ares_channel* channel = nullptr;
   /* parse name, splitting it into host and port parts */
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
+  std::string host;
+  std::string port;
   grpc_core::SplitHostPort(name, &host, &port);
-  if (host == nullptr) {
+  if (host.empty()) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
         GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     goto error_cleanup;
-  } else if (port == nullptr) {
+  } else if (port.empty()) {
     if (default_port == nullptr) {
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
           GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
       goto error_cleanup;
     }
-    port.reset(gpr_strdup(default_port));
+    port = default_port;
   }
   error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
-                                            query_timeout_ms, combiner, r);
+                                            query_timeout_ms,
+                                            std::move(work_serializer), r);
   if (error != GRPC_ERROR_NONE) goto error_cleanup;
   channel = grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
   // If dns_server is specified, use it.
@@ -414,22 +427,22 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   }
   r->pending_queries = 1;
   if (grpc_ares_query_ipv6()) {
-    hr = create_hostbyname_request_locked(r, host.get(),
-                                          grpc_strhtons(port.get()),
+    hr = create_hostbyname_request_locked(r, host.c_str(),
+                                          grpc_strhtons(port.c_str()),
                                           /*is_balancer=*/false);
     ares_gethostbyname(*channel, hr->host, AF_INET6, on_hostbyname_done_locked,
                        hr);
   }
-  hr =
-      create_hostbyname_request_locked(r, host.get(), grpc_strhtons(port.get()),
-                                       /*is_balancer=*/false);
+  hr = create_hostbyname_request_locked(r, host.c_str(),
+                                        grpc_strhtons(port.c_str()),
+                                        /*is_balancer=*/false);
   ares_gethostbyname(*channel, hr->host, AF_INET, on_hostbyname_done_locked,
                      hr);
-  if (check_grpclb) {
+  if (r->balancer_addresses_out != nullptr) {
     /* Query the SRV record */
     grpc_ares_request_ref_locked(r);
     char* service_name;
-    gpr_asprintf(&service_name, "_grpclb._tcp.%s", host.get());
+    gpr_asprintf(&service_name, "_grpclb._tcp.%s", host.c_str());
     ares_query(*channel, service_name, ns_c_in, ns_t_srv,
                on_srv_query_done_locked, r);
     gpr_free(service_name);
@@ -437,7 +450,7 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   if (r->service_config_json_out != nullptr) {
     grpc_ares_request_ref_locked(r);
     char* config_name;
-    gpr_asprintf(&config_name, "_grpc_config.%s", host.get());
+    gpr_asprintf(&config_name, "_grpc_config.%s", host.c_str());
     ares_search(*channel, config_name, ns_c_in, ns_t_txt, on_txt_done_locked,
                 r);
     gpr_free(config_name);
@@ -452,18 +465,16 @@ error_cleanup:
 
 static bool inner_resolve_as_ip_literal_locked(
     const char* name, const char* default_port,
-    std::unique_ptr<grpc_core::ServerAddressList>* addrs,
-    grpc_core::UniquePtr<char>* host, grpc_core::UniquePtr<char>* port,
-    grpc_core::UniquePtr<char>* hostport) {
-  grpc_core::SplitHostPort(name, host, port);
-  if (*host == nullptr) {
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs, std::string* host,
+    std::string* port, std::string* hostport) {
+  if (!grpc_core::SplitHostPort(name, host, port)) {
     gpr_log(GPR_ERROR,
             "Failed to parse %s to host:port while attempting to resolve as ip "
             "literal.",
             name);
     return false;
   }
-  if (*port == nullptr) {
+  if (port->empty()) {
     if (default_port == nullptr) {
       gpr_log(GPR_ERROR,
               "No port or default port for %s while attempting to resolve as "
@@ -471,16 +482,16 @@ static bool inner_resolve_as_ip_literal_locked(
               name);
       return false;
     }
-    port->reset(gpr_strdup(default_port));
+    *port = default_port;
   }
   grpc_resolved_address addr;
-  GPR_ASSERT(grpc_core::JoinHostPort(hostport, host->get(), atoi(port->get())));
-  if (grpc_parse_ipv4_hostport(hostport->get(), &addr,
+  *hostport = grpc_core::JoinHostPort(*host, atoi(port->c_str()));
+  if (grpc_parse_ipv4_hostport(hostport->c_str(), &addr,
                                false /* log errors */) ||
-      grpc_parse_ipv6_hostport(hostport->get(), &addr,
+      grpc_parse_ipv6_hostport(hostport->c_str(), &addr,
                                false /* log errors */)) {
     GPR_ASSERT(*addrs == nullptr);
-    *addrs = grpc_core::MakeUnique<ServerAddressList>();
+    *addrs = absl::make_unique<ServerAddressList>();
     (*addrs)->emplace_back(addr.addr, addr.len, nullptr /* args */);
     return true;
   }
@@ -490,22 +501,21 @@ static bool inner_resolve_as_ip_literal_locked(
 static bool resolve_as_ip_literal_locked(
     const char* name, const char* default_port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs) {
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
-  grpc_core::UniquePtr<char> hostport;
+  std::string host;
+  std::string port;
+  std::string hostport;
   bool out = inner_resolve_as_ip_literal_locked(name, default_port, addrs,
                                                 &host, &port, &hostport);
   return out;
 }
 
-static bool target_matches_localhost_inner(const char* name,
-                                           grpc_core::UniquePtr<char>* host,
-                                           grpc_core::UniquePtr<char>* port) {
+static bool target_matches_localhost_inner(const char* name, std::string* host,
+                                           std::string* port) {
   if (!grpc_core::SplitHostPort(name, host, port)) {
     gpr_log(GPR_ERROR, "Unable to split host and port for name: %s", name);
     return false;
   }
-  if (gpr_stricmp(host->get(), "localhost") == 0) {
+  if (gpr_stricmp(host->c_str(), "localhost") == 0) {
     return true;
   } else {
     return false;
@@ -513,25 +523,25 @@ static bool target_matches_localhost_inner(const char* name,
 }
 
 static bool target_matches_localhost(const char* name) {
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
+  std::string host;
+  std::string port;
   return target_matches_localhost_inner(name, &host, &port);
 }
 
 #ifdef GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY
 static bool inner_maybe_resolve_localhost_manually_locked(
-    const char* name, const char* default_port,
-    std::unique_ptr<grpc_core::ServerAddressList>* addrs,
-    grpc_core::UniquePtr<char>* host, grpc_core::UniquePtr<char>* port) {
+    const grpc_ares_request* r, const char* name, const char* default_port,
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs, std::string* host,
+    std::string* port) {
   grpc_core::SplitHostPort(name, host, port);
-  if (*host == nullptr) {
+  if (host->empty()) {
     gpr_log(GPR_ERROR,
             "Failed to parse %s into host:port during manual localhost "
             "resolution check.",
             name);
     return false;
   }
-  if (*port == nullptr) {
+  if (port->empty()) {
     if (default_port == nullptr) {
       gpr_log(GPR_ERROR,
               "No port or default port for %s during manual localhost "
@@ -539,12 +549,12 @@ static bool inner_maybe_resolve_localhost_manually_locked(
               name);
       return false;
     }
-    port->reset(gpr_strdup(default_port));
+    *port = default_port;
   }
-  if (gpr_stricmp(host->get(), "localhost") == 0) {
+  if (gpr_stricmp(host->c_str(), "localhost") == 0) {
     GPR_ASSERT(*addrs == nullptr);
-    *addrs = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
-    uint16_t numeric_port = grpc_strhtons(port->get());
+    *addrs = absl::make_unique<grpc_core::ServerAddressList>();
+    uint16_t numeric_port = grpc_strhtons(port->c_str());
     // Append the ipv6 loopback address.
     struct sockaddr_in6 ipv6_loopback_addr;
     memset(&ipv6_loopback_addr, 0, sizeof(ipv6_loopback_addr));
@@ -563,23 +573,24 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     (*addrs)->emplace_back(&ipv4_loopback_addr, sizeof(ipv4_loopback_addr),
                            nullptr /* args */);
     // Let the address sorter figure out which one should be tried first.
-    grpc_cares_wrapper_address_sorting_sort(addrs->get());
+    grpc_cares_wrapper_address_sorting_sort(r, addrs->get());
     return true;
   }
   return false;
 }
 
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
-    const char* name, const char* default_port,
+    const grpc_ares_request* r, const char* name, const char* default_port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs) {
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
-  return inner_maybe_resolve_localhost_manually_locked(name, default_port,
+  std::string host;
+  std::string port;
+  return inner_maybe_resolve_localhost_manually_locked(r, name, default_port,
                                                        addrs, &host, &port);
 }
 #else  /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
-    const char* /*name*/, const char* /*default_port*/,
+    const grpc_ares_request* r, const char* /*name*/,
+    const char* /*default_port*/,
     std::unique_ptr<grpc_core::ServerAddressList>* /*addrs*/) {
   return false;
 }
@@ -588,14 +599,16 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
 static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addrs, bool check_grpclb,
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms,
-    grpc_core::Combiner* combiner) {
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   grpc_ares_request* r =
       static_cast<grpc_ares_request*>(gpr_zalloc(sizeof(grpc_ares_request)));
   r->ev_driver = nullptr;
   r->on_done = on_done;
   r->addresses_out = addrs;
+  r->balancer_addresses_out = balancer_addrs;
   r->service_config_json_out = service_config_json;
   r->error = GRPC_ERROR_NONE;
   r->pending_queries = 0;
@@ -609,7 +622,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     return r;
   }
   // Early out if the target is localhost and we're on Windows.
-  if (grpc_ares_maybe_resolve_localhost_manually_locked(name, default_port,
+  if (grpc_ares_maybe_resolve_localhost_manually_locked(r, name, default_port,
                                                         addrs)) {
     grpc_ares_complete_request_locked(r);
     return r;
@@ -618,22 +631,24 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
   // as to cut down on lookups over the network, especially in tests:
   // https://github.com/grpc/proposal/pull/79
   if (target_matches_localhost(name)) {
-    check_grpclb = false;
+    r->balancer_addresses_out = nullptr;
     r->service_config_json_out = nullptr;
   }
   // Look up name using c-ares lib.
   grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
-      r, dns_server, name, default_port, interested_parties, check_grpclb,
-      query_timeout_ms, combiner);
+      r, dns_server, name, default_port, interested_parties, query_timeout_ms,
+      std::move(work_serializer));
   return r;
 }
 
 grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addrs, bool check_grpclb,
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms,
-    grpc_core::Combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) =
+    grpc_dns_lookup_ares_locked_impl;
 
 static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {
   GPR_ASSERT(r != nullptr);
@@ -673,8 +688,8 @@ void grpc_ares_cleanup(void) {}
  */
 
 typedef struct grpc_resolve_address_ares_request {
-  /* combiner that queries and related callbacks run under */
-  grpc_core::Combiner* combiner;
+  /* work_serializer that queries and related callbacks run under */
+  std::shared_ptr<grpc_core::WorkSerializer> work_serializer;
   /** the pointer to receive the resolved addresses */
   grpc_resolved_addresses** addrs_out;
   /** currently resolving addresses */
@@ -694,9 +709,8 @@ typedef struct grpc_resolve_address_ares_request {
   grpc_ares_request* ares_request = nullptr;
 } grpc_resolve_address_ares_request;
 
-static void on_dns_lookup_done_locked(void* arg, grpc_error* error) {
-  grpc_resolve_address_ares_request* r =
-      static_cast<grpc_resolve_address_ares_request*>(arg);
+static void on_dns_lookup_done_locked(grpc_resolve_address_ares_request* r,
+                                      grpc_error* error) {
   gpr_free(r->ares_request);
   grpc_resolved_addresses** resolved_addresses = r->addrs_out;
   if (r->addresses == nullptr || r->addresses->empty()) {
@@ -709,36 +723,32 @@ static void on_dns_lookup_done_locked(void* arg, grpc_error* error) {
         static_cast<grpc_resolved_address*>(gpr_zalloc(
             sizeof(grpc_resolved_address) * (*resolved_addresses)->naddrs));
     for (size_t i = 0; i < (*resolved_addresses)->naddrs; ++i) {
-      GPR_ASSERT(!(*r->addresses)[i].IsBalancer());
       memcpy(&(*resolved_addresses)->addrs[i], &(*r->addresses)[i].address(),
              sizeof(grpc_resolved_address));
     }
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_resolve_address_done,
-                          GRPC_ERROR_REF(error));
-  GRPC_COMBINER_UNREF(r->combiner, "on_dns_lookup_done_cb");
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_resolve_address_done, error);
   delete r;
 }
 
 static void on_dns_lookup_done(void* arg, grpc_error* error) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
-  r->combiner->Run(GRPC_CLOSURE_INIT(&r->on_dns_lookup_done_locked,
-                                     on_dns_lookup_done_locked, r, nullptr),
-                   GRPC_ERROR_REF(error));
+  GRPC_ERROR_REF(error);  // ref owned by lambda
+  r->work_serializer->Run([r, error]() { on_dns_lookup_done_locked(r, error); },
+                          DEBUG_LOCATION);
 }
 
-static void grpc_resolve_address_invoke_dns_lookup_ares_locked(
-    void* arg, grpc_error* /*unused_error*/) {
+static void grpc_resolve_address_invoke_dns_lookup_ares_locked(void* arg) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
   GRPC_CLOSURE_INIT(&r->on_dns_lookup_done_locked, on_dns_lookup_done, r,
                     grpc_schedule_on_exec_ctx);
   r->ares_request = grpc_dns_lookup_ares_locked(
       nullptr /* dns_server */, r->name, r->default_port, r->interested_parties,
-      &r->on_dns_lookup_done_locked, &r->addresses, false /* check_grpclb */,
-      nullptr /* service_config_json */, GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS,
-      r->combiner);
+      &r->on_dns_lookup_done_locked, &r->addresses,
+      nullptr /* balancer_addresses */, nullptr /* service_config_json */,
+      GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS, r->work_serializer);
 }
 
 static void grpc_resolve_address_ares_impl(const char* name,
@@ -748,16 +758,15 @@ static void grpc_resolve_address_ares_impl(const char* name,
                                            grpc_resolved_addresses** addrs) {
   grpc_resolve_address_ares_request* r =
       new grpc_resolve_address_ares_request();
-  r->combiner = grpc_combiner_create();
+  r->work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   r->addrs_out = addrs;
   r->on_resolve_address_done = on_done;
   r->name = name;
   r->default_port = default_port;
   r->interested_parties = interested_parties;
-  r->combiner->Run(
-      GRPC_CLOSURE_CREATE(grpc_resolve_address_invoke_dns_lookup_ares_locked, r,
-                          nullptr),
-      GRPC_ERROR_NONE);
+  r->work_serializer->Run(
+      [r]() { grpc_resolve_address_invoke_dns_lookup_ares_locked(r); },
+      DEBUG_LOCATION);
 }
 
 void (*grpc_resolve_address_ares)(

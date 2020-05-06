@@ -11,53 +11,124 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+
+
+class _WatchConnectivityFailed(Exception):
+    """Dedicated exception class for watch connectivity failed.
+
+    It might be failed due to deadline exceeded.
+    """
+cdef CallbackFailureHandler _WATCH_CONNECTIVITY_FAILURE_HANDLER = CallbackFailureHandler(
+    'watch_connectivity_state',
+    'Timed out',
+    _WatchConnectivityFailed)
+
 
 cdef class AioChannel:
-    def __cinit__(self, bytes target):
-        self.channel = grpc_insecure_channel_create(<char *>target, NULL, NULL)
-        self.cq = CallbackCompletionQueue()
+    def __cinit__(self, bytes target, tuple options, ChannelCredentials credentials, object loop):
+        init_grpc_aio()
+        if options is None:
+            options = ()
+        cdef _ChannelArgs channel_args = _ChannelArgs(options)
         self._target = target
+        self.loop = loop
+        self._status = AIO_CHANNEL_STATUS_READY
+
+        if credentials is None:
+            self._is_secure = False
+            self.channel = grpc_insecure_channel_create(
+                <char *>target,
+                channel_args.c_args(),
+                NULL)
+        else:
+            self._is_secure = True
+            self.channel = grpc_secure_channel_create(
+                <grpc_channel_credentials *> credentials.c(),
+                <char *>target,
+                channel_args.c_args(),
+                NULL)
+
+    def __dealloc__(self):
+        shutdown_grpc_aio()
 
     def __repr__(self):
         class_name = self.__class__.__name__
         id_ = id(self)
         return f"<{class_name} {id_}>"
 
+    def check_connectivity_state(self, bint try_to_connect):
+        """A Cython wrapper for Core's check connectivity state API."""
+        if self._status == AIO_CHANNEL_STATUS_DESTROYED:
+            return ConnectivityState.shutdown
+        else:
+            return grpc_channel_check_connectivity_state(
+                self.channel,
+                try_to_connect,
+            )
+
+    async def watch_connectivity_state(self,
+                                       grpc_connectivity_state last_observed_state,
+                                       object deadline):
+        """Watch for one connectivity state change.
+
+        Keeps mirroring the behavior from Core, so we can easily switch to
+        other design of API if necessary.
+        """
+        if self._status in (AIO_CHANNEL_STATUS_DESTROYED, AIO_CHANNEL_STATUS_CLOSING):
+            raise UsageError('Channel is closed.')
+
+        cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
+
+        cdef object future = self.loop.create_future()
+        cdef CallbackWrapper wrapper = CallbackWrapper(
+            future,
+            self.loop,
+            _WATCH_CONNECTIVITY_FAILURE_HANDLER)
+        grpc_channel_watch_connectivity_state(
+            self.channel,
+            last_observed_state,
+            c_deadline,
+            global_completion_queue(),
+            wrapper.c_functor())
+
+        try:
+            await future
+        except _WatchConnectivityFailed:
+            return False
+        else:
+            return True
+
+    def closing(self):
+        self._status = AIO_CHANNEL_STATUS_CLOSING
+
     def close(self):
+        self._status = AIO_CHANNEL_STATUS_DESTROYED
         grpc_channel_destroy(self.channel)
 
-    async def unary_unary(self,
-                          bytes method,
-                          bytes request,
-                          object deadline,
-                          object cancellation_future,
-                          object initial_metadata_observer,
-                          object status_observer):
-        """Assembles a unary-unary RPC.
+    def closed(self):
+        return self._status in (AIO_CHANNEL_STATUS_CLOSING, AIO_CHANNEL_STATUS_DESTROYED)
+
+    def call(self,
+             bytes method,
+             object deadline,
+             object python_call_credentials,
+             object wait_for_ready):
+        """Assembles a Cython Call object.
 
         Returns:
-          The response message in bytes.
+          An _AioCall object.
         """
-        cdef _AioCall call = _AioCall(self, deadline, method)
-        return await call.unary_unary(request,
-                                      cancellation_future,
-                                      initial_metadata_observer,
-                                      status_observer)
+        if self.closed():
+            raise UsageError('Channel is closed.')
 
-    def unary_stream(self,
-                     bytes method,
-                     bytes request,
-                     object deadline,
-                     object cancellation_future,
-                     object initial_metadata_observer,
-                     object status_observer):
-        """Assembles a unary-stream RPC.
+        cdef CallCredentials cython_call_credentials
+        if python_call_credentials is not None:
+            if not self._is_secure:
+                raise UsageError("Call credentials are only valid on secure channels")
 
-        Returns:
-          An async generator that yields raw responses.
-        """
-        cdef _AioCall call = _AioCall(self, deadline, method)
-        return call.unary_stream(request,
-                                 cancellation_future,
-                                 initial_metadata_observer,
-                                 status_observer)
+            cython_call_credentials = python_call_credentials._credentials
+        else:
+            cython_call_credentials = None
+
+        return _AioCall(self, deadline, method, cython_call_credentials, wait_for_ready)

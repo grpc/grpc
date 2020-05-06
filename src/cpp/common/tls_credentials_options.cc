@@ -16,19 +16,21 @@
  *
  */
 
-#include <grpcpp/security/tls_credentials_options.h>
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
-
 #include <grpc/support/alloc.h>
+#include <grpcpp/security/tls_credentials_options.h>
 
+#include "absl/container/inlined_vector.h"
+
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/common/tls_credentials_options_util.h"
 
 namespace grpc_impl {
 namespace experimental {
 
 /** TLS key materials config API implementation **/
-void TlsKeyMaterialsConfig::set_pem_root_certs(grpc::string pem_root_certs) {
-  pem_root_certs_ = std::move(pem_root_certs);
+void TlsKeyMaterialsConfig::set_pem_root_certs(
+    const grpc::string& pem_root_certs) {
+  pem_root_certs_ = pem_root_certs;
 }
 
 void TlsKeyMaterialsConfig::add_pem_key_cert_pair(
@@ -37,10 +39,10 @@ void TlsKeyMaterialsConfig::add_pem_key_cert_pair(
 }
 
 void TlsKeyMaterialsConfig::set_key_materials(
-    grpc::string pem_root_certs,
-    std::vector<PemKeyCertPair> pem_key_cert_pair_list) {
-  pem_key_cert_pair_list_ = std::move(pem_key_cert_pair_list);
-  pem_root_certs_ = std::move(pem_root_certs);
+    const grpc::string& pem_root_certs,
+    const std::vector<PemKeyCertPair>& pem_key_cert_pair_list) {
+  pem_key_cert_pair_list_ = pem_key_cert_pair_list;
+  pem_root_certs_ = pem_root_certs;
 }
 
 /** TLS credential reload arg API implementation **/
@@ -59,7 +61,6 @@ TlsCredentialReloadArg::~TlsCredentialReloadArg() {}
 void* TlsCredentialReloadArg::cb_user_data() const {
   return c_arg_->cb_user_data;
 }
-
 bool TlsCredentialReloadArg::is_pem_key_cert_pair_list_empty() const {
   return c_arg_->key_materials_config->pem_key_cert_pair_list().empty();
 }
@@ -70,8 +71,7 @@ grpc_ssl_certificate_config_reload_status TlsCredentialReloadArg::status()
 }
 
 grpc::string TlsCredentialReloadArg::error_details() const {
-  grpc::string cpp_error_details(c_arg_->error_details);
-  return cpp_error_details;
+  return c_arg_->error_details->error_details();
 }
 
 void TlsCredentialReloadArg::set_cb_user_data(void* cb_user_data) {
@@ -85,17 +85,44 @@ void TlsCredentialReloadArg::set_pem_root_certs(
   c_arg_->key_materials_config->set_pem_root_certs(std::move(c_pem_root_certs));
 }
 
-void TlsCredentialReloadArg::add_pem_key_cert_pair(
-    TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair) {
+namespace {
+
+::grpc_core::PemKeyCertPair ConvertToCorePemKeyCertPair(
+    const TlsKeyMaterialsConfig::PemKeyCertPair& pem_key_cert_pair) {
   grpc_ssl_pem_key_cert_pair* ssl_pair =
       (grpc_ssl_pem_key_cert_pair*)gpr_malloc(
           sizeof(grpc_ssl_pem_key_cert_pair));
   ssl_pair->private_key = gpr_strdup(pem_key_cert_pair.private_key.c_str());
   ssl_pair->cert_chain = gpr_strdup(pem_key_cert_pair.cert_chain.c_str());
-  ::grpc_core::PemKeyCertPair c_pem_key_cert_pair =
-      ::grpc_core::PemKeyCertPair(ssl_pair);
+  return ::grpc_core::PemKeyCertPair(ssl_pair);
+}
+
+}  //  namespace
+
+void TlsCredentialReloadArg::add_pem_key_cert_pair(
+    const TlsKeyMaterialsConfig::PemKeyCertPair& pem_key_cert_pair) {
   c_arg_->key_materials_config->add_pem_key_cert_pair(
-      std::move(c_pem_key_cert_pair));
+      ConvertToCorePemKeyCertPair(pem_key_cert_pair));
+}
+
+void TlsCredentialReloadArg::set_key_materials(
+    const grpc::string& pem_root_certs,
+    std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pem_key_cert_pair_list) {
+  /** Initialize the |key_materials_config| field of |c_arg_|, if it has not
+   *  already been done. **/
+  if (c_arg_->key_materials_config == nullptr) {
+    c_arg_->key_materials_config = grpc_tls_key_materials_config_create();
+  }
+  /** Convert |pem_key_cert_pair_list| to an inlined vector of ssl pairs. **/
+  ::absl::InlinedVector<::grpc_core::PemKeyCertPair, 1>
+      c_pem_key_cert_pair_list;
+  for (const auto& key_cert_pair : pem_key_cert_pair_list) {
+    c_pem_key_cert_pair_list.emplace_back(
+        ConvertToCorePemKeyCertPair(key_cert_pair));
+  }
+  /** Populate the key materials config field of |c_arg_|. **/
+  c_arg_->key_materials_config->set_key_materials(pem_root_certs.c_str(),
+                                                  c_pem_key_cert_pair_list);
 }
 
 void TlsCredentialReloadArg::set_key_materials_config(
@@ -104,7 +131,7 @@ void TlsCredentialReloadArg::set_key_materials_config(
     c_arg_->key_materials_config = nullptr;
     return;
   }
-  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
+  ::absl::InlinedVector<::grpc_core::PemKeyCertPair, 1>
       c_pem_key_cert_pair_list;
   for (const auto& key_cert_pair :
        key_materials_config->pem_key_cert_pair_list()) {
@@ -123,7 +150,7 @@ void TlsCredentialReloadArg::set_key_materials_config(
     c_arg_->key_materials_config = grpc_tls_key_materials_config_create();
   }
   c_arg_->key_materials_config->set_key_materials(
-      std::move(c_pem_root_certs), std::move(c_pem_key_cert_pair_list));
+      key_materials_config->pem_root_certs().c_str(), c_pem_key_cert_pair_list);
   c_arg_->key_materials_config->set_version(key_materials_config->version());
 }
 
@@ -134,7 +161,7 @@ void TlsCredentialReloadArg::set_status(
 
 void TlsCredentialReloadArg::set_error_details(
     const grpc::string& error_details) {
-  c_arg_->error_details = gpr_strdup(error_details.c_str());
+  c_arg_->error_details->set_error_details(error_details.c_str());
 }
 
 void TlsCredentialReloadArg::OnCredentialReloadDoneCallback() {
@@ -186,13 +213,17 @@ grpc::string TlsServerAuthorizationCheckArg::peer_cert() const {
   return cpp_peer_cert;
 }
 
+grpc::string TlsServerAuthorizationCheckArg::peer_cert_full_chain() const {
+  grpc::string cpp_peer_cert_full_chain(c_arg_->peer_cert_full_chain);
+  return cpp_peer_cert_full_chain;
+}
+
 grpc_status_code TlsServerAuthorizationCheckArg::status() const {
   return c_arg_->status;
 }
 
 grpc::string TlsServerAuthorizationCheckArg::error_details() const {
-  grpc::string cpp_error_details(c_arg_->error_details);
-  return cpp_error_details;
+  return c_arg_->error_details->error_details();
 }
 
 void TlsServerAuthorizationCheckArg::set_cb_user_data(void* cb_user_data) {
@@ -213,13 +244,18 @@ void TlsServerAuthorizationCheckArg::set_peer_cert(
   c_arg_->peer_cert = gpr_strdup(peer_cert.c_str());
 }
 
+void TlsServerAuthorizationCheckArg::set_peer_cert_full_chain(
+    const grpc::string& peer_cert_full_chain) {
+  c_arg_->peer_cert_full_chain = gpr_strdup(peer_cert_full_chain.c_str());
+}
+
 void TlsServerAuthorizationCheckArg::set_status(grpc_status_code status) {
   c_arg_->status = status;
 }
 
 void TlsServerAuthorizationCheckArg::set_error_details(
     const grpc::string& error_details) {
-  c_arg_->error_details = gpr_strdup(error_details.c_str());
+  c_arg_->error_details->set_error_details(error_details.c_str());
 }
 
 void TlsServerAuthorizationCheckArg::OnServerAuthorizationCheckDoneCallback() {
@@ -247,11 +283,13 @@ TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {}
 /** gRPC TLS credential options API implementation **/
 TlsCredentialsOptions::TlsCredentialsOptions(
     grpc_ssl_client_certificate_request_type cert_request_type,
+    grpc_tls_server_verification_option server_verification_option,
     std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
     std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
     std::shared_ptr<TlsServerAuthorizationCheckConfig>
         server_authorization_check_config)
     : cert_request_type_(cert_request_type),
+      server_verification_option_(server_verification_option),
       key_materials_config_(std::move(key_materials_config)),
       credential_reload_config_(std::move(credential_reload_config)),
       server_authorization_check_config_(
@@ -272,8 +310,15 @@ TlsCredentialsOptions::TlsCredentialsOptions(
     grpc_tls_credentials_options_set_server_authorization_check_config(
         c_credentials_options_, server_authorization_check_config_->c_config());
   }
+  grpc_tls_credentials_options_set_server_verification_option(
+      c_credentials_options_, server_verification_option);
 }
 
+/** Whenever a TlsCredentialsOptions instance is created, the caller takes
+ *  ownership of the c_credentials_options_ pointer (see e.g. the implementation
+ *  of the TlsCredentials API in secure_credentials.cc). For this reason, the
+ *  TlsCredentialsOptions destructor is not responsible for freeing
+ *  c_credentials_options_. **/
 TlsCredentialsOptions::~TlsCredentialsOptions() {}
 
 }  // namespace experimental

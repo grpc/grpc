@@ -19,11 +19,12 @@ RPC, e.g. cancellation.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Any, AsyncIterable, Awaitable, Callable, Generic, Text, Optional
+from typing import AsyncIterable, Awaitable, Generic, Optional, Union
 
 import grpc
 
-from ._typing import MetadataType, RequestType, ResponseType
+from ._typing import (DoneCallbackType, EOFType, MetadataType, RequestType,
+                      ResponseType)
 
 __all__ = 'RpcContext', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
 
@@ -72,11 +73,11 @@ class RpcContext(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def add_done_callback(self, callback: Callable[[Any], None]) -> None:
+    def add_done_callback(self, callback: DoneCallbackType) -> None:
         """Registers a callback to be called on RPC termination.
 
         Args:
-          callback: A callable object will be called with the context object as
+          callback: A callable object will be called with the call object as
           its only argument.
         """
 
@@ -109,16 +110,30 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def details(self) -> Text:
+    async def details(self) -> str:
         """Accesses the details sent by the server.
 
         Returns:
           The details string of the RPC.
         """
 
+    @abstractmethod
+    async def wait_for_connection(self) -> None:
+        """Waits until connected to peer and raises aio.AioRpcError if failed.
 
-class UnaryUnaryCall(
-        Generic[RequestType, ResponseType], Call, metaclass=ABCMeta):
+        This is an EXPERIMENTAL method.
+
+        This method ensures the RPC has been successfully connected. Otherwise,
+        an AioRpcError will be raised to explain the reason of the connection
+        failure.
+
+        This method is recommended for building retry mechanisms.
+        """
+
+
+class UnaryUnaryCall(Generic[RequestType, ResponseType],
+                     Call,
+                     metaclass=ABCMeta):
     """The abstract base class of an unary-unary RPC on the client-side."""
 
     @abstractmethod
@@ -130,8 +145,9 @@ class UnaryUnaryCall(
         """
 
 
-class UnaryStreamCall(
-        Generic[RequestType, ResponseType], Call, metaclass=ABCMeta):
+class UnaryStreamCall(Generic[RequestType, ResponseType],
+                      Call,
+                      metaclass=ABCMeta):
 
     @abstractmethod
     def __aiter__(self) -> AsyncIterable[ResponseType]:
@@ -144,14 +160,85 @@ class UnaryStreamCall(
         """
 
     @abstractmethod
-    async def read(self) -> ResponseType:
-        """Reads one message from the RPC.
+    async def read(self) -> Union[EOFType, ResponseType]:
+        """Reads one message from the stream.
 
-        For each streaming RPC, concurrent reads in multiple coroutines are not
-        allowed. If you want to perform read in multiple coroutines, you needs
-        synchronization. So, you can start another read after current read is
-        finished.
+        Read operations must be serialized when called from multiple
+        coroutines.
 
         Returns:
-          A response message of the RPC.
+          A response message, or an `grpc.aio.EOF` to indicate the end of the
+          stream.
+        """
+
+
+class StreamUnaryCall(Generic[RequestType, ResponseType],
+                      Call,
+                      metaclass=ABCMeta):
+
+    @abstractmethod
+    async def write(self, request: RequestType) -> None:
+        """Writes one message to the stream.
+
+        Raises:
+          An RpcError exception if the write failed.
+        """
+
+    @abstractmethod
+    async def done_writing(self) -> None:
+        """Notifies server that the client is done sending messages.
+
+        After done_writing is called, any additional invocation to the write
+        function will fail. This function is idempotent.
+        """
+
+    @abstractmethod
+    def __await__(self) -> Awaitable[ResponseType]:
+        """Await the response message to be ready.
+
+        Returns:
+          The response message of the stream.
+        """
+
+
+class StreamStreamCall(Generic[RequestType, ResponseType],
+                       Call,
+                       metaclass=ABCMeta):
+
+    @abstractmethod
+    def __aiter__(self) -> AsyncIterable[ResponseType]:
+        """Returns the async iterable representation that yields messages.
+
+        Under the hood, it is calling the "read" method.
+
+        Returns:
+          An async iterable object that yields messages.
+        """
+
+    @abstractmethod
+    async def read(self) -> Union[EOFType, ResponseType]:
+        """Reads one message from the stream.
+
+        Read operations must be serialized when called from multiple
+        coroutines.
+
+        Returns:
+          A response message, or an `grpc.aio.EOF` to indicate the end of the
+          stream.
+        """
+
+    @abstractmethod
+    async def write(self, request: RequestType) -> None:
+        """Writes one message to the stream.
+
+        Raises:
+          An RpcError exception if the write failed.
+        """
+
+    @abstractmethod
+    async def done_writing(self) -> None:
+        """Notifies server that the client is done sending messages.
+
+        After done_writing is called, any additional invocation to the write
+        function will fail. This function is idempotent.
         """

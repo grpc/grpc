@@ -174,6 +174,11 @@ typedef struct {
 /** Enable/disable support for per-message compression. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
 #define GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION "grpc.per_message_compression"
+/** Experimental Arg. Enable/disable support for per-message decompression.
+   Defaults to 1. If disabled, decompression will not be performed and the
+   application will see the compressed message in the byte buffer. */
+#define GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION \
+  "grpc.per_message_decompression"
 /** Enable/disable support for deadline checking. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
 #define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"
@@ -323,6 +328,20 @@ typedef struct {
   "grpc.experimental.tcp_min_read_chunk_size"
 #define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
   "grpc.experimental.tcp_max_read_chunk_size"
+/* TCP TX Zerocopy enable state: zero is disabled, non-zero is enabled. By
+   default, it is disabled. */
+#define GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED \
+  "grpc.experimental.tcp_tx_zerocopy_enabled"
+/* TCP TX Zerocopy send threshold: only zerocopy if >= this many bytes sent. By
+   default, this is set to 16KB. */
+#define GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD \
+  "grpc.experimental.tcp_tx_zerocopy_send_bytes_threshold"
+/* TCP TX Zerocopy max simultaneous sends: limit for maximum number of pending
+   calls to tcp_write() using zerocopy. A tcp_write() is considered pending
+   until the kernel performs the zerocopy-done callback for all sendmsg() calls
+   issued by the tcp_write(). By default, this is set to 4. */
+#define GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS \
+  "grpc.experimental.tcp_tx_zerocopy_max_simultaneous_sends"
 /* Timeout in milliseconds to use for calls to the grpclb load balancer.
    If 0 or unset, the balancer calls will have no deadline. */
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_call_timeout_ms"
@@ -330,22 +349,21 @@ typedef struct {
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS "grpc.grpclb_fallback_timeout_ms"
-/* Timeout in milliseconds to wait for the serverlist from the xDS load
-   balancer before using fallback backend addresses from the resolver.
-   If 0, enter fallback mode immediately. Default value is 10000. */
-#define GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS "grpc.xds_fallback_timeout_ms"
-/* Time in milliseconds to wait before a locality is deleted after it's removed
-   from the received EDS update. If 0, delete the locality immediately. Default
-   value is 15 minutes. */
-#define GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS \
-  "grpc.xds_locality_retention_interval_ms"
-/* Timeout in milliseconds to wait for the localities of a specific priority to
-   complete their initial connection attempt before xDS fails over to the next
-   priority. Specifically, the connection attempt of a priority is considered
-   completed when any locality of that priority is ready or all the localities
-   of that priority fail to connect. If 0, failover happens immediately. Default
-   value is 10 seconds. */
-#define GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS "grpc.xds_failover_timeout_ms"
+/* Timeout in milliseconds to wait for the child of a specific priority to
+   complete its initial connection attempt before the priority LB policy fails
+   over to the next priority. Default value is 10 seconds. */
+#define GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS \
+  "grpc.priority_failover_timeout_ms"
+/* Timeout in milliseconds to wait for a resource to be returned from
+ * the xds server before assuming that it does not exist.
+ * The default is 15 seconds. */
+#define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
+  "grpc.xds_resource_does_not_exist_timeout_ms"
+/* If set, enable xds routing policy.  This boolean argument is currently
+ * disabled by default; however, it will be changed to enabled by default
+ * once the functionality proves stable.  This arg will eventually
+ * be removed completely. */
+#define GRPC_ARG_XDS_ROUTING_ENABLED "grpc.xds_routing_enabled"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"

@@ -25,11 +25,16 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :response_compressed, :message, 6, "grpc.testing.BoolValue"
       optional :response_status, :message, 7, "grpc.testing.EchoStatus"
       optional :expect_compressed, :message, 8, "grpc.testing.BoolValue"
+      optional :fill_server_id, :bool, 9
+      optional :fill_grpclb_route_type, :bool, 10
     end
     add_message "grpc.testing.SimpleResponse" do
       optional :payload, :message, 1, "grpc.testing.Payload"
       optional :username, :string, 2
       optional :oauth_scope, :string, 3
+      optional :server_id, :string, 4
+      optional :grpclb_route_type, :enum, 5, "grpc.testing.GrpclbRouteType"
+      optional :hostname, :string, 6
     end
     add_message "grpc.testing.StreamingInputCallRequest" do
       optional :payload, :message, 1, "grpc.testing.Payload"
@@ -59,26 +64,42 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :passed, :bool, 1
       repeated :backoff_ms, :int32, 2
     end
+    add_message "grpc.testing.LoadBalancerStatsRequest" do
+      optional :num_rpcs, :int32, 1
+      optional :timeout_sec, :int32, 2
+    end
+    add_message "grpc.testing.LoadBalancerStatsResponse" do
+      map :rpcs_by_peer, :string, :int32, 1
+      optional :num_failures, :int32, 2
+    end
     add_enum "grpc.testing.PayloadType" do
       value :COMPRESSABLE, 0
+    end
+    add_enum "grpc.testing.GrpclbRouteType" do
+      value :GRPCLB_ROUTE_TYPE_UNKNOWN, 0
+      value :GRPCLB_ROUTE_TYPE_FALLBACK, 1
+      value :GRPCLB_ROUTE_TYPE_BACKEND, 2
     end
   end
 end
 
 module Grpc
   module Testing
-    BoolValue = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.BoolValue").msgclass
-    Payload = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Payload").msgclass
-    EchoStatus = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.EchoStatus").msgclass
-    SimpleRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.SimpleRequest").msgclass
-    SimpleResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.SimpleResponse").msgclass
-    StreamingInputCallRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.StreamingInputCallRequest").msgclass
-    StreamingInputCallResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.StreamingInputCallResponse").msgclass
-    ResponseParameters = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ResponseParameters").msgclass
-    StreamingOutputCallRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.StreamingOutputCallRequest").msgclass
-    StreamingOutputCallResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.StreamingOutputCallResponse").msgclass
-    ReconnectParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ReconnectParams").msgclass
-    ReconnectInfo = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ReconnectInfo").msgclass
-    PayloadType = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.PayloadType").enummodule
+    BoolValue = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.BoolValue").msgclass
+    Payload = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Payload").msgclass
+    EchoStatus = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.EchoStatus").msgclass
+    SimpleRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.SimpleRequest").msgclass
+    SimpleResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.SimpleResponse").msgclass
+    StreamingInputCallRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.StreamingInputCallRequest").msgclass
+    StreamingInputCallResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.StreamingInputCallResponse").msgclass
+    ResponseParameters = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ResponseParameters").msgclass
+    StreamingOutputCallRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.StreamingOutputCallRequest").msgclass
+    StreamingOutputCallResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.StreamingOutputCallResponse").msgclass
+    ReconnectParams = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ReconnectParams").msgclass
+    ReconnectInfo = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ReconnectInfo").msgclass
+    LoadBalancerStatsRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerStatsRequest").msgclass
+    LoadBalancerStatsResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerStatsResponse").msgclass
+    PayloadType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.PayloadType").enummodule
+    GrpclbRouteType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.GrpclbRouteType").enummodule
   end
 end

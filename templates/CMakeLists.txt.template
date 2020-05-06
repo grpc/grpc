@@ -21,11 +21,11 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
 
-  <%!
-
+  <%
   import re
 
   proto_re = re.compile('(.*)\\.proto')
+  lib_map = {lib.name: lib for lib in libs}
 
   def proto_replace_ext(filename, ext):
       m = proto_re.match(filename)
@@ -33,8 +33,19 @@
         return filename
       return '${_gRPC_PROTO_GENS_DIR}/' + m.group(1) + ext
 
-  def is_absl_lib(target_name):
-      return target_name.startswith("absl/");
+  def is_absl_lib(lib_name):
+      return lib_name.startswith("absl/");
+
+  def get_absl_dep(lib_name):
+      return lib_map[lib_name].cmake_target
+
+  def list_absl_lib_files_for(lib_name):
+    ret = []
+    lib = lib_map[lib_name]
+    for dep in lib.transitive_deps:
+      if is_absl_lib(dep) and len(lib_map[dep].src) > 0:
+        ret.append(get_absl_dep(dep).replace("::", "_"))
+    return ret
 
   def get_deps(target_dict):
     deps = []
@@ -55,6 +66,8 @@
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
         deps.append("${_gRPC_BENCHMARK_LIBRARIES}")
+      elif is_absl_lib(d):
+        deps.append(get_absl_dep(d))
       else:
         deps.append(d)
     if (target_dict.build == 'test' or target_dict.build == 'private') and target_dict.language == 'c++':
@@ -192,6 +205,24 @@
     set(gRPC_BENCHMARK_PROVIDER "none")
   endif()
 
+  set(gRPC_ABSL_PROVIDER "module" CACHE STRING "Provider of absl library")
+  set_property(CACHE gRPC_ABSL_PROVIDER PROPERTY STRINGS "module" "package")
+  <%
+    # Collect all abseil rules used by gpr, grpc, so on.
+    used_abseil_rules = set()
+    for lib in libs:
+      if lib.get("baselib"):
+        for dep in lib.transitive_deps:
+          if is_absl_lib(dep):
+            used_abseil_rules.add(lib_map[dep].cmake_target.replace("::", "_"))
+  %>
+  set(gRPC_ABSL_USED_TARGETS
+  % for rule in sorted(used_abseil_rules):
+    ${rule}
+  % endfor
+    absl_meta
+  )
+
   set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
   if(UNIX)
@@ -211,9 +242,17 @@
     set(_gRPC_PLATFORM_WINDOWS ON)
   endif()
 
+   # Use C99 standard
+  set(CMAKE_C_STANDARD 99)
+
+  # Add c++11 flags
+  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-  set(CMAKE_MODULE_PATH "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules")
+  list(APPEND CMAKE_MODULE_PATH "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules")
 
   if(MSVC)
     include(cmake/msvc_static_runtime.cmake)
@@ -251,6 +290,7 @@
     set(_gRPC_CORE_NOSTDCXX_FLAGS "")
   endif()
 
+  include(cmake/abseil-cpp.cmake)
   include(cmake/address_sorting.cmake)
   include(cmake/benchmark.cmake)
   include(cmake/cares.cmake)
@@ -259,11 +299,6 @@
   include(cmake/ssl.cmake)
   include(cmake/upb.cmake)
   include(cmake/zlib.cmake)
-
-  if(NOT MSVC)
-    set(CMAKE_C_FLAGS   "<%text>${CMAKE_C_FLAGS}</%text> -std=c99")
-    set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS}</%text> -std=c++11")
-  endif()
 
   if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m pthread)
@@ -274,7 +309,7 @@
   endif()
 
   if(WIN32 AND MSVC)
-    set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32)
+    set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32)
   endif()
 
   # Create directory for generated .proto files
@@ -408,33 +443,26 @@
       cmake_libs.append(lib)
   %>
   % for lib in cmake_libs:
-  % if lib.build in ["test", "private"]:
+  %   if lib.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
   ${cc_library(lib)}
   endif()
-  % elif lib.name in ['grpc_csharp_ext']:
+  %   elif lib.name in ['grpc_csharp_ext']:
   if(gRPC_BUILD_CSHARP_EXT)
   ${cc_library(lib)}
-  % if any(proto_re.match(src) for src in lib.src):
-  if(gRPC_BUILD_CODEGEN)
-  % endif
-  ${cc_install(lib)}
-  % if any(proto_re.match(src) for src in lib.src):
   endif()
-  % endif
-  endif()
-  % else:
+  %   else:
   ${cc_library(lib)}
-  % if not lib.build in ["tool"]:
-  % if any(proto_re.match(src) for src in lib.src):
+  %     if not lib.build in ["tool"]:
+  %       if any(proto_re.match(src) for src in lib.src):
   if(gRPC_BUILD_CODEGEN)
-  % endif
+  %       endif
   ${cc_install(lib)}
-  % if any(proto_re.match(src) for src in lib.src):
+  %       if any(proto_re.match(src) for src in lib.src):
   endif()
-  % endif
-  % endif
-  % endif
+  %       endif
+  %     endif
+  %   endif
   % endfor
 
   % for tgt in targets:
@@ -684,7 +712,7 @@
     "gRPC platform support library"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     ""
-    "-lgpr"
+    "${" ".join(("-l" + l) for l in ["gpr",] + list_absl_lib_files_for("gpr"))}"
     ""
     "gpr.pc")
 
@@ -694,7 +722,7 @@
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "gpr openssl"
-    "-lgrpc -laddress_sorting -lupb -lcares -lz"
+    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "upb", "cares", "z"] + list_absl_lib_files_for("grpc"))}"
     ""
     "grpc.pc")
 
@@ -704,7 +732,7 @@
     "high performance general RPC framework without SSL"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "gpr"
-    "-lgrpc_unsecure"
+    "${" ".join(("-l" + l) for l in ["grpc_unsecure",] + list_absl_lib_files_for("grpc_unsecure"))}"
     ""
     "grpc_unsecure.pc")
 
@@ -714,7 +742,7 @@
     "C++ wrapper for gRPC"
     "<%text>${PACKAGE_VERSION}</%text>"
     "grpc"
-    "-lgrpc++"
+    "${" ".join(("-l" + l) for l in ["grpc++",] + list_absl_lib_files_for("grpc++"))}"
     ""
     "grpc++.pc")
 
@@ -724,6 +752,6 @@
     "C++ wrapper for gRPC without SSL"
     "<%text>${PACKAGE_VERSION}</%text>"
     "grpc_unsecure"
-    "-lgrpc++_unsecure"
+    "${" ".join(("-l" + l) for l in ["grpc++_unsecure",] + list_absl_lib_files_for("grpc++_unsecure"))}"
     ""
     "grpc++_unsecure.pc")
