@@ -29,13 +29,13 @@
 
 static bool g_pre_init_called = false;
 
-extern void authority_not_supported(grpc_end2end_test_config config);
+/**extern void authority_not_supported(grpc_end2end_test_config config);
 extern void authority_not_supported_pre_init(void);
 extern void bad_hostname(grpc_end2end_test_config config);
-extern void bad_hostname_pre_init(void);
+extern void bad_hostname_pre_init(void);**/
 extern void bad_ping(grpc_end2end_test_config config);
 extern void bad_ping_pre_init(void);
-extern void binary_metadata(grpc_end2end_test_config config);
+/**extern void binary_metadata(grpc_end2end_test_config config);
 extern void binary_metadata_pre_init(void);
 extern void call_creds(grpc_end2end_test_config config);
 extern void call_creds_pre_init(void);
@@ -68,10 +68,10 @@ extern void default_host_pre_init(void);
 extern void disappearing_server(grpc_end2end_test_config config);
 extern void disappearing_server_pre_init(void);
 extern void empty_batch(grpc_end2end_test_config config);
-extern void empty_batch_pre_init(void);
+extern void empty_batch_pre_init(void);**/
 extern void filter_call_init_fails(grpc_end2end_test_config config);
 extern void filter_call_init_fails_pre_init(void);
-extern void filter_causes_close(grpc_end2end_test_config config);
+/**extern void filter_causes_close(grpc_end2end_test_config config);
 extern void filter_causes_close_pre_init(void);
 extern void filter_context(grpc_end2end_test_config config);
 extern void filter_context_pre_init(void);
@@ -88,10 +88,10 @@ extern void hpack_size_pre_init(void);
 extern void idempotent_request(grpc_end2end_test_config config);
 extern void idempotent_request_pre_init(void);
 extern void invoke_large_request(grpc_end2end_test_config config);
-extern void invoke_large_request_pre_init(void);
+extern void invoke_large_request_pre_init(void);**/
 extern void keepalive_timeout(grpc_end2end_test_config config);
 extern void keepalive_timeout_pre_init(void);
-extern void large_metadata(grpc_end2end_test_config config);
+/**extern void large_metadata(grpc_end2end_test_config config);
 extern void large_metadata_pre_init(void);
 extern void max_concurrent_streams(grpc_end2end_test_config config);
 extern void max_concurrent_streams_pre_init(void);
@@ -187,14 +187,15 @@ extern void write_buffering(grpc_end2end_test_config config);
 extern void write_buffering_pre_init(void);
 extern void write_buffering_at_end(grpc_end2end_test_config config);
 extern void write_buffering_at_end_pre_init(void);
+**/
 
 void grpc_end2end_tests_pre_init(void) {
   GPR_ASSERT(!g_pre_init_called);
   g_pre_init_called = true;
-  authority_not_supported_pre_init();
-  bad_hostname_pre_init();
+  //authority_not_supported_pre_init();
+  //bad_hostname_pre_init();
   bad_ping_pre_init();
-  binary_metadata_pre_init();
+  /**binary_metadata_pre_init();
   call_creds_pre_init();
   call_host_override_pre_init();
   cancel_after_accept_pre_init();
@@ -210,9 +211,9 @@ void grpc_end2end_tests_pre_init(void) {
   connectivity_pre_init();
   default_host_pre_init();
   disappearing_server_pre_init();
-  empty_batch_pre_init();
+  empty_batch_pre_init();**/
   filter_call_init_fails_pre_init();
-  filter_causes_close_pre_init();
+  /**filter_causes_close_pre_init();
   filter_context_pre_init();
   filter_latency_pre_init();
   filter_status_code_pre_init();
@@ -221,7 +222,9 @@ void grpc_end2end_tests_pre_init(void) {
   hpack_size_pre_init();
   idempotent_request_pre_init();
   invoke_large_request_pre_init();
+  **/
   keepalive_timeout_pre_init();
+  /**
   large_metadata_pre_init();
   max_concurrent_streams_pre_init();
   max_connection_age_pre_init();
@@ -270,6 +273,7 @@ void grpc_end2end_tests_pre_init(void) {
   workaround_cronet_compression_pre_init();
   write_buffering_pre_init();
   write_buffering_at_end_pre_init();
+  **/
 }
 
 void grpc_end2end_tests(int argc, char **argv,
@@ -279,10 +283,10 @@ void grpc_end2end_tests(int argc, char **argv,
   GPR_ASSERT(g_pre_init_called);
 
   if (argc <= 1) {
-    authority_not_supported(config);
-    bad_hostname(config);
+    //authority_not_supported(config);
+    //bad_hostname(config);
     bad_ping(config);
-    binary_metadata(config);
+    /**binary_metadata(config);
     call_creds(config);
     call_host_override(config);
     cancel_after_accept(config);
@@ -299,7 +303,9 @@ void grpc_end2end_tests(int argc, char **argv,
     default_host(config);
     disappearing_server(config);
     empty_batch(config);
+    **/
     filter_call_init_fails(config);
+    /**
     filter_causes_close(config);
     filter_context(config);
     filter_latency(config);
@@ -309,7 +315,9 @@ void grpc_end2end_tests(int argc, char **argv,
     hpack_size(config);
     idempotent_request(config);
     invoke_large_request(config);
+    **/
     keepalive_timeout(config);
+    /**
     large_metadata(config);
     max_concurrent_streams(config);
     max_connection_age(config);
@@ -358,22 +366,24 @@ void grpc_end2end_tests(int argc, char **argv,
     workaround_cronet_compression(config);
     write_buffering(config);
     write_buffering_at_end(config);
+    **/
     return;
   }
 
   for (i = 1; i < argc; i++) {
-    if (0 == strcmp("authority_not_supported", argv[i])) {
+    /**if (0 == strcmp("authority_not_supported", argv[i])) {
       authority_not_supported(config);
       continue;
     }
     if (0 == strcmp("bad_hostname", argv[i])) {
       bad_hostname(config);
       continue;
-    }
+    }**/
     if (0 == strcmp("bad_ping", argv[i])) {
       bad_ping(config);
       continue;
     }
+    /**
     if (0 == strcmp("binary_metadata", argv[i])) {
       binary_metadata(config);
       continue;
@@ -441,11 +451,12 @@ void grpc_end2end_tests(int argc, char **argv,
     if (0 == strcmp("empty_batch", argv[i])) {
       empty_batch(config);
       continue;
-    }
+    }**/
     if (0 == strcmp("filter_call_init_fails", argv[i])) {
       filter_call_init_fails(config);
       continue;
     }
+    /**
     if (0 == strcmp("filter_causes_close", argv[i])) {
       filter_causes_close(config);
       continue;
@@ -481,12 +492,12 @@ void grpc_end2end_tests(int argc, char **argv,
     if (0 == strcmp("invoke_large_request", argv[i])) {
       invoke_large_request(config);
       continue;
-    }
+    }**/
     if (0 == strcmp("keepalive_timeout", argv[i])) {
       keepalive_timeout(config);
       continue;
     }
-    if (0 == strcmp("large_metadata", argv[i])) {
+    /**if (0 == strcmp("large_metadata", argv[i])) {
       large_metadata(config);
       continue;
     }
@@ -677,7 +688,7 @@ void grpc_end2end_tests(int argc, char **argv,
     if (0 == strcmp("write_buffering_at_end", argv[i])) {
       write_buffering_at_end(config);
       continue;
-    }
+    }**/
     gpr_log(GPR_DEBUG, "not a test: '%s'", argv[i]);
     abort();
   }

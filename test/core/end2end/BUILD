@@ -185,7 +185,7 @@ grpc_cc_test(
 
 grpc_end2end_tests()
 
-grpc_end2end_nosec_tests()
+#grpc_end2end_nosec_tests()
 
 grpc_cc_test(
     name = "h2_ssl_session_reuse_test",
