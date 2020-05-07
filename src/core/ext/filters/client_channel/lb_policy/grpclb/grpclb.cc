@@ -131,8 +131,9 @@ constexpr char kGrpclb[] = "grpclb";
 class GrpcLbConfig : public LoadBalancingPolicy::Config {
  public:
   GrpcLbConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
-               const std::string& target_name)
-      : child_policy_(std::move(child_policy)), target_name_(target_name) {}
+               std::string target_name)
+      : child_policy_(std::move(child_policy)),
+        target_name_(std::move(target_name)) {}
   const char* name() const override { return kGrpclb; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
@@ -375,7 +376,7 @@ class GrpcLb : public LoadBalancingPolicy {
   const char* server_name_ = nullptr;
   // The target name from configuration; if set, it overrides server_name_ in
   // the balancer requests.
-  const char* target_name_ = nullptr;
+  std::string target_name_;
 
   // Current channel args from the resolver.
   grpc_channel_args* args_ = nullptr;
@@ -768,9 +769,11 @@ GrpcLb::BalancerCallState::BalancerCallState(
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
   upb::Arena arena;
-  grpc_slice request_payload_slice = GrpcLbRequestCreate(
-      grpclb_policy()->target_name_ ?: grpclb_policy()->server_name_,
-      arena.ptr());
+  grpc_slice request_payload_slice =
+      GrpcLbRequestCreate(grpclb_policy()->target_name_.empty()
+                              ? grpclb_policy()->server_name_
+                              : grpclb_policy()->target_name_.c_str(),
+                          arena.ptr());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -1352,7 +1355,6 @@ GrpcLb::GrpcLb(Args args)
 
 GrpcLb::~GrpcLb() {
   gpr_free((void*)server_name_);
-  if (target_name_ != nullptr) gpr_free((void*)target_name_);
   grpc_channel_args_destroy(args_);
 }
 
@@ -1398,17 +1400,9 @@ void GrpcLb::ResetBackoffLocked() {
 void GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
   auto* grpclb_config = static_cast<const GrpcLbConfig*>(args.config.get());
-  if (grpclb_config != nullptr) {
-    child_policy_config_ = grpclb_config->child_policy();
-    if (grpclb_config->target_name().length() > 0) {
-      target_name_ = gpr_strdup(grpclb_config->target_name().c_str());
-    } else {
-      target_name_ = nullptr;
-    }
-  } else {
-    child_policy_config_ = nullptr;
-    target_name_ = nullptr;
-  }
+  GPR_ASSERT(grpclb_config != nullptr);
+  child_policy_config_ = grpclb_config->child_policy();
+  target_name_ = grpclb_config->target_name();
   ProcessAddressesAndChannelArgsLocked(args.addresses, *args.args);
   // Update the existing child policy.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
@@ -1698,15 +1692,15 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     std::vector<grpc_error*> error_list;
     Json child_policy_config_json_tmp;
     const Json* child_policy_config_json;
-    const std::string* target_name_ptr = nullptr;
-    auto it = json.object_value().find("targetName");
+    std::string target_name;
+    auto it = json.object_value().find("serviceName");
     if (it != json.object_value().end()) {
       const Json& target_name_json = it->second;
       if (target_name_json.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "targetname filed is not string"));
+            "field:serviceName error:type should be string"));
       } else {
-        target_name_ptr = &target_name_json.string_value();
+        target_name = target_name_json.string_value();
       }
     }
     it = json.object_value().find("childPolicy");
@@ -1729,9 +1723,8 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
           GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
     }
     if (error_list.empty()) {
-      return MakeRefCounted<GrpcLbConfig>(
-          std::move(child_policy_config),
-          target_name_ptr == nullptr ? std::string() : *target_name_ptr);
+      return MakeRefCounted<GrpcLbConfig>(std::move(child_policy_config),
+                                          target_name);
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("GrpcLb Parser", &error_list);
       return nullptr;

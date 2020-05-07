@@ -1400,7 +1400,7 @@ TEST_F(SingleBalancerTest, TargetFromLbPolicyConfig) {
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"grpclb\":{\n"
-      "      \"targetName\":\"test_target\"\n"
+      "      \"serviceName\":\"test_target\"\n"
       "    }}\n"
       "  ]\n"
       "}";
