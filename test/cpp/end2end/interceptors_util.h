@@ -103,7 +103,7 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
   ~EchoTestServiceStreamingImpl() override {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) {
+              EchoResponse* response) override {
     auto client_metadata = context->client_metadata();
     for (const auto& pair : client_metadata) {
       context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
