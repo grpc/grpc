@@ -31,48 +31,59 @@ namespace Grpc.Core
         /// </summary>
         public static readonly Status DefaultCancelled = new Status(StatusCode.Cancelled, "");
 
-        readonly StatusCode statusCode;
-        readonly string detail;
+        /// <summary>
+        /// Creates a new instance of <c>Status</c>.
+        /// </summary>
+        /// <param name="statusCode">Status code.</param>
+        /// <param name="detail">Detail.</param>
+        public Status(StatusCode statusCode, string detail) : this(statusCode, detail, null)
+        {
+        }
 
         /// <summary>
         /// Creates a new instance of <c>Status</c>.
         /// </summary>
         /// <param name="statusCode">Status code.</param>
         /// <param name="detail">Detail.</param>
-        public Status(StatusCode statusCode, string detail)
+        /// <param name="debugErrorString">Optional internal error string.</param>
+        public Status(StatusCode statusCode, string detail, string debugErrorString)
         {
-            this.statusCode = statusCode;
-            this.detail = detail;
+            StatusCode = statusCode;
+            Detail = detail;
+            DebugErrorString = debugErrorString;
         }
 
         /// <summary>
         /// Gets the gRPC status code. OK indicates success, all other values indicate an error.
         /// </summary>
-        public StatusCode StatusCode
-        {
-            get
-            {
-                return statusCode;
-            }
-        }
+        public StatusCode StatusCode { get; }
 
         /// <summary>
         /// Gets the detail.
         /// </summary>
-        public string Detail
-        {
-            get
-            {
-                return detail;
-            }
-        }
+        public string Detail { get; }
+
+        /// <summary>
+        /// In case of an error, this field may contain additional error details to help with debugging.
+        /// This field will be only populated on a client and its value is generated locally,
+        /// based on the internal state of the gRPC client stack (i.e. the value is never sent over the wire).
+        /// Note that this field is available only for debugging purposes, the application logic should
+        /// never rely on values of this field (it should should <c>StatusCode</c> and <c>Detail</c> instead).
+        /// Example: when a client fails to connect to a server, this field may provide additional details
+        /// why the connection to the server has failed.
+        /// </summary>
+        public string DebugErrorString { get; }
 
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents the current <see cref="Grpc.Core.Status"/>.
         /// </summary>
         public override string ToString()
         {
-            return string.Format("Status(StatusCode={0}, Detail=\"{1}\")", statusCode, detail);
+            if (DebugErrorString != null)
+            {
+                return $"Status(StatusCode=\"{StatusCode}\", Detail=\"{Detail}\", DebugErrorString=\"{DebugErrorString}\")";
+            }
+            return $"Status(StatusCode=\"{StatusCode}\", Detail=\"{Detail}\")";
         }
     }
 }
