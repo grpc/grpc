@@ -97,9 +97,7 @@ namespace Grpc.Core.Internal
             IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
             var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
 
-            string error = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_error_string(this));
-
-            return new ClientSideStatus(status, metadata, error);
+            return new ClientSideStatus(status, metadata);
         }
 
         public IBufferReader GetReceivedMessageReader()

@@ -16,25 +16,40 @@
 
 #endregion
 
+using System;
+using Grpc.Core;
+
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// Status + metadata + error received on client side when call finishes.
+    /// Status + metadata received on client side when call finishes.
     /// (when receive_status_on_client operation finishes).
     /// </summary>
-    internal readonly struct ClientSideStatus
+    internal struct ClientSideStatus
     {
-        public ClientSideStatus(Status status, Metadata trailers, string error)
+        readonly Status status;
+        readonly Metadata trailers;
+
+        public ClientSideStatus(Status status, Metadata trailers)
         {
-            Status = status;
-            Trailers = trailers;
-            Error = error;
+            this.status = status;
+            this.trailers = trailers;
         }
 
-        public Status Status { get; }
+        public Status Status
+        {
+            get
+            {
+                return this.status;
+            }
+        }
 
-        public Metadata Trailers { get; }
-
-        public string Error { get; }
+        public Metadata Trailers
+        {
+            get
+            {
+                return this.trailers;
+            }
+        }
     }
 }

@@ -553,7 +553,7 @@ namespace Grpc.Core.Internal
 
                 if (deserializeException != null && receivedStatus.Status.StatusCode == StatusCode.OK)
                 {
-                    receivedStatus = new ClientSideStatus(DeserializeResponseFailureStatus, receivedStatus.Trailers, receivedStatus.Error);
+                    receivedStatus = new ClientSideStatus(DeserializeResponseFailureStatus, receivedStatus.Trailers);
                 }
                 finishedStatus = receivedStatus;
 
