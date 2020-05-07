@@ -2485,7 +2485,8 @@ static grpc_error* try_http_parsing(grpc_chttp2_transport* t) {
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                "Trying to connect an http1.x server"),
                            GRPC_ERROR_INT_HTTP_STATUS, response.status),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+        GRPC_ERROR_INT_GRPC_STATUS,
+        grpc_http2_status_to_grpc_status(response.status));
   }
   GRPC_ERROR_UNREF(parse_error);
 
