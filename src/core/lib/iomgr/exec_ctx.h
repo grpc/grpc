@@ -357,6 +357,11 @@ class ApplicationCallbackExecCtx {
   /** Global shutdown for ApplicationCallbackExecCtx. Called by init. */
   static void GlobalShutdown(void) { gpr_tls_destroy(&callback_exec_ctx_); }
 
+  static bool Available() {
+    return reinterpret_cast<ApplicationCallbackExecCtx*>(
+               gpr_tls_get(&callback_exec_ctx_)) != nullptr;
+  }
+
  private:
   uintptr_t flags_{0u};
   grpc_experimental_completion_queue_functor* head_{nullptr};
