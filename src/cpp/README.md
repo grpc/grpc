@@ -70,17 +70,25 @@ also sets up an `add_subdirectory()` rule for you. This causes gRPC to be
 built as part of your project.
 
 ```cmake
+cmake_minimum_required(VERSION 3.15)
+project(my_project)
+
 include(FetchContent)
 FetchContent_Declare(
   gRPC
   GIT_REPOSITORY https://github.com/grpc/grpc
-  GIT_TAG        v1.25.0
+  GIT_TAG        RELEASE_TAG_HERE  # e.g v1.28.0
 )
+set(FETCHCONTENT_QUIET OFF)
 FetchContent_MakeAvailable(gRPC)
 
 add_executable(my_exe my_exe.cc)
 target_link_libraries(my_exe grpc++)
 ```
+
+Note that you need to
+[install the prerequisites](../../BUILDING.md#pre-requisites)
+before building gRPC.
 
 ### git submodule
 If you cannot use FetchContent, another approach is to add the gRPC source tree
