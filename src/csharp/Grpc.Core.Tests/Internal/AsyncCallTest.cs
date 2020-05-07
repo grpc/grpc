@@ -78,7 +78,7 @@ namespace Grpc.Core.Internal.Tests
         {
             var resultTask = asyncCall.UnaryCallAsync("request1");
             fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
-                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null),
                 CreateResponsePayload(),
                 new Metadata());
 
@@ -102,7 +102,7 @@ namespace Grpc.Core.Internal.Tests
         {
             var resultTask = asyncCall.UnaryCallAsync("request1");
             fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
-                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null),
                 null,
                 new Metadata());
 
@@ -159,7 +159,7 @@ namespace Grpc.Core.Internal.Tests
         {
             var resultTask = asyncCall.ClientStreamingCallAsync();
             fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
-                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null),
                 CreateResponsePayload(),
                 new Metadata());
 
@@ -197,7 +197,7 @@ namespace Grpc.Core.Internal.Tests
             completeTask.Wait();
 
             fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
-                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null),
                 CreateResponsePayload(),
                 new Metadata());
 
@@ -283,7 +283,7 @@ namespace Grpc.Core.Internal.Tests
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
 
             fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
-                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null),
                 CreateResponsePayload(),
                 new Metadata());
 
@@ -301,7 +301,7 @@ namespace Grpc.Core.Internal.Tests
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
 
             fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
-                new ClientSideStatus(new Status(StatusCode.OutOfRange, ""), new Metadata()),
+                new ClientSideStatus(new Status(StatusCode.OutOfRange, ""), new Metadata(), null),
                 CreateResponsePayload(),
                 new Metadata());
 
@@ -325,7 +325,7 @@ namespace Grpc.Core.Internal.Tests
             fakeCall.SendCompletionCallback.OnSendCompletion(true);
 
             fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
-                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null),
                 CreateResponsePayload(),
                 new Metadata());
 
@@ -339,7 +339,7 @@ namespace Grpc.Core.Internal.Tests
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
 
             fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
-                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null),
                 CreateResponsePayload(),
                 new Metadata());
 
@@ -395,7 +395,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
 
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateNullResponse());
-            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null));
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
         }
@@ -408,7 +408,7 @@ namespace Grpc.Core.Internal.Tests
             var readTask = responseStream.MoveNext();
 
             // try alternative order of completions
-            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null));
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateNullResponse());
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
@@ -444,7 +444,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.AreEqual("response1", responseStream.Current);
 
             var readTask3 = responseStream.MoveNext();
-            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null));
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateNullResponse());
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask3);
@@ -484,7 +484,7 @@ namespace Grpc.Core.Internal.Tests
 
             var readTask = responseStream.MoveNext();
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateNullResponse());
-            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null));
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
         }
@@ -498,7 +498,7 @@ namespace Grpc.Core.Internal.Tests
 
             var readTask = responseStream.MoveNext();
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateNullResponse());
-            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null));
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
 
@@ -516,7 +516,7 @@ namespace Grpc.Core.Internal.Tests
 
             var readTask = responseStream.MoveNext();
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateNullResponse());
-            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata(), null));
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
 
@@ -639,7 +639,7 @@ namespace Grpc.Core.Internal.Tests
 
         ClientSideStatus CreateClientSideStatus(StatusCode statusCode)
         {
-            return new ClientSideStatus(new Status(statusCode, ""), new Metadata());
+            return new ClientSideStatus(new Status(statusCode, ""), new Metadata(), null);
         }
 
         IBufferReader CreateResponsePayload()
