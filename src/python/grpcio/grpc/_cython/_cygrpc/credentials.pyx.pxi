@@ -34,12 +34,14 @@ cdef class CallCredentials:
     raise NotImplementedError()
 
 
-cdef int _get_metadata(
-    void *state, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void *user_data,
-    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-    size_t *num_creds_md, grpc_status_code *status,
-    const char **error_details) except * with gil:
+cdef int _get_metadata(void *state,
+                       grpc_auth_metadata_context context,
+                       grpc_credentials_plugin_metadata_cb cb,
+                       void *user_data,
+                       grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+                       size_t *num_creds_md,
+                       grpc_status_code *status,
+                       const char **error_details) except * with gil:
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):
@@ -348,4 +350,33 @@ def channel_credentials_local(grpc_local_connect_type local_connect_type):
 def server_credentials_local(grpc_local_connect_type local_connect_type):
   cdef ServerCredentials credentials = ServerCredentials()
   credentials.c_credentials = grpc_local_server_credentials_create(local_connect_type)
+  return credentials
+
+
+cdef class ALTSChannelCredentials(ChannelCredentials):
+
+  def __cinit__(self, list service_accounts):
+    self.c_options = grpc_alts_credentials_client_options_create()
+    cdef str account
+    for account in service_accounts:
+      grpc_alts_credentials_client_options_add_target_service_account(self.c_options, account)
+ 
+  def __dealloc__(self):
+    if self.c_options != NULL:
+      grpc_alts_credentials_options_destroy(self.c_options)
+
+  cdef grpc_channel_credentials *c(self) except *:
+    return grpc_alts_credentials_create(self.c_options)
+    
+
+def channel_credentials_alts(list service_accounts):
+  return ALTSChannelCredentials(service_accounts)
+
+
+def server_credentials_alts():
+  cdef ServerCredentials credentials = ServerCredentials()
+  cdef grpc_alts_credentials_options* c_options = grpc_alts_credentials_server_options_create()
+  credentials.c_credentials = grpc_alts_server_credentials_create(c_options)
+  # Options can be destroyed as deep copy was performed.
+  grpc_alts_credentials_options_destroy(c_options)
   return credentials

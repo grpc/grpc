@@ -63,6 +63,8 @@ struct alts_tsi_handshaker {
   // shutdown effectively follows base.handshake_shutdown,
   // but is synchronized by the mutex of this object.
   bool shutdown;
+  // Maximum frame size used by frame protector.
+  size_t max_frame_size;
 };
 
 /* Main struct for ALTS TSI handshaker result. */
@@ -75,6 +77,8 @@ typedef struct alts_tsi_handshaker_result {
   grpc_slice rpc_versions;
   bool is_client;
   grpc_slice serialized_context;
+  // Peer's maximum frame size.
+  size_t max_frame_size;
 } alts_tsi_handshaker_result;
 
 static tsi_result handshaker_result_extract_peer(
@@ -156,6 +160,26 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
   alts_tsi_handshaker_result* result =
       reinterpret_cast<alts_tsi_handshaker_result*>(
           const_cast<tsi_handshaker_result*>(self));
+
+  // In case the peer does not send max frame size (e.g. peer is gRPC Go or
+  // peer uses an old binary), the negotiated frame size is set to
+  // kTsiAltsMinFrameSize (ignoring max_output_protected_frame_size value if
+  // present). Otherwise, it is based on peer and user specified max frame
+  // size (if present).
+  size_t max_frame_size = kTsiAltsMinFrameSize;
+  if (result->max_frame_size) {
+    size_t peer_max_frame_size = result->max_frame_size;
+    max_frame_size = std::min<size_t>(peer_max_frame_size,
+                                      max_output_protected_frame_size == nullptr
+                                          ? kTsiAltsMaxFrameSize
+                                          : *max_output_protected_frame_size);
+    max_frame_size = std::max<size_t>(max_frame_size, kTsiAltsMinFrameSize);
+  }
+  max_output_protected_frame_size = &max_frame_size;
+  gpr_log(GPR_DEBUG,
+          "After Frame Size Negotiation, maximum frame size used by frame "
+          "protector equals %zu",
+          *max_output_protected_frame_size);
   tsi_result ok = alts_zero_copy_grpc_protector_create(
       reinterpret_cast<const uint8_t*>(result->key_data),
       kAltsAes128GcmRekeyKeyLength, /*is_rekey=*/true, result->is_client,
@@ -288,6 +312,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
       static_cast<char*>(gpr_zalloc(peer_service_account.size + 1));
   memcpy(result->peer_identity, peer_service_account.data,
          peer_service_account.size);
+  result->max_frame_size = grpc_gcp_HandshakerResult_max_frame_size(hresult);
   upb::Arena rpc_versions_arena;
   bool serialized = grpc_gcp_rpc_protocol_versions_encode(
       peer_rpc_version, rpc_versions_arena.ptr(), &result->rpc_versions);
@@ -374,7 +399,8 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
         handshaker, channel, handshaker->handshaker_service_url,
         handshaker->interested_parties, handshaker->options,
         handshaker->target_name, grpc_cb, cb, user_data,
-        handshaker->client_vtable_for_testing, handshaker->is_client);
+        handshaker->client_vtable_for_testing, handshaker->is_client,
+        handshaker->max_frame_size);
     if (client == nullptr) {
       gpr_log(GPR_ERROR, "Failed to create ALTS handshaker client");
       return TSI_FAILED_PRECONDITION;
@@ -570,7 +596,8 @@ bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker* handshaker) {
 tsi_result alts_tsi_handshaker_create(
     const grpc_alts_credentials_options* options, const char* target_name,
     const char* handshaker_service_url, bool is_client,
-    grpc_pollset_set* interested_parties, tsi_handshaker** self) {
+    grpc_pollset_set* interested_parties, tsi_handshaker** self,
+    size_t user_specified_max_frame_size) {
   if (handshaker_service_url == nullptr || self == nullptr ||
       options == nullptr || (is_client && target_name == nullptr)) {
     gpr_log(GPR_ERROR, "Invalid arguments to alts_tsi_handshaker_create()");
@@ -590,6 +617,9 @@ tsi_result alts_tsi_handshaker_create(
   handshaker->has_created_handshaker_client = false;
   handshaker->handshaker_service_url = gpr_strdup(handshaker_service_url);
   handshaker->options = grpc_alts_credentials_options_copy(options);
+  handshaker->max_frame_size = user_specified_max_frame_size != 0
+                                   ? user_specified_max_frame_size
+                                   : kTsiAltsMaxFrameSize;
   handshaker->base.vtable = handshaker->use_dedicated_cq
                                 ? &handshaker_vtable_dedicated
                                 : &handshaker_vtable;

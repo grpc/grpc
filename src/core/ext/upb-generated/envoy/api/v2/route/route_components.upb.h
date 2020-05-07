@@ -42,6 +42,7 @@ struct envoy_api_v2_route_RouteAction_HashPolicy_Header;
 struct envoy_api_v2_route_RouteAction_HashPolicy_Cookie;
 struct envoy_api_v2_route_RouteAction_HashPolicy_ConnectionProperties;
 struct envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter;
+struct envoy_api_v2_route_RouteAction_HashPolicy_FilterState;
 struct envoy_api_v2_route_RouteAction_UpgradeConfig;
 struct envoy_api_v2_route_RetryPolicy;
 struct envoy_api_v2_route_RetryPolicy_RetryPriority;
@@ -85,6 +86,7 @@ typedef struct envoy_api_v2_route_RouteAction_HashPolicy_Header envoy_api_v2_rou
 typedef struct envoy_api_v2_route_RouteAction_HashPolicy_Cookie envoy_api_v2_route_RouteAction_HashPolicy_Cookie;
 typedef struct envoy_api_v2_route_RouteAction_HashPolicy_ConnectionProperties envoy_api_v2_route_RouteAction_HashPolicy_ConnectionProperties;
 typedef struct envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter;
+typedef struct envoy_api_v2_route_RouteAction_HashPolicy_FilterState envoy_api_v2_route_RouteAction_HashPolicy_FilterState;
 typedef struct envoy_api_v2_route_RouteAction_UpgradeConfig envoy_api_v2_route_RouteAction_UpgradeConfig;
 typedef struct envoy_api_v2_route_RetryPolicy envoy_api_v2_route_RetryPolicy;
 typedef struct envoy_api_v2_route_RetryPolicy_RetryPriority envoy_api_v2_route_RetryPolicy_RetryPriority;
@@ -128,6 +130,7 @@ extern const upb_msglayout envoy_api_v2_route_RouteAction_HashPolicy_Header_msgi
 extern const upb_msglayout envoy_api_v2_route_RouteAction_HashPolicy_Cookie_msginit;
 extern const upb_msglayout envoy_api_v2_route_RouteAction_HashPolicy_ConnectionProperties_msginit;
 extern const upb_msglayout envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter_msginit;
+extern const upb_msglayout envoy_api_v2_route_RouteAction_HashPolicy_FilterState_msginit;
 extern const upb_msglayout envoy_api_v2_route_RouteAction_UpgradeConfig_msginit;
 extern const upb_msglayout envoy_api_v2_route_RetryPolicy_msginit;
 extern const upb_msglayout envoy_api_v2_route_RetryPolicy_RetryPriority_msginit;
@@ -155,6 +158,7 @@ struct envoy_api_v2_core_Metadata;
 struct envoy_api_v2_core_RuntimeFractionalPercent;
 struct envoy_type_FractionalPercent;
 struct envoy_type_Int64Range;
+struct envoy_type_matcher_RegexMatchAndSubstitute;
 struct envoy_type_matcher_RegexMatcher;
 struct envoy_type_matcher_StringMatcher;
 struct envoy_type_tracing_v2_CustomTag;
@@ -169,6 +173,7 @@ extern const upb_msglayout envoy_api_v2_core_Metadata_msginit;
 extern const upb_msglayout envoy_api_v2_core_RuntimeFractionalPercent_msginit;
 extern const upb_msglayout envoy_type_FractionalPercent_msginit;
 extern const upb_msglayout envoy_type_Int64Range_msginit;
+extern const upb_msglayout envoy_type_matcher_RegexMatchAndSubstitute_msginit;
 extern const upb_msglayout envoy_type_matcher_RegexMatcher_msginit;
 extern const upb_msglayout envoy_type_matcher_StringMatcher_msginit;
 extern const upb_msglayout envoy_type_tracing_v2_CustomTag_msginit;
@@ -218,46 +223,48 @@ UPB_INLINE char *envoy_api_v2_route_VirtualHost_serialize(const envoy_api_v2_rou
 }
 
 UPB_INLINE upb_strview envoy_api_v2_route_VirtualHost_name(const envoy_api_v2_route_VirtualHost *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 16)); }
-UPB_INLINE upb_strview const* envoy_api_v2_route_VirtualHost_domains(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(36, 64), len); }
-UPB_INLINE const envoy_api_v2_route_Route* const* envoy_api_v2_route_VirtualHost_routes(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const envoy_api_v2_route_Route* const*)_upb_array_accessor(msg, UPB_SIZE(40, 72), len); }
+UPB_INLINE upb_strview const* envoy_api_v2_route_VirtualHost_domains(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(40, 72), len); }
+UPB_INLINE const envoy_api_v2_route_Route* const* envoy_api_v2_route_VirtualHost_routes(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const envoy_api_v2_route_Route* const*)_upb_array_accessor(msg, UPB_SIZE(44, 80), len); }
 UPB_INLINE int32_t envoy_api_v2_route_VirtualHost_require_tls(const envoy_api_v2_route_VirtualHost *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
-UPB_INLINE const envoy_api_v2_route_VirtualCluster* const* envoy_api_v2_route_VirtualHost_virtual_clusters(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const envoy_api_v2_route_VirtualCluster* const*)_upb_array_accessor(msg, UPB_SIZE(44, 80), len); }
-UPB_INLINE const envoy_api_v2_route_RateLimit* const* envoy_api_v2_route_VirtualHost_rate_limits(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const envoy_api_v2_route_RateLimit* const*)_upb_array_accessor(msg, UPB_SIZE(48, 88), len); }
-UPB_INLINE const struct envoy_api_v2_core_HeaderValueOption* const* envoy_api_v2_route_VirtualHost_request_headers_to_add(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const struct envoy_api_v2_core_HeaderValueOption* const*)_upb_array_accessor(msg, UPB_SIZE(52, 96), len); }
+UPB_INLINE const envoy_api_v2_route_VirtualCluster* const* envoy_api_v2_route_VirtualHost_virtual_clusters(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const envoy_api_v2_route_VirtualCluster* const*)_upb_array_accessor(msg, UPB_SIZE(48, 88), len); }
+UPB_INLINE const envoy_api_v2_route_RateLimit* const* envoy_api_v2_route_VirtualHost_rate_limits(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const envoy_api_v2_route_RateLimit* const*)_upb_array_accessor(msg, UPB_SIZE(52, 96), len); }
+UPB_INLINE const struct envoy_api_v2_core_HeaderValueOption* const* envoy_api_v2_route_VirtualHost_request_headers_to_add(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const struct envoy_api_v2_core_HeaderValueOption* const*)_upb_array_accessor(msg, UPB_SIZE(56, 104), len); }
 UPB_INLINE const envoy_api_v2_route_CorsPolicy* envoy_api_v2_route_VirtualHost_cors(const envoy_api_v2_route_VirtualHost *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_route_CorsPolicy*, UPB_SIZE(20, 32)); }
-UPB_INLINE const struct envoy_api_v2_core_HeaderValueOption* const* envoy_api_v2_route_VirtualHost_response_headers_to_add(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const struct envoy_api_v2_core_HeaderValueOption* const*)_upb_array_accessor(msg, UPB_SIZE(56, 104), len); }
-UPB_INLINE upb_strview const* envoy_api_v2_route_VirtualHost_response_headers_to_remove(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(60, 112), len); }
-UPB_INLINE const envoy_api_v2_route_VirtualHost_PerFilterConfigEntry* const* envoy_api_v2_route_VirtualHost_per_filter_config(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const envoy_api_v2_route_VirtualHost_PerFilterConfigEntry* const*)_upb_array_accessor(msg, UPB_SIZE(64, 120), len); }
-UPB_INLINE upb_strview const* envoy_api_v2_route_VirtualHost_request_headers_to_remove(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(68, 128), len); }
+UPB_INLINE const struct envoy_api_v2_core_HeaderValueOption* const* envoy_api_v2_route_VirtualHost_response_headers_to_add(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const struct envoy_api_v2_core_HeaderValueOption* const*)_upb_array_accessor(msg, UPB_SIZE(60, 112), len); }
+UPB_INLINE upb_strview const* envoy_api_v2_route_VirtualHost_response_headers_to_remove(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(64, 120), len); }
+UPB_INLINE const envoy_api_v2_route_VirtualHost_PerFilterConfigEntry* const* envoy_api_v2_route_VirtualHost_per_filter_config(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const envoy_api_v2_route_VirtualHost_PerFilterConfigEntry* const*)_upb_array_accessor(msg, UPB_SIZE(68, 128), len); }
+UPB_INLINE upb_strview const* envoy_api_v2_route_VirtualHost_request_headers_to_remove(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(72, 136), len); }
 UPB_INLINE bool envoy_api_v2_route_VirtualHost_include_request_attempt_count(const envoy_api_v2_route_VirtualHost *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)); }
-UPB_INLINE const envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry* const* envoy_api_v2_route_VirtualHost_typed_per_filter_config(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry* const*)_upb_array_accessor(msg, UPB_SIZE(72, 136), len); }
+UPB_INLINE const envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry* const* envoy_api_v2_route_VirtualHost_typed_per_filter_config(const envoy_api_v2_route_VirtualHost *msg, size_t *len) { return (const envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry* const*)_upb_array_accessor(msg, UPB_SIZE(76, 144), len); }
 UPB_INLINE const envoy_api_v2_route_RetryPolicy* envoy_api_v2_route_VirtualHost_retry_policy(const envoy_api_v2_route_VirtualHost *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_route_RetryPolicy*, UPB_SIZE(24, 40)); }
 UPB_INLINE const envoy_api_v2_route_HedgePolicy* envoy_api_v2_route_VirtualHost_hedge_policy(const envoy_api_v2_route_VirtualHost *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_route_HedgePolicy*, UPB_SIZE(28, 48)); }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_route_VirtualHost_per_request_buffer_limit_bytes(const envoy_api_v2_route_VirtualHost *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(32, 56)); }
+UPB_INLINE bool envoy_api_v2_route_VirtualHost_include_attempt_count_in_response(const envoy_api_v2_route_VirtualHost *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(9, 9)); }
+UPB_INLINE const struct google_protobuf_Any* envoy_api_v2_route_VirtualHost_retry_policy_typed_config(const envoy_api_v2_route_VirtualHost *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Any*, UPB_SIZE(36, 64)); }
 
 UPB_INLINE void envoy_api_v2_route_VirtualHost_set_name(envoy_api_v2_route_VirtualHost *msg, upb_strview value) {
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 16)) = value;
 }
 UPB_INLINE upb_strview* envoy_api_v2_route_VirtualHost_mutable_domains(envoy_api_v2_route_VirtualHost *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(36, 64), len);
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(40, 72), len);
 }
 UPB_INLINE upb_strview* envoy_api_v2_route_VirtualHost_resize_domains(envoy_api_v2_route_VirtualHost *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(36, 64), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(40, 72), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_api_v2_route_VirtualHost_add_domains(envoy_api_v2_route_VirtualHost *msg, upb_strview val, upb_arena *arena) {
   return _upb_array_append_accessor(
-      msg, UPB_SIZE(36, 64), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+      msg, UPB_SIZE(40, 72), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
 }
 UPB_INLINE envoy_api_v2_route_Route** envoy_api_v2_route_VirtualHost_mutable_routes(envoy_api_v2_route_VirtualHost *msg, size_t *len) {
-  return (envoy_api_v2_route_Route**)_upb_array_mutable_accessor(msg, UPB_SIZE(40, 72), len);
+  return (envoy_api_v2_route_Route**)_upb_array_mutable_accessor(msg, UPB_SIZE(44, 80), len);
 }
 UPB_INLINE envoy_api_v2_route_Route** envoy_api_v2_route_VirtualHost_resize_routes(envoy_api_v2_route_VirtualHost *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_route_Route**)_upb_array_resize_accessor(msg, UPB_SIZE(40, 72), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_route_Route**)_upb_array_resize_accessor(msg, UPB_SIZE(44, 80), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_route_Route* envoy_api_v2_route_VirtualHost_add_routes(envoy_api_v2_route_VirtualHost *msg, upb_arena *arena) {
   struct envoy_api_v2_route_Route* sub = (struct envoy_api_v2_route_Route*)upb_msg_new(&envoy_api_v2_route_Route_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(40, 72), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(44, 80), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -265,41 +272,41 @@ UPB_INLINE void envoy_api_v2_route_VirtualHost_set_require_tls(envoy_api_v2_rout
   UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
 }
 UPB_INLINE envoy_api_v2_route_VirtualCluster** envoy_api_v2_route_VirtualHost_mutable_virtual_clusters(envoy_api_v2_route_VirtualHost *msg, size_t *len) {
-  return (envoy_api_v2_route_VirtualCluster**)_upb_array_mutable_accessor(msg, UPB_SIZE(44, 80), len);
+  return (envoy_api_v2_route_VirtualCluster**)_upb_array_mutable_accessor(msg, UPB_SIZE(48, 88), len);
 }
 UPB_INLINE envoy_api_v2_route_VirtualCluster** envoy_api_v2_route_VirtualHost_resize_virtual_clusters(envoy_api_v2_route_VirtualHost *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_route_VirtualCluster**)_upb_array_resize_accessor(msg, UPB_SIZE(44, 80), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_route_VirtualCluster**)_upb_array_resize_accessor(msg, UPB_SIZE(48, 88), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_route_VirtualCluster* envoy_api_v2_route_VirtualHost_add_virtual_clusters(envoy_api_v2_route_VirtualHost *msg, upb_arena *arena) {
   struct envoy_api_v2_route_VirtualCluster* sub = (struct envoy_api_v2_route_VirtualCluster*)upb_msg_new(&envoy_api_v2_route_VirtualCluster_msginit, arena);
-  bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(44, 80), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
-  if (!ok) return NULL;
-  return sub;
-}
-UPB_INLINE envoy_api_v2_route_RateLimit** envoy_api_v2_route_VirtualHost_mutable_rate_limits(envoy_api_v2_route_VirtualHost *msg, size_t *len) {
-  return (envoy_api_v2_route_RateLimit**)_upb_array_mutable_accessor(msg, UPB_SIZE(48, 88), len);
-}
-UPB_INLINE envoy_api_v2_route_RateLimit** envoy_api_v2_route_VirtualHost_resize_rate_limits(envoy_api_v2_route_VirtualHost *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_route_RateLimit**)_upb_array_resize_accessor(msg, UPB_SIZE(48, 88), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
-}
-UPB_INLINE struct envoy_api_v2_route_RateLimit* envoy_api_v2_route_VirtualHost_add_rate_limits(envoy_api_v2_route_VirtualHost *msg, upb_arena *arena) {
-  struct envoy_api_v2_route_RateLimit* sub = (struct envoy_api_v2_route_RateLimit*)upb_msg_new(&envoy_api_v2_route_RateLimit_msginit, arena);
   bool ok = _upb_array_append_accessor(
       msg, UPB_SIZE(48, 88), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
+UPB_INLINE envoy_api_v2_route_RateLimit** envoy_api_v2_route_VirtualHost_mutable_rate_limits(envoy_api_v2_route_VirtualHost *msg, size_t *len) {
+  return (envoy_api_v2_route_RateLimit**)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 96), len);
+}
+UPB_INLINE envoy_api_v2_route_RateLimit** envoy_api_v2_route_VirtualHost_resize_rate_limits(envoy_api_v2_route_VirtualHost *msg, size_t len, upb_arena *arena) {
+  return (envoy_api_v2_route_RateLimit**)_upb_array_resize_accessor(msg, UPB_SIZE(52, 96), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+}
+UPB_INLINE struct envoy_api_v2_route_RateLimit* envoy_api_v2_route_VirtualHost_add_rate_limits(envoy_api_v2_route_VirtualHost *msg, upb_arena *arena) {
+  struct envoy_api_v2_route_RateLimit* sub = (struct envoy_api_v2_route_RateLimit*)upb_msg_new(&envoy_api_v2_route_RateLimit_msginit, arena);
+  bool ok = _upb_array_append_accessor(
+      msg, UPB_SIZE(52, 96), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  if (!ok) return NULL;
+  return sub;
+}
 UPB_INLINE struct envoy_api_v2_core_HeaderValueOption** envoy_api_v2_route_VirtualHost_mutable_request_headers_to_add(envoy_api_v2_route_VirtualHost *msg, size_t *len) {
-  return (struct envoy_api_v2_core_HeaderValueOption**)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 96), len);
+  return (struct envoy_api_v2_core_HeaderValueOption**)_upb_array_mutable_accessor(msg, UPB_SIZE(56, 104), len);
 }
 UPB_INLINE struct envoy_api_v2_core_HeaderValueOption** envoy_api_v2_route_VirtualHost_resize_request_headers_to_add(envoy_api_v2_route_VirtualHost *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_api_v2_core_HeaderValueOption**)_upb_array_resize_accessor(msg, UPB_SIZE(52, 96), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (struct envoy_api_v2_core_HeaderValueOption**)_upb_array_resize_accessor(msg, UPB_SIZE(56, 104), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_core_HeaderValueOption* envoy_api_v2_route_VirtualHost_add_request_headers_to_add(envoy_api_v2_route_VirtualHost *msg, upb_arena *arena) {
   struct envoy_api_v2_core_HeaderValueOption* sub = (struct envoy_api_v2_core_HeaderValueOption*)upb_msg_new(&envoy_api_v2_core_HeaderValueOption_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(52, 96), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(56, 104), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -316,64 +323,64 @@ UPB_INLINE struct envoy_api_v2_route_CorsPolicy* envoy_api_v2_route_VirtualHost_
   return sub;
 }
 UPB_INLINE struct envoy_api_v2_core_HeaderValueOption** envoy_api_v2_route_VirtualHost_mutable_response_headers_to_add(envoy_api_v2_route_VirtualHost *msg, size_t *len) {
-  return (struct envoy_api_v2_core_HeaderValueOption**)_upb_array_mutable_accessor(msg, UPB_SIZE(56, 104), len);
+  return (struct envoy_api_v2_core_HeaderValueOption**)_upb_array_mutable_accessor(msg, UPB_SIZE(60, 112), len);
 }
 UPB_INLINE struct envoy_api_v2_core_HeaderValueOption** envoy_api_v2_route_VirtualHost_resize_response_headers_to_add(envoy_api_v2_route_VirtualHost *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_api_v2_core_HeaderValueOption**)_upb_array_resize_accessor(msg, UPB_SIZE(56, 104), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (struct envoy_api_v2_core_HeaderValueOption**)_upb_array_resize_accessor(msg, UPB_SIZE(60, 112), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_core_HeaderValueOption* envoy_api_v2_route_VirtualHost_add_response_headers_to_add(envoy_api_v2_route_VirtualHost *msg, upb_arena *arena) {
   struct envoy_api_v2_core_HeaderValueOption* sub = (struct envoy_api_v2_core_HeaderValueOption*)upb_msg_new(&envoy_api_v2_core_HeaderValueOption_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(56, 104), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(60, 112), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
 UPB_INLINE upb_strview* envoy_api_v2_route_VirtualHost_mutable_response_headers_to_remove(envoy_api_v2_route_VirtualHost *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(60, 112), len);
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(64, 120), len);
 }
 UPB_INLINE upb_strview* envoy_api_v2_route_VirtualHost_resize_response_headers_to_remove(envoy_api_v2_route_VirtualHost *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(60, 112), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(64, 120), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_api_v2_route_VirtualHost_add_response_headers_to_remove(envoy_api_v2_route_VirtualHost *msg, upb_strview val, upb_arena *arena) {
   return _upb_array_append_accessor(
-      msg, UPB_SIZE(60, 112), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+      msg, UPB_SIZE(64, 120), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
 }
 UPB_INLINE envoy_api_v2_route_VirtualHost_PerFilterConfigEntry** envoy_api_v2_route_VirtualHost_mutable_per_filter_config(envoy_api_v2_route_VirtualHost *msg, size_t *len) {
-  return (envoy_api_v2_route_VirtualHost_PerFilterConfigEntry**)_upb_array_mutable_accessor(msg, UPB_SIZE(64, 120), len);
+  return (envoy_api_v2_route_VirtualHost_PerFilterConfigEntry**)_upb_array_mutable_accessor(msg, UPB_SIZE(68, 128), len);
 }
 UPB_INLINE envoy_api_v2_route_VirtualHost_PerFilterConfigEntry** envoy_api_v2_route_VirtualHost_resize_per_filter_config(envoy_api_v2_route_VirtualHost *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_route_VirtualHost_PerFilterConfigEntry**)_upb_array_resize_accessor(msg, UPB_SIZE(64, 120), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_route_VirtualHost_PerFilterConfigEntry**)_upb_array_resize_accessor(msg, UPB_SIZE(68, 128), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_route_VirtualHost_PerFilterConfigEntry* envoy_api_v2_route_VirtualHost_add_per_filter_config(envoy_api_v2_route_VirtualHost *msg, upb_arena *arena) {
   struct envoy_api_v2_route_VirtualHost_PerFilterConfigEntry* sub = (struct envoy_api_v2_route_VirtualHost_PerFilterConfigEntry*)upb_msg_new(&envoy_api_v2_route_VirtualHost_PerFilterConfigEntry_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(64, 120), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(68, 128), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
 UPB_INLINE upb_strview* envoy_api_v2_route_VirtualHost_mutable_request_headers_to_remove(envoy_api_v2_route_VirtualHost *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(68, 128), len);
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(72, 136), len);
 }
 UPB_INLINE upb_strview* envoy_api_v2_route_VirtualHost_resize_request_headers_to_remove(envoy_api_v2_route_VirtualHost *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(68, 128), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(72, 136), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_api_v2_route_VirtualHost_add_request_headers_to_remove(envoy_api_v2_route_VirtualHost *msg, upb_strview val, upb_arena *arena) {
   return _upb_array_append_accessor(
-      msg, UPB_SIZE(68, 128), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+      msg, UPB_SIZE(72, 136), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
 }
 UPB_INLINE void envoy_api_v2_route_VirtualHost_set_include_request_attempt_count(envoy_api_v2_route_VirtualHost *msg, bool value) {
   UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)) = value;
 }
 UPB_INLINE envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry** envoy_api_v2_route_VirtualHost_mutable_typed_per_filter_config(envoy_api_v2_route_VirtualHost *msg, size_t *len) {
-  return (envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry**)_upb_array_mutable_accessor(msg, UPB_SIZE(72, 136), len);
+  return (envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry**)_upb_array_mutable_accessor(msg, UPB_SIZE(76, 144), len);
 }
 UPB_INLINE envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry** envoy_api_v2_route_VirtualHost_resize_typed_per_filter_config(envoy_api_v2_route_VirtualHost *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry**)_upb_array_resize_accessor(msg, UPB_SIZE(72, 136), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry**)_upb_array_resize_accessor(msg, UPB_SIZE(76, 144), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry* envoy_api_v2_route_VirtualHost_add_typed_per_filter_config(envoy_api_v2_route_VirtualHost *msg, upb_arena *arena) {
   struct envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry* sub = (struct envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry*)upb_msg_new(&envoy_api_v2_route_VirtualHost_TypedPerFilterConfigEntry_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(72, 136), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(76, 144), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -410,6 +417,21 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_route_VirtualHost_mu
     sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_route_VirtualHost_set_per_request_buffer_limit_bytes(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_route_VirtualHost_set_include_attempt_count_in_response(envoy_api_v2_route_VirtualHost *msg, bool value) {
+  UPB_FIELD_AT(msg, bool, UPB_SIZE(9, 9)) = value;
+}
+UPB_INLINE void envoy_api_v2_route_VirtualHost_set_retry_policy_typed_config(envoy_api_v2_route_VirtualHost *msg, struct google_protobuf_Any* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_Any*, UPB_SIZE(36, 64)) = value;
+}
+UPB_INLINE struct google_protobuf_Any* envoy_api_v2_route_VirtualHost_mutable_retry_policy_typed_config(envoy_api_v2_route_VirtualHost *msg, upb_arena *arena) {
+  struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_api_v2_route_VirtualHost_retry_policy_typed_config(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Any*)upb_msg_new(&google_protobuf_Any_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_route_VirtualHost_set_retry_policy_typed_config(msg, sub);
   }
   return sub;
 }
@@ -1381,7 +1403,7 @@ typedef enum {
   envoy_api_v2_route_RouteAction_cluster_specifier_weighted_clusters = 3,
   envoy_api_v2_route_RouteAction_cluster_specifier_NOT_SET = 0
 } envoy_api_v2_route_RouteAction_cluster_specifier_oneofcases;
-UPB_INLINE envoy_api_v2_route_RouteAction_cluster_specifier_oneofcases envoy_api_v2_route_RouteAction_cluster_specifier_case(const envoy_api_v2_route_RouteAction* msg) { return (envoy_api_v2_route_RouteAction_cluster_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(100, 176)); }
+UPB_INLINE envoy_api_v2_route_RouteAction_cluster_specifier_oneofcases envoy_api_v2_route_RouteAction_cluster_specifier_case(const envoy_api_v2_route_RouteAction* msg) { return (envoy_api_v2_route_RouteAction_cluster_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(108, 192)); }
 
 typedef enum {
   envoy_api_v2_route_RouteAction_host_rewrite_specifier_host_rewrite = 6,
@@ -1389,48 +1411,50 @@ typedef enum {
   envoy_api_v2_route_RouteAction_host_rewrite_specifier_auto_host_rewrite_header = 29,
   envoy_api_v2_route_RouteAction_host_rewrite_specifier_NOT_SET = 0
 } envoy_api_v2_route_RouteAction_host_rewrite_specifier_oneofcases;
-UPB_INLINE envoy_api_v2_route_RouteAction_host_rewrite_specifier_oneofcases envoy_api_v2_route_RouteAction_host_rewrite_specifier_case(const envoy_api_v2_route_RouteAction* msg) { return (envoy_api_v2_route_RouteAction_host_rewrite_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(112, 200)); }
+UPB_INLINE envoy_api_v2_route_RouteAction_host_rewrite_specifier_oneofcases envoy_api_v2_route_RouteAction_host_rewrite_specifier_case(const envoy_api_v2_route_RouteAction* msg) { return (envoy_api_v2_route_RouteAction_host_rewrite_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(120, 216)); }
 
-UPB_INLINE bool envoy_api_v2_route_RouteAction_has_cluster(const envoy_api_v2_route_RouteAction *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(100, 176), 1); }
-UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_cluster(const envoy_api_v2_route_RouteAction *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(92, 160), UPB_SIZE(100, 176), 1, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool envoy_api_v2_route_RouteAction_has_cluster_header(const envoy_api_v2_route_RouteAction *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(100, 176), 2); }
-UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_cluster_header(const envoy_api_v2_route_RouteAction *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(92, 160), UPB_SIZE(100, 176), 2, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool envoy_api_v2_route_RouteAction_has_weighted_clusters(const envoy_api_v2_route_RouteAction *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(100, 176), 3); }
-UPB_INLINE const envoy_api_v2_route_WeightedCluster* envoy_api_v2_route_RouteAction_weighted_clusters(const envoy_api_v2_route_RouteAction *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_route_WeightedCluster*, UPB_SIZE(92, 160), UPB_SIZE(100, 176), 3, NULL); }
+UPB_INLINE bool envoy_api_v2_route_RouteAction_has_cluster(const envoy_api_v2_route_RouteAction *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(108, 192), 1); }
+UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_cluster(const envoy_api_v2_route_RouteAction *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(100, 176), UPB_SIZE(108, 192), 1, upb_strview_make("", strlen(""))); }
+UPB_INLINE bool envoy_api_v2_route_RouteAction_has_cluster_header(const envoy_api_v2_route_RouteAction *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(108, 192), 2); }
+UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_cluster_header(const envoy_api_v2_route_RouteAction *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(100, 176), UPB_SIZE(108, 192), 2, upb_strview_make("", strlen(""))); }
+UPB_INLINE bool envoy_api_v2_route_RouteAction_has_weighted_clusters(const envoy_api_v2_route_RouteAction *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(108, 192), 3); }
+UPB_INLINE const envoy_api_v2_route_WeightedCluster* envoy_api_v2_route_RouteAction_weighted_clusters(const envoy_api_v2_route_RouteAction *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_route_WeightedCluster*, UPB_SIZE(100, 176), UPB_SIZE(108, 192), 3, NULL); }
 UPB_INLINE const struct envoy_api_v2_core_Metadata* envoy_api_v2_route_RouteAction_metadata_match(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_Metadata*, UPB_SIZE(32, 40)); }
 UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_prefix_rewrite(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(24, 24)); }
-UPB_INLINE bool envoy_api_v2_route_RouteAction_has_host_rewrite(const envoy_api_v2_route_RouteAction *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(112, 200), 6); }
-UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_host_rewrite(const envoy_api_v2_route_RouteAction *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(104, 184), UPB_SIZE(112, 200), 6, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool envoy_api_v2_route_RouteAction_has_auto_host_rewrite(const envoy_api_v2_route_RouteAction *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(112, 200), 7); }
-UPB_INLINE const struct google_protobuf_BoolValue* envoy_api_v2_route_RouteAction_auto_host_rewrite(const envoy_api_v2_route_RouteAction *msg) { return UPB_READ_ONEOF(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(104, 184), UPB_SIZE(112, 200), 7, NULL); }
+UPB_INLINE bool envoy_api_v2_route_RouteAction_has_host_rewrite(const envoy_api_v2_route_RouteAction *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 216), 6); }
+UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_host_rewrite(const envoy_api_v2_route_RouteAction *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(112, 200), UPB_SIZE(120, 216), 6, upb_strview_make("", strlen(""))); }
+UPB_INLINE bool envoy_api_v2_route_RouteAction_has_auto_host_rewrite(const envoy_api_v2_route_RouteAction *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 216), 7); }
+UPB_INLINE const struct google_protobuf_BoolValue* envoy_api_v2_route_RouteAction_auto_host_rewrite(const envoy_api_v2_route_RouteAction *msg) { return UPB_READ_ONEOF(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(112, 200), UPB_SIZE(120, 216), 7, NULL); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_route_RouteAction_timeout(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(36, 48)); }
 UPB_INLINE const envoy_api_v2_route_RetryPolicy* envoy_api_v2_route_RouteAction_retry_policy(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_route_RetryPolicy*, UPB_SIZE(40, 56)); }
 UPB_INLINE const envoy_api_v2_route_RouteAction_RequestMirrorPolicy* envoy_api_v2_route_RouteAction_request_mirror_policy(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_route_RouteAction_RequestMirrorPolicy*, UPB_SIZE(44, 64)); }
 UPB_INLINE int32_t envoy_api_v2_route_RouteAction_priority(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
-UPB_INLINE const envoy_api_v2_route_RateLimit* const* envoy_api_v2_route_RouteAction_rate_limits(const envoy_api_v2_route_RouteAction *msg, size_t *len) { return (const envoy_api_v2_route_RateLimit* const*)_upb_array_accessor(msg, UPB_SIZE(76, 128), len); }
+UPB_INLINE const envoy_api_v2_route_RateLimit* const* envoy_api_v2_route_RouteAction_rate_limits(const envoy_api_v2_route_RouteAction *msg, size_t *len) { return (const envoy_api_v2_route_RateLimit* const*)_upb_array_accessor(msg, UPB_SIZE(84, 144), len); }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_api_v2_route_RouteAction_include_vh_rate_limits(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(48, 72)); }
-UPB_INLINE const envoy_api_v2_route_RouteAction_HashPolicy* const* envoy_api_v2_route_RouteAction_hash_policy(const envoy_api_v2_route_RouteAction *msg, size_t *len) { return (const envoy_api_v2_route_RouteAction_HashPolicy* const*)_upb_array_accessor(msg, UPB_SIZE(80, 136), len); }
+UPB_INLINE const envoy_api_v2_route_RouteAction_HashPolicy* const* envoy_api_v2_route_RouteAction_hash_policy(const envoy_api_v2_route_RouteAction *msg, size_t *len) { return (const envoy_api_v2_route_RouteAction_HashPolicy* const*)_upb_array_accessor(msg, UPB_SIZE(88, 152), len); }
 UPB_INLINE const envoy_api_v2_route_CorsPolicy* envoy_api_v2_route_RouteAction_cors(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_route_CorsPolicy*, UPB_SIZE(52, 80)); }
 UPB_INLINE int32_t envoy_api_v2_route_RouteAction_cluster_not_found_response_code(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(8, 8)); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_route_RouteAction_max_grpc_timeout(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(56, 88)); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_route_RouteAction_idle_timeout(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(60, 96)); }
-UPB_INLINE const envoy_api_v2_route_RouteAction_UpgradeConfig* const* envoy_api_v2_route_RouteAction_upgrade_configs(const envoy_api_v2_route_RouteAction *msg, size_t *len) { return (const envoy_api_v2_route_RouteAction_UpgradeConfig* const*)_upb_array_accessor(msg, UPB_SIZE(84, 144), len); }
+UPB_INLINE const envoy_api_v2_route_RouteAction_UpgradeConfig* const* envoy_api_v2_route_RouteAction_upgrade_configs(const envoy_api_v2_route_RouteAction *msg, size_t *len) { return (const envoy_api_v2_route_RouteAction_UpgradeConfig* const*)_upb_array_accessor(msg, UPB_SIZE(92, 160), len); }
 UPB_INLINE int32_t envoy_api_v2_route_RouteAction_internal_redirect_action(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(16, 16)); }
 UPB_INLINE const envoy_api_v2_route_HedgePolicy* envoy_api_v2_route_RouteAction_hedge_policy(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_route_HedgePolicy*, UPB_SIZE(64, 104)); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_route_RouteAction_grpc_timeout_offset(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(68, 112)); }
-UPB_INLINE bool envoy_api_v2_route_RouteAction_has_auto_host_rewrite_header(const envoy_api_v2_route_RouteAction *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(112, 200), 29); }
-UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_auto_host_rewrite_header(const envoy_api_v2_route_RouteAction *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(104, 184), UPB_SIZE(112, 200), 29, upb_strview_make("", strlen(""))); }
-UPB_INLINE const envoy_api_v2_route_RouteAction_RequestMirrorPolicy* const* envoy_api_v2_route_RouteAction_request_mirror_policies(const envoy_api_v2_route_RouteAction *msg, size_t *len) { return (const envoy_api_v2_route_RouteAction_RequestMirrorPolicy* const*)_upb_array_accessor(msg, UPB_SIZE(88, 152), len); }
+UPB_INLINE bool envoy_api_v2_route_RouteAction_has_auto_host_rewrite_header(const envoy_api_v2_route_RouteAction *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(120, 216), 29); }
+UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_auto_host_rewrite_header(const envoy_api_v2_route_RouteAction *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(112, 200), UPB_SIZE(120, 216), 29, upb_strview_make("", strlen(""))); }
+UPB_INLINE const envoy_api_v2_route_RouteAction_RequestMirrorPolicy* const* envoy_api_v2_route_RouteAction_request_mirror_policies(const envoy_api_v2_route_RouteAction *msg, size_t *len) { return (const envoy_api_v2_route_RouteAction_RequestMirrorPolicy* const*)_upb_array_accessor(msg, UPB_SIZE(96, 168), len); }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_route_RouteAction_max_internal_redirects(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(72, 120)); }
+UPB_INLINE const struct envoy_type_matcher_RegexMatchAndSubstitute* envoy_api_v2_route_RouteAction_regex_rewrite(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const struct envoy_type_matcher_RegexMatchAndSubstitute*, UPB_SIZE(76, 128)); }
+UPB_INLINE const struct google_protobuf_Any* envoy_api_v2_route_RouteAction_retry_policy_typed_config(const envoy_api_v2_route_RouteAction *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Any*, UPB_SIZE(80, 136)); }
 
 UPB_INLINE void envoy_api_v2_route_RouteAction_set_cluster(envoy_api_v2_route_RouteAction *msg, upb_strview value) {
-  UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(92, 160), value, UPB_SIZE(100, 176), 1);
+  UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(100, 176), value, UPB_SIZE(108, 192), 1);
 }
 UPB_INLINE void envoy_api_v2_route_RouteAction_set_cluster_header(envoy_api_v2_route_RouteAction *msg, upb_strview value) {
-  UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(92, 160), value, UPB_SIZE(100, 176), 2);
+  UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(100, 176), value, UPB_SIZE(108, 192), 2);
 }
 UPB_INLINE void envoy_api_v2_route_RouteAction_set_weighted_clusters(envoy_api_v2_route_RouteAction *msg, envoy_api_v2_route_WeightedCluster* value) {
-  UPB_WRITE_ONEOF(msg, envoy_api_v2_route_WeightedCluster*, UPB_SIZE(92, 160), value, UPB_SIZE(100, 176), 3);
+  UPB_WRITE_ONEOF(msg, envoy_api_v2_route_WeightedCluster*, UPB_SIZE(100, 176), value, UPB_SIZE(108, 192), 3);
 }
 UPB_INLINE struct envoy_api_v2_route_WeightedCluster* envoy_api_v2_route_RouteAction_mutable_weighted_clusters(envoy_api_v2_route_RouteAction *msg, upb_arena *arena) {
   struct envoy_api_v2_route_WeightedCluster* sub = (struct envoy_api_v2_route_WeightedCluster*)envoy_api_v2_route_RouteAction_weighted_clusters(msg);
@@ -1457,10 +1481,10 @@ UPB_INLINE void envoy_api_v2_route_RouteAction_set_prefix_rewrite(envoy_api_v2_r
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(24, 24)) = value;
 }
 UPB_INLINE void envoy_api_v2_route_RouteAction_set_host_rewrite(envoy_api_v2_route_RouteAction *msg, upb_strview value) {
-  UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(104, 184), value, UPB_SIZE(112, 200), 6);
+  UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(112, 200), value, UPB_SIZE(120, 216), 6);
 }
 UPB_INLINE void envoy_api_v2_route_RouteAction_set_auto_host_rewrite(envoy_api_v2_route_RouteAction *msg, struct google_protobuf_BoolValue* value) {
-  UPB_WRITE_ONEOF(msg, struct google_protobuf_BoolValue*, UPB_SIZE(104, 184), value, UPB_SIZE(112, 200), 7);
+  UPB_WRITE_ONEOF(msg, struct google_protobuf_BoolValue*, UPB_SIZE(112, 200), value, UPB_SIZE(120, 216), 7);
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_route_RouteAction_mutable_auto_host_rewrite(envoy_api_v2_route_RouteAction *msg, upb_arena *arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_api_v2_route_RouteAction_auto_host_rewrite(msg);
@@ -1511,15 +1535,15 @@ UPB_INLINE void envoy_api_v2_route_RouteAction_set_priority(envoy_api_v2_route_R
   UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
 }
 UPB_INLINE envoy_api_v2_route_RateLimit** envoy_api_v2_route_RouteAction_mutable_rate_limits(envoy_api_v2_route_RouteAction *msg, size_t *len) {
-  return (envoy_api_v2_route_RateLimit**)_upb_array_mutable_accessor(msg, UPB_SIZE(76, 128), len);
+  return (envoy_api_v2_route_RateLimit**)_upb_array_mutable_accessor(msg, UPB_SIZE(84, 144), len);
 }
 UPB_INLINE envoy_api_v2_route_RateLimit** envoy_api_v2_route_RouteAction_resize_rate_limits(envoy_api_v2_route_RouteAction *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_route_RateLimit**)_upb_array_resize_accessor(msg, UPB_SIZE(76, 128), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_route_RateLimit**)_upb_array_resize_accessor(msg, UPB_SIZE(84, 144), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_route_RateLimit* envoy_api_v2_route_RouteAction_add_rate_limits(envoy_api_v2_route_RouteAction *msg, upb_arena *arena) {
   struct envoy_api_v2_route_RateLimit* sub = (struct envoy_api_v2_route_RateLimit*)upb_msg_new(&envoy_api_v2_route_RateLimit_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(76, 128), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(84, 144), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -1536,15 +1560,15 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_route_RouteAction_muta
   return sub;
 }
 UPB_INLINE envoy_api_v2_route_RouteAction_HashPolicy** envoy_api_v2_route_RouteAction_mutable_hash_policy(envoy_api_v2_route_RouteAction *msg, size_t *len) {
-  return (envoy_api_v2_route_RouteAction_HashPolicy**)_upb_array_mutable_accessor(msg, UPB_SIZE(80, 136), len);
+  return (envoy_api_v2_route_RouteAction_HashPolicy**)_upb_array_mutable_accessor(msg, UPB_SIZE(88, 152), len);
 }
 UPB_INLINE envoy_api_v2_route_RouteAction_HashPolicy** envoy_api_v2_route_RouteAction_resize_hash_policy(envoy_api_v2_route_RouteAction *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_route_RouteAction_HashPolicy**)_upb_array_resize_accessor(msg, UPB_SIZE(80, 136), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_route_RouteAction_HashPolicy**)_upb_array_resize_accessor(msg, UPB_SIZE(88, 152), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_route_RouteAction_HashPolicy* envoy_api_v2_route_RouteAction_add_hash_policy(envoy_api_v2_route_RouteAction *msg, upb_arena *arena) {
   struct envoy_api_v2_route_RouteAction_HashPolicy* sub = (struct envoy_api_v2_route_RouteAction_HashPolicy*)upb_msg_new(&envoy_api_v2_route_RouteAction_HashPolicy_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(80, 136), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(88, 152), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -1588,15 +1612,15 @@ UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_route_RouteAction_mutab
   return sub;
 }
 UPB_INLINE envoy_api_v2_route_RouteAction_UpgradeConfig** envoy_api_v2_route_RouteAction_mutable_upgrade_configs(envoy_api_v2_route_RouteAction *msg, size_t *len) {
-  return (envoy_api_v2_route_RouteAction_UpgradeConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(84, 144), len);
+  return (envoy_api_v2_route_RouteAction_UpgradeConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(92, 160), len);
 }
 UPB_INLINE envoy_api_v2_route_RouteAction_UpgradeConfig** envoy_api_v2_route_RouteAction_resize_upgrade_configs(envoy_api_v2_route_RouteAction *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_route_RouteAction_UpgradeConfig**)_upb_array_resize_accessor(msg, UPB_SIZE(84, 144), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_route_RouteAction_UpgradeConfig**)_upb_array_resize_accessor(msg, UPB_SIZE(92, 160), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_route_RouteAction_UpgradeConfig* envoy_api_v2_route_RouteAction_add_upgrade_configs(envoy_api_v2_route_RouteAction *msg, upb_arena *arena) {
   struct envoy_api_v2_route_RouteAction_UpgradeConfig* sub = (struct envoy_api_v2_route_RouteAction_UpgradeConfig*)upb_msg_new(&envoy_api_v2_route_RouteAction_UpgradeConfig_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(84, 144), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(92, 160), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -1628,18 +1652,18 @@ UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_route_RouteAction_mutab
   return sub;
 }
 UPB_INLINE void envoy_api_v2_route_RouteAction_set_auto_host_rewrite_header(envoy_api_v2_route_RouteAction *msg, upb_strview value) {
-  UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(104, 184), value, UPB_SIZE(112, 200), 29);
+  UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(112, 200), value, UPB_SIZE(120, 216), 29);
 }
 UPB_INLINE envoy_api_v2_route_RouteAction_RequestMirrorPolicy** envoy_api_v2_route_RouteAction_mutable_request_mirror_policies(envoy_api_v2_route_RouteAction *msg, size_t *len) {
-  return (envoy_api_v2_route_RouteAction_RequestMirrorPolicy**)_upb_array_mutable_accessor(msg, UPB_SIZE(88, 152), len);
+  return (envoy_api_v2_route_RouteAction_RequestMirrorPolicy**)_upb_array_mutable_accessor(msg, UPB_SIZE(96, 168), len);
 }
 UPB_INLINE envoy_api_v2_route_RouteAction_RequestMirrorPolicy** envoy_api_v2_route_RouteAction_resize_request_mirror_policies(envoy_api_v2_route_RouteAction *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_route_RouteAction_RequestMirrorPolicy**)_upb_array_resize_accessor(msg, UPB_SIZE(88, 152), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_route_RouteAction_RequestMirrorPolicy**)_upb_array_resize_accessor(msg, UPB_SIZE(96, 168), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_route_RouteAction_RequestMirrorPolicy* envoy_api_v2_route_RouteAction_add_request_mirror_policies(envoy_api_v2_route_RouteAction *msg, upb_arena *arena) {
   struct envoy_api_v2_route_RouteAction_RequestMirrorPolicy* sub = (struct envoy_api_v2_route_RouteAction_RequestMirrorPolicy*)upb_msg_new(&envoy_api_v2_route_RouteAction_RequestMirrorPolicy_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(88, 152), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(96, 168), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -1652,6 +1676,30 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_route_RouteAction_mu
     sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_route_RouteAction_set_max_internal_redirects(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_route_RouteAction_set_regex_rewrite(envoy_api_v2_route_RouteAction *msg, struct envoy_type_matcher_RegexMatchAndSubstitute* value) {
+  UPB_FIELD_AT(msg, struct envoy_type_matcher_RegexMatchAndSubstitute*, UPB_SIZE(76, 128)) = value;
+}
+UPB_INLINE struct envoy_type_matcher_RegexMatchAndSubstitute* envoy_api_v2_route_RouteAction_mutable_regex_rewrite(envoy_api_v2_route_RouteAction *msg, upb_arena *arena) {
+  struct envoy_type_matcher_RegexMatchAndSubstitute* sub = (struct envoy_type_matcher_RegexMatchAndSubstitute*)envoy_api_v2_route_RouteAction_regex_rewrite(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_type_matcher_RegexMatchAndSubstitute*)upb_msg_new(&envoy_type_matcher_RegexMatchAndSubstitute_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_route_RouteAction_set_regex_rewrite(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_route_RouteAction_set_retry_policy_typed_config(envoy_api_v2_route_RouteAction *msg, struct google_protobuf_Any* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_Any*, UPB_SIZE(80, 136)) = value;
+}
+UPB_INLINE struct google_protobuf_Any* envoy_api_v2_route_RouteAction_mutable_retry_policy_typed_config(envoy_api_v2_route_RouteAction *msg, upb_arena *arena) {
+  struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_api_v2_route_RouteAction_retry_policy_typed_config(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Any*)upb_msg_new(&google_protobuf_Any_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_route_RouteAction_set_retry_policy_typed_config(msg, sub);
   }
   return sub;
 }
@@ -1673,6 +1721,7 @@ UPB_INLINE char *envoy_api_v2_route_RouteAction_RequestMirrorPolicy_serialize(co
 UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_RequestMirrorPolicy_cluster(const envoy_api_v2_route_RouteAction_RequestMirrorPolicy *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
 UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_RequestMirrorPolicy_runtime_key(const envoy_api_v2_route_RouteAction_RequestMirrorPolicy *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)); }
 UPB_INLINE const struct envoy_api_v2_core_RuntimeFractionalPercent* envoy_api_v2_route_RouteAction_RequestMirrorPolicy_runtime_fraction(const envoy_api_v2_route_RouteAction_RequestMirrorPolicy *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_RuntimeFractionalPercent*, UPB_SIZE(16, 32)); }
+UPB_INLINE const struct google_protobuf_BoolValue* envoy_api_v2_route_RouteAction_RequestMirrorPolicy_trace_sampled(const envoy_api_v2_route_RouteAction_RequestMirrorPolicy *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(20, 40)); }
 
 UPB_INLINE void envoy_api_v2_route_RouteAction_RequestMirrorPolicy_set_cluster(envoy_api_v2_route_RouteAction_RequestMirrorPolicy *msg, upb_strview value) {
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
@@ -1689,6 +1738,18 @@ UPB_INLINE struct envoy_api_v2_core_RuntimeFractionalPercent* envoy_api_v2_route
     sub = (struct envoy_api_v2_core_RuntimeFractionalPercent*)upb_msg_new(&envoy_api_v2_core_RuntimeFractionalPercent_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_route_RouteAction_RequestMirrorPolicy_set_runtime_fraction(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_route_RouteAction_RequestMirrorPolicy_set_trace_sampled(envoy_api_v2_route_RouteAction_RequestMirrorPolicy *msg, struct google_protobuf_BoolValue* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_BoolValue*, UPB_SIZE(20, 40)) = value;
+}
+UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_route_RouteAction_RequestMirrorPolicy_mutable_trace_sampled(envoy_api_v2_route_RouteAction_RequestMirrorPolicy *msg, upb_arena *arena) {
+  struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_api_v2_route_RouteAction_RequestMirrorPolicy_trace_sampled(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_BoolValue*)upb_msg_new(&google_protobuf_BoolValue_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_route_RouteAction_RequestMirrorPolicy_set_trace_sampled(msg, sub);
   }
   return sub;
 }
@@ -1712,6 +1773,7 @@ typedef enum {
   envoy_api_v2_route_RouteAction_HashPolicy_policy_specifier_cookie = 2,
   envoy_api_v2_route_RouteAction_HashPolicy_policy_specifier_connection_properties = 3,
   envoy_api_v2_route_RouteAction_HashPolicy_policy_specifier_query_parameter = 5,
+  envoy_api_v2_route_RouteAction_HashPolicy_policy_specifier_filter_state = 6,
   envoy_api_v2_route_RouteAction_HashPolicy_policy_specifier_NOT_SET = 0
 } envoy_api_v2_route_RouteAction_HashPolicy_policy_specifier_oneofcases;
 UPB_INLINE envoy_api_v2_route_RouteAction_HashPolicy_policy_specifier_oneofcases envoy_api_v2_route_RouteAction_HashPolicy_policy_specifier_case(const envoy_api_v2_route_RouteAction_HashPolicy* msg) { return (envoy_api_v2_route_RouteAction_HashPolicy_policy_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(8, 16)); }
@@ -1725,6 +1787,8 @@ UPB_INLINE const envoy_api_v2_route_RouteAction_HashPolicy_ConnectionProperties*
 UPB_INLINE bool envoy_api_v2_route_RouteAction_HashPolicy_terminal(const envoy_api_v2_route_RouteAction_HashPolicy *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)); }
 UPB_INLINE bool envoy_api_v2_route_RouteAction_HashPolicy_has_query_parameter(const envoy_api_v2_route_RouteAction_HashPolicy *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 5); }
 UPB_INLINE const envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter* envoy_api_v2_route_RouteAction_HashPolicy_query_parameter(const envoy_api_v2_route_RouteAction_HashPolicy *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter*, UPB_SIZE(4, 8), UPB_SIZE(8, 16), 5, NULL); }
+UPB_INLINE bool envoy_api_v2_route_RouteAction_HashPolicy_has_filter_state(const envoy_api_v2_route_RouteAction_HashPolicy *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 6); }
+UPB_INLINE const envoy_api_v2_route_RouteAction_HashPolicy_FilterState* envoy_api_v2_route_RouteAction_HashPolicy_filter_state(const envoy_api_v2_route_RouteAction_HashPolicy *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_route_RouteAction_HashPolicy_FilterState*, UPB_SIZE(4, 8), UPB_SIZE(8, 16), 6, NULL); }
 
 UPB_INLINE void envoy_api_v2_route_RouteAction_HashPolicy_set_header(envoy_api_v2_route_RouteAction_HashPolicy *msg, envoy_api_v2_route_RouteAction_HashPolicy_Header* value) {
   UPB_WRITE_ONEOF(msg, envoy_api_v2_route_RouteAction_HashPolicy_Header*, UPB_SIZE(4, 8), value, UPB_SIZE(8, 16), 1);
@@ -1774,6 +1838,18 @@ UPB_INLINE struct envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter* envo
     sub = (struct envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter*)upb_msg_new(&envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_route_RouteAction_HashPolicy_set_query_parameter(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_route_RouteAction_HashPolicy_set_filter_state(envoy_api_v2_route_RouteAction_HashPolicy *msg, envoy_api_v2_route_RouteAction_HashPolicy_FilterState* value) {
+  UPB_WRITE_ONEOF(msg, envoy_api_v2_route_RouteAction_HashPolicy_FilterState*, UPB_SIZE(4, 8), value, UPB_SIZE(8, 16), 6);
+}
+UPB_INLINE struct envoy_api_v2_route_RouteAction_HashPolicy_FilterState* envoy_api_v2_route_RouteAction_HashPolicy_mutable_filter_state(envoy_api_v2_route_RouteAction_HashPolicy *msg, upb_arena *arena) {
+  struct envoy_api_v2_route_RouteAction_HashPolicy_FilterState* sub = (struct envoy_api_v2_route_RouteAction_HashPolicy_FilterState*)envoy_api_v2_route_RouteAction_HashPolicy_filter_state(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_api_v2_route_RouteAction_HashPolicy_FilterState*)upb_msg_new(&envoy_api_v2_route_RouteAction_HashPolicy_FilterState_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_route_RouteAction_HashPolicy_set_filter_state(msg, sub);
   }
   return sub;
 }
@@ -1872,6 +1948,26 @@ UPB_INLINE char *envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter_serial
 UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter_name(const envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
 
 UPB_INLINE void envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter_set_name(envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter *msg, upb_strview value) {
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+}
+
+/* envoy.api.v2.route.RouteAction.HashPolicy.FilterState */
+
+UPB_INLINE envoy_api_v2_route_RouteAction_HashPolicy_FilterState *envoy_api_v2_route_RouteAction_HashPolicy_FilterState_new(upb_arena *arena) {
+  return (envoy_api_v2_route_RouteAction_HashPolicy_FilterState *)upb_msg_new(&envoy_api_v2_route_RouteAction_HashPolicy_FilterState_msginit, arena);
+}
+UPB_INLINE envoy_api_v2_route_RouteAction_HashPolicy_FilterState *envoy_api_v2_route_RouteAction_HashPolicy_FilterState_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_api_v2_route_RouteAction_HashPolicy_FilterState *ret = envoy_api_v2_route_RouteAction_HashPolicy_FilterState_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_route_RouteAction_HashPolicy_FilterState_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE char *envoy_api_v2_route_RouteAction_HashPolicy_FilterState_serialize(const envoy_api_v2_route_RouteAction_HashPolicy_FilterState *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_api_v2_route_RouteAction_HashPolicy_FilterState_msginit, arena, len);
+}
+
+UPB_INLINE upb_strview envoy_api_v2_route_RouteAction_HashPolicy_FilterState_key(const envoy_api_v2_route_RouteAction_HashPolicy_FilterState *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+
+UPB_INLINE void envoy_api_v2_route_RouteAction_HashPolicy_FilterState_set_key(envoy_api_v2_route_RouteAction_HashPolicy_FilterState *msg, upb_strview value) {
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
 }
 

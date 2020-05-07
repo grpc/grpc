@@ -31,6 +31,35 @@
 
 namespace grpc {
 
+void RegisterOpenCensusPlugin() {
+  RegisterChannelFilter<CensusChannelData, CensusClientCallData>(
+      "opencensus_client", GRPC_CLIENT_CHANNEL, INT_MAX /* priority */,
+      nullptr /* condition function */);
+  RegisterChannelFilter<CensusChannelData, CensusServerCallData>(
+      "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
+      nullptr /* condition function */);
+
+  // Access measures to ensure they are initialized. Otherwise, creating a view
+  // before the first RPC would cause an error.
+  RpcClientSentBytesPerRpc();
+  RpcClientReceivedBytesPerRpc();
+  RpcClientRoundtripLatency();
+  RpcClientServerLatency();
+  RpcClientSentMessagesPerRpc();
+  RpcClientReceivedMessagesPerRpc();
+
+  RpcServerSentBytesPerRpc();
+  RpcServerReceivedBytesPerRpc();
+  RpcServerServerLatency();
+  RpcServerSentMessagesPerRpc();
+  RpcServerReceivedMessagesPerRpc();
+}
+
+::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context) {
+  return reinterpret_cast<const CensusContext*>(context->census_context())
+      ->Span();
+}
+
 // These measure definitions should be kept in sync across opencensus
 // implementations--see
 // https://github.com/census-instrumentation/opencensus-java/blob/master/contrib/grpc_metrics/src/main/java/io/opencensus/contrib/grpc/metrics/RpcMeasureConstants.java.
@@ -98,39 +127,5 @@ ABSL_CONST_INIT const absl::string_view
 
 ABSL_CONST_INIT const absl::string_view kRpcServerServerLatencyMeasureName =
     "grpc.io/server/server_latency";
+
 }  // namespace grpc
-namespace grpc_impl {
-
-void RegisterOpenCensusPlugin() {
-  grpc::RegisterChannelFilter<grpc::CensusChannelData,
-                              grpc::CensusClientCallData>(
-      "opencensus_client", GRPC_CLIENT_CHANNEL, INT_MAX /* priority */,
-      nullptr /* condition function */);
-  grpc::RegisterChannelFilter<grpc::CensusChannelData,
-                              grpc::CensusServerCallData>(
-      "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
-      nullptr /* condition function */);
-
-  // Access measures to ensure they are initialized. Otherwise, creating a view
-  // before the first RPC would cause an error.
-  grpc::RpcClientSentBytesPerRpc();
-  grpc::RpcClientReceivedBytesPerRpc();
-  grpc::RpcClientRoundtripLatency();
-  grpc::RpcClientServerLatency();
-  grpc::RpcClientSentMessagesPerRpc();
-  grpc::RpcClientReceivedMessagesPerRpc();
-
-  grpc::RpcServerSentBytesPerRpc();
-  grpc::RpcServerReceivedBytesPerRpc();
-  grpc::RpcServerServerLatency();
-  grpc::RpcServerSentMessagesPerRpc();
-  grpc::RpcServerReceivedMessagesPerRpc();
-}
-
-::opencensus::trace::Span GetSpanFromServerContext(
-    grpc::ServerContext* context) {
-  return reinterpret_cast<const grpc::CensusContext*>(context->census_context())
-      ->Span();
-}
-
-}  // namespace grpc_impl

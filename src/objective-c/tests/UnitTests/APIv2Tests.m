@@ -235,12 +235,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                        expectedUserAgent = [expectedUserAgent stringByAppendingString:@" ("];
                        expectedUserAgent =
                            [expectedUserAgent stringByAppendingString:@GPR_PLATFORM_STRING];
-                       expectedUserAgent =
-                           [expectedUserAgent stringByAppendingString:@"; chttp2; "];
-                       expectedUserAgent = [expectedUserAgent
-                           stringByAppendingString:[NSString
-                                                       stringWithUTF8String:grpc_g_stands_for()]];
-                       expectedUserAgent = [expectedUserAgent stringByAppendingString:@")"];
+                       expectedUserAgent = [expectedUserAgent stringByAppendingString:@"; chttp2)"];
                        XCTAssertEqualObjects(userAgent, expectedUserAgent);
 
                        NSError *error = nil;
@@ -401,6 +396,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.timeout = 0.001;
+  options.transportType = GRPCTransportTypeInsecure;
   GRPCRequestOptions *requestOptions =
       [[GRPCRequestOptions alloc] initWithHost:kHostAddress
                                           path:kFullDuplexCallMethod.HTTPPath

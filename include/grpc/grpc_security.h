@@ -714,6 +714,10 @@ GRPCAPI grpc_server_credentials* grpc_local_server_credentials_create(
 /** --- TLS channel/server credentials ---
  * It is used for experimental purpose for now and subject to change. */
 
+/** Struct for indicating errors. It is used for
+ *  experimental purpose for now and subject to change. */
+typedef struct grpc_tls_error_details grpc_tls_error_details;
+
 /** Config for TLS key materials. It is used for
  *  experimental purpose for now and subject to change. */
 typedef struct grpc_tls_key_materials_config grpc_tls_key_materials_config;
@@ -793,11 +797,13 @@ GRPCAPI grpc_tls_key_materials_config* grpc_tls_key_materials_config_create(
     void);
 
 /** Set grpc_tls_key_materials_config instance with provided a TLS certificate.
-    config will take the ownership of pem_root_certs and pem_key_cert_pairs.
     It's valid for the caller to provide nullptr pem_root_certs, in which case
     the gRPC-provided root cert will be used. pem_key_cert_pairs should not be
-    NULL. It returns 1 on success and 0 on failure. It is used for
-    experimental purpose for now and subject to change.
+    NULL.
+    The ownerships of |pem_root_certs| and |pem_key_cert_pairs| remain with the
+    caller.
+    It returns 1 on success and 0 on failure. It is used for experimental
+    purpose for now and subject to change.
  */
 GRPCAPI int grpc_tls_key_materials_config_set_key_materials(
     grpc_tls_key_materials_config* config, const char* pem_root_certs,
@@ -836,8 +842,10 @@ typedef void (*grpc_tls_on_credential_reload_done_cb)(
     - cb and cb_user_data represent a gRPC-provided
       callback and an argument passed to it.
     - key_materials_config is an in/output parameter containing currently
-      used/newly reloaded credentials. If credential reload does not result
-      in a new credential, key_materials_config should not be modified.
+      used/newly reloaded credentials. If credential reload does not result in
+      a new credential, key_materials_config should not be modified. The same
+      key_materials_config object can be updated if new key materials is
+      available.
     - status and error_details are used to hold information about
       errors occurred when a credential reload request is scheduled/cancelled.
     - config is a pointer to the unique grpc_tls_credential_reload_config
@@ -853,7 +861,7 @@ struct grpc_tls_credential_reload_arg {
   void* cb_user_data;
   grpc_tls_key_materials_config* key_materials_config;
   grpc_ssl_certificate_config_reload_status status;
-  const char* error_details;
+  grpc_tls_error_details* error_details;
   grpc_tls_credential_reload_config* config;
   void* context;
   void (*destroy_context)(void* ctx);
@@ -865,8 +873,9 @@ struct grpc_tls_credential_reload_arg {
     - schedule is a pointer to an application-provided callback used to invoke
       credential reload API. The implementation of this method has to be
       non-blocking, but can be performed synchronously or asynchronously.
-      1) If processing occurs synchronously, it populates arg->key_materials,
-      arg->status, and arg->error_details and returns zero.
+      1) If processing occurs synchronously, it populates
+      arg->key_materials_config, arg->status, and arg->error_details
+      and returns zero.
       2) If processing occurs asynchronously, it returns a non-zero value.
       The application then invokes arg->cb when processing is completed. Note
       that arg->cb cannot be invoked before schedule API returns.
@@ -930,7 +939,7 @@ struct grpc_tls_server_authorization_check_arg {
   const char* peer_cert;
   const char* peer_cert_full_chain;
   grpc_status_code status;
-  const char* error_details;
+  grpc_tls_error_details* error_details;
   grpc_tls_server_authorization_check_config* config;
   void* context;
   void (*destroy_context)(void* ctx);

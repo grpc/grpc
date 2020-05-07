@@ -193,8 +193,8 @@ If you are running CMake v3.13 or newer you can build gRPC's dependencies
 in "module" mode and install them alongside gRPC in a single step.
 [Example](test/distrib/cpp/run_distrib_test_cmake_module_install.sh)
 
-If you are using an older version of gRPC, you will need to select "package"
-mode (rather than "module" mode) for the dependencies.
+If you are building gRPC < 1.27 or if you are using CMake < 3.13 you will need
+to select "package" mode (rather than "module" mode) for the dependencies.
 This means you will need to have external copies of these libraries available
 on your system. This [example](test/distrib/cpp/run_distrib_test_cmake.sh) shows
 how to install dependencies with cmake before proceeding to installing gRPC itself. 

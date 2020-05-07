@@ -63,6 +63,8 @@ class AllTest(unittest.TestCase):
             'LocalConnectionType',
             'local_channel_credentials',
             'local_server_credentials',
+            'alts_channel_credentials',
+            'alts_server_credentials',
             'unary_unary_rpc_method_handler',
             'unary_stream_rpc_method_handler',
             'stream_unary_rpc_method_handler',

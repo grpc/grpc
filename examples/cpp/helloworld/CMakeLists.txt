@@ -54,12 +54,13 @@ if(GRPC_AS_SUBMODULE)
   # After using add_subdirectory, we can now use the grpc targets directly from
   # this build.
   set(_PROTOBUF_LIBPROTOBUF libprotobuf)
+  set(_REFLECTION grpc++_reflection)
   if(CMAKE_CROSSCOMPILING)
     find_program(_PROTOBUF_PROTOC protoc)
   else()
     set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
   endif()
-  set(_GRPC_GRPCPP_UNSECURE grpc++_unsecure)
+  set(_GRPC_GRPCPP grpc++)
   if(CMAKE_CROSSCOMPILING)
     find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
   else()
@@ -84,8 +85,9 @@ elseif(GRPC_FETCHCONTENT)
   # Since FetchContent uses add_subdirectory under the hood, we can use
   # the grpc targets directly from this build.
   set(_PROTOBUF_LIBPROTOBUF libprotobuf)
+  set(_REFLECTION grpc++_reflection)
   set(_PROTOBUF_PROTOC $<TARGET_FILE:protoc>)
-  set(_GRPC_GRPCPP_UNSECURE grpc++_unsecure)
+  set(_GRPC_GRPCPP grpc++)
   if(CMAKE_CROSSCOMPILING)
     find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
   else()
@@ -102,6 +104,7 @@ else()
   message(STATUS "Using protobuf ${protobuf_VERSION}")
 
   set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
+  set(_REFLECTION gRPC::grpc++_reflection)
   if(CMAKE_CROSSCOMPILING)
     find_program(_PROTOBUF_PROTOC protoc)
   else()
@@ -113,7 +116,7 @@ else()
   find_package(gRPC CONFIG REQUIRED)
   message(STATUS "Using gRPC ${gRPC_VERSION}")
 
-  set(_GRPC_GRPCPP_UNSECURE gRPC::grpc++_unsecure)
+  set(_GRPC_GRPCPP gRPC::grpc++)
   if(CMAKE_CROSSCOMPILING)
     find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
   else()
@@ -151,6 +154,7 @@ foreach(_target
     ${hw_proto_srcs}
     ${hw_grpc_srcs})
   target_link_libraries(${_target}
-    ${_GRPC_GRPCPP_UNSECURE}
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
 endforeach()

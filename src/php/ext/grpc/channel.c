@@ -350,7 +350,6 @@ PHP_METHOD(Channel, __construct) {
                            1 TSRMLS_CC);
       return;
     } else {
-      Z_ADDREF(*creds_obj);
       creds = PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel_credentials,
                                           creds_obj);
     }

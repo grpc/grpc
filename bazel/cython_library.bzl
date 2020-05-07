@@ -63,12 +63,15 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
         )
         shared_objects.append(shared_object_name)
 
+    data = shared_objects[:]
+    data += kwargs.pop("data", [])
+
     # Now create a py_library with these shared objects as data.
     native.py_library(
         name = name,
         srcs = py_srcs,
         deps = py_deps,
         srcs_version = "PY2AND3",
-        data = shared_objects,
+        data = data,
         **kwargs
     )

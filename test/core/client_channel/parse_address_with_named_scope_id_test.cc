@@ -61,8 +61,8 @@ static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
 
 struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {
   grpc_uri* uri = grpc_uri_parse(uri_text, 0);
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
+  std::string host;
+  std::string port;
   grpc_core::SplitHostPort(uri->path, &host, &port);
   struct addrinfo hints;
   memset(&hints, 0, sizeof(hints));
@@ -70,11 +70,11 @@ struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_NUMERICHOST;
   struct addrinfo* result;
-  int res = getaddrinfo(host.get(), port.get(), &hints, &result);
+  int res = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
   if (res != 0) {
     gpr_log(GPR_ERROR,
             "getaddrinfo failed to resolve host:%s port:%s. Error: %d.",
-            host.get(), port.get(), res);
+            host.c_str(), port.c_str(), res);
     abort();
   }
   size_t num_addrs_from_getaddrinfo = 0;
