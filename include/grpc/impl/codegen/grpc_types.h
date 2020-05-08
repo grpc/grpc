@@ -391,6 +391,9 @@ typedef struct {
   "grpc.disable_client_authority_filter"
 /** If set to zero, disables use of http proxies. Enabled by default. */
 #define GRPC_ARG_ENABLE_HTTP_PROXY "grpc.enable_http_proxy"
+/** Channel arg to set http proxy per channel. If set, the channel arg
+ *  value will be prefered over the envrionment variable settings. */
+#define GRPC_ARG_HTTP_PROXY "grpc.http_proxy"
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
 #define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"

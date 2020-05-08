@@ -45,17 +45,23 @@ namespace {
  * credentials if present in the 'http_proxy' env var, otherwise leaves it
  * unchanged. It is caller's responsibility to gpr_free user_cred.
  */
-char* GetHttpProxyServer(char** user_cred) {
+char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
   GPR_ASSERT(user_cred != nullptr);
   grpc_uri* uri = nullptr;
   char* proxy_name = nullptr;
   char** authority_strs = nullptr;
   size_t authority_nstrs;
-  /* Prefer using 'grpc_proxy'. Fallback on 'http_proxy' if it is not set.
-   * Also prefer using 'https_proxy' with fallback on 'http_proxy'. The
-   * fallback behavior can be removed if there's a demand for it.
+  /* We check the following places to determine the HTTP proxy to use, stopping
+   * at the first one that is set:
+   * 1. GRPC_ARG_HTTP_PROXY channel arg
+   * 2. grpc_proxy environment variable
+   * 3. https_proxy environment variable
+   * 4. http_proxy environment variable
+   * If none of the above are set, then no HTTP proxy will be used.
    */
-  char* uri_str = gpr_getenv("grpc_proxy");
+  char* uri_str =
+      gpr_strdup(grpc_channel_args_find_string(args, GRPC_ARG_HTTP_PROXY));
+  if (uri_str == nullptr) uri_str = gpr_getenv("grpc_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("https_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("http_proxy");
   if (uri_str == nullptr) return nullptr;
@@ -103,7 +109,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
       return false;
     }
     char* user_cred = nullptr;
-    *name_to_resolve = GetHttpProxyServer(&user_cred);
+    *name_to_resolve = GetHttpProxyServer(args, &user_cred);
     if (*name_to_resolve == nullptr) return false;
     char* no_proxy_str = nullptr;
     grpc_uri* uri = grpc_uri_parse(server_uri, false /* suppress_errors */);
