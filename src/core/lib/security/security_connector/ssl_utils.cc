@@ -222,17 +222,17 @@ int grpc_ssl_cmp_target_name(absl::string_view target_name,
   return overridden_target_name.compare(other_overridden_target_name);
 }
 
-bool isSpiffeID(absl::string_view spiffe_uri) {
-  if (spiffe_uri.size() > 2048) {
+static bool isSpiffeId(absl::string_view uri) {
+  // Return false without logging for a non-spiffe uri scheme.
+  if (!absl::StartsWith(uri, "spiffe://")) {
+    return false;
+  };
+  if (uri.size() > 2048) {
     gpr_log(GPR_INFO, "Invalid SPIFFE ID: ID longer than 2048 bytes.");
     return false;
   }
-  std::vector<absl::string_view> splits = absl::StrSplit(spiffe_uri, '/');
-  if (splits.size() < 4 || splits[0] != "spiffe:" || splits[1] != "") {
-    gpr_log(GPR_INFO, "Invalid SPIFFE ID: invalid format.");
-    return false;
-  }
-  if (splits[3] == "") {
+  std::vector<absl::string_view> splits = absl::StrSplit(uri, '/');
+  if (splits.size() < 4 || splits[3] == "") {
     gpr_log(GPR_INFO, "Invalid SPIFFE ID: workload id is empty.");
     return false;
   }
@@ -291,7 +291,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
           prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
       absl::string_view spiffe_id(prop->value.data, prop->value.length);
-      if (isSpiffeID(spiffe_id)) {
+      if (isSpiffeId(spiffe_id)) {
         spiffe_data = prop->value.data;
         spiffe_length = prop->value.length;
         spiffe_id_count += 1;

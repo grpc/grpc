@@ -375,6 +375,16 @@ static tsi_result add_subject_alt_names_properties_to_peer(
           TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
           reinterpret_cast<const char*>(name), static_cast<size_t>(name_size),
           &peer->properties[(*current_insert_index)++]);
+      if (result != TSI_OK) {
+        OPENSSL_free(name);
+        break;
+      }
+      if (subject_alt_name->type == GEN_URI) {
+        result = tsi_construct_string_peer_property(
+            TSI_X509_URI_PEER_PROPERTY, reinterpret_cast<const char*>(name),
+            static_cast<size_t>(name_size),
+            &peer->properties[(*current_insert_index)++]);
+      }
       OPENSSL_free(name);
     } else if (subject_alt_name->type == GEN_IPADD) {
       char ntop_buf[INET6_ADDRSTRLEN];
@@ -400,23 +410,6 @@ static tsi_result add_subject_alt_names_properties_to_peer(
       result = tsi_construct_string_peer_property_from_cstring(
           TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, name,
           &peer->properties[(*current_insert_index)++]);
-    }
-    if (result != TSI_OK) break;
-    if (subject_alt_name->type == GEN_URI) {
-      unsigned char* name = nullptr;
-      int name_size;
-      name_size = ASN1_STRING_to_UTF8(
-          &name, subject_alt_name->d.uniformResourceIdentifier);
-      if (name_size < 0) {
-        gpr_log(GPR_ERROR, "Could not get utf8 from asn1 string.");
-        result = TSI_INTERNAL_ERROR;
-        break;
-      }
-      result = tsi_construct_string_peer_property(
-          TSI_X509_URI_PEER_PROPERTY, reinterpret_cast<const char*>(name),
-          static_cast<size_t>(name_size),
-          &peer->properties[(*current_insert_index)++]);
-      OPENSSL_free(name);
     }
     if (result != TSI_OK) break;
   }

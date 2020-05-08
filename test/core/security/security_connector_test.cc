@@ -469,7 +469,7 @@ static void test_spiffe_id_peer_to_auth_context(void) {
       grpc_ssl_peer_to_auth_context(&invalid_peer,
                                     GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(invalid_ctx != nullptr);
-  GPR_ASSERT(check_spiffe_id(invalid_ctx.get(), "", false));
+  GPR_ASSERT(check_spiffe_id(invalid_ctx.get(), nullptr, false));
   tsi_peer_destruct(&invalid_peer);
   invalid_ctx.reset(DEBUG_LOCATION, "test");
   // A valid SPIFFE ID with other URI fields should be plumbed.
@@ -504,7 +504,7 @@ static void test_spiffe_id_peer_to_auth_context(void) {
       grpc_ssl_peer_to_auth_context(&multiple_peer,
                                     GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(multiple_ctx != nullptr);
-  GPR_ASSERT(check_spiffe_id(multiple_ctx.get(), "", false));
+  GPR_ASSERT(check_spiffe_id(multiple_ctx.get(), nullptr, false));
   tsi_peer_destruct(&multiple_peer);
   multiple_ctx.reset(DEBUG_LOCATION, "test");
 }
