@@ -853,7 +853,7 @@ class CallOpSet;
 /// the maximum count of ops we'll need in a set. We leverage the
 /// empty base class optimization to slim this class (especially
 /// when there are many unused slots used). To avoid duplicate base classes,
-/// the template parmeter for CallNoOp is varied by argument position.
+/// the template parameter for CallNoOp is varied by argument position.
 template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
 class CallOpSet : public CallOpSetInterface,
                   public Op1,
