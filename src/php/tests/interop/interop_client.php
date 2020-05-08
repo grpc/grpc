@@ -304,6 +304,68 @@ function clientStreaming($stub)
 }
 
 /**
+ * Run the client_compressed_streaming test.
+ *
+ * @param $stub Stub object that has service methods
+ */
+function clientCompressedStreaming($stub)
+{
+    $request_len = 27182;
+    $request2_len = 45904;
+    $response_len = 73086;
+    $falseBoolValue = new Grpc\Testing\BoolValue(['value' => false]);
+    $trueBoolValue = new Grpc\Testing\BoolValue(['value' => true]);
+
+    // 1. Probing for compression-checks support
+
+    $payload = new Grpc\Testing\Payload([
+        'body' => str_repeat("\0", $request_len),
+    ]);
+    $request = new Grpc\Testing\StreamingInputCallRequest([
+        'payload' => $payload,
+        'expect_compressed' => $trueBoolValue, // lie
+    ]);
+
+    $call = $stub->StreamingInputCall();
+    $call->write($request);
+    list($result, $status) = $call->wait();
+    hardAssert(
+        $status->code === GRPC\STATUS_INVALID_ARGUMENT,
+        'Received unexpected StreamingInputCall status code: ' .
+            $status->code
+    );
+
+    // 2. write compressed message
+
+    $call = $stub->StreamingInputCall([
+        'grpc-internal-encoding-request' => ['gzip'],
+    ]);
+    $request->setExpectCompressed($trueBoolValue);
+    $call->write($request);
+
+    // 3. write uncompressed message
+
+    $payload2 = new Grpc\Testing\Payload([
+        'body' => str_repeat("\0", $request2_len),
+    ]);
+    $request->setPayload($payload2);
+    $request->setExpectCompressed($falseBoolValue);
+    $call->write($request, [
+        'flags' => 0x02 // GRPC_WRITE_NO_COMPRESS
+    ]);
+
+    // 4. verify response
+
+    list($result, $status) = $call->wait();
+
+    hardAssertIfStatusOk($status);
+    hardAssert(
+        $result->getAggregatedPayloadSize() === $response_len,
+        'aggregated_payload_size was incorrect'
+    );
+}
+
+/**
  * Run the server_streaming test.
  *
  * @param $stub Stub object that has service methods.
@@ -722,6 +784,9 @@ function interop_main($args, $stub = false)
             break;
         case 'client_compressed_unary':
             clientCompressedUnary($stub);
+            break;
+        case 'client_compressed_streaming':
+            clientCompressedStreaming($stub);
             break;
         default:
             echo "Unsupported test case $test_case\n";
