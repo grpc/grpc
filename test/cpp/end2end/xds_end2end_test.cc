@@ -3089,16 +3089,18 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   // Change Route Configurations: same clusters different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
+  // Change default route to a new cluster to help to identify when new polices
+  // are seen by the client.
+  default_route->mutable_route()->set_cluster(kNewCluster3Name);
   SetRouteConfiguration(0, new_route_config);
   backends_[1]->backend_service1()->ResetCounters();
   backends_[2]->backend_service1()->ResetCounters();
   backends_[3]->backend_service1()->ResetCounters();
-  WaitForAllBackends(0, 1);
-  WaitForAllBackends(1, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(3, 4);
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
@@ -3109,7 +3111,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   const int weight_50_request_count_2 =
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
+  EXPECT_EQ(kNumEchoRpcs, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
   EXPECT_THAT(weight_50_request_count_1,
@@ -3181,7 +3183,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
   auto* weighted_cluster2 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
-  weighted_cluster2->set_name(kNewCluster2Name);
+  weighted_cluster2->set_name(kDefaultResourceName);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
   route1->mutable_route()
       ->mutable_weighted_clusters()
@@ -3198,15 +3200,15 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
       RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
+  int weight_25_request_count =
+      backends_[0]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   int weight_75_request_count =
       backends_[1]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  int weight_25_request_count =
-      backends_[2]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
@@ -3224,31 +3226,33 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
                                              (1 + kErrorTolerance))));
   // Change Route Configurations: new set of clusters with different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
-  weighted_cluster2->set_name(kNewCluster3Name);
+  weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
+  // Change default route to a new cluster to help to identify when new polices
+  // are seen by the client.
+  default_route->mutable_route()->set_cluster(kNewCluster2Name);
   SetRouteConfiguration(0, new_route_config);
+  backends_[0]->backend_service1()->ResetCounters();
   backends_[1]->backend_service1()->ResetCounters();
   backends_[2]->backend_service1()->ResetCounters();
   backends_[3]->backend_service1()->ResetCounters();
-  WaitForAllBackends(0, 1);
-  WaitForAllBackends(1, 2, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  WaitForAllBackends(3, 4, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(2, 3);
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   const int weight_50_request_count_1 =
       backends_[1]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
-  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  const int old_request_count_2 =
+  EXPECT_EQ(kNumEchoRpcs, backends_[2]->backend_service()->request_count());
+  const int weight_50_request_count_3 =
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
-  const int weight_50_request_count_3 =
+  const int old_request_count_2 =
       backends_[3]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
   EXPECT_THAT(weight_50_request_count_1,
@@ -3263,16 +3267,19 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
                                              (1 + kErrorTolerance))));
   // Allow 1% of traffic to temporarily still go to the old cluster
   EXPECT_LT(old_request_count_2, kNumEcho1Rpcs * 1 / 100);
-  // Change Route Configurations: Back to original set of clusters.
+  // Change Route Configurations.
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
   weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
+  // Change default route to a new cluster to help to identify when new polices
+  // are seen by the client.
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, new_route_config);
+  backends_[0]->backend_service1()->ResetCounters();
   backends_[1]->backend_service1()->ResetCounters();
   backends_[2]->backend_service1()->ResetCounters();
   backends_[3]->backend_service1()->ResetCounters();
   WaitForAllBackends(0, 1);
-  WaitForAllBackends(1, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
