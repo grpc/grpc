@@ -10,7 +10,7 @@
     native libraries are used at all times. Mismatching native and managed library
     versions are not supported.
   -->
-  <ItemGroup Condition="'$(SkipGrpcNativeLibsCopying)' == ''">
+  <ItemGroup Condition="'$(SkipGrpcNativeLibsCopying)' != 'true'">
     <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win\native\grpc_csharp_ext.x86.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <Link>grpc_csharp_ext.x86.dll</Link>
