@@ -77,7 +77,7 @@ native_method_signatures = [
     'void grpcsharp_ssl_server_certificate_config_destroy(IntPtr serverCertificateConfig)',
     'ServerCredentialsOptionsSafeHandle grpcsharp_ssl_server_credentials_create_options_using_config(SslClientCertificateRequestType clientCertificateRequest, ServerCertificateConfigSafeHandle serverCertificateConfig)',
     'ServerCredentialsOptionsSafeHandle grpcsharp_ssl_server_credentials_create_options_using_config_fetcher(SslClientCertificateRequestType clientCertificateRequest, IntPtr cbTag, IntPtr userData)',
-    'void grpcsharp_write_config_to_pointer(IntPtr pointerToLocation, ServerCertificateConfigSafeHandle config)',
+    'void grpcsharp_write_ssl_server_certificate_config_to_pointer(IntPtr pointerToLocation, ServerCertificateConfigSafeHandle config)',
     'void grpcsharp_ssl_server_credentials_options_destroy(IntPtr serverCredentialsOptions)',
     'ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create_with_options(ServerCredentialsOptionsSafeHandle serverCredentialsOptions)',
     'void grpcsharp_server_credentials_release(IntPtr credentials)',

@@ -330,7 +330,7 @@ void grpcsharp_ssl_server_credentials_create_options_using_config_fetcher() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
-void grpcsharp_write_config_to_pointer() {
+void grpcsharp_write_ssl_server_certificate_config_to_pointer() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
