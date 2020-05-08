@@ -1287,11 +1287,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   }
 
-  void ResetBackendCounters() {
-    for (auto& backend : backends_) {
-      backend->backend_service()->ResetCounters();
-      backend->backend_service2()->ResetCounters();
-      backend->backend_service2()->ResetCounters();
+  void ResetBackendCounters(size_t start_index = 0, size_t stop_index = 0) {
+    if (stop_index == 0) stop_index = backends_.size();
+    for (size_t i = start_index; i < stop_index; ++i) {
+      backends_[i]->backend_service()->ResetCounters();
+      backends_[i]->backend_service1()->ResetCounters();
+      backends_[i]->backend_service2()->ResetCounters();
     }
   }
 
@@ -2960,9 +2961,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   SetRouteConfiguration(0, new_route_config);
   WaitForAllBackends(0, 1);
   CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(
-      kNumEcho1Rpcs,
-      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
+  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -3057,9 +3056,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   SetRouteConfiguration(0, new_route_config);
   WaitForAllBackends(0, 1);
   CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(
-      kNumEcho1Rpcs,
-      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
+  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -3093,9 +3090,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   // are seen by the client.
   default_route->mutable_route()->set_cluster(kNewCluster3Name);
   SetRouteConfiguration(0, new_route_config);
-  backends_[1]->backend_service1()->ResetCounters();
-  backends_[2]->backend_service1()->ResetCounters();
-  backends_[3]->backend_service1()->ResetCounters();
+  ResetBackendCounters();
   WaitForAllBackends(3, 4);
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
@@ -3194,10 +3189,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, new_route_config);
   WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
-  CheckRpcSendOk(
-      kNumEcho1Rpcs,
-      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
+  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   int weight_25_request_count =
@@ -3228,39 +3221,33 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
-  // Change default route to a new cluster to help to identify when new polices
-  // are seen by the client.
-  default_route->mutable_route()->set_cluster(kNewCluster2Name);
   SetRouteConfiguration(0, new_route_config);
-  backends_[0]->backend_service1()->ResetCounters();
-  backends_[1]->backend_service1()->ResetCounters();
-  backends_[2]->backend_service1()->ResetCounters();
-  backends_[3]->backend_service1()->ResetCounters();
-  WaitForAllBackends(2, 3);
+  ResetBackendCounters();
+  WaitForAllBackends(2, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  const int old_request_count_2 =
+      backends_[0]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   const int weight_50_request_count_1 =
       backends_[1]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
-  EXPECT_EQ(kNumEchoRpcs, backends_[2]->backend_service()->request_count());
-  const int weight_50_request_count_3 =
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  const int weight_50_request_count_2 =
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
-  const int old_request_count_2 =
-      backends_[3]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
   EXPECT_THAT(weight_50_request_count_1,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
                                              (1 - kErrorTolerance)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
                                              (1 + kErrorTolerance))));
-  EXPECT_THAT(weight_50_request_count_3,
+  EXPECT_THAT(weight_50_request_count_2,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
                                              (1 - kErrorTolerance)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
@@ -3269,17 +3256,11 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   EXPECT_LT(old_request_count_2, kNumEcho1Rpcs * 1 / 100);
   // Change Route Configurations.
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
-  weighted_cluster2->set_name(kNewCluster2Name);
+  weighted_cluster2->set_name(kNewCluster3Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
-  // Change default route to a new cluster to help to identify when new polices
-  // are seen by the client.
-  default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, new_route_config);
-  backends_[0]->backend_service1()->ResetCounters();
-  backends_[1]->backend_service1()->ResetCounters();
-  backends_[2]->backend_service1()->ResetCounters();
-  backends_[3]->backend_service1()->ResetCounters();
-  WaitForAllBackends(0, 1);
+  ResetBackendCounters();
+  WaitForAllBackends(3, 4, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
@@ -3290,11 +3271,11 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weight_75_request_count = backends_[1]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  weight_25_request_count = backends_[2]->backend_service1()->request_count();
+  const int old_request_count_3 =
+      backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
-  const int old_request_count_3 =
-      backends_[3]->backend_service1()->request_count();
+  weight_25_request_count = backends_[3]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
   EXPECT_THAT(weight_75_request_count,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
