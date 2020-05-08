@@ -450,18 +450,17 @@ grpc_core::UniquePtr<char> GrpcLb::Serverlist::AsText() const {
   gpr_strvec_init(&entries);
   for (size_t i = 0; i < serverlist_.size(); ++i) {
     const GrpcLbServer& server = serverlist_[i];
-    char* ipport;
+    std::string ipport;
     if (server.drop) {
-      ipport = gpr_strdup("(drop)");
+      ipport = "(drop)";
     } else {
       grpc_resolved_address addr;
       ParseServer(server, &addr);
-      grpc_sockaddr_to_string(&ipport, &addr, false);
+      ipport = grpc_sockaddr_to_string(&addr, false);
     }
     char* entry;
-    gpr_asprintf(&entry, "  %" PRIuPTR ": %s token=%s\n", i, ipport,
+    gpr_asprintf(&entry, "  %" PRIuPTR ": %s token=%s\n", i, ipport.c_str(),
                  server.load_balance_token);
-    gpr_free(ipport);
     gpr_strvec_add(&entries, entry);
   }
   grpc_core::UniquePtr<char> result(gpr_strvec_flatten(&entries, nullptr));

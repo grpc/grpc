@@ -66,11 +66,11 @@ static void run_test(const test_fixture* fixture) {
 
   grpc_init();
 
-  grpc_core::UniquePtr<char> addr;
-  grpc_core::JoinHostPort(&addr, "localhost", grpc_pick_unused_port_or_die());
+  std::string addr =
+      grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  fixture->add_server_port(server, addr.get());
+  fixture->add_server_port(server, addr.c_str());
   grpc_completion_queue* server_cq =
       grpc_completion_queue_create_for_next(nullptr);
   grpc_server_register_completion_queue(server, server_cq, nullptr);
@@ -83,7 +83,7 @@ static void run_test(const test_fixture* fixture) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_channel* channels[NUM_CONNECTIONS];
   for (size_t i = 0; i < NUM_CONNECTIONS; i++) {
-    channels[i] = fixture->create_channel(addr.get());
+    channels[i] = fixture->create_channel(addr.c_str());
 
     gpr_timespec connect_deadline = grpc_timeout_seconds_to_deadline(30);
     grpc_connectivity_state state;
