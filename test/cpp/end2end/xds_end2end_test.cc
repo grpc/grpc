@@ -2604,7 +2604,7 @@ TEST_P(LdsRdsTest, RouteHasNoRouteAction) {
 }
 
 // cluster_specifier other than cluster in the LDS response.
-TEST_P(LdsRdsTest, RouteActionHasNoCluster) {
+TEST_P(LdsRdsTest, RouteActionUnsupportedClusterSpecifier) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   route_config.mutable_virtual_hosts(0)
@@ -2901,7 +2901,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
   EXPECT_EQ(kNumEcho2Rpcs, backends_[3]->backend_service2()->request_count());
 }
 
-TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
+TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -2954,20 +2954,6 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
       ->mutable_weighted_clusters()
       ->mutable_total_weight()
       ->set_value(kWeight75 + kWeight25);
-  auto route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  route2->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service/");
-  auto* weighted_cluster3 =
-      route2->mutable_route()->mutable_weighted_clusters()->add_clusters();
-  weighted_cluster3->set_name(kNewCluster1Name);
-  weighted_cluster3->mutable_weight()->set_value(kWeight75);
-  auto* weighted_cluster4 =
-      route2->mutable_route()->mutable_weighted_clusters()->add_clusters();
-  weighted_cluster4->set_name(kNewCluster2Name);
-  weighted_cluster4->mutable_weight()->set_value(kWeight25);
-  route2->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75 + kWeight25);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
@@ -3002,7 +2988,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTarget) {
                                              (1 + kErrorTolerance))));
 }
 
-TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetWeightChange) {
+TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,
@@ -3138,7 +3124,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetWeightChange) {
                                              (1 + kErrorTolerance))));
 }
 
-TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingWeightedTargetClusterChangeAndBack) {
+TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   ResetStub(/*failover_timeout=*/0,
             /*expected_targets=*/"",
             /*xds_resource_does_not_exist_timeout*/ 0,

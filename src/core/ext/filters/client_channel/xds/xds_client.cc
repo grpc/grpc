@@ -944,8 +944,11 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     RefCountedPtr<ServiceConfig> service_config;
     for (int i = 0; i < xds_client()->lds_result_->rds_update->routes.size();
          ++i) {
-      gpr_log(GPR_INFO, "donna check address %d. %p", i,
-              &(xds_client()->lds_result_->rds_update->routes[i]));
+      gpr_log(GPR_INFO, "donna check address %d. %p %p", i,
+              &(xds_client()->lds_result_->rds_update->routes[i]),
+              &(xds_client()
+                    ->lds_result_->rds_update->routes[i]
+                    .weighted_clusters));
     }
     grpc_error* error = xds_client()->CreateServiceConfig(
         xds_client()->lds_result_->rds_update.value(), &service_config);
@@ -2074,56 +2077,24 @@ std::string CreateServiceConfigRoute(const std::string& action_name,
       service, method, action_name);
 }
 
-// Wraps RdsRoute (which contains weighted_clusters)
-// with 2 constructed keys which can be used to refer to
-// entries in the 2-level map storing weighted target policy information.
-// Note regular cluster routes are also stored in here (without keys since keys
-// are not necessary), they are here to maintain the entire
-// route order in the RdsUpdate.
+// An extension object to each RdsRoute which contains weighted_clusters
+// with useful information:
+// 1. sorted weighted cluster names in a string
+// 2. sorted weighted cluster names and weights in a string
+// 3. name to be used as action name
 struct WeightedClusterKeys {
-  const XdsApi::RdsUpdate::RdsRoute* route;
   std::string cluster_names_key;
   std::string cluster_weights_key;
+  std::string action_name;
 };
 
-// In the first pass of the RdsUpdate, 2 data structures will be created for
-// all the RdsRoute that contain weighted_clusters:
-// 1. 2-level map storing the new set of weighted target policy information.
-//    Top level map is keyed by cluster names without weight like a_b_c;
-//    bottom level map is keyed by cluster names + weights like a10_b50_c40.
-//    This data structure allows easy access to each weighted_clusters action.
-// 2. a vector of wrappers which contains the weighted_clusters (inside
-//    RdsRoute), and the 2 keys which can refer to entries in the
-//    2-level map created.  Since we need the 2 sets of keys for easy access we
-//    build them in the 1st pass of the RdsUpdate.  Since we need multiple
-//    passes on RdsUpdate and must iterate the RdsRoute in the original order as
-//    they appear in RdsUpdate, we can not use the 2-level map for the
-//    subsequent iterations; therefore we build a vector of wrappers.
-std::vector<WeightedClusterKeys> CreateWeightedClustersMapAndKeysFromRdsUpdate(
-    const XdsApi::RdsUpdate& update,
-    XdsClient::WeightedClusterChildNameMap* actions) {
-  std::vector<WeightedClusterKeys> weighted_cluster_keys;
-  for (int i = 0; i < update.routes.size(); ++i) {
-    WeightedClusterKeys keys;
-    keys.route = &update.routes[i];
-    gpr_log(GPR_INFO, "donna received ptr %d. %p", i, keys.route);
-    if (!keys.route->weighted_clusters.empty()) {
-      std::set<std::string> cluster_names;
-      std::set<std::string> cluster_weights;
-      for (const auto& cluster : keys.route->weighted_clusters) {
-        // put names in std::set to be sorted.
-        cluster_names.emplace(cluster.name);
-        cluster_weights.emplace(
-            absl::StrFormat("%s_%d", cluster.name, cluster.weight));
-      }
-      keys.cluster_names_key = absl::StrJoin(cluster_names, "_");
-      keys.cluster_weights_key = absl::StrJoin(cluster_weights, "_");
-      (*actions)[keys.cluster_names_key][keys.cluster_weights_key] = 0;
-    }
-    weighted_cluster_keys.emplace_back(std::move(keys));
-  }
-  return weighted_cluster_keys;
-}
+// A map storing additional information for each RdsRoute which contains
+// weighted_clusters, keyed by the pointer to ClusterWeight in RdsRoute.
+// This map allows easy retrieval of the additional information when iterating
+// RdsRoutes in RdsUpdate.
+using WeightedClusterKeysMap =
+    std::map<const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>*,
+             WeightedClusterKeys>;
 
 // Look through the old set of weighted target actions, and assume all old
 // action names can be reused. If the exact same weighted target policy (same
@@ -2154,6 +2125,150 @@ XdsClient::WeightedClusterChildNameMap FindActionsToReuse(
     }
   }
   return actions_to_reuse;
+}
+
+// Returning A map storing additional information for each RdsRoute which
+// contains weighted_clusters:
+// 1. sorted weighted cluster names in a string: cluster_names_key
+// 2. sorted weighted cluster names and weights in a string: cluster_weights_key
+// 3. name to be used as action name
+// keyed by the pointer to ClusterWeight in RdsRoute.
+// This map allows easy retrieval of the additional information when iterating
+// RdsRoutes in RdsUpdate.
+// This map is generated via the following steps:
+// 1. First pass create cluster_names_key and cluster_weights_key for all
+// entries and store them in 2 data structures:
+//   1. WeightedClusterKeysMap (the return object)
+//   2. XdsClient::WeightedClusterChildNameMap:
+//     2-level map storing the new set of weighted target policy information.
+//     Top level map is keyed by cluster names without weight like a_b_c;
+//     bottom level map is keyed by cluster names + weights like a10_b50_c40.
+//     This data structure allows easy access to each weighted_clusters action.
+// 2. Find reusable action names from action list generated from the last update
+// based on the following rules:
+//   1. if clusters and weights for a new action are the same as an existing
+//      action, reuse the name.
+//   2. If clusters for a new action are the same but weights differ, reuse an
+//      unused name from existing actions if there is one; otherwise, new name.
+//   3. If clusters differ, use a new name.
+//   4. Store all newly names used in for the next update (notice old_actions is
+//   modified by this method).
+WeightedClusterKeysMap CreateNewWeightedClusterKeys(
+    const XdsApi::RdsUpdate& update,
+    XdsClient::WeightedClusterChildNameMap* old_actions) {
+  WeightedClusterKeysMap weighted_cluster_keys;
+  XdsClient::WeightedClusterChildNameMap new_actions;
+  for (const auto& route : update.routes) {
+    if (!route.weighted_clusters.empty()) {
+      WeightedClusterKeys keys;
+      std::set<std::string> cluster_names;
+      std::set<std::string> cluster_weights;
+      for (const auto& cluster : route.weighted_clusters) {
+        // put names in std::set to be sorted.
+        cluster_names.emplace(cluster.name);
+        cluster_weights.emplace(
+            absl::StrFormat("%s_%d", cluster.name, cluster.weight));
+      }
+      keys.cluster_names_key = absl::StrJoin(cluster_names, "_");
+      keys.cluster_weights_key = absl::StrJoin(cluster_weights, "_");
+      new_actions[keys.cluster_names_key][keys.cluster_weights_key] = 0;
+      weighted_cluster_keys[&route.weighted_clusters] = std::move(keys);
+    }
+  }
+  gpr_log(GPR_INFO, "donna new new start =======================");
+  for (const auto& p : weighted_cluster_keys) {
+    gpr_log(GPR_INFO, "donna new %p, %s, and %s", p.first,
+            p.second.cluster_names_key.c_str(),
+            p.second.cluster_weights_key.c_str());
+  }
+  gpr_log(GPR_INFO, "donna new new actions: ");
+  for (const auto& one : new_actions) {
+    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
+    for (const auto& two : one.second) {
+      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
+              two.second);
+    }
+  }
+  gpr_log(GPR_INFO, "donna old actions:");
+  for (const auto& one : *old_actions) {
+    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
+    for (const auto& two : one.second) {
+      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
+              two.second);
+    }
+  }
+  auto actions_to_reuse = FindActionsToReuse(*old_actions, new_actions);
+  gpr_log(GPR_INFO, "donna after find action to reuse:");
+  for (const auto& one : actions_to_reuse) {
+    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
+    for (const auto& two : one.second) {
+      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
+              two.second);
+    }
+  }
+  for (auto& p : weighted_cluster_keys) {
+    auto old_action = old_actions->find(p.second.cluster_names_key);
+    size_t index = 0;
+    if (old_action != old_actions->end() &&
+        old_action->second.find(p.second.cluster_weights_key) !=
+            old_action->second.end()) {
+      // This action is exact the same as an action from previous actions,
+      // we must retrieve the same action name to be used.
+      index = (*old_actions)[p.second.cluster_names_key]
+                            [p.second.cluster_weights_key];
+    } else {
+      // This action is not exactly the same as an action from previous
+      // action, let us see if we can reuse a name or get a new name.
+      auto cluster_names_key =
+          actions_to_reuse.find(p.second.cluster_names_key);
+      if (cluster_names_key != actions_to_reuse.end()) {
+        // There is something to reuse: this policy uses the same set of
+        // clusters as a previous action and that action name is not already
+        // taken.
+        auto reuse_cluster_weights_key = cluster_names_key->second.begin();
+        index = reuse_cluster_weights_key->second;
+        // Remove entry from actions_to_reuse.
+        cluster_names_key->second.erase(reuse_cluster_weights_key);
+        if (cluster_names_key->second.empty()) {
+          actions_to_reuse.erase(cluster_names_key);
+        }
+      } else {
+        // There is nothing to reuse as all names for  the same set of
+        // cluters are already removed.
+        auto new_action = new_actions.find(p.second.cluster_names_key);
+        if (new_action != new_actions.end()) {
+          index = new_actions[p.second.cluster_names_key]["nextindex"];
+          ++new_actions[p.second.cluster_names_key]["nextindex"];
+        } else {
+          index = 0;
+        }
+      }
+    }
+    p.second.action_name =
+        absl::StrFormat("%s_%d", p.second.cluster_names_key, index);
+    new_actions[p.second.cluster_names_key][p.second.cluster_weights_key] =
+        index;
+    new_actions[p.second.cluster_names_key]["nextindex"] = std::max(
+        new_actions[p.second.cluster_names_key]["nextindex"], index + 1);
+  }
+  gpr_log(GPR_INFO, "donna new new actions with names first");
+  for (const auto& p : weighted_cluster_keys) {
+    gpr_log(GPR_INFO, "donna new %p, %s, and %s and %s", p.first,
+            p.second.action_name.c_str(), p.second.cluster_names_key.c_str(),
+            p.second.cluster_weights_key.c_str());
+  }
+  gpr_log(GPR_INFO, "donna new new actions: ");
+  for (const auto& one : new_actions) {
+    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
+    for (const auto& two : one.second) {
+      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
+              two.second);
+    }
+  }
+  gpr_log(GPR_INFO, "donna new new done=================");
+  // Update old_actions to get ready for the next update.
+  *old_actions = new_actions;
+  return weighted_cluster_keys;
 }
 
 // Create the service config for one weighted cluster.
@@ -2192,73 +2307,12 @@ std::string CreateServiceConfigActionWeightedCluster(
 
 }  // namespace
 
-// 2-level map cache for final actions included in the current service config;
-// this cache is used when a new update comes and we are about to build a new
-// service config.  We will try to reuse the same action names as much as
-// possible when building the new service config based on the following rules:
-// 1. if clusters and weights for a new action are the same as an existing
-// action, reuse the name.
-// 2. If clusters for a new action are the same but weights differ, reuse an
-// unused name from existing actions if there is one; otherwise, new name.
-// 3. If clusters differ, use a new name.
-// 4. Store all names used in weighted_cluster_child_name_map_ for the next
-// update.
-void XdsClient::UpdateFinalActions(
-    const WeightedClusterChildNameMap& actions_to_remove) {
-  for (const auto& p : actions_to_remove) {
-    const std::string& cluster_names_key = p.first;
-    const auto& cluster_weights_map = p.second;
-    auto cluster_names =
-        weighted_cluster_child_name_map_.find(cluster_names_key);
-    GPR_ASSERT(cluster_names != weighted_cluster_child_name_map_.end());
-    for (const auto& q : cluster_weights_map) {
-      const std::string& cluster_weights_key = q.first;
-      auto& update_cluster_weights_map = cluster_names->second;
-      if (cluster_weights_key == "nextindex") continue;
-      update_cluster_weights_map.erase(cluster_weights_key);
-      if (update_cluster_weights_map.empty()) {
-        weighted_cluster_child_name_map_.erase(cluster_names_key);
-      }
-    }
-  }
-}
-
 grpc_error* XdsClient::CreateServiceConfig(
     const XdsApi::RdsUpdate& rds_update,
     RefCountedPtr<ServiceConfig>* service_config) {
-  WeightedClusterChildNameMap actions;
-  std::vector<WeightedClusterKeys> weighted_clusters_with_keys =
-      CreateWeightedClustersMapAndKeysFromRdsUpdate(rds_update, &actions);
-  auto actions_to_reuse =
-      FindActionsToReuse(weighted_cluster_child_name_map_, actions);
-  gpr_log(GPR_INFO, "donna old actions: ");
-  for (const auto& one : weighted_cluster_child_name_map_) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
-    }
-  }
-  gpr_log(GPR_INFO, "donna new actions: ");
-  for (const auto& one : actions) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
-    }
-  }
-  for (const auto& key : weighted_clusters_with_keys) {
-    gpr_log(GPR_INFO, "donna keys %s %s", key.cluster_names_key.c_str(),
-            key.cluster_weights_key.c_str());
-  }
-  gpr_log(GPR_INFO, "donna after find action to reuse:");
-  for (const auto& one : actions_to_reuse) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
-    }
-  }
+  WeightedClusterKeysMap new_weighted_cluster_keys =
+      CreateNewWeightedClusterKeys(rds_update,
+                                   &weighted_cluster_child_name_map_);
   std::vector<std::string> config_parts;
   config_parts.push_back(
       "{\n"
@@ -2266,105 +2320,32 @@ grpc_error* XdsClient::CreateServiceConfig(
       "    { \"xds_routing_experimental\":{\n"
       "      \"actions\":{\n");
   std::vector<std::string> actions_vector;
-  std::vector<std::string> weighted_targets;
-  // actions already added identified using:
-  // 1. cluster name for regular cluster or
-  // 2. cluster + weight combined name string for weighted cluster (not actual
-  // name in service config)
+  std::vector<std::string> route_table;
   std::set<std::string> actions_set;
-  for (const auto& route : weighted_clusters_with_keys) {
-    if (route.route->weighted_clusters.empty()) {
-      // action type cluster
-      if (actions_set.find(route.route->cluster_name) == actions_set.end()) {
-        actions_vector.push_back(CreateServiceConfigActionCluster(
-            route.route->cluster_name.c_str()));
-        actions_set.emplace(route.route->cluster_name);
-      }
-      weighted_targets.push_back(CreateServiceConfigRoute(
-          absl::StrFormat("cds:%s", route.route->cluster_name.c_str()),
-          route.route->service.c_str(), route.route->method.c_str()));
-    } else {
-      // action type weighted cluster
-      std::string weighted_clusters_name;
-      if (actions_set.find(route.cluster_weights_key) != actions_set.end()) {
-        // The same action has already been added in the action list,
-        // just need to obtain the name for the route list.
-        weighted_clusters_name = absl::StrFormat(
-            "%s_%d", route.cluster_names_key,
-            weighted_cluster_child_name_map_[route.cluster_names_key]
-                                            [route.cluster_weights_key]);
-      } else {
-        // This action needs to be added
-        auto old_result =
-            weighted_cluster_child_name_map_.find(route.cluster_names_key);
-        if (old_result != weighted_cluster_child_name_map_.end() &&
-            old_result->second.find(route.cluster_weights_key) !=
-                old_result->second.end()) {
-          // This action is exact the same as an action from previous actions,
-          // we must retrieve the same action name to be used.
-          weighted_clusters_name = absl::StrFormat(
-              "%s_%d", route.cluster_names_key,
-              weighted_cluster_child_name_map_[route.cluster_names_key]
-                                              [route.cluster_weights_key]);
-        } else {
-          // This action is not exactly the same as an action from previous
-          // action, let us see if we can reuse a name or get a new name.
-          auto top_element = actions_to_reuse.find(route.cluster_names_key);
-          if (top_element != actions_to_reuse.end()) {
-            // There is something to reuse: this policy uses the same set of
-            // clusters as a previous action and that action name is not already
-            // taken.
-            auto reuse_element = top_element->second.begin();
-            weighted_clusters_name = absl::StrFormat(
-                "%s_%d", route.cluster_names_key, reuse_element->second);
-            // Update the bottom level key with cluster and weights from the new
-            // policy: add new key and delete old key).
-            weighted_cluster_child_name_map_[route.cluster_names_key]
-                                            [route.cluster_weights_key] =
-                                                reuse_element->second;
-            weighted_cluster_child_name_map_[route.cluster_names_key].erase(
-                reuse_element->first);
-            // Remove entry from actions_to_reuse.
-            top_element->second.erase(reuse_element);
-            if (top_element->second.empty()) {
-              actions_to_reuse.erase(route.cluster_names_key);
-            }
-          } else {
-            // There is nothing to reuse as all names for  the same set of
-            // cluters are already removed.
-            size_t next_index = 0;
-            if (old_result != weighted_cluster_child_name_map_.end()) {
-              auto next_index_element = old_result->second.find("nextindex");
-              next_index = next_index_element->second;
-              ++next_index_element->second;
-            } else {
-              weighted_cluster_child_name_map_[route.cluster_names_key]
-                                              ["nextindex"] = 1;
-            }
-            weighted_cluster_child_name_map_[route.cluster_names_key]
-                                            [route.cluster_weights_key] =
-                                                next_index;
-            weighted_clusters_name =
-                absl::StrFormat("%s_%d", route.cluster_names_key, next_index);
-          }
-        }
-        actions_set.emplace(route.cluster_weights_key);
-        actions_vector.push_back(CreateServiceConfigActionWeightedCluster(
-            weighted_clusters_name, route.route->weighted_clusters));
-      }
-      weighted_targets.push_back(CreateServiceConfigRoute(
-          absl::StrFormat("weighted:%s", weighted_clusters_name),
-          route.route->service.c_str(), route.route->method.c_str()));
+  for (const auto& route : rds_update.routes) {
+    const std::string action_name =
+        route.weighted_clusters.empty()
+            ? route.cluster_name
+            : new_weighted_cluster_keys[&route.weighted_clusters].action_name;
+    if (actions_set.find(action_name) == actions_set.end()) {
+      actions_set.emplace(action_name);
+      actions_vector.push_back(
+          route.weighted_clusters.empty()
+              ? CreateServiceConfigActionCluster(action_name)
+              : CreateServiceConfigActionWeightedCluster(
+                    action_name, route.weighted_clusters));
     }
+    route_table.push_back(CreateServiceConfigRoute(
+        absl::StrFormat("%s:%s",
+                        route.weighted_clusters.empty() ? "cds" : "weighted",
+                        action_name),
+        route.service, route.method));
   }
-  // remove remaining actions in actions_to_reuse.
-  UpdateFinalActions(actions_to_reuse);
-  // Construct action list and route list in order.
   config_parts.push_back(absl::StrJoin(actions_vector, ",\n"));
   config_parts.push_back(
       "    },\n"
       "      \"routes\":[\n");
-  config_parts.push_back(absl::StrJoin(weighted_targets, ",\n"));
+  config_parts.push_back(absl::StrJoin(route_table, ",\n"));
   config_parts.push_back(
       "    ]\n"
       "    } }\n"
@@ -2373,22 +2354,6 @@ grpc_error* XdsClient::CreateServiceConfig(
   std::string json = absl::StrJoin(config_parts, "");
   grpc_error* error = GRPC_ERROR_NONE;
   *service_config = ServiceConfig::Create(json.c_str(), &error);
-  gpr_log(GPR_INFO, "donna before final action to reuse:");
-  for (const auto& one : actions_to_reuse) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
-    }
-  }
-  gpr_log(GPR_INFO, "donna final actions: ");
-  for (const auto& one : weighted_cluster_child_name_map_) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
-    }
-  }
   gpr_log(GPR_INFO, "donna service config is %s", json.c_str());
   return error;
 }
