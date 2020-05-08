@@ -314,6 +314,34 @@ void grpcsharp_ssl_server_credentials_create() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
+void grpcsharp_ssl_server_certificate_config_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_ssl_server_certificate_config_destroy() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_ssl_server_credentials_create_options_using_config() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_ssl_server_credentials_create_options_using_config_fetcher() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_write_config_to_pointer() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_ssl_server_credentials_options_destroy() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_ssl_server_credentials_create_with_options() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
 void grpcsharp_server_credentials_release() {
   fprintf(stderr, "Should never reach here");
   abort();
