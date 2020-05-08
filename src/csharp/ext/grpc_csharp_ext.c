@@ -1120,11 +1120,6 @@ grpcsharp_ssl_server_credentials_create_options_using_config(
       certificate_config);
 }
 
-GPR_EXPORT void GPR_CALLTYPE grpcsharp_write_config_to_pointer(
-    void** pointer_to_location, grpc_ssl_server_certificate_config* config) {
-  *pointer_to_location = config;
-}
-
 grpc_ssl_server_certificate_config_callback saved_cb = NULL;
 
 // Definition of grpcsharp_ssl_server_certificate_config_callback_handler
@@ -1145,6 +1140,12 @@ grpcsharp_ssl_server_credentials_create_options_using_config_fetcher(
       client_certificate_request,
       grpcsharp_ssl_server_certificate_config_callback_handler,
       user_data);
+}
+
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_write_ssl_server_certificate_config_to_pointer(
+    void** pointer_to_location, grpc_ssl_server_certificate_config* config) {
+  *pointer_to_location = config;
 }
 
 GPR_EXPORT void GPR_CALLTYPE

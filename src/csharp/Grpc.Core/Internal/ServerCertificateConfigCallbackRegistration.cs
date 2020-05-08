@@ -53,7 +53,7 @@ namespace Grpc.Core.Internal
 
                 // Write the pointer to the certificate to the location where arg1 is pointing to:
                 ServerCertificateConfigSafeHandle nativeServerCertificateConfig = serverCertificateConfig.ToNative();
-                Native.grpcsharp_write_config_to_pointer(arg1, nativeServerCertificateConfig);
+                Native.grpcsharp_write_ssl_server_certificate_config_to_pointer(arg1, nativeServerCertificateConfig);
 
                 // Perhaps the pointer arithmetic should be done in Native should be done in CLR:
                     //GCHandle handle = GCHandle.Alloc(nativeServerCertificateConfig);
