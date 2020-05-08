@@ -942,14 +942,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     // If the RouteConfiguration was found inlined in LDS response, notify
     // the watcher immediately.
     RefCountedPtr<ServiceConfig> service_config;
-    for (int i = 0; i < xds_client()->lds_result_->rds_update->routes.size();
-         ++i) {
-      gpr_log(GPR_INFO, "donna check address %d. %p %p", i,
-              &(xds_client()->lds_result_->rds_update->routes[i]),
-              &(xds_client()
-                    ->lds_result_->rds_update->routes[i]
-                    .weighted_clusters));
-    }
     grpc_error* error = xds_client()->CreateServiceConfig(
         xds_client()->lds_result_->rds_update.value(), &service_config);
     if (error == GRPC_ERROR_NONE) {
@@ -2107,17 +2099,18 @@ XdsClient::WeightedClusterChildNameMap FindActionsToReuse(
   XdsClient::WeightedClusterChildNameMap actions_to_reuse = old_actions;
   for (const auto& p : old_actions) {
     const std::string& cluster_names_key = p.first;
-    const auto& old_cluster_weights_map = p.second;
+    const auto& old_cluster_weights_map = p.second.cluster_weights_map;
     auto cluster_names = actions.find(cluster_names_key);
     if (cluster_names != actions.end()) {
       for (const auto& q : old_cluster_weights_map) {
         const std::string& cluster_weights_key = q.first;
-        auto cluster_weights_map = cluster_names->second;
+        auto cluster_weights_map = cluster_names->second.cluster_weights_map;
         auto cluster_weights = cluster_weights_map.find(cluster_weights_key);
         if (cluster_weights != cluster_weights_map.end()) {
           // same policy found, this name is taken.
-          actions_to_reuse[cluster_names_key].erase(cluster_weights_key);
-          if (actions_to_reuse[cluster_names_key].empty()) {
+          actions_to_reuse[cluster_names_key].cluster_weights_map.erase(
+              cluster_weights_key);
+          if (actions_to_reuse[cluster_names_key].cluster_weights_map.empty()) {
             actions_to_reuse.erase(cluster_names_key);
           }
         }
@@ -2171,51 +2164,23 @@ WeightedClusterKeysMap CreateNewWeightedClusterKeys(
       }
       keys.cluster_names_key = absl::StrJoin(cluster_names, "_");
       keys.cluster_weights_key = absl::StrJoin(cluster_weights, "_");
-      new_actions[keys.cluster_names_key][keys.cluster_weights_key] = 0;
+      new_actions[keys.cluster_names_key]
+          .cluster_weights_map[keys.cluster_weights_key] = 0;
       weighted_cluster_keys[&route.weighted_clusters] = std::move(keys);
     }
   }
-  gpr_log(GPR_INFO, "donna new new start =======================");
-  for (const auto& p : weighted_cluster_keys) {
-    gpr_log(GPR_INFO, "donna new %p, %s, and %s", p.first,
-            p.second.cluster_names_key.c_str(),
-            p.second.cluster_weights_key.c_str());
-  }
-  gpr_log(GPR_INFO, "donna new new actions: ");
-  for (const auto& one : new_actions) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
-    }
-  }
-  gpr_log(GPR_INFO, "donna old actions:");
-  for (const auto& one : *old_actions) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
-    }
-  }
   auto actions_to_reuse = FindActionsToReuse(*old_actions, new_actions);
-  gpr_log(GPR_INFO, "donna after find action to reuse:");
-  for (const auto& one : actions_to_reuse) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
-    }
-  }
   for (auto& p : weighted_cluster_keys) {
     auto old_action = old_actions->find(p.second.cluster_names_key);
     size_t index = 0;
     if (old_action != old_actions->end() &&
-        old_action->second.find(p.second.cluster_weights_key) !=
-            old_action->second.end()) {
+        old_action->second.cluster_weights_map.find(
+            p.second.cluster_weights_key) !=
+            old_action->second.cluster_weights_map.end()) {
       // This action is exact the same as an action from previous actions,
       // we must retrieve the same action name to be used.
       index = (*old_actions)[p.second.cluster_names_key]
-                            [p.second.cluster_weights_key];
+                  .cluster_weights_map[p.second.cluster_weights_key];
     } else {
       // This action is not exactly the same as an action from previous
       // action, let us see if we can reuse a name or get a new name.
@@ -2225,11 +2190,13 @@ WeightedClusterKeysMap CreateNewWeightedClusterKeys(
         // There is something to reuse: this policy uses the same set of
         // clusters as a previous action and that action name is not already
         // taken.
-        auto reuse_cluster_weights_key = cluster_names_key->second.begin();
+        auto reuse_cluster_weights_key =
+            cluster_names_key->second.cluster_weights_map.begin();
         index = reuse_cluster_weights_key->second;
         // Remove entry from actions_to_reuse.
-        cluster_names_key->second.erase(reuse_cluster_weights_key);
-        if (cluster_names_key->second.empty()) {
+        cluster_names_key->second.cluster_weights_map.erase(
+            reuse_cluster_weights_key);
+        if (cluster_names_key->second.cluster_weights_map.empty()) {
           actions_to_reuse.erase(cluster_names_key);
         }
       } else {
@@ -2237,8 +2204,8 @@ WeightedClusterKeysMap CreateNewWeightedClusterKeys(
         // cluters are already removed.
         auto new_action = new_actions.find(p.second.cluster_names_key);
         if (new_action != new_actions.end()) {
-          index = new_actions[p.second.cluster_names_key]["nextindex"];
-          ++new_actions[p.second.cluster_names_key]["nextindex"];
+          index = new_actions[p.second.cluster_names_key].next_index;
+          ++new_actions[p.second.cluster_names_key].next_index;
         } else {
           index = 0;
         }
@@ -2246,26 +2213,12 @@ WeightedClusterKeysMap CreateNewWeightedClusterKeys(
     }
     p.second.action_name =
         absl::StrFormat("%s_%d", p.second.cluster_names_key, index);
-    new_actions[p.second.cluster_names_key][p.second.cluster_weights_key] =
-        index;
-    new_actions[p.second.cluster_names_key]["nextindex"] = std::max(
-        new_actions[p.second.cluster_names_key]["nextindex"], index + 1);
-  }
-  gpr_log(GPR_INFO, "donna new new actions with names first");
-  for (const auto& p : weighted_cluster_keys) {
-    gpr_log(GPR_INFO, "donna new %p, %s, and %s and %s", p.first,
-            p.second.action_name.c_str(), p.second.cluster_names_key.c_str(),
-            p.second.cluster_weights_key.c_str());
-  }
-  gpr_log(GPR_INFO, "donna new new actions: ");
-  for (const auto& one : new_actions) {
-    gpr_log(GPR_INFO, "donna level 1 %s", one.first.c_str());
-    for (const auto& two : one.second) {
-      gpr_log(GPR_INFO, "    donna leve 2 %s and %lu", two.first.c_str(),
-              two.second);
+    new_actions[p.second.cluster_names_key]
+        .cluster_weights_map[p.second.cluster_weights_key] = index;
+    if (new_actions[p.second.cluster_names_key].next_index <= index) {
+      new_actions[p.second.cluster_names_key].next_index = index + 1;
     }
   }
-  gpr_log(GPR_INFO, "donna new new done=================");
   // Update old_actions to get ready for the next update.
   *old_actions = new_actions;
   return weighted_cluster_keys;
@@ -2283,6 +2236,7 @@ std::string CreateServiceConfigActionWeightedCluster(
                       "            \"targets\":{\n",
                       name));
   std::vector<std::string> weighted_targets;
+  weighted_targets.reserve(clusters.size());
   for (const auto& cluster_weight : clusters) {
     weighted_targets.push_back(
         absl::StrFormat("              \"%s\":{\n"
@@ -2354,7 +2308,6 @@ grpc_error* XdsClient::CreateServiceConfig(
   std::string json = absl::StrJoin(config_parts, "");
   grpc_error* error = GRPC_ERROR_NONE;
   *service_config = ServiceConfig::Create(json.c_str(), &error);
-  gpr_log(GPR_INFO, "donna service config is %s", json.c_str());
   return error;
 }
 

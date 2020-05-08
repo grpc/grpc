@@ -46,10 +46,14 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // level map is keyed by cluster names + weights like a10_b50_c40.  Bottom
   // level map may have a special entry with key "nextindex" and value the next
   // index should be used, (the index is of type uint64_t so wrap around is ok).
+  struct ClusterNamesInfo {
+    uint64_t next_index;
+    std::map<std::string /*cluster names + weights*/,
+             uint64_t /*policy index number*/>
+        cluster_weights_map;
+  };
   using WeightedClusterChildNameMap =
-      std::map<std::string /*cluster names*/,
-               std::map<std::string /*cluster names + weights*/,
-                        uint64_t /*policy index number*/>>;
+      std::map<std::string /*cluster names*/, ClusterNamesInfo>;
 
   // Service config watcher interface.  Implemented by callers.
   class ServiceConfigWatcherInterface {
