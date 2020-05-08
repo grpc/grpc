@@ -186,6 +186,10 @@ class ClientContext {
   ClientContext();
   ~ClientContext();
 
+  // Move constructor and move assignment operator
+  ClientContext(ClientContext&& other) = default;
+  ClientContext& operator=(ClientContext&& other) = default;
+
   /// Create a new \a ClientContext as a child of an incoming server call,
   /// according to \a options (\see PropagationOptions).
   ///
