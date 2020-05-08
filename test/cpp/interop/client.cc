@@ -94,7 +94,7 @@ DEFINE_int32(soak_max_failures, 0,
              "The number of iterations in soak tests that are allowed to fail "
              "(either due to non-OK status code or exceeding the "
              "per-iteration max acceptable latency).");
-DEFINE_int64(soak_per_iteration_max_acceptable_latency_ms, 0,
+DEFINE_int32(soak_per_iteration_max_acceptable_latency_ms, 0,
              "The number of milliseconds a single iteration in the two soak "
              "tests (rpc_soak and channel_soak) is allowed to take.");
 DEFINE_int32(iteration_interval, 10,

@@ -31,10 +31,10 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/security/credentials.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/core/util/histogram.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
 
@@ -1067,10 +1067,10 @@ bool InteropClient::DoCustomMetadata() {
   return true;
 }
 
-std::tuple<bool, grpc_millis, std::string>
+std::tuple<bool, int32_t, std::string>
 InteropClient::PerformOneSoakTestIteration(
     const bool reset_channel,
-    const int64_t max_acceptable_per_iteration_latency_ms) {
+    const int32_t max_acceptable_per_iteration_latency_ms) {
   gpr_timespec start = gpr_now(GPR_CLOCK_MONOTONIC);
   SimpleRequest request;
   SimpleResponse response;
@@ -1087,14 +1087,13 @@ InteropClient::PerformOneSoakTestIteration(
   }
   Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-  grpc_millis elapsed_ms =
-      grpc_timespec_to_millis_round_down(gpr_time_sub(now, start));
+  int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(now, start));
   if (!s.ok()) {
     return std::make_tuple(false, elapsed_ms, context.debug_error_string());
   } else if (elapsed_ms > max_acceptable_per_iteration_latency_ms) {
     char* out;
     GPR_ASSERT(gpr_asprintf(
-                   &out, "%ld ms exceeds max acceptable latency: %ld ms.",
+                   &out, "%d ms exceeds max acceptable latency: %d ms.",
                    elapsed_ms, max_acceptable_per_iteration_latency_ms) != -1);
     std::string debug_string(out);
     gpr_free(out);
@@ -1107,44 +1106,44 @@ InteropClient::PerformOneSoakTestIteration(
 void InteropClient::PerformSoakTest(
     const bool reset_channel_per_iteration, const int32_t soak_iterations,
     const int32_t max_failures,
-    const int64_t max_acceptable_per_iteration_latency_ms) {
-  std::vector<std::tuple<bool, grpc_millis, std::string>> results;
-  std::vector<grpc_millis> latencies_ms;
+    const int32_t max_acceptable_per_iteration_latency_ms) {
+  std::vector<std::tuple<bool, int32_t, std::string>> results;
+  grpc_histogram* latencies_ms_histogram = grpc_histogram_create(
+      1 /* resolution */,
+      500 * 1e3 /* largest bucket; 500 seconds is unlikely */);
   for (int i = 0; i < soak_iterations; ++i) {
     auto result = PerformOneSoakTestIteration(
         reset_channel_per_iteration, max_acceptable_per_iteration_latency_ms);
     results.push_back(result);
-    latencies_ms.push_back(std::get<1>(result));
+    grpc_histogram_add(latencies_ms_histogram, std::get<1>(result));
   }
   int total_failures = 0;
   for (size_t i = 0; i < results.size(); i++) {
     bool success = std::get<0>(results[i]);
-    grpc_millis elapsed_ms = std::get<1>(results[i]);
+    int32_t elapsed_ms = std::get<1>(results[i]);
     std::string debug_string = std::get<2>(results[i]);
     if (!success) {
-      gpr_log(GPR_DEBUG, "soak iteration:%ld elapsed_ms:%ld failed: %s", i,
+      gpr_log(GPR_DEBUG, "soak iteration: %ld elapsed_ms: %d failed: %s", i,
               elapsed_ms, debug_string.c_str());
       total_failures++;
     } else {
-      gpr_log(GPR_DEBUG, "soak iteration:%ld elapsed_ms:%ld succeeded", i,
+      gpr_log(GPR_DEBUG, "soak iteration: %ld elapsed_ms: %d succeeded", i,
               elapsed_ms);
     }
   }
-  std::sort(latencies_ms.begin(), latencies_ms.end());
-  grpc_millis latency_ms_median = latencies_ms.size() >= 2
-                                      ? latencies_ms[latencies_ms.size() / 2]
-                                      : latencies_ms.back();
-  grpc_millis latency_ms_90th =
-      latencies_ms.size() >= 10 ? latencies_ms[(latencies_ms.size() / 10) * 9]
-                                : latencies_ms.back();
-  grpc_millis latency_ms_worst = latencies_ms.back();
+  double latency_ms_median =
+      grpc_histogram_percentile(latencies_ms_histogram, 50);
+  double latency_ms_90th =
+      grpc_histogram_percentile(latencies_ms_histogram, 90);
+  double latency_ms_worst = grpc_histogram_maximum(latencies_ms_histogram);
+  grpc_histogram_destroy(latencies_ms_histogram);
   if (total_failures > max_failures) {
     gpr_log(GPR_ERROR,
-            "soak test ran:%d iterations. total_failures:%d exceeds "
-            "max_failures_threshold:%d. "
-            "median_soak_iteration_latency:%ld ms. "
-            "90th_soak_iteration_latency:%ld ms. "
-            "worst_soak_iteration_latency:%ld ms. "
+            "soak test ran: %d iterations. total_failures: %d exceeds "
+            "max_failures_threshold: %d. "
+            "median_soak_iteration_latency: %lf ms. "
+            "90th_soak_iteration_latency: %lf ms. "
+            "worst_soak_iteration_latency: %lf ms. "
             "See breakdown above for which iterations succeeded, failed, and "
             "why for more info.",
             soak_iterations, total_failures, max_failures, latency_ms_median,
@@ -1152,11 +1151,11 @@ void InteropClient::PerformSoakTest(
     GPR_ASSERT(0);
   } else {
     gpr_log(GPR_INFO,
-            "soak test ran:%d iterations. total_failures:%d is within "
-            "max_failures_threshold:%d. "
-            "median_soak_iteration_latency:%ld ms. "
-            "90th_soak_iteration_latency:%ld ms. "
-            "worst_soak_iteration_latency:%ld ms. "
+            "soak test ran: %d iterations. total_failures: %d is within "
+            "max_failures_threshold: %d. "
+            "median_soak_iteration_latency: %lf ms. "
+            "90th_soak_iteration_latency: %lf ms. "
+            "worst_soak_iteration_latency: %lf ms. "
             "See breakdown above for which iterations succeeded, failed, and "
             "why for more info.",
             soak_iterations, total_failures, max_failures, latency_ms_median,

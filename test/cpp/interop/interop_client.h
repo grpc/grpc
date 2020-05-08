@@ -23,7 +23,6 @@
 
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 
@@ -131,14 +130,14 @@ class InteropClient {
                         const grpc::string& optional_debug_string);
   bool TransientFailureOrAbort();
 
-  std::tuple<bool, grpc_millis, std::string> PerformOneSoakTestIteration(
+  std::tuple<bool, int32_t, std::string> PerformOneSoakTestIteration(
       const bool reset_channel,
-      const int64_t max_acceptable_per_iteration_latency_ms);
+      const int32_t max_acceptable_per_iteration_latency_ms);
 
   void PerformSoakTest(const bool reset_channel_per_iteration,
                        const int32_t soak_iterations,
                        const int32_t max_failures,
-                       const int64_t max_acceptable_per_iteration_latency_ms);
+                       const int32_t max_acceptable_per_iteration_latency_ms);
 
   ServiceStub serviceStub_;
   /// If true, abort() is not called for transient failures
