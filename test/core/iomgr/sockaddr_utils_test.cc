@@ -175,9 +175,15 @@ static void test_sockaddr_is_wildcard(void) {
 
 static void expect_sockaddr_str(const char* expected,
                                 grpc_resolved_address* addr, int normalize) {
+  int result;
+  char* str;
   gpr_log(GPR_INFO, "  expect_sockaddr_str(%s)", expected);
-  std::string actual = grpc_sockaddr_to_string(addr, normalize);
-  GPR_ASSERT(actual == expected);
+  result = grpc_sockaddr_to_string(&str, addr, normalize);
+  GPR_ASSERT(str != nullptr);
+  GPR_ASSERT(result >= 0);
+  GPR_ASSERT((size_t)result == strlen(str));
+  GPR_ASSERT(strcmp(expected, str) == 0);
+  gpr_free(str);
 }
 
 static void expect_sockaddr_uri(const char* expected,

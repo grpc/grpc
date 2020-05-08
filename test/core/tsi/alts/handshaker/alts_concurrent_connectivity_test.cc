@@ -103,7 +103,7 @@ class FakeHandshakeServer {
  public:
   FakeHandshakeServer(bool check_num_concurrent_rpcs) {
     int port = grpc_pick_unused_port_or_die();
-    address_ = grpc_core::JoinHostPort("localhost", port);
+    grpc_core::JoinHostPort(&address_, "localhost", port);
     if (check_num_concurrent_rpcs) {
       service_ = grpc::gcp::
           CreateFakeHandshakerService(kFakeHandshakeServerMaxConcurrentStreams /* expected max concurrent rpcs */);
@@ -112,24 +112,22 @@ class FakeHandshakeServer {
           0 /* expected max concurrent rpcs unset */);
     }
     grpc::ServerBuilder builder;
-    builder.AddListeningPort(address_.c_str(),
-                             grpc::InsecureServerCredentials());
+    builder.AddListeningPort(address_.get(), grpc::InsecureServerCredentials());
     builder.RegisterService(service_.get());
     // TODO(apolcyn): when removing the global concurrent handshake limiting
     // queue, set MAX_CONCURRENT_STREAMS on this server.
     server_ = builder.BuildAndStart();
-    gpr_log(GPR_INFO, "Fake handshaker server listening on %s",
-            address_.c_str());
+    gpr_log(GPR_INFO, "Fake handshaker server listening on %s", address_.get());
   }
 
   ~FakeHandshakeServer() {
     server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   }
 
-  const char* address() { return address_.c_str(); }
+  const char* address() { return address_.get(); }
 
  private:
-  std::string address_;
+  grpc_core::UniquePtr<char> address_;
   std::unique_ptr<grpc::Service> service_;
   std::unique_ptr<grpc::Server> server_;
 };
@@ -149,13 +147,13 @@ class TestServer {
     server_cq_ = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(server_, server_cq_, nullptr);
     int port = grpc_pick_unused_port_or_die();
-    server_addr_ = grpc_core::JoinHostPort("localhost", port);
-    GPR_ASSERT(grpc_server_add_secure_http2_port(server_, server_addr_.c_str(),
+    GPR_ASSERT(grpc_core::JoinHostPort(&server_addr_, "localhost", port));
+    GPR_ASSERT(grpc_server_add_secure_http2_port(server_, server_addr_.get(),
                                                  server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     gpr_log(GPR_DEBUG, "Start TestServer %p. listen on %s", this,
-            server_addr_.c_str());
+            server_addr_.get());
     server_thd_ =
         std::unique_ptr<std::thread>(new std::thread(PollUntilShutdown, this));
   }
@@ -170,7 +168,7 @@ class TestServer {
     grpc_completion_queue_destroy(server_cq_);
   }
 
-  const char* address() { return server_addr_.c_str(); }
+  const char* address() { return server_addr_.get(); }
 
   static void PollUntilShutdown(const TestServer* self) {
     grpc_event ev = grpc_completion_queue_next(
@@ -184,7 +182,7 @@ class TestServer {
   grpc_server* server_;
   grpc_completion_queue* server_cq_;
   std::unique_ptr<std::thread> server_thd_;
-  std::string server_addr_;
+  grpc_core::UniquePtr<char> server_addr_;
   // Give this test server its own ALTS handshake server
   // so that we avoid competing for ALTS handshake server resources (e.g.
   // available HTTP2 streams on a globally shared handshaker subchannel)

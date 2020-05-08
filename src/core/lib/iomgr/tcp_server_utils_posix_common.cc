@@ -29,8 +29,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <string>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -85,15 +83,15 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
                                         grpc_tcp_listener** listener) {
   grpc_tcp_listener* sp = nullptr;
   int port = -1;
-  std::string addr_str;
+  char* addr_str;
   char* name;
 
   grpc_error* err =
       grpc_tcp_server_prepare_socket(s, fd, addr, s->so_reuseport, &port);
   if (err == GRPC_ERROR_NONE) {
     GPR_ASSERT(port > 0);
-    addr_str = grpc_sockaddr_to_string(addr, true);
-    gpr_asprintf(&name, "tcp-server-listener:%s", addr_str.c_str());
+    grpc_sockaddr_to_string(&addr_str, addr, 1);
+    gpr_asprintf(&name, "tcp-server-listener:%s", addr_str);
     gpr_mu_lock(&s->mu);
     s->nports++;
     GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
@@ -116,6 +114,7 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
     sp->sibling = nullptr;
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
+    gpr_free(addr_str);
     gpr_free(name);
   }
 

@@ -24,8 +24,6 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include "absl/strings/str_format.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -152,18 +150,23 @@ void grpc_sockaddr_make_wildcard6(int port,
   resolved_wild_out->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
 }
 
-std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
-                                    bool normalize) {
+int grpc_sockaddr_to_string(char** out,
+                            const grpc_resolved_address* resolved_addr,
+                            int normalize) {
+  const grpc_sockaddr* addr;
   const int save_errno = errno;
   grpc_resolved_address addr_normalized;
-  if (normalize && grpc_sockaddr_is_v4mapped(resolved_addr, &addr_normalized)) {
-    resolved_addr = &addr_normalized;
-  }
-  const grpc_sockaddr* addr =
-      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+  char ntop_buf[GRPC_INET6_ADDRSTRLEN];
   const void* ip = nullptr;
   int port = 0;
   uint32_t sin6_scope_id = 0;
+  int ret;
+
+  *out = nullptr;
+  if (normalize && grpc_sockaddr_is_v4mapped(resolved_addr, &addr_normalized)) {
+    resolved_addr = &addr_normalized;
+  }
+  addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   if (addr->sa_family == GRPC_AF_INET) {
     const grpc_sockaddr_in* addr4 =
         reinterpret_cast<const grpc_sockaddr_in*>(addr);
@@ -176,24 +179,25 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
     port = grpc_ntohs(addr6->sin6_port);
     sin6_scope_id = addr6->sin6_scope_id;
   }
-  char ntop_buf[GRPC_INET6_ADDRSTRLEN];
-  std::string out;
   if (ip != nullptr && grpc_inet_ntop(addr->sa_family, ip, ntop_buf,
                                       sizeof(ntop_buf)) != nullptr) {
+    grpc_core::UniquePtr<char> tmp_out;
     if (sin6_scope_id != 0) {
-      // Enclose sin6_scope_id with the format defined in RFC 6784 section 2.
-      std::string host_with_scope =
-          absl::StrFormat("%s%%25%" PRIu32, ntop_buf, sin6_scope_id);
-      out = grpc_core::JoinHostPort(host_with_scope, port);
+      char* host_with_scope;
+      /* Enclose sin6_scope_id with the format defined in RFC 6784 section 2. */
+      gpr_asprintf(&host_with_scope, "%s%%25%" PRIu32, ntop_buf, sin6_scope_id);
+      ret = grpc_core::JoinHostPort(&tmp_out, host_with_scope, port);
+      gpr_free(host_with_scope);
     } else {
-      out = grpc_core::JoinHostPort(ntop_buf, port);
+      ret = grpc_core::JoinHostPort(&tmp_out, ntop_buf, port);
     }
+    *out = tmp_out.release();
   } else {
-    out = absl::StrFormat("(sockaddr family=%d)", addr->sa_family);
+    ret = gpr_asprintf(out, "(sockaddr family=%d)", addr->sa_family);
   }
   /* This is probably redundant, but we wouldn't want to log the wrong error. */
   errno = save_errno;
-  return out;
+  return ret;
 }
 
 void grpc_string_to_sockaddr(grpc_resolved_address* out, char* addr, int port) {
@@ -222,13 +226,15 @@ char* grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
   if (scheme == nullptr || strcmp("unix", scheme) == 0) {
     return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
   }
-  std::string path =
-      grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
+  char* path = nullptr;
   char* uri_str = nullptr;
-  if (scheme != nullptr) {
-    gpr_asprintf(&uri_str, "%s:%s", scheme, path.c_str());
+  if (grpc_sockaddr_to_string(&path, resolved_addr,
+                              false /* suppress errors */) &&
+      scheme != nullptr) {
+    gpr_asprintf(&uri_str, "%s:%s", scheme, path);
   }
-  return uri_str;
+  gpr_free(path);
+  return uri_str != nullptr ? uri_str : nullptr;
 }
 
 const char* grpc_sockaddr_get_uri_scheme(

@@ -503,10 +503,11 @@ class CheckingResultHandler : public ResultHandler {
                                  std::vector<GrpcLBAddress>* out) {
     for (size_t i = 0; i < addresses.size(); i++) {
       const grpc_core::ServerAddress& addr = addresses[i];
-      std::string str =
-          grpc_sockaddr_to_string(&addr.address(), true /* normalize */);
-      gpr_log(GPR_INFO, "%s", str.c_str());
-      out->emplace_back(GrpcLBAddress(std::move(str), is_balancer));
+      char* str;
+      grpc_sockaddr_to_string(&str, &addr.address(), 1 /* normalize */);
+      gpr_log(GPR_INFO, "%s", str);
+      out->emplace_back(GrpcLBAddress(std::string(str), is_balancer));
+      gpr_free(str);
     }
   }
 };

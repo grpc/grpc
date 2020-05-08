@@ -26,8 +26,12 @@
 
 static void join_host_port_expect(const char* host, int port,
                                   const char* expected) {
-  std::string actual = grpc_core::JoinHostPort(host, port);
-  GPR_ASSERT(actual == expected);
+  grpc_core::UniquePtr<char> buf;
+  int len;
+  len = grpc_core::JoinHostPort(&buf, host, port);
+  GPR_ASSERT(len >= 0);
+  GPR_ASSERT(strlen(expected) == static_cast<size_t>(len));
+  GPR_ASSERT(strcmp(expected, buf.get()) == 0);
 }
 
 static void test_join_host_port(void) {
