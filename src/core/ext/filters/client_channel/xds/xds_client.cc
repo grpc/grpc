@@ -895,9 +895,15 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     gpr_log(GPR_INFO,
             "[xds_client %p] LDS update does not include requested resource",
             xds_client());
-    xds_client()->service_config_watcher_->OnError(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "LDS update does not include requested resource"));
+    if (xds_client()->lds_result_.has_value() &&
+        !xds_client()->lds_result_->route_config_name.empty()) {
+      Unsubscribe(XdsApi::kRdsTypeUrl,
+                  xds_client()->lds_result_->route_config_name,
+                  /*delay_unsubscription=*/false);
+      xds_client()->rds_result_.reset();
+    }
+    xds_client()->lds_result_.reset();
+    xds_client()->service_config_watcher_->OnResourceDoesNotExist();
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -936,6 +942,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     Unsubscribe(
         XdsApi::kRdsTypeUrl, xds_client()->lds_result_->route_config_name,
         /*delay_unsubscription=*/!lds_update->route_config_name.empty());
+    xds_client()->rds_result_.reset();
   }
   xds_client()->lds_result_ = std::move(lds_update);
   if (xds_client()->lds_result_->rds_update.has_value()) {
@@ -963,9 +970,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
     gpr_log(GPR_INFO,
             "[xds_client %p] RDS update does not include requested resource",
             xds_client());
-    xds_client()->service_config_watcher_->OnError(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "RDS update does not include requested resource"));
+    xds_client()->rds_result_.reset();
+    xds_client()->service_config_watcher_->OnResourceDoesNotExist();
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1051,20 +1057,20 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     }
   }
   // For any subscribed resource that is not present in the update,
-  // remove it from the cache and notify watchers of the error.
+  // remove it from the cache and notify watchers that it does not exist.
   for (const auto& p : cds_state.subscribed_resources) {
     const std::string& cluster_name = p.first;
     if (cds_update_map.find(cluster_name) == cds_update_map.end()) {
       ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
       cluster_state.update.reset();
       for (const auto& p : cluster_state.watchers) {
-        p.first->OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Cluster not present in CDS update"));
+        p.first->OnResourceDoesNotExist();
       }
     }
   }
-  // Also remove any EDS resources that are no longer referred to by any CDS
-  // resources.
+  // For any EDS resource that is no longer referred to by any CDS
+  // resources, remove it from the cache and notify watchers that it
+  // does not exist.
   auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
   for (const auto& p : eds_state.subscribed_resources) {
     const std::string& eds_resource_name = p.first;
@@ -1074,8 +1080,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
           xds_client()->endpoint_map_[eds_resource_name];
       endpoint_state.update.reset();
       for (const auto& p : endpoint_state.watchers) {
-        p.first->OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "ClusterLoadAssignment resource removed due to CDS update"));
+        p.first->OnResourceDoesNotExist();
       }
     }
   }

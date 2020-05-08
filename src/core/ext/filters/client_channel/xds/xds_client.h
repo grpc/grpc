@@ -50,6 +50,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
         RefCountedPtr<ServiceConfig> service_config) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
+
+    virtual void OnResourceDoesNotExist() = 0;
   };
 
   // Cluster data watcher interface.  Implemented by callers.
@@ -60,6 +62,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     virtual void OnClusterChanged(XdsApi::CdsUpdate cluster_data) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
+
+    virtual void OnResourceDoesNotExist() = 0;
   };
 
   // Endpoint data watcher interface.  Implemented by callers.
@@ -70,6 +74,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     virtual void OnEndpointChanged(XdsApi::EdsUpdate update) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
+
+    virtual void OnResourceDoesNotExist() = 0;
   };
 
   // If *error is not GRPC_ERROR_NONE after construction, then there was

@@ -1897,6 +1897,30 @@ TEST_P(XdsResolverOnlyTest, ChangeClusters) {
   EXPECT_EQ(0, std::get<1>(counts));
 }
 
+// Tests that we go into TRANSIENT_FAILURE if the Listener is removed.
+TEST_P(XdsResolverOnlyTest, ListenerRemoved) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  // Unset CDS resource.
+  balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl,
+                                              kDefaultResourceName);
+  // Wait for RPCs to start failing.
+  do {
+  } while (SendRpc(RpcOptions(), nullptr).ok());
+  // Make sure RPCs are still failing.
+  CheckRpcSendFailure(1000);
+  // Make sure we ACK'ed the update.
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
+}
+
 // Tests that things keep workng if the cluster resource disappears.
 TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
   SetNextResolution({});
