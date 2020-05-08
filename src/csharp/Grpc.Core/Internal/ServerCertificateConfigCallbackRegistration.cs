@@ -58,7 +58,6 @@ namespace Grpc.Core.Internal
                 // Perhaps the pointer arithmetic should be done in Native should be done in CLR:
                     //GCHandle handle = GCHandle.Alloc(nativeServerCertificateConfig);
                     //IntPtr pointerToNativeHandle = GCHandle.ToIntPtr(handle);
-                    //Logger.Debug($"pointerToNativeHandle={pointerToNativeHandle.ToString("X")}");
                     //Marshal.WriteIntPtr(arg1, pointerToNativeHandle);
 
                 // We could somehow retrieve the old cert config and compare instead of passing .New unconditinally.
