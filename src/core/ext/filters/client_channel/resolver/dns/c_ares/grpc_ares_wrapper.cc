@@ -123,21 +123,12 @@ static void log_address_sorting_list(const grpc_ares_request* r,
                                      const ServerAddressList& addresses,
                                      const char* input_output_str) {
   for (size_t i = 0; i < addresses.size(); i++) {
-    char* addr_str;
-    if (grpc_sockaddr_to_string(&addr_str, &addresses[i].address(), true)) {
-      gpr_log(
-          GPR_INFO,
-          "(c-ares resolver) request:%p c-ares address sorting: %s[%" PRIuPTR
-          "]=%s",
-          r, input_output_str, i, addr_str);
-      gpr_free(addr_str);
-    } else {
-      gpr_log(
-          GPR_INFO,
-          "(c-ares resolver) request:%p c-ares address sorting: %s[%" PRIuPTR
-          "]=<unprintable>",
-          r, input_output_str, i);
-    }
+    std::string addr_str =
+        grpc_sockaddr_to_string(&addresses[i].address(), true);
+    gpr_log(GPR_INFO,
+            "(c-ares resolver) request:%p c-ares address sorting: %s[%" PRIuPTR
+            "]=%s",
+            r, input_output_str, i, addr_str.c_str());
   }
 }
 

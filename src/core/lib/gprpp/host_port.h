@@ -21,9 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
+#include <string>
 
-#include "src/core/lib/gprpp/memory.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -32,12 +32,6 @@ namespace grpc_core {
 // like an IPv6 literal.  If the host is already bracketed, then additional
 // brackets will not be added.
 std::string JoinHostPort(absl::string_view host, int port);
-// TODO(roth): Change all callers to use the above variant and then
-// remove this one.
-/* Usage is similar to gpr_asprintf: returns the number of bytes written
-   (excluding the final '\0'), and *out points to a string.
-   In the unlikely event of an error, returns -1 and sets *out to NULL. */
-int JoinHostPort(grpc_core::UniquePtr<char>* out, const char* host, int port);
 
 /** Given a name in the form "host:port" or "[ho:st]:port", split into hostname
    and port number.

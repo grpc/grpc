@@ -1115,15 +1115,13 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
                   locality.name->AsHumanReadableString(), locality.lb_weight,
                   locality.serverlist.size());
           for (size_t i = 0; i < locality.serverlist.size(); ++i) {
-            char* ipport;
-            grpc_sockaddr_to_string(&ipport, &locality.serverlist[i].address(),
-                                    false);
+            std::string ipport = grpc_sockaddr_to_string(
+                &locality.serverlist[i].address(), false);
             gpr_log(GPR_INFO,
                     "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
                     " %s, server address %" PRIuPTR ": %s",
                     xds_client(), priority, locality_count,
-                    locality.name->AsHumanReadableString(), i, ipport);
-            gpr_free(ipport);
+                    locality.name->AsHumanReadableString(), i, ipport.c_str());
           }
           ++locality_count;
         }

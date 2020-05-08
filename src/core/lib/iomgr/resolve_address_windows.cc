@@ -113,14 +113,6 @@ static grpc_error* windows_blocking_resolve_address(
     i++;
   }
 
-  {
-    for (i = 0; i < (*addresses)->naddrs; i++) {
-      char* buf;
-      grpc_sockaddr_to_string(&buf, &(*addresses)->addrs[i], 0);
-      gpr_free(buf);
-    }
-  }
-
 done:
   if (result) {
     freeaddrinfo(result);

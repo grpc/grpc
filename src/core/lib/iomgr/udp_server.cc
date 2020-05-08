@@ -148,11 +148,9 @@ GrpcUdpListener::GrpcUdpListener(grpc_udp_server* server, int fd,
       server_(server),
       orphan_notified_(false),
       already_shutdown_(false) {
-  char* addr_str;
   char* name;
-  grpc_sockaddr_to_string(&addr_str, addr, 1);
-  gpr_asprintf(&name, "udp-server-listener:%s", addr_str);
-  gpr_free(addr_str);
+  std::string addr_str = grpc_sockaddr_to_string(addr, true);
+  gpr_asprintf(&name, "udp-server-listener:%s", addr_str.c_str());
   emfd_ = grpc_fd_create(fd, name, true);
   memcpy(&addr_, addr, sizeof(grpc_resolved_address));
   GPR_ASSERT(emfd_);
@@ -413,10 +411,8 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
   }
 
   if (bind_socket(socket_factory, fd, addr) < 0) {
-    char* addr_str;
-    grpc_sockaddr_to_string(&addr_str, addr, 0);
-    gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));
-    gpr_free(addr_str);
+    std::string addr_str = grpc_sockaddr_to_string(addr, false);
+    gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str.c_str(), strerror(errno));
     goto error;
   }
 
@@ -583,10 +579,8 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
             "Try to have multiple listeners on same port, but SO_REUSEPORT is "
             "not supported. Only create 1 listener.");
   }
-  char* addr_str;
-  grpc_sockaddr_to_string(&addr_str, addr, 1);
-  gpr_log(GPR_DEBUG, "add address: %s to server", addr_str);
-  gpr_free(addr_str);
+  std::string addr_str = grpc_sockaddr_to_string(addr, true);
+  gpr_log(GPR_DEBUG, "add address: %s to server", addr_str.c_str());
 
   int allocated_port1 = -1;
   int allocated_port2 = -1;

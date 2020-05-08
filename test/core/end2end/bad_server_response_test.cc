@@ -71,7 +71,7 @@
 #define SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD (size_t)200
 
 struct rpc_state {
-  grpc_core::UniquePtr<char> target;
+  std::string target;
   grpc_completion_queue* cq;
   grpc_channel* channel;
   grpc_call* call;
@@ -165,9 +165,9 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   state.cq = grpc_completion_queue_create_for_next(nullptr);
   cqv = cq_verifier_create(state.cq);
-  grpc_core::JoinHostPort(&state.target, "127.0.0.1", target_port);
+  state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
   state.channel =
-      grpc_insecure_channel_create(state.target.get(), nullptr, nullptr);
+      grpc_insecure_channel_create(state.target.c_str(), nullptr, nullptr);
   grpc_slice host = grpc_slice_from_static_string("localhost");
   state.call = grpc_channel_create_call(
       state.channel, nullptr, GRPC_PROPAGATE_DEFAULTS, state.cq,
@@ -231,7 +231,7 @@ static void cleanup_rpc() {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(state.cq);
   grpc_channel_destroy(state.channel);
-  state.target.reset();
+  state.target.clear();
 }
 
 typedef struct {
