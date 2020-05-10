@@ -55,6 +55,11 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   using WeightedClusterChildNameMap =
       std::map<std::string /*cluster names*/, ClusterNamesInfo>;
 
+  // The index to use for the action name for each WeightedCluster target.
+  // using WeightedClusterIndexMap = std::map<std::string /* cluster_weights_key
+  // */, uint64_t /* index */>;
+  using WeightedClusterIndexMap = WeightedClusterChildNameMap;
+
   // Service config watcher interface.  Implemented by callers.
   class ServiceConfigWatcherInterface {
    public:
@@ -285,6 +290,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // 2-level map cache for final actions included in the current service config.
   WeightedClusterChildNameMap weighted_cluster_child_name_map_;
+
+  // Cache of action names for WeightedCluster targets in the current
+  // service config.
+  WeightedClusterIndexMap weighted_cluster_index_map_;
 
   bool shutting_down_ = false;
 };

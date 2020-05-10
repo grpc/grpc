@@ -3231,8 +3231,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
-  const int old_request_count_2 =
-      backends_[0]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   const int weight_50_request_count_1 =
@@ -3255,8 +3254,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
                                              (1 - kErrorTolerance)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
                                              (1 + kErrorTolerance))));
-  // Allow 1% of traffic to temporarily still go to the old cluster
-  EXPECT_LT(old_request_count_2, kNumEcho1Rpcs * 1 / 100);
   // Change Route Configurations.
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
   weighted_cluster2->set_name(kNewCluster3Name);
@@ -3274,8 +3271,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weight_75_request_count = backends_[1]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  const int old_request_count_3 =
-      backends_[2]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   weight_25_request_count = backends_[3]->backend_service1()->request_count();
@@ -3290,8 +3286,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
                                              (1 - kErrorTolerance)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
                                              (1 + kErrorTolerance))));
-  // Allow 1% of traffic to temporarily still go to the old cluster
-  EXPECT_LT(old_request_count_3, kNumEcho1Rpcs * 1 / 100);
 }
 
 using CdsTest = BasicTest;
