@@ -18,7 +18,6 @@ import argparse
 import logging
 
 import grpc
-from grpc.experimental.aio import init_grpc_aio
 
 from tests.interop import server as interop_server_lib
 from tests_aio.unit import _test_server
@@ -29,13 +28,10 @@ _LOGGER.setLevel(logging.DEBUG)
 
 
 async def serve():
-    init_grpc_aio()
-
     args = interop_server_lib.parse_interop_server_arguments()
 
-    if args.use_tls:
-        credentials = interop_server_lib.get_server_credentials()
-
+    if args.use_tls or args.use_alts:
+        credentials = interop_server_lib.get_server_credentials(args.use_tls)
         address, server = await _test_server.start_test_server(
             port=args.port, secure=True, server_credentials=credentials)
     else:

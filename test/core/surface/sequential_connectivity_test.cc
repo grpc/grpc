@@ -25,9 +25,13 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/end2end/data/ssl_test_data.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 typedef struct test_fixture {
   const char* name;
@@ -62,11 +66,11 @@ static void run_test(const test_fixture* fixture) {
 
   grpc_init();
 
-  grpc_core::UniquePtr<char> addr;
-  grpc_core::JoinHostPort(&addr, "localhost", grpc_pick_unused_port_or_die());
+  std::string addr =
+      grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  fixture->add_server_port(server, addr.get());
+  fixture->add_server_port(server, addr.c_str());
   grpc_completion_queue* server_cq =
       grpc_completion_queue_create_for_next(nullptr);
   grpc_server_register_completion_queue(server, server_cq, nullptr);
@@ -79,7 +83,7 @@ static void run_test(const test_fixture* fixture) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_channel* channels[NUM_CONNECTIONS];
   for (size_t i = 0; i < NUM_CONNECTIONS; i++) {
-    channels[i] = fixture->create_channel(addr.get());
+    channels[i] = fixture->create_channel(addr.c_str());
 
     gpr_timespec connect_deadline = grpc_timeout_seconds_to_deadline(30);
     grpc_connectivity_state state;
@@ -139,17 +143,33 @@ static const test_fixture insecure_test = {
 };
 
 static void secure_test_add_port(grpc_server* server, const char* addr) {
-  grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
-                                                  test_server1_cert};
+  grpc_slice cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  const char* server_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* server_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
   grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
-      nullptr, &pem_cert_key_pair, 1, 0, nullptr);
+      nullptr, &pem_key_cert_pair, 1, 0, nullptr);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
   grpc_server_add_secure_http2_port(server, addr, ssl_creds);
   grpc_server_credentials_release(ssl_creds);
 }
 
 static grpc_channel* secure_test_create_channel(const char* addr) {
+  grpc_slice ca_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  const char* test_root_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
   grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr, nullptr);
+  grpc_slice_unref(ca_slice);
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),

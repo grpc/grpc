@@ -26,8 +26,8 @@ import sys
 
 import grpc
 
-from examples.python.multiprocessing import prime_pb2
-from examples.python.multiprocessing import prime_pb2_grpc
+import prime_pb2
+import prime_pb2_grpc
 
 _PROCESS_COUNT = 8
 _MAXIMUM_CANDIDATE = 10000

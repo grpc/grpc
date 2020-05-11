@@ -80,7 +80,8 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
   if (method->client_streaming()) {
     out->Print(vars,
                " * @param array $$metadata metadata\n"
-               " * @param array $$options call options\n */\n"
+               " * @param array $$options call options\n"
+               " * @return \\$output_type_id$\n */\n"
                "public function $name$($$metadata = [], "
                "$$options = []) {\n");
     out->Indent();
@@ -98,7 +99,8 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
     out->Print(vars,
                " * @param \\$input_type_id$ $$argument input argument\n"
                " * @param array $$metadata metadata\n"
-               " * @param array $$options call options\n */\n"
+               " * @param array $$options call options\n"
+               " * @return \\$output_type_id$\n */\n"
                "public function $name$(\\$input_type_id$ $$argument,\n"
                "  $$metadata = [], $$options = []) {\n");
     out->Indent();

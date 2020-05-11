@@ -34,6 +34,7 @@ message RouteMatch {
     // If specified, the route is a prefix rule meaning that the prefix must
     // match the beginning of the *:path* header.
     string prefix = 1;
+    string path = 2;
   }
 }
 

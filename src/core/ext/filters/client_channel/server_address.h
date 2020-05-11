@@ -21,16 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-
-// Channel arg key for a bool indicating whether an address is a grpclb
-// load balancer (as opposed to a backend).
-#define GRPC_ARG_ADDRESS_IS_BALANCER "grpc.address_is_balancer"
-
-// Channel arg key for a string indicating an address's balancer name.
-#define GRPC_ARG_ADDRESS_BALANCER_NAME "grpc.address_balancer_name"
 
 namespace grpc_core {
 
@@ -73,12 +67,12 @@ class ServerAddress {
     return *this;
   }
 
-  bool operator==(const ServerAddress& other) const;
+  bool operator==(const ServerAddress& other) const { return Cmp(other) == 0; }
+
+  int Cmp(const ServerAddress& other) const;
 
   const grpc_resolved_address& address() const { return address_; }
   const grpc_channel_args* args() const { return args_; }
-
-  bool IsBalancer() const;
 
  private:
   grpc_resolved_address address_;
@@ -89,7 +83,7 @@ class ServerAddress {
 // ServerAddressList
 //
 
-typedef InlinedVector<ServerAddress, 1> ServerAddressList;
+typedef absl::InlinedVector<ServerAddress, 1> ServerAddressList;
 
 }  // namespace grpc_core
 

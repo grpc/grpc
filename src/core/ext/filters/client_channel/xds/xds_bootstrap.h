@@ -23,9 +23,10 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/impl/codegen/slice.h>
 
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
@@ -53,7 +54,7 @@ class XdsBootstrap {
 
   struct XdsServer {
     std::string server_uri;
-    InlinedVector<ChannelCreds, 1> channel_creds;
+    absl::InlinedVector<ChannelCreds, 1> channel_creds;
   };
 
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
@@ -78,7 +79,7 @@ class XdsBootstrap {
   grpc_error* ParseNode(Json* json);
   grpc_error* ParseLocality(Json* json);
 
-  InlinedVector<XdsServer, 1> servers_;
+  absl::InlinedVector<XdsServer, 1> servers_;
   std::unique_ptr<Node> node_;
 };
 

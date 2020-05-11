@@ -284,8 +284,8 @@ void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
                                  [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
 
   /* clamp max recv hint to an allowable size */
-  if (max_size_hint >= UINT32_MAX - sent_init_window) {
-    max_recv_bytes = UINT32_MAX - sent_init_window;
+  if (max_size_hint >= kMaxWindowUpdateSize - sent_init_window) {
+    max_recv_bytes = kMaxWindowUpdateSize - sent_init_window;
   } else {
     max_recv_bytes = static_cast<uint32_t>(max_size_hint);
   }
@@ -298,7 +298,7 @@ void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
   }
 
   /* add some small lookahead to keep pipelines flowing */
-  GPR_ASSERT(max_recv_bytes <= UINT32_MAX - sent_init_window);
+  GPR_DEBUG_ASSERT(max_recv_bytes <= kMaxWindowUpdateSize - sent_init_window);
   if (local_window_delta_ < max_recv_bytes) {
     uint32_t add_max_recv_bytes =
         static_cast<uint32_t>(max_recv_bytes - local_window_delta_);

@@ -34,6 +34,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :oauth_scope, :string, 3
       optional :server_id, :string, 4
       optional :grpclb_route_type, :enum, 5, "grpc.testing.GrpclbRouteType"
+      optional :hostname, :string, 6
     end
     add_message "grpc.testing.StreamingInputCallRequest" do
       optional :payload, :message, 1, "grpc.testing.Payload"
@@ -63,6 +64,14 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :passed, :bool, 1
       repeated :backoff_ms, :int32, 2
     end
+    add_message "grpc.testing.LoadBalancerStatsRequest" do
+      optional :num_rpcs, :int32, 1
+      optional :timeout_sec, :int32, 2
+    end
+    add_message "grpc.testing.LoadBalancerStatsResponse" do
+      map :rpcs_by_peer, :string, :int32, 1
+      optional :num_failures, :int32, 2
+    end
     add_enum "grpc.testing.PayloadType" do
       value :COMPRESSABLE, 0
     end
@@ -88,6 +97,8 @@ module Grpc
     StreamingOutputCallResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.StreamingOutputCallResponse").msgclass
     ReconnectParams = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ReconnectParams").msgclass
     ReconnectInfo = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ReconnectInfo").msgclass
+    LoadBalancerStatsRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerStatsRequest").msgclass
+    LoadBalancerStatsResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerStatsResponse").msgclass
     PayloadType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.PayloadType").enummodule
     GrpclbRouteType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.GrpclbRouteType").enummodule
   end

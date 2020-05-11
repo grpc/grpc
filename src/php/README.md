@@ -58,7 +58,7 @@ $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
 ```sh
 $ cd grpc
 $ git submodule update --init
-$ make
+$ EXTRA_DEFINES=GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK make
 $ [sudo] make install
 ```
 
@@ -275,12 +275,8 @@ $ composer install
 
 ### Client Stub
 
-Generate client stub classes from `.proto` files
-
-```sh
-$ cd grpc/src/php
-$ ./bin/generate_proto_php.sh
-```
+The generate client stub classes have already been generated from `.proto` files
+by the `./bin/generate_proto_php.sh` script.
 
 ### Run test server
 

@@ -19,15 +19,18 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <unordered_map>
+
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/slice/slice_hash_table.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:
@@ -87,7 +90,8 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   };
 
   static constexpr int kNumPreallocatedParsers = 4;
-  typedef InlinedVector<std::unique_ptr<ParsedConfig>, kNumPreallocatedParsers>
+  typedef absl::InlinedVector<std::unique_ptr<ParsedConfig>,
+                              kNumPreallocatedParsers>
       ParsedConfigVector;
 
   /// When a service config is applied to a call in the client_channel_filter,
@@ -125,10 +129,11 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   /// Creates a new service config from parsing \a json_string.
   /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(StringView json_string,
+  static RefCountedPtr<ServiceConfig> Create(absl::string_view json_string,
                                              grpc_error** error);
 
   ServiceConfig(std::string json_string, Json json, grpc_error** error);
+  ~ServiceConfig();
 
   const std::string& json_string() const { return json_string_; }
 
@@ -143,7 +148,8 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// Retrieves the vector of parsed configs for the method identified
   /// by \a path.  The lifetime of the returned vector and contained objects
   /// is tied to the lifetime of the ServiceConfig object.
-  const ParsedConfigVector* GetMethodParsedConfigVector(const grpc_slice& path);
+  const ParsedConfigVector* GetMethodParsedConfigVector(
+      const grpc_slice& path) const;
 
   /// Globally register a service config parser. On successful registration, it
   /// returns the index at which the parser was registered. On failure, -1 is
@@ -162,29 +168,27 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   grpc_error* ParseGlobalParams();
   grpc_error* ParsePerMethodParams();
 
-  // Returns a path string for the JSON name object specified by \a json.
-  // Returns null on error, and stores error in \a error.
-  static UniquePtr<char> ParseJsonMethodName(const Json& json,
-                                             grpc_error** error);
+  // Returns a path string for the JSON name object specified by json.
+  // Sets *error on error.
+  static std::string ParseJsonMethodName(const Json& json, grpc_error** error);
 
-  grpc_error* ParseJsonMethodConfigToServiceConfigVectorTable(
-      const Json& json,
-      InlinedVector<SliceHashTable<const ParsedConfigVector*>::Entry, 10>*
-          entries);
+  grpc_error* ParseJsonMethodConfig(const Json& json);
 
   std::string json_string_;
   Json json_;
 
-  InlinedVector<std::unique_ptr<ParsedConfig>, kNumPreallocatedParsers>
+  absl::InlinedVector<std::unique_ptr<ParsedConfig>, kNumPreallocatedParsers>
       parsed_global_configs_;
   // A map from the method name to the parsed config vector. Note that we are
   // using a raw pointer and not a unique pointer so that we can use the same
   // vector for multiple names.
-  RefCountedPtr<SliceHashTable<const ParsedConfigVector*>>
-      parsed_method_configs_table_;
+  std::unordered_map<grpc_slice, const ParsedConfigVector*, SliceHash>
+      parsed_method_configs_map_;
+  // Default method config.
+  const ParsedConfigVector* default_method_config_vector_ = nullptr;
   // Storage for all the vectors that are being used in
   // parsed_method_configs_table_.
-  InlinedVector<std::unique_ptr<ParsedConfigVector>, 32>
+  absl::InlinedVector<std::unique_ptr<ParsedConfigVector>, 32>
       parsed_method_config_vectors_storage_;
 };
 

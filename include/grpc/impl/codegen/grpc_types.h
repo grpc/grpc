@@ -174,6 +174,11 @@ typedef struct {
 /** Enable/disable support for per-message compression. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
 #define GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION "grpc.per_message_compression"
+/** Experimental Arg. Enable/disable support for per-message decompression.
+   Defaults to 1. If disabled, decompression will not be performed and the
+   application will see the compressed message in the byte buffer. */
+#define GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION \
+  "grpc.per_message_decompression"
 /** Enable/disable support for deadline checking. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
 #define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"
@@ -344,27 +349,21 @@ typedef struct {
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS "grpc.grpclb_fallback_timeout_ms"
-/* Timeout in milliseconds to wait for the serverlist from the xDS load
-   balancer before using fallback backend addresses from the resolver.
-   If 0, enter fallback mode immediately. Default value is 10000. */
-#define GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS "grpc.xds_fallback_timeout_ms"
-/* Time in milliseconds to wait before a locality is deleted after it's removed
-   from the received EDS update. If 0, delete the locality immediately. Default
-   value is 15 minutes. */
-#define GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS \
-  "grpc.xds_locality_retention_interval_ms"
-/* Timeout in milliseconds to wait for the localities of a specific priority to
-   complete their initial connection attempt before xDS fails over to the next
-   priority. Specifically, the connection attempt of a priority is considered
-   completed when any locality of that priority is ready or all the localities
-   of that priority fail to connect. If 0, failover happens immediately. Default
-   value is 10 seconds. */
-#define GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS "grpc.xds_failover_timeout_ms"
+/* Timeout in milliseconds to wait for the child of a specific priority to
+   complete its initial connection attempt before the priority LB policy fails
+   over to the next priority. Default value is 10 seconds. */
+#define GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS \
+  "grpc.priority_failover_timeout_ms"
 /* Timeout in milliseconds to wait for a resource to be returned from
  * the xds server before assuming that it does not exist.
  * The default is 15 seconds. */
 #define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
   "grpc.xds_resource_does_not_exist_timeout_ms"
+/* If set, enable xds routing policy.  This boolean argument is currently
+ * disabled by default; however, it will be changed to enabled by default
+ * once the functionality proves stable.  This arg will eventually
+ * be removed completely. */
+#define GRPC_ARG_XDS_ROUTING_ENABLED "grpc.xds_routing_enabled"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"
@@ -392,6 +391,9 @@ typedef struct {
   "grpc.disable_client_authority_filter"
 /** If set to zero, disables use of http proxies. Enabled by default. */
 #define GRPC_ARG_ENABLE_HTTP_PROXY "grpc.enable_http_proxy"
+/** Channel arg to set http proxy per channel. If set, the channel arg
+ *  value will be prefered over the envrionment variable settings. */
+#define GRPC_ARG_HTTP_PROXY "grpc.http_proxy"
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
 #define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"
