@@ -14,11 +14,10 @@
 """Shared implementation."""
 
 import logging
-
 import time
-import six
 
 import grpc
+import six
 from grpc._cython import cygrpc
 
 _LOGGER = logging.getLogger(__name__)

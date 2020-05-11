@@ -16,6 +16,7 @@
 These APIs are subject to be removed during any minor version release.
 """
 
+import copy
 import functools
 import sys
 import warnings
@@ -78,11 +79,37 @@ def experimental_api(f):
     return _wrapper
 
 
+def wrap_server_method_handler(wrapper, handler):
+    """Wraps the server method handler function.
+
+    The server implementation requires all server handlers being wrapped as
+    RpcMethodHandler objects. This helper function ease the pain of writing
+    server handler wrappers.
+    """
+    if not handler:
+        return None
+
+    if not handler.request_streaming:
+        if not handler.response_streaming:
+            # NOTE(lidiz) _replace is a public API:
+            #   https://docs.python.org/dev/library/collections.html#collections.somenamedtuple._replace
+            return handler._replace(unary_unary=wrapper(handler.unary_unary))
+        else:
+            return handler._replace(unary_stream=wrapper(handler.unary_stream))
+    else:
+        if not handler.response_streaming:
+            return handler._replace(stream_unary=wrapper(handler.stream_unary))
+        else:
+            return handler._replace(
+                stream_stream=wrapper(handler.stream_stream))
+
+
 __all__ = (
     'ChannelOptions',
     'ExperimentalApiWarning',
     'UsageError',
     'insecure_channel_credentials',
+    'wrap_server_method_handler',
 )
 
 if sys.version_info[0] == 3 and sys.version_info[1] >= 6:
