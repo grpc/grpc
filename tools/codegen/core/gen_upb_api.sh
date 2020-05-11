@@ -37,17 +37,23 @@ proto_files=( \
   "envoy/annotations/deprecation.proto" \
   "envoy/annotations/resource.proto" \
   "envoy/api/v2/auth/cert.proto" \
+  "envoy/api/v2/auth/common.proto" \
+  "envoy/api/v2/auth/secret.proto" \
+  "envoy/api/v2/auth/tls.proto" \
   "envoy/api/v2/cds.proto" \
   "envoy/api/v2/cluster/circuit_breaker.proto" \
   "envoy/api/v2/cluster/filter.proto" \
   "envoy/api/v2/cluster/outlier_detection.proto" \
   "envoy/api/v2/core/address.proto" \
   "envoy/api/v2/core/base.proto" \
+  "envoy/api/v2/core/backoff.proto" \
   "envoy/api/v2/core/config_source.proto" \
+  "envoy/api/v2/core/event_service_config.proto" \
   "envoy/api/v2/core/grpc_service.proto" \
   "envoy/api/v2/core/health_check.proto" \
   "envoy/api/v2/core/http_uri.proto" \
   "envoy/api/v2/core/protocol.proto" \
+  "envoy/api/v2/core/socket_option.proto" \
   "envoy/api/v2/cluster.proto" \
   "envoy/api/v2/discovery.proto" \
   "envoy/api/v2/eds.proto" \
@@ -68,6 +74,7 @@ proto_files=( \
   "envoy/config/listener/v2/api_listener.proto" \
   "envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto" \
   "envoy/config/filter/accesslog/v2/accesslog.proto" \
+  "envoy/config/trace/v2/http_tracer.proto" \
   "envoy/service/discovery/v2/ads.proto" \
   "envoy/service/load_stats/v2/lrs.proto" \
   "envoy/type/http.proto" \
@@ -98,6 +105,7 @@ proto_files=( \
   "udpa/data/orca/v1/orca_load_report.proto" \
   "udpa/annotations/migrate.proto" \
   "udpa/annotations/sensitive.proto" \
+  "udpa/annotations/status.proto" \
   "validate/validate.proto")
 
 for i in "${proto_files[@]}"

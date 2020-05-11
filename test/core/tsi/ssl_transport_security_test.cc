@@ -259,6 +259,18 @@ static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
   return false;
 }
 
+static bool check_uri(tsi_peer* peer, const char* name) {
+  for (size_t i = 0; i < peer->property_count; i++) {
+    const tsi_peer_property* prop = &peer->properties[i];
+    if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
+      if (memcmp(prop->value.data, name, prop->value.length) == 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void check_server1_peer(tsi_peer* peer) {
   const tsi_peer_property* property =
       check_basic_authenticated_peer_and_get_common_name(peer);
@@ -659,10 +671,14 @@ void ssl_tsi_test_do_round_trip_for_all_configs() {
 
 void ssl_tsi_test_do_round_trip_odd_buffer_size() {
   gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_odd_buffer_size");
-#ifndef MEMORY_SANITIZER
+#if !defined(MEMORY_SANITIZER) && !defined(GPR_ARCH_32) && !defined(__APPLE__)
   const size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
 #else
-  // avoid test being extremely slow under MSAN
+  // 1. avoid test being extremely slow under MSAN
+  // 2. on 32-bit, the test is much slower (probably due to lack of boringssl
+  // asm optimizations) so we only run a subset of tests to avoid timeout
+  // 3. on Mac OS, we have slower testing machines so we only run a subset
+  // of tests to avoid timeout
   const size_t odd_sizes[] = {1025};
 #endif
   const size_t size = sizeof(odd_sizes) / sizeof(size_t);
@@ -858,9 +874,9 @@ void ssl_tsi_test_extract_x509_subject_names() {
   tsi_peer peer;
   GPR_ASSERT(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer) ==
              TSI_OK);
-  // One for common name, one for certificate, one for security level, and six
-  // for SAN fields.
-  size_t expected_property_count = 8;
+  // tsi_peer should include one common name, one certificate, one security
+  // level, six SAN fields, and two URI fields.
+  size_t expected_property_count = 10;
   GPR_ASSERT(peer.property_count == expected_property_count);
   // Check common name
   const char* expected_cn = "xpigors";
@@ -881,6 +897,8 @@ void ssl_tsi_test_extract_x509_subject_names() {
       check_subject_alt_name(&peer, "https://foo.test.domain.com/test") == 1);
   GPR_ASSERT(
       check_subject_alt_name(&peer, "https://bar.test.domain.com/test") == 1);
+  GPR_ASSERT(check_uri(&peer, "https://foo.test.domain.com/test") == 1);
+  GPR_ASSERT(check_uri(&peer, "https://bar.test.domain.com/test") == 1);
   // Check email address
   GPR_ASSERT(check_subject_alt_name(&peer, "foo@test.domain.com") == 1);
   GPR_ASSERT(check_subject_alt_name(&peer, "bar@test.domain.com") == 1);

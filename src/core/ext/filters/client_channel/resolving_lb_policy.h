@@ -21,13 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -80,7 +81,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  using TraceStringVector = InlinedVector<char*, 3>;
+  using TraceStringVector = absl::InlinedVector<char*, 3>;
 
   class ResolverResultHandler;
   class ResolvingControlHelper;

@@ -277,6 +277,7 @@ typedef struct {
   /* maximum size of a frame */
   size_t max_frame_size;
   bool use_true_binary_metadata;
+  bool is_end_of_stream;
 } framer_state;
 
 /* fills p (which is expected to be kDataFrameHeaderSize bytes long)
@@ -315,17 +316,29 @@ static size_t current_frame_size(framer_state* st) {
 }
 
 /* finish a frame - fill in the previously reserved header */
-static void finish_frame(framer_state* st, int is_header_boundary,
-                         int is_last_in_stream) {
+static void finish_frame(framer_state* st, int is_header_boundary) {
   uint8_t type = 0xff;
-  type = st->is_first_frame ? GRPC_CHTTP2_FRAME_HEADER
-                            : GRPC_CHTTP2_FRAME_CONTINUATION;
-  fill_header(
-      GRPC_SLICE_START_PTR(st->output->slices[st->header_idx]), type,
-      st->stream_id, current_frame_size(st),
-      static_cast<uint8_t>(
-          (is_last_in_stream ? GRPC_CHTTP2_DATA_FLAG_END_STREAM : 0) |
-          (is_header_boundary ? GRPC_CHTTP2_DATA_FLAG_END_HEADERS : 0)));
+  type =
+      static_cast<uint8_t>(st->is_first_frame ? GRPC_CHTTP2_FRAME_HEADER
+                                              : GRPC_CHTTP2_FRAME_CONTINUATION);
+  uint8_t flags = 0xff;
+  /* per the HTTP/2 spec:
+       A HEADERS frame carries the END_STREAM flag that signals the end of a
+       stream. However, a HEADERS frame with the END_STREAM flag set can be
+       followed by CONTINUATION frames on the same stream. Logically, the
+       CONTINUATION frames are part of the HEADERS frame.
+     Thus, we add the END_STREAM flag to the HEADER frame (the first frame). */
+  flags = static_cast<uint8_t>(st->is_first_frame && st->is_end_of_stream
+                                   ? GRPC_CHTTP2_DATA_FLAG_END_STREAM
+                                   : 0);
+  /* per the HTTP/2 spec:
+       A HEADERS frame without the END_HEADERS flag set MUST be followed by
+       a CONTINUATION frame for the same stream.
+     Thus, we add the END_HEADER flag to the last frame. */
+  flags |= static_cast<uint8_t>(
+      is_header_boundary ? GRPC_CHTTP2_DATA_FLAG_END_HEADERS : 0);
+  fill_header(GRPC_SLICE_START_PTR(st->output->slices[st->header_idx]), type,
+              st->stream_id, current_frame_size(st), flags);
   st->stats->framing_bytes += kDataFrameHeaderSize;
   st->is_first_frame = 0;
 }
@@ -347,7 +360,7 @@ static void ensure_space(framer_state* st, size_t need_bytes) {
   if (GPR_LIKELY(current_frame_size(st) + need_bytes <= st->max_frame_size)) {
     return;
   }
-  finish_frame(st, 0, 0);
+  finish_frame(st, 0);
   begin_frame(st);
 }
 
@@ -362,7 +375,7 @@ static void add_header_data(framer_state* st, grpc_slice slice) {
   } else {
     st->stats->header_bytes += remaining;
     grpc_slice_buffer_add(st->output, grpc_slice_split_head(&slice, remaining));
-    finish_frame(st, 0, 0);
+    finish_frame(st, 0);
     begin_frame(st);
     add_header_data(st, slice);
   }
@@ -841,6 +854,7 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
   st.stats = options->stats;
   st.max_frame_size = options->max_frame_size;
   st.use_true_binary_metadata = options->use_true_binary_metadata;
+  st.is_end_of_stream = options->is_eof;
 
   /* Encode a metadata batch; store the returned values, representing
      a metadata element that needs to be unreffed back into the metadata
@@ -883,5 +897,5 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
     deadline_enc(c, deadline, &st);
   }
 
-  finish_frame(&st, 1, options->is_eof);
+  finish_frame(&st, 1);
 }

@@ -37,15 +37,12 @@ ServerAddress::ServerAddress(const void* address, size_t address_len,
   address_.len = static_cast<socklen_t>(address_len);
 }
 
-bool ServerAddress::operator==(const ServerAddress& other) const {
-  return address_.len == other.address_.len &&
-         memcmp(address_.addr, other.address_.addr, address_.len) == 0 &&
-         grpc_channel_args_compare(args_, other.args_) == 0;
-}
-
-bool ServerAddress::IsBalancer() const {
-  return grpc_channel_arg_get_bool(
-      grpc_channel_args_find(args_, GRPC_ARG_ADDRESS_IS_BALANCER), false);
+int ServerAddress::Cmp(const ServerAddress& other) const {
+  if (address_.len > other.address_.len) return 1;
+  if (address_.len < other.address_.len) return -1;
+  int retval = memcmp(address_.addr, other.address_.addr, address_.len);
+  if (retval != 0) return retval;
+  return grpc_channel_args_compare(args_, other.args_);
 }
 
 }  // namespace grpc_core

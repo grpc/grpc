@@ -80,10 +80,6 @@ class FakeResolverResponseGenerator
   // Set the corresponding FakeResolver to this generator.
   void SetFakeResolver(RefCountedPtr<FakeResolver> resolver);
 
-  static void SetResponseLocked(void* arg, grpc_error* error);
-  static void SetReresolutionResponseLocked(void* arg, grpc_error* error);
-  static void SetFailureLocked(void* arg, grpc_error* error);
-
   // Mutex protecting the members below.
   Mutex mu_;
   RefCountedPtr<FakeResolver> resolver_;

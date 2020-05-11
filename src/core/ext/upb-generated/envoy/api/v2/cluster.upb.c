@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include "upb/msg.h"
 #include "envoy/api/v2/cluster.upb.h"
-#include "envoy/api/v2/auth/cert.upb.h"
+#include "envoy/api/v2/auth/tls.upb.h"
 #include "envoy/api/v2/cluster/circuit_breaker.upb.h"
 #include "envoy/api/v2/cluster/filter.upb.h"
 #include "envoy/api/v2/cluster/outlier_detection.upb.h"
@@ -26,6 +26,7 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/migrate.upb.h"
+#include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
@@ -237,26 +238,28 @@ const upb_msglayout envoy_api_v2_Cluster_OriginalDstLbConfig_msginit = {
   UPB_SIZE(1, 1), 1, false,
 };
 
-static const upb_msglayout *const envoy_api_v2_Cluster_CommonLbConfig_submsgs[4] = {
+static const upb_msglayout *const envoy_api_v2_Cluster_CommonLbConfig_submsgs[5] = {
+  &envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_msginit,
   &envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig_msginit,
   &envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig_msginit,
   &envoy_type_Percent_msginit,
   &google_protobuf_Duration_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_Cluster_CommonLbConfig__fields[6] = {
-  {1, UPB_SIZE(4, 8), 0, 2, 11, 1},
-  {2, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 1, 11, 1},
-  {3, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 0, 11, 1},
-  {4, UPB_SIZE(8, 16), 0, 3, 11, 1},
+static const upb_msglayout_field envoy_api_v2_Cluster_CommonLbConfig__fields[7] = {
+  {1, UPB_SIZE(4, 8), 0, 3, 11, 1},
+  {2, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 2, 11, 1},
+  {3, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 1, 11, 1},
+  {4, UPB_SIZE(8, 16), 0, 4, 11, 1},
   {5, UPB_SIZE(0, 0), 0, 0, 8, 1},
   {6, UPB_SIZE(1, 1), 0, 0, 8, 1},
+  {7, UPB_SIZE(12, 24), 0, 0, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_Cluster_CommonLbConfig_msginit = {
   &envoy_api_v2_Cluster_CommonLbConfig_submsgs[0],
   &envoy_api_v2_Cluster_CommonLbConfig__fields[0],
-  UPB_SIZE(20, 40), 6, false,
+  UPB_SIZE(24, 48), 7, false,
 };
 
 static const upb_msglayout *const envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig_submsgs[2] = {
@@ -280,6 +283,16 @@ const upb_msglayout envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig
   NULL,
   NULL,
   UPB_SIZE(0, 0), 0, false,
+};
+
+static const upb_msglayout_field envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 8, 1},
+};
+
+const upb_msglayout envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_msginit = {
+  NULL,
+  &envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig__fields[0],
+  UPB_SIZE(1, 1), 1, false,
 };
 
 static const upb_msglayout *const envoy_api_v2_Cluster_RefreshRate_submsgs[2] = {

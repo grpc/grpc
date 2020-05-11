@@ -107,6 +107,8 @@ class ServerBuilder {
   ///     traffic (via AddListeningPort)
   ///  3. [for async api only] completion queues have been added via
   ///     AddCompletionQueue
+  ///
+  ///  Will return a nullptr on errors.
   virtual std::unique_ptr<grpc::Server> BuildAndStart();
 
   /// Register a service. This call does not take ownership of the service.

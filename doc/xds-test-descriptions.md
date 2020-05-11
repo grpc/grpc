@@ -25,6 +25,9 @@ The code for the xDS test client can be at:
 
 Clients should accept these arguments:
 
+*   --fail_on_failed_rpcs=BOOL
+    *   If true, the client should exit with a non-zero return code if any RPCs
+        fail. Default is false.
 *   --num_channels=CHANNELS
     *   The number of channels to create to the server.
 *   --qps=QPS
@@ -88,6 +91,7 @@ Client parameters:
 
 1.  --num_channels=1
 1.  --qps=10
+1.  --fail_on_failed_rpc=true
 
 Load balancer configuration:
 
@@ -106,6 +110,7 @@ Client parameters:
 
 1.  --num_channels=1
 1.  --qps=10
+1.  --fail_on_failed_rpc=true
 
 Load balancer configuration:
 
@@ -220,6 +225,7 @@ Client parameters:
 
 1.  --num_channels=1
 1.  --qps=10
+1.  --fail_on_failed_rpc=true
 
 Load balancer configuration:
 
@@ -268,6 +274,7 @@ Client parameters:
 
 1.  --num_channels=1
 1.  --qps=10
+1.  --fail_on_failed_rpc=true
 
 Load balancer configuration:
 

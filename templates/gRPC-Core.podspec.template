@@ -192,12 +192,12 @@
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'BoringSSL-GRPC', '0.0.7'
+      ss.dependency 'BoringSSL-GRPC', '0.0.8'
       abseil_version = '1.20200225.0'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor
-      ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
+      ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC'
 
       ss.source_files = ${ruby_multiline_list(grpc_private_files, 22)}
       ss.private_header_files = ${ruby_multiline_list(grpc_private_headers, 30)}

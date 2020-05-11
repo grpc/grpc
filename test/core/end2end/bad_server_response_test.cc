@@ -41,7 +41,7 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_tcp_server.h"
 
-#define HTTP1_RESP                           \
+#define HTTP1_RESP_400                       \
   "HTTP/1.0 400 Bad Request\n"               \
   "Content-Type: text/html; charset=UTF-8\n" \
   "Content-Length: 0\n"                      \
@@ -71,7 +71,7 @@
 #define SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD (size_t)200
 
 struct rpc_state {
-  grpc_core::UniquePtr<char> target;
+  std::string target;
   grpc_completion_queue* cq;
   grpc_channel* channel;
   grpc_call* call;
@@ -165,9 +165,9 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   state.cq = grpc_completion_queue_create_for_next(nullptr);
   cqv = cq_verifier_create(state.cq);
-  grpc_core::JoinHostPort(&state.target, "127.0.0.1", target_port);
+  state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
   state.channel =
-      grpc_insecure_channel_create(state.target.get(), nullptr, nullptr);
+      grpc_insecure_channel_create(state.target.c_str(), nullptr, nullptr);
   grpc_slice host = grpc_slice_from_static_string("localhost");
   state.call = grpc_channel_create_call(
       state.channel, nullptr, GRPC_PROPAGATE_DEFAULTS, state.cq,
@@ -231,7 +231,7 @@ static void cleanup_rpc() {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(state.cq);
   grpc_channel_destroy(state.channel);
-  state.target.reset();
+  state.target.clear();
 }
 
 typedef struct {
@@ -309,40 +309,41 @@ int main(int argc, char** argv) {
   grpc_init();
 
   /* status defined in hpack static table */
-  run_test(HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1, GRPC_STATUS_CANCELLED,
+  run_test(HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1, GRPC_STATUS_UNKNOWN,
            HTTP2_DETAIL_MSG(204));
-
-  run_test(HTTP2_RESP(206), sizeof(HTTP2_RESP(206)) - 1, GRPC_STATUS_CANCELLED,
+  run_test(HTTP2_RESP(206), sizeof(HTTP2_RESP(206)) - 1, GRPC_STATUS_UNKNOWN,
            HTTP2_DETAIL_MSG(206));
-
-  run_test(HTTP2_RESP(304), sizeof(HTTP2_RESP(304)) - 1, GRPC_STATUS_CANCELLED,
+  run_test(HTTP2_RESP(304), sizeof(HTTP2_RESP(304)) - 1, GRPC_STATUS_UNKNOWN,
            HTTP2_DETAIL_MSG(304));
-
-  run_test(HTTP2_RESP(400), sizeof(HTTP2_RESP(400)) - 1, GRPC_STATUS_CANCELLED,
+  run_test(HTTP2_RESP(400), sizeof(HTTP2_RESP(400)) - 1, GRPC_STATUS_INTERNAL,
            HTTP2_DETAIL_MSG(400));
-
-  run_test(HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1, GRPC_STATUS_CANCELLED,
-           HTTP2_DETAIL_MSG(404));
-
-  run_test(HTTP2_RESP(500), sizeof(HTTP2_RESP(500)) - 1, GRPC_STATUS_CANCELLED,
+  run_test(HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1,
+           GRPC_STATUS_UNIMPLEMENTED, HTTP2_DETAIL_MSG(404));
+  run_test(HTTP2_RESP(500), sizeof(HTTP2_RESP(500)) - 1, GRPC_STATUS_UNKNOWN,
            HTTP2_DETAIL_MSG(500));
 
   /* status not defined in hpack static table */
-  run_test(HTTP2_RESP(401), sizeof(HTTP2_RESP(401)) - 1, GRPC_STATUS_CANCELLED,
-           HTTP2_DETAIL_MSG(401));
-
-  run_test(HTTP2_RESP(403), sizeof(HTTP2_RESP(403)) - 1, GRPC_STATUS_CANCELLED,
-           HTTP2_DETAIL_MSG(403));
-
-  run_test(HTTP2_RESP(502), sizeof(HTTP2_RESP(502)) - 1, GRPC_STATUS_CANCELLED,
-           HTTP2_DETAIL_MSG(502));
+  run_test(HTTP2_RESP(401), sizeof(HTTP2_RESP(401)) - 1,
+           GRPC_STATUS_UNAUTHENTICATED, HTTP2_DETAIL_MSG(401));
+  run_test(HTTP2_RESP(403), sizeof(HTTP2_RESP(403)) - 1,
+           GRPC_STATUS_PERMISSION_DENIED, HTTP2_DETAIL_MSG(403));
+  run_test(HTTP2_RESP(429), sizeof(HTTP2_RESP(429)) - 1,
+           GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(429));
+  run_test(HTTP2_RESP(499), sizeof(HTTP2_RESP(499)) - 1, GRPC_STATUS_UNKNOWN,
+           HTTP2_DETAIL_MSG(499));
+  run_test(HTTP2_RESP(502), sizeof(HTTP2_RESP(502)) - 1,
+           GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(502));
+  run_test(HTTP2_RESP(503), sizeof(HTTP2_RESP(503)) - 1,
+           GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(503));
+  run_test(HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
+           GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
 
   /* unparseable response */
   run_test(UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1, GRPC_STATUS_UNKNOWN,
            nullptr);
 
   /* http1 response */
-  run_test(HTTP1_RESP, sizeof(HTTP1_RESP) - 1, GRPC_STATUS_UNAVAILABLE,
+  run_test(HTTP1_RESP_400, sizeof(HTTP1_RESP_400) - 1, GRPC_STATUS_INTERNAL,
            HTTP1_DETAIL_MSG);
 
   grpc_shutdown();

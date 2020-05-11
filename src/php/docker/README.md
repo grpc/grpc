@@ -95,6 +95,20 @@ Run image:
 ```sh
 $ docker run -it --rm grpc-php/alpine
 ```
+### `centos7`
+
+This image builds the `grpc` extension against the GCC version in Centos7 base image. The default version of gcc in centos7 is gcc-4.8.5. Run `scl enable devtoolset-7 bash` command to enable gcc-7.3.1.
+
+Build `centos7` docker image:
+```sh
+$ cd grpc
+$ docker build -t grpc-gcc7/centos -f ./src/php/docker/centos7/Dockerfile .
+```
+
+Run image:
+```sh
+$ docker run -it --rm grpc-gcc7/centos
+```
 
 ### `php-src`
 

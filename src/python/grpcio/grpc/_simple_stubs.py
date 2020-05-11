@@ -192,11 +192,11 @@ def unary_unary(
       request: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials() or
@@ -263,11 +263,11 @@ def unary_stream(
       request: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials().
@@ -333,11 +333,11 @@ def stream_unary(
       request_iterator: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials().
@@ -403,11 +403,11 @@ def stream_stream(
       request_iterator: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials().
