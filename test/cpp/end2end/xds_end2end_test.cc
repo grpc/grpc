@@ -1908,7 +1908,7 @@ TEST_P(XdsResolverOnlyTest, ListenerRemoved) {
       AdsServiceImpl::BuildEdsResource(args));
   // We need to wait for all backends to come online.
   WaitForAllBackends();
-  // Unset CDS resource.
+  // Unset LDS resource.
   balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl,
                                               kDefaultResourceName);
   // Wait for RPCs to start failing.
@@ -1921,7 +1921,7 @@ TEST_P(XdsResolverOnlyTest, ListenerRemoved) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that things keep workng if the cluster resource disappears.
+// Tests that we go into TRANSIENT_FAILURE if the Cluster disappears.
 TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -1935,8 +1935,11 @@ TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
   // Unset CDS resource.
   balancers_[0]->ads_service()->UnsetResource(kCdsTypeUrl,
                                               kDefaultResourceName);
-  // Make sure RPCs are still succeeding.
-  CheckRpcSendOk(100 * num_backends_);
+  // Wait for RPCs to start failing.
+  do {
+  } while (SendRpc(RpcOptions(), nullptr).ok());
+  // Make sure RPCs are still failing.
+  CheckRpcSendFailure(1000);
   // Make sure we ACK'ed the update.
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);

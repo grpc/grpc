@@ -342,20 +342,15 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
   }
 
   void OnResourceDoesNotExist() override {
-    gpr_log(GPR_ERROR, "[edslb %p] EDS resource does not exist",
-            eds_policy_.get());
-    // Go into TRANSIENT_FAILURE if we have not yet created the child
-    // policy (i.e., we have not yet received data from xds).  Otherwise,
-    // we keep running with the data we had previously.
-    // TODO(roth): Once traffic splitting is implemented, this should be
-    // fixed to report TRANSIENT_FAILURE unconditionally.
-    if (eds_policy_->child_policy_ == nullptr) {
-      eds_policy_->channel_control_helper()->UpdateState(
-          GRPC_CHANNEL_TRANSIENT_FAILURE,
-          absl::make_unique<TransientFailurePicker>(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "EDS resource does not exist")));
-    }
+    gpr_log(
+        GPR_ERROR,
+        "[edslb %p] EDS resource does not exist -- reporting TRANSIENT_FAILURE",
+        eds_policy_.get());
+    eds_policy_->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        absl::make_unique<TransientFailurePicker>(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "EDS resource does not exist")));
   }
 
  private:
