@@ -36,7 +36,7 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view stats,
   // overwriting it below.
   context->~CensusContext();
   SpanContext parent_ctx =
-       opencensus::trace::propagation::FromGrpcTraceBinHeader(tracing);
+      opencensus::trace::propagation::FromGrpcTraceBinHeader(tracing);
   if (parent_ctx.IsValid()) {
     new (context) CensusContext(method, parent_ctx);
     return;
@@ -72,11 +72,10 @@ size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
                              char* tracing_buf, size_t tracing_buf_size) {
   if (tracing_buf_size <
       opencensus::trace::propagation::kGrpcTraceBinHeaderLen) {
-     return 0;
+    return 0;
   }
   opencensus::trace::propagation::ToGrpcTraceBinHeader(
-      context,
-      reinterpret_cast<uint8_t*>(tracing_buf));
+      context, reinterpret_cast<uint8_t*>(tracing_buf));
   return opencensus::trace::propagation::kGrpcTraceBinHeaderLen;
 }
 
