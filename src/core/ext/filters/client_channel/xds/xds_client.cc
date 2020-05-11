@@ -2189,7 +2189,7 @@ void XdsClient::UpdateWeightedClusterIndexMap(
               cluster_weights_key) ==
               new_cluster_names_map_it->second.cluster_weights_map.end()) {
         // For any route in the current update which does not have a action name
-        // found or generated
+        // found or generated already, we need an action name.
         auto index = 0;
         const auto& reuse_cluster_weights_map_it =
             reuse_weighted_cluster_index_map.find(cluster_names_key);
@@ -2207,12 +2207,13 @@ void XdsClient::UpdateWeightedClusterIndexMap(
             // Remove the name from being able to reuse again.
             reuse_cluster_weights_map.erase(reuse_cluster_weights_it);
           } else {
-            // Take the next index to use and increment.
+            // There is nothing to reuse, take the next index to use and
+            // increment.
             index = reuse_cluster_weights_map_it->second.next_index++;
           }
         } else {
-          // First time this cluster set is used, create an entry and track next
-          // index.
+          // This is the first time we are seeing this set of clusters
+          // in this update, use index 0 and set next index to 1.
           reuse_weighted_cluster_index_map[cluster_names_key].next_index =
               index + 1;
         }
