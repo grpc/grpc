@@ -25,6 +25,8 @@
 
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/gprpp/memory.h"
+
 namespace grpc_core {
 
 // Given a host and port, creates a newly-allocated string of the form
@@ -32,6 +34,13 @@ namespace grpc_core {
 // like an IPv6 literal.  If the host is already bracketed, then additional
 // brackets will not be added.
 std::string JoinHostPort(absl::string_view host, int port);
+
+// Deprecated variant of above -- DO NOT USE!
+// TODO(roth): Remove this variant once asylo is no longer using it.
+// Usage is similar to gpr_asprintf: returns the number of bytes written
+// (excluding the final '\0'), and *out points to a string.
+// In the unlikely event of an error, returns -1 and sets *out to NULL.
+int JoinHostPort(grpc_core::UniquePtr<char>* out, const char* host, int port);
 
 /** Given a name in the form "host:port" or "[ho:st]:port", split into hostname
    and port number.
