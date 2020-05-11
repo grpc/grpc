@@ -2167,6 +2167,8 @@ void XdsClient::UpdateWeightedClusterIndexMap(
           new_weighted_cluster_index_map[cluster_names_key]
               .cluster_weights_map[cluster_weights_key] =
               old_cluster_weights_it->second;
+          new_weighted_cluster_index_map[cluster_names_key].next_index =
+              old_cluster_names_map_it->second.next_index;
           reuse_weighted_cluster_index_map[cluster_names_key]
               .cluster_weights_map.erase(cluster_weights_key);
         }
@@ -2219,6 +2221,8 @@ void XdsClient::UpdateWeightedClusterIndexMap(
         }
         new_weighted_cluster_index_map[cluster_names_key]
             .cluster_weights_map[cluster_weights_key] = index;
+        new_weighted_cluster_index_map[cluster_names_key].next_index =
+            reuse_weighted_cluster_index_map[cluster_names_key].next_index;
       }
     }
   }
