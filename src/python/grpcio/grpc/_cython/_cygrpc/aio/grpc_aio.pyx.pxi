@@ -77,7 +77,7 @@ cdef _actual_aio_initialization():
         _GRPC_ASYNCIO_ENGINE,
         _default_asyncio_engine(),
     )
-    _LOGGER.info('Using %s as I/O engine', _global_aio_state.engine)
+    _LOGGER.debug('Using %s as I/O engine', _global_aio_state.engine)
 
     # Initializes the process-level state accordingly
     if _global_aio_state.engine is AsyncIOEngine.CUSTOM_IO_MANAGER:
@@ -105,7 +105,7 @@ cdef _actual_aio_shutdown():
         )
         future.add_done_callback(_grpc_shutdown_wrapper)
     elif _global_aio_state.engine is AsyncIOEngine.POLLER:
-        _global_aio_state.cq.shutdown()
+        (<PollerCompletionQueue>_global_aio_state.cq).shutdown()
         grpc_shutdown_blocking()
     else:
         raise ValueError('Unsupported engine type [%s]' % _global_aio_state.engine)

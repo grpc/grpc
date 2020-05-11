@@ -24,6 +24,7 @@
 #include <grpcpp/security/server_credentials.h>
 
 #include "src/core/lib/surface/call_test_only.h"
+#include "src/core/lib/transport/byte_stream.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
 DECLARE_bool(use_alts);
@@ -60,8 +61,11 @@ uint32_t InteropServerContextInspector::GetEncodingsAcceptedByClient() const {
   return grpc_call_test_only_get_encodings_accepted_by_peer(context_.call_);
 }
 
-uint32_t InteropServerContextInspector::GetMessageFlags() const {
-  return grpc_call_test_only_get_message_flags(context_.call_);
+bool InteropServerContextInspector::WasCompressed() const {
+  return (grpc_call_test_only_get_message_flags(context_.call_) &
+          GRPC_WRITE_INTERNAL_COMPRESS) ||
+         (grpc_call_test_only_get_message_flags(context_.call_) &
+          GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED);
 }
 
 std::shared_ptr<const AuthContext>

@@ -43,6 +43,17 @@ namespace grpc {
 namespace testing {
 namespace {
 
+enum class RPCType {
+  kSyncUnary,
+  kSyncClientStreaming,
+  kSyncServerStreaming,
+  kSyncBidiStreaming,
+  kAsyncCQUnary,
+  kAsyncCQClientStreaming,
+  kAsyncCQServerStreaming,
+  kAsyncCQBidiStreaming,
+};
+
 /* Hijacks Echo RPC and fills in the expected values */
 class HijackingInterceptor : public experimental::Interceptor {
  public:
@@ -400,6 +411,7 @@ class ServerStreamingRpcHijackingInterceptor
  public:
   ServerStreamingRpcHijackingInterceptor(experimental::ClientRpcInfo* info) {
     info_ = info;
+    got_failed_message_ = false;
   }
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
@@ -531,10 +543,22 @@ class LoggingInterceptor : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
       EchoRequest req;
-      EXPECT_EQ(static_cast<const EchoRequest*>(methods->GetSendMessage())
-                    ->message()
-                    .find("Hello"),
-                0u);
+      auto* send_msg = methods->GetSendMessage();
+      if (send_msg == nullptr) {
+        // We did not get the non-serialized form of the message. Get the
+        // serialized form.
+        auto* buffer = methods->GetSerializedSendMessage();
+        auto copied_buffer = *buffer;
+        EchoRequest req;
+        EXPECT_TRUE(
+            SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
+                .ok());
+        EXPECT_EQ(req.message(), "Hello");
+      } else {
+        EXPECT_EQ(
+            static_cast<const EchoRequest*>(send_msg)->message().find("Hello"),
+            0u);
+      }
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
       EXPECT_TRUE(
@@ -580,6 +604,27 @@ class LoggingInterceptor : public experimental::Interceptor {
       post_recv_status_ = true;
     }
     methods->Proceed();
+  }
+
+  static void VerifyCall(RPCType type) {
+    switch (type) {
+      case RPCType::kSyncUnary:
+      case RPCType::kAsyncCQUnary:
+        VerifyUnaryCall();
+        break;
+      case RPCType::kSyncClientStreaming:
+      case RPCType::kAsyncCQClientStreaming:
+        VerifyClientStreamingCall();
+        break;
+      case RPCType::kSyncServerStreaming:
+      case RPCType::kAsyncCQServerStreaming:
+        VerifyServerStreamingCall();
+        break;
+      case RPCType::kSyncBidiStreaming:
+      case RPCType::kAsyncCQBidiStreaming:
+        VerifyBidiStreamingCall();
+        break;
+    }
   }
 
   static void VerifyCallCommon() {
@@ -638,7 +683,103 @@ class LoggingInterceptorFactory
   }
 };
 
-class ClientInterceptorsEnd2endTest : public ::testing::Test {
+class TestScenario {
+ public:
+  explicit TestScenario(const RPCType& type) : type_(type) {}
+
+  RPCType type() const { return type_; }
+
+ private:
+  RPCType type_;
+};
+
+std::vector<TestScenario> CreateTestScenarios() {
+  std::vector<TestScenario> scenarios;
+  scenarios.emplace_back(RPCType::kSyncUnary);
+  scenarios.emplace_back(RPCType::kSyncClientStreaming);
+  scenarios.emplace_back(RPCType::kSyncServerStreaming);
+  scenarios.emplace_back(RPCType::kSyncBidiStreaming);
+  scenarios.emplace_back(RPCType::kAsyncCQUnary);
+  scenarios.emplace_back(RPCType::kAsyncCQServerStreaming);
+  return scenarios;
+}
+
+class ParameterizedClientInterceptorsEnd2endTest
+    : public ::testing::TestWithParam<TestScenario> {
+ protected:
+  ParameterizedClientInterceptorsEnd2endTest() {
+    int port = grpc_pick_unused_port_or_die();
+
+    ServerBuilder builder;
+    server_address_ = "localhost:" + std::to_string(port);
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+  }
+
+  ~ParameterizedClientInterceptorsEnd2endTest() { server_->Shutdown(); }
+
+  void SendRPC(const std::shared_ptr<Channel>& channel) {
+    switch (GetParam().type()) {
+      case RPCType::kSyncUnary:
+        MakeCall(channel);
+        break;
+      case RPCType::kSyncClientStreaming:
+        MakeClientStreamingCall(channel);
+        break;
+      case RPCType::kSyncServerStreaming:
+        MakeServerStreamingCall(channel);
+        break;
+      case RPCType::kSyncBidiStreaming:
+        MakeBidiStreamingCall(channel);
+        break;
+      case RPCType::kAsyncCQUnary:
+        MakeAsyncCQCall(channel);
+        break;
+      case RPCType::kAsyncCQClientStreaming:
+        // TODO(yashykt) : Fill this out
+        break;
+      case RPCType::kAsyncCQServerStreaming:
+        MakeAsyncCQServerStreamingCall(channel);
+        break;
+      case RPCType::kAsyncCQBidiStreaming:
+        // TODO(yashykt) : Fill this out
+        break;
+    }
+  }
+
+  std::string server_address_;
+  EchoTestServiceStreamingImpl service_;
+  std::unique_ptr<Server> server_;
+};
+
+TEST_P(ParameterizedClientInterceptorsEnd2endTest,
+       ClientInterceptorLoggingTest) {
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
+      new LoggingInterceptorFactory()));
+  // Add 20 dummy interceptors
+  for (auto i = 0; i < 20; i++) {
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  SendRPC(channel);
+  LoggingInterceptor::VerifyCall(GetParam().type());
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+}
+
+INSTANTIATE_TEST_SUITE_P(ParameterizedClientInterceptorsEnd2end,
+                         ParameterizedClientInterceptorsEnd2endTest,
+                         ::testing::ValuesIn(CreateTestScenarios()));
+
+class ClientInterceptorsEnd2endTest
+    : public ::testing::TestWithParam<TestScenario> {
  protected:
   ClientInterceptorsEnd2endTest() {
     int port = grpc_pick_unused_port_or_die();
@@ -656,26 +797,6 @@ class ClientInterceptorsEnd2endTest : public ::testing::Test {
   TestServiceImpl service_;
   std::unique_ptr<Server> server_;
 };
-
-TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLoggingTest) {
-  ChannelArguments args;
-  DummyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-      creators;
-  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
-      new LoggingInterceptorFactory()));
-  // Add 20 dummy interceptors
-  for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
-  }
-  auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
-  MakeCall(channel);
-  LoggingInterceptor::VerifyUnaryCall();
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
-}
 
 TEST_F(ClientInterceptorsEnd2endTest,
        LameChannelClientInterceptorHijackingTest) {
@@ -757,7 +878,26 @@ TEST_F(ClientInterceptorsEnd2endTest,
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 12);
 }
 
-TEST_F(ClientInterceptorsEnd2endTest,
+class ClientInterceptorsCallbackEnd2endTest : public ::testing::Test {
+ protected:
+  ClientInterceptorsCallbackEnd2endTest() {
+    int port = grpc_pick_unused_port_or_die();
+
+    ServerBuilder builder;
+    server_address_ = "localhost:" + std::to_string(port);
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+  }
+
+  ~ClientInterceptorsCallbackEnd2endTest() { server_->Shutdown(); }
+
+  std::string server_address_;
+  TestServiceImpl service_;
+  std::unique_ptr<Server> server_;
+};
+
+TEST_F(ClientInterceptorsCallbackEnd2endTest,
        ClientInterceptorLoggingTestWithCallback) {
   ChannelArguments args;
   DummyInterceptor::Reset();
@@ -778,7 +918,7 @@ TEST_F(ClientInterceptorsEnd2endTest,
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
 
-TEST_F(ClientInterceptorsEnd2endTest,
+TEST_F(ClientInterceptorsCallbackEnd2endTest,
        ClientInterceptorFactoryAllowsNullptrReturn) {
   ChannelArguments args;
   DummyInterceptor::Reset();
@@ -900,6 +1040,21 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingHijackingTest) {
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeServerStreamingCall(channel);
+  EXPECT_TRUE(ServerStreamingRpcHijackingInterceptor::GotFailedMessage());
+}
+
+TEST_F(ClientInterceptorsStreamingEnd2endTest,
+       AsyncCQServerStreamingHijackingTest) {
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(
+      std::unique_ptr<ServerStreamingRpcHijackingInterceptorFactory>(
+          new ServerStreamingRpcHijackingInterceptorFactory()));
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  MakeAsyncCQServerStreamingCall(channel);
   EXPECT_TRUE(ServerStreamingRpcHijackingInterceptor::GotFailedMessage());
 }
 

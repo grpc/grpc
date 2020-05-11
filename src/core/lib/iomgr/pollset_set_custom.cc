@@ -22,23 +22,23 @@
 
 #include "src/core/lib/iomgr/pollset_set.h"
 
-grpc_pollset_set* pollset_set_create(void) {
+static grpc_pollset_set* pollset_set_create(void) {
   return (grpc_pollset_set*)((intptr_t)0xdeafbeef);
 }
 
-void pollset_set_destroy(grpc_pollset_set* /*pollset_set*/) {}
+static void pollset_set_destroy(grpc_pollset_set* /*pollset_set*/) {}
 
-void pollset_set_add_pollset(grpc_pollset_set* /*pollset_set*/,
-                             grpc_pollset* /*pollset*/) {}
+static void pollset_set_add_pollset(grpc_pollset_set* /*pollset_set*/,
+                                    grpc_pollset* /*pollset*/) {}
 
-void pollset_set_del_pollset(grpc_pollset_set* /*pollset_set*/,
-                             grpc_pollset* /*pollset*/) {}
+static void pollset_set_del_pollset(grpc_pollset_set* /*pollset_set*/,
+                                    grpc_pollset* /*pollset*/) {}
 
-void pollset_set_add_pollset_set(grpc_pollset_set* /*bag*/,
-                                 grpc_pollset_set* /*item*/) {}
+static void pollset_set_add_pollset_set(grpc_pollset_set* /*bag*/,
+                                        grpc_pollset_set* /*item*/) {}
 
-void pollset_set_del_pollset_set(grpc_pollset_set* /*bag*/,
-                                 grpc_pollset_set* /*item*/) {}
+static void pollset_set_del_pollset_set(grpc_pollset_set* /*bag*/,
+                                        grpc_pollset_set* /*item*/) {}
 
 static grpc_pollset_set_vtable vtable = {
     pollset_set_create,          pollset_set_destroy,

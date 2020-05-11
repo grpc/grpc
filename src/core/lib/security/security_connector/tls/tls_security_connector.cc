@@ -23,6 +23,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -144,15 +146,14 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
     : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
                                       std::move(channel_creds),
                                       std::move(request_metadata_creds)),
-      overridden_target_name_(overridden_target_name == nullptr
-                                  ? nullptr
-                                  : gpr_strdup(overridden_target_name)) {
+      overridden_target_name_(
+          overridden_target_name == nullptr ? "" : overridden_target_name) {
   key_materials_config_ = grpc_tls_key_materials_config_create()->Ref();
   check_arg_ = ServerAuthorizationCheckArgCreate(this);
-  grpc_core::StringView host;
-  grpc_core::StringView port;
+  absl::string_view host;
+  absl::string_view port;
   grpc_core::SplitHostPort(target_name, &host, &port);
-  target_name_ = grpc_core::StringViewToCString(host);
+  target_name_ = std::string(host);
 }
 
 TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
@@ -176,8 +177,8 @@ void TlsChannelSecurityConnector::add_handshakers(
   tsi_handshaker* tsi_hs = nullptr;
   tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
       client_handshaker_factory_,
-      overridden_target_name_ != nullptr ? overridden_target_name_.get()
-                                         : target_name_.get(),
+      overridden_target_name_.empty() ? target_name_.c_str()
+                                      : overridden_target_name_.c_str(),
       &tsi_hs);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
@@ -192,9 +193,9 @@ void TlsChannelSecurityConnector::check_peer(
     tsi_peer peer, grpc_endpoint* /*ep*/,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
-  const char* target_name = overridden_target_name_ != nullptr
-                                ? overridden_target_name_.get()
-                                : target_name_.get();
+  const char* target_name = overridden_target_name_.empty()
+                                ? target_name_.c_str()
+                                : overridden_target_name_.c_str();
   grpc_error* error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
@@ -271,16 +272,16 @@ int TlsChannelSecurityConnector::cmp(
   if (c != 0) {
     return c;
   }
-  return grpc_ssl_cmp_target_name(target_name_.get(), other->target_name_.get(),
-                                  overridden_target_name_.get(),
-                                  other->overridden_target_name_.get());
+  return grpc_ssl_cmp_target_name(
+      target_name_.c_str(), other->target_name_.c_str(),
+      overridden_target_name_.c_str(), other->overridden_target_name_.c_str());
 }
 
 bool TlsChannelSecurityConnector::check_call_host(
-    grpc_core::StringView host, grpc_auth_context* auth_context,
+    absl::string_view host, grpc_auth_context* auth_context,
     grpc_closure* on_call_host_checked, grpc_error** error) {
-  return grpc_ssl_check_call_host(host, target_name_.get(),
-                                  overridden_target_name_.get(), auth_context,
+  return grpc_ssl_check_call_host(host, target_name_.c_str(),
+                                  overridden_target_name_.c_str(), auth_context,
                                   error);
 }
 

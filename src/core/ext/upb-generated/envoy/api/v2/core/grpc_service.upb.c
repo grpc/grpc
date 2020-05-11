@@ -14,8 +14,9 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/empty.upb.h"
 #include "google/protobuf/struct.upb.h"
-#include "udpa/annotations/sensitive.upb.h"
 #include "udpa/annotations/migrate.upb.h"
+#include "udpa/annotations/sensitive.upb.h"
+#include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"

@@ -30,7 +30,7 @@ _LOGGER.setLevel(logging.DEBUG)
 def _create_channel(args):
     target = f'{args.server_host}:{args.server_port}'
 
-    if args.use_tls:
+    if args.use_tls or args.use_alts:
         channel_credentials, options = interop_client_lib.get_secure_channel_parameters(
             args)
         return aio.secure_channel(target, channel_credentials, options)

@@ -399,8 +399,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   ssl_pair->cert_chain = gpr_strdup(test_cert_chain.c_str());
   ::grpc_core::PemKeyCertPair pem_key_cert_pair =
       ::grpc_core::PemKeyCertPair(ssl_pair);
-  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
-      pem_key_cert_pair_list;
+  ::absl::InlinedVector<::grpc_core::PemKeyCertPair, 1> pem_key_cert_pair_list;
   pem_key_cert_pair_list.push_back(pem_key_cert_pair);
   grpc::string test_pem_root_certs = "pem_root_certs";
   c_key_materials.set_key_materials(test_pem_root_certs.c_str(),
@@ -417,7 +416,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   EXPECT_EQ(c_arg.cb_user_data, nullptr);
   EXPECT_STREQ(c_arg.key_materials_config->pem_root_certs(),
                "new_pem_root_certs");
-  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1> pair_list =
+  ::absl::InlinedVector<::grpc_core::PemKeyCertPair, 1> pair_list =
       c_arg.key_materials_config->pem_key_cert_pair_list();
   EXPECT_EQ(static_cast<int>(pair_list.size()), 2);
   EXPECT_STREQ(pair_list[0].private_key(), "private_key");
@@ -625,7 +624,7 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   EXPECT_EQ(c_credential_reload_arg.cb_user_data, nullptr);
   EXPECT_STREQ(c_credential_reload_arg.key_materials_config->pem_root_certs(),
                "new_pem_root_certs");
-  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1> c_pair_list =
+  ::absl::InlinedVector<::grpc_core::PemKeyCertPair, 1> c_pair_list =
       c_credential_reload_arg.key_materials_config->pem_key_cert_pair_list();
   EXPECT_EQ(static_cast<int>(c_pair_list.size()), 2);
   EXPECT_STREQ(c_pair_list[0].private_key(), "private_key");
@@ -685,22 +684,6 @@ TEST_F(CredentialsTest, LoadTlsChannelCredentials) {
   std::shared_ptr<grpc_impl::ChannelCredentials> channel_credentials =
       grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
-}
-
-// This test demonstrates how the TLS credentials will be used to create
-// server credentials.
-TEST_F(CredentialsTest, LoadTlsServerCredentials) {
-  std::shared_ptr<TestTlsCredentialReload> test_credential_reload(
-      new TestTlsCredentialReload());
-  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config(
-      new TlsCredentialReloadConfig(test_credential_reload));
-
-  TlsCredentialsOptions options = TlsCredentialsOptions(
-      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
-      GRPC_TLS_SERVER_VERIFICATION, nullptr, credential_reload_config, nullptr);
-  std::shared_ptr<::grpc_impl::ServerCredentials> server_credentials =
-      grpc::experimental::TlsServerCredentials(options);
-  GPR_ASSERT(server_credentials.get() != nullptr);
 }
 
 TEST_F(CredentialsTest, TlsCredentialReloadConfigErrorMessages) {

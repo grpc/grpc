@@ -47,9 +47,10 @@ static int g_resolve_port = -1;
 static grpc_ares_request* (*iomgr_dns_lookup_ares_locked)(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms,
-    grpc_core::Combiner* combiner);
+    std::shared_ptr<grpc_core::WorkSerializer> combiner);
 
 static void (*iomgr_cancel_ares_request_locked)(grpc_ares_request* request);
 
@@ -104,13 +105,15 @@ static grpc_address_resolver_vtable test_resolver = {
 static grpc_ares_request* my_dns_lookup_ares_locked(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms,
-    grpc_core::Combiner* combiner) {
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   if (0 != strcmp(addr, "test")) {
     return iomgr_dns_lookup_ares_locked(
         dns_server, addr, default_port, interested_parties, on_done, addresses,
-        check_grpclb, service_config_json, query_timeout_ms, combiner);
+        balancer_addresses, service_config_json, query_timeout_ms,
+        std::move(work_serializer));
   }
 
   grpc_error* error = GRPC_ERROR_NONE;

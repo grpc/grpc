@@ -254,6 +254,10 @@ gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
     return gpr_time_add(gpr_now(clock_type), t);
   }
 
+  // If the given input hits this code, the same result is not guaranteed for
+  // the same input because it relies on `gpr_now` to calculate the difference
+  // between two different clocks. Please be careful when you want to use this
+  // function in unit tests. (e.g. https://github.com/grpc/grpc/pull/22655)
   return gpr_time_add(gpr_now(clock_type),
                       gpr_time_sub(t, gpr_now(t.clock_type)));
 }

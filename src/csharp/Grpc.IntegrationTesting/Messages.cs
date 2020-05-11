@@ -37,29 +37,35 @@ namespace Grpc.Testing {
             "CzIYLmdycGMudGVzdGluZy5FY2hvU3RhdHVzEjIKEWV4cGVjdF9jb21wcmVz",
             "c2VkGAggASgLMhcuZ3JwYy50ZXN0aW5nLkJvb2xWYWx1ZRIWCg5maWxsX3Nl",
             "cnZlcl9pZBgJIAEoCBIeChZmaWxsX2dycGNsYl9yb3V0ZV90eXBlGAogASgI",
-            "IqwBCg5TaW1wbGVSZXNwb25zZRImCgdwYXlsb2FkGAEgASgLMhUuZ3JwYy50",
+            "Ir4BCg5TaW1wbGVSZXNwb25zZRImCgdwYXlsb2FkGAEgASgLMhUuZ3JwYy50",
             "ZXN0aW5nLlBheWxvYWQSEAoIdXNlcm5hbWUYAiABKAkSEwoLb2F1dGhfc2Nv",
             "cGUYAyABKAkSEQoJc2VydmVyX2lkGAQgASgJEjgKEWdycGNsYl9yb3V0ZV90",
-            "eXBlGAUgASgOMh0uZ3JwYy50ZXN0aW5nLkdycGNsYlJvdXRlVHlwZSJ3ChlT",
-            "dHJlYW1pbmdJbnB1dENhbGxSZXF1ZXN0EiYKB3BheWxvYWQYASABKAsyFS5n",
-            "cnBjLnRlc3RpbmcuUGF5bG9hZBIyChFleHBlY3RfY29tcHJlc3NlZBgCIAEo",
-            "CzIXLmdycGMudGVzdGluZy5Cb29sVmFsdWUiPQoaU3RyZWFtaW5nSW5wdXRD",
-            "YWxsUmVzcG9uc2USHwoXYWdncmVnYXRlZF9wYXlsb2FkX3NpemUYASABKAUi",
-            "ZAoSUmVzcG9uc2VQYXJhbWV0ZXJzEgwKBHNpemUYASABKAUSEwoLaW50ZXJ2",
-            "YWxfdXMYAiABKAUSKwoKY29tcHJlc3NlZBgDIAEoCzIXLmdycGMudGVzdGlu",
-            "Zy5Cb29sVmFsdWUi6AEKGlN0cmVhbWluZ091dHB1dENhbGxSZXF1ZXN0EjAK",
-            "DXJlc3BvbnNlX3R5cGUYASABKA4yGS5ncnBjLnRlc3RpbmcuUGF5bG9hZFR5",
-            "cGUSPQoTcmVzcG9uc2VfcGFyYW1ldGVycxgCIAMoCzIgLmdycGMudGVzdGlu",
-            "Zy5SZXNwb25zZVBhcmFtZXRlcnMSJgoHcGF5bG9hZBgDIAEoCzIVLmdycGMu",
-            "dGVzdGluZy5QYXlsb2FkEjEKD3Jlc3BvbnNlX3N0YXR1cxgHIAEoCzIYLmdy",
-            "cGMudGVzdGluZy5FY2hvU3RhdHVzIkUKG1N0cmVhbWluZ091dHB1dENhbGxS",
-            "ZXNwb25zZRImCgdwYXlsb2FkGAEgASgLMhUuZ3JwYy50ZXN0aW5nLlBheWxv",
-            "YWQiMwoPUmVjb25uZWN0UGFyYW1zEiAKGG1heF9yZWNvbm5lY3RfYmFja29m",
-            "Zl9tcxgBIAEoBSIzCg1SZWNvbm5lY3RJbmZvEg4KBnBhc3NlZBgBIAEoCBIS",
-            "CgpiYWNrb2ZmX21zGAIgAygFKh8KC1BheWxvYWRUeXBlEhAKDENPTVBSRVNT",
-            "QUJMRRAAKm8KD0dycGNsYlJvdXRlVHlwZRIdChlHUlBDTEJfUk9VVEVfVFlQ",
-            "RV9VTktOT1dOEAASHgoaR1JQQ0xCX1JPVVRFX1RZUEVfRkFMTEJBQ0sQARId",
-            "ChlHUlBDTEJfUk9VVEVfVFlQRV9CQUNLRU5EEAJiBnByb3RvMw=="));
+            "eXBlGAUgASgOMh0uZ3JwYy50ZXN0aW5nLkdycGNsYlJvdXRlVHlwZRIQCgho",
+            "b3N0bmFtZRgGIAEoCSJ3ChlTdHJlYW1pbmdJbnB1dENhbGxSZXF1ZXN0EiYK",
+            "B3BheWxvYWQYASABKAsyFS5ncnBjLnRlc3RpbmcuUGF5bG9hZBIyChFleHBl",
+            "Y3RfY29tcHJlc3NlZBgCIAEoCzIXLmdycGMudGVzdGluZy5Cb29sVmFsdWUi",
+            "PQoaU3RyZWFtaW5nSW5wdXRDYWxsUmVzcG9uc2USHwoXYWdncmVnYXRlZF9w",
+            "YXlsb2FkX3NpemUYASABKAUiZAoSUmVzcG9uc2VQYXJhbWV0ZXJzEgwKBHNp",
+            "emUYASABKAUSEwoLaW50ZXJ2YWxfdXMYAiABKAUSKwoKY29tcHJlc3NlZBgD",
+            "IAEoCzIXLmdycGMudGVzdGluZy5Cb29sVmFsdWUi6AEKGlN0cmVhbWluZ091",
+            "dHB1dENhbGxSZXF1ZXN0EjAKDXJlc3BvbnNlX3R5cGUYASABKA4yGS5ncnBj",
+            "LnRlc3RpbmcuUGF5bG9hZFR5cGUSPQoTcmVzcG9uc2VfcGFyYW1ldGVycxgC",
+            "IAMoCzIgLmdycGMudGVzdGluZy5SZXNwb25zZVBhcmFtZXRlcnMSJgoHcGF5",
+            "bG9hZBgDIAEoCzIVLmdycGMudGVzdGluZy5QYXlsb2FkEjEKD3Jlc3BvbnNl",
+            "X3N0YXR1cxgHIAEoCzIYLmdycGMudGVzdGluZy5FY2hvU3RhdHVzIkUKG1N0",
+            "cmVhbWluZ091dHB1dENhbGxSZXNwb25zZRImCgdwYXlsb2FkGAEgASgLMhUu",
+            "Z3JwYy50ZXN0aW5nLlBheWxvYWQiMwoPUmVjb25uZWN0UGFyYW1zEiAKGG1h",
+            "eF9yZWNvbm5lY3RfYmFja29mZl9tcxgBIAEoBSIzCg1SZWNvbm5lY3RJbmZv",
+            "Eg4KBnBhc3NlZBgBIAEoCBISCgpiYWNrb2ZmX21zGAIgAygFIkEKGExvYWRC",
+            "YWxhbmNlclN0YXRzUmVxdWVzdBIQCghudW1fcnBjcxgBIAEoBRITCgt0aW1l",
+            "b3V0X3NlYxgCIAEoBSKzAQoZTG9hZEJhbGFuY2VyU3RhdHNSZXNwb25zZRJN",
+            "CgxycGNzX2J5X3BlZXIYASADKAsyNy5ncnBjLnRlc3RpbmcuTG9hZEJhbGFu",
+            "Y2VyU3RhdHNSZXNwb25zZS5ScGNzQnlQZWVyRW50cnkSFAoMbnVtX2ZhaWx1",
+            "cmVzGAIgASgFGjEKD1JwY3NCeVBlZXJFbnRyeRILCgNrZXkYASABKAkSDQoF",
+            "dmFsdWUYAiABKAU6AjgBKh8KC1BheWxvYWRUeXBlEhAKDENPTVBSRVNTQUJM",
+            "RRAAKm8KD0dycGNsYlJvdXRlVHlwZRIdChlHUlBDTEJfUk9VVEVfVFlQRV9V",
+            "TktOT1dOEAASHgoaR1JQQ0xCX1JPVVRFX1RZUEVfRkFMTEJBQ0sQARIdChlH",
+            "UlBDTEJfUk9VVEVfVFlQRV9CQUNLRU5EEAJiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.PayloadType), typeof(global::Grpc.Testing.GrpclbRouteType), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -67,14 +73,16 @@ namespace Grpc.Testing {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Payload), global::Grpc.Testing.Payload.Parser, new[]{ "Type", "Body" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoStatus), global::Grpc.Testing.EchoStatus.Parser, new[]{ "Code", "Message" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleRequest), global::Grpc.Testing.SimpleRequest.Parser, new[]{ "ResponseType", "ResponseSize", "Payload", "FillUsername", "FillOauthScope", "ResponseCompressed", "ResponseStatus", "ExpectCompressed", "FillServerId", "FillGrpclbRouteType" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleResponse), global::Grpc.Testing.SimpleResponse.Parser, new[]{ "Payload", "Username", "OauthScope", "ServerId", "GrpclbRouteType" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleResponse), global::Grpc.Testing.SimpleResponse.Parser, new[]{ "Payload", "Username", "OauthScope", "ServerId", "GrpclbRouteType", "Hostname" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.StreamingInputCallRequest), global::Grpc.Testing.StreamingInputCallRequest.Parser, new[]{ "Payload", "ExpectCompressed" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.StreamingInputCallResponse), global::Grpc.Testing.StreamingInputCallResponse.Parser, new[]{ "AggregatedPayloadSize" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParameters), global::Grpc.Testing.ResponseParameters.Parser, new[]{ "Size", "IntervalUs", "Compressed" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.StreamingOutputCallRequest), global::Grpc.Testing.StreamingOutputCallRequest.Parser, new[]{ "ResponseType", "ResponseParameters", "Payload", "ResponseStatus" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.StreamingOutputCallResponse), global::Grpc.Testing.StreamingOutputCallResponse.Parser, new[]{ "Payload" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ReconnectParams), global::Grpc.Testing.ReconnectParams.Parser, new[]{ "MaxReconnectBackoffMs" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ReconnectInfo), global::Grpc.Testing.ReconnectInfo.Parser, new[]{ "Passed", "BackoffMs" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ReconnectInfo), global::Grpc.Testing.ReconnectInfo.Parser, new[]{ "Passed", "BackoffMs" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadBalancerStatsRequest), global::Grpc.Testing.LoadBalancerStatsRequest.Parser, new[]{ "NumRpcs", "TimeoutSec" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadBalancerStatsResponse), global::Grpc.Testing.LoadBalancerStatsResponse.Parser, new[]{ "RpcsByPeer", "NumFailures" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, })
           }));
     }
     #endregion
@@ -1056,6 +1064,7 @@ namespace Grpc.Testing {
       oauthScope_ = other.oauthScope_;
       serverId_ = other.serverId_;
       grpclbRouteType_ = other.grpclbRouteType_;
+      hostname_ = other.hostname_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1136,6 +1145,20 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "hostname" field.</summary>
+    public const int HostnameFieldNumber = 6;
+    private string hostname_ = "";
+    /// <summary>
+    /// Server hostname.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string Hostname {
+      get { return hostname_; }
+      set {
+        hostname_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as SimpleResponse);
@@ -1154,6 +1177,7 @@ namespace Grpc.Testing {
       if (OauthScope != other.OauthScope) return false;
       if (ServerId != other.ServerId) return false;
       if (GrpclbRouteType != other.GrpclbRouteType) return false;
+      if (Hostname != other.Hostname) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1165,6 +1189,7 @@ namespace Grpc.Testing {
       if (OauthScope.Length != 0) hash ^= OauthScope.GetHashCode();
       if (ServerId.Length != 0) hash ^= ServerId.GetHashCode();
       if (GrpclbRouteType != global::Grpc.Testing.GrpclbRouteType.Unknown) hash ^= GrpclbRouteType.GetHashCode();
+      if (Hostname.Length != 0) hash ^= Hostname.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1198,6 +1223,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(40);
         output.WriteEnum((int) GrpclbRouteType);
       }
+      if (Hostname.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(Hostname);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1220,6 +1249,9 @@ namespace Grpc.Testing {
       }
       if (GrpclbRouteType != global::Grpc.Testing.GrpclbRouteType.Unknown) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) GrpclbRouteType);
+      }
+      if (Hostname.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Hostname);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1249,6 +1281,9 @@ namespace Grpc.Testing {
       }
       if (other.GrpclbRouteType != global::Grpc.Testing.GrpclbRouteType.Unknown) {
         GrpclbRouteType = other.GrpclbRouteType;
+      }
+      if (other.Hostname.Length != 0) {
+        Hostname = other.Hostname;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1282,6 +1317,10 @@ namespace Grpc.Testing {
           }
           case 40: {
             GrpclbRouteType = (global::Grpc.Testing.GrpclbRouteType) input.ReadEnum();
+            break;
+          }
+          case 50: {
+            Hostname = input.ReadString();
             break;
           }
         }
@@ -2469,6 +2508,324 @@ namespace Grpc.Testing {
           case 18:
           case 16: {
             backoffMs_.AddEntriesFrom(input, _repeated_backoffMs_codec);
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class LoadBalancerStatsRequest : pb::IMessage<LoadBalancerStatsRequest> {
+    private static readonly pb::MessageParser<LoadBalancerStatsRequest> _parser = new pb::MessageParser<LoadBalancerStatsRequest>(() => new LoadBalancerStatsRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<LoadBalancerStatsRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[12]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public LoadBalancerStatsRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public LoadBalancerStatsRequest(LoadBalancerStatsRequest other) : this() {
+      numRpcs_ = other.numRpcs_;
+      timeoutSec_ = other.timeoutSec_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public LoadBalancerStatsRequest Clone() {
+      return new LoadBalancerStatsRequest(this);
+    }
+
+    /// <summary>Field number for the "num_rpcs" field.</summary>
+    public const int NumRpcsFieldNumber = 1;
+    private int numRpcs_;
+    /// <summary>
+    /// Request stats for the next num_rpcs sent by client.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int NumRpcs {
+      get { return numRpcs_; }
+      set {
+        numRpcs_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "timeout_sec" field.</summary>
+    public const int TimeoutSecFieldNumber = 2;
+    private int timeoutSec_;
+    /// <summary>
+    /// If num_rpcs have not completed within timeout_sec, return partial results.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int TimeoutSec {
+      get { return timeoutSec_; }
+      set {
+        timeoutSec_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as LoadBalancerStatsRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(LoadBalancerStatsRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (NumRpcs != other.NumRpcs) return false;
+      if (TimeoutSec != other.TimeoutSec) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (NumRpcs != 0) hash ^= NumRpcs.GetHashCode();
+      if (TimeoutSec != 0) hash ^= TimeoutSec.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (NumRpcs != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(NumRpcs);
+      }
+      if (TimeoutSec != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(TimeoutSec);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (NumRpcs != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(NumRpcs);
+      }
+      if (TimeoutSec != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(TimeoutSec);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(LoadBalancerStatsRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.NumRpcs != 0) {
+        NumRpcs = other.NumRpcs;
+      }
+      if (other.TimeoutSec != 0) {
+        TimeoutSec = other.TimeoutSec;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            NumRpcs = input.ReadInt32();
+            break;
+          }
+          case 16: {
+            TimeoutSec = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class LoadBalancerStatsResponse : pb::IMessage<LoadBalancerStatsResponse> {
+    private static readonly pb::MessageParser<LoadBalancerStatsResponse> _parser = new pb::MessageParser<LoadBalancerStatsResponse>(() => new LoadBalancerStatsResponse());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<LoadBalancerStatsResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[13]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public LoadBalancerStatsResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public LoadBalancerStatsResponse(LoadBalancerStatsResponse other) : this() {
+      rpcsByPeer_ = other.rpcsByPeer_.Clone();
+      numFailures_ = other.numFailures_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public LoadBalancerStatsResponse Clone() {
+      return new LoadBalancerStatsResponse(this);
+    }
+
+    /// <summary>Field number for the "rpcs_by_peer" field.</summary>
+    public const int RpcsByPeerFieldNumber = 1;
+    private static readonly pbc::MapField<string, int>.Codec _map_rpcsByPeer_codec
+        = new pbc::MapField<string, int>.Codec(pb::FieldCodec.ForString(10, ""), pb::FieldCodec.ForInt32(16, 0), 10);
+    private readonly pbc::MapField<string, int> rpcsByPeer_ = new pbc::MapField<string, int>();
+    /// <summary>
+    /// The number of completed RPCs for each peer.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::MapField<string, int> RpcsByPeer {
+      get { return rpcsByPeer_; }
+    }
+
+    /// <summary>Field number for the "num_failures" field.</summary>
+    public const int NumFailuresFieldNumber = 2;
+    private int numFailures_;
+    /// <summary>
+    /// The number of RPCs that failed to record a remote peer.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int NumFailures {
+      get { return numFailures_; }
+      set {
+        numFailures_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as LoadBalancerStatsResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(LoadBalancerStatsResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!RpcsByPeer.Equals(other.RpcsByPeer)) return false;
+      if (NumFailures != other.NumFailures) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      hash ^= RpcsByPeer.GetHashCode();
+      if (NumFailures != 0) hash ^= NumFailures.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      rpcsByPeer_.WriteTo(output, _map_rpcsByPeer_codec);
+      if (NumFailures != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(NumFailures);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      size += rpcsByPeer_.CalculateSize(_map_rpcsByPeer_codec);
+      if (NumFailures != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(NumFailures);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(LoadBalancerStatsResponse other) {
+      if (other == null) {
+        return;
+      }
+      rpcsByPeer_.Add(other.rpcsByPeer_);
+      if (other.NumFailures != 0) {
+        NumFailures = other.NumFailures;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            rpcsByPeer_.AddEntriesFrom(input, _map_rpcsByPeer_codec);
+            break;
+          }
+          case 16: {
+            NumFailures = input.ReadInt32();
             break;
           }
         }

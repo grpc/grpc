@@ -10,6 +10,7 @@
 #include "upb/msg.h"
 #include "envoy/api/v2/scoped_route.upb.h"
 #include "udpa/annotations/migrate.upb.h"
+#include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"

@@ -7,6 +7,9 @@ and [contribution guidelines](https://github.com/grpc/grpc-community/blob/master
 If you are new to github, please start by reading [Pull Request
 howto](https://help.github.com/articles/about-pull-requests/)
 
+If you are looking for features to work on, please filter the issues list with the label ["disposition/help wanted"](https://github.com/grpc/grpc/issues?q=label%3A%22disposition%2Fhelp+wanted%22).
+Please note that some of these feature requests might have been closed in the past as a result of them being marked as stale due to there being no activity, but these are still valid feature requests.
+
 ## Legal requirements
 
 In order to protect both you and ourselves, you will need to sign the

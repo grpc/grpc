@@ -299,7 +299,7 @@ class ClientCallbackEnd2endTest
     }
   }
 
-  void SendGenericEchoAsBidi(int num_rpcs, int reuses) {
+  void SendGenericEchoAsBidi(int num_rpcs, int reuses, bool do_writes_done) {
     const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
     grpc::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
@@ -308,8 +308,8 @@ class ClientCallbackEnd2endTest
                                                                   ByteBuffer> {
        public:
         Client(ClientCallbackEnd2endTest* test, const grpc::string& method_name,
-               const grpc::string& test_str, int reuses)
-            : reuses_remaining_(reuses) {
+               const grpc::string& test_str, int reuses, bool do_writes_done)
+            : reuses_remaining_(reuses), do_writes_done_(do_writes_done) {
           activate_ = [this, test, method_name, test_str] {
             if (reuses_remaining_ > 0) {
               cli_ctx_.reset(new ClientContext);
@@ -329,7 +329,11 @@ class ClientCallbackEnd2endTest
           };
           activate_();
         }
-        void OnWriteDone(bool /*ok*/) override { StartWritesDone(); }
+        void OnWriteDone(bool /*ok*/) override {
+          if (do_writes_done_) {
+            StartWritesDone();
+          }
+        }
         void OnReadDone(bool /*ok*/) override {
           EchoResponse response;
           EXPECT_TRUE(ParseFromByteBuffer(&recv_buf_, &response));
@@ -355,7 +359,10 @@ class ClientCallbackEnd2endTest
         std::mutex mu_;
         std::condition_variable cv_;
         bool done_ = false;
-      } rpc{this, kMethodName, test_string, reuses};
+        const bool do_writes_done_;
+      };
+
+      Client rpc(this, kMethodName, test_string, reuses, do_writes_done);
 
       rpc.Await();
     }
@@ -517,13 +524,19 @@ TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsAsBidi) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  SendGenericEchoAsBidi(10, 1);
+  SendGenericEchoAsBidi(10, 1, /*do_writes_done=*/true);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsAsBidiWithReactorReuse) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  SendGenericEchoAsBidi(10, 10);
+  SendGenericEchoAsBidi(10, 10, /*do_writes_done=*/true);
+}
+
+TEST_P(ClientCallbackEnd2endTest, GenericRpcNoWritesDone) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  SendGenericEchoAsBidi(1, 1, /*do_writes_done=*/false);
 }
 
 #if GRPC_ALLOW_EXCEPTIONS

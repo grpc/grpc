@@ -20,7 +20,6 @@
 
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client.h"
-#include "src/core/lib/gprpp/string_view.h"
 
 namespace grpc_core {
 
@@ -35,7 +34,8 @@ namespace {
 class XdsResolver : public Resolver {
  public:
   explicit XdsResolver(ResolverArgs args)
-      : Resolver(args.combiner, std::move(args.result_handler)),
+      : Resolver(std::move(args.work_serializer),
+                 std::move(args.result_handler)),
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set) {
     char* path = args.uri->path;
@@ -71,6 +71,7 @@ class XdsResolver : public Resolver {
     void OnServiceConfigChanged(
         RefCountedPtr<ServiceConfig> service_config) override;
     void OnError(grpc_error* error) override;
+    void OnResourceDoesNotExist() override;
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
@@ -109,10 +110,24 @@ void XdsResolver::ServiceConfigWatcher::OnError(grpc_error* error) {
   resolver_->result_handler()->ReturnResult(std::move(result));
 }
 
+void XdsResolver::ServiceConfigWatcher::OnResourceDoesNotExist() {
+  if (resolver_->xds_client_ == nullptr) return;
+  gpr_log(GPR_ERROR,
+          "[xds_resolver %p] LDS/RDS resource does not exist -- returning "
+          "empty service config",
+          resolver_.get());
+  Result result;
+  result.service_config =
+      ServiceConfig::Create("{}", &result.service_config_error);
+  GPR_ASSERT(result.service_config != nullptr);
+  result.args = grpc_channel_args_copy(resolver_->args_);
+  resolver_->result_handler()->ReturnResult(std::move(result));
+}
+
 void XdsResolver::StartLocked() {
   grpc_error* error = GRPC_ERROR_NONE;
   xds_client_ = MakeOrphanable<XdsClient>(
-      combiner(), interested_parties_, server_name_,
+      work_serializer(), interested_parties_, server_name_,
       absl::make_unique<ServiceConfigWatcher>(Ref()), *args_, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,

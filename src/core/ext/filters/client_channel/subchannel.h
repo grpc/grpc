@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <deque>
+
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
@@ -176,24 +178,44 @@ class SubchannelCall {
 class Subchannel {
  public:
   class ConnectivityStateWatcherInterface
-      : public InternallyRefCounted<ConnectivityStateWatcherInterface> {
+      : public RefCounted<ConnectivityStateWatcherInterface> {
    public:
+    struct ConnectivityStateChange {
+      grpc_connectivity_state state;
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+    };
+
     virtual ~ConnectivityStateWatcherInterface() = default;
 
     // Will be invoked whenever the subchannel's connectivity state
     // changes.  There will be only one invocation of this method on a
     // given watcher instance at any given time.
-    //
+    // Implementations should call PopConnectivityStateChange to get the next
+    // connectivity state change.
+    virtual void OnConnectivityStateChange() = 0;
+
+    virtual grpc_pollset_set* interested_parties() = 0;
+
+    // Enqueues connectivity state change notifications.
     // When the state changes to READY, connected_subchannel will
     // contain a ref to the connected subchannel.  When it changes from
     // READY to some other state, the implementation must release its
     // ref to the connected subchannel.
-    virtual void OnConnectivityStateChange(
-        grpc_connectivity_state new_state,
-        RefCountedPtr<ConnectedSubchannel> connected_subchannel)  // NOLINT
-        = 0;
+    // TODO(yashkt): This is currently needed to send the state updates in the
+    // right order when asynchronously notifying. This will no longer be
+    // necessary when we have access to EventManager.
+    void PushConnectivityStateChange(ConnectivityStateChange state_change);
 
-    virtual grpc_pollset_set* interested_parties() = 0;
+    // Dequeues connectivity state change notifications.
+    ConnectivityStateChange PopConnectivityStateChange();
+
+   private:
+    // Keeps track of the updates that the watcher instance must be notified of.
+    // TODO(yashkt): This is currently needed to send the state updates in the
+    // right order when asynchronously notifying. This will no longer be
+    // necessary when we have access to EventManager.
+    std::deque<ConnectivityStateChange> connectivity_state_queue_;
+    Mutex mu_;  // protects the queue
   };
 
   // The ctor and dtor are not intended to use directly.
@@ -243,7 +265,7 @@ class Subchannel {
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
       grpc_core::UniquePtr<char> health_check_service_name,
-      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+      RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
@@ -280,7 +302,7 @@ class Subchannel {
     ~ConnectivityStateWatcherList() { Clear(); }
 
     void AddWatcherLocked(
-        OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+        RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(ConnectivityStateWatcherInterface* watcher);
 
     // Notifies all watchers in the list about a change to state.
@@ -294,7 +316,7 @@ class Subchannel {
     // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
     // be a set instead of a map.
     std::map<ConnectivityStateWatcherInterface*,
-             OrphanablePtr<ConnectivityStateWatcherInterface>>
+             RefCountedPtr<ConnectivityStateWatcherInterface>>
         watchers_;
   };
 
@@ -312,7 +334,7 @@ class Subchannel {
     void AddWatcherLocked(
         Subchannel* subchannel, grpc_connectivity_state initial_state,
         grpc_core::UniquePtr<char> health_check_service_name,
-        OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+        RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const char* health_check_service_name,
                              ConnectivityStateWatcherInterface* watcher);
 
@@ -331,6 +353,8 @@ class Subchannel {
   };
 
   class ConnectedSubchannelStateWatcher;
+
+  class AsyncWatcherNotifierLocked;
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state);

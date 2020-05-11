@@ -40,6 +40,8 @@ describe 'Code Generation Options' do
       expect(services[:OtherTest].output).to eq(A::Other::Thing)
       expect(services[:FooTest].input).to eq(RPC::Test::New::Package::Options::Foo)
       expect(services[:FooTest].output).to eq(RPC::Test::New::Package::Options::Foo)
+      expect(services[:NestedMessageTest].input).to eq(RPC::Test::New::Package::Options::Foo)
+      expect(services[:NestedMessageTest].output).to eq(RPC::Test::New::Package::Options::Bar::Baz)
     end
   end
 end
