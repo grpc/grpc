@@ -10,7 +10,7 @@
 
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
 
-static const char descriptor[4871] =
+static const char descriptor[5517] =
   "\n\024gogoproto/gogo.proto\022\tgogoproto\032 googl"
   "e/protobuf/descriptor.proto:N\n\023goproto_e"
   "num_prefix\022\034.google.protobuf.EnumOptions"
@@ -75,7 +75,15 @@ static const char descriptor[4871] =
   "\ncompareAll:A\n\014typedecl_all\022\034.google.pro"
   "tobuf.FileOptions\030\266\354\003 \001(\010R\013typedeclAll:A"
   "\n\014enumdecl_all\022\034.google.protobuf.FileOpt"
-  "ions\030\267\354\003 \001(\010R\013enumdeclAll:J\n\017goproto_get"
+  "ions\030\267\354\003 \001(\010R\013enumdeclAll:Q\n\024goproto_reg"
+  "istration\022\034.google.protobuf.FileOptions\030"
+  "\270\354\003 \001(\010R\023goprotoRegistration:G\n\017messagen"
+  "ame_all\022\034.google.protobuf.FileOptions\030\271\354"
+  "\003 \001(\010R\016messagenameAll:R\n\025goproto_sizecac"
+  "he_all\022\034.google.protobuf.FileOptions\030\272\354\003"
+  " \001(\010R\023goprotoSizecacheAll:N\n\023goproto_unk"
+  "eyed_all\022\034.google.protobuf.FileOptions\030\273"
+  "\354\003 \001(\010R\021goprotoUnkeyedAll:J\n\017goproto_get"
   "ters\022\037.google.protobuf.MessageOptions\030\201\364"
   "\003 \001(\010R\016goprotoGetters:L\n\020goproto_stringe"
   "r\022\037.google.protobuf.MessageOptions\030\203\364\003 \001"
@@ -115,24 +123,32 @@ static const char descriptor[4871] =
   "\007compare\022\037.google.protobuf.MessageOption"
   "s\030\235\364\003 \001(\010R\007compare:=\n\010typedecl\022\037.google."
   "protobuf.MessageOptions\030\236\364\003 \001(\010R\010typedec"
-  "l:;\n\010nullable\022\035.google.protobuf.FieldOpt"
-  "ions\030\351\373\003 \001(\010R\010nullable:5\n\005embed\022\035.google"
-  ".protobuf.FieldOptions\030\352\373\003 \001(\010R\005embed:\?\n"
-  "\ncustomtype\022\035.google.protobuf.FieldOptio"
-  "ns\030\353\373\003 \001(\tR\ncustomtype:\?\n\ncustomname\022\035.g"
-  "oogle.protobuf.FieldOptions\030\354\373\003 \001(\tR\ncus"
-  "tomname:9\n\007jsontag\022\035.google.protobuf.Fie"
-  "ldOptions\030\355\373\003 \001(\tR\007jsontag:;\n\010moretags\022\035"
-  ".google.protobuf.FieldOptions\030\356\373\003 \001(\tR\010m"
-  "oretags:;\n\010casttype\022\035.google.protobuf.Fi"
-  "eldOptions\030\357\373\003 \001(\tR\010casttype:9\n\007castkey\022"
-  "\035.google.protobuf.FieldOptions\030\360\373\003 \001(\tR\007"
-  "castkey:=\n\tcastvalue\022\035.google.protobuf.F"
-  "ieldOptions\030\361\373\003 \001(\tR\tcastvalue:9\n\007stdtim"
-  "e\022\035.google.protobuf.FieldOptions\030\362\373\003 \001(\010"
-  "R\007stdtime:A\n\013stdduration\022\035.google.protob"
-  "uf.FieldOptions\030\363\373\003 \001(\010R\013stddurationB!\n\023"
-  "com.google.protobufB\nGoGoProtos";
+  "l:C\n\013messagename\022\037.google.protobuf.Messa"
+  "geOptions\030\241\364\003 \001(\010R\013messagename:N\n\021goprot"
+  "o_sizecache\022\037.google.protobuf.MessageOpt"
+  "ions\030\242\364\003 \001(\010R\020goprotoSizecache:J\n\017goprot"
+  "o_unkeyed\022\037.google.protobuf.MessageOptio"
+  "ns\030\243\364\003 \001(\010R\016goprotoUnkeyed:;\n\010nullable\022\035"
+  ".google.protobuf.FieldOptions\030\351\373\003 \001(\010R\010n"
+  "ullable:5\n\005embed\022\035.google.protobuf.Field"
+  "Options\030\352\373\003 \001(\010R\005embed:\?\n\ncustomtype\022\035.g"
+  "oogle.protobuf.FieldOptions\030\353\373\003 \001(\tR\ncus"
+  "tomtype:\?\n\ncustomname\022\035.google.protobuf."
+  "FieldOptions\030\354\373\003 \001(\tR\ncustomname:9\n\007json"
+  "tag\022\035.google.protobuf.FieldOptions\030\355\373\003 \001"
+  "(\tR\007jsontag:;\n\010moretags\022\035.google.protobu"
+  "f.FieldOptions\030\356\373\003 \001(\tR\010moretags:;\n\010cast"
+  "type\022\035.google.protobuf.FieldOptions\030\357\373\003 "
+  "\001(\tR\010casttype:9\n\007castkey\022\035.google.protob"
+  "uf.FieldOptions\030\360\373\003 \001(\tR\007castkey:=\n\tcast"
+  "value\022\035.google.protobuf.FieldOptions\030\361\373\003"
+  " \001(\tR\tcastvalue:9\n\007stdtime\022\035.google.prot"
+  "obuf.FieldOptions\030\362\373\003 \001(\010R\007stdtime:A\n\013st"
+  "dduration\022\035.google.protobuf.FieldOptions"
+  "\030\363\373\003 \001(\010R\013stdduration:\?\n\nwktpointer\022\035.go"
+  "ogle.protobuf.FieldOptions\030\364\373\003 \001(\010R\nwktp"
+  "ointerBE\n\023com.google.protobufB\nGoGoProto"
+  "sZ\"github.com/gogo/protobuf/gogoproto";
 
 static upb_def_init *deps[2] = {
   &google_protobuf_descriptor_proto_upbdefinit,
@@ -143,5 +159,5 @@ upb_def_init gogoproto_gogo_proto_upbdefinit = {
   deps,
   NULL,
   "gogoproto/gogo.proto",
-  UPB_STRVIEW_INIT(descriptor, 4871)
+  UPB_STRVIEW_INIT(descriptor, 5517)
 };

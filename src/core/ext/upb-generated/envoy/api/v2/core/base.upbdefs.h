@@ -26,6 +26,16 @@ UPB_INLINE const upb_msgdef *envoy_api_v2_core_Locality_getmsgdef(upb_symtab *s)
   return upb_symtab_lookupmsg(s, "envoy.api.v2.core.Locality");
 }
 
+UPB_INLINE const upb_msgdef *envoy_api_v2_core_BuildVersion_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_api_v2_core_base_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.core.BuildVersion");
+}
+
+UPB_INLINE const upb_msgdef *envoy_api_v2_core_Extension_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_api_v2_core_base_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.core.Extension");
+}
+
 UPB_INLINE const upb_msgdef *envoy_api_v2_core_Node_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_api_v2_core_base_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.api.v2.core.Node");
@@ -44,6 +54,11 @@ UPB_INLINE const upb_msgdef *envoy_api_v2_core_Metadata_FilterMetadataEntry_getm
 UPB_INLINE const upb_msgdef *envoy_api_v2_core_RuntimeUInt32_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_api_v2_core_base_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.api.v2.core.RuntimeUInt32");
+}
+
+UPB_INLINE const upb_msgdef *envoy_api_v2_core_RuntimeDouble_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_api_v2_core_base_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.core.RuntimeDouble");
 }
 
 UPB_INLINE const upb_msgdef *envoy_api_v2_core_RuntimeFeatureFlag_getmsgdef(upb_symtab *s) {
@@ -71,6 +86,11 @@ UPB_INLINE const upb_msgdef *envoy_api_v2_core_DataSource_getmsgdef(upb_symtab *
   return upb_symtab_lookupmsg(s, "envoy.api.v2.core.DataSource");
 }
 
+UPB_INLINE const upb_msgdef *envoy_api_v2_core_RetryPolicy_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_api_v2_core_base_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.core.RetryPolicy");
+}
+
 UPB_INLINE const upb_msgdef *envoy_api_v2_core_RemoteDataSource_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_api_v2_core_base_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.api.v2.core.RemoteDataSource");
@@ -84,11 +104,6 @@ UPB_INLINE const upb_msgdef *envoy_api_v2_core_AsyncDataSource_getmsgdef(upb_sym
 UPB_INLINE const upb_msgdef *envoy_api_v2_core_TransportSocket_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_api_v2_core_base_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.api.v2.core.TransportSocket");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_core_SocketOption_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_core_base_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.core.SocketOption");
 }
 
 UPB_INLINE const upb_msgdef *envoy_api_v2_core_RuntimeFractionalPercent_getmsgdef(upb_symtab *s) {

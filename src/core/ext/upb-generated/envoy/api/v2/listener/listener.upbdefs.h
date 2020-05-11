@@ -21,26 +21,6 @@ extern "C" {
 
 extern upb_def_init envoy_api_v2_listener_listener_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_api_v2_listener_Filter_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_listener_listener_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.listener.Filter");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_listener_FilterChainMatch_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_listener_listener_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.listener.FilterChainMatch");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_listener_FilterChain_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_listener_listener_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.listener.FilterChain");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_listener_ListenerFilter_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_listener_listener_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.listener.ListenerFilter");
-}
-
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

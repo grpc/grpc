@@ -71,6 +71,11 @@ UPB_INLINE const upb_msgdef *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCreden
   return upb_symtab_lookupmsg(s, "envoy.api.v2.core.GrpcService.GoogleGrpc.CallCredentials.MetadataCredentialsFromPlugin");
 }
 
+UPB_INLINE const upb_msgdef *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_StsService_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_api_v2_core_grpc_service_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.core.GrpcService.GoogleGrpc.CallCredentials.StsService");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

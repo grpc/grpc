@@ -21,61 +21,6 @@ extern "C" {
 
 extern upb_def_init envoy_api_v2_auth_cert_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_api_v2_auth_TlsParameters_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_auth_cert_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.auth.TlsParameters");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_auth_PrivateKeyProvider_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_auth_cert_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.auth.PrivateKeyProvider");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_auth_TlsCertificate_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_auth_cert_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.auth.TlsCertificate");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_auth_TlsSessionTicketKeys_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_auth_cert_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.auth.TlsSessionTicketKeys");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_auth_CertificateValidationContext_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_auth_cert_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.auth.CertificateValidationContext");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_auth_CommonTlsContext_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_auth_cert_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.auth.CommonTlsContext");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidationContext_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_auth_cert_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.auth.CommonTlsContext.CombinedCertificateValidationContext");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_auth_UpstreamTlsContext_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_auth_cert_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.auth.UpstreamTlsContext");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_auth_DownstreamTlsContext_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_auth_cert_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.auth.DownstreamTlsContext");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_auth_SdsSecretConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_auth_cert_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.auth.SdsSecretConfig");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_auth_Secret_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_auth_cert_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.auth.Secret");
-}
-
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

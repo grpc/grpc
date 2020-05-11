@@ -8,89 +8,27 @@
 
 #include "upb/def.h"
 
-extern upb_def_init envoy_api_v2_auth_cert_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_core_address_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_core_base_proto_upbdefinit;
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern upb_def_init google_protobuf_struct_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_api_v2_listener_Filter_msginit;
-extern const upb_msglayout envoy_api_v2_listener_FilterChainMatch_msginit;
-extern const upb_msglayout envoy_api_v2_listener_FilterChain_msginit;
-extern const upb_msglayout envoy_api_v2_listener_ListenerFilter_msginit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
+extern upb_def_init envoy_api_v2_listener_listener_components_proto_upbdefinit;
 
-static const upb_msglayout *layouts[4] = {
-  &envoy_api_v2_listener_Filter_msginit,
-  &envoy_api_v2_listener_FilterChainMatch_msginit,
-  &envoy_api_v2_listener_FilterChain_msginit,
-  &envoy_api_v2_listener_ListenerFilter_msginit,
-};
-
-static const char descriptor[1907] =
+static const char descriptor[259] =
   "\n$envoy/api/v2/listener/listener.proto\022\025"
-  "envoy.api.v2.listener\032\034envoy/api/v2/auth"
-  "/cert.proto\032\037envoy/api/v2/core/address.p"
-  "roto\032\034envoy/api/v2/core/base.proto\032\031goog"
-  "le/protobuf/any.proto\032\034google/protobuf/s"
-  "truct.proto\032\036google/protobuf/wrappers.pr"
-  "oto\032\027validate/validate.proto\"\252\001\n\006Filter\022"
-  "\035\n\004name\030\001 \001(\tB\t\272\351\300\003\004r\002 \001R\004name\0221\n\006config"
-  "\030\002 \001(\0132\027.google.protobuf.StructH\000R\006confi"
-  "g\0229\n\014typed_config\030\004 \001(\0132\024.google.protobu"
-  "f.AnyH\000R\013typedConfigB\r\n\013config_typeJ\004\010\003\020"
-  "\004\"\312\005\n\020FilterChainMatch\022V\n\020destination_po"
-  "rt\030\010 \001(\0132\034.google.protobuf.UInt32ValueB\r"
-  "\272\351\300\003\010*\006\030\377\377\003(\001R\017destinationPort\022A\n\rprefix"
-  "_ranges\030\003 \003(\0132\034.envoy.api.v2.core.CidrRa"
-  "ngeR\014prefixRanges\022%\n\016address_suffix\030\004 \001("
-  "\tR\raddressSuffix\022;\n\nsuffix_len\030\005 \001(\0132\034.g"
-  "oogle.protobuf.UInt32ValueR\tsuffixLen\022i\n"
-  "\013source_type\030\014 \001(\0162<.envoy.api.v2.listen"
-  "er.FilterChainMatch.ConnectionSourceType"
-  "B\n\272\351\300\003\005\202\001\002\020\001R\nsourceType\022N\n\024source_prefi"
-  "x_ranges\030\006 \003(\0132\034.envoy.api.v2.core.CidrR"
-  "angeR\022sourcePrefixRanges\0225\n\014source_ports"
-  "\030\007 \003(\rB\022\272\351\300\003\r\222\001\n\"\010*\006\030\377\377\003(\001R\013sourcePorts\022"
-  "!\n\014server_names\030\013 \003(\tR\013serverNames\022-\n\022tr"
-  "ansport_protocol\030\t \001(\tR\021transportProtoco"
-  "l\0223\n\025application_protocols\030\n \003(\tR\024applic"
-  "ationProtocols\"8\n\024ConnectionSourceType\022\007"
-  "\n\003ANY\020\000\022\t\n\005LOCAL\020\001\022\014\n\010EXTERNAL\020\002J\004\010\001\020\002\"\307"
-  "\003\n\013FilterChain\022U\n\022filter_chain_match\030\001 \001"
-  "(\0132\'.envoy.api.v2.listener.FilterChainMa"
-  "tchR\020filterChainMatch\022H\n\013tls_context\030\002 \001"
-  "(\0132\'.envoy.api.v2.auth.DownstreamTlsCont"
-  "extR\ntlsContext\0227\n\007filters\030\003 \003(\0132\035.envoy"
-  ".api.v2.listener.FilterR\007filters\022B\n\017use_"
-  "proxy_proto\030\004 \001(\0132\032.google.protobuf.Bool"
-  "ValueR\ruseProxyProto\0227\n\010metadata\030\005 \001(\0132\033"
-  ".envoy.api.v2.core.MetadataR\010metadata\022M\n"
-  "\020transport_socket\030\006 \001(\0132\".envoy.api.v2.c"
-  "ore.TransportSocketR\017transportSocket\022\022\n\004"
-  "name\030\007 \001(\tR\004name\"\254\001\n\016ListenerFilter\022\035\n\004n"
-  "ame\030\001 \001(\tB\t\272\351\300\003\004r\002 \001R\004name\0221\n\006config\030\002 \001"
-  "(\0132\027.google.protobuf.StructH\000R\006config\0229\n"
-  "\014typed_config\030\003 \001(\0132\024.google.protobuf.An"
-  "yH\000R\013typedConfigB\r\n\013config_typeBj\n#io.en"
-  "voyproxy.envoy.api.v2.listenerB\rListener"
-  "ProtoP\001\252\002\027Envoy.Api.V2.ListenerNS\352\002\027Envo"
-  "y.Api.V2.ListenerNSb\006proto3";
+  "envoy.api.v2.listener\032\035udpa/annotations/"
+  "status.proto\032/envoy/api/v2/listener/list"
+  "ener_components.protoBj\n#io.envoyproxy.e"
+  "nvoy.api.v2.listenerB\rListenerProtoP\001\252\002\027"
+  "Envoy.Api.V2.ListenerNS\352\002\027Envoy.Api.V2.L"
+  "istenerNSP\001b\006proto3";
 
-static upb_def_init *deps[8] = {
-  &envoy_api_v2_auth_cert_proto_upbdefinit,
-  &envoy_api_v2_core_address_proto_upbdefinit,
-  &envoy_api_v2_core_base_proto_upbdefinit,
-  &google_protobuf_any_proto_upbdefinit,
-  &google_protobuf_struct_proto_upbdefinit,
-  &google_protobuf_wrappers_proto_upbdefinit,
-  &validate_validate_proto_upbdefinit,
+static upb_def_init *deps[3] = {
+  &udpa_annotations_status_proto_upbdefinit,
+  &envoy_api_v2_listener_listener_components_proto_upbdefinit,
   NULL
 };
 
 upb_def_init envoy_api_v2_listener_listener_proto_upbdefinit = {
   deps,
-  layouts,
+  NULL,
   "envoy/api/v2/listener/listener.proto",
-  UPB_STRVIEW_INIT(descriptor, 1907)
+  UPB_STRVIEW_INIT(descriptor, 259)
 };

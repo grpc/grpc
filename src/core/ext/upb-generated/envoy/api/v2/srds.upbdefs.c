@@ -10,46 +10,44 @@
 
 extern upb_def_init envoy_api_v2_discovery_proto_upbdefinit;
 extern upb_def_init google_api_annotations_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_api_v2_ScopedRouteConfiguration_msginit;
-extern const upb_msglayout envoy_api_v2_ScopedRouteConfiguration_Key_msginit;
-extern const upb_msglayout envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_msginit;
+extern upb_def_init envoy_annotations_resource_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
+extern upb_def_init envoy_api_v2_scoped_route_proto_upbdefinit;
+extern const upb_msglayout envoy_api_v2_SrdsDummy_msginit;
 
-static const upb_msglayout *layouts[3] = {
-  &envoy_api_v2_ScopedRouteConfiguration_msginit,
-  &envoy_api_v2_ScopedRouteConfiguration_Key_msginit,
-  &envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_msginit,
+static const upb_msglayout *layouts[1] = {
+  &envoy_api_v2_SrdsDummy_msginit,
 };
 
-static const char descriptor[898] =
+static const char descriptor[744] =
   "\n\027envoy/api/v2/srds.proto\022\014envoy.api.v2\032"
   "\034envoy/api/v2/discovery.proto\032\034google/ap"
-  "i/annotations.proto\032\027validate/validate.p"
-  "roto\"\353\002\n\030ScopedRouteConfiguration\022\035\n\004nam"
-  "e\030\001 \001(\tB\t\272\351\300\003\004r\002 \001R\004name\022C\n\030route_config"
-  "uration_name\030\002 \001(\tB\t\272\351\300\003\004r\002 \001R\026routeConf"
-  "igurationName\022H\n\003key\030\003 \001(\0132*.envoy.api.v"
-  "2.ScopedRouteConfiguration.KeyB\n\272\351\300\003\005\212\001\002"
-  "\020\001R\003key\032\240\001\n\003Key\022]\n\tfragments\030\001 \003(\01323.env"
-  "oy.api.v2.ScopedRouteConfiguration.Key.F"
-  "ragmentB\n\272\351\300\003\005\222\001\002\010\001R\tfragments\032:\n\010Fragme"
-  "nt\022\037\n\nstring_key\030\001 \001(\tH\000R\tstringKeyB\r\n\004t"
-  "ype\022\005\270\351\300\003\0012\337\002\n\034ScopedRoutesDiscoveryServ"
-  "ice\022[\n\022StreamScopedRoutes\022\036.envoy.api.v2"
-  ".DiscoveryRequest\032\037.envoy.api.v2.Discove"
-  "ryResponse\"\000(\0010\001\022d\n\021DeltaScopedRoutes\022#."
-  "envoy.api.v2.DeltaDiscoveryRequest\032$.env"
-  "oy.api.v2.DeltaDiscoveryResponse\"\000(\0010\001\022|"
-  "\n\021FetchScopedRoutes\022\036.envoy.api.v2.Disco"
-  "veryRequest\032\037.envoy.api.v2.DiscoveryResp"
-  "onse\"&\202\323\344\223\002 \"\033/v2/discovery:scoped-route"
-  "s:\001*B,\n\032io.envoyproxy.envoy.api.v2B\tSrds"
-  "ProtoP\001\210\001\001b\006proto3";
+  "i/annotations.proto\032 envoy/annotations/r"
+  "esource.proto\032\036udpa/annotations/migrate."
+  "proto\032\035udpa/annotations/status.proto\032\037en"
+  "voy/api/v2/scoped_route.proto\"\013\n\tSrdsDum"
+  "my2\225\003\n\034ScopedRoutesDiscoveryService\022[\n\022S"
+  "treamScopedRoutes\022\036.envoy.api.v2.Discove"
+  "ryRequest\032\037.envoy.api.v2.DiscoveryRespon"
+  "se\"\000(\0010\001\022d\n\021DeltaScopedRoutes\022#.envoy.ap"
+  "i.v2.DeltaDiscoveryRequest\032$.envoy.api.v"
+  "2.DeltaDiscoveryResponse\"\000(\0010\001\022\202\001\n\021Fetch"
+  "ScopedRoutes\022\036.envoy.api.v2.DiscoveryReq"
+  "uest\032\037.envoy.api.v2.DiscoveryResponse\",\202"
+  "\323\344\223\002\035\"\033/v2/discovery:scoped-routes\202\323\344\223\002\003"
+  ":\001*\032-\212\244\226\363\007\'\n%envoy.api.v2.ScopedRouteCon"
+  "figurationBR\n\032io.envoyproxy.envoy.api.v2"
+  "B\tSrdsProtoP\001\210\001\001\362\230\376\217\005\030\022\026envoy.service.ro"
+  "ute.v3\272\200\310\321\006\002\020\001P\005b\006proto3";
 
-static upb_def_init *deps[4] = {
+static upb_def_init *deps[7] = {
   &envoy_api_v2_discovery_proto_upbdefinit,
   &google_api_annotations_proto_upbdefinit,
-  &validate_validate_proto_upbdefinit,
+  &envoy_annotations_resource_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
+  &envoy_api_v2_scoped_route_proto_upbdefinit,
   NULL
 };
 
@@ -57,5 +55,5 @@ upb_def_init envoy_api_v2_srds_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/srds.proto",
-  UPB_STRVIEW_INIT(descriptor, 898)
+  UPB_STRVIEW_INIT(descriptor, 744)
 };

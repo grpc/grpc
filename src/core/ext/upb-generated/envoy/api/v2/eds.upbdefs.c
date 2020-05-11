@@ -9,73 +9,53 @@
 #include "upb/def.h"
 
 extern upb_def_init envoy_api_v2_discovery_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_endpoint_endpoint_proto_upbdefinit;
-extern upb_def_init envoy_type_percent_proto_upbdefinit;
 extern upb_def_init google_api_annotations_proto_upbdefinit;
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
+extern upb_def_init envoy_annotations_resource_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_api_v2_ClusterLoadAssignment_msginit;
-extern const upb_msglayout envoy_api_v2_ClusterLoadAssignment_Policy_msginit;
-extern const upb_msglayout envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_msginit;
-extern const upb_msglayout envoy_api_v2_ClusterLoadAssignment_NamedEndpointsEntry_msginit;
+extern upb_def_init envoy_api_v2_endpoint_proto_upbdefinit;
+extern const upb_msglayout envoy_api_v2_EdsDummy_msginit;
 
-static const upb_msglayout *layouts[4] = {
-  &envoy_api_v2_ClusterLoadAssignment_msginit,
-  &envoy_api_v2_ClusterLoadAssignment_Policy_msginit,
-  &envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_msginit,
-  &envoy_api_v2_ClusterLoadAssignment_NamedEndpointsEntry_msginit,
+static const upb_msglayout *layouts[1] = {
+  &envoy_api_v2_EdsDummy_msginit,
 };
 
-static const char descriptor[1539] =
+static const char descriptor[808] =
   "\n\026envoy/api/v2/eds.proto\022\014envoy.api.v2\032\034"
-  "envoy/api/v2/discovery.proto\032$envoy/api/"
-  "v2/endpoint/endpoint.proto\032\030envoy/type/p"
-  "ercent.proto\032\034google/api/annotations.pro"
-  "to\032\036google/protobuf/duration.proto\032\036goog"
-  "le/protobuf/wrappers.proto\032\027validate/val"
-  "idate.proto\"\377\006\n\025ClusterLoadAssignment\022,\n"
-  "\014cluster_name\030\001 \001(\tB\t\272\351\300\003\004r\002 \001R\013clusterN"
-  "ame\022H\n\tendpoints\030\002 \003(\0132*.envoy.api.v2.en"
-  "dpoint.LocalityLbEndpointsR\tendpoints\022`\n"
-  "\017named_endpoints\030\005 \003(\01327.envoy.api.v2.Cl"
-  "usterLoadAssignment.NamedEndpointsEntryR"
-  "\016namedEndpoints\022B\n\006policy\030\004 \001(\0132*.envoy."
-  "api.v2.ClusterLoadAssignment.PolicyR\006pol"
-  "icy\032\343\003\n\006Policy\022^\n\016drop_overloads\030\002 \003(\01327"
-  ".envoy.api.v2.ClusterLoadAssignment.Poli"
-  "cy.DropOverloadR\rdropOverloads\022`\n\027overpr"
-  "ovisioning_factor\030\003 \001(\0132\034.google.protobu"
-  "f.UInt32ValueB\t\272\351\300\003\004*\002 \000R\026overprovisioni"
-  "ngFactor\022W\n\024endpoint_stale_after\030\004 \001(\0132\031"
-  ".google.protobuf.DurationB\n\272\351\300\003\005\252\001\002*\000R\022e"
-  "ndpointStaleAfter\0229\n\030disable_overprovisi"
-  "oning\030\005 \001(\010R\027disableOverprovisioning\032}\n\014"
-  "DropOverload\022%\n\010category\030\001 \001(\tB\t\272\351\300\003\004r\002 "
-  "\001R\010category\022F\n\017drop_percentage\030\002 \001(\0132\035.e"
-  "nvoy.type.FractionalPercentR\016dropPercent"
-  "ageJ\004\010\001\020\002\032b\n\023NamedEndpointsEntry\022\020\n\003key\030"
-  "\001 \001(\tR\003key\0225\n\005value\030\002 \001(\0132\037.envoy.api.v2"
-  ".endpoint.EndpointR\005value:\0028\0012\316\002\n\030Endpoi"
-  "ntDiscoveryService\022X\n\017StreamEndpoints\022\036."
-  "envoy.api.v2.DiscoveryRequest\032\037.envoy.ap"
-  "i.v2.DiscoveryResponse\"\000(\0010\001\022a\n\016DeltaEnd"
-  "points\022#.envoy.api.v2.DeltaDiscoveryRequ"
-  "est\032$.envoy.api.v2.DeltaDiscoveryRespons"
-  "e\"\000(\0010\001\022u\n\016FetchEndpoints\022\036.envoy.api.v2"
-  ".DiscoveryRequest\032\037.envoy.api.v2.Discove"
-  "ryResponse\"\"\202\323\344\223\002\034\"\027/v2/discovery:endpoi"
-  "nts:\001*B+\n\032io.envoyproxy.envoy.api.v2B\010Ed"
-  "sProtoP\001\210\001\001b\006proto3";
+  "envoy/api/v2/discovery.proto\032\034google/api"
+  "/annotations.proto\032\036google/protobuf/dura"
+  "tion.proto\032\036google/protobuf/wrappers.pro"
+  "to\032 envoy/annotations/resource.proto\032\036ud"
+  "pa/annotations/migrate.proto\032\035udpa/annot"
+  "ations/status.proto\032\027validate/validate.p"
+  "roto\032\033envoy/api/v2/endpoint.proto\"\n\n\010Eds"
+  "Dummy2\200\003\n\030EndpointDiscoveryService\022X\n\017St"
+  "reamEndpoints\022\036.envoy.api.v2.DiscoveryRe"
+  "quest\032\037.envoy.api.v2.DiscoveryResponse\"\000"
+  "(\0010\001\022a\n\016DeltaEndpoints\022#.envoy.api.v2.De"
+  "ltaDiscoveryRequest\032$.envoy.api.v2.Delta"
+  "DiscoveryResponse\"\000(\0010\001\022{\n\016FetchEndpoint"
+  "s\022\036.envoy.api.v2.DiscoveryRequest\032\037.envo"
+  "y.api.v2.DiscoveryResponse\"(\202\323\344\223\002\031\"\027/v2/"
+  "discovery:endpoints\202\323\344\223\002\003:\001*\032*\212\244\226\363\007$\n\"en"
+  "voy.api.v2.ClusterLoadAssignmentBT\n\032io.e"
+  "nvoyproxy.envoy.api.v2B\010EdsProtoP\001\210\001\001\362\230\376"
+  "\217\005\033\022\031envoy.service.endpoint.v3\272\200\310\321\006\002\020\001P\010"
+  "b\006proto3";
 
-static upb_def_init *deps[8] = {
+static upb_def_init *deps[10] = {
   &envoy_api_v2_discovery_proto_upbdefinit,
-  &envoy_api_v2_endpoint_endpoint_proto_upbdefinit,
-  &envoy_type_percent_proto_upbdefinit,
   &google_api_annotations_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
+  &envoy_annotations_resource_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
+  &envoy_api_v2_endpoint_proto_upbdefinit,
   NULL
 };
 
@@ -83,5 +63,5 @@ upb_def_init envoy_api_v2_eds_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/eds.proto",
-  UPB_STRVIEW_INIT(descriptor, 1539)
+  UPB_STRVIEW_INIT(descriptor, 808)
 };

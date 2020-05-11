@@ -9,22 +9,29 @@
 #include "upb/def.h"
 
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern const upb_msglayout envoy_config_listener_v2_ApiListener_msginit;
 
 static const upb_msglayout *layouts[1] = {
   &envoy_config_listener_v2_ApiListener_msginit,
 };
 
-static const char descriptor[240] =
+static const char descriptor[343] =
   "\n+envoy/config/listener/v2/api_listener."
   "proto\022\030envoy.config.listener.v2\032\031google/"
-  "protobuf/any.proto\"F\n\013ApiListener\0227\n\014api"
-  "_listener\030\001 \001(\0132\024.google.protobuf.AnyR\013a"
-  "piListenerB<\n&io.envoyproxy.envoy.config"
-  ".listener.v2B\020ApiListenerProtoP\001b\006proto3";
+  "protobuf/any.proto\032\036udpa/annotations/mig"
+  "rate.proto\032\035udpa/annotations/status.prot"
+  "o\"F\n\013ApiListener\0227\n\014api_listener\030\001 \001(\0132\024"
+  ".google.protobuf.AnyR\013apiListenerBd\n&io."
+  "envoyproxy.envoy.config.listener.v2B\020Api"
+  "ListenerProtoP\001\362\230\376\217\005\032\022\030envoy.config.list"
+  "ener.v3\272\200\310\321\006\002\020\001b\006proto3";
 
-static upb_def_init *deps[2] = {
+static upb_def_init *deps[4] = {
   &google_protobuf_any_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   NULL
 };
 
@@ -32,5 +39,5 @@ upb_def_init envoy_config_listener_v2_api_listener_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/config/listener/v2/api_listener.proto",
-  UPB_STRVIEW_INIT(descriptor, 240)
+  UPB_STRVIEW_INIT(descriptor, 343)
 };

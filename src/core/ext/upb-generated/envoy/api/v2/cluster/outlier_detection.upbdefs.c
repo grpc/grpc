@@ -10,6 +10,8 @@
 
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_api_v2_cluster_OutlierDetection_msginit;
 
@@ -17,69 +19,73 @@ static const upb_msglayout *layouts[1] = {
   &envoy_api_v2_cluster_OutlierDetection_msginit,
 };
 
-static const char descriptor[2286] =
+static const char descriptor[2366] =
   "\n,envoy/api/v2/cluster/outlier_detection"
   ".proto\022\024envoy.api.v2.cluster\032\036google/pro"
   "tobuf/duration.proto\032\036google/protobuf/wr"
-  "appers.proto\032\027validate/validate.proto\"\325\017"
-  "\n\020OutlierDetection\022E\n\017consecutive_5xx\030\001 "
-  "\001(\0132\034.google.protobuf.UInt32ValueR\016conse"
-  "cutive5xx\022A\n\010interval\030\002 \001(\0132\031.google.pro"
-  "tobuf.DurationB\n\272\351\300\003\005\252\001\002*\000R\010interval\022S\n\022"
-  "base_ejection_time\030\003 \001(\0132\031.google.protob"
-  "uf.DurationB\n\272\351\300\003\005\252\001\002*\000R\020baseEjectionTim"
-  "e\022Y\n\024max_ejection_percent\030\004 \001(\0132\034.google"
-  ".protobuf.UInt32ValueB\t\272\351\300\003\004*\002\030dR\022maxEje"
-  "ctionPercent\022c\n\031enforcing_consecutive_5x"
-  "x\030\005 \001(\0132\034.google.protobuf.UInt32ValueB\t\272"
-  "\351\300\003\004*\002\030dR\027enforcingConsecutive5xx\022]\n\026enf"
-  "orcing_success_rate\030\006 \001(\0132\034.google.proto"
-  "buf.UInt32ValueB\t\272\351\300\003\004*\002\030dR\024enforcingSuc"
-  "cessRate\022Y\n\032success_rate_minimum_hosts\030\007"
-  " \001(\0132\034.google.protobuf.UInt32ValueR\027succ"
-  "essRateMinimumHosts\022[\n\033success_rate_requ"
-  "est_volume\030\010 \001(\0132\034.google.protobuf.UInt3"
-  "2ValueR\030successRateRequestVolume\022W\n\031succ"
-  "ess_rate_stdev_factor\030\t \001(\0132\034.google.pro"
-  "tobuf.UInt32ValueR\026successRateStdevFacto"
-  "r\022\\\n\033consecutive_gateway_failure\030\n \001(\0132\034"
-  ".google.protobuf.UInt32ValueR\031consecutiv"
-  "eGatewayFailure\022z\n%enforcing_consecutive"
-  "_gateway_failure\030\013 \001(\0132\034.google.protobuf"
-  ".UInt32ValueB\t\272\351\300\003\004*\002\030dR\"enforcingConsec"
-  "utiveGatewayFailure\022J\n\"split_external_lo"
-  "cal_origin_errors\030\014 \001(\010R\036splitExternalLo"
-  "calOriginErrors\022e\n consecutive_local_ori"
-  "gin_failure\030\r \001(\0132\034.google.protobuf.UInt"
-  "32ValueR\035consecutiveLocalOriginFailure\022\203"
-  "\001\n*enforcing_consecutive_local_origin_fa"
-  "ilure\030\016 \001(\0132\034.google.protobuf.UInt32Valu"
-  "eB\t\272\351\300\003\004*\002\030dR&enforcingConsecutiveLocalO"
-  "riginFailure\022u\n#enforcing_local_origin_s"
-  "uccess_rate\030\017 \001(\0132\034.google.protobuf.UInt"
-  "32ValueB\t\272\351\300\003\004*\002\030dR\037enforcingLocalOrigin"
-  "SuccessRate\022i\n\034failure_percentage_thresh"
-  "old\030\020 \001(\0132\034.google.protobuf.UInt32ValueB"
-  "\t\272\351\300\003\004*\002\030dR\032failurePercentageThreshold\022i"
-  "\n\034enforcing_failure_percentage\030\021 \001(\0132\034.g"
-  "oogle.protobuf.UInt32ValueB\t\272\351\300\003\004*\002\030dR\032e"
-  "nforcingFailurePercentage\022\201\001\n)enforcing_"
-  "failure_percentage_local_origin\030\022 \001(\0132\034."
-  "google.protobuf.UInt32ValueB\t\272\351\300\003\004*\002\030dR%"
+  "appers.proto\032\036udpa/annotations/migrate.p"
+  "roto\032\035udpa/annotations/status.proto\032\027val"
+  "idate/validate.proto\"\276\017\n\020OutlierDetectio"
+  "n\022E\n\017consecutive_5xx\030\001 \001(\0132\034.google.prot"
+  "obuf.UInt32ValueR\016consecutive5xx\022\?\n\010inte"
+  "rval\030\002 \001(\0132\031.google.protobuf.DurationB\010\372"
+  "B\005\252\001\002*\000R\010interval\022Q\n\022base_ejection_time\030"
+  "\003 \001(\0132\031.google.protobuf.DurationB\010\372B\005\252\001\002"
+  "*\000R\020baseEjectionTime\022W\n\024max_ejection_per"
+  "cent\030\004 \001(\0132\034.google.protobuf.UInt32Value"
+  "B\007\372B\004*\002\030dR\022maxEjectionPercent\022a\n\031enforci"
+  "ng_consecutive_5xx\030\005 \001(\0132\034.google.protob"
+  "uf.UInt32ValueB\007\372B\004*\002\030dR\027enforcingConsec"
+  "utive5xx\022[\n\026enforcing_success_rate\030\006 \001(\013"
+  "2\034.google.protobuf.UInt32ValueB\007\372B\004*\002\030dR"
+  "\024enforcingSuccessRate\022Y\n\032success_rate_mi"
+  "nimum_hosts\030\007 \001(\0132\034.google.protobuf.UInt"
+  "32ValueR\027successRateMinimumHosts\022[\n\033succ"
+  "ess_rate_request_volume\030\010 \001(\0132\034.google.p"
+  "rotobuf.UInt32ValueR\030successRateRequestV"
+  "olume\022W\n\031success_rate_stdev_factor\030\t \001(\013"
+  "2\034.google.protobuf.UInt32ValueR\026successR"
+  "ateStdevFactor\022\\\n\033consecutive_gateway_fa"
+  "ilure\030\n \001(\0132\034.google.protobuf.UInt32Valu"
+  "eR\031consecutiveGatewayFailure\022x\n%enforcin"
+  "g_consecutive_gateway_failure\030\013 \001(\0132\034.go"
+  "ogle.protobuf.UInt32ValueB\007\372B\004*\002\030dR\"enfo"
+  "rcingConsecutiveGatewayFailure\022J\n\"split_"
+  "external_local_origin_errors\030\014 \001(\010R\036spli"
+  "tExternalLocalOriginErrors\022e\n consecutiv"
+  "e_local_origin_failure\030\r \001(\0132\034.google.pr"
+  "otobuf.UInt32ValueR\035consecutiveLocalOrig"
+  "inFailure\022\201\001\n*enforcing_consecutive_loca"
+  "l_origin_failure\030\016 \001(\0132\034.google.protobuf"
+  ".UInt32ValueB\007\372B\004*\002\030dR&enforcingConsecut"
+  "iveLocalOriginFailure\022s\n#enforcing_local"
+  "_origin_success_rate\030\017 \001(\0132\034.google.prot"
+  "obuf.UInt32ValueB\007\372B\004*\002\030dR\037enforcingLoca"
+  "lOriginSuccessRate\022g\n\034failure_percentage"
+  "_threshold\030\020 \001(\0132\034.google.protobuf.UInt3"
+  "2ValueB\007\372B\004*\002\030dR\032failurePercentageThresh"
+  "old\022g\n\034enforcing_failure_percentage\030\021 \001("
+  "\0132\034.google.protobuf.UInt32ValueB\007\372B\004*\002\030d"
+  "R\032enforcingFailurePercentage\022\177\n)enforcin"
+  "g_failure_percentage_local_origin\030\022 \001(\0132"
+  "\034.google.protobuf.UInt32ValueB\007\372B\004*\002\030dR%"
   "enforcingFailurePercentageLocalOrigin\022e\n"
   " failure_percentage_minimum_hosts\030\023 \001(\0132"
   "\034.google.protobuf.UInt32ValueR\035failurePe"
   "rcentageMinimumHosts\022g\n!failure_percenta"
   "ge_request_volume\030\024 \001(\0132\034.google.protobu"
   "f.UInt32ValueR\036failurePercentageRequestV"
-  "olumeBo\n\"io.envoyproxy.envoy.api.v2.clus"
-  "terB\025OutlierDetectionProtoP\001\252\002\026Envoy.Api"
-  ".V2.ClusterNS\352\002\026Envoy.Api.V2.ClusterNSb\006"
+  "olumeB\226\001\n\"io.envoyproxy.envoy.api.v2.clu"
+  "sterB\025OutlierDetectionProtoP\001\252\002\026Envoy.Ap"
+  "i.V2.ClusterNS\352\002\026Envoy.Api.V2.ClusterNS\362"
+  "\230\376\217\005\031\022\027envoy.config.cluster.v3\272\200\310\321\006\002\020\001b\006"
   "proto3";
 
-static upb_def_init *deps[4] = {
+static upb_def_init *deps[6] = {
   &google_protobuf_duration_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
@@ -88,5 +94,5 @@ upb_def_init envoy_api_v2_cluster_outlier_detection_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/cluster/outlier_detection.proto",
-  UPB_STRVIEW_INIT(descriptor, 2286)
+  UPB_STRVIEW_INIT(descriptor, 2366)
 };

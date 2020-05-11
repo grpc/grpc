@@ -21,26 +21,6 @@ extern "C" {
 
 extern upb_def_init envoy_api_v2_endpoint_endpoint_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_api_v2_endpoint_Endpoint_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_endpoint_endpoint_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.endpoint.Endpoint");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_endpoint_endpoint_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.endpoint.Endpoint.HealthCheckConfig");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_endpoint_LbEndpoint_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_endpoint_endpoint_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.endpoint.LbEndpoint");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_endpoint_LocalityLbEndpoints_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_endpoint_endpoint_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.endpoint.LocalityLbEndpoints");
-}
-
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -56,6 +56,11 @@ UPB_INLINE const upb_msgdef *envoy_api_v2_core_HealthCheck_CustomHealthCheck_get
   return upb_symtab_lookupmsg(s, "envoy.api.v2.core.HealthCheck.CustomHealthCheck");
 }
 
+UPB_INLINE const upb_msgdef *envoy_api_v2_core_HealthCheck_TlsOptions_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_api_v2_core_health_check_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.core.HealthCheck.TlsOptions");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -9,6 +9,8 @@
 #include "upb/def.h"
 
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_api_v2_core_HttpUri_msginit;
 
@@ -16,19 +18,23 @@ static const upb_msglayout *layouts[1] = {
   &envoy_api_v2_core_HttpUri_msginit,
 };
 
-static const char descriptor[345] =
+static const char descriptor[436] =
   "\n envoy/api/v2/core/http_uri.proto\022\021envo"
   "y.api.v2.core\032\036google/protobuf/duration."
-  "proto\032\027validate/validate.proto\"\255\001\n\007HttpU"
-  "ri\022\033\n\003uri\030\001 \001(\tB\t\272\351\300\003\004r\002 \001R\003uri\022%\n\007clust"
-  "er\030\002 \001(\tB\t\272\351\300\003\004r\002 \001H\000R\007cluster\022A\n\007timeou"
-  "t\030\003 \001(\0132\031.google.protobuf.DurationB\014\272\351\300\003"
-  "\007\252\001\004\010\0012\000R\007timeoutB\033\n\022http_upstream_type\022"
-  "\005\270\351\300\003\001B1\n\037io.envoyproxy.envoy.api.v2.cor"
-  "eB\014HttpUriProtoP\001b\006proto3";
+  "proto\032\036udpa/annotations/migrate.proto\032\035u"
+  "dpa/annotations/status.proto\032\027validate/v"
+  "alidate.proto\"\245\001\n\007HttpUri\022\031\n\003uri\030\001 \001(\tB\007"
+  "\372B\004r\002 \001R\003uri\022#\n\007cluster\030\002 \001(\tB\007\372B\004r\002 \001H\000"
+  "R\007cluster\022\?\n\007timeout\030\003 \001(\0132\031.google.prot"
+  "obuf.DurationB\n\372B\007\252\001\004\010\0012\000R\007timeoutB\031\n\022ht"
+  "tp_upstream_type\022\003\370B\001BU\n\037io.envoyproxy.e"
+  "nvoy.api.v2.coreB\014HttpUriProtoP\001\362\230\376\217\005\026\022\024"
+  "envoy.config.core.v3\272\200\310\321\006\002\020\001b\006proto3";
 
-static upb_def_init *deps[3] = {
+static upb_def_init *deps[5] = {
   &google_protobuf_duration_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
@@ -37,5 +43,5 @@ upb_def_init envoy_api_v2_core_http_uri_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/core/http_uri.proto",
-  UPB_STRVIEW_INIT(descriptor, 345)
+  UPB_STRVIEW_INIT(descriptor, 436)
 };

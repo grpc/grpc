@@ -9,6 +9,8 @@
 #include "upb/def.h"
 
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_api_v2_cluster_Filter_msginit;
 
@@ -16,18 +18,23 @@ static const upb_msglayout *layouts[1] = {
   &envoy_api_v2_cluster_Filter_msginit,
 };
 
-static const char descriptor[318] =
+static const char descriptor[419] =
   "\n!envoy/api/v2/cluster/filter.proto\022\024env"
   "oy.api.v2.cluster\032\031google/protobuf/any.p"
-  "roto\032\027validate/validate.proto\"`\n\006Filter\022"
-  "\035\n\004name\030\001 \001(\tB\t\272\351\300\003\004r\002 \001R\004name\0227\n\014typed_"
-  "config\030\002 \001(\0132\024.google.protobuf.AnyR\013type"
-  "dConfigBe\n\"io.envoyproxy.envoy.api.v2.cl"
-  "usterB\013FilterProtoP\001\252\002\026Envoy.Api.V2.Clus"
-  "terNS\352\002\026Envoy.Api.V2.ClusterNSb\006proto3";
+  "roto\032\036udpa/annotations/migrate.proto\032\035ud"
+  "pa/annotations/status.proto\032\027validate/va"
+  "lidate.proto\"^\n\006Filter\022\033\n\004name\030\001 \001(\tB\007\372B"
+  "\004r\002 \001R\004name\0227\n\014typed_config\030\002 \001(\0132\024.goog"
+  "le.protobuf.AnyR\013typedConfigB\214\001\n\"io.envo"
+  "yproxy.envoy.api.v2.clusterB\013FilterProto"
+  "P\001\252\002\026Envoy.Api.V2.ClusterNS\352\002\026Envoy.Api."
+  "V2.ClusterNS\362\230\376\217\005\031\022\027envoy.config.cluster"
+  ".v3\272\200\310\321\006\002\020\001b\006proto3";
 
-static upb_def_init *deps[3] = {
+static upb_def_init *deps[5] = {
   &google_protobuf_any_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
@@ -36,5 +43,5 @@ upb_def_init envoy_api_v2_cluster_filter_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/cluster/filter.proto",
-  UPB_STRVIEW_INIT(descriptor, 318)
+  UPB_STRVIEW_INIT(descriptor, 419)
 };

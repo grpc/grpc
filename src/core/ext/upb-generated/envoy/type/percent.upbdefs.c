@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_type_Percent_msginit;
 extern const upb_msglayout envoy_type_FractionalPercent_msginit;
@@ -17,19 +18,21 @@ static const upb_msglayout *layouts[2] = {
   &envoy_type_FractionalPercent_msginit,
 };
 
-static const char descriptor[383] =
-  "\n\030envoy/type/percent.proto\022\nenvoy.type\032\027"
-  "validate/validate.proto\":\n\007Percent\022/\n\005va"
-  "lue\030\001 \001(\001B\031\272\351\300\003\024\022\022\031\000\000\000\000\000\000Y@)\000\000\000\000\000\000\000\000R\005va"
-  "lue\"\315\001\n\021FractionalPercent\022\034\n\tnumerator\030\001"
-  " \001(\rR\tnumerator\022[\n\013denominator\030\002 \001(\0162-.e"
-  "nvoy.type.FractionalPercent.DenominatorT"
-  "ypeB\n\272\351\300\003\005\202\001\002\020\001R\013denominator\"=\n\017Denomina"
-  "torType\022\013\n\007HUNDRED\020\000\022\020\n\014TEN_THOUSAND\020\001\022\013"
-  "\n\007MILLION\020\002B*\n\030io.envoyproxy.envoy.typeB"
-  "\014PercentProtoP\001b\006proto3";
+static const char descriptor[418] =
+  "\n\030envoy/type/percent.proto\022\nenvoy.type\032\035"
+  "udpa/annotations/status.proto\032\027validate/"
+  "validate.proto\"8\n\007Percent\022-\n\005value\030\001 \001(\001"
+  "B\027\372B\024\022\022\031\000\000\000\000\000\000Y@)\000\000\000\000\000\000\000\000R\005value\"\313\001\n\021Fra"
+  "ctionalPercent\022\034\n\tnumerator\030\001 \001(\rR\tnumer"
+  "ator\022Y\n\013denominator\030\002 \001(\0162-.envoy.type.F"
+  "ractionalPercent.DenominatorTypeB\010\372B\005\202\001\002"
+  "\020\001R\013denominator\"=\n\017DenominatorType\022\013\n\007HU"
+  "NDRED\020\000\022\020\n\014TEN_THOUSAND\020\001\022\013\n\007MILLION\020\002B2"
+  "\n\030io.envoyproxy.envoy.typeB\014PercentProto"
+  "P\001\272\200\310\321\006\002\020\001b\006proto3";
 
-static upb_def_init *deps[2] = {
+static upb_def_init *deps[3] = {
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
@@ -38,5 +41,5 @@ upb_def_init envoy_type_percent_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/type/percent.proto",
-  UPB_STRVIEW_INIT(descriptor, 383)
+  UPB_STRVIEW_INIT(descriptor, 418)
 };

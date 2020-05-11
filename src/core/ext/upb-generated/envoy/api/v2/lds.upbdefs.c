@@ -8,104 +8,53 @@
 
 #include "upb/def.h"
 
-extern upb_def_init envoy_api_v2_core_address_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_core_base_proto_upbdefinit;
 extern upb_def_init envoy_api_v2_discovery_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_listener_listener_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_listener_udp_listener_config_proto_upbdefinit;
-extern upb_def_init envoy_config_listener_v2_api_listener_proto_upbdefinit;
 extern upb_def_init google_api_annotations_proto_upbdefinit;
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
+extern upb_def_init envoy_annotations_resource_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_api_v2_Listener_msginit;
-extern const upb_msglayout envoy_api_v2_Listener_DeprecatedV1_msginit;
-extern const upb_msglayout envoy_api_v2_Listener_ConnectionBalanceConfig_msginit;
-extern const upb_msglayout envoy_api_v2_Listener_ConnectionBalanceConfig_ExactBalance_msginit;
+extern upb_def_init envoy_api_v2_listener_proto_upbdefinit;
+extern const upb_msglayout envoy_api_v2_LdsDummy_msginit;
 
-static const upb_msglayout *layouts[4] = {
-  &envoy_api_v2_Listener_msginit,
-  &envoy_api_v2_Listener_DeprecatedV1_msginit,
-  &envoy_api_v2_Listener_ConnectionBalanceConfig_msginit,
-  &envoy_api_v2_Listener_ConnectionBalanceConfig_ExactBalance_msginit,
+static const upb_msglayout *layouts[1] = {
+  &envoy_api_v2_LdsDummy_msginit,
 };
 
-static const char descriptor[2493] =
-  "\n\026envoy/api/v2/lds.proto\022\014envoy.api.v2\032\037"
-  "envoy/api/v2/core/address.proto\032\034envoy/a"
-  "pi/v2/core/base.proto\032\034envoy/api/v2/disc"
-  "overy.proto\032$envoy/api/v2/listener/liste"
-  "ner.proto\032/envoy/api/v2/listener/udp_lis"
-  "tener_config.proto\032+envoy/config/listene"
-  "r/v2/api_listener.proto\032\034google/api/anno"
-  "tations.proto\032\036google/protobuf/duration."
-  "proto\032\036google/protobuf/wrappers.proto\032\027v"
-  "alidate/validate.proto\"\266\r\n\010Listener\022\022\n\004n"
-  "ame\030\001 \001(\tR\004name\022@\n\007address\030\002 \001(\0132\032.envoy"
-  ".api.v2.core.AddressB\n\272\351\300\003\005\212\001\002\020\001R\007addres"
-  "s\022G\n\rfilter_chains\030\003 \003(\0132\".envoy.api.v2."
-  "listener.FilterChainR\014filterChains\022H\n\020us"
-  "e_original_dst\030\004 \001(\0132\032.google.protobuf.B"
-  "oolValueB\002\030\001R\016useOriginalDst\022f\n!per_conn"
-  "ection_buffer_limit_bytes\030\005 \001(\0132\034.google"
-  ".protobuf.UInt32ValueR\035perConnectionBuff"
-  "erLimitBytes\0227\n\010metadata\030\006 \001(\0132\033.envoy.a"
-  "pi.v2.core.MetadataR\010metadata\022H\n\rdepreca"
-  "ted_v1\030\007 \001(\0132#.envoy.api.v2.Listener.Dep"
-  "recatedV1R\014deprecatedV1\022\?\n\ndrain_type\030\010 "
-  "\001(\0162 .envoy.api.v2.Listener.DrainTypeR\td"
-  "rainType\022P\n\020listener_filters\030\t \003(\0132%.env"
-  "oy.api.v2.listener.ListenerFilterR\017liste"
-  "nerFilters\022S\n\030listener_filters_timeout\030\017"
-  " \001(\0132\031.google.protobuf.DurationR\026listene"
-  "rFiltersTimeout\022N\n$continue_on_listener_"
-  "filters_timeout\030\021 \001(\010R continueOnListene"
-  "rFiltersTimeout\022<\n\013transparent\030\n \001(\0132\032.g"
-  "oogle.protobuf.BoolValueR\013transparent\0226\n"
-  "\010freebind\030\013 \001(\0132\032.google.protobuf.BoolVa"
-  "lueR\010freebind\022F\n\016socket_options\030\r \003(\0132\037."
-  "envoy.api.v2.core.SocketOptionR\rsocketOp"
-  "tions\022X\n\032tcp_fast_open_queue_length\030\014 \001("
-  "\0132\034.google.protobuf.UInt32ValueR\026tcpFast"
-  "OpenQueueLength\022P\n\021traffic_direction\030\020 \001"
-  "(\0162#.envoy.api.v2.core.TrafficDirectionR"
-  "\020trafficDirection\022X\n\023udp_listener_config"
-  "\030\022 \001(\0132(.envoy.api.v2.listener.UdpListen"
-  "erConfigR\021udpListenerConfig\022H\n\014api_liste"
-  "ner\030\023 \001(\0132%.envoy.config.listener.v2.Api"
-  "ListenerR\013apiListener\022j\n\031connection_bala"
-  "nce_config\030\024 \001(\0132..envoy.api.v2.Listener"
-  ".ConnectionBalanceConfigR\027connectionBala"
-  "nceConfig\032L\n\014DeprecatedV1\022<\n\014bind_to_por"
-  "t\030\001 \001(\0132\032.google.protobuf.BoolValueR\nbin"
-  "dToPort\032\244\001\n\027ConnectionBalanceConfig\022b\n\re"
-  "xact_balance\030\001 \001(\0132;.envoy.api.v2.Listen"
-  "er.ConnectionBalanceConfig.ExactBalanceH"
-  "\000R\014exactBalance\032\016\n\014ExactBalanceB\025\n\014balan"
-  "ce_type\022\005\270\351\300\003\001\")\n\tDrainType\022\013\n\007DEFAULT\020\000"
-  "\022\017\n\013MODIFY_ONLY\020\001J\004\010\016\020\0172\316\002\n\030ListenerDisc"
-  "overyService\022a\n\016DeltaListeners\022#.envoy.a"
-  "pi.v2.DeltaDiscoveryRequest\032$.envoy.api."
-  "v2.DeltaDiscoveryResponse\"\000(\0010\001\022X\n\017Strea"
-  "mListeners\022\036.envoy.api.v2.DiscoveryReque"
-  "st\032\037.envoy.api.v2.DiscoveryResponse\"\000(\0010"
-  "\001\022u\n\016FetchListeners\022\036.envoy.api.v2.Disco"
-  "veryRequest\032\037.envoy.api.v2.DiscoveryResp"
-  "onse\"\"\202\323\344\223\002\034\"\027/v2/discovery:listeners:\001*"
-  "B+\n\032io.envoyproxy.envoy.api.v2B\010LdsProto"
-  "P\001\210\001\001b\006proto3";
+static const char descriptor[795] =
+  "\n\026envoy/api/v2/lds.proto\022\014envoy.api.v2\032\034"
+  "envoy/api/v2/discovery.proto\032\034google/api"
+  "/annotations.proto\032\036google/protobuf/dura"
+  "tion.proto\032\036google/protobuf/wrappers.pro"
+  "to\032 envoy/annotations/resource.proto\032\036ud"
+  "pa/annotations/migrate.proto\032\035udpa/annot"
+  "ations/status.proto\032\027validate/validate.p"
+  "roto\032\033envoy/api/v2/listener.proto\"\n\n\010Lds"
+  "Dummy2\363\002\n\030ListenerDiscoveryService\022a\n\016De"
+  "ltaListeners\022#.envoy.api.v2.DeltaDiscove"
+  "ryRequest\032$.envoy.api.v2.DeltaDiscoveryR"
+  "esponse\"\000(\0010\001\022X\n\017StreamListeners\022\036.envoy"
+  ".api.v2.DiscoveryRequest\032\037.envoy.api.v2."
+  "DiscoveryResponse\"\000(\0010\001\022{\n\016FetchListener"
+  "s\022\036.envoy.api.v2.DiscoveryRequest\032\037.envo"
+  "y.api.v2.DiscoveryResponse\"(\202\323\344\223\002\031\"\027/v2/"
+  "discovery:listeners\202\323\344\223\002\003:\001*\032\035\212\244\226\363\007\027\n\025en"
+  "voy.api.v2.ListenerBT\n\032io.envoyproxy.env"
+  "oy.api.v2B\010LdsProtoP\001\210\001\001\362\230\376\217\005\033\022\031envoy.se"
+  "rvice.listener.v3\272\200\310\321\006\002\020\001P\010b\006proto3";
 
-static upb_def_init *deps[11] = {
-  &envoy_api_v2_core_address_proto_upbdefinit,
-  &envoy_api_v2_core_base_proto_upbdefinit,
+static upb_def_init *deps[10] = {
   &envoy_api_v2_discovery_proto_upbdefinit,
-  &envoy_api_v2_listener_listener_proto_upbdefinit,
-  &envoy_api_v2_listener_udp_listener_config_proto_upbdefinit,
-  &envoy_config_listener_v2_api_listener_proto_upbdefinit,
   &google_api_annotations_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
+  &envoy_annotations_resource_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
+  &envoy_api_v2_listener_proto_upbdefinit,
   NULL
 };
 
@@ -113,5 +62,5 @@ upb_def_init envoy_api_v2_lds_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/lds.proto",
-  UPB_STRVIEW_INIT(descriptor, 2493)
+  UPB_STRVIEW_INIT(descriptor, 795)
 };

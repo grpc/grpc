@@ -21,24 +21,9 @@ extern "C" {
 
 extern upb_def_init envoy_api_v2_lds_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_api_v2_Listener_getmsgdef(upb_symtab *s) {
+UPB_INLINE const upb_msgdef *envoy_api_v2_LdsDummy_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_api_v2_lds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.Listener");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_Listener_DeprecatedV1_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_lds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.Listener.DeprecatedV1");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_Listener_ConnectionBalanceConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_lds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.Listener.ConnectionBalanceConfig");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_Listener_ConnectionBalanceConfig_ExactBalance_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_lds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.Listener.ConnectionBalanceConfig.ExactBalance");
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.LdsDummy");
 }
 
 #ifdef __cplusplus

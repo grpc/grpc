@@ -21,19 +21,9 @@ extern "C" {
 
 extern upb_def_init envoy_api_v2_srds_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_api_v2_ScopedRouteConfiguration_getmsgdef(upb_symtab *s) {
+UPB_INLINE const upb_msgdef *envoy_api_v2_SrdsDummy_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_api_v2_srds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.ScopedRouteConfiguration");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_ScopedRouteConfiguration_Key_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_srds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.ScopedRouteConfiguration.Key");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_srds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.ScopedRouteConfiguration.Key.Fragment");
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.SrdsDummy");
 }
 
 #ifdef __cplusplus

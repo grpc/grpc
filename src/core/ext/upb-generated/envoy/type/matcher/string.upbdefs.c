@@ -9,6 +9,8 @@
 #include "upb/def.h"
 
 extern upb_def_init envoy_type_matcher_regex_proto_upbdefinit;
+extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_type_matcher_StringMatcher_msginit;
 extern const upb_msglayout envoy_type_matcher_ListStringMatcher_msginit;
@@ -18,24 +20,28 @@ static const upb_msglayout *layouts[2] = {
   &envoy_type_matcher_ListStringMatcher_msginit,
 };
 
-static const char descriptor[522] =
+static const char descriptor[625] =
   "\n\037envoy/type/matcher/string.proto\022\022envoy"
   ".type.matcher\032\036envoy/type/matcher/regex."
-  "proto\032\027validate/validate.proto\"\376\001\n\rStrin"
-  "gMatcher\022\026\n\005exact\030\001 \001(\tH\000R\005exact\022#\n\006pref"
-  "ix\030\002 \001(\tB\t\272\351\300\003\004r\002 \001H\000R\006prefix\022#\n\006suffix\030"
-  "\003 \001(\tB\t\272\351\300\003\004r\002 \001H\000R\006suffix\022$\n\005regex\030\004 \001("
-  "\tB\014\030\001\272\351\300\003\005r\003(\200\010H\000R\005regex\022M\n\nsafe_regex\030\005"
-  " \001(\0132 .envoy.type.matcher.RegexMatcherB\n"
-  "\272\351\300\003\005\212\001\002\020\001H\000R\tsafeRegexB\026\n\rmatch_pattern"
-  "\022\005\270\351\300\003\001\"^\n\021ListStringMatcher\022I\n\010patterns"
-  "\030\001 \003(\0132!.envoy.type.matcher.StringMatche"
-  "rB\n\272\351\300\003\005\222\001\002\010\001R\010patternsB1\n io.envoyproxy"
-  ".envoy.type.matcherB\013StringProtoP\001b\006prot"
-  "o3";
+  "proto\032#envoy/annotations/deprecation.pro"
+  "to\032\035udpa/annotations/status.proto\032\027valid"
+  "ate/validate.proto\"\233\002\n\rStringMatcher\022\026\n\005"
+  "exact\030\001 \001(\tH\000R\005exact\022!\n\006prefix\030\002 \001(\tB\007\372B"
+  "\004r\002 \001H\000R\006prefix\022!\n\006suffix\030\003 \001(\tB\007\372B\004r\002 \001"
+  "H\000R\006suffix\022(\n\005regex\030\004 \001(\tB\020\030\001\372B\005r\003(\200\010\270\356\362"
+  "\322\005\001H\000R\005regex\022K\n\nsafe_regex\030\005 \001(\0132 .envoy"
+  ".type.matcher.RegexMatcherB\010\372B\005\212\001\002\020\001H\000R\t"
+  "safeRegex\022\037\n\013ignore_case\030\006 \001(\010R\nignoreCa"
+  "seB\024\n\rmatch_pattern\022\003\370B\001\"\\\n\021ListStringMa"
+  "tcher\022G\n\010patterns\030\001 \003(\0132!.envoy.type.mat"
+  "cher.StringMatcherB\010\372B\005\222\001\002\010\001R\010patternsB9"
+  "\n io.envoyproxy.envoy.type.matcherB\013Stri"
+  "ngProtoP\001\272\200\310\321\006\002\020\001b\006proto3";
 
-static upb_def_init *deps[3] = {
+static upb_def_init *deps[5] = {
   &envoy_type_matcher_regex_proto_upbdefinit,
+  &envoy_annotations_deprecation_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
@@ -44,5 +50,5 @@ upb_def_init envoy_type_matcher_string_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/type/matcher/string.proto",
-  UPB_STRVIEW_INIT(descriptor, 522)
+  UPB_STRVIEW_INIT(descriptor, 625)
 };

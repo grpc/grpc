@@ -8,294 +8,45 @@
 
 #include "upb/def.h"
 
-extern upb_def_init envoy_api_v2_auth_cert_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_cluster_circuit_breaker_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_cluster_filter_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_cluster_outlier_detection_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_core_address_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_core_base_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_core_config_source_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_core_health_check_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_core_protocol_proto_upbdefinit;
 extern upb_def_init envoy_api_v2_discovery_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_eds_proto_upbdefinit;
-extern upb_def_init envoy_type_percent_proto_upbdefinit;
 extern upb_def_init google_api_annotations_proto_upbdefinit;
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init google_protobuf_struct_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_api_v2_Cluster_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_TransportSocketMatch_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_CustomClusterType_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_EdsClusterConfig_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_LbSubsetConfig_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_LbSubsetConfig_LbSubsetSelector_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_LeastRequestLbConfig_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_RingHashLbConfig_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_OriginalDstLbConfig_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_CommonLbConfig_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_RefreshRate_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_ExtensionProtocolOptionsEntry_msginit;
-extern const upb_msglayout envoy_api_v2_Cluster_TypedExtensionProtocolOptionsEntry_msginit;
-extern const upb_msglayout envoy_api_v2_LoadBalancingPolicy_msginit;
-extern const upb_msglayout envoy_api_v2_LoadBalancingPolicy_Policy_msginit;
-extern const upb_msglayout envoy_api_v2_UpstreamBindConfig_msginit;
-extern const upb_msglayout envoy_api_v2_UpstreamConnectionOptions_msginit;
+extern upb_def_init envoy_annotations_resource_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
+extern upb_def_init envoy_api_v2_cluster_proto_upbdefinit;
+extern const upb_msglayout envoy_api_v2_CdsDummy_msginit;
 
-static const upb_msglayout *layouts[19] = {
-  &envoy_api_v2_Cluster_msginit,
-  &envoy_api_v2_Cluster_TransportSocketMatch_msginit,
-  &envoy_api_v2_Cluster_CustomClusterType_msginit,
-  &envoy_api_v2_Cluster_EdsClusterConfig_msginit,
-  &envoy_api_v2_Cluster_LbSubsetConfig_msginit,
-  &envoy_api_v2_Cluster_LbSubsetConfig_LbSubsetSelector_msginit,
-  &envoy_api_v2_Cluster_LeastRequestLbConfig_msginit,
-  &envoy_api_v2_Cluster_RingHashLbConfig_msginit,
-  &envoy_api_v2_Cluster_OriginalDstLbConfig_msginit,
-  &envoy_api_v2_Cluster_CommonLbConfig_msginit,
-  &envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig_msginit,
-  &envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig_msginit,
-  &envoy_api_v2_Cluster_RefreshRate_msginit,
-  &envoy_api_v2_Cluster_ExtensionProtocolOptionsEntry_msginit,
-  &envoy_api_v2_Cluster_TypedExtensionProtocolOptionsEntry_msginit,
-  &envoy_api_v2_LoadBalancingPolicy_msginit,
-  &envoy_api_v2_LoadBalancingPolicy_Policy_msginit,
-  &envoy_api_v2_UpstreamBindConfig_msginit,
-  &envoy_api_v2_UpstreamConnectionOptions_msginit,
+static const upb_msglayout *layouts[1] = {
+  &envoy_api_v2_CdsDummy_msginit,
 };
 
-static const char descriptor[8270] =
+static const char descriptor[698] =
   "\n\026envoy/api/v2/cds.proto\022\014envoy.api.v2\032\034"
-  "envoy/api/v2/auth/cert.proto\032*envoy/api/"
-  "v2/cluster/circuit_breaker.proto\032!envoy/"
-  "api/v2/cluster/filter.proto\032,envoy/api/v"
-  "2/cluster/outlier_detection.proto\032\037envoy"
-  "/api/v2/core/address.proto\032\034envoy/api/v2"
-  "/core/base.proto\032%envoy/api/v2/core/conf"
-  "ig_source.proto\032$envoy/api/v2/core/healt"
-  "h_check.proto\032 envoy/api/v2/core/protoco"
-  "l.proto\032\034envoy/api/v2/discovery.proto\032\026e"
-  "nvoy/api/v2/eds.proto\032\030envoy/type/percen"
-  "t.proto\032\034google/api/annotations.proto\032\031g"
-  "oogle/protobuf/any.proto\032\036google/protobu"
-  "f/duration.proto\032\034google/protobuf/struct"
-  ".proto\032\036google/protobuf/wrappers.proto\032\027"
-  "validate/validate.proto\"\2705\n\007Cluster\022d\n\030t"
-  "ransport_socket_matches\030+ \003(\0132*.envoy.ap"
-  "i.v2.Cluster.TransportSocketMatchR\026trans"
-  "portSocketMatches\022\035\n\004name\030\001 \001(\tB\t\272\351\300\003\004r\002"
-  " \001R\004name\022\"\n\ralt_stat_name\030\034 \001(\tR\013altStat"
-  "Name\022E\n\004type\030\002 \001(\0162#.envoy.api.v2.Cluste"
-  "r.DiscoveryTypeB\n\272\351\300\003\005\202\001\002\020\001H\000R\004type\022L\n\014c"
-  "luster_type\030& \001(\0132\'.envoy.api.v2.Cluster"
-  ".CustomClusterTypeH\000R\013clusterType\022T\n\022eds"
-  "_cluster_config\030\003 \001(\0132&.envoy.api.v2.Clu"
-  "ster.EdsClusterConfigR\020edsClusterConfig\022"
-  "N\n\017connect_timeout\030\004 \001(\0132\031.google.protob"
-  "uf.DurationB\n\272\351\300\003\005\252\001\002*\000R\016connectTimeout\022"
-  "f\n!per_connection_buffer_limit_bytes\030\005 \001"
-  "(\0132\034.google.protobuf.UInt32ValueR\035perCon"
-  "nectionBufferLimitBytes\022G\n\tlb_policy\030\006 \001"
-  "(\0162\036.envoy.api.v2.Cluster.LbPolicyB\n\272\351\300\003"
-  "\005\202\001\002\020\001R\010lbPolicy\0220\n\005hosts\030\007 \003(\0132\032.envoy."
-  "api.v2.core.AddressR\005hosts\022L\n\017load_assig"
-  "nment\030! \001(\0132#.envoy.api.v2.ClusterLoadAs"
-  "signmentR\016loadAssignment\022C\n\rhealth_check"
-  "s\030\010 \003(\0132\036.envoy.api.v2.core.HealthCheckR"
-  "\014healthChecks\022[\n\033max_requests_per_connec"
-  "tion\030\t \001(\0132\034.google.protobuf.UInt32Value"
-  "R\030maxRequestsPerConnection\022P\n\020circuit_br"
-  "eakers\030\n \001(\0132%.envoy.api.v2.cluster.Circ"
-  "uitBreakersR\017circuitBreakers\022F\n\013tls_cont"
-  "ext\030\013 \001(\0132%.envoy.api.v2.auth.UpstreamTl"
-  "sContextR\ntlsContext\022g\n\034common_http_prot"
-  "ocol_options\030\035 \001(\0132&.envoy.api.v2.core.H"
-  "ttpProtocolOptionsR\031commonHttpProtocolOp"
-  "tions\022[\n\025http_protocol_options\030\r \001(\0132\'.e"
-  "nvoy.api.v2.core.Http1ProtocolOptionsR\023h"
-  "ttpProtocolOptions\022]\n\026http2_protocol_opt"
-  "ions\030\016 \001(\0132\'.envoy.api.v2.core.Http2Prot"
-  "ocolOptionsR\024http2ProtocolOptions\022q\n\032ext"
-  "ension_protocol_options\030# \003(\01323.envoy.ap"
-  "i.v2.Cluster.ExtensionProtocolOptionsEnt"
-  "ryR\030extensionProtocolOptions\022\201\001\n typed_e"
-  "xtension_protocol_options\030$ \003(\01328.envoy."
-  "api.v2.Cluster.TypedExtensionProtocolOpt"
-  "ionsEntryR\035typedExtensionProtocolOptions"
-  "\022O\n\020dns_refresh_rate\030\020 \001(\0132\031.google.prot"
-  "obuf.DurationB\n\272\351\300\003\005\252\001\002*\000R\016dnsRefreshRat"
-  "e\022Z\n\030dns_failure_refresh_rate\030, \001(\0132!.en"
-  "voy.api.v2.Cluster.RefreshRateR\025dnsFailu"
-  "reRefreshRate\022&\n\017respect_dns_ttl\030\' \001(\010R\r"
-  "respectDnsTtl\022]\n\021dns_lookup_family\030\021 \001(\016"
-  "2%.envoy.api.v2.Cluster.DnsLookupFamilyB"
-  "\n\272\351\300\003\005\202\001\002\020\001R\017dnsLookupFamily\022\?\n\rdns_reso"
-  "lvers\030\022 \003(\0132\032.envoy.api.v2.core.AddressR"
-  "\014dnsResolvers\022S\n\021outlier_detection\030\023 \001(\013"
-  "2&.envoy.api.v2.cluster.OutlierDetection"
-  "R\020outlierDetection\022P\n\020cleanup_interval\030\024"
-  " \001(\0132\031.google.protobuf.DurationB\n\272\351\300\003\005\252\001"
-  "\002*\000R\017cleanupInterval\022O\n\024upstream_bind_co"
-  "nfig\030\025 \001(\0132\035.envoy.api.v2.core.BindConfi"
-  "gR\022upstreamBindConfig\022N\n\020lb_subset_confi"
-  "g\030\026 \001(\0132$.envoy.api.v2.Cluster.LbSubsetC"
-  "onfigR\016lbSubsetConfig\022W\n\023ring_hash_lb_co"
-  "nfig\030\027 \001(\0132&.envoy.api.v2.Cluster.RingHa"
-  "shLbConfigH\001R\020ringHashLbConfig\022`\n\026origin"
-  "al_dst_lb_config\030\" \001(\0132).envoy.api.v2.Cl"
-  "uster.OriginalDstLbConfigH\001R\023originalDst"
-  "LbConfig\022c\n\027least_request_lb_config\030% \001("
-  "\0132*.envoy.api.v2.Cluster.LeastRequestLbC"
-  "onfigH\001R\024leastRequestLbConfig\022N\n\020common_"
-  "lb_config\030\033 \001(\0132$.envoy.api.v2.Cluster.C"
-  "ommonLbConfigR\016commonLbConfig\022M\n\020transpo"
-  "rt_socket\030\030 \001(\0132\".envoy.api.v2.core.Tran"
-  "sportSocketR\017transportSocket\0227\n\010metadata"
-  "\030\031 \001(\0132\033.envoy.api.v2.core.MetadataR\010met"
-  "adata\022]\n\022protocol_selection\030\032 \001(\0162..envo"
-  "y.api.v2.Cluster.ClusterProtocolSelectio"
-  "nR\021protocolSelection\022g\n\033upstream_connect"
-  "ion_options\030\036 \001(\0132\'.envoy.api.v2.Upstrea"
-  "mConnectionOptionsR\031upstreamConnectionOp"
-  "tions\022U\n(close_connections_on_host_healt"
-  "h_failure\030\037 \001(\010R#closeConnectionsOnHostH"
-  "ealthFailure\022H\n!drain_connections_on_hos"
-  "t_removal\030  \001(\010R\035drainConnectionsOnHostR"
-  "emoval\0226\n\007filters\030( \003(\0132\034.envoy.api.v2.c"
-  "luster.FilterR\007filters\022U\n\025load_balancing"
-  "_policy\030) \001(\0132!.envoy.api.v2.LoadBalanci"
-  "ngPolicyR\023loadBalancingPolicy\022>\n\nlrs_ser"
-  "ver\030* \001(\0132\037.envoy.api.v2.core.ConfigSour"
-  "ceR\tlrsServer\032\263\001\n\024TransportSocketMatch\022\035"
-  "\n\004name\030\001 \001(\tB\t\272\351\300\003\004r\002\020\001R\004name\022-\n\005match\030\002"
-  " \001(\0132\027.google.protobuf.StructR\005match\022M\n\020"
-  "transport_socket\030\003 \001(\0132\".envoy.api.v2.co"
-  "re.TransportSocketR\017transportSocket\032k\n\021C"
-  "ustomClusterType\022\035\n\004name\030\001 \001(\tB\t\272\351\300\003\004r\002 "
-  "\001R\004name\0227\n\014typed_config\030\002 \001(\0132\024.google.p"
-  "rotobuf.AnyR\013typedConfig\032u\n\020EdsClusterCo"
-  "nfig\022>\n\neds_config\030\001 \001(\0132\037.envoy.api.v2."
-  "core.ConfigSourceR\tedsConfig\022!\n\014service_"
-  "name\030\002 \001(\tR\013serviceName\032\302\006\n\016LbSubsetConf"
-  "ig\022p\n\017fallback_policy\030\001 \001(\0162;.envoy.api."
-  "v2.Cluster.LbSubsetConfig.LbSubsetFallba"
-  "ckPolicyB\n\272\351\300\003\005\202\001\002\020\001R\016fallbackPolicy\022>\n\016"
-  "default_subset\030\002 \001(\0132\027.google.protobuf.S"
-  "tructR\rdefaultSubset\022`\n\020subset_selectors"
-  "\030\003 \003(\01325.envoy.api.v2.Cluster.LbSubsetCo"
-  "nfig.LbSubsetSelectorR\017subsetSelectors\0222"
-  "\n\025locality_weight_aware\030\004 \001(\010R\023localityW"
-  "eightAware\0222\n\025scale_locality_weight\030\005 \001("
-  "\010R\023scaleLocalityWeight\022$\n\016panic_mode_any"
-  "\030\006 \001(\010R\014panicModeAny\022\036\n\013list_as_any\030\007 \001("
-  "\010R\tlistAsAny\032\234\002\n\020LbSubsetSelector\022\022\n\004key"
-  "s\030\001 \003(\tR\004keys\022\211\001\n\017fallback_policy\030\002 \001(\0162"
-  "T.envoy.api.v2.Cluster.LbSubsetConfig.Lb"
-  "SubsetSelector.LbSubsetSelectorFallbackP"
-  "olicyB\n\272\351\300\003\005\202\001\002\020\001R\016fallbackPolicy\"h\n\036LbS"
-  "ubsetSelectorFallbackPolicy\022\017\n\013NOT_DEFIN"
-  "ED\020\000\022\017\n\013NO_FALLBACK\020\001\022\020\n\014ANY_ENDPOINT\020\002\022"
-  "\022\n\016DEFAULT_SUBSET\020\003\"O\n\026LbSubsetFallbackP"
-  "olicy\022\017\n\013NO_FALLBACK\020\000\022\020\n\014ANY_ENDPOINT\020\001"
-  "\022\022\n\016DEFAULT_SUBSET\020\002\032b\n\024LeastRequestLbCo"
-  "nfig\022J\n\014choice_count\030\001 \001(\0132\034.google.prot"
-  "obuf.UInt32ValueB\t\272\351\300\003\004*\002(\002R\013choiceCount"
-  "\032\336\002\n\020RingHashLbConfig\022V\n\021minimum_ring_si"
-  "ze\030\001 \001(\0132\034.google.protobuf.UInt64ValueB\014"
-  "\272\351\300\003\0072\005\030\200\200\200\004R\017minimumRingSize\022d\n\rhash_fu"
-  "nction\030\003 \001(\01623.envoy.api.v2.Cluster.Ring"
-  "HashLbConfig.HashFunctionB\n\272\351\300\003\005\202\001\002\020\001R\014h"
-  "ashFunction\022V\n\021maximum_ring_size\030\004 \001(\0132\034"
-  ".google.protobuf.UInt64ValueB\014\272\351\300\003\0072\005\030\200\200"
-  "\200\004R\017maximumRingSize\".\n\014HashFunction\022\013\n\007X"
-  "X_HASH\020\000\022\021\n\rMURMUR_HASH_2\020\001J\004\010\002\020\003\032=\n\023Ori"
-  "ginalDstLbConfig\022&\n\017use_http_header\030\001 \001("
-  "\010R\ruseHttpHeader\032\257\006\n\016CommonLbConfig\022K\n\027h"
-  "ealthy_panic_threshold\030\001 \001(\0132\023.envoy.typ"
-  "e.PercentR\025healthyPanicThreshold\022i\n\024zone"
-  "_aware_lb_config\030\002 \001(\01326.envoy.api.v2.Cl"
-  "uster.CommonLbConfig.ZoneAwareLbConfigH\000"
-  "R\021zoneAwareLbConfig\022~\n\033locality_weighted"
-  "_lb_config\030\003 \001(\0132=.envoy.api.v2.Cluster."
-  "CommonLbConfig.LocalityWeightedLbConfigH"
-  "\000R\030localityWeightedLbConfig\022I\n\023update_me"
-  "rge_window\030\004 \001(\0132\031.google.protobuf.Durat"
-  "ionR\021updateMergeWindow\022C\n\037ignore_new_hos"
-  "ts_until_first_hc\030\005 \001(\010R\032ignoreNewHostsU"
-  "ntilFirstHc\022M\n$close_connections_on_host"
-  "_set_change\030\006 \001(\010R\037closeConnectionsOnHos"
-  "tSetChange\032\314\001\n\021ZoneAwareLbConfig\022<\n\017rout"
-  "ing_enabled\030\001 \001(\0132\023.envoy.type.PercentR\016"
-  "routingEnabled\022F\n\020min_cluster_size\030\002 \001(\013"
-  "2\034.google.protobuf.UInt64ValueR\016minClust"
-  "erSize\0221\n\025fail_traffic_on_panic\030\003 \001(\010R\022f"
-  "ailTrafficOnPanic\032\032\n\030LocalityWeightedLbC"
-  "onfigB\033\n\031locality_config_specifier\032\255\001\n\013R"
-  "efreshRate\022P\n\rbase_interval\030\001 \001(\0132\031.goog"
-  "le.protobuf.DurationB\020\272\351\300\003\013\252\001\010\010\001*\004\020\300\204=R\014"
-  "baseInterval\022L\n\014max_interval\030\002 \001(\0132\031.goo"
-  "gle.protobuf.DurationB\016\272\351\300\003\t\252\001\006*\004\020\300\204=R\013m"
-  "axInterval\032d\n\035ExtensionProtocolOptionsEn"
-  "try\022\020\n\003key\030\001 \001(\tR\003key\022-\n\005value\030\002 \001(\0132\027.g"
-  "oogle.protobuf.StructR\005value:\0028\001\032f\n\"Type"
-  "dExtensionProtocolOptionsEntry\022\020\n\003key\030\001 "
-  "\001(\tR\003key\022*\n\005value\030\002 \001(\0132\024.google.protobu"
-  "f.AnyR\005value:\0028\001\"W\n\rDiscoveryType\022\n\n\006STA"
-  "TIC\020\000\022\016\n\nSTRICT_DNS\020\001\022\017\n\013LOGICAL_DNS\020\002\022\007"
-  "\n\003EDS\020\003\022\020\n\014ORIGINAL_DST\020\004\"\246\001\n\010LbPolicy\022\017"
-  "\n\013ROUND_ROBIN\020\000\022\021\n\rLEAST_REQUEST\020\001\022\r\n\tRI"
-  "NG_HASH\020\002\022\n\n\006RANDOM\020\003\022\027\n\017ORIGINAL_DST_LB"
-  "\020\004\032\002\010\001\022\n\n\006MAGLEV\020\005\022\024\n\020CLUSTER_PROVIDED\020\006"
-  "\022 \n\034LOAD_BALANCING_POLICY_CONFIG\020\007\"5\n\017Dn"
-  "sLookupFamily\022\010\n\004AUTO\020\000\022\013\n\007V4_ONLY\020\001\022\013\n\007"
-  "V6_ONLY\020\002\"T\n\030ClusterProtocolSelection\022\033\n"
-  "\027USE_CONFIGURED_PROTOCOL\020\000\022\033\n\027USE_DOWNST"
-  "REAM_PROTOCOL\020\001B\030\n\026cluster_discovery_typ"
-  "eB\013\n\tlb_configJ\004\010\014\020\rJ\004\010\017\020\020\"\344\001\n\023LoadBalan"
-  "cingPolicy\022D\n\010policies\030\001 \003(\0132(.envoy.api"
-  ".v2.LoadBalancingPolicy.PolicyR\010policies"
-  "\032\206\001\n\006Policy\022\022\n\004name\030\001 \001(\tR\004name\022/\n\006confi"
-  "g\030\002 \001(\0132\027.google.protobuf.StructR\006config"
-  "\0227\n\014typed_config\030\003 \001(\0132\024.google.protobuf"
-  ".AnyR\013typedConfig\"W\n\022UpstreamBindConfig\022"
-  "A\n\016source_address\030\001 \001(\0132\032.envoy.api.v2.c"
-  "ore.AddressR\rsourceAddress\"a\n\031UpstreamCo"
-  "nnectionOptions\022D\n\rtcp_keepalive\030\001 \001(\0132\037"
-  ".envoy.api.v2.core.TcpKeepaliveR\014tcpKeep"
-  "alive2\311\002\n\027ClusterDiscoveryService\022W\n\016Str"
-  "eamClusters\022\036.envoy.api.v2.DiscoveryRequ"
-  "est\032\037.envoy.api.v2.DiscoveryResponse\"\000(\001"
-  "0\001\022`\n\rDeltaClusters\022#.envoy.api.v2.Delta"
-  "DiscoveryRequest\032$.envoy.api.v2.DeltaDis"
-  "coveryResponse\"\000(\0010\001\022s\n\rFetchClusters\022\036."
-  "envoy.api.v2.DiscoveryRequest\032\037.envoy.ap"
-  "i.v2.DiscoveryResponse\"!\202\323\344\223\002\033\"\026/v2/disc"
-  "overy:clusters:\001*B+\n\032io.envoyproxy.envoy"
-  ".api.v2B\010CdsProtoP\001\210\001\001b\006proto3";
+  "envoy/api/v2/discovery.proto\032\034google/api"
+  "/annotations.proto\032 envoy/annotations/re"
+  "source.proto\032\036udpa/annotations/migrate.p"
+  "roto\032\035udpa/annotations/status.proto\032\032env"
+  "oy/api/v2/cluster.proto\"\n\n\010CdsDummy2\355\002\n\027"
+  "ClusterDiscoveryService\022W\n\016StreamCluster"
+  "s\022\036.envoy.api.v2.DiscoveryRequest\032\037.envo"
+  "y.api.v2.DiscoveryResponse\"\000(\0010\001\022`\n\rDelt"
+  "aClusters\022#.envoy.api.v2.DeltaDiscoveryR"
+  "equest\032$.envoy.api.v2.DeltaDiscoveryResp"
+  "onse\"\000(\0010\001\022y\n\rFetchClusters\022\036.envoy.api."
+  "v2.DiscoveryRequest\032\037.envoy.api.v2.Disco"
+  "veryResponse\"\'\202\323\344\223\002\030\"\026/v2/discovery:clus"
+  "ters\202\323\344\223\002\003:\001*\032\034\212\244\226\363\007\026\n\024envoy.api.v2.Clus"
+  "terBS\n\032io.envoyproxy.envoy.api.v2B\010CdsPr"
+  "otoP\001\210\001\001\362\230\376\217\005\032\022\030envoy.service.cluster.v3"
+  "\272\200\310\321\006\002\020\001P\005b\006proto3";
 
-static upb_def_init *deps[19] = {
-  &envoy_api_v2_auth_cert_proto_upbdefinit,
-  &envoy_api_v2_cluster_circuit_breaker_proto_upbdefinit,
-  &envoy_api_v2_cluster_filter_proto_upbdefinit,
-  &envoy_api_v2_cluster_outlier_detection_proto_upbdefinit,
-  &envoy_api_v2_core_address_proto_upbdefinit,
-  &envoy_api_v2_core_base_proto_upbdefinit,
-  &envoy_api_v2_core_config_source_proto_upbdefinit,
-  &envoy_api_v2_core_health_check_proto_upbdefinit,
-  &envoy_api_v2_core_protocol_proto_upbdefinit,
+static upb_def_init *deps[7] = {
   &envoy_api_v2_discovery_proto_upbdefinit,
-  &envoy_api_v2_eds_proto_upbdefinit,
-  &envoy_type_percent_proto_upbdefinit,
   &google_api_annotations_proto_upbdefinit,
-  &google_protobuf_any_proto_upbdefinit,
-  &google_protobuf_duration_proto_upbdefinit,
-  &google_protobuf_struct_proto_upbdefinit,
-  &google_protobuf_wrappers_proto_upbdefinit,
-  &validate_validate_proto_upbdefinit,
+  &envoy_annotations_resource_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
+  &envoy_api_v2_cluster_proto_upbdefinit,
   NULL
 };
 
@@ -303,5 +54,5 @@ upb_def_init envoy_api_v2_cds_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/cds.proto",
-  UPB_STRVIEW_INIT(descriptor, 8270)
+  UPB_STRVIEW_INIT(descriptor, 698)
 };

@@ -8,14 +8,17 @@
 
 #include "upb/def.h"
 
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 
-static const char descriptor[136] =
-  "\n\025envoy/type/http.proto\022\nenvoy.type*2\n\017C"
-  "odecClientType\022\t\n\005HTTP1\020\000\022\t\n\005HTTP2\020\001\022\t\n\005"
-  "HTTP3\020\002B\'\n\030io.envoyproxy.envoy.typeB\tHtt"
-  "pProtoP\001b\006proto3";
+static const char descriptor[175] =
+  "\n\025envoy/type/http.proto\022\nenvoy.type\032\035udp"
+  "a/annotations/status.proto*2\n\017CodecClien"
+  "tType\022\t\n\005HTTP1\020\000\022\t\n\005HTTP2\020\001\022\t\n\005HTTP3\020\002B/"
+  "\n\030io.envoyproxy.envoy.typeB\tHttpProtoP\001\272"
+  "\200\310\321\006\002\020\001b\006proto3";
 
-static upb_def_init *deps[1] = {
+static upb_def_init *deps[2] = {
+  &udpa_annotations_status_proto_upbdefinit,
   NULL
 };
 
@@ -23,5 +26,5 @@ upb_def_init envoy_type_http_proto_upbdefinit = {
   deps,
   NULL,
   "envoy/type/http.proto",
-  UPB_STRVIEW_INIT(descriptor, 136)
+  UPB_STRVIEW_INIT(descriptor, 175)
 };

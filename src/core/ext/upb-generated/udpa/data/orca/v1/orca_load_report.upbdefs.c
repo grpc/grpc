@@ -19,25 +19,24 @@ static const upb_msglayout *layouts[3] = {
   &udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_msginit,
 };
 
-static const char descriptor[687] =
+static const char descriptor[674] =
   "\n(udpa/data/orca/v1/orca_load_report.pro"
   "to\022\021udpa.data.orca.v1\032\027validate/validate"
-  ".proto\"\222\004\n\016OrcaLoadReport\022I\n\017cpu_utiliza"
-  "tion\030\001 \001(\001B \272\351\300\003\013\022\t)\000\000\000\000\000\000\000\000\272\351\300\003\013\022\t\031\000\000\000\000"
-  "\000\000\360\?R\016cpuUtilization\022I\n\017mem_utilization\030"
-  "\002 \001(\001B \272\351\300\003\013\022\t)\000\000\000\000\000\000\000\000\272\351\300\003\013\022\t\031\000\000\000\000\000\000\360\?R"
-  "\016memUtilization\022\020\n\003rps\030\003 \001(\004R\003rps\022U\n\014req"
-  "uest_cost\030\004 \003(\01322.udpa.data.orca.v1.Orca"
-  "LoadReport.RequestCostEntryR\013requestCost"
-  "\022\200\001\n\013utilization\030\005 \003(\01322.udpa.data.orca."
-  "v1.OrcaLoadReport.UtilizationEntryB*\272\351\300\003"
-  "\020\232\001\r*\013\022\t)\000\000\000\000\000\000\000\000\272\351\300\003\020\232\001\r*\013\022\t\031\000\000\000\000\000\000\360\?R\013"
-  "utilization\032>\n\020RequestCostEntry\022\020\n\003key\030\001"
-  " \001(\tR\003key\022\024\n\005value\030\002 \001(\001R\005value:\0028\001\032>\n\020U"
-  "tilizationEntry\022\020\n\003key\030\001 \001(\tR\003key\022\024\n\005val"
-  "ue\030\002 \001(\001R\005value:\0028\001B:\n!com.github.udpa.u"
-  "dpa.data.orca.v1B\023OrcaLoadReportProtoP\001b"
-  "\006proto3";
+  ".proto\"\205\004\n\016OrcaLoadReport\022E\n\017cpu_utiliza"
+  "tion\030\001 \001(\001B\034\372B\013\022\t)\000\000\000\000\000\000\000\000\372B\013\022\t\031\000\000\000\000\000\000\360\?"
+  "R\016cpuUtilization\022E\n\017mem_utilization\030\002 \001("
+  "\001B\034\372B\013\022\t)\000\000\000\000\000\000\000\000\372B\013\022\t\031\000\000\000\000\000\000\360\?R\016memUtil"
+  "ization\022\020\n\003rps\030\003 \001(\004R\003rps\022U\n\014request_cos"
+  "t\030\004 \003(\01322.udpa.data.orca.v1.OrcaLoadRepo"
+  "rt.RequestCostEntryR\013requestCost\022|\n\013util"
+  "ization\030\005 \003(\01322.udpa.data.orca.v1.OrcaLo"
+  "adReport.UtilizationEntryB&\372B\020\232\001\r*\013\022\t)\000\000"
+  "\000\000\000\000\000\000\372B\020\232\001\r*\013\022\t\031\000\000\000\000\000\000\360\?R\013utilization\032>"
+  "\n\020RequestCostEntry\022\020\n\003key\030\001 \001(\tR\003key\022\024\n\005"
+  "value\030\002 \001(\001R\005value:\0028\001\032>\n\020UtilizationEnt"
+  "ry\022\020\n\003key\030\001 \001(\tR\003key\022\024\n\005value\030\002 \001(\001R\005val"
+  "ue:\0028\001B:\n!com.github.udpa.udpa.data.orca"
+  ".v1B\023OrcaLoadReportProtoP\001b\006proto3";
 
 static upb_def_init *deps[2] = {
   &validate_validate_proto_upbdefinit,
@@ -48,5 +47,5 @@ upb_def_init udpa_data_orca_v1_orca_load_report_proto_upbdefinit = {
   deps,
   layouts,
   "udpa/data/orca/v1/orca_load_report.proto",
-  UPB_STRVIEW_INIT(descriptor, 687)
+  UPB_STRVIEW_INIT(descriptor, 674)
 };

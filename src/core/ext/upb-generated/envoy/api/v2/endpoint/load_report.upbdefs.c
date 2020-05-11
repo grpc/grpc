@@ -12,6 +12,8 @@ extern upb_def_init envoy_api_v2_core_address_proto_upbdefinit;
 extern upb_def_init envoy_api_v2_core_base_proto_upbdefinit;
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_struct_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_api_v2_endpoint_UpstreamLocalityStats_msginit;
 extern const upb_msglayout envoy_api_v2_endpoint_UpstreamEndpointStats_msginit;
@@ -27,63 +29,68 @@ static const upb_msglayout *layouts[5] = {
   &envoy_api_v2_endpoint_ClusterStats_DroppedRequests_msginit,
 };
 
-static const char descriptor[1986] =
+static const char descriptor[2083] =
   "\n\'envoy/api/v2/endpoint/load_report.prot"
   "o\022\025envoy.api.v2.endpoint\032\037envoy/api/v2/c"
   "ore/address.proto\032\034envoy/api/v2/core/bas"
   "e.proto\032\036google/protobuf/duration.proto\032"
-  "\034google/protobuf/struct.proto\032\027validate/"
-  "validate.proto\"\215\004\n\025UpstreamLocalityStats"
-  "\0227\n\010locality\030\001 \001(\0132\033.envoy.api.v2.core.L"
-  "ocalityR\010locality\022:\n\031total_successful_re"
-  "quests\030\002 \001(\004R\027totalSuccessfulRequests\022;\n"
-  "\032total_requests_in_progress\030\003 \001(\004R\027total"
-  "RequestsInProgress\0220\n\024total_error_reques"
-  "ts\030\004 \001(\004R\022totalErrorRequests\0222\n\025total_is"
-  "sued_requests\030\010 \001(\004R\023totalIssuedRequests"
-  "\022Z\n\021load_metric_stats\030\005 \003(\0132..envoy.api."
-  "v2.endpoint.EndpointLoadMetricStatsR\017loa"
-  "dMetricStats\022d\n\027upstream_endpoint_stats\030"
-  "\007 \003(\0132,.envoy.api.v2.endpoint.UpstreamEn"
-  "dpointStatsR\025upstreamEndpointStats\022\032\n\010pr"
-  "iority\030\006 \001(\rR\010priority\"\275\003\n\025UpstreamEndpo"
-  "intStats\0224\n\007address\030\001 \001(\0132\032.envoy.api.v2"
-  ".core.AddressR\007address\0223\n\010metadata\030\006 \001(\013"
-  "2\027.google.protobuf.StructR\010metadata\022:\n\031t"
-  "otal_successful_requests\030\002 \001(\004R\027totalSuc"
-  "cessfulRequests\022;\n\032total_requests_in_pro"
-  "gress\030\003 \001(\004R\027totalRequestsInProgress\0220\n\024"
-  "total_error_requests\030\004 \001(\004R\022totalErrorRe"
-  "quests\0222\n\025total_issued_requests\030\007 \001(\004R\023t"
-  "otalIssuedRequests\022Z\n\021load_metric_stats\030"
-  "\005 \003(\0132..envoy.api.v2.endpoint.EndpointLo"
-  "adMetricStatsR\017loadMetricStats\"\262\001\n\027Endpo"
-  "intLoadMetricStats\022\037\n\013metric_name\030\001 \001(\tR"
-  "\nmetricName\022H\n!num_requests_finished_wit"
-  "h_metric\030\002 \001(\004R\035numRequestsFinishedWithM"
-  "etric\022,\n\022total_metric_value\030\003 \001(\001R\020total"
-  "MetricValue\"\242\004\n\014ClusterStats\022,\n\014cluster_"
-  "name\030\001 \001(\tB\t\272\351\300\003\004r\002 \001R\013clusterName\0220\n\024cl"
-  "uster_service_name\030\006 \001(\tR\022clusterService"
-  "Name\022p\n\027upstream_locality_stats\030\002 \003(\0132,."
-  "envoy.api.v2.endpoint.UpstreamLocalitySt"
-  "atsB\n\272\351\300\003\005\222\001\002\010\001R\025upstreamLocalityStats\0224"
-  "\n\026total_dropped_requests\030\003 \001(\004R\024totalDro"
-  "ppedRequests\022^\n\020dropped_requests\030\005 \003(\01323"
-  ".envoy.api.v2.endpoint.ClusterStats.Drop"
-  "pedRequestsR\017droppedRequests\022K\n\024load_rep"
-  "ort_interval\030\004 \001(\0132\031.google.protobuf.Dur"
-  "ationR\022loadReportInterval\032]\n\017DroppedRequ"
-  "ests\022%\n\010category\030\001 \001(\tB\t\272\351\300\003\004r\002 \001R\010categ"
-  "ory\022#\n\rdropped_count\030\002 \001(\004R\014droppedCount"
-  "B8\n#io.envoyproxy.envoy.api.v2.endpointB"
-  "\017LoadReportProtoP\001b\006proto3";
+  "\034google/protobuf/struct.proto\032\036udpa/anno"
+  "tations/migrate.proto\032\035udpa/annotations/"
+  "status.proto\032\027validate/validate.proto\"\215\004"
+  "\n\025UpstreamLocalityStats\0227\n\010locality\030\001 \001("
+  "\0132\033.envoy.api.v2.core.LocalityR\010locality"
+  "\022:\n\031total_successful_requests\030\002 \001(\004R\027tot"
+  "alSuccessfulRequests\022;\n\032total_requests_i"
+  "n_progress\030\003 \001(\004R\027totalRequestsInProgres"
+  "s\0220\n\024total_error_requests\030\004 \001(\004R\022totalEr"
+  "rorRequests\0222\n\025total_issued_requests\030\010 \001"
+  "(\004R\023totalIssuedRequests\022Z\n\021load_metric_s"
+  "tats\030\005 \003(\0132..envoy.api.v2.endpoint.Endpo"
+  "intLoadMetricStatsR\017loadMetricStats\022d\n\027u"
+  "pstream_endpoint_stats\030\007 \003(\0132,.envoy.api"
+  ".v2.endpoint.UpstreamEndpointStatsR\025upst"
+  "reamEndpointStats\022\032\n\010priority\030\006 \001(\rR\010pri"
+  "ority\"\275\003\n\025UpstreamEndpointStats\0224\n\007addre"
+  "ss\030\001 \001(\0132\032.envoy.api.v2.core.AddressR\007ad"
+  "dress\0223\n\010metadata\030\006 \001(\0132\027.google.protobu"
+  "f.StructR\010metadata\022:\n\031total_successful_r"
+  "equests\030\002 \001(\004R\027totalSuccessfulRequests\022;"
+  "\n\032total_requests_in_progress\030\003 \001(\004R\027tota"
+  "lRequestsInProgress\0220\n\024total_error_reque"
+  "sts\030\004 \001(\004R\022totalErrorRequests\0222\n\025total_i"
+  "ssued_requests\030\007 \001(\004R\023totalIssuedRequest"
+  "s\022Z\n\021load_metric_stats\030\005 \003(\0132..envoy.api"
+  ".v2.endpoint.EndpointLoadMetricStatsR\017lo"
+  "adMetricStats\"\262\001\n\027EndpointLoadMetricStat"
+  "s\022\037\n\013metric_name\030\001 \001(\tR\nmetricName\022H\n!nu"
+  "m_requests_finished_with_metric\030\002 \001(\004R\035n"
+  "umRequestsFinishedWithMetric\022,\n\022total_me"
+  "tric_value\030\003 \001(\001R\020totalMetricValue\"\234\004\n\014C"
+  "lusterStats\022*\n\014cluster_name\030\001 \001(\tB\007\372B\004r\002"
+  " \001R\013clusterName\0220\n\024cluster_service_name\030"
+  "\006 \001(\tR\022clusterServiceName\022n\n\027upstream_lo"
+  "cality_stats\030\002 \003(\0132,.envoy.api.v2.endpoi"
+  "nt.UpstreamLocalityStatsB\010\372B\005\222\001\002\010\001R\025upst"
+  "reamLocalityStats\0224\n\026total_dropped_reque"
+  "sts\030\003 \001(\004R\024totalDroppedRequests\022^\n\020dropp"
+  "ed_requests\030\005 \003(\01323.envoy.api.v2.endpoin"
+  "t.ClusterStats.DroppedRequestsR\017droppedR"
+  "equests\022K\n\024load_report_interval\030\004 \001(\0132\031."
+  "google.protobuf.DurationR\022loadReportInte"
+  "rval\032[\n\017DroppedRequests\022#\n\010category\030\001 \001("
+  "\tB\007\372B\004r\002 \001R\010category\022#\n\rdropped_count\030\002 "
+  "\001(\004R\014droppedCountB`\n#io.envoyproxy.envoy"
+  ".api.v2.endpointB\017LoadReportProtoP\001\362\230\376\217\005"
+  "\032\022\030envoy.config.endpoint.v3\272\200\310\321\006\002\020\001b\006pro"
+  "to3";
 
-static upb_def_init *deps[6] = {
+static upb_def_init *deps[8] = {
   &envoy_api_v2_core_address_proto_upbdefinit,
   &envoy_api_v2_core_base_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
   &google_protobuf_struct_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
@@ -92,5 +99,5 @@ upb_def_init envoy_api_v2_endpoint_load_report_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/endpoint/load_report.proto",
-  UPB_STRVIEW_INIT(descriptor, 1986)
+  UPB_STRVIEW_INIT(descriptor, 2083)
 };

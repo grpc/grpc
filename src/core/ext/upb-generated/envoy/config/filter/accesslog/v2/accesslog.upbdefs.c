@@ -9,10 +9,12 @@
 #include "upb/def.h"
 
 extern upb_def_init envoy_api_v2_core_base_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_route_route_proto_upbdefinit;
+extern upb_def_init envoy_api_v2_route_route_components_proto_upbdefinit;
 extern upb_def_init envoy_type_percent_proto_upbdefinit;
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
 extern upb_def_init google_protobuf_struct_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_config_filter_accesslog_v2_AccessLog_msginit;
 extern const upb_msglayout envoy_config_filter_accesslog_v2_AccessLogFilter_msginit;
@@ -46,99 +48,103 @@ static const upb_msglayout *layouts[14] = {
   &envoy_config_filter_accesslog_v2_ExtensionFilter_msginit,
 };
 
-static const char descriptor[3361] =
+static const char descriptor[3469] =
   "\n0envoy/config/filter/accesslog/v2/acces"
   "slog.proto\022 envoy.config.filter.accesslo"
-  "g.v2\032\034envoy/api/v2/core/base.proto\032\036envo"
-  "y/api/v2/route/route.proto\032\030envoy/type/p"
-  "ercent.proto\032\031google/protobuf/any.proto\032"
-  "\034google/protobuf/struct.proto\032\027validate/"
-  "validate.proto\"\347\001\n\tAccessLog\022\022\n\004name\030\001 \001"
-  "(\tR\004name\022I\n\006filter\030\002 \001(\01321.envoy.config."
-  "filter.accesslog.v2.AccessLogFilterR\006fil"
-  "ter\0221\n\006config\030\003 \001(\0132\027.google.protobuf.St"
-  "ructH\000R\006config\0229\n\014typed_config\030\004 \001(\0132\024.g"
-  "oogle.protobuf.AnyH\000R\013typedConfigB\r\n\013con"
-  "fig_type\"\266\010\n\017AccessLogFilter\022b\n\022status_c"
-  "ode_filter\030\001 \001(\01322.envoy.config.filter.a"
-  "ccesslog.v2.StatusCodeFilterH\000R\020statusCo"
-  "deFilter\022[\n\017duration_filter\030\002 \001(\01320.envo"
-  "y.config.filter.accesslog.v2.DurationFil"
-  "terH\000R\016durationFilter\022o\n\027not_health_chec"
-  "k_filter\030\003 \001(\01326.envoy.config.filter.acc"
-  "esslog.v2.NotHealthCheckFilterH\000R\024notHea"
-  "lthCheckFilter\022^\n\020traceable_filter\030\004 \001(\013"
-  "21.envoy.config.filter.accesslog.v2.Trac"
-  "eableFilterH\000R\017traceableFilter\022X\n\016runtim"
-  "e_filter\030\005 \001(\0132/.envoy.config.filter.acc"
-  "esslog.v2.RuntimeFilterH\000R\rruntimeFilter"
-  "\022L\n\nand_filter\030\006 \001(\0132+.envoy.config.filt"
-  "er.accesslog.v2.AndFilterH\000R\tandFilter\022I"
-  "\n\tor_filter\030\007 \001(\0132*.envoy.config.filter."
-  "accesslog.v2.OrFilterH\000R\010orFilter\022U\n\rhea"
-  "der_filter\030\010 \001(\0132..envoy.config.filter.a"
-  "ccesslog.v2.HeaderFilterH\000R\014headerFilter"
-  "\022h\n\024response_flag_filter\030\t \001(\01324.envoy.c"
-  "onfig.filter.accesslog.v2.ResponseFlagFi"
-  "lterH\000R\022responseFlagFilter\022b\n\022grpc_statu"
-  "s_filter\030\n \001(\01322.envoy.config.filter.acc"
-  "esslog.v2.GrpcStatusFilterH\000R\020grpcStatus"
-  "Filter\022^\n\020extension_filter\030\013 \001(\01321.envoy"
-  ".config.filter.accesslog.v2.ExtensionFil"
-  "terH\000R\017extensionFilterB\031\n\020filter_specifi"
-  "er\022\005\270\351\300\003\001\"\273\001\n\020ComparisonFilter\022Q\n\002op\030\001 \001"
-  "(\01625.envoy.config.filter.accesslog.v2.Co"
-  "mparisonFilter.OpB\n\272\351\300\003\005\202\001\002\020\001R\002op\0226\n\005val"
-  "ue\030\002 \001(\0132 .envoy.api.v2.core.RuntimeUInt"
-  "32R\005value\"\034\n\002Op\022\006\n\002EQ\020\000\022\006\n\002GE\020\001\022\006\n\002LE\020\002\""
-  "r\n\020StatusCodeFilter\022^\n\ncomparison\030\001 \001(\0132"
-  "2.envoy.config.filter.accesslog.v2.Compa"
-  "risonFilterB\n\272\351\300\003\005\212\001\002\020\001R\ncomparison\"p\n\016D"
-  "urationFilter\022^\n\ncomparison\030\001 \001(\01322.envo"
+  "g.v2\032\034envoy/api/v2/core/base.proto\032)envo"
+  "y/api/v2/route/route_components.proto\032\030e"
+  "nvoy/type/percent.proto\032\031google/protobuf"
+  "/any.proto\032\034google/protobuf/struct.proto"
+  "\032\036udpa/annotations/migrate.proto\032\035udpa/a"
+  "nnotations/status.proto\032\027validate/valida"
+  "te.proto\"\353\001\n\tAccessLog\022\022\n\004name\030\001 \001(\tR\004na"
+  "me\022I\n\006filter\030\002 \001(\01321.envoy.config.filter"
+  ".accesslog.v2.AccessLogFilterR\006filter\0225\n"
+  "\006config\030\003 \001(\0132\027.google.protobuf.StructB\002"
+  "\030\001H\000R\006config\0229\n\014typed_config\030\004 \001(\0132\024.goo"
+  "gle.protobuf.AnyH\000R\013typedConfigB\r\n\013confi"
+  "g_type\"\264\010\n\017AccessLogFilter\022b\n\022status_cod"
+  "e_filter\030\001 \001(\01322.envoy.config.filter.acc"
+  "esslog.v2.StatusCodeFilterH\000R\020statusCode"
+  "Filter\022[\n\017duration_filter\030\002 \001(\01320.envoy."
+  "config.filter.accesslog.v2.DurationFilte"
+  "rH\000R\016durationFilter\022o\n\027not_health_check_"
+  "filter\030\003 \001(\01326.envoy.config.filter.acces"
+  "slog.v2.NotHealthCheckFilterH\000R\024notHealt"
+  "hCheckFilter\022^\n\020traceable_filter\030\004 \001(\01321"
+  ".envoy.config.filter.accesslog.v2.Tracea"
+  "bleFilterH\000R\017traceableFilter\022X\n\016runtime_"
+  "filter\030\005 \001(\0132/.envoy.config.filter.acces"
+  "slog.v2.RuntimeFilterH\000R\rruntimeFilter\022L"
+  "\n\nand_filter\030\006 \001(\0132+.envoy.config.filter"
+  ".accesslog.v2.AndFilterH\000R\tandFilter\022I\n\t"
+  "or_filter\030\007 \001(\0132*.envoy.config.filter.ac"
+  "cesslog.v2.OrFilterH\000R\010orFilter\022U\n\rheade"
+  "r_filter\030\010 \001(\0132..envoy.config.filter.acc"
+  "esslog.v2.HeaderFilterH\000R\014headerFilter\022h"
+  "\n\024response_flag_filter\030\t \001(\01324.envoy.con"
+  "fig.filter.accesslog.v2.ResponseFlagFilt"
+  "erH\000R\022responseFlagFilter\022b\n\022grpc_status_"
+  "filter\030\n \001(\01322.envoy.config.filter.acces"
+  "slog.v2.GrpcStatusFilterH\000R\020grpcStatusFi"
+  "lter\022^\n\020extension_filter\030\013 \001(\01321.envoy.c"
+  "onfig.filter.accesslog.v2.ExtensionFilte"
+  "rH\000R\017extensionFilterB\027\n\020filter_specifier"
+  "\022\003\370B\001\"\271\001\n\020ComparisonFilter\022O\n\002op\030\001 \001(\01625"
+  ".envoy.config.filter.accesslog.v2.Compar"
+  "isonFilter.OpB\010\372B\005\202\001\002\020\001R\002op\0226\n\005value\030\002 \001"
+  "(\0132 .envoy.api.v2.core.RuntimeUInt32R\005va"
+  "lue\"\034\n\002Op\022\006\n\002EQ\020\000\022\006\n\002GE\020\001\022\006\n\002LE\020\002\"p\n\020Sta"
+  "tusCodeFilter\022\\\n\ncomparison\030\001 \001(\01322.envo"
   "y.config.filter.accesslog.v2.ComparisonF"
-  "ilterB\n\272\351\300\003\005\212\001\002\020\001R\ncomparison\"\026\n\024NotHeal"
-  "thCheckFilter\"\021\n\017TraceableFilter\"\301\001\n\rRun"
-  "timeFilter\022*\n\013runtime_key\030\001 \001(\tB\t\272\351\300\003\004r\002"
-  " \001R\nruntimeKey\022F\n\017percent_sampled\030\002 \001(\0132"
-  "\035.envoy.type.FractionalPercentR\016percentS"
-  "ampled\022<\n\032use_independent_randomness\030\003 \001"
-  "(\010R\030useIndependentRandomness\"d\n\tAndFilte"
-  "r\022W\n\007filters\030\001 \003(\01321.envoy.config.filter"
-  ".accesslog.v2.AccessLogFilterB\n\272\351\300\003\005\222\001\002\010"
-  "\002R\007filters\"c\n\010OrFilter\022W\n\007filters\030\002 \003(\0132"
-  "1.envoy.config.filter.accesslog.v2.Acces"
-  "sLogFilterB\n\272\351\300\003\005\222\001\002\010\002R\007filters\"U\n\014Heade"
-  "rFilter\022E\n\006header\030\001 \001(\0132!.envoy.api.v2.r"
-  "oute.HeaderMatcherB\n\272\351\300\003\005\212\001\002\020\001R\006header\"\205"
-  "\001\n\022ResponseFlagFilter\022o\n\005flags\030\001 \003(\tBY\272\351"
-  "\300\003T\222\001Q\"OrMR\002LHR\002UHR\002UTR\002LRR\002URR\002UFR\002UCR\002"
-  "UOR\002NRR\002DIR\002FIR\002RLR\004UAEXR\004RLSER\002DCR\003URXR"
-  "\002SIR\002IHR\005flags\"\317\003\n\020GrpcStatusFilter\022f\n\010s"
-  "tatuses\030\001 \003(\01629.envoy.config.filter.acce"
-  "sslog.v2.GrpcStatusFilter.StatusB\017\272\351\300\003\n\222"
-  "\001\007\"\005\202\001\002\020\001R\010statuses\022\030\n\007exclude\030\002 \001(\010R\007ex"
-  "clude\"\270\002\n\006Status\022\006\n\002OK\020\000\022\014\n\010CANCELED\020\001\022\013"
-  "\n\007UNKNOWN\020\002\022\024\n\020INVALID_ARGUMENT\020\003\022\025\n\021DEA"
-  "DLINE_EXCEEDED\020\004\022\r\n\tNOT_FOUND\020\005\022\022\n\016ALREA"
-  "DY_EXISTS\020\006\022\025\n\021PERMISSION_DENIED\020\007\022\026\n\022RE"
-  "SOURCE_EXHAUSTED\020\010\022\027\n\023FAILED_PRECONDITIO"
-  "N\020\t\022\013\n\007ABORTED\020\n\022\020\n\014OUT_OF_RANGE\020\013\022\021\n\rUN"
-  "IMPLEMENTED\020\014\022\014\n\010INTERNAL\020\r\022\017\n\013UNAVAILAB"
-  "LE\020\016\022\r\n\tDATA_LOSS\020\017\022\023\n\017UNAUTHENTICATED\020\020"
-  "\"\242\001\n\017ExtensionFilter\022\022\n\004name\030\001 \001(\tR\004name"
-  "\0221\n\006config\030\002 \001(\0132\027.google.protobuf.Struc"
-  "tH\000R\006config\0229\n\014typed_config\030\003 \001(\0132\024.goog"
-  "le.protobuf.AnyH\000R\013typedConfigB\r\n\013config"
-  "_typeBB\n.io.envoyproxy.envoy.config.filt"
-  "er.accesslog.v2B\016AccesslogProtoP\001b\006proto"
-  "3";
+  "ilterB\010\372B\005\212\001\002\020\001R\ncomparison\"n\n\016DurationF"
+  "ilter\022\\\n\ncomparison\030\001 \001(\01322.envoy.config"
+  ".filter.accesslog.v2.ComparisonFilterB\010\372"
+  "B\005\212\001\002\020\001R\ncomparison\"\026\n\024NotHealthCheckFil"
+  "ter\"\021\n\017TraceableFilter\"\277\001\n\rRuntimeFilter"
+  "\022(\n\013runtime_key\030\001 \001(\tB\007\372B\004r\002 \001R\nruntimeK"
+  "ey\022F\n\017percent_sampled\030\002 \001(\0132\035.envoy.type"
+  ".FractionalPercentR\016percentSampled\022<\n\032us"
+  "e_independent_randomness\030\003 \001(\010R\030useIndep"
+  "endentRandomness\"b\n\tAndFilter\022U\n\007filters"
+  "\030\001 \003(\01321.envoy.config.filter.accesslog.v"
+  "2.AccessLogFilterB\010\372B\005\222\001\002\010\002R\007filters\"a\n\010"
+  "OrFilter\022U\n\007filters\030\002 \003(\01321.envoy.config"
+  ".filter.accesslog.v2.AccessLogFilterB\010\372B"
+  "\005\222\001\002\010\002R\007filters\"S\n\014HeaderFilter\022C\n\006heade"
+  "r\030\001 \001(\0132!.envoy.api.v2.route.HeaderMatch"
+  "erB\010\372B\005\212\001\002\020\001R\006header\"\210\001\n\022ResponseFlagFil"
+  "ter\022r\n\005flags\030\001 \003(\tB\\\372BY\222\001V\"TrRR\002LHR\002UHR\002"
+  "UTR\002LRR\002URR\002UFR\002UCR\002UOR\002NRR\002DIR\002FIR\002RLR\004"
+  "UAEXR\004RLSER\002DCR\003URXR\002SIR\002IHR\003DPER\005flags\""
+  "\315\003\n\020GrpcStatusFilter\022d\n\010statuses\030\001 \003(\01629"
+  ".envoy.config.filter.accesslog.v2.GrpcSt"
+  "atusFilter.StatusB\r\372B\n\222\001\007\"\005\202\001\002\020\001R\010status"
+  "es\022\030\n\007exclude\030\002 \001(\010R\007exclude\"\270\002\n\006Status\022"
+  "\006\n\002OK\020\000\022\014\n\010CANCELED\020\001\022\013\n\007UNKNOWN\020\002\022\024\n\020IN"
+  "VALID_ARGUMENT\020\003\022\025\n\021DEADLINE_EXCEEDED\020\004\022"
+  "\r\n\tNOT_FOUND\020\005\022\022\n\016ALREADY_EXISTS\020\006\022\025\n\021PE"
+  "RMISSION_DENIED\020\007\022\026\n\022RESOURCE_EXHAUSTED\020"
+  "\010\022\027\n\023FAILED_PRECONDITION\020\t\022\013\n\007ABORTED\020\n\022"
+  "\020\n\014OUT_OF_RANGE\020\013\022\021\n\rUNIMPLEMENTED\020\014\022\014\n\010"
+  "INTERNAL\020\r\022\017\n\013UNAVAILABLE\020\016\022\r\n\tDATA_LOSS"
+  "\020\017\022\023\n\017UNAUTHENTICATED\020\020\"\246\001\n\017ExtensionFil"
+  "ter\022\022\n\004name\030\001 \001(\tR\004name\0225\n\006config\030\002 \001(\0132"
+  "\027.google.protobuf.StructB\002\030\001H\000R\006config\0229"
+  "\n\014typed_config\030\003 \001(\0132\024.google.protobuf.A"
+  "nyH\000R\013typedConfigB\r\n\013config_typeBk\n.io.e"
+  "nvoyproxy.envoy.config.filter.accesslog."
+  "v2B\016AccesslogProtoP\001\362\230\376\217\005\033\022\031envoy.config"
+  ".accesslog.v3\272\200\310\321\006\002\020\001b\006proto3";
 
-static upb_def_init *deps[7] = {
+static upb_def_init *deps[9] = {
   &envoy_api_v2_core_base_proto_upbdefinit,
-  &envoy_api_v2_route_route_proto_upbdefinit,
+  &envoy_api_v2_route_route_components_proto_upbdefinit,
   &envoy_type_percent_proto_upbdefinit,
   &google_protobuf_any_proto_upbdefinit,
   &google_protobuf_struct_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
@@ -147,5 +153,5 @@ upb_def_init envoy_config_filter_accesslog_v2_accesslog_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/config/filter/accesslog/v2/accesslog.proto",
-  UPB_STRVIEW_INIT(descriptor, 3361)
+  UPB_STRVIEW_INIT(descriptor, 3469)
 };

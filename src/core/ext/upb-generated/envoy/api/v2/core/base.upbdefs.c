@@ -8,125 +8,168 @@
 
 #include "upb/def.h"
 
+extern upb_def_init envoy_api_v2_core_address_proto_upbdefinit;
+extern upb_def_init envoy_api_v2_core_backoff_proto_upbdefinit;
 extern upb_def_init envoy_api_v2_core_http_uri_proto_upbdefinit;
 extern upb_def_init envoy_type_percent_proto_upbdefinit;
+extern upb_def_init envoy_type_semantic_version_proto_upbdefinit;
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
+extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_struct_proto_upbdefinit;
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
+extern upb_def_init envoy_api_v2_core_socket_option_proto_upbdefinit;
 extern const upb_msglayout envoy_api_v2_core_Locality_msginit;
+extern const upb_msglayout envoy_api_v2_core_BuildVersion_msginit;
+extern const upb_msglayout envoy_api_v2_core_Extension_msginit;
 extern const upb_msglayout envoy_api_v2_core_Node_msginit;
 extern const upb_msglayout envoy_api_v2_core_Metadata_msginit;
 extern const upb_msglayout envoy_api_v2_core_Metadata_FilterMetadataEntry_msginit;
 extern const upb_msglayout envoy_api_v2_core_RuntimeUInt32_msginit;
+extern const upb_msglayout envoy_api_v2_core_RuntimeDouble_msginit;
 extern const upb_msglayout envoy_api_v2_core_RuntimeFeatureFlag_msginit;
 extern const upb_msglayout envoy_api_v2_core_HeaderValue_msginit;
 extern const upb_msglayout envoy_api_v2_core_HeaderValueOption_msginit;
 extern const upb_msglayout envoy_api_v2_core_HeaderMap_msginit;
 extern const upb_msglayout envoy_api_v2_core_DataSource_msginit;
+extern const upb_msglayout envoy_api_v2_core_RetryPolicy_msginit;
 extern const upb_msglayout envoy_api_v2_core_RemoteDataSource_msginit;
 extern const upb_msglayout envoy_api_v2_core_AsyncDataSource_msginit;
 extern const upb_msglayout envoy_api_v2_core_TransportSocket_msginit;
-extern const upb_msglayout envoy_api_v2_core_SocketOption_msginit;
 extern const upb_msglayout envoy_api_v2_core_RuntimeFractionalPercent_msginit;
 extern const upb_msglayout envoy_api_v2_core_ControlPlane_msginit;
 
-static const upb_msglayout *layouts[16] = {
+static const upb_msglayout *layouts[19] = {
   &envoy_api_v2_core_Locality_msginit,
+  &envoy_api_v2_core_BuildVersion_msginit,
+  &envoy_api_v2_core_Extension_msginit,
   &envoy_api_v2_core_Node_msginit,
   &envoy_api_v2_core_Metadata_msginit,
   &envoy_api_v2_core_Metadata_FilterMetadataEntry_msginit,
   &envoy_api_v2_core_RuntimeUInt32_msginit,
+  &envoy_api_v2_core_RuntimeDouble_msginit,
   &envoy_api_v2_core_RuntimeFeatureFlag_msginit,
   &envoy_api_v2_core_HeaderValue_msginit,
   &envoy_api_v2_core_HeaderValueOption_msginit,
   &envoy_api_v2_core_HeaderMap_msginit,
   &envoy_api_v2_core_DataSource_msginit,
+  &envoy_api_v2_core_RetryPolicy_msginit,
   &envoy_api_v2_core_RemoteDataSource_msginit,
   &envoy_api_v2_core_AsyncDataSource_msginit,
   &envoy_api_v2_core_TransportSocket_msginit,
-  &envoy_api_v2_core_SocketOption_msginit,
   &envoy_api_v2_core_RuntimeFractionalPercent_msginit,
   &envoy_api_v2_core_ControlPlane_msginit,
 };
 
-static const char descriptor[2681] =
+static const char descriptor[3640] =
   "\n\034envoy/api/v2/core/base.proto\022\021envoy.ap"
-  "i.v2.core\032 envoy/api/v2/core/http_uri.pr"
-  "oto\032\030envoy/type/percent.proto\032\031google/pr"
-  "otobuf/any.proto\032\034google/protobuf/struct"
-  ".proto\032\036google/protobuf/wrappers.proto\032\027"
-  "validate/validate.proto\"Q\n\010Locality\022\026\n\006r"
-  "egion\030\001 \001(\tR\006region\022\022\n\004zone\030\002 \001(\tR\004zone\022"
-  "\031\n\010sub_zone\030\003 \001(\tR\007subZone\"\303\001\n\004Node\022\016\n\002i"
-  "d\030\001 \001(\tR\002id\022\030\n\007cluster\030\002 \001(\tR\007cluster\0223\n"
-  "\010metadata\030\003 \001(\0132\027.google.protobuf.Struct"
-  "R\010metadata\0227\n\010locality\030\004 \001(\0132\033.envoy.api"
-  ".v2.core.LocalityR\010locality\022#\n\rbuild_ver"
-  "sion\030\005 \001(\tR\014buildVersion\"\300\001\n\010Metadata\022X\n"
-  "\017filter_metadata\030\001 \003(\0132/.envoy.api.v2.co"
-  "re.Metadata.FilterMetadataEntryR\016filterM"
-  "etadata\032Z\n\023FilterMetadataEntry\022\020\n\003key\030\001 "
-  "\001(\tR\003key\022-\n\005value\030\002 \001(\0132\027.google.protobu"
-  "f.StructR\005value:\0028\001\"`\n\rRuntimeUInt32\022#\n\r"
-  "default_value\030\002 \001(\rR\014defaultValue\022*\n\013run"
-  "time_key\030\003 \001(\tB\t\272\351\300\003\004r\002 \001R\nruntimeKey\"\215\001"
-  "\n\022RuntimeFeatureFlag\022K\n\rdefault_value\030\001 "
-  "\001(\0132\032.google.protobuf.BoolValueB\n\272\351\300\003\005\212\001"
-  "\002\020\001R\014defaultValue\022*\n\013runtime_key\030\002 \001(\tB\t"
-  "\272\351\300\003\004r\002 \001R\nruntimeKey\"Q\n\013HeaderValue\022\037\n\003"
-  "key\030\001 \001(\tB\r\272\351\300\003\010r\006 \001(\200\200\001R\003key\022!\n\005value\030\002"
-  " \001(\tB\013\272\351\300\003\006r\004(\200\200\001R\005value\"\213\001\n\021HeaderValue"
-  "Option\022B\n\006header\030\001 \001(\0132\036.envoy.api.v2.co"
-  "re.HeaderValueB\n\272\351\300\003\005\212\001\002\020\001R\006header\0222\n\006ap"
-  "pend\030\002 \001(\0132\032.google.protobuf.BoolValueR\006"
-  "append\"E\n\tHeaderMap\0228\n\007headers\030\001 \003(\0132\036.e"
-  "nvoy.api.v2.core.HeaderValueR\007headers\"\253\001"
-  "\n\nDataSource\022\'\n\010filename\030\001 \001(\tB\t\272\351\300\003\004r\002 "
-  "\001H\000R\010filename\022.\n\014inline_bytes\030\002 \001(\014B\t\272\351\300"
-  "\003\004z\002\020\001H\000R\013inlineBytes\0220\n\rinline_string\030\003"
-  " \001(\tB\t\272\351\300\003\004r\002 \001H\000R\014inlineStringB\022\n\tspeci"
-  "fier\022\005\270\351\300\003\001\"x\n\020RemoteDataSource\022A\n\010http_"
-  "uri\030\001 \001(\0132\032.envoy.api.v2.core.HttpUriB\n\272"
-  "\351\300\003\005\212\001\002\020\001R\007httpUri\022!\n\006sha256\030\002 \001(\tB\t\272\351\300\003"
-  "\004r\002 \001R\006sha256\"\233\001\n\017AsyncDataSource\0225\n\005loc"
-  "al\030\001 \001(\0132\035.envoy.api.v2.core.DataSourceH"
-  "\000R\005local\022=\n\006remote\030\002 \001(\0132#.envoy.api.v2."
-  "core.RemoteDataSourceH\000R\006remoteB\022\n\tspeci"
-  "fier\022\005\270\351\300\003\001\"\255\001\n\017TransportSocket\022\035\n\004name\030"
-  "\001 \001(\tB\t\272\351\300\003\004r\002 \001R\004name\0221\n\006config\030\002 \001(\0132\027"
-  ".google.protobuf.StructH\000R\006config\0229\n\014typ"
-  "ed_config\030\003 \001(\0132\024.google.protobuf.AnyH\000R"
-  "\013typedConfigB\r\n\013config_type\"\277\002\n\014SocketOp"
-  "tion\022 \n\013description\030\001 \001(\tR\013description\022\024"
-  "\n\005level\030\002 \001(\003R\005level\022\022\n\004name\030\003 \001(\003R\004name"
-  "\022\035\n\tint_value\030\004 \001(\003H\000R\010intValue\022\035\n\tbuf_v"
-  "alue\030\005 \001(\014H\000R\010bufValue\022M\n\005state\030\006 \001(\0162+."
-  "envoy.api.v2.core.SocketOption.SocketSta"
-  "teB\n\272\351\300\003\005\202\001\002\020\001R\005state\"F\n\013SocketState\022\021\n\r"
-  "STATE_PREBIND\020\000\022\017\n\013STATE_BOUND\020\001\022\023\n\017STAT"
-  "E_LISTENING\020\002B\016\n\005value\022\005\270\351\300\003\001\"\213\001\n\030Runtim"
-  "eFractionalPercent\022N\n\rdefault_value\030\001 \001("
-  "\0132\035.envoy.type.FractionalPercentB\n\272\351\300\003\005\212"
-  "\001\002\020\001R\014defaultValue\022\037\n\013runtime_key\030\002 \001(\tR"
-  "\nruntimeKey\".\n\014ControlPlane\022\036\n\nidentifie"
-  "r\030\001 \001(\tR\nidentifier*(\n\017RoutingPriority\022\013"
-  "\n\007DEFAULT\020\000\022\010\n\004HIGH\020\001*\211\001\n\rRequestMethod\022"
-  "\026\n\022METHOD_UNSPECIFIED\020\000\022\007\n\003GET\020\001\022\010\n\004HEAD"
-  "\020\002\022\010\n\004POST\020\003\022\007\n\003PUT\020\004\022\n\n\006DELETE\020\005\022\013\n\007CON"
-  "NECT\020\006\022\013\n\007OPTIONS\020\007\022\t\n\005TRACE\020\010\022\t\n\005PATCH\020"
-  "\t*>\n\020TrafficDirection\022\017\n\013UNSPECIFIED\020\000\022\013"
-  "\n\007INBOUND\020\001\022\014\n\010OUTBOUND\020\002B.\n\037io.envoypro"
-  "xy.envoy.api.v2.coreB\tBaseProtoP\001b\006proto"
-  "3";
+  "i.v2.core\032\037envoy/api/v2/core/address.pro"
+  "to\032\037envoy/api/v2/core/backoff.proto\032 env"
+  "oy/api/v2/core/http_uri.proto\032\030envoy/typ"
+  "e/percent.proto\032!envoy/type/semantic_ver"
+  "sion.proto\032\031google/protobuf/any.proto\032\036g"
+  "oogle/protobuf/duration.proto\032\034google/pr"
+  "otobuf/struct.proto\032\036google/protobuf/wra"
+  "ppers.proto\032\036udpa/annotations/migrate.pr"
+  "oto\032\035udpa/annotations/status.proto\032\027vali"
+  "date/validate.proto\032%envoy/api/v2/core/s"
+  "ocket_option.proto\"Q\n\010Locality\022\026\n\006region"
+  "\030\001 \001(\tR\006region\022\022\n\004zone\030\002 \001(\tR\004zone\022\031\n\010su"
+  "b_zone\030\003 \001(\tR\007subZone\"z\n\014BuildVersion\0225\n"
+  "\007version\030\001 \001(\0132\033.envoy.type.SemanticVers"
+  "ionR\007version\0223\n\010metadata\030\002 \001(\0132\027.google."
+  "protobuf.StructR\010metadata\"\273\001\n\tExtension\022"
+  "\022\n\004name\030\001 \001(\tR\004name\022\032\n\010category\030\002 \001(\tR\010c"
+  "ategory\022\'\n\017type_descriptor\030\003 \001(\tR\016typeDe"
+  "scriptor\0229\n\007version\030\004 \001(\0132\037.envoy.api.v2"
+  ".core.BuildVersionR\007version\022\032\n\010disabled\030"
+  "\005 \001(\010R\010disabled\"\312\004\n\004Node\022\016\n\002id\030\001 \001(\tR\002id"
+  "\022\030\n\007cluster\030\002 \001(\tR\007cluster\0223\n\010metadata\030\003"
+  " \001(\0132\027.google.protobuf.StructR\010metadata\022"
+  "7\n\010locality\030\004 \001(\0132\033.envoy.api.v2.core.Lo"
+  "calityR\010locality\022\'\n\rbuild_version\030\005 \001(\tB"
+  "\002\030\001R\014buildVersion\022&\n\017user_agent_name\030\006 \001"
+  "(\tR\ruserAgentName\022.\n\022user_agent_version\030"
+  "\007 \001(\tH\000R\020userAgentVersion\022Z\n\030user_agent_"
+  "build_version\030\010 \001(\0132\037.envoy.api.v2.core."
+  "BuildVersionH\000R\025userAgentBuildVersion\022<\n"
+  "\nextensions\030\t \003(\0132\034.envoy.api.v2.core.Ex"
+  "tensionR\nextensions\022\'\n\017client_features\030\n"
+  " \003(\tR\016clientFeatures\022K\n\023listening_addres"
+  "ses\030\013 \003(\0132\032.envoy.api.v2.core.AddressR\022l"
+  "isteningAddressesB\031\n\027user_agent_version_"
+  "type\"\300\001\n\010Metadata\022X\n\017filter_metadata\030\001 \003"
+  "(\0132/.envoy.api.v2.core.Metadata.FilterMe"
+  "tadataEntryR\016filterMetadata\032Z\n\023FilterMet"
+  "adataEntry\022\020\n\003key\030\001 \001(\tR\003key\022-\n\005value\030\002 "
+  "\001(\0132\027.google.protobuf.StructR\005value:\0028\001\""
+  "^\n\rRuntimeUInt32\022#\n\rdefault_value\030\002 \001(\rR"
+  "\014defaultValue\022(\n\013runtime_key\030\003 \001(\tB\007\372B\004r"
+  "\002 \001R\nruntimeKey\"^\n\rRuntimeDouble\022#\n\rdefa"
+  "ult_value\030\001 \001(\001R\014defaultValue\022(\n\013runtime"
+  "_key\030\002 \001(\tB\007\372B\004r\002 \001R\nruntimeKey\"\211\001\n\022Runt"
+  "imeFeatureFlag\022I\n\rdefault_value\030\001 \001(\0132\032."
+  "google.protobuf.BoolValueB\010\372B\005\212\001\002\020\001R\014def"
+  "aultValue\022(\n\013runtime_key\030\002 \001(\tB\007\372B\004r\002 \001R"
+  "\nruntimeKey\"Y\n\013HeaderValue\022#\n\003key\030\001 \001(\tB"
+  "\021\372B\016r\014 \001(\200\200\001\300\001\001\310\001\000R\003key\022%\n\005value\030\002 \001(\tB\017"
+  "\372B\014r\n(\200\200\001\300\001\002\310\001\000R\005value\"\211\001\n\021HeaderValueOp"
+  "tion\022@\n\006header\030\001 \001(\0132\036.envoy.api.v2.core"
+  ".HeaderValueB\010\372B\005\212\001\002\020\001R\006header\0222\n\006append"
+  "\030\002 \001(\0132\032.google.protobuf.BoolValueR\006appe"
+  "nd\"E\n\tHeaderMap\0228\n\007headers\030\001 \003(\0132\036.envoy"
+  ".api.v2.core.HeaderValueR\007headers\"\243\001\n\nDa"
+  "taSource\022%\n\010filename\030\001 \001(\tB\007\372B\004r\002 \001H\000R\010f"
+  "ilename\022,\n\014inline_bytes\030\002 \001(\014B\007\372B\004z\002\020\001H\000"
+  "R\013inlineBytes\022.\n\rinline_string\030\003 \001(\tB\007\372B"
+  "\004r\002 \001H\000R\014inlineStringB\020\n\tspecifier\022\003\370B\001\""
+  "\226\001\n\013RetryPolicy\022H\n\016retry_back_off\030\001 \001(\0132"
+  "\".envoy.api.v2.core.BackoffStrategyR\014ret"
+  "ryBackOff\022=\n\013num_retries\030\002 \001(\0132\034.google."
+  "protobuf.UInt32ValueR\nnumRetries\"\267\001\n\020Rem"
+  "oteDataSource\022\?\n\010http_uri\030\001 \001(\0132\032.envoy."
+  "api.v2.core.HttpUriB\010\372B\005\212\001\002\020\001R\007httpUri\022\037"
+  "\n\006sha256\030\002 \001(\tB\007\372B\004r\002 \001R\006sha256\022A\n\014retry"
+  "_policy\030\003 \001(\0132\036.envoy.api.v2.core.RetryP"
+  "olicyR\013retryPolicy\"\231\001\n\017AsyncDataSource\0225"
+  "\n\005local\030\001 \001(\0132\035.envoy.api.v2.core.DataSo"
+  "urceH\000R\005local\022=\n\006remote\030\002 \001(\0132#.envoy.ap"
+  "i.v2.core.RemoteDataSourceH\000R\006remoteB\020\n\t"
+  "specifier\022\003\370B\001\"\257\001\n\017TransportSocket\022\033\n\004na"
+  "me\030\001 \001(\tB\007\372B\004r\002 \001R\004name\0225\n\006config\030\002 \001(\0132"
+  "\027.google.protobuf.StructB\002\030\001H\000R\006config\0229"
+  "\n\014typed_config\030\003 \001(\0132\024.google.protobuf.A"
+  "nyH\000R\013typedConfigB\r\n\013config_type\"\211\001\n\030Run"
+  "timeFractionalPercent\022L\n\rdefault_value\030\001"
+  " \001(\0132\035.envoy.type.FractionalPercentB\010\372B\005"
+  "\212\001\002\020\001R\014defaultValue\022\037\n\013runtime_key\030\002 \001(\t"
+  "R\nruntimeKey\".\n\014ControlPlane\022\036\n\nidentifi"
+  "er\030\001 \001(\tR\nidentifier*(\n\017RoutingPriority\022"
+  "\013\n\007DEFAULT\020\000\022\010\n\004HIGH\020\001*\211\001\n\rRequestMethod"
+  "\022\026\n\022METHOD_UNSPECIFIED\020\000\022\007\n\003GET\020\001\022\010\n\004HEA"
+  "D\020\002\022\010\n\004POST\020\003\022\007\n\003PUT\020\004\022\n\n\006DELETE\020\005\022\013\n\007CO"
+  "NNECT\020\006\022\013\n\007OPTIONS\020\007\022\t\n\005TRACE\020\010\022\t\n\005PATCH"
+  "\020\t*>\n\020TrafficDirection\022\017\n\013UNSPECIFIED\020\000\022"
+  "\013\n\007INBOUND\020\001\022\014\n\010OUTBOUND\020\002BR\n\037io.envoypr"
+  "oxy.envoy.api.v2.coreB\tBaseProtoP\001\362\230\376\217\005\026"
+  "\022\024envoy.config.core.v3\272\200\310\321\006\002\020\001P\014b\006proto3";
 
-static upb_def_init *deps[7] = {
+static upb_def_init *deps[14] = {
+  &envoy_api_v2_core_address_proto_upbdefinit,
+  &envoy_api_v2_core_backoff_proto_upbdefinit,
   &envoy_api_v2_core_http_uri_proto_upbdefinit,
   &envoy_type_percent_proto_upbdefinit,
+  &envoy_type_semantic_version_proto_upbdefinit,
   &google_protobuf_any_proto_upbdefinit,
+  &google_protobuf_duration_proto_upbdefinit,
   &google_protobuf_struct_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
+  &envoy_api_v2_core_socket_option_proto_upbdefinit,
   NULL
 };
 
@@ -134,5 +177,5 @@ upb_def_init envoy_api_v2_core_base_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/core/base.proto",
-  UPB_STRVIEW_INIT(descriptor, 2681)
+  UPB_STRVIEW_INIT(descriptor, 3640)
 };

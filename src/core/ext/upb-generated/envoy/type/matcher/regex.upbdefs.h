@@ -31,6 +31,11 @@ UPB_INLINE const upb_msgdef *envoy_type_matcher_RegexMatcher_GoogleRE2_getmsgdef
   return upb_symtab_lookupmsg(s, "envoy.type.matcher.RegexMatcher.GoogleRE2");
 }
 
+UPB_INLINE const upb_msgdef *envoy_type_matcher_RegexMatchAndSubstitute_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_type_matcher_regex_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.type.matcher.RegexMatchAndSubstitute");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -26,6 +26,11 @@ UPB_INLINE const upb_msgdef *envoy_api_v2_listener_UdpListenerConfig_getmsgdef(u
   return upb_symtab_lookupmsg(s, "envoy.api.v2.listener.UdpListenerConfig");
 }
 
+UPB_INLINE const upb_msgdef *envoy_api_v2_listener_ActiveRawUdpListenerConfig_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_api_v2_listener_udp_listener_config_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.listener.ActiveRawUdpListenerConfig");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

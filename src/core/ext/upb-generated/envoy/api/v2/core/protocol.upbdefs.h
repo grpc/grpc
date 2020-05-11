@@ -26,6 +26,11 @@ UPB_INLINE const upb_msgdef *envoy_api_v2_core_TcpProtocolOptions_getmsgdef(upb_
   return upb_symtab_lookupmsg(s, "envoy.api.v2.core.TcpProtocolOptions");
 }
 
+UPB_INLINE const upb_msgdef *envoy_api_v2_core_UpstreamHttpProtocolOptions_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_api_v2_core_protocol_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.core.UpstreamHttpProtocolOptions");
+}
+
 UPB_INLINE const upb_msgdef *envoy_api_v2_core_HttpProtocolOptions_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_api_v2_core_protocol_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.api.v2.core.HttpProtocolOptions");
@@ -36,9 +41,24 @@ UPB_INLINE const upb_msgdef *envoy_api_v2_core_Http1ProtocolOptions_getmsgdef(up
   return upb_symtab_lookupmsg(s, "envoy.api.v2.core.Http1ProtocolOptions");
 }
 
+UPB_INLINE const upb_msgdef *envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_api_v2_core_protocol_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.core.Http1ProtocolOptions.HeaderKeyFormat");
+}
+
+UPB_INLINE const upb_msgdef *envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_api_v2_core_protocol_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.core.Http1ProtocolOptions.HeaderKeyFormat.ProperCaseWords");
+}
+
 UPB_INLINE const upb_msgdef *envoy_api_v2_core_Http2ProtocolOptions_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_api_v2_core_protocol_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.api.v2.core.Http2ProtocolOptions");
+}
+
+UPB_INLINE const upb_msgdef *envoy_api_v2_core_Http2ProtocolOptions_SettingsParameter_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_api_v2_core_protocol_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.core.Http2ProtocolOptions.SettingsParameter");
 }
 
 UPB_INLINE const upb_msgdef *envoy_api_v2_core_GrpcProtocolOptions_getmsgdef(upb_symtab *s) {

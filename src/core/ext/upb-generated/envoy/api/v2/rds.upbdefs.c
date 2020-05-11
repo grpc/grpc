@@ -8,70 +8,55 @@
 
 #include "upb/def.h"
 
-extern upb_def_init envoy_api_v2_core_base_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_core_config_source_proto_upbdefinit;
 extern upb_def_init envoy_api_v2_discovery_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_route_route_proto_upbdefinit;
 extern upb_def_init google_api_annotations_proto_upbdefinit;
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
+extern upb_def_init envoy_annotations_resource_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_api_v2_RouteConfiguration_msginit;
-extern const upb_msglayout envoy_api_v2_Vhds_msginit;
+extern upb_def_init envoy_api_v2_route_proto_upbdefinit;
+extern const upb_msglayout envoy_api_v2_RdsDummy_msginit;
 
-static const upb_msglayout *layouts[2] = {
-  &envoy_api_v2_RouteConfiguration_msginit,
-  &envoy_api_v2_Vhds_msginit,
+static const upb_msglayout *layouts[1] = {
+  &envoy_api_v2_RdsDummy_msginit,
 };
 
-static const char descriptor[1541] =
+static const char descriptor[926] =
   "\n\026envoy/api/v2/rds.proto\022\014envoy.api.v2\032\034"
-  "envoy/api/v2/core/base.proto\032%envoy/api/"
-  "v2/core/config_source.proto\032\034envoy/api/v"
-  "2/discovery.proto\032\036envoy/api/v2/route/ro"
-  "ute.proto\032\034google/api/annotations.proto\032"
-  "\036google/protobuf/wrappers.proto\032\027validat"
-  "e/validate.proto\"\253\005\n\022RouteConfiguration\022"
-  "\022\n\004name\030\001 \001(\tR\004name\022D\n\rvirtual_hosts\030\002 \003"
-  "(\0132\037.envoy.api.v2.route.VirtualHostR\014vir"
-  "tualHosts\022&\n\004vhds\030\t \001(\0132\022.envoy.api.v2.V"
-  "hdsR\004vhds\0222\n\025internal_only_headers\030\003 \003(\t"
-  "R\023internalOnlyHeaders\022h\n\027response_header"
-  "s_to_add\030\004 \003(\0132$.envoy.api.v2.core.Heade"
-  "rValueOptionB\013\272\351\300\003\006\222\001\003\020\350\007R\024responseHeade"
-  "rsToAdd\022;\n\032response_headers_to_remove\030\005 "
-  "\003(\tR\027responseHeadersToRemove\022f\n\026request_"
-  "headers_to_add\030\006 \003(\0132$.envoy.api.v2.core"
-  ".HeaderValueOptionB\013\272\351\300\003\006\222\001\003\020\350\007R\023request"
-  "HeadersToAdd\0229\n\031request_headers_to_remov"
-  "e\030\010 \003(\tR\026requestHeadersToRemove\022L\n#most_"
-  "specific_header_mutations_wins\030\n \001(\010R\037mo"
-  "stSpecificHeaderMutationsWins\022G\n\021validat"
-  "e_clusters\030\007 \001(\0132\032.google.protobuf.BoolV"
-  "alueR\020validateClusters\"X\n\004Vhds\022P\n\rconfig"
-  "_source\030\001 \001(\0132\037.envoy.api.v2.core.Config"
-  "SourceB\n\272\351\300\003\005\212\001\002\020\001R\014configSource2\277\002\n\025Rou"
-  "teDiscoveryService\022U\n\014StreamRoutes\022\036.env"
+  "envoy/api/v2/discovery.proto\032\034google/api"
+  "/annotations.proto\032\036google/protobuf/wrap"
+  "pers.proto\032 envoy/annotations/resource.p"
+  "roto\032\036udpa/annotations/migrate.proto\032\035ud"
+  "pa/annotations/status.proto\032\027validate/va"
+  "lidate.proto\032\030envoy/api/v2/route.proto\"\n"
+  "\n\010RdsDummy2\356\002\n\025RouteDiscoveryService\022U\n\014"
+  "StreamRoutes\022\036.envoy.api.v2.DiscoveryReq"
+  "uest\032\037.envoy.api.v2.DiscoveryResponse\"\000("
+  "\0010\001\022^\n\013DeltaRoutes\022#.envoy.api.v2.DeltaD"
+  "iscoveryRequest\032$.envoy.api.v2.DeltaDisc"
+  "overyResponse\"\000(\0010\001\022u\n\013FetchRoutes\022\036.env"
   "oy.api.v2.DiscoveryRequest\032\037.envoy.api.v"
-  "2.DiscoveryResponse\"\000(\0010\001\022^\n\013DeltaRoutes"
-  "\022#.envoy.api.v2.DeltaDiscoveryRequest\032$."
-  "envoy.api.v2.DeltaDiscoveryResponse\"\000(\0010"
-  "\001\022o\n\013FetchRoutes\022\036.envoy.api.v2.Discover"
-  "yRequest\032\037.envoy.api.v2.DiscoveryRespons"
-  "e\"\037\202\323\344\223\002\031\"\024/v2/discovery:routes:\001*2\203\001\n\033V"
-  "irtualHostDiscoveryService\022d\n\021DeltaVirtu"
-  "alHosts\022#.envoy.api.v2.DeltaDiscoveryReq"
-  "uest\032$.envoy.api.v2.DeltaDiscoveryRespon"
-  "se\"\000(\0010\001B+\n\032io.envoyproxy.envoy.api.v2B\010"
-  "RdsProtoP\001\210\001\001b\006proto3";
+  "2.DiscoveryResponse\"%\202\323\344\223\002\026\"\024/v2/discove"
+  "ry:routes\202\323\344\223\002\003:\001*\032\'\212\244\226\363\007!\n\037envoy.api.v2"
+  ".RouteConfiguration2\253\001\n\033VirtualHostDisco"
+  "veryService\022d\n\021DeltaVirtualHosts\022#.envoy"
+  ".api.v2.DeltaDiscoveryRequest\032$.envoy.ap"
+  "i.v2.DeltaDiscoveryResponse\"\000(\0010\001\032&\212\244\226\363\007"
+  " \n\036envoy.api.v2.route.VirtualHostBQ\n\032io."
+  "envoyproxy.envoy.api.v2B\010RdsProtoP\001\210\001\001\362\230"
+  "\376\217\005\030\022\026envoy.service.route.v3\272\200\310\321\006\002\020\001P\007b\006"
+  "proto3";
 
-static upb_def_init *deps[8] = {
-  &envoy_api_v2_core_base_proto_upbdefinit,
-  &envoy_api_v2_core_config_source_proto_upbdefinit,
+static upb_def_init *deps[9] = {
   &envoy_api_v2_discovery_proto_upbdefinit,
-  &envoy_api_v2_route_route_proto_upbdefinit,
   &google_api_annotations_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
+  &envoy_annotations_resource_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
+  &envoy_api_v2_route_proto_upbdefinit,
   NULL
 };
 
@@ -79,5 +64,5 @@ upb_def_init envoy_api_v2_rds_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/rds.proto",
-  UPB_STRVIEW_INIT(descriptor, 1541)
+  UPB_STRVIEW_INIT(descriptor, 926)
 };

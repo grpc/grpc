@@ -21,14 +21,9 @@ extern "C" {
 
 extern upb_def_init envoy_api_v2_rds_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_api_v2_RouteConfiguration_getmsgdef(upb_symtab *s) {
+UPB_INLINE const upb_msgdef *envoy_api_v2_RdsDummy_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_api_v2_rds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.RouteConfiguration");
-}
-
-UPB_INLINE const upb_msgdef *envoy_api_v2_Vhds_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_api_v2_rds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.api.v2.Vhds");
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.RdsDummy");
 }
 
 #ifdef __cplusplus

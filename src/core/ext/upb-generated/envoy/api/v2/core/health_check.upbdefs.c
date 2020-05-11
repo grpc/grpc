@@ -9,12 +9,17 @@
 #include "upb/def.h"
 
 extern upb_def_init envoy_api_v2_core_base_proto_upbdefinit;
+extern upb_def_init envoy_api_v2_core_event_service_config_proto_upbdefinit;
 extern upb_def_init envoy_type_http_proto_upbdefinit;
+extern upb_def_init envoy_type_matcher_string_proto_upbdefinit;
 extern upb_def_init envoy_type_range_proto_upbdefinit;
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_struct_proto_upbdefinit;
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
+extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_api_v2_core_HealthCheck_msginit;
 extern const upb_msglayout envoy_api_v2_core_HealthCheck_Payload_msginit;
@@ -23,8 +28,9 @@ extern const upb_msglayout envoy_api_v2_core_HealthCheck_TcpHealthCheck_msginit;
 extern const upb_msglayout envoy_api_v2_core_HealthCheck_RedisHealthCheck_msginit;
 extern const upb_msglayout envoy_api_v2_core_HealthCheck_GrpcHealthCheck_msginit;
 extern const upb_msglayout envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit;
+extern const upb_msglayout envoy_api_v2_core_HealthCheck_TlsOptions_msginit;
 
-static const upb_msglayout *layouts[7] = {
+static const upb_msglayout *layouts[8] = {
   &envoy_api_v2_core_HealthCheck_msginit,
   &envoy_api_v2_core_HealthCheck_Payload_msginit,
   &envoy_api_v2_core_HealthCheck_HttpHealthCheck_msginit,
@@ -32,95 +38,114 @@ static const upb_msglayout *layouts[7] = {
   &envoy_api_v2_core_HealthCheck_RedisHealthCheck_msginit,
   &envoy_api_v2_core_HealthCheck_GrpcHealthCheck_msginit,
   &envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit,
+  &envoy_api_v2_core_HealthCheck_TlsOptions_msginit,
 };
 
-static const char descriptor[3059] =
+static const char descriptor[3572] =
   "\n$envoy/api/v2/core/health_check.proto\022\021"
   "envoy.api.v2.core\032\034envoy/api/v2/core/bas"
-  "e.proto\032\025envoy/type/http.proto\032\026envoy/ty"
-  "pe/range.proto\032\031google/protobuf/any.prot"
-  "o\032\036google/protobuf/duration.proto\032\034googl"
-  "e/protobuf/struct.proto\032\036google/protobuf"
-  "/wrappers.proto\032\027validate/validate.proto"
-  "\"\267\024\n\013HealthCheck\022A\n\007timeout\030\001 \001(\0132\031.goog"
-  "le.protobuf.DurationB\014\272\351\300\003\007\252\001\004\010\001*\000R\007time"
-  "out\022C\n\010interval\030\002 \001(\0132\031.google.protobuf."
-  "DurationB\014\272\351\300\003\007\252\001\004\010\001*\000R\010interval\022@\n\016init"
-  "ial_jitter\030\024 \001(\0132\031.google.protobuf.Durat"
-  "ionR\rinitialJitter\022B\n\017interval_jitter\030\003 "
-  "\001(\0132\031.google.protobuf.DurationR\016interval"
-  "Jitter\0226\n\027interval_jitter_percent\030\022 \001(\rR"
-  "\025intervalJitterPercent\022M\n\023unhealthy_thre"
-  "shold\030\004 \001(\0132\034.google.protobuf.UInt32Valu"
-  "eR\022unhealthyThreshold\022I\n\021healthy_thresho"
-  "ld\030\005 \001(\0132\034.google.protobuf.UInt32ValueR\020"
-  "healthyThreshold\0227\n\010alt_port\030\006 \001(\0132\034.goo"
-  "gle.protobuf.UInt32ValueR\007altPort\022E\n\020reu"
-  "se_connection\030\007 \001(\0132\032.google.protobuf.Bo"
-  "olValueR\017reuseConnection\022\\\n\021http_health_"
-  "check\030\010 \001(\0132..envoy.api.v2.core.HealthCh"
-  "eck.HttpHealthCheckH\000R\017httpHealthCheck\022Y"
-  "\n\020tcp_health_check\030\t \001(\0132-.envoy.api.v2."
-  "core.HealthCheck.TcpHealthCheckH\000R\016tcpHe"
-  "althCheck\022\\\n\021grpc_health_check\030\013 \001(\0132..e"
-  "nvoy.api.v2.core.HealthCheck.GrpcHealthC"
-  "heckH\000R\017grpcHealthCheck\022b\n\023custom_health"
-  "_check\030\r \001(\01320.envoy.api.v2.core.HealthC"
-  "heck.CustomHealthCheckH\000R\021customHealthCh"
-  "eck\022U\n\023no_traffic_interval\030\014 \001(\0132\031.googl"
-  "e.protobuf.DurationB\n\272\351\300\003\005\252\001\002*\000R\021noTraff"
-  "icInterval\022T\n\022unhealthy_interval\030\016 \001(\0132\031"
-  ".google.protobuf.DurationB\n\272\351\300\003\005\252\001\002*\000R\021u"
-  "nhealthyInterval\022]\n\027unhealthy_edge_inter"
-  "val\030\017 \001(\0132\031.google.protobuf.DurationB\n\272\351"
-  "\300\003\005\252\001\002*\000R\025unhealthyEdgeInterval\022Y\n\025healt"
-  "hy_edge_interval\030\020 \001(\0132\031.google.protobuf"
-  ".DurationB\n\272\351\300\003\005\252\001\002*\000R\023healthyEdgeInterv"
-  "al\022$\n\016event_log_path\030\021 \001(\tR\014eventLogPath"
-  "\022F\n always_log_health_check_failures\030\023 \001"
-  "(\010R\034alwaysLogHealthCheckFailures\032V\n\007Payl"
-  "oad\022\037\n\004text\030\001 \001(\tB\t\272\351\300\003\004r\002 \001H\000R\004text\022\030\n\006"
-  "binary\030\002 \001(\014H\000R\006binaryB\020\n\007payload\022\005\270\351\300\003\001"
-  "\032\303\004\n\017HttpHealthCheck\022\022\n\004host\030\001 \001(\tR\004host"
-  "\022\035\n\004path\030\002 \001(\tB\t\272\351\300\003\004r\002 \001R\004path\022:\n\004send\030"
-  "\003 \001(\0132&.envoy.api.v2.core.HealthCheck.Pa"
-  "yloadR\004send\022@\n\007receive\030\004 \001(\0132&.envoy.api"
-  ".v2.core.HealthCheck.PayloadR\007receive\022!\n"
-  "\014service_name\030\005 \001(\tR\013serviceName\022f\n\026requ"
-  "est_headers_to_add\030\006 \003(\0132$.envoy.api.v2."
-  "core.HeaderValueOptionB\013\272\351\300\003\006\222\001\003\020\350\007R\023req"
-  "uestHeadersToAdd\0229\n\031request_headers_to_r"
-  "emove\030\010 \003(\tR\026requestHeadersToRemove\022\037\n\tu"
-  "se_http2\030\007 \001(\010B\002\030\001R\010useHttp2\022C\n\021expected"
-  "_statuses\030\t \003(\0132\026.envoy.type.Int64RangeR"
-  "\020expectedStatuses\022S\n\021codec_client_type\030\n"
-  " \001(\0162\033.envoy.type.CodecClientTypeB\n\272\351\300\003\005"
-  "\202\001\002\020\001R\017codecClientType\032\216\001\n\016TcpHealthChec"
-  "k\022:\n\004send\030\001 \001(\0132&.envoy.api.v2.core.Heal"
-  "thCheck.PayloadR\004send\022@\n\007receive\030\002 \003(\0132&"
-  ".envoy.api.v2.core.HealthCheck.PayloadR\007"
-  "receive\032$\n\020RedisHealthCheck\022\020\n\003key\030\001 \001(\t"
-  "R\003key\032R\n\017GrpcHealthCheck\022!\n\014service_name"
-  "\030\001 \001(\tR\013serviceName\022\034\n\tauthority\030\002 \001(\tR\t"
-  "authority\032\257\001\n\021CustomHealthCheck\022\035\n\004name\030"
-  "\001 \001(\tB\t\272\351\300\003\004r\002 \001R\004name\0221\n\006config\030\002 \001(\0132\027"
-  ".google.protobuf.StructH\000R\006config\0229\n\014typ"
-  "ed_config\030\003 \001(\0132\024.google.protobuf.AnyH\000R"
-  "\013typedConfigB\r\n\013config_typeB\027\n\016health_ch"
-  "ecker\022\005\270\351\300\003\001J\004\010\n\020\013*`\n\014HealthStatus\022\013\n\007UN"
-  "KNOWN\020\000\022\013\n\007HEALTHY\020\001\022\r\n\tUNHEALTHY\020\002\022\014\n\010D"
-  "RAINING\020\003\022\013\n\007TIMEOUT\020\004\022\014\n\010DEGRADED\020\005B5\n\037"
-  "io.envoyproxy.envoy.api.v2.coreB\020HealthC"
-  "heckProtoP\001b\006proto3";
+  "e.proto\032,envoy/api/v2/core/event_service"
+  "_config.proto\032\025envoy/type/http.proto\032\037en"
+  "voy/type/matcher/string.proto\032\026envoy/typ"
+  "e/range.proto\032\031google/protobuf/any.proto"
+  "\032\036google/protobuf/duration.proto\032\034google"
+  "/protobuf/struct.proto\032\036google/protobuf/"
+  "wrappers.proto\032#envoy/annotations/deprec"
+  "ation.proto\032\036udpa/annotations/migrate.pr"
+  "oto\032\035udpa/annotations/status.proto\032\027vali"
+  "date/validate.proto\"\341\026\n\013HealthCheck\022\?\n\007t"
+  "imeout\030\001 \001(\0132\031.google.protobuf.DurationB"
+  "\n\372B\007\252\001\004\010\001*\000R\007timeout\022A\n\010interval\030\002 \001(\0132\031"
+  ".google.protobuf.DurationB\n\372B\007\252\001\004\010\001*\000R\010i"
+  "nterval\022@\n\016initial_jitter\030\024 \001(\0132\031.google"
+  ".protobuf.DurationR\rinitialJitter\022B\n\017int"
+  "erval_jitter\030\003 \001(\0132\031.google.protobuf.Dur"
+  "ationR\016intervalJitter\0226\n\027interval_jitter"
+  "_percent\030\022 \001(\rR\025intervalJitterPercent\022W\n"
+  "\023unhealthy_threshold\030\004 \001(\0132\034.google.prot"
+  "obuf.UInt32ValueB\010\372B\005\212\001\002\020\001R\022unhealthyThr"
+  "eshold\022S\n\021healthy_threshold\030\005 \001(\0132\034.goog"
+  "le.protobuf.UInt32ValueB\010\372B\005\212\001\002\020\001R\020healt"
+  "hyThreshold\0227\n\010alt_port\030\006 \001(\0132\034.google.p"
+  "rotobuf.UInt32ValueR\007altPort\022E\n\020reuse_co"
+  "nnection\030\007 \001(\0132\032.google.protobuf.BoolVal"
+  "ueR\017reuseConnection\022\\\n\021http_health_check"
+  "\030\010 \001(\0132..envoy.api.v2.core.HealthCheck.H"
+  "ttpHealthCheckH\000R\017httpHealthCheck\022Y\n\020tcp"
+  "_health_check\030\t \001(\0132-.envoy.api.v2.core."
+  "HealthCheck.TcpHealthCheckH\000R\016tcpHealthC"
+  "heck\022\\\n\021grpc_health_check\030\013 \001(\0132..envoy."
+  "api.v2.core.HealthCheck.GrpcHealthCheckH"
+  "\000R\017grpcHealthCheck\022b\n\023custom_health_chec"
+  "k\030\r \001(\01320.envoy.api.v2.core.HealthCheck."
+  "CustomHealthCheckH\000R\021customHealthCheck\022S"
+  "\n\023no_traffic_interval\030\014 \001(\0132\031.google.pro"
+  "tobuf.DurationB\010\372B\005\252\001\002*\000R\021noTrafficInter"
+  "val\022R\n\022unhealthy_interval\030\016 \001(\0132\031.google"
+  ".protobuf.DurationB\010\372B\005\252\001\002*\000R\021unhealthyI"
+  "nterval\022[\n\027unhealthy_edge_interval\030\017 \001(\013"
+  "2\031.google.protobuf.DurationB\010\372B\005\252\001\002*\000R\025u"
+  "nhealthyEdgeInterval\022W\n\025healthy_edge_int"
+  "erval\030\020 \001(\0132\031.google.protobuf.DurationB\010"
+  "\372B\005\252\001\002*\000R\023healthyEdgeInterval\022$\n\016event_l"
+  "og_path\030\021 \001(\tR\014eventLogPath\022J\n\revent_ser"
+  "vice\030\026 \001(\0132%.envoy.api.v2.core.EventServ"
+  "iceConfigR\014eventService\022F\n always_log_he"
+  "alth_check_failures\030\023 \001(\010R\034alwaysLogHeal"
+  "thCheckFailures\022J\n\013tls_options\030\025 \001(\0132).e"
+  "nvoy.api.v2.core.HealthCheck.TlsOptionsR"
+  "\ntlsOptions\032R\n\007Payload\022\035\n\004text\030\001 \001(\tB\007\372B"
+  "\004r\002 \001H\000R\004text\022\030\n\006binary\030\002 \001(\014H\000R\006binaryB"
+  "\016\n\007payload\022\003\370B\001\032\234\005\n\017HttpHealthCheck\022\022\n\004h"
+  "ost\030\001 \001(\tR\004host\022\033\n\004path\030\002 \001(\tB\007\372B\004r\002 \001R\004"
+  "path\022:\n\004send\030\003 \001(\0132&.envoy.api.v2.core.H"
+  "ealthCheck.PayloadR\004send\022@\n\007receive\030\004 \001("
+  "\0132&.envoy.api.v2.core.HealthCheck.Payloa"
+  "dR\007receive\022%\n\014service_name\030\005 \001(\tB\002\030\001R\013se"
+  "rviceName\022d\n\026request_headers_to_add\030\006 \003("
+  "\0132$.envoy.api.v2.core.HeaderValueOptionB"
+  "\t\372B\006\222\001\003\020\350\007R\023requestHeadersToAdd\0229\n\031reque"
+  "st_headers_to_remove\030\010 \003(\tR\026requestHeade"
+  "rsToRemove\022%\n\tuse_http2\030\007 \001(\010B\010\030\001\270\356\362\322\005\001R"
+  "\010useHttp2\022C\n\021expected_statuses\030\t \003(\0132\026.e"
+  "nvoy.type.Int64RangeR\020expectedStatuses\022Q"
+  "\n\021codec_client_type\030\n \001(\0162\033.envoy.type.C"
+  "odecClientTypeB\010\372B\005\202\001\002\020\001R\017codecClientTyp"
+  "e\022S\n\024service_name_matcher\030\013 \001(\0132!.envoy."
+  "type.matcher.StringMatcherR\022serviceNameM"
+  "atcher\032\216\001\n\016TcpHealthCheck\022:\n\004send\030\001 \001(\0132"
+  "&.envoy.api.v2.core.HealthCheck.PayloadR"
+  "\004send\022@\n\007receive\030\002 \003(\0132&.envoy.api.v2.co"
+  "re.HealthCheck.PayloadR\007receive\032$\n\020Redis"
+  "HealthCheck\022\020\n\003key\030\001 \001(\tR\003key\032R\n\017GrpcHea"
+  "lthCheck\022!\n\014service_name\030\001 \001(\tR\013serviceN"
+  "ame\022\034\n\tauthority\030\002 \001(\tR\tauthority\032\261\001\n\021Cu"
+  "stomHealthCheck\022\033\n\004name\030\001 \001(\tB\007\372B\004r\002 \001R\004"
+  "name\0225\n\006config\030\002 \001(\0132\027.google.protobuf.S"
+  "tructB\002\030\001H\000R\006config\0229\n\014typed_config\030\003 \001("
+  "\0132\024.google.protobuf.AnyH\000R\013typedConfigB\r"
+  "\n\013config_type\0323\n\nTlsOptions\022%\n\016alpn_prot"
+  "ocols\030\001 \003(\tR\ralpnProtocolsB\025\n\016health_che"
+  "cker\022\003\370B\001J\004\010\n\020\013*`\n\014HealthStatus\022\013\n\007UNKNO"
+  "WN\020\000\022\013\n\007HEALTHY\020\001\022\r\n\tUNHEALTHY\020\002\022\014\n\010DRAI"
+  "NING\020\003\022\013\n\007TIMEOUT\020\004\022\014\n\010DEGRADED\020\005BY\n\037io."
+  "envoyproxy.envoy.api.v2.coreB\020HealthChec"
+  "kProtoP\001\362\230\376\217\005\026\022\024envoy.config.core.v3\272\200\310\321"
+  "\006\002\020\001b\006proto3";
 
-static upb_def_init *deps[9] = {
+static upb_def_init *deps[14] = {
   &envoy_api_v2_core_base_proto_upbdefinit,
+  &envoy_api_v2_core_event_service_config_proto_upbdefinit,
   &envoy_type_http_proto_upbdefinit,
+  &envoy_type_matcher_string_proto_upbdefinit,
   &envoy_type_range_proto_upbdefinit,
   &google_protobuf_any_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
   &google_protobuf_struct_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
+  &envoy_annotations_deprecation_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
@@ -129,5 +154,5 @@ upb_def_init envoy_api_v2_core_health_check_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/core/health_check.proto",
-  UPB_STRVIEW_INIT(descriptor, 3059)
+  UPB_STRVIEW_INIT(descriptor, 3572)
 };

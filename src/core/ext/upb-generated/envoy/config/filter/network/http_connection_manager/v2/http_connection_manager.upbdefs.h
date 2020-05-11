@@ -91,6 +91,11 @@ UPB_INLINE const upb_msgdef *envoy_config_filter_network_http_connection_manager
   return upb_symtab_lookupmsg(s, "envoy.config.filter.network.http_connection_manager.v2.HttpFilter");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_filter_network_http_connection_manager_v2_http_connection_manager_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.filter.network.http_connection_manager.v2.RequestIDExtension");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

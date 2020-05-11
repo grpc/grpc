@@ -31,6 +31,11 @@ UPB_INLINE const upb_msgdef *envoy_api_v2_cluster_CircuitBreakers_Thresholds_get
   return upb_symtab_lookupmsg(s, "envoy.api.v2.cluster.CircuitBreakers.Thresholds");
 }
 
+UPB_INLINE const upb_msgdef *envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_api_v2_cluster_circuit_breaker_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.api.v2.cluster.CircuitBreakers.Thresholds.RetryBudget");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

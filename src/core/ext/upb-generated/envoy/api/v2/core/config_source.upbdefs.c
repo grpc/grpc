@@ -11,6 +11,9 @@
 extern upb_def_init envoy_api_v2_core_grpc_service_proto_upbdefinit;
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
+extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_api_v2_core_ApiConfigSource_msginit;
 extern const upb_msglayout envoy_api_v2_core_AggregatedConfigSource_msginit;
@@ -26,47 +29,59 @@ static const upb_msglayout *layouts[5] = {
   &envoy_api_v2_core_ConfigSource_msginit,
 };
 
-static const char descriptor[1397] =
+static const char descriptor[1755] =
   "\n%envoy/api/v2/core/config_source.proto\022"
   "\021envoy.api.v2.core\032$envoy/api/v2/core/gr"
   "pc_service.proto\032\036google/protobuf/durati"
   "on.proto\032\036google/protobuf/wrappers.proto"
-  "\032\027validate/validate.proto\"\307\004\n\017ApiConfigS"
-  "ource\022Q\n\010api_type\030\001 \001(\0162*.envoy.api.v2.c"
-  "ore.ApiConfigSource.ApiTypeB\n\272\351\300\003\005\202\001\002\020\001R"
-  "\007apiType\022#\n\rcluster_names\030\002 \003(\tR\014cluster"
-  "Names\022C\n\rgrpc_services\030\004 \003(\0132\036.envoy.api"
-  ".v2.core.GrpcServiceR\014grpcServices\022>\n\rre"
-  "fresh_delay\030\003 \001(\0132\031.google.protobuf.Dura"
-  "tionR\014refreshDelay\022N\n\017request_timeout\030\005 "
-  "\001(\0132\031.google.protobuf.DurationB\n\272\351\300\003\005\252\001\002"
-  "*\000R\016requestTimeout\022T\n\023rate_limit_setting"
-  "s\030\006 \001(\0132$.envoy.api.v2.core.RateLimitSet"
-  "tingsR\021rateLimitSettings\022A\n\036set_node_on_"
-  "first_message_only\030\007 \001(\010R\031setNodeOnFirst"
-  "MessageOnly\"N\n\007ApiType\022\037\n\027UNSUPPORTED_RE"
-  "ST_LEGACY\020\000\032\002\010\001\022\010\n\004REST\020\001\022\010\n\004GRPC\020\002\022\016\n\nD"
-  "ELTA_GRPC\020\003\"\030\n\026AggregatedConfigSource\"\022\n"
-  "\020SelfConfigSource\"\235\001\n\021RateLimitSettings\022"
-  ";\n\nmax_tokens\030\001 \001(\0132\034.google.protobuf.UI"
-  "nt32ValueR\tmaxTokens\022K\n\tfill_rate\030\002 \001(\0132"
-  "\034.google.protobuf.DoubleValueB\020\272\351\300\003\013\022\t!\000"
-  "\000\000\000\000\000\000\000R\010fillRate\"\341\002\n\014ConfigSource\022\024\n\004pa"
-  "th\030\001 \001(\tH\000R\004path\022P\n\021api_config_source\030\002 "
-  "\001(\0132\".envoy.api.v2.core.ApiConfigSourceH"
-  "\000R\017apiConfigSource\022=\n\003ads\030\003 \001(\0132).envoy."
-  "api.v2.core.AggregatedConfigSourceH\000R\003ad"
-  "s\0229\n\004self\030\005 \001(\0132#.envoy.api.v2.core.Self"
-  "ConfigSourceH\000R\004self\022M\n\025initial_fetch_ti"
-  "meout\030\004 \001(\0132\031.google.protobuf.DurationR\023"
-  "initialFetchTimeoutB \n\027config_source_spe"
-  "cifier\022\005\270\351\300\003\001B6\n\037io.envoyproxy.envoy.api"
-  ".v2.coreB\021ConfigSourceProtoP\001b\006proto3";
+  "\032#envoy/annotations/deprecation.proto\032\036u"
+  "dpa/annotations/migrate.proto\032\035udpa/anno"
+  "tations/status.proto\032\027validate/validate."
+  "proto\"\246\005\n\017ApiConfigSource\022O\n\010api_type\030\001 "
+  "\001(\0162*.envoy.api.v2.core.ApiConfigSource."
+  "ApiTypeB\010\372B\005\202\001\002\020\001R\007apiType\022[\n\025transport_"
+  "api_version\030\010 \001(\0162\035.envoy.api.v2.core.Ap"
+  "iVersionB\010\372B\005\202\001\002\020\001R\023transportApiVersion\022"
+  "#\n\rcluster_names\030\002 \003(\tR\014clusterNames\022C\n\r"
+  "grpc_services\030\004 \003(\0132\036.envoy.api.v2.core."
+  "GrpcServiceR\014grpcServices\022>\n\rrefresh_del"
+  "ay\030\003 \001(\0132\031.google.protobuf.DurationR\014ref"
+  "reshDelay\022L\n\017request_timeout\030\005 \001(\0132\031.goo"
+  "gle.protobuf.DurationB\010\372B\005\252\001\002*\000R\016request"
+  "Timeout\022T\n\023rate_limit_settings\030\006 \001(\0132$.e"
+  "nvoy.api.v2.core.RateLimitSettingsR\021rate"
+  "LimitSettings\022A\n\036set_node_on_first_messa"
+  "ge_only\030\007 \001(\010R\031setNodeOnFirstMessageOnly"
+  "\"T\n\007ApiType\022%\n\027UNSUPPORTED_REST_LEGACY\020\000"
+  "\032\010\010\001\250\367\264\213\002\001\022\010\n\004REST\020\001\022\010\n\004GRPC\020\002\022\016\n\nDELTA_"
+  "GRPC\020\003\"\030\n\026AggregatedConfigSource\"\022\n\020Self"
+  "ConfigSource\"\233\001\n\021RateLimitSettings\022;\n\nma"
+  "x_tokens\030\001 \001(\0132\034.google.protobuf.UInt32V"
+  "alueR\tmaxTokens\022I\n\tfill_rate\030\002 \001(\0132\034.goo"
+  "gle.protobuf.DoubleValueB\016\372B\013\022\t!\000\000\000\000\000\000\000\000"
+  "R\010fillRate\"\272\003\n\014ConfigSource\022\024\n\004path\030\001 \001("
+  "\tH\000R\004path\022P\n\021api_config_source\030\002 \001(\0132\".e"
+  "nvoy.api.v2.core.ApiConfigSourceH\000R\017apiC"
+  "onfigSource\022=\n\003ads\030\003 \001(\0132).envoy.api.v2."
+  "core.AggregatedConfigSourceH\000R\003ads\0229\n\004se"
+  "lf\030\005 \001(\0132#.envoy.api.v2.core.SelfConfigS"
+  "ourceH\000R\004self\022M\n\025initial_fetch_timeout\030\004"
+  " \001(\0132\031.google.protobuf.DurationR\023initial"
+  "FetchTimeout\022Y\n\024resource_api_version\030\006 \001"
+  "(\0162\035.envoy.api.v2.core.ApiVersionB\010\372B\005\202\001"
+  "\002\020\001R\022resourceApiVersionB\036\n\027config_source"
+  "_specifier\022\003\370B\001*&\n\nApiVersion\022\010\n\004AUTO\020\000\022"
+  "\006\n\002V2\020\001\022\006\n\002V3\020\002BZ\n\037io.envoyproxy.envoy.a"
+  "pi.v2.coreB\021ConfigSourceProtoP\001\362\230\376\217\005\026\022\024e"
+  "nvoy.config.core.v3\272\200\310\321\006\002\020\001b\006proto3";
 
-static upb_def_init *deps[5] = {
+static upb_def_init *deps[8] = {
   &envoy_api_v2_core_grpc_service_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
+  &envoy_annotations_deprecation_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
@@ -75,5 +90,5 @@ upb_def_init envoy_api_v2_core_config_source_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/core/config_source.proto",
-  UPB_STRVIEW_INIT(descriptor, 1397)
+  UPB_STRVIEW_INIT(descriptor, 1755)
 };

@@ -8,22 +8,29 @@
 
 #include "upb/def.h"
 
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern const upb_msglayout envoy_type_Int64Range_msginit;
+extern const upb_msglayout envoy_type_Int32Range_msginit;
 extern const upb_msglayout envoy_type_DoubleRange_msginit;
 
-static const upb_msglayout *layouts[2] = {
+static const upb_msglayout *layouts[3] = {
   &envoy_type_Int64Range_msginit,
+  &envoy_type_Int32Range_msginit,
   &envoy_type_DoubleRange_msginit,
 };
 
-static const char descriptor[195] =
-  "\n\026envoy/type/range.proto\022\nenvoy.type\"4\n\n"
-  "Int64Range\022\024\n\005start\030\001 \001(\003R\005start\022\020\n\003end\030"
-  "\002 \001(\003R\003end\"5\n\013DoubleRange\022\024\n\005start\030\001 \001(\001"
-  "R\005start\022\020\n\003end\030\002 \001(\001R\003endB(\n\030io.envoypro"
-  "xy.envoy.typeB\nRangeProtoP\001b\006proto3";
+static const char descriptor[288] =
+  "\n\026envoy/type/range.proto\022\nenvoy.type\032\035ud"
+  "pa/annotations/status.proto\"4\n\nInt64Rang"
+  "e\022\024\n\005start\030\001 \001(\003R\005start\022\020\n\003end\030\002 \001(\003R\003en"
+  "d\"4\n\nInt32Range\022\024\n\005start\030\001 \001(\005R\005start\022\020\n"
+  "\003end\030\002 \001(\005R\003end\"5\n\013DoubleRange\022\024\n\005start\030"
+  "\001 \001(\001R\005start\022\020\n\003end\030\002 \001(\001R\003endB0\n\030io.env"
+  "oyproxy.envoy.typeB\nRangeProtoP\001\272\200\310\321\006\002\020\001"
+  "b\006proto3";
 
-static upb_def_init *deps[1] = {
+static upb_def_init *deps[2] = {
+  &udpa_annotations_status_proto_upbdefinit,
   NULL
 };
 
@@ -31,5 +38,5 @@ upb_def_init envoy_type_range_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/type/range.proto",
-  UPB_STRVIEW_INIT(descriptor, 195)
+  UPB_STRVIEW_INIT(descriptor, 288)
 };

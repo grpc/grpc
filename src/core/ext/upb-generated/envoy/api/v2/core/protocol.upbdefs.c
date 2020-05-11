@@ -10,74 +10,115 @@
 
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_api_v2_core_TcpProtocolOptions_msginit;
+extern const upb_msglayout envoy_api_v2_core_UpstreamHttpProtocolOptions_msginit;
 extern const upb_msglayout envoy_api_v2_core_HttpProtocolOptions_msginit;
 extern const upb_msglayout envoy_api_v2_core_Http1ProtocolOptions_msginit;
+extern const upb_msglayout envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_msginit;
+extern const upb_msglayout envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_msginit;
 extern const upb_msglayout envoy_api_v2_core_Http2ProtocolOptions_msginit;
+extern const upb_msglayout envoy_api_v2_core_Http2ProtocolOptions_SettingsParameter_msginit;
 extern const upb_msglayout envoy_api_v2_core_GrpcProtocolOptions_msginit;
 
-static const upb_msglayout *layouts[5] = {
+static const upb_msglayout *layouts[9] = {
   &envoy_api_v2_core_TcpProtocolOptions_msginit,
+  &envoy_api_v2_core_UpstreamHttpProtocolOptions_msginit,
   &envoy_api_v2_core_HttpProtocolOptions_msginit,
   &envoy_api_v2_core_Http1ProtocolOptions_msginit,
+  &envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_msginit,
+  &envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_msginit,
   &envoy_api_v2_core_Http2ProtocolOptions_msginit,
+  &envoy_api_v2_core_Http2ProtocolOptions_SettingsParameter_msginit,
   &envoy_api_v2_core_GrpcProtocolOptions_msginit,
 };
 
-static const char descriptor[1882] =
+static const char descriptor[3062] =
   "\n envoy/api/v2/core/protocol.proto\022\021envo"
   "y.api.v2.core\032\036google/protobuf/duration."
-  "proto\032\036google/protobuf/wrappers.proto\032\027v"
-  "alidate/validate.proto\"\024\n\022TcpProtocolOpt"
-  "ions\"\250\001\n\023HttpProtocolOptions\022<\n\014idle_tim"
-  "eout\030\001 \001(\0132\031.google.protobuf.DurationR\013i"
-  "dleTimeout\022S\n\021max_headers_count\030\002 \001(\0132\034."
-  "google.protobuf.UInt32ValueB\t\272\351\300\003\004*\002(\001R\017"
-  "maxHeadersCount\"\276\001\n\024Http1ProtocolOptions"
-  "\022H\n\022allow_absolute_url\030\001 \001(\0132\032.google.pr"
-  "otobuf.BoolValueR\020allowAbsoluteUrl\022$\n\016ac"
-  "cept_http_10\030\002 \001(\010R\014acceptHttp10\0226\n\030defa"
-  "ult_host_for_http_10\030\003 \001(\tR\024defaultHostF"
-  "orHttp10\"\225\t\n\024Http2ProtocolOptions\022F\n\020hpa"
-  "ck_table_size\030\001 \001(\0132\034.google.protobuf.UI"
-  "nt32ValueR\016hpackTableSize\022c\n\026max_concurr"
-  "ent_streams\030\002 \001(\0132\034.google.protobuf.UInt"
-  "32ValueB\017\272\351\300\003\n*\010\030\377\377\377\377\007(\001R\024maxConcurrentS"
-  "treams\022l\n\032initial_stream_window_size\030\003 \001"
-  "(\0132\034.google.protobuf.UInt32ValueB\021\272\351\300\003\014*"
-  "\n\030\377\377\377\377\007(\377\377\003R\027initialStreamWindowSize\022t\n\036"
-  "initial_connection_window_size\030\004 \001(\0132\034.g"
-  "oogle.protobuf.UInt32ValueB\021\272\351\300\003\014*\n\030\377\377\377\377"
-  "\007(\377\377\003R\033initialConnectionWindowSize\022#\n\ral"
-  "low_connect\030\005 \001(\010R\014allowConnect\022%\n\016allow"
-  "_metadata\030\006 \001(\010R\rallowMetadata\022W\n\023max_ou"
-  "tbound_frames\030\007 \001(\0132\034.google.protobuf.UI"
-  "nt32ValueB\t\272\351\300\003\004*\002(\001R\021maxOutboundFrames\022"
-  "f\n\033max_outbound_control_frames\030\010 \001(\0132\034.g"
-  "oogle.protobuf.UInt32ValueB\t\272\351\300\003\004*\002(\001R\030m"
-  "axOutboundControlFrames\022\204\001\n1max_consecut"
-  "ive_inbound_frames_with_empty_payload\030\t "
-  "\001(\0132\034.google.protobuf.UInt32ValueR+maxCo"
-  "nsecutiveInboundFramesWithEmptyPayload\022o"
-  "\n&max_inbound_priority_frames_per_stream"
-  "\030\n \001(\0132\034.google.protobuf.UInt32ValueR!ma"
-  "xInboundPriorityFramesPerStream\022\223\001\n4max_"
-  "inbound_window_update_frames_per_data_fr"
-  "ame_sent\030\013 \001(\0132\034.google.protobuf.UInt32V"
-  "alueB\t\272\351\300\003\004*\002(\001R,maxInboundWindowUpdateF"
-  "ramesPerDataFrameSent\022Q\n&stream_error_on"
-  "_invalid_http_messaging\030\014 \001(\010R!streamErr"
-  "orOnInvalidHttpMessaging\"t\n\023GrpcProtocol"
-  "Options\022]\n\026http2_protocol_options\030\001 \001(\0132"
-  "\'.envoy.api.v2.core.Http2ProtocolOptions"
-  "R\024http2ProtocolOptionsB2\n\037io.envoyproxy."
-  "envoy.api.v2.coreB\rProtocolProtoP\001b\006prot"
-  "o3";
+  "proto\032\036google/protobuf/wrappers.proto\032\036u"
+  "dpa/annotations/migrate.proto\032\035udpa/anno"
+  "tations/status.proto\032\027validate/validate."
+  "proto\"\024\n\022TcpProtocolOptions\"h\n\033UpstreamH"
+  "ttpProtocolOptions\022\031\n\010auto_sni\030\001 \001(\010R\007au"
+  "toSni\022.\n\023auto_san_validation\030\002 \001(\010R\021auto"
+  "SanValidation\"\241\004\n\023HttpProtocolOptions\022<\n"
+  "\014idle_timeout\030\001 \001(\0132\031.google.protobuf.Du"
+  "rationR\013idleTimeout\022Q\n\027max_connection_du"
+  "ration\030\003 \001(\0132\031.google.protobuf.DurationR"
+  "\025maxConnectionDuration\022Q\n\021max_headers_co"
+  "unt\030\002 \001(\0132\034.google.protobuf.UInt32ValueB"
+  "\007\372B\004*\002(\001R\017maxHeadersCount\022I\n\023max_stream_"
+  "duration\030\004 \001(\0132\031.google.protobuf.Duratio"
+  "nR\021maxStreamDuration\022\212\001\n\037headers_with_un"
+  "derscores_action\030\005 \001(\0162C.envoy.api.v2.co"
+  "re.HttpProtocolOptions.HeadersWithUnders"
+  "coresActionR\034headersWithUnderscoresActio"
+  "n\"N\n\034HeadersWithUnderscoresAction\022\t\n\005ALL"
+  "OW\020\000\022\022\n\016REJECT_REQUEST\020\001\022\017\n\013DROP_HEADER\020"
+  "\002\"\200\004\n\024Http1ProtocolOptions\022H\n\022allow_abso"
+  "lute_url\030\001 \001(\0132\032.google.protobuf.BoolVal"
+  "ueR\020allowAbsoluteUrl\022$\n\016accept_http_10\030\002"
+  " \001(\010R\014acceptHttp10\0226\n\030default_host_for_h"
+  "ttp_10\030\003 \001(\tR\024defaultHostForHttp10\022c\n\021he"
+  "ader_key_format\030\004 \001(\01327.envoy.api.v2.cor"
+  "e.Http1ProtocolOptions.HeaderKeyFormatR\017"
+  "headerKeyFormat\022\'\n\017enable_trailers\030\005 \001(\010"
+  "R\016enableTrailers\032\261\001\n\017HeaderKeyFormat\022u\n\021"
+  "proper_case_words\030\001 \001(\0132G.envoy.api.v2.c"
+  "ore.Http1ProtocolOptions.HeaderKeyFormat"
+  ".ProperCaseWordsH\000R\017properCaseWords\032\021\n\017P"
+  "roperCaseWordsB\024\n\rheader_format\022\003\370B\001\"\251\013\n"
+  "\024Http2ProtocolOptions\022F\n\020hpack_table_siz"
+  "e\030\001 \001(\0132\034.google.protobuf.UInt32ValueR\016h"
+  "packTableSize\022a\n\026max_concurrent_streams\030"
+  "\002 \001(\0132\034.google.protobuf.UInt32ValueB\r\372B\n"
+  "*\010\030\377\377\377\377\007(\001R\024maxConcurrentStreams\022j\n\032init"
+  "ial_stream_window_size\030\003 \001(\0132\034.google.pr"
+  "otobuf.UInt32ValueB\017\372B\014*\n\030\377\377\377\377\007(\377\377\003R\027ini"
+  "tialStreamWindowSize\022r\n\036initial_connecti"
+  "on_window_size\030\004 \001(\0132\034.google.protobuf.U"
+  "Int32ValueB\017\372B\014*\n\030\377\377\377\377\007(\377\377\003R\033initialConn"
+  "ectionWindowSize\022#\n\rallow_connect\030\005 \001(\010R"
+  "\014allowConnect\022%\n\016allow_metadata\030\006 \001(\010R\ra"
+  "llowMetadata\022U\n\023max_outbound_frames\030\007 \001("
+  "\0132\034.google.protobuf.UInt32ValueB\007\372B\004*\002(\001"
+  "R\021maxOutboundFrames\022d\n\033max_outbound_cont"
+  "rol_frames\030\010 \001(\0132\034.google.protobuf.UInt3"
+  "2ValueB\007\372B\004*\002(\001R\030maxOutboundControlFrame"
+  "s\022\204\001\n1max_consecutive_inbound_frames_wit"
+  "h_empty_payload\030\t \001(\0132\034.google.protobuf."
+  "UInt32ValueR+maxConsecutiveInboundFrames"
+  "WithEmptyPayload\022o\n&max_inbound_priority"
+  "_frames_per_stream\030\n \001(\0132\034.google.protob"
+  "uf.UInt32ValueR!maxInboundPriorityFrames"
+  "PerStream\022\221\001\n4max_inbound_window_update_"
+  "frames_per_data_frame_sent\030\013 \001(\0132\034.googl"
+  "e.protobuf.UInt32ValueB\007\372B\004*\002(\001R,maxInbo"
+  "undWindowUpdateFramesPerDataFrameSent\022Q\n"
+  "&stream_error_on_invalid_http_messaging\030"
+  "\014 \001(\010R!streamErrorOnInvalidHttpMessaging"
+  "\022w\n\032custom_settings_parameters\030\r \003(\01329.e"
+  "nvoy.api.v2.core.Http2ProtocolOptions.Se"
+  "ttingsParameterR\030customSettingsParameter"
+  "s\032\244\001\n\021SettingsParameter\022Q\n\nidentifier\030\001 "
+  "\001(\0132\034.google.protobuf.UInt32ValueB\023\372B\010*\006"
+  "\030\200\200\004(\001\372B\005\212\001\002\020\001R\nidentifier\022<\n\005value\030\002 \001("
+  "\0132\034.google.protobuf.UInt32ValueB\010\372B\005\212\001\002\020"
+  "\001R\005value\"t\n\023GrpcProtocolOptions\022]\n\026http2"
+  "_protocol_options\030\001 \001(\0132\'.envoy.api.v2.c"
+  "ore.Http2ProtocolOptionsR\024http2ProtocolO"
+  "ptionsBV\n\037io.envoyproxy.envoy.api.v2.cor"
+  "eB\rProtocolProtoP\001\362\230\376\217\005\026\022\024envoy.config.c"
+  "ore.v3\272\200\310\321\006\002\020\001b\006proto3";
 
-static upb_def_init *deps[4] = {
+static upb_def_init *deps[6] = {
   &google_protobuf_duration_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
@@ -86,5 +127,5 @@ upb_def_init envoy_api_v2_core_protocol_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/core/protocol.proto",
-  UPB_STRVIEW_INIT(descriptor, 1882)
+  UPB_STRVIEW_INIT(descriptor, 3062)
 };

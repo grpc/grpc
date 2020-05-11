@@ -26,6 +26,11 @@ UPB_INLINE const upb_msgdef *envoy_type_Int64Range_getmsgdef(upb_symtab *s) {
   return upb_symtab_lookupmsg(s, "envoy.type.Int64Range");
 }
 
+UPB_INLINE const upb_msgdef *envoy_type_Int32Range_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_type_range_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.type.Int32Range");
+}
+
 UPB_INLINE const upb_msgdef *envoy_type_DoubleRange_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_type_range_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.type.DoubleRange");

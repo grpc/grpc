@@ -8,68 +8,26 @@
 
 #include "upb/def.h"
 
-extern upb_def_init envoy_api_v2_core_address_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_core_base_proto_upbdefinit;
-extern upb_def_init envoy_api_v2_core_health_check_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_api_v2_endpoint_Endpoint_msginit;
-extern const upb_msglayout envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_msginit;
-extern const upb_msglayout envoy_api_v2_endpoint_LbEndpoint_msginit;
-extern const upb_msglayout envoy_api_v2_endpoint_LocalityLbEndpoints_msginit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
+extern upb_def_init envoy_api_v2_endpoint_endpoint_components_proto_upbdefinit;
 
-static const upb_msglayout *layouts[4] = {
-  &envoy_api_v2_endpoint_Endpoint_msginit,
-  &envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_msginit,
-  &envoy_api_v2_endpoint_LbEndpoint_msginit,
-  &envoy_api_v2_endpoint_LocalityLbEndpoints_msginit,
-};
-
-static const char descriptor[1214] =
+static const char descriptor[207] =
   "\n$envoy/api/v2/endpoint/endpoint.proto\022\025"
-  "envoy.api.v2.endpoint\032\037envoy/api/v2/core"
-  "/address.proto\032\034envoy/api/v2/core/base.p"
-  "roto\032$envoy/api/v2/core/health_check.pro"
-  "to\032\036google/protobuf/wrappers.proto\032\027vali"
-  "date/validate.proto\"\344\001\n\010Endpoint\0224\n\007addr"
-  "ess\030\001 \001(\0132\032.envoy.api.v2.core.AddressR\007a"
-  "ddress\022a\n\023health_check_config\030\002 \001(\01321.en"
-  "voy.api.v2.endpoint.Endpoint.HealthCheck"
-  "ConfigR\021healthCheckConfig\032\?\n\021HealthCheck"
-  "Config\022*\n\nport_value\030\001 \001(\rB\013\272\351\300\003\006*\004\030\377\377\003R"
-  "\tportValue\"\341\002\n\nLbEndpoint\022=\n\010endpoint\030\001 "
-  "\001(\0132\037.envoy.api.v2.endpoint.EndpointH\000R\010"
-  "endpoint\022%\n\rendpoint_name\030\005 \001(\tH\000R\014endpo"
-  "intName\022D\n\rhealth_status\030\002 \001(\0162\037.envoy.a"
-  "pi.v2.core.HealthStatusR\014healthStatus\0227\n"
-  "\010metadata\030\003 \001(\0132\033.envoy.api.v2.core.Meta"
-  "dataR\010metadata\022[\n\025load_balancing_weight\030"
-  "\004 \001(\0132\034.google.protobuf.UInt32ValueB\t\272\351\300"
-  "\003\004*\002(\001R\023loadBalancingWeightB\021\n\017host_iden"
-  "tifier\"\325\002\n\023LocalityLbEndpoints\0227\n\010locali"
-  "ty\030\001 \001(\0132\033.envoy.api.v2.core.LocalityR\010l"
-  "ocality\022D\n\014lb_endpoints\030\002 \003(\0132!.envoy.ap"
-  "i.v2.endpoint.LbEndpointR\013lbEndpoints\022[\n"
-  "\025load_balancing_weight\030\003 \001(\0132\034.google.pr"
-  "otobuf.UInt32ValueB\t\272\351\300\003\004*\002(\001R\023loadBalan"
-  "cingWeight\022&\n\010priority\030\005 \001(\rB\n\272\351\300\003\005*\003\030\200\001"
-  "R\010priority\022:\n\tproximity\030\006 \001(\0132\034.google.p"
-  "rotobuf.UInt32ValueR\tproximityB6\n#io.env"
-  "oyproxy.envoy.api.v2.endpointB\rEndpointP"
-  "rotoP\001b\006proto3";
+  "envoy.api.v2.endpoint\032\035udpa/annotations/"
+  "status.proto\032/envoy/api/v2/endpoint/endp"
+  "oint_components.protoB6\n#io.envoyproxy.e"
+  "nvoy.api.v2.endpointB\rEndpointProtoP\001P\001b"
+  "\006proto3";
 
-static upb_def_init *deps[6] = {
-  &envoy_api_v2_core_address_proto_upbdefinit,
-  &envoy_api_v2_core_base_proto_upbdefinit,
-  &envoy_api_v2_core_health_check_proto_upbdefinit,
-  &google_protobuf_wrappers_proto_upbdefinit,
-  &validate_validate_proto_upbdefinit,
+static upb_def_init *deps[3] = {
+  &udpa_annotations_status_proto_upbdefinit,
+  &envoy_api_v2_endpoint_endpoint_components_proto_upbdefinit,
   NULL
 };
 
 upb_def_init envoy_api_v2_endpoint_endpoint_proto_upbdefinit = {
   deps,
-  layouts,
+  NULL,
   "envoy/api/v2/endpoint/endpoint.proto",
-  UPB_STRVIEW_INIT(descriptor, 1214)
+  UPB_STRVIEW_INIT(descriptor, 207)
 };

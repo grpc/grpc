@@ -13,6 +13,9 @@ extern upb_def_init google_protobuf_any_proto_upbdefinit;
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_empty_proto_upbdefinit;
 extern upb_def_init google_protobuf_struct_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_sensitive_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_api_v2_core_GrpcService_msginit;
 extern const upb_msglayout envoy_api_v2_core_GrpcService_EnvoyGrpc_msginit;
@@ -24,8 +27,9 @@ extern const upb_msglayout envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredenti
 extern const upb_msglayout envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials_msginit;
 extern const upb_msglayout envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials_msginit;
 extern const upb_msglayout envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_msginit;
+extern const upb_msglayout envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_StsService_msginit;
 
-static const upb_msglayout *layouts[10] = {
+static const upb_msglayout *layouts[11] = {
   &envoy_api_v2_core_GrpcService_msginit,
   &envoy_api_v2_core_GrpcService_EnvoyGrpc_msginit,
   &envoy_api_v2_core_GrpcService_GoogleGrpc_msginit,
@@ -36,84 +40,104 @@ static const upb_msglayout *layouts[10] = {
   &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials_msginit,
   &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials_msginit,
   &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_msginit,
+  &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_StsService_msginit,
 };
 
-static const char descriptor[2700] =
+static const char descriptor[3336] =
   "\n$envoy/api/v2/core/grpc_service.proto\022\021"
   "envoy.api.v2.core\032\034envoy/api/v2/core/bas"
   "e.proto\032\031google/protobuf/any.proto\032\036goog"
   "le/protobuf/duration.proto\032\033google/proto"
   "buf/empty.proto\032\034google/protobuf/struct."
-  "proto\032\027validate/validate.proto\"\344\022\n\013GrpcS"
-  "ervice\022I\n\nenvoy_grpc\030\001 \001(\0132(.envoy.api.v"
-  "2.core.GrpcService.EnvoyGrpcH\000R\tenvoyGrp"
-  "c\022L\n\013google_grpc\030\002 \001(\0132).envoy.api.v2.co"
-  "re.GrpcService.GoogleGrpcH\000R\ngoogleGrpc\022"
-  "3\n\007timeout\030\003 \001(\0132\031.google.protobuf.Durat"
-  "ionR\007timeout\022I\n\020initial_metadata\030\005 \003(\0132\036"
-  ".envoy.api.v2.core.HeaderValueR\017initialM"
-  "etadata\0329\n\tEnvoyGrpc\022,\n\014cluster_name\030\001 \001"
-  "(\tB\t\272\351\300\003\004r\002 \001R\013clusterName\032\337\017\n\nGoogleGrp"
-  "c\022(\n\ntarget_uri\030\001 \001(\tB\t\272\351\300\003\004r\002 \001R\ttarget"
-  "Uri\022m\n\023channel_credentials\030\002 \001(\0132<.envoy"
-  ".api.v2.core.GrpcService.GoogleGrpc.Chan"
-  "nelCredentialsR\022channelCredentials\022d\n\020ca"
-  "ll_credentials\030\003 \003(\01329.envoy.api.v2.core"
-  ".GrpcService.GoogleGrpc.CallCredentialsR"
-  "\017callCredentials\022*\n\013stat_prefix\030\004 \001(\tB\t\272"
-  "\351\300\003\004r\002 \001R\nstatPrefix\0228\n\030credentials_fact"
-  "ory_name\030\005 \001(\tR\026credentialsFactoryName\022/"
-  "\n\006config\030\006 \001(\0132\027.google.protobuf.StructR"
-  "\006config\032\314\001\n\016SslCredentials\022<\n\nroot_certs"
-  "\030\001 \001(\0132\035.envoy.api.v2.core.DataSourceR\tr"
-  "ootCerts\022>\n\013private_key\030\002 \001(\0132\035.envoy.ap"
-  "i.v2.core.DataSourceR\nprivateKey\022<\n\ncert"
-  "_chain\030\003 \001(\0132\035.envoy.api.v2.core.DataSou"
-  "rceR\tcertChain\032\030\n\026GoogleLocalCredentials"
-  "\032\312\002\n\022ChannelCredentials\022c\n\017ssl_credentia"
-  "ls\030\001 \001(\01328.envoy.api.v2.core.GrpcService"
-  ".GoogleGrpc.SslCredentialsH\000R\016sslCredent"
-  "ials\022\?\n\016google_default\030\002 \001(\0132\026.google.pr"
-  "otobuf.EmptyH\000R\rgoogleDefault\022o\n\021local_c"
-  "redentials\030\003 \001(\0132@.envoy.api.v2.core.Grp"
-  "cService.GoogleGrpc.GoogleLocalCredentia"
-  "lsH\000R\020localCredentialsB\035\n\024credential_spe"
-  "cifier\022\005\270\351\300\003\001\032\204\010\n\017CallCredentials\022#\n\014acc"
-  "ess_token\030\001 \001(\tH\000R\013accessToken\022L\n\025google"
-  "_compute_engine\030\002 \001(\0132\026.google.protobuf."
-  "EmptyH\000R\023googleComputeEngine\0222\n\024google_r"
-  "efresh_token\030\003 \001(\tH\000R\022googleRefreshToken"
-  "\022\233\001\n\032service_account_jwt_access\030\004 \001(\0132\\."
-  "envoy.api.v2.core.GrpcService.GoogleGrpc"
-  ".CallCredentials.ServiceAccountJWTAccess"
-  "CredentialsH\000R\027serviceAccountJwtAccess\022o"
-  "\n\ngoogle_iam\030\005 \001(\0132N.envoy.api.v2.core.G"
-  "rpcService.GoogleGrpc.CallCredentials.Go"
-  "ogleIAMCredentialsH\000R\tgoogleIam\022z\n\013from_"
-  "plugin\030\006 \001(\0132W.envoy.api.v2.core.GrpcSer"
-  "vice.GoogleGrpc.CallCredentials.Metadata"
-  "CredentialsFromPluginH\000R\nfromPlugin\032u\n\"S"
-  "erviceAccountJWTAccessCredentials\022\031\n\010jso"
-  "n_key\030\001 \001(\tR\007jsonKey\0224\n\026token_lifetime_s"
-  "econds\030\002 \001(\004R\024tokenLifetimeSeconds\032v\n\024Go"
-  "ogleIAMCredentials\022/\n\023authorization_toke"
-  "n\030\001 \001(\tR\022authorizationToken\022-\n\022authority"
-  "_selector\030\002 \001(\tR\021authoritySelector\032\260\001\n\035M"
-  "etadataCredentialsFromPlugin\022\022\n\004name\030\001 \001"
-  "(\tR\004name\0221\n\006config\030\002 \001(\0132\027.google.protob"
-  "uf.StructH\000R\006config\0229\n\014typed_config\030\003 \001("
-  "\0132\024.google.protobuf.AnyH\000R\013typedConfigB\r"
-  "\n\013config_typeB\035\n\024credential_specifier\022\005\270"
-  "\351\300\003\001B\031\n\020target_specifier\022\005\270\351\300\003\001J\004\010\004\020\005B5\n"
+  "proto\032\036udpa/annotations/migrate.proto\032 u"
+  "dpa/annotations/sensitive.proto\032\035udpa/an"
+  "notations/status.proto\032\027validate/validat"
+  "e.proto\"\333\026\n\013GrpcService\022I\n\nenvoy_grpc\030\001 "
+  "\001(\0132(.envoy.api.v2.core.GrpcService.Envo"
+  "yGrpcH\000R\tenvoyGrpc\022L\n\013google_grpc\030\002 \001(\0132"
+  ").envoy.api.v2.core.GrpcService.GoogleGr"
+  "pcH\000R\ngoogleGrpc\0223\n\007timeout\030\003 \001(\0132\031.goog"
+  "le.protobuf.DurationR\007timeout\022I\n\020initial"
+  "_metadata\030\005 \003(\0132\036.envoy.api.v2.core.Head"
+  "erValueR\017initialMetadata\0327\n\tEnvoyGrpc\022*\n"
+  "\014cluster_name\030\001 \001(\tB\007\372B\004r\002 \001R\013clusterNam"
+  "e\032\332\023\n\nGoogleGrpc\022&\n\ntarget_uri\030\001 \001(\tB\007\372B"
+  "\004r\002 \001R\ttargetUri\022m\n\023channel_credentials\030"
+  "\002 \001(\0132<.envoy.api.v2.core.GrpcService.Go"
+  "ogleGrpc.ChannelCredentialsR\022channelCred"
+  "entials\022d\n\020call_credentials\030\003 \003(\01329.envo"
+  "y.api.v2.core.GrpcService.GoogleGrpc.Cal"
+  "lCredentialsR\017callCredentials\022(\n\013stat_pr"
+  "efix\030\004 \001(\tB\007\372B\004r\002 \001R\nstatPrefix\0228\n\030crede"
+  "ntials_factory_name\030\005 \001(\tR\026credentialsFa"
+  "ctoryName\022/\n\006config\030\006 \001(\0132\027.google.proto"
+  "buf.StructR\006config\032\324\001\n\016SslCredentials\022<\n"
+  "\nroot_certs\030\001 \001(\0132\035.envoy.api.v2.core.Da"
+  "taSourceR\trootCerts\022F\n\013private_key\030\002 \001(\013"
+  "2\035.envoy.api.v2.core.DataSourceB\006\270\267\213\244\002\001R"
+  "\nprivateKey\022<\n\ncert_chain\030\003 \001(\0132\035.envoy."
+  "api.v2.core.DataSourceR\tcertChain\032\030\n\026Goo"
+  "gleLocalCredentials\032\310\002\n\022ChannelCredentia"
+  "ls\022c\n\017ssl_credentials\030\001 \001(\01328.envoy.api."
+  "v2.core.GrpcService.GoogleGrpc.SslCreden"
+  "tialsH\000R\016sslCredentials\022\?\n\016google_defaul"
+  "t\030\002 \001(\0132\026.google.protobuf.EmptyH\000R\rgoogl"
+  "eDefault\022o\n\021local_credentials\030\003 \001(\0132@.en"
+  "voy.api.v2.core.GrpcService.GoogleGrpc.G"
+  "oogleLocalCredentialsH\000R\020localCredential"
+  "sB\033\n\024credential_specifier\022\003\370B\001\032\375\013\n\017CallC"
+  "redentials\022#\n\014access_token\030\001 \001(\tH\000R\013acce"
+  "ssToken\022L\n\025google_compute_engine\030\002 \001(\0132\026"
+  ".google.protobuf.EmptyH\000R\023googleComputeE"
+  "ngine\0222\n\024google_refresh_token\030\003 \001(\tH\000R\022g"
+  "oogleRefreshToken\022\233\001\n\032service_account_jw"
+  "t_access\030\004 \001(\0132\\.envoy.api.v2.core.GrpcS"
+  "ervice.GoogleGrpc.CallCredentials.Servic"
+  "eAccountJWTAccessCredentialsH\000R\027serviceA"
+  "ccountJwtAccess\022o\n\ngoogle_iam\030\005 \001(\0132N.en"
+  "voy.api.v2.core.GrpcService.GoogleGrpc.C"
+  "allCredentials.GoogleIAMCredentialsH\000R\tg"
+  "oogleIam\022z\n\013from_plugin\030\006 \001(\0132W.envoy.ap"
+  "i.v2.core.GrpcService.GoogleGrpc.CallCre"
+  "dentials.MetadataCredentialsFromPluginH\000"
+  "R\nfromPlugin\022g\n\013sts_service\030\007 \001(\0132D.envo"
+  "y.api.v2.core.GrpcService.GoogleGrpc.Cal"
+  "lCredentials.StsServiceH\000R\nstsService\032u\n"
+  "\"ServiceAccountJWTAccessCredentials\022\031\n\010j"
+  "son_key\030\001 \001(\tR\007jsonKey\0224\n\026token_lifetime"
+  "_seconds\030\002 \001(\004R\024tokenLifetimeSeconds\032v\n\024"
+  "GoogleIAMCredentials\022/\n\023authorization_to"
+  "ken\030\001 \001(\tR\022authorizationToken\022-\n\022authori"
+  "ty_selector\030\002 \001(\tR\021authoritySelector\032\264\001\n"
+  "\035MetadataCredentialsFromPlugin\022\022\n\004name\030\001"
+  " \001(\tR\004name\0225\n\006config\030\002 \001(\0132\027.google.prot"
+  "obuf.StructB\002\030\001H\000R\006config\0229\n\014typed_confi"
+  "g\030\003 \001(\0132\024.google.protobuf.AnyH\000R\013typedCo"
+  "nfigB\r\n\013config_type\032\213\003\n\nStsService\022;\n\032to"
+  "ken_exchange_service_uri\030\001 \001(\tR\027tokenExc"
+  "hangeServiceUri\022\032\n\010resource\030\002 \001(\tR\010resou"
+  "rce\022\032\n\010audience\030\003 \001(\tR\010audience\022\024\n\005scope"
+  "\030\004 \001(\tR\005scope\0220\n\024requested_token_type\030\005 "
+  "\001(\tR\022requestedTokenType\0225\n\022subject_token"
+  "_path\030\006 \001(\tB\007\372B\004r\002 \001R\020subjectTokenPath\0225"
+  "\n\022subject_token_type\030\007 \001(\tB\007\372B\004r\002 \001R\020sub"
+  "jectTokenType\022(\n\020actor_token_path\030\010 \001(\tR"
+  "\016actorTokenPath\022(\n\020actor_token_type\030\t \001("
+  "\tR\016actorTokenTypeB\033\n\024credential_specifie"
+  "r\022\003\370B\001B\027\n\020target_specifier\022\003\370B\001J\004\010\004\020\005BY\n"
   "\037io.envoyproxy.envoy.api.v2.coreB\020GrpcSe"
-  "rviceProtoP\001b\006proto3";
+  "rviceProtoP\001\362\230\376\217\005\026\022\024envoy.config.core.v3"
+  "\272\200\310\321\006\002\020\001b\006proto3";
 
-static upb_def_init *deps[7] = {
+static upb_def_init *deps[10] = {
   &envoy_api_v2_core_base_proto_upbdefinit,
   &google_protobuf_any_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
   &google_protobuf_empty_proto_upbdefinit,
   &google_protobuf_struct_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_sensitive_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
@@ -122,5 +146,5 @@ upb_def_init envoy_api_v2_core_grpc_service_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/core/grpc_service.proto",
-  UPB_STRVIEW_INIT(descriptor, 2700)
+  UPB_STRVIEW_INIT(descriptor, 3336)
 };

@@ -9,41 +9,62 @@
 #include "upb/def.h"
 
 extern upb_def_init envoy_api_v2_core_base_proto_upbdefinit;
+extern upb_def_init envoy_type_percent_proto_upbdefinit;
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
+extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_api_v2_cluster_CircuitBreakers_msginit;
 extern const upb_msglayout envoy_api_v2_cluster_CircuitBreakers_Thresholds_msginit;
+extern const upb_msglayout envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_msginit;
 
-static const upb_msglayout *layouts[2] = {
+static const upb_msglayout *layouts[3] = {
   &envoy_api_v2_cluster_CircuitBreakers_msginit,
   &envoy_api_v2_cluster_CircuitBreakers_Thresholds_msginit,
+  &envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_msginit,
 };
 
-static const char descriptor[828] =
+static const char descriptor[1247] =
   "\n*envoy/api/v2/cluster/circuit_breaker.p"
   "roto\022\024envoy.api.v2.cluster\032\034envoy/api/v2"
-  "/core/base.proto\032\036google/protobuf/wrappe"
-  "rs.proto\"\302\004\n\017CircuitBreakers\022P\n\nthreshol"
-  "ds\030\001 \003(\01320.envoy.api.v2.cluster.CircuitB"
-  "reakers.ThresholdsR\nthresholds\032\334\003\n\nThres"
-  "holds\022>\n\010priority\030\001 \001(\0162\".envoy.api.v2.c"
-  "ore.RoutingPriorityR\010priority\022E\n\017max_con"
-  "nections\030\002 \001(\0132\034.google.protobuf.UInt32V"
-  "alueR\016maxConnections\022N\n\024max_pending_requ"
-  "ests\030\003 \001(\0132\034.google.protobuf.UInt32Value"
-  "R\022maxPendingRequests\022\?\n\014max_requests\030\004 \001"
-  "(\0132\034.google.protobuf.UInt32ValueR\013maxReq"
-  "uests\022=\n\013max_retries\030\005 \001(\0132\034.google.prot"
-  "obuf.UInt32ValueR\nmaxRetries\022\'\n\017track_re"
-  "maining\030\006 \001(\010R\016trackRemaining\022N\n\024max_con"
-  "nection_pools\030\007 \001(\0132\034.google.protobuf.UI"
-  "nt32ValueR\022maxConnectionPoolsBm\n\"io.envo"
-  "yproxy.envoy.api.v2.clusterB\023CircuitBrea"
-  "kerProtoP\001\252\002\026Envoy.Api.V2.ClusterNS\352\002\026En"
-  "voy.Api.V2.ClusterNSb\006proto3";
+  "/core/base.proto\032\030envoy/type/percent.pro"
+  "to\032\036google/protobuf/wrappers.proto\032\036udpa"
+  "/annotations/migrate.proto\032\035udpa/annotat"
+  "ions/status.proto\032\027validate/validate.pro"
+  "to\"\313\006\n\017CircuitBreakers\022P\n\nthresholds\030\001 \003"
+  "(\01320.envoy.api.v2.cluster.CircuitBreaker"
+  "s.ThresholdsR\nthresholds\032\345\005\n\nThresholds\022"
+  "H\n\010priority\030\001 \001(\0162\".envoy.api.v2.core.Ro"
+  "utingPriorityB\010\372B\005\202\001\002\020\001R\010priority\022E\n\017max"
+  "_connections\030\002 \001(\0132\034.google.protobuf.UIn"
+  "t32ValueR\016maxConnections\022N\n\024max_pending_"
+  "requests\030\003 \001(\0132\034.google.protobuf.UInt32V"
+  "alueR\022maxPendingRequests\022\?\n\014max_requests"
+  "\030\004 \001(\0132\034.google.protobuf.UInt32ValueR\013ma"
+  "xRequests\022=\n\013max_retries\030\005 \001(\0132\034.google."
+  "protobuf.UInt32ValueR\nmaxRetries\022_\n\014retr"
+  "y_budget\030\010 \001(\0132<.envoy.api.v2.cluster.Ci"
+  "rcuitBreakers.Thresholds.RetryBudgetR\013re"
+  "tryBudget\022\'\n\017track_remaining\030\006 \001(\010R\016trac"
+  "kRemaining\022N\n\024max_connection_pools\030\007 \001(\013"
+  "2\034.google.protobuf.UInt32ValueR\022maxConne"
+  "ctionPools\032\233\001\n\013RetryBudget\022:\n\016budget_per"
+  "cent\030\001 \001(\0132\023.envoy.type.PercentR\rbudgetP"
+  "ercent\022P\n\025min_retry_concurrency\030\002 \001(\0132\034."
+  "google.protobuf.UInt32ValueR\023minRetryCon"
+  "currencyB\224\001\n\"io.envoyproxy.envoy.api.v2."
+  "clusterB\023CircuitBreakerProtoP\001\252\002\026Envoy.A"
+  "pi.V2.ClusterNS\352\002\026Envoy.Api.V2.ClusterNS"
+  "\362\230\376\217\005\031\022\027envoy.config.cluster.v3\272\200\310\321\006\002\020\001b"
+  "\006proto3";
 
-static upb_def_init *deps[3] = {
+static upb_def_init *deps[7] = {
   &envoy_api_v2_core_base_proto_upbdefinit,
+  &envoy_type_percent_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
+  &validate_validate_proto_upbdefinit,
   NULL
 };
 
@@ -51,5 +72,5 @@ upb_def_init envoy_api_v2_cluster_circuit_breaker_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/cluster/circuit_breaker.proto",
-  UPB_STRVIEW_INIT(descriptor, 828)
+  UPB_STRVIEW_INIT(descriptor, 1247)
 };

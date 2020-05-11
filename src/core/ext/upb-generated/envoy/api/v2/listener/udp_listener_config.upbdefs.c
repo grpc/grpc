@@ -10,29 +10,38 @@
 
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
 extern upb_def_init google_protobuf_struct_proto_upbdefinit;
+extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern const upb_msglayout envoy_api_v2_listener_UdpListenerConfig_msginit;
+extern const upb_msglayout envoy_api_v2_listener_ActiveRawUdpListenerConfig_msginit;
 
-static const upb_msglayout *layouts[1] = {
+static const upb_msglayout *layouts[2] = {
   &envoy_api_v2_listener_UdpListenerConfig_msginit,
+  &envoy_api_v2_listener_ActiveRawUdpListenerConfig_msginit,
 };
 
-static const char descriptor[445] =
+static const char descriptor[583] =
   "\n/envoy/api/v2/listener/udp_listener_con"
   "fig.proto\022\025envoy.api.v2.listener\032\031google"
   "/protobuf/any.proto\032\034google/protobuf/str"
-  "uct.proto\"\274\001\n\021UdpListenerConfig\022*\n\021udp_l"
-  "istener_name\030\001 \001(\tR\017udpListenerName\0221\n\006c"
-  "onfig\030\002 \001(\0132\027.google.protobuf.StructH\000R\006"
-  "config\0229\n\014typed_config\030\003 \001(\0132\024.google.pr"
-  "otobuf.AnyH\000R\013typedConfigB\r\n\013config_type"
-  "Bs\n#io.envoyproxy.envoy.api.v2.listenerB"
-  "\026UdpListenerConfigProtoP\001\252\002\027Envoy.Api.V2"
-  ".ListenerNS\352\002\027Envoy.Api.V2.ListenerNSb\006p"
-  "roto3";
+  "uct.proto\032\036udpa/annotations/migrate.prot"
+  "o\032\035udpa/annotations/status.proto\"\300\001\n\021Udp"
+  "ListenerConfig\022*\n\021udp_listener_name\030\001 \001("
+  "\tR\017udpListenerName\0225\n\006config\030\002 \001(\0132\027.goo"
+  "gle.protobuf.StructB\002\030\001H\000R\006config\0229\n\014typ"
+  "ed_config\030\003 \001(\0132\024.google.protobuf.AnyH\000R"
+  "\013typedConfigB\r\n\013config_type\"\034\n\032ActiveRaw"
+  "UdpListenerConfigB\233\001\n#io.envoyproxy.envo"
+  "y.api.v2.listenerB\026UdpListenerConfigProt"
+  "oP\001\252\002\027Envoy.Api.V2.ListenerNS\352\002\027Envoy.Ap"
+  "i.V2.ListenerNS\362\230\376\217\005\032\022\030envoy.config.list"
+  "ener.v3\272\200\310\321\006\002\020\001b\006proto3";
 
-static upb_def_init *deps[3] = {
+static upb_def_init *deps[5] = {
   &google_protobuf_any_proto_upbdefinit,
   &google_protobuf_struct_proto_upbdefinit,
+  &udpa_annotations_migrate_proto_upbdefinit,
+  &udpa_annotations_status_proto_upbdefinit,
   NULL
 };
 
@@ -40,5 +49,5 @@ upb_def_init envoy_api_v2_listener_udp_listener_config_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/api/v2/listener/udp_listener_config.proto",
-  UPB_STRVIEW_INIT(descriptor, 445)
+  UPB_STRVIEW_INIT(descriptor, 583)
 };
