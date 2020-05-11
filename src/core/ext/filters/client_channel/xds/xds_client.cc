@@ -2103,8 +2103,7 @@ std::string CreateServiceConfigActionWeightedCluster(
   return absl::StrJoin(config_parts, "");
 }
 
-// Returns the cluster names and weights key for a second level map look up for
-// a WeightedClusters action.
+// Returns the cluster names and weights key or the cluster names only key.
 std::string WeightedClustersKey(
     const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
         weighted_clusters,
@@ -2222,24 +2221,6 @@ void XdsClient::UpdateWeightedClusterIndexMap(
       }
     }
   }
-  gpr_log(GPR_INFO, "donna after work==========");
-  for (auto& p : new_weighted_cluster_index_map) {
-    gpr_log(GPR_INFO, "donna new cluster <%s> next [%d]", p.first.c_str(),
-            p.second.next_index);
-    for (auto& q : p.second.cluster_weights_map) {
-      gpr_log(GPR_INFO, "donna             new cluster weights <%s> and [%d]",
-              q.first.c_str(), q.second);
-    }
-  };
-  for (auto& p : reuse_weighted_cluster_index_map) {
-    gpr_log(GPR_INFO, "donna reuse cluster <%s> next [%d]", p.first.c_str(),
-            p.second.next_index);
-    for (auto& q : p.second.cluster_weights_map) {
-      gpr_log(GPR_INFO, "donna             reuse cluster weights <%s> and [%d]",
-              q.first.c_str(), q.second);
-    }
-  };
-  gpr_log(GPR_INFO, "==========donna after work");
   weighted_cluster_index_map_ = std::move(new_weighted_cluster_index_map);
 }
 
@@ -2288,7 +2269,6 @@ grpc_error* XdsClient::CreateServiceConfig(
   std::string json = absl::StrJoin(config_parts, "");
   grpc_error* error = GRPC_ERROR_NONE;
   *service_config = ServiceConfig::Create(json.c_str(), &error);
-  gpr_log(GPR_INFO, "donna service config is %s", json.c_str());
   return error;
 }
 

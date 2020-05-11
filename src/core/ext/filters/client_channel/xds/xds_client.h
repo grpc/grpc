@@ -226,8 +226,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Sends an error notification to all watchers.
   void NotifyOnError(grpc_error* error);
 
-  // Returns the cluster names key for top level map look up for a
-  // WeightedClusters action.
+  // Returns the weighted_clusters action name to use from the
+  // WeightedClusterIndexMap for a weighted_clusters RdsUpdate::RdsRoute.
   std::string WeightedClustersActionName(
       const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
           weighted_clusters);
