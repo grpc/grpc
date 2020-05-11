@@ -375,60 +375,48 @@ namespace Grpc.Tools
         static readonly Encoding s_utf8WithoutBom = new UTF8Encoding(false);
         protected override Encoding ResponseFileEncoding => s_utf8WithoutBom;
 
-        // Protoc takes one argument per line from the response file, and does not
-        // require any quoting whatsoever. Otherwise, this is similar to the
-        // standard CommandLineBuilder
-        class ProtocResponseFileBuilder
+        class ProtocCommandLineBuilder : CommandLineBuilder
         {
-            StringBuilder _data = new StringBuilder(1000);
-            public override string ToString() => _data.ToString();
-
-            // If 'value' is not empty, append '--name=value\n'.
-            public void AddSwitchMaybe(string name, string value)
+            // If 'value' is not empty, append '--name=value'.
+            public void AppendSwitchUnquotedIfNotNullOrEmpty(string name, string value)
             {
                 if (!string.IsNullOrEmpty(value))
                 {
-                    _data.Append("--").Append(name).Append("=")
-                         .Append(value).Append('\n');
+                    AppendSwitchIfNotNull($"--{name}=", value);
                 }
             }
 
             // Add switch with the 'values' separated by commas, for options.
-            public void AddSwitchMaybe(string name, string[] values)
+            public void AppendSwitchIfNotNullOrEmpty(string name, string[] values)
             {
                 if (values?.Length > 0)
                 {
-                    _data.Append("--").Append(name).Append("=")
-                         .Append(string.Join(",", values)).Append('\n');
+                    AppendSwitchIfNotNull($"--{name}=", values, ",");
                 }
             }
+        }
 
-            // Add a positional argument to the file data.
-            public void AddArg(string arg)
-            {
-                _data.Append(arg).Append('\n');
-            }
-        };
-
-        // Called by the base ToolTask to get response file contents.
-        protected override string GenerateResponseFileCommands()
+        // Called by the base ToolTask to get the command line.
+        protected override string GenerateCommandLineCommands()
         {
-            var cmd = new ProtocResponseFileBuilder();
-            cmd.AddSwitchMaybe(Generator + "_out", TrimEndSlash(OutputDir));
-            cmd.AddSwitchMaybe(Generator + "_opt", OutputOptions);
-            cmd.AddSwitchMaybe("plugin=protoc-gen-grpc", GrpcPluginExe);
-            cmd.AddSwitchMaybe("grpc_out", TrimEndSlash(GrpcOutputDir));
-            cmd.AddSwitchMaybe("grpc_opt", GrpcOutputOptions);
+            var cmd = new ProtocCommandLineBuilder();
+            cmd.AppendSwitchUnquotedIfNotNullOrEmpty(Generator + "_out", TrimEndSlash(OutputDir));
+            cmd.AppendSwitchIfNotNullOrEmpty(Generator + "_opt", OutputOptions);
+            cmd.AppendSwitchUnquotedIfNotNullOrEmpty("plugin=protoc-gen-grpc", GrpcPluginExe);
+            cmd.AppendSwitchUnquotedIfNotNullOrEmpty("grpc_out", TrimEndSlash(GrpcOutputDir));
+            cmd.AppendSwitchIfNotNullOrEmpty("grpc_opt", GrpcOutputOptions);
             if (ProtoPath != null)
             {
-                foreach (string path in ProtoPath)
-                    cmd.AddSwitchMaybe("proto_path", TrimEndSlash(path));
+                foreach (var path in ProtoPath)
+                {
+                    cmd.AppendSwitchUnquotedIfNotNullOrEmpty("proto_path", TrimEndSlash(path));
+                }
             }
-            cmd.AddSwitchMaybe("dependency_out", DependencyOut);
-            cmd.AddSwitchMaybe("error_format", "msvs");
+            cmd.AppendSwitchUnquotedIfNotNullOrEmpty("dependency_out", DependencyOut);
+            cmd.AppendSwitchUnquotedIfNotNullOrEmpty("error_format", "msvs");
             foreach (var proto in Protobuf)
             {
-                cmd.AddArg(proto.ItemSpec);
+                cmd.AppendFileNameIfNotNull(proto.ItemSpec);
             }
             return cmd.ToString();
         }
