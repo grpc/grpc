@@ -252,7 +252,10 @@ def _get_python_include(repository_ctx, python_bin):
             "main_header = os.path.join('{}', 'Python.h');".format(include_path) +
             "assert os.path.exists(main_header), main_header + ' does not exist.'",
         ],
-        error_msg = "Unable to find Python headers for {}".format(python_bin),
+        error_msg = "Unable to find Python headers for {} at {}".format(
+            python_bin,
+            include_path,
+        ),
         error_details = _HEADERS_HELP,
         empty_stdout_fine = True,
     )
