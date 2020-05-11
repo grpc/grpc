@@ -18,6 +18,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -133,7 +134,18 @@ static void insecure_test_add_port(grpc_server* server, const char* addr) {
 }
 
 static grpc_channel* insecure_test_create_channel(const char* addr) {
-  return grpc_insecure_channel_create(addr, nullptr, nullptr);
+  grpc_arg arg = {GRPC_ARG_INTEGER,
+                  const_cast<char*>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL),
+                  {.integer = 1}};
+  grpc_channel_args* new_client_args =
+      grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+  grpc_channel* channel =
+      grpc_insecure_channel_create(addr, new_client_args, nullptr);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(new_client_args);
+  }
+  return channel;
 }
 
 static const test_fixture insecure_test = {
@@ -170,12 +182,16 @@ static grpc_channel* secure_test_create_channel(const char* addr) {
   grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr, nullptr);
   grpc_slice_unref(ca_slice);
-  grpc_arg ssl_name_override = {
-      GRPC_ARG_STRING,
-      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      {const_cast<char*>("foo.test.google.fr")}};
+  const int kNumArgs = 2;
+  grpc_arg args[kNumArgs] = {
+      {GRPC_ARG_STRING,
+       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
+       {const_cast<char*>("foo.test.google.fr")}},
+      {GRPC_ARG_INTEGER,
+       const_cast<char*>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL),
+       {.integer = 1}}};
   grpc_channel_args* new_client_args =
-      grpc_channel_args_copy_and_add(nullptr, &ssl_name_override, 1);
+      grpc_channel_args_copy_and_add(nullptr, args, kNumArgs);
   grpc_channel* channel =
       grpc_secure_channel_create(ssl_creds, addr, new_client_args, nullptr);
   {
