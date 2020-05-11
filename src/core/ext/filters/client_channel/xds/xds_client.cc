@@ -2069,162 +2069,42 @@ std::string CreateServiceConfigRoute(const std::string& action_name,
       service, method, action_name);
 }
 
-// An extension object to each RdsRoute which contains weighted_clusters
-// with useful information:
-// 1. sorted weighted cluster names in a string
-// 2. sorted weighted cluster names and weights in a string
-// 3. name to be used as action name
-struct WeightedClusterKeys {
-  std::string cluster_names_key;
-  std::string cluster_weights_key;
-  std::string action_name;
-};
-
-// A map storing additional information for each RdsRoute which contains
-// weighted_clusters, keyed by the pointer to ClusterWeight in RdsRoute.
-// This map allows easy retrieval of the additional information when iterating
-// RdsRoutes in RdsUpdate.
-using WeightedClusterKeysMap =
-    std::map<const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>*,
-             WeightedClusterKeys>;
-
-// Look through the old set of weighted target actions, and assume all old
-// action names can be reused. If the exact same weighted target policy (same
-// clusters and weights) appears in the update, then that old action name is
-// taken again; any other action names from the old set of weighted target
-// actions are candidates for reuse.
-XdsClient::WeightedClusterChildNameMap FindActionsToReuse(
-    const XdsClient::WeightedClusterChildNameMap& old_actions,
-    const XdsClient::WeightedClusterChildNameMap& actions) {
-  XdsClient::WeightedClusterChildNameMap actions_to_reuse = old_actions;
-  for (const auto& p : old_actions) {
-    const std::string& cluster_names_key = p.first;
-    const auto& old_cluster_weights_map = p.second.cluster_weights_map;
-    auto cluster_names = actions.find(cluster_names_key);
-    if (cluster_names != actions.end()) {
-      for (const auto& q : old_cluster_weights_map) {
-        const std::string& cluster_weights_key = q.first;
-        auto cluster_weights_map = cluster_names->second.cluster_weights_map;
-        auto cluster_weights = cluster_weights_map.find(cluster_weights_key);
-        if (cluster_weights != cluster_weights_map.end()) {
-          // same policy found, this name is taken.
-          actions_to_reuse[cluster_names_key].cluster_weights_map.erase(
-              cluster_weights_key);
-          if (actions_to_reuse[cluster_names_key].cluster_weights_map.empty()) {
-            actions_to_reuse.erase(cluster_names_key);
-          }
-        }
-      }
-    }
+// Create the service config for one weighted cluster.
+std::string CreateServiceConfigActionWeightedCluster(
+    const std::string& name,
+    const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>& clusters) {
+  std::vector<std::string> config_parts;
+  config_parts.push_back(
+      absl::StrFormat("      \"weighted:%s\":{\n"
+                      "        \"child_policy\":[ {\n"
+                      "          \"weighted_target_experimental\":{\n"
+                      "            \"targets\":{\n",
+                      name));
+  std::vector<std::string> weighted_targets;
+  weighted_targets.reserve(clusters.size());
+  for (const auto& cluster_weight : clusters) {
+    weighted_targets.push_back(absl::StrFormat(
+        "              \"%s\":{\n"
+        "                \"weight\":%d,\n"
+        "                \"childPolicy\":[ {\n"
+        "                  \"cds_experimental\":{\n"
+        "                    \"cluster\": \"%s\"\n"
+        "                  }\n"
+        "                } ]\n"
+        "               }",
+        cluster_weight.name, cluster_weight.weight, cluster_weight.name));
   }
-  return actions_to_reuse;
+  config_parts.push_back(absl::StrJoin(weighted_targets, ",\n"));
+  config_parts.push_back(
+      "            }\n"
+      "          }\n"
+      "        } ]\n"
+      "       }");
+  return absl::StrJoin(config_parts, "");
 }
 
-// Returning A map storing additional information for each RdsRoute which
-// contains weighted_clusters:
-// 1. sorted weighted cluster names in a string: cluster_names_key
-// 2. sorted weighted cluster names and weights in a string: cluster_weights_key
-// 3. name to be used as action name
-// keyed by the pointer to ClusterWeight in RdsRoute.
-// This map allows easy retrieval of the additional information when iterating
-// RdsRoutes in RdsUpdate.
-// This map is generated via the following steps:
-// 1. First pass create cluster_names_key and cluster_weights_key for all
-// entries and store them in 2 data structures:
-//   1. WeightedClusterKeysMap (the return object)
-//   2. XdsClient::WeightedClusterChildNameMap:
-//     2-level map storing the new set of weighted target policy information.
-//     Top level map is keyed by cluster names without weight like a_b_c;
-//     bottom level map is keyed by cluster names + weights like a10_b50_c40.
-//     This data structure allows easy access to each weighted_clusters action.
-// 2. Find reusable action names from action list generated from the last update
-// based on the following rules:
-//   1. if clusters and weights for a new action are the same as an existing
-//      action, reuse the name.
-//   2. If clusters for a new action are the same but weights differ, reuse an
-//      unused name from existing actions if there is one; otherwise, new name.
-//   3. If clusters differ, use a new name.
-//   4. Store all newly names used in for the next update (notice old_actions is
-//   modified by this method).
-WeightedClusterKeysMap CreateNewWeightedClusterKeys(
-    const XdsApi::RdsUpdate& update,
-    XdsClient::WeightedClusterChildNameMap* old_actions) {
-  WeightedClusterKeysMap weighted_cluster_keys;
-  XdsClient::WeightedClusterChildNameMap new_actions;
-  for (const auto& route : update.routes) {
-    if (!route.weighted_clusters.empty()) {
-      WeightedClusterKeys keys;
-      std::set<std::string> cluster_names;
-      std::set<std::string> cluster_weights;
-      for (const auto& cluster : route.weighted_clusters) {
-        // put names in std::set to be sorted.
-        cluster_names.emplace(cluster.name);
-        cluster_weights.emplace(
-            absl::StrFormat("%s_%d", cluster.name, cluster.weight));
-      }
-      keys.cluster_names_key = absl::StrJoin(cluster_names, "_");
-      keys.cluster_weights_key = absl::StrJoin(cluster_weights, "_");
-      new_actions[keys.cluster_names_key]
-          .cluster_weights_map[keys.cluster_weights_key] = 0;
-      weighted_cluster_keys[&route.weighted_clusters] = std::move(keys);
-    }
-  }
-  auto actions_to_reuse = FindActionsToReuse(*old_actions, new_actions);
-  for (auto& p : weighted_cluster_keys) {
-    auto old_action = old_actions->find(p.second.cluster_names_key);
-    size_t index = 0;
-    if (old_action != old_actions->end() &&
-        old_action->second.cluster_weights_map.find(
-            p.second.cluster_weights_key) !=
-            old_action->second.cluster_weights_map.end()) {
-      // This action is exact the same as an action from previous actions,
-      // we must retrieve the same action name to be used.
-      index = (*old_actions)[p.second.cluster_names_key]
-                  .cluster_weights_map[p.second.cluster_weights_key];
-    } else {
-      // This action is not exactly the same as an action from previous
-      // action, let us see if we can reuse a name or get a new name.
-      auto cluster_names_key =
-          actions_to_reuse.find(p.second.cluster_names_key);
-      if (cluster_names_key != actions_to_reuse.end()) {
-        // There is something to reuse: this policy uses the same set of
-        // clusters as a previous action and that action name is not already
-        // taken.
-        auto reuse_cluster_weights_key =
-            cluster_names_key->second.cluster_weights_map.begin();
-        index = reuse_cluster_weights_key->second;
-        // Remove entry from actions_to_reuse.
-        cluster_names_key->second.cluster_weights_map.erase(
-            reuse_cluster_weights_key);
-        if (cluster_names_key->second.cluster_weights_map.empty()) {
-          actions_to_reuse.erase(cluster_names_key);
-        }
-      } else {
-        // There is nothing to reuse as all names for  the same set of
-        // cluters are already removed.
-        auto new_action = new_actions.find(p.second.cluster_names_key);
-        if (new_action != new_actions.end()) {
-          index = new_actions[p.second.cluster_names_key].next_index;
-          ++new_actions[p.second.cluster_names_key].next_index;
-        } else {
-          index = 0;
-        }
-      }
-    }
-    p.second.action_name =
-        absl::StrFormat("%s_%d", p.second.cluster_names_key, index);
-    new_actions[p.second.cluster_names_key]
-        .cluster_weights_map[p.second.cluster_weights_key] = index;
-    if (new_actions[p.second.cluster_names_key].next_index <= index) {
-      new_actions[p.second.cluster_names_key].next_index = index + 1;
-    }
-  }
-  // Update old_actions to get ready for the next update.
-  *old_actions = new_actions;
-  return weighted_cluster_keys;
-}
-
-// Returns the WeightedClusterIndexMap key for a WeightedClusters action.
+// Returns the cluster names and weights key for a second level map look up for
+// a WeightedClusters action.
 std::string WeightedClustersKey(
     const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
         weighted_clusters,
@@ -2241,29 +2121,31 @@ std::string WeightedClustersKey(
   return absl::StrJoin(cluster_weights, "_");
 }
 
-std::string WeightedClustersActionName(
+}  // namespace
+
+std::string XdsClient::WeightedClustersActionName(
     const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
-        weighted_clusters,
-    const XdsClient::WeightedClusterIndexMap& weighted_clusters_index_map) {
+        weighted_clusters) {
   std::string cluster_names_key =
       WeightedClustersKey(weighted_clusters, /*cluster_names_only=*/true);
   std::string cluster_weights_key = WeightedClustersKey(weighted_clusters);
-  auto cluster = weighted_clusters_index_map.find(cluster_names_key);
-  GPR_ASSERT(cluster != weighted_clusters_index_map.end());
-  auto weight = cluster->second.cluster_weights_map.find(cluster_weights_key);
-  GPR_ASSERT(weight != cluster->second.cluster_weights_map.end());
-  return absl::StrFormat("%s_%d", cluster_names_key, weight->second);
+  const auto& cluster_names_map_it =
+      weighted_cluster_index_map_.find(cluster_names_key);
+  GPR_ASSERT(cluster_names_map_it != weighted_cluster_index_map_.end());
+  const auto& cluster_weights_map =
+      cluster_names_map_it->second.cluster_weights_map;
+  const auto& cluster_weights_map_it =
+      cluster_weights_map.find(cluster_weights_key);
+  GPR_ASSERT(cluster_weights_map_it != cluster_weights_map.end());
+  return absl::StrFormat("%s_%d", cluster_names_key,
+                         cluster_weights_map_it->second);
 }
 
-// Creates the WeightedClusterIndexMap that will determine the names of the
-// WeightedCluster actions for update.  Will reuse indexes from
-// old_weighted_cluster_index_map as appropriate.
-XdsClient::WeightedClusterIndexMap CreateWeightedClusterIndexMap(
-    const XdsApi::RdsUpdate& rds_update,
-    const XdsClient::WeightedClusterIndexMap& old_weighted_cluster_index_map) {
+void XdsClient::UpdateWeightedClusterIndexMap(
+    const XdsApi::RdsUpdate& rds_update) {
   XdsClient::WeightedClusterIndexMap new_weighted_cluster_index_map;
-  XdsClient::WeightedClusterIndexMap cluster_name_and_cluster_weight_keys_map =
-      old_weighted_cluster_index_map;
+  XdsClient::WeightedClusterIndexMap reuse_weighted_cluster_index_map =
+      weighted_cluster_index_map_;
   // First pass of all the routes.  If the exact same weighted target policy
   // (same clusters and weights) appears in the old map, then that old action
   // name is taken again and should be moved to the new map; any other action
@@ -2274,18 +2156,19 @@ XdsClient::WeightedClusterIndexMap CreateWeightedClusterIndexMap(
           route.weighted_clusters, /*cluster_names_only=*/true);
       const std::string cluster_weights_key =
           WeightedClustersKey(route.weighted_clusters);
-      const auto& old_cluster_names_map =
-          old_weighted_cluster_index_map.find(cluster_names_key);
-      if (old_cluster_names_map != old_weighted_cluster_index_map.end()) {
+      const auto& old_cluster_names_map_it =
+          weighted_cluster_index_map_.find(cluster_names_key);
+      if (old_cluster_names_map_it != weighted_cluster_index_map_.end()) {
         const auto& old_cluster_weights_map =
-            old_cluster_names_map->second.cluster_weights_map;
-        const auto& old_index =
+            old_cluster_names_map_it->second.cluster_weights_map;
+        const auto& old_cluster_weights_it =
             old_cluster_weights_map.find(cluster_weights_key);
-        if (old_index != old_cluster_weights_map.end()) {
+        if (old_cluster_weights_it != old_cluster_weights_map.end()) {
           // same policy found, put it in new map and remove it from reuse map.
           new_weighted_cluster_index_map[cluster_names_key]
-              .cluster_weights_map[cluster_weights_key] = old_index->second;
-          cluster_name_and_cluster_weight_keys_map[cluster_names_key]
+              .cluster_weights_map[cluster_weights_key] =
+              old_cluster_weights_it->second;
+          reuse_weighted_cluster_index_map[cluster_names_key]
               .cluster_weights_map.erase(cluster_weights_key);
         }
       }
@@ -2300,40 +2183,39 @@ XdsClient::WeightedClusterIndexMap CreateWeightedClusterIndexMap(
           route.weighted_clusters, /*cluster_names_only=*/true);
       const std::string cluster_weights_key =
           WeightedClustersKey(route.weighted_clusters);
-      // For any route which does not have a action name already generated
-      const auto& new_cluster_names_map =
+      const auto& new_cluster_names_map_it =
           new_weighted_cluster_index_map.find(cluster_names_key);
-      if (new_cluster_names_map == new_weighted_cluster_index_map.end() ||
-          new_cluster_names_map->second.cluster_weights_map.find(
+      if (new_cluster_names_map_it == new_weighted_cluster_index_map.end() ||
+          new_cluster_names_map_it->second.cluster_weights_map.find(
               cluster_weights_key) ==
-              new_cluster_names_map->second.cluster_weights_map.end()) {
+              new_cluster_names_map_it->second.cluster_weights_map.end()) {
+        // For any route in the current update which does not have a action name
+        // found or generated
         auto index = 0;
-        auto cluster_weights_map =
-            cluster_name_and_cluster_weight_keys_map.find(cluster_names_key);
-        if (cluster_weights_map !=
-            cluster_name_and_cluster_weight_keys_map.end()) {
-          if (!cluster_weights_map->second.cluster_weights_map.empty()) {
+        const auto& reuse_cluster_weights_map_it =
+            reuse_weighted_cluster_index_map.find(cluster_names_key);
+        if (reuse_cluster_weights_map_it !=
+            reuse_weighted_cluster_index_map.end()) {
+          auto& reuse_cluster_weights_map =
+              reuse_cluster_weights_map_it->second.cluster_weights_map;
+          if (!reuse_cluster_weights_map.empty()) {
             // There could be something to reuse: this policy uses the same set
             // of clusters as a previous action and that action name is not
             // already taken.
-            auto reuse_cluster_weights_key =
-                cluster_weights_map->second.cluster_weights_map.begin();
-            index = reuse_cluster_weights_key->second;
+            const auto& reuse_cluster_weights_it =
+                reuse_cluster_weights_map.begin();
+            index = reuse_cluster_weights_it->second;
             // Remove the name from being able to reuse again.
-            cluster_weights_map->second.cluster_weights_map.erase(
-                reuse_cluster_weights_key);
+            reuse_cluster_weights_map.erase(reuse_cluster_weights_it);
           } else {
-            // Take the next index to use in the name.
-            index = cluster_weights_map->second.next_index;
-            cluster_weights_map->second.next_index++;
+            // Take the next index to use and increment.
+            index = reuse_cluster_weights_map_it->second.next_index++;
           }
         } else {
           // First time this cluster set is used, create an entry and track next
           // index.
-          cluster_name_and_cluster_weight_keys_map[cluster_names_key]
-              .cluster_weights_map[cluster_weights_key] = index;
-          cluster_name_and_cluster_weight_keys_map[cluster_names_key]
-              .next_index = index + 1;
+          reuse_weighted_cluster_index_map[cluster_names_key].next_index =
+              index + 1;
         }
         new_weighted_cluster_index_map[cluster_names_key]
             .cluster_weights_map[cluster_weights_key] = index;
@@ -2342,76 +2224,37 @@ XdsClient::WeightedClusterIndexMap CreateWeightedClusterIndexMap(
   }
   gpr_log(GPR_INFO, "donna after work==========");
   for (auto& p : new_weighted_cluster_index_map) {
-    gpr_log(GPR_INFO, "donna new cluster <%s>", p.first.c_str());
+    gpr_log(GPR_INFO, "donna new cluster <%s> next [%d]", p.first.c_str(),
+            p.second.next_index);
     for (auto& q : p.second.cluster_weights_map) {
       gpr_log(GPR_INFO, "donna             new cluster weights <%s> and [%d]",
               q.first.c_str(), q.second);
     }
   };
+  for (auto& p : reuse_weighted_cluster_index_map) {
+    gpr_log(GPR_INFO, "donna reuse cluster <%s> next [%d]", p.first.c_str(),
+            p.second.next_index);
+    for (auto& q : p.second.cluster_weights_map) {
+      gpr_log(GPR_INFO, "donna             reuse cluster weights <%s> and [%d]",
+              q.first.c_str(), q.second);
+    }
+  };
   gpr_log(GPR_INFO, "==========donna after work");
-  return new_weighted_cluster_index_map;
+  weighted_cluster_index_map_ = std::move(new_weighted_cluster_index_map);
 }
-
-// Create the service config for one weighted cluster.
-std::string CreateServiceConfigActionWeightedCluster(
-    const std::string& name,
-    const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>& clusters) {
-  std::vector<std::string> config_parts;
-  config_parts.push_back(
-      absl::StrFormat("      \"weighted:%s\":{\n"
-                      "        \"child_policy\":[ {\n"
-                      "          \"weighted_target_experimental\":{\n"
-                      "            \"targets\":{\n",
-                      name));
-  std::vector<std::string> weighted_targets;
-  weighted_targets.reserve(clusters.size());
-  for (const auto& cluster_weight : clusters) {
-    weighted_targets.push_back(
-        absl::StrFormat("              \"%s\":{\n"
-                        "                \"weight\":%d,\n"
-                        "                \"childPolicy\":[ {\n"
-                        "                  \"cds_experimental\":{\n"
-                        "                    \"cluster\": \"%s\"\n"
-                        "                  }\n"
-                        "                } ]\n"
-                        "               }",
-                        cluster_weight.name.c_str(), cluster_weight.weight,
-                        cluster_weight.name.c_str()));
-  }
-  config_parts.push_back(absl::StrJoin(weighted_targets, ",\n"));
-  config_parts.push_back(
-      "            }\n"
-      "          }\n"
-      "        } ]\n"
-      "       }");
-  return absl::StrJoin(config_parts, "");
-}
-
-}  // namespace
 
 grpc_error* XdsClient::CreateServiceConfig(
     const XdsApi::RdsUpdate& rds_update,
     RefCountedPtr<ServiceConfig>* service_config) {
-  WeightedClusterKeysMap new_weighted_cluster_keys =
-      CreateNewWeightedClusterKeys(rds_update,
-                                   &weighted_cluster_child_name_map_);
-  std::vector<std::string> config_parts;
-  config_parts.push_back(
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"xds_routing_experimental\":{\n"
-      "      \"actions\":{\n");
   std::vector<std::string> actions_vector;
   std::vector<std::string> route_table;
   std::set<std::string> actions_set;
-  weighted_cluster_index_map_ =
-      CreateWeightedClusterIndexMap(rds_update, weighted_cluster_index_map_);
+  UpdateWeightedClusterIndexMap(rds_update);
   for (const auto& route : rds_update.routes) {
     const std::string action_name =
         route.weighted_clusters.empty()
             ? route.cluster_name
-            : WeightedClustersActionName(route.weighted_clusters,
-                                         weighted_cluster_index_map_);
+            : WeightedClustersActionName(route.weighted_clusters);
     if (actions_set.find(action_name) == actions_set.end()) {
       actions_set.emplace(action_name);
       actions_vector.push_back(
@@ -2426,6 +2269,12 @@ grpc_error* XdsClient::CreateServiceConfig(
                         action_name),
         route.service, route.method));
   }
+  std::vector<std::string> config_parts;
+  config_parts.push_back(
+      "{\n"
+      "  \"loadBalancingConfig\":[\n"
+      "    { \"xds_routing_experimental\":{\n"
+      "      \"actions\":{\n");
   config_parts.push_back(absl::StrJoin(actions_vector, ",\n"));
   config_parts.push_back(
       "    },\n"

@@ -2604,7 +2604,9 @@ TEST_P(LdsRdsTest, RouteHasNoRouteAction) {
   EXPECT_EQ(response_state.error_message, "No RouteAction found in route.");
 }
 
-// cluster_specifier other than cluster in the LDS response.
+// Tests that LDS client should send a NACK if route has a
+// cluster_specifier other than cluster or weighted_clusters in the LDS
+// response.
 TEST_P(LdsRdsTest, RouteActionUnsupportedClusterSpecifier) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2966,15 +2968,12 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   const int weight_75_request_count =
       backends_[1]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   const int weight_25_request_count =
       backends_[2]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   const double kErrorTolerance = 0.2;
   EXPECT_THAT(weight_75_request_count,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
@@ -3062,7 +3061,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   const int weight_75_request_count =
       backends_[1]->backend_service1()->request_count();
@@ -3070,10 +3068,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   const int weight_25_request_count =
       backends_[2]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
   const double kErrorTolerance = 0.2;
   EXPECT_THAT(weight_75_request_count,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
@@ -3099,18 +3095,14 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   const int weight_50_request_count_1 =
       backends_[1]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   const int weight_50_request_count_2 =
       backends_[2]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   EXPECT_EQ(kNumEchoRpcs, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
   EXPECT_THAT(weight_50_request_count_1,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
                                              (1 - kErrorTolerance)),
@@ -3198,17 +3190,13 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   int weight_25_request_count =
       backends_[0]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   int weight_75_request_count =
       backends_[1]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
   const double kErrorTolerance = 0.2;
   EXPECT_THAT(weight_75_request_count,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
@@ -3232,18 +3220,14 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   const int weight_50_request_count_1 =
       backends_[1]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   const int weight_50_request_count_2 =
       backends_[2]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
   EXPECT_THAT(weight_50_request_count_1,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
                                              (1 - kErrorTolerance)),
@@ -3266,16 +3250,12 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   weight_75_request_count = backends_[1]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   weight_25_request_count = backends_[3]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[3]->backend_service2()->request_count());
   EXPECT_THAT(weight_75_request_count,
               ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
                                              (1 - kErrorTolerance)),
