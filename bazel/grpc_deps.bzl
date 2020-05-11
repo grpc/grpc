@@ -212,11 +212,11 @@ def grpc_deps():
         http_archive(
             name = "com_github_cares_cares",
             build_file = "@com_github_grpc_grpc//third_party:cares/cares.BUILD",
-            sha256 = "e8c2751ddc70fed9dc6f999acd92e232d5846f009ee1674f8aee81f19b2b915a",
-            strip_prefix = "c-ares-e982924acee7f7313b4baa4ee5ec000c5e373c30",
+            sha256 = "6fc3e03427d2237e28b97cb3c0ac7106f2a3ac72fbe8698363cff5877faeb83a",
+            strip_prefix = "c-ares-077a587dccbe2f0d8a1987fbd3525333705c2249",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/e982924acee7f7313b4baa4ee5ec000c5e373c30.tar.gz",
-                "https://github.com/c-ares/c-ares/archive/e982924acee7f7313b4baa4ee5ec000c5e373c30.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/077a587dccbe2f0d8a1987fbd3525333705c2249.tar.gz",
+                "https://github.com/c-ares/c-ares/archive/077a587dccbe2f0d8a1987fbd3525333705c2249.tar.gz",
             ],
         )
 

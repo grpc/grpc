@@ -1,3 +1,5 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 config_setting(
     name = "darwin",
     values = {"cpu": "darwin"},
@@ -44,7 +46,7 @@ config_setting(
     values = {"cpu": "ios_arm64"},
 )
 
-# The following architectures are found in 
+# The following architectures are found in
 # https://github.com/bazelbuild/bazel/blob/master/src/main/java/com/google/devtools/build/lib/rules/apple/ApplePlatform.java
 config_setting(
     name = "tvos_x86_64",
@@ -111,7 +113,10 @@ cc_library(
     srcs = [
         "ares__close_sockets.c",
         "ares__get_hostent.c",
+        "ares__parse_into_addrinfo.c",
         "ares__read_line.c",
+        "ares__readaddrinfo.c",
+        "ares__sortaddrinfo.c",
         "ares__timeval.c",
         "ares_cancel.c",
         "ares_create_query.c",
@@ -122,6 +127,8 @@ cc_library(
         "ares_fds.c",
         "ares_free_hostent.c",
         "ares_free_string.c",
+        "ares_freeaddrinfo.c",
+        "ares_getaddrinfo.c",
         "ares_getenv.c",
         "ares_gethostbyaddr.c",
         "ares_gethostbyname.c",
@@ -150,8 +157,8 @@ cc_library(
         "ares_send.c",
         "ares_strcasecmp.c",
         "ares_strdup.c",
-        "ares_strsplit.c",
         "ares_strerror.c",
+        "ares_strsplit.c",
         "ares_timeout.c",
         "ares_version.c",
         "ares_writev.c",
@@ -159,7 +166,12 @@ cc_library(
         "inet_net_pton.c",
         "inet_ntop.c",
         "windows_port.c",
-    ],
+    ] + select({
+        ":android": [
+            "ares_android.c",
+        ],
+        "//conditions:default": [],
+    }),
     hdrs = [
         "ares.h",
         "ares_build.h",
@@ -184,10 +196,16 @@ cc_library(
         "ares_version.h",
         "ares_writev.h",
         "bitncmp.h",
+        "config-dos.h",
         "config-win32.h",
         "nameser.h",
         "setup_once.h",
-    ],
+    ] + select({
+        ":android": [
+            "ares_android.h",
+        ],
+        "//conditions:default": [],
+    }),
     copts = [
         "-D_GNU_SOURCE",
         "-D_HAS_EXCEPTIONS=0",
