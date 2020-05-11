@@ -19,6 +19,7 @@
 #include <cinttypes>
 #include <fstream>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include <grpc/grpc.h>
@@ -33,6 +34,7 @@
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/core/util/histogram.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
 
@@ -1065,36 +1067,121 @@ bool InteropClient::DoCustomMetadata() {
   return true;
 }
 
-bool InteropClient::DoRpcSoakTest(int32_t soak_iterations) {
-  gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
-  GPR_ASSERT(soak_iterations > 0);
+std::tuple<bool, int32_t, std::string>
+InteropClient::PerformOneSoakTestIteration(
+    const bool reset_channel,
+    const int32_t max_acceptable_per_iteration_latency_ms) {
+  gpr_timespec start = gpr_now(GPR_CLOCK_MONOTONIC);
   SimpleRequest request;
   SimpleResponse response;
+  // Don't set the deadline on the RPC, and instead just
+  // record how long the RPC took and compare. This makes
+  // debugging easier when looking at failure results.
+  ClientContext context;
+  InteropClientContextInspector inspector(context);
+  request.set_response_size(kLargeResponseSize);
+  grpc::string payload(kLargeRequestSize, '\0');
+  request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
+  if (reset_channel) {
+    serviceStub_.ResetChannel();
+  }
+  Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
+  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+  int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(now, start));
+  if (!s.ok()) {
+    return std::make_tuple(false, elapsed_ms, context.debug_error_string());
+  } else if (elapsed_ms > max_acceptable_per_iteration_latency_ms) {
+    char* out;
+    GPR_ASSERT(gpr_asprintf(
+                   &out, "%d ms exceeds max acceptable latency: %d ms.",
+                   elapsed_ms, max_acceptable_per_iteration_latency_ms) != -1);
+    std::string debug_string(out);
+    gpr_free(out);
+    return std::make_tuple(false, elapsed_ms, debug_string);
+  } else {
+    return std::make_tuple(true, elapsed_ms, "");
+  }
+}
+
+void InteropClient::PerformSoakTest(
+    const bool reset_channel_per_iteration, const int32_t soak_iterations,
+    const int32_t max_failures,
+    const int32_t max_acceptable_per_iteration_latency_ms) {
+  std::vector<std::tuple<bool, int32_t, std::string>> results;
+  grpc_histogram* latencies_ms_histogram = grpc_histogram_create(
+      1 /* resolution */,
+      500 * 1e3 /* largest bucket; 500 seconds is unlikely */);
   for (int i = 0; i < soak_iterations; ++i) {
-    if (!PerformLargeUnary(&request, &response)) {
-      gpr_log(GPR_ERROR, "rpc_soak test failed on iteration %d", i);
-      return false;
+    auto result = PerformOneSoakTestIteration(
+        reset_channel_per_iteration, max_acceptable_per_iteration_latency_ms);
+    results.push_back(result);
+    grpc_histogram_add(latencies_ms_histogram, std::get<1>(result));
+  }
+  int total_failures = 0;
+  for (size_t i = 0; i < results.size(); i++) {
+    bool success = std::get<0>(results[i]);
+    int32_t elapsed_ms = std::get<1>(results[i]);
+    std::string debug_string = std::get<2>(results[i]);
+    if (!success) {
+      gpr_log(GPR_DEBUG, "soak iteration: %ld elapsed_ms: %d failed: %s", i,
+              elapsed_ms, debug_string.c_str());
+      total_failures++;
+    } else {
+      gpr_log(GPR_DEBUG, "soak iteration: %ld elapsed_ms: %d succeeded", i,
+              elapsed_ms);
     }
   }
+  double latency_ms_median =
+      grpc_histogram_percentile(latencies_ms_histogram, 50);
+  double latency_ms_90th =
+      grpc_histogram_percentile(latencies_ms_histogram, 90);
+  double latency_ms_worst = grpc_histogram_maximum(latencies_ms_histogram);
+  grpc_histogram_destroy(latencies_ms_histogram);
+  if (total_failures > max_failures) {
+    gpr_log(GPR_ERROR,
+            "soak test ran: %d iterations. total_failures: %d exceeds "
+            "max_failures_threshold: %d. "
+            "median_soak_iteration_latency: %lf ms. "
+            "90th_soak_iteration_latency: %lf ms. "
+            "worst_soak_iteration_latency: %lf ms. "
+            "See breakdown above for which iterations succeeded, failed, and "
+            "why for more info.",
+            soak_iterations, total_failures, max_failures, latency_ms_median,
+            latency_ms_90th, latency_ms_worst);
+    GPR_ASSERT(0);
+  } else {
+    gpr_log(GPR_INFO,
+            "soak test ran: %d iterations. total_failures: %d is within "
+            "max_failures_threshold: %d. "
+            "median_soak_iteration_latency: %lf ms. "
+            "90th_soak_iteration_latency: %lf ms. "
+            "worst_soak_iteration_latency: %lf ms. "
+            "See breakdown above for which iterations succeeded, failed, and "
+            "why for more info.",
+            soak_iterations, total_failures, max_failures, latency_ms_median,
+            latency_ms_90th, latency_ms_worst);
+  }
+}
+
+bool InteropClient::DoRpcSoakTest(
+    int32_t soak_iterations, int32_t max_failures,
+    int64_t max_acceptable_per_iteration_latency_ms) {
+  gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
+  GPR_ASSERT(soak_iterations > 0);
+  PerformSoakTest(false /* reset channel per iteration */, soak_iterations,
+                  max_failures, max_acceptable_per_iteration_latency_ms);
   gpr_log(GPR_DEBUG, "rpc_soak test done.");
   return true;
 }
 
-bool InteropClient::DoChannelSoakTest(int32_t soak_iterations) {
+bool InteropClient::DoChannelSoakTest(
+    int32_t soak_iterations, int32_t max_failures,
+    int64_t max_acceptable_per_iteration_latency_ms) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs, tearing down the channel each time...",
           soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
-  SimpleRequest request;
-  SimpleResponse response;
-  for (int i = 0; i < soak_iterations; ++i) {
-    serviceStub_.ResetChannel();
-    gpr_log(GPR_DEBUG, "Starting channel_soak iteration %d...", i);
-    if (!PerformLargeUnary(&request, &response)) {
-      gpr_log(GPR_ERROR, "channel_soak test failed on iteration %d", i);
-      return false;
-    }
-    gpr_log(GPR_DEBUG, "channel_soak iteration %d finished", i);
-  }
+  PerformSoakTest(true /* reset channel per iteration */, soak_iterations,
+                  max_failures, max_acceptable_per_iteration_latency_ms);
   gpr_log(GPR_DEBUG, "channel_soak test done.");
   return true;
 }
