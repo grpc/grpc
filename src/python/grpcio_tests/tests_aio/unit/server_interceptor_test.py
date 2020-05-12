@@ -196,19 +196,22 @@ class TestServerInterceptor(AioTestBase):
             # Get the actual handler
             handler = await continuation(handler_call_details)
 
-            def wrap_handler(handler: grpc.RpcMethodHandler):
+            def wrapper(behavior: Callable[
+                [messages_pb2.SimpleRequest, aio.
+                 ServerInterceptor], messages_pb2.SimpleResponse]):
 
-                @functools.wraps(handler)
+                @functools.wraps(behavior)
                 async def wrapper(request: messages_pb2.SimpleRequest,
-                                  context: aio.ServicerContext):
+                                  context: aio.ServicerContext
+                                 ) -> messages_pb2.SimpleResponse:
                     if request.response_size not in cache_store:
-                        cache_store[request.response_size] = await handler(
+                        cache_store[request.response_size] = await behavior(
                             request, context)
                     return cache_store[request.response_size]
 
                 return wrapper
 
-            return wrap_server_method_handler(wrap_handler, handler)
+            return wrap_server_method_handler(wrapper, handler)
 
         # Constructs a server with the cache interceptor
         server, stub = await _create_server_stub_pair(
