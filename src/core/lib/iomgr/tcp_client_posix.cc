@@ -294,14 +294,11 @@ static char* extract_source_ip(int fd) {
   resolved_address.len = sizeof(resolved_address.addr);
   char* out = nullptr;
   if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(&resolved_address.addr),
-                  &resolved_address.len) != -1) {
-    std::string result =
-        grpc_sockaddr_to_string(&resolved_address, false /* normalize */);
-    out = gpr_strdup(result.c_str());
-  } else {
+                  &resolved_address.len) == -1 ||
+      grpc_sockaddr_to_string(&out, &resolved_address, false /* normalize */) ==
+          -1) {
     gpr_log(GPR_INFO,
-            "source address will be missing from logs and errors. gotsockname "
-            "errno: %d",
+            "source address will be missing from logs and errors. errno: %d",
             errno);
     out = gpr_strdup("source_address_extraction_failed");
   }
