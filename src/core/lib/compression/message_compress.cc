@@ -68,6 +68,10 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
       goto error;
     }
   }
+  if (r != Z_STREAM_END) {
+    gpr_log(GPR_INFO, "zlib: Data error");
+    goto error;
+  }
 
   GPR_ASSERT(outbuf.refcount);
   outbuf.data.refcounted.length -= zs->avail_out;

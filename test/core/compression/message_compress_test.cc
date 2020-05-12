@@ -196,6 +196,34 @@ static void test_bad_decompression_data_crc(void) {
   grpc_slice_buffer_destroy(&output);
 }
 
+static void test_bad_decompression_data_missing_trailer(void) {
+  grpc_slice_buffer input;
+  grpc_slice_buffer corrupted;
+  grpc_slice_buffer output;
+  size_t idx;
+
+  grpc_slice_buffer_init(&input);
+  grpc_slice_buffer_init(&corrupted);
+  grpc_slice_buffer_init(&output);
+  grpc_slice_buffer_add(&input, create_test_value(ONE_MB_A));
+
+  grpc_core::ExecCtx exec_ctx;
+  /* compress it */
+  grpc_msg_compress(GRPC_MESSAGE_COMPRESS_GZIP, &input, &corrupted);
+  /* corrupt the output by smashing the CRC */
+  GPR_ASSERT(corrupted.count > 1);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(corrupted.slices[1]) > 8);
+  corrupted.slices[1].data.refcounted.length -= 8;
+
+  /* try (and fail) to decompress the corrupted compresed buffer */
+  GPR_ASSERT(0 == grpc_msg_decompress(GRPC_MESSAGE_COMPRESS_GZIP, &corrupted,
+                                      &output));
+
+  grpc_slice_buffer_destroy(&input);
+  grpc_slice_buffer_destroy(&corrupted);
+  grpc_slice_buffer_destroy(&output);
+}
+
 static void test_bad_decompression_data_trailing_garbage(void) {
   grpc_slice_buffer input;
   grpc_slice_buffer output;
@@ -315,6 +343,7 @@ int main(int argc, char** argv) {
 
   test_tiny_data_compress();
   test_bad_decompression_data_crc();
+  test_bad_decompression_data_missing_trailer();
   test_bad_decompression_data_stream();
   test_bad_decompression_data_trailing_garbage();
   test_bad_compression_algorithm();
