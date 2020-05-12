@@ -279,7 +279,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       LoadReportState>
       load_report_map_;
 
-  // 2-level map to store wighted target policy information.
+  // 2-level map to store WeightedCluster action names.
   // Top level map is keyed by cluster names without weight like a_b_c; bottom
   // level map is keyed by cluster names + weights like a10_b50_c40.
   struct ClusterNamesInfo {
