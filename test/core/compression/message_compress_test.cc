@@ -198,27 +198,29 @@ static void test_bad_decompression_data_crc(void) {
 
 static void test_bad_decompression_data_missing_trailer(void) {
   grpc_slice_buffer input;
-  grpc_slice_buffer corrupted;
+  grpc_slice_buffer decompressed;
+  grpc_slice_buffer garbage;
   grpc_slice_buffer output;
-  size_t idx;
 
   grpc_slice_buffer_init(&input);
-  grpc_slice_buffer_init(&corrupted);
+  grpc_slice_buffer_init(&decompressed);
+  grpc_slice_buffer_init(&garbage);
   grpc_slice_buffer_init(&output);
   grpc_slice_buffer_add(&input, create_test_value(ONE_MB_A));
 
   grpc_core::ExecCtx exec_ctx;
   /* compress it */
-  grpc_msg_compress(GRPC_MESSAGE_COMPRESS_GZIP, &input, &corrupted);
-  GPR_ASSERT(GRPC_SLICE_LENGTH(corrupted.slices[corrupted.count - 1]) > 8);
-  /* Remove the footer by manipulating the slice length */
-  corrupted.slices[1].data.refcounted.length -= 8;
+  grpc_msg_compress(GRPC_MESSAGE_COMPRESS_GZIP, &input, &decompressed);
+  GPR_ASSERT(decompressed.length > 8);
+  /* Remove the footer from the decompressed message */
+  grpc_slice_buffer_trim_end(&decompressed, 8, &garbage);
   /* try (and fail) to decompress the compressed buffer without the footer */
-  GPR_ASSERT(0 == grpc_msg_decompress(GRPC_MESSAGE_COMPRESS_GZIP, &corrupted,
+  GPR_ASSERT(0 == grpc_msg_decompress(GRPC_MESSAGE_COMPRESS_GZIP, &decompressed,
                                       &output));
 
   grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&corrupted);
+  grpc_slice_buffer_destroy(&decompressed);
+  grpc_slice_buffer_destroy(&garbage);
   grpc_slice_buffer_destroy(&output);
 }
 
