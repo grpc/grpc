@@ -203,7 +203,6 @@ grpc_cc_test(
     deps = [
         "//:alts_util",
         "//:gpr",
-        "//:gpr_base",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -216,7 +215,6 @@ grpc_cc_test(
     deps = [
         "//:alts_util",
         "//:gpr",
-        "//:gpr_base",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

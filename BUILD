@@ -297,16 +297,6 @@ GRPCXX_PUBLIC_HDRS = [
 ]
 
 grpc_cc_library(
-    name = "gpr",
-    language = "c++",
-    public_hdrs = GPR_PUBLIC_HDRS,
-    standalone = True,
-    deps = [
-        "gpr_base",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_unsecure",
     srcs = [
         "src/core/lib/surface/init.cc",
@@ -482,8 +472,14 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+alias(
     name = "gpr_base",
+    actual = ":gpr",
+    deprecation = "gpr_base is deprecated, use gpr instead.",
+)
+
+grpc_cc_library(
+    name = "gpr",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
         "src/core/lib/gpr/atm.cc",
@@ -566,6 +562,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
+    standalone = True,
     deps = [
         "gpr_codegen",
         "grpc_codegen",
@@ -629,7 +626,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
     deps = [
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_trace",
         "ref_counted",
         "ref_counted_ptr",
@@ -643,7 +640,7 @@ grpc_cc_library(
     deps = [
         "atomic",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_trace",
         "ref_counted_ptr",
     ],
@@ -654,7 +651,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted_ptr.h"],
     deps = [
-        "gpr_base",
+        "gpr",
     ],
 )
 
@@ -968,7 +965,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
         "eventmanager_libuv",
-        "gpr_base",
+        "gpr",
         "grpc_codegen",
         "grpc_trace",
         "orphanable",
@@ -1083,7 +1080,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
+        "gpr",
         "grpc_base",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
@@ -1892,7 +1889,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
+        "gpr",
         "grpc_base",
         "grpc_http_filters",
         "grpc_transport_chttp2_alpn",
@@ -2845,6 +2842,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/poller/eventmanager_libuv.h",
     ],
     deps = [
-        "gpr_base",
+        "gpr",
     ],
 )

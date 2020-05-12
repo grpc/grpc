@@ -67,7 +67,6 @@ grpc_cc_test(
     deps = [
         "//:alts_frame_protector",
         "//:gpr",
-        "//:gpr_base",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
         "//test/core/util:grpc_test_util",
