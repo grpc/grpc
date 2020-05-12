@@ -57,8 +57,7 @@ typedef struct {
   int refs;
   grpc_closure write_closure;
   grpc_pollset_set* interested_parties;
-  char* remote_addr_str;
-  char* source_addr_str;
+  char* addr_str;
   grpc_endpoint** ep;
   grpc_closure* closure;
   grpc_channel_args* channel_args;
@@ -104,8 +103,8 @@ static void tc_on_alarm(void* acp, grpc_error* error) {
   async_connect* ac = static_cast<async_connect*>(acp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     const char* str = grpc_error_string(error);
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
-            ac->remote_addr_str, str);
+    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s", ac->addr_str,
+            str);
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != nullptr) {
@@ -116,17 +115,15 @@ static void tc_on_alarm(void* acp, grpc_error* error) {
   gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
-    gpr_free(ac->remote_addr_str);
-    gpr_free(ac->source_addr_str);
+    gpr_free(ac->addr_str);
     grpc_channel_args_destroy(ac->channel_args);
     gpr_free(ac);
   }
 }
 
 grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_channel_args* channel_args,
-    const char* remote_addr_str) {
-  return grpc_tcp_create(fd, channel_args, remote_addr_str);
+    grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str) {
+  return grpc_tcp_create(fd, channel_args, addr_str);
 }
 
 static void on_writable(void* acp, grpc_error* error) {
@@ -143,8 +140,8 @@ static void on_writable(void* acp, grpc_error* error) {
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     const char* str = grpc_error_string(error);
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
-            ac->remote_addr_str, str);
+    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s", ac->addr_str,
+            str);
   }
 
   gpr_mu_lock(&ac->mu);
@@ -176,8 +173,7 @@ static void on_writable(void* acp, grpc_error* error) {
   switch (so_error) {
     case 0:
       grpc_pollset_set_del_fd(ac->interested_parties, fd);
-      *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args,
-                                           ac->remote_addr_str);
+      *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args, ac->addr_str);
       fd = nullptr;
       break;
     case ENOBUFS:
@@ -219,8 +215,7 @@ finish:
   done = (--ac->refs == 0);
   // Create a copy of the data from "ac" to be accessed after the unlock, as
   // "ac" and its contents may be deallocated by the time they are read.
-  const grpc_slice remote_addr_str_slice =
-      grpc_slice_from_copied_string(ac->remote_addr_str);
+  const grpc_slice addr_str_slice = grpc_slice_from_copied_string(ac->addr_str);
   gpr_mu_unlock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
     char* error_descr;
@@ -234,20 +229,15 @@ finish:
     gpr_free(error_descr);
     gpr_free(desc);
     error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                               remote_addr_str_slice /* takes ownership */);
-    const grpc_slice source_addr_str_slice =
-        grpc_slice_from_copied_string(ac->source_addr_str);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_SOURCE_ADDRESS,
-                               source_addr_str_slice /* takes ownership */);
+                               addr_str_slice /* takes ownership */);
   } else {
-    grpc_slice_unref_internal(remote_addr_str_slice);
+    grpc_slice_unref_internal(addr_str_slice);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
     // populated *inside* the lock.
     gpr_mu_destroy(&ac->mu);
-    gpr_free(ac->remote_addr_str);
-    gpr_free(ac->source_addr_str);
+    gpr_free(ac->addr_str);
     grpc_channel_args_destroy(ac->channel_args);
     gpr_free(ac);
   }
@@ -285,26 +275,6 @@ grpc_error* grpc_tcp_client_prepare_fd(const grpc_channel_args* channel_args,
   return GRPC_ERROR_NONE;
 }
 
-/* Fills in dest with a new string containing the human readable
- * source address of fd. If source address extraction fails for any reason,
- * this then fills in dest with "source_address_extraction_failed". */
-static char* extract_source_ip(int fd) {
-  grpc_resolved_address resolved_address;
-  memset(&resolved_address, 0, sizeof(resolved_address));
-  resolved_address.len = sizeof(resolved_address.addr);
-  char* out = nullptr;
-  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(&resolved_address.addr),
-                  &resolved_address.len) == -1 ||
-      grpc_sockaddr_to_string(&out, &resolved_address, false /* normalize */) ==
-          -1) {
-    gpr_log(GPR_INFO,
-            "source address will be missing from logs and errors. errno: %d",
-            errno);
-    out = gpr_strdup("source_address_extraction_failed");
-  }
-  return out;
-}
-
 void grpc_tcp_client_create_from_prepared_fd(
     grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
     const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
@@ -317,17 +287,17 @@ void grpc_tcp_client_create_from_prepared_fd(
   } while (err < 0 && errno == EINTR);
 
   char* name;
-  char* remote_addr_str;
-  remote_addr_str = grpc_sockaddr_to_uri(addr);
-  gpr_asprintf(&name, "tcp-client:%s", remote_addr_str);
+  char* addr_str;
+  addr_str = grpc_sockaddr_to_uri(addr);
+  gpr_asprintf(&name, "tcp-client:%s", addr_str);
   grpc_fd* fdobj = grpc_fd_create(fd, name, true);
   gpr_free(name);
-  gpr_free(remote_addr_str);
+  gpr_free(addr_str);
 
   if (err >= 0) {
-    char* remote_addr_str = grpc_sockaddr_to_uri(addr);
-    *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args, remote_addr_str);
-    gpr_free(remote_addr_str);
+    char* addr_str = grpc_sockaddr_to_uri(addr);
+    *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args, addr_str);
+    gpr_free(addr_str);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
     return;
   }
@@ -349,8 +319,7 @@ void grpc_tcp_client_create_from_prepared_fd(
   ac->ep = ep;
   ac->fd = fdobj;
   ac->interested_parties = interested_parties;
-  ac->remote_addr_str = grpc_sockaddr_to_uri(addr);
-  ac->source_addr_str = extract_source_ip(fd);
+  ac->addr_str = grpc_sockaddr_to_uri(addr);
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
@@ -359,7 +328,7 @@ void grpc_tcp_client_create_from_prepared_fd(
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
-            ac->remote_addr_str, fdobj);
+            ac->addr_str, fdobj);
   }
 
   gpr_mu_lock(&ac->mu);
