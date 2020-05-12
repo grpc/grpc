@@ -22,7 +22,7 @@ exports_files([
 ])
 
 package(
-    default_visibility = ["//visibility:public"],
+    default_visibility = ["//test:__subpackages__"],
     features = [
         "-layering_check",
         "-parse_headers",
@@ -301,6 +301,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     standalone = True,
+    visibility = ["//visibility:public"],
     deps = [
         "gpr_base",
     ],
@@ -316,6 +317,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     standalone = True,
+    visibility = ["//visibility:public"],
     deps = [
         "grpc_common",
         "grpc_lb_policy_cds",
@@ -336,6 +338,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     standalone = True,
+    visibility = ["//visibility:public"],
     deps = [
         "grpc_common",
         "grpc_lb_policy_cds_secure",
@@ -378,6 +381,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     standalone = True,
+    visibility = ["//visibility:public"],
     deps = [
         "gpr",
         "grpc",
@@ -398,6 +402,7 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
+    visibility = ["//visibility:public"],
     deps = [
         "gpr",
         "grpc++_base_unsecure",
@@ -420,6 +425,7 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
+    visibility = ["//visibility:public"],
     deps = [
         "grpc++",
         "//src/proto/grpc/status:status_proto",
@@ -438,6 +444,7 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
+    visibility = ["//visibility:public"],
     deps = [
         "alts_upb",
         "alts_util",
@@ -1541,6 +1548,7 @@ grpc_cc_library(
         "opencensus-stats",
     ],
     language = "c++",
+    visibility = ["//visibility:public"],
     deps = [
         "grpc++_base",
         "grpc_secure",
@@ -1720,7 +1728,6 @@ grpc_cc_library(
     srcs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc"],
     hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
     language = "c++",
-    visibility = ["//test:__subpackages__"],
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -2290,6 +2297,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/proto_buffer_writer.h",
         "include/grpcpp/impl/codegen/proto_utils.h",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         "grpc++_codegen_base",
         "grpc++_config_proto",
@@ -2306,6 +2314,7 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/config_protobuf.h",
         "include/grpcpp/impl/codegen/config_protobuf.h",
     ],
+    visibility = ["//visibility:public"],
 )
 
 grpc_cc_library(
@@ -2323,6 +2332,7 @@ grpc_cc_library(
         "include/grpcpp/ext/proto_server_reflection_plugin.h",
         "include/grpcpp/ext/proto_server_reflection_plugin_impl.h",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         ":grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
@@ -2344,6 +2354,7 @@ grpc_cc_library(
         "include/grpcpp/ext/channelz_service_plugin.h",
         "include/grpcpp/ext/channelz_service_plugin_impl.h",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         ":grpc++",
         "//src/proto/grpc/channelz:channelz_proto",
@@ -2364,6 +2375,7 @@ grpc_cc_library(
         "include/grpcpp/test/mock_stream.h",
         "include/grpcpp/test/server_context_test_spouse.h",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         ":grpc++",
     ],
