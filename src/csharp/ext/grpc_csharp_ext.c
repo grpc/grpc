@@ -1078,17 +1078,15 @@ grpcsharp_ssl_server_credentials_create(
 
 GPR_EXPORT grpc_ssl_server_certificate_config* GPR_CALLTYPE
 grpcsharp_ssl_server_certificate_config_create(
-    const char* pem_root_certs,
-    const char** key_cert_pair_cert_chain_array,
-    const char** key_cert_pair_private_key_array,
-    size_t num_key_cert_pairs) {
+    const char* pem_root_certs, const char** key_cert_pair_cert_chain_array,
+    const char** key_cert_pair_private_key_array, size_t num_key_cert_pairs) {
   size_t i;
   grpc_ssl_server_certificate_config* config;
   grpc_ssl_pem_key_cert_pair* key_cert_pairs =
       gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair) * num_key_cert_pairs);
   memset(key_cert_pairs, 0,
          sizeof(grpc_ssl_pem_key_cert_pair) * num_key_cert_pairs);
-  
+
   for (i = 0; i < num_key_cert_pairs; i++) {
     if (key_cert_pair_cert_chain_array[i] ||
         key_cert_pair_private_key_array[i]) {
@@ -1098,15 +1096,12 @@ grpcsharp_ssl_server_certificate_config_create(
   }
 
   config = grpc_ssl_server_certificate_config_create(
-      pem_root_certs,
-      key_cert_pairs,
-      num_key_cert_pairs);
+      pem_root_certs, key_cert_pairs, num_key_cert_pairs);
   gpr_free(key_cert_pairs);
   return config;
 }
 
-GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_ssl_server_certificate_config_destroy(
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_ssl_server_certificate_config_destroy(
     grpc_ssl_server_certificate_config* config) {
   return grpc_ssl_server_certificate_config_destroy(config);
 }
@@ -1116,8 +1111,7 @@ grpcsharp_ssl_server_credentials_create_options_using_config(
     grpc_ssl_client_certificate_request_type client_certificate_request,
     grpc_ssl_server_certificate_config* certificate_config) {
   return grpc_ssl_server_credentials_create_options_using_config(
-      client_certificate_request,
-      certificate_config);
+      client_certificate_request, certificate_config);
 }
 
 grpc_ssl_server_certificate_config_callback saved_cb = NULL;
@@ -1138,8 +1132,7 @@ grpcsharp_ssl_server_credentials_create_options_using_config_fetcher(
   saved_cb = cb;
   return grpc_ssl_server_credentials_create_options_using_config_fetcher(
       client_certificate_request,
-      grpcsharp_ssl_server_certificate_config_callback_handler,
-      user_data);
+      grpcsharp_ssl_server_certificate_config_callback_handler, user_data);
 }
 
 GPR_EXPORT void GPR_CALLTYPE
@@ -1148,8 +1141,7 @@ grpcsharp_write_ssl_server_certificate_config_to_pointer(
   *pointer_to_location = config;
 }
 
-GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_ssl_server_credentials_options_destroy(
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_ssl_server_credentials_options_destroy(
     grpc_ssl_server_credentials_options* options) {
   return grpc_ssl_server_credentials_options_destroy(options);
 }
