@@ -23,6 +23,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <string>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -389,15 +391,9 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   }
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    char* port_string;
-    grpc_sockaddr_to_string(&port_string, addr, 0);
-    const char* str = grpc_error_string(error);
-    if (port_string) {
-      gpr_log(GPR_INFO, "SERVER %p add_port %s error=%s", s, port_string, str);
-      gpr_free(port_string);
-    } else {
-      gpr_log(GPR_INFO, "SERVER %p add_port error=%s", s, str);
-    }
+    gpr_log(GPR_INFO, "SERVER %p add_port %s error=%s", s,
+            grpc_sockaddr_to_string(addr, false).c_str(),
+            grpc_error_string(error));
   }
 
   family = grpc_sockaddr_get_family(addr);

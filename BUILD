@@ -75,11 +75,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "gringotts"
+g_stands_for = "gradius"
 
 core_version = "10.0.0"
 
-version = "1.29.0-dev"
+version = "1.30.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -554,7 +554,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
-        "src/core/lib/gprpp/string_view.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
@@ -2483,6 +2482,9 @@ grpc_cc_library(
     name = "envoy_ads_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/cds.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c",
@@ -2508,11 +2510,15 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c",
         "src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c",
         "src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c",
+        "src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c",
         "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c",
         "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c",
     ],
     hdrs = [
         "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/cds.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/cluster.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h",
@@ -2538,6 +2544,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.h",
         "src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h",
         "src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.h",
+        "src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.h",
         "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
         "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
     ],
@@ -2578,21 +2585,27 @@ grpc_cc_library(
     name = "envoy_core_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c",
     ],
     hdrs = [
         "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.h",
     ],
     external_deps = [
         "upb_lib",
@@ -2688,10 +2701,12 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/upb-generated/udpa/annotations/migrate.upb.c",
         "src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c",
+        "src/core/ext/upb-generated/udpa/annotations/status.upb.c",
     ],
     hdrs = [
         "src/core/ext/upb-generated/udpa/annotations/migrate.upb.h",
         "src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h",
+        "src/core/ext/upb-generated/udpa/annotations/status.upb.h",
     ],
     external_deps = [
         "upb_lib",

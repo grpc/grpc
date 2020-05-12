@@ -40,6 +40,7 @@ class LoadBalancerStatsServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\LoadBalancerStatsRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\LoadBalancerStatsResponse
      */
     public function GetClientStats(\Grpc\Testing\LoadBalancerStatsRequest $argument,
       $metadata = [], $options = []) {

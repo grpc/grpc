@@ -91,6 +91,8 @@ static const char* error_str_name(grpc_error_strs key) {
       return "description";
     case GRPC_ERROR_STR_OS_ERROR:
       return "os_error";
+    case GRPC_ERROR_STR_SOURCE_ADDRESS:
+      return "source_address";
     case GRPC_ERROR_STR_TARGET_ADDRESS:
       return "target_address";
     case GRPC_ERROR_STR_SYSCALL:

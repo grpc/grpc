@@ -686,22 +686,6 @@ TEST_F(CredentialsTest, LoadTlsChannelCredentials) {
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
-// This test demonstrates how the TLS credentials will be used to create
-// server credentials.
-TEST_F(CredentialsTest, LoadTlsServerCredentials) {
-  std::shared_ptr<TestTlsCredentialReload> test_credential_reload(
-      new TestTlsCredentialReload());
-  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config(
-      new TlsCredentialReloadConfig(test_credential_reload));
-
-  TlsCredentialsOptions options = TlsCredentialsOptions(
-      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
-      GRPC_TLS_SERVER_VERIFICATION, nullptr, credential_reload_config, nullptr);
-  std::shared_ptr<::grpc_impl::ServerCredentials> server_credentials =
-      grpc::experimental::TlsServerCredentials(options);
-  GPR_ASSERT(server_credentials.get() != nullptr);
-}
-
 TEST_F(CredentialsTest, TlsCredentialReloadConfigErrorMessages) {
   std::shared_ptr<TlsCredentialReloadConfig> config(
       new TlsCredentialReloadConfig(nullptr));

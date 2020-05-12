@@ -106,19 +106,18 @@ void test_bind_server_twice(void) {
 
 void test_bind_server_to_addr(const char* host, bool secure) {
   int port = grpc_pick_unused_port_or_die();
-  grpc_core::UniquePtr<char> addr;
-  grpc_core::JoinHostPort(&addr, host, port);
-  gpr_log(GPR_INFO, "Test bind to %s", addr.get());
+  std::string addr = grpc_core::JoinHostPort(host, port);
+  gpr_log(GPR_INFO, "Test bind to %s", addr.c_str());
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
   if (secure) {
     grpc_server_credentials* fake_creds =
         grpc_fake_transport_security_server_credentials_create();
     GPR_ASSERT(
-        grpc_server_add_secure_http2_port(server, addr.get(), fake_creds));
+        grpc_server_add_secure_http2_port(server, addr.c_str(), fake_creds));
     grpc_server_credentials_release(fake_creds);
   } else {
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr.get()));
+    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr.c_str()));
   }
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);

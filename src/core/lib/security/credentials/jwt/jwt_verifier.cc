@@ -86,9 +86,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
     gpr_log(GPR_ERROR, "Invalid base64.");
     return Json();  // JSON null
   }
-  grpc_core::StringView string(
-      reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
-      GRPC_SLICE_LENGTH(slice));
+  absl::string_view string = grpc_core::StringViewFromSlice(slice);
   grpc_error* error = GRPC_ERROR_NONE;
   Json json = Json::Parse(string, &error);
   if (error != GRPC_ERROR_NONE) {
@@ -418,7 +416,7 @@ static Json json_from_http(const grpc_httpcli_response* response) {
   }
   grpc_error* error = GRPC_ERROR_NONE;
   Json json = Json::Parse(
-      grpc_core::StringView(response->body, response->body_length), &error);
+      absl::string_view(response->body, response->body_length), &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Invalid JSON found in response.");
     return Json();  // JSON null

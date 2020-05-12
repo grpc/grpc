@@ -23,6 +23,8 @@
 
 #include <cstring>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/slice.h>
 
 #include "src/core/lib/gpr/murmur_hash.h"
@@ -185,6 +187,13 @@ struct InternedSliceRefcount;
 struct InternedSlice : public ManagedMemorySlice {
   explicit InternedSlice(InternedSliceRefcount* s);
 };
+
+// Converts grpc_slice to absl::string_view.
+inline absl::string_view StringViewFromSlice(const grpc_slice& slice) {
+  return absl::string_view(
+      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
+      GRPC_SLICE_LENGTH(slice));
+}
 
 }  // namespace grpc_core
 
