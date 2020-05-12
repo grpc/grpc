@@ -85,6 +85,14 @@ def wrap_server_method_handler(wrapper, handler):
     The server implementation requires all server handlers being wrapped as
     RpcMethodHandler objects. This helper function ease the pain of writing
     server handler wrappers.
+
+    Args:
+        wrapper: A wrapper function that takes in a method handler behavior
+          (the actual function) and returns a wrapped function.
+        handler: A RpcMethodHandler object to be wrapped.
+
+    Returns:
+        A newly created RpcMethodHandler.
     """
     if not handler:
         return None
