@@ -95,8 +95,8 @@ class _CacheInterceptor(aio.ServerInterceptor):
         handler = await continuation(handler_call_details)
 
         # Only intercept unary call RPCs
-        if handler and (handler.request_streaming or
-                        handler.response_streaming):
+        if handler and (handler.request_streaming or  # pytype: disable=attribute-error
+                        handler.response_streaming):  # pytype: disable=attribute-error
             return handler
 
         def wrapper(behavior: Callable[
