@@ -34,7 +34,7 @@
 static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
                      grpc_slice_buffer* output,
                      int (*flate)(z_stream* zs, int flush)) {
-  int r;
+  int r = Z_OK;
   int flush;
   size_t i;
   grpc_slice outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);

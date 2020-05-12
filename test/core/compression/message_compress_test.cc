@@ -210,12 +210,10 @@ static void test_bad_decompression_data_missing_trailer(void) {
   grpc_core::ExecCtx exec_ctx;
   /* compress it */
   grpc_msg_compress(GRPC_MESSAGE_COMPRESS_GZIP, &input, &corrupted);
-  /* corrupt the output by smashing the CRC */
-  GPR_ASSERT(corrupted.count > 1);
-  GPR_ASSERT(GRPC_SLICE_LENGTH(corrupted.slices[1]) > 8);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(corrupted.slices[corrupted.count - 1]) > 8);
+  /* Remove the footer by manipulating the slice length */
   corrupted.slices[1].data.refcounted.length -= 8;
-
-  /* try (and fail) to decompress the corrupted compresed buffer */
+  /* try (and fail) to decompress the compressed buffer without the footer */
   GPR_ASSERT(0 == grpc_msg_decompress(GRPC_MESSAGE_COMPRESS_GZIP, &corrupted,
                                       &output));
 
