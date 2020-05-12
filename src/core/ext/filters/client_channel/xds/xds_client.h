@@ -283,7 +283,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Top level map is keyed by cluster names without weight like a_b_c; bottom
   // level map is keyed by cluster names + weights like a10_b50_c40.
   struct ClusterNamesInfo {
-    uint64_t next_index;
+    uint64_t next_index = 0;
     std::map<std::string /*cluster names + weights*/,
              uint64_t /*policy index number*/>
         cluster_weights_map;

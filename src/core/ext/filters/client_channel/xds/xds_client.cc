@@ -2109,7 +2109,7 @@ struct WeightedClustersKeys {
 };
 
 // Returns the cluster names and weights key or the cluster names only key.
-WeightedClustersKeys GetWeightedClustersKeyFromRdsRoute(
+WeightedClustersKeys GetWeightedClustersKey(
     const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
         weighted_clusters) {
   std::set<std::string> cluster_names;
@@ -2119,10 +2119,8 @@ WeightedClustersKeys GetWeightedClustersKeyFromRdsRoute(
     cluster_weights.emplace(
         absl::StrFormat("%s_%d", cluster_weight.name, cluster_weight.weight));
   }
-  WeightedClustersKeys keys;
-  keys.cluster_names_key = absl::StrJoin(cluster_names, "_");
-  keys.cluster_weights_key = absl::StrJoin(cluster_weights, "_");
-  return keys;
+  return {absl::StrJoin(cluster_names, "_"),
+          absl::StrJoin(cluster_weights, "_")};
 }
 
 }  // namespace
@@ -2130,8 +2128,7 @@ WeightedClustersKeys GetWeightedClustersKeyFromRdsRoute(
 std::string XdsClient::WeightedClustersActionName(
     const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
         weighted_clusters) {
-  WeightedClustersKeys keys =
-      GetWeightedClustersKeyFromRdsRoute(weighted_clusters);
+  WeightedClustersKeys keys = GetWeightedClustersKey(weighted_clusters);
   auto cluster_names_map_it =
       weighted_cluster_index_map_.find(keys.cluster_names_key);
   GPR_ASSERT(cluster_names_map_it != weighted_cluster_index_map_.end());
@@ -2146,8 +2143,7 @@ std::string XdsClient::WeightedClustersActionName(
 
 void XdsClient::UpdateWeightedClusterIndexMap(
     const XdsApi::RdsUpdate& rds_update) {
-  XdsClient::WeightedClusterIndexMap new_weighted_cluster_index_map;
-  // First pass of all the routes: construct a list of unique WeightedCluster
+  // Construct a list of unique WeightedCluster
   // actions which we need to process: to find action names
   std::map<std::string /* cluster_weights_key */,
            std::string /* cluster_names_key */>
@@ -2155,7 +2151,7 @@ void XdsClient::UpdateWeightedClusterIndexMap(
   for (const auto& route : rds_update.routes) {
     if (!route.weighted_clusters.empty()) {
       WeightedClustersKeys keys =
-          GetWeightedClustersKeyFromRdsRoute(route.weighted_clusters);
+          GetWeightedClustersKey(route.weighted_clusters);
       auto action_it = actions_to_process.find(keys.cluster_weights_key);
       if (action_it == actions_to_process.end()) {
         actions_to_process[std::move(keys.cluster_weights_key)] =
@@ -2163,69 +2159,67 @@ void XdsClient::UpdateWeightedClusterIndexMap(
       }
     }
   }
-  // Second pass of all unique WeightedCluster actions: if the exact same
+  // First pass of all unique WeightedCluster actions: if the exact same
   // weighted target policy (same clusters and weights) appears in the old map,
   // then that old action name is taken again and should be moved to the new
   // map; any other action names from the old set of actions are candidates for
   // reuse.
+  XdsClient::WeightedClusterIndexMap new_weighted_cluster_index_map;
   for (auto action_it = actions_to_process.begin();
        action_it != actions_to_process.end();) {
     const std::string& cluster_names_key = action_it->second;
     const std::string& cluster_weights_key = action_it->first;
     auto old_cluster_names_map_it =
         weighted_cluster_index_map_.find(cluster_names_key);
-    if (old_cluster_names_map_it != weighted_cluster_index_map_.end() &&
-        old_cluster_names_map_it->second.cluster_weights_map.find(
-            cluster_weights_key) !=
-            old_cluster_names_map_it->second.cluster_weights_map.end()) {
-      // same policy found, put it in new map and remove it from old map.
-      new_weighted_cluster_index_map[cluster_names_key]
-          .cluster_weights_map[cluster_weights_key] =
-          old_cluster_names_map_it->second
-              .cluster_weights_map[cluster_weights_key];
-      new_weighted_cluster_index_map[cluster_names_key].next_index =
+    if (old_cluster_names_map_it != weighted_cluster_index_map_.end()) {
+      // Add cluster_names_key to the new map and copy next_index.
+      auto& new_cluster_names_info =
+          new_weighted_cluster_index_map[cluster_names_key];
+      new_cluster_names_info.next_index =
           old_cluster_names_map_it->second.next_index;
-      weighted_cluster_index_map_[cluster_names_key].cluster_weights_map.erase(
-          cluster_weights_key);
-      action_it = actions_to_process.erase(action_it);
-    } else {
-      ++action_it;
+      // Lookup cluster_weights_key in old map.
+      auto& old_cluster_weights_map =
+          old_cluster_names_map_it->second.cluster_weights_map;
+      auto old_cluster_weights_map_it =
+          old_cluster_weights_map.find(cluster_weights_key);
+      if (old_cluster_weights_map_it != old_cluster_weights_map.end()) {
+        // same policy found, move from old map to new map.
+        new_cluster_names_info.cluster_weights_map[cluster_weights_key] =
+            old_cluster_weights_map_it->second;
+        old_cluster_weights_map.erase(old_cluster_weights_map_it);
+        // This action has been added to new map, so no need to process it
+        // again.
+        action_it = actions_to_process.erase(action_it);
+        continue;
+      }
     }
+    ++action_it;
   }
-  // Thrid pass of all remaining unique WeightedCluster actions: if clusters for
-  // a new action are the same as an old unused action, reuse the name.  If
+  // Second pass of all remaining unique WeightedCluster actions: if clusters
+  // for a new action are the same as an old unused action, reuse the name.  If
   // clusters differ, use a brand new name.
   for (const auto& action : actions_to_process) {
     const std::string& cluster_names_key = action.second;
     const std::string& cluster_weights_key = action.first;
-    uint64_t index = 0;
-    auto old_cluster_weights_map_it =
-        weighted_cluster_index_map_.find(cluster_names_key);
-    if (old_cluster_weights_map_it != weighted_cluster_index_map_.end()) {
-      auto& old_cluster_weights_map =
-          old_cluster_weights_map_it->second.cluster_weights_map;
-      if (!old_cluster_weights_map.empty()) {
-        // There could be something to reuse: this policy uses the same set
-        // of clusters as a previous action and that action name is not
-        // already taken.
-        auto old_cluster_weights_it = old_cluster_weights_map.begin();
-        index = old_cluster_weights_it->second;
-        // Remove the name from being able to reuse again.
-        old_cluster_weights_map.erase(old_cluster_weights_it);
-      } else {
-        // There is nothing to reuse, take the next index to use and
-        // increment.
-        index = old_cluster_weights_map_it->second.next_index++;
-      }
+    auto& new_cluster_names_info =
+        new_weighted_cluster_index_map[cluster_names_key];
+    auto& old_cluster_weights_map =
+        weighted_cluster_index_map_[cluster_names_key].cluster_weights_map;
+    auto old_cluster_weights_it = old_cluster_weights_map.begin();
+    if (old_cluster_weights_it != old_cluster_weights_map.end()) {
+      // There is something to reuse: this action uses the same set
+      // of clusters as a previous action and that action name is not
+      // already taken.
+      new_cluster_names_info.cluster_weights_map[cluster_weights_key] =
+          old_cluster_weights_it->second;
+      // Remove the name from being able to reuse again.
+      old_cluster_weights_map.erase(old_cluster_weights_it);
     } else {
-      // This is the first time we are seeing this set of clusters
-      // in this update, use index 0 and set next index to 1.
-      weighted_cluster_index_map_[cluster_names_key].next_index = index + 1;
+      // There is nothing to reuse, take the next index to use and
+      // increment.
+      new_cluster_names_info.cluster_weights_map[cluster_weights_key] =
+          new_cluster_names_info.next_index++;
     }
-    new_weighted_cluster_index_map[cluster_names_key]
-        .cluster_weights_map[cluster_weights_key] = index;
-    new_weighted_cluster_index_map[cluster_names_key].next_index =
-        weighted_cluster_index_map_[cluster_names_key].next_index;
   }
   weighted_cluster_index_map_ = std::move(new_weighted_cluster_index_map);
 }
