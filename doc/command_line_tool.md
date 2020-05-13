@@ -63,13 +63,8 @@ $ cmake -DgRPC_BUILD_TESTS=ON ../..
 Finally you can build the command line tool with the command:
 
 ```
+# run from cmake/build directory
 $ make grpc_cli
-```
-
-To speed up compilation time on linux, you can use make with following flag:
-
-```
-$ make grpc_cli -j$(nproc)
 ```
 
 The main file can be found at
