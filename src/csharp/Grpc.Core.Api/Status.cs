@@ -42,6 +42,8 @@ namespace Grpc.Core
 
         /// <summary>
         /// Creates a new instance of <c>Status</c>.
+        /// Users should not use this constructor, except for creating instances for testing.
+        /// The debug error string should only be populated by gRPC internals.
         /// </summary>
         /// <param name="statusCode">Status code.</param>
         /// <param name="detail">Detail.</param>

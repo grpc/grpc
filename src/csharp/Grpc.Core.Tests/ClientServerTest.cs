@@ -140,6 +140,26 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void UnaryCall_StatusDebugErrorStringNotTransmittedFromServer()
+        {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
+            {
+                context.Status = new Status(StatusCode.Unauthenticated, "", "this DebugErrorString value should not be transmitted to the client");
+                return Task.FromResult("");
+            });
+
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
+            Assert.IsTrue(ex.Status.DebugErrorString.Contains("Error received from peer"));  // a different debug error string set by grpc client
+            Assert.AreEqual(0, ex.Trailers.Count);
+
+            var ex2 = Assert.ThrowsAsync<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unauthenticated, ex2.Status.StatusCode);
+            Assert.IsTrue(ex2.Status.DebugErrorString.Contains("Error received from peer"));  // a different debug error string set by grpc client
+            Assert.AreEqual(0, ex2.Trailers.Count);
+        }
+
+        [Test]
         public void UnaryCall_ServerHandlerSetsStatusAndTrailers()
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
