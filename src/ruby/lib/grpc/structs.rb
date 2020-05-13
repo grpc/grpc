@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Struct.new('Status', :code, :details, :metadata)
+Struct.new('Status', :code, :details, :metadata, :debug_error_string)
