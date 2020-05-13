@@ -30,8 +30,11 @@ namespace gcp {
 // If max_expected_concurrent_rpcs is non-zero, the fake handshake service
 // will track the number of concurrent RPCs that it handles and abort
 // if if ever exceeds that number.
+// If expected_target_name is non-empty, the fake handshake service will
+// ensure that the target_name of requested handshakes matches it, and
+// abort otherwise.
 std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
-    int expected_max_concurrent_rpcs);
+    int expected_max_concurrent_rpcs, std::string expected_target_name);
 
 }  // namespace gcp
 }  // namespace grpc

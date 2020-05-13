@@ -52,8 +52,13 @@ grpc_alts_credentials::~grpc_alts_credentials() {
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_alts_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target_name, const grpc_channel_args* /*args*/,
+    const char* target_name, const grpc_channel_args* args,
     grpc_channel_args** /*new_args*/) {
+  const char* overridden_target_name = const_cast<char*>(
+      grpc_channel_args_find_string(args, GRPC_ALTS_TARGET_NAME_OVERRIDE_ARG));
+  if (overridden_target_name != nullptr) {
+    target_name = overridden_target_name;
+  }
   return grpc_alts_channel_security_connector_create(
       this->Ref(), std::move(call_creds), target_name);
 }

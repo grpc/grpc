@@ -33,7 +33,8 @@ DEFINE_int32(handshaker_port, 55056,
 static void RunFakeHandshakerServer(const std::string& server_address) {
   std::unique_ptr<grpc::Service> service =
       grpc::gcp::CreateFakeHandshakerService(
-          0 /* expected max concurrent rpcs unset */);
+          0 /* expected max concurrent rpcs unset */,
+          "" /* expected target name unset */);
   grpc::ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(service.get());

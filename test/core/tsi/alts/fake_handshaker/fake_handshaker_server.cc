@@ -55,8 +55,10 @@ namespace gcp {
 // It is thread-safe.
 class FakeHandshakerService : public HandshakerService::Service {
  public:
-  explicit FakeHandshakerService(int expected_max_concurrent_rpcs)
-      : expected_max_concurrent_rpcs_(expected_max_concurrent_rpcs) {}
+  explicit FakeHandshakerService(int expected_max_concurrent_rpcs,
+                                 std::string expected_target_name)
+      : expected_max_concurrent_rpcs_(expected_max_concurrent_rpcs),
+        expected_target_name_(expected_target_name) {}
 
   Status DoHandshake(
       ServerContext* server_context,
@@ -113,6 +115,9 @@ class FakeHandshakerService : public HandshakerService::Service {
                             const StartClientHandshakeReq& request,
                             HandshakerResp* response) {
     GPR_ASSERT(context != nullptr && response != nullptr);
+    if (!expected_target_name_.empty()) {
+      GPR_ASSERT(expected_target_name_ == request.target_name());
+    }
     // Checks request.
     if (context->state != INITIAL) {
       return Status(StatusCode::FAILED_PRECONDITION, kWrongStateError);
@@ -277,12 +282,13 @@ class FakeHandshakerService : public HandshakerService::Service {
   grpc::internal::Mutex expected_max_concurrent_rpcs_mu_;
   int concurrent_rpcs_ = 0;
   const int expected_max_concurrent_rpcs_;
+  const std::string expected_target_name_;
 };
 
 std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
-    int expected_max_concurrent_rpcs) {
-  return std::unique_ptr<grpc::Service>{
-      new grpc::gcp::FakeHandshakerService(expected_max_concurrent_rpcs)};
+    int expected_max_concurrent_rpcs, std::string expected_target_name) {
+  return std::unique_ptr<grpc::Service>{new grpc::gcp::FakeHandshakerService(
+      expected_max_concurrent_rpcs, expected_target_name)};
 }
 
 }  // namespace gcp

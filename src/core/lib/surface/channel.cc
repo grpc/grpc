@@ -135,6 +135,7 @@ static grpc_core::UniquePtr<char> get_default_authority(
     const grpc_channel_args* input_args) {
   bool has_default_authority = false;
   char* ssl_override = nullptr;
+  char* alts_override = nullptr;
   grpc_core::UniquePtr<char> default_authority;
   const size_t num_args = input_args != nullptr ? input_args->num_args : 0;
   for (size_t i = 0; i < num_args; ++i) {
@@ -143,10 +144,15 @@ static grpc_core::UniquePtr<char> get_default_authority(
     } else if (0 == strcmp(input_args->args[i].key,
                            GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
       ssl_override = grpc_channel_arg_get_string(&input_args->args[i]);
+    } else if (0 == strcmp(input_args->args[i].key,
+                           GRPC_ALTS_TARGET_NAME_OVERRIDE_ARG)) {
+      alts_override = grpc_channel_arg_get_string(&input_args->args[i]);
     }
   }
   if (!has_default_authority && ssl_override != nullptr) {
     default_authority.reset(gpr_strdup(ssl_override));
+  } else if (!has_default_authority && alts_override != nullptr) {
+    default_authority.reset(gpr_strdup(alts_override));
   }
   return default_authority;
 }
