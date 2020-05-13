@@ -252,6 +252,7 @@ def grpc_generate_one_off_targets():
     native.alias(
         name = "grpc_objc",
         actual = "//:grpc",
+        visibility = ["//visibility:public"],
     )
 
 def grpc_generate_objc_one_off_targets():
