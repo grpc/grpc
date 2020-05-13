@@ -64,10 +64,20 @@ grpc_objc_library(
         "GRPCClient/GRPCCall+OAuth2.h",
         "GRPCClient/GRPCCall+Tests.h",
         "GRPCClient/GRPCCallLegacy.h",
-        "GRPCClient/GRPCTypes.h",
     ],
     deps = [
-        "rx_library_headers",
+        ":grpc_objc_interface_types",
+        ":rx_library_headers",
+    ],
+)
+
+grpc_objc_library(
+    name = "grpc_objc_interface_types",
+    srcs = [
+        "GRPCClient/GRPCTypes.m",
+    ],
+    hdrs = [
+        "GRPCClient/GRPCTypes.h",
     ],
 )
 
