@@ -34,7 +34,7 @@ namespace gcp {
 // ensure that the target_name of requested handshakes matches it, and
 // abort otherwise.
 std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
-    int expected_max_concurrent_rpcs, std::string expected_target_name);
+    int expected_max_concurrent_rpcs, const std::string& expected_target_name);
 
 }  // namespace gcp
 }  // namespace grpc

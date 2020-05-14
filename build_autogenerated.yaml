@@ -4715,6 +4715,26 @@ targets:
   corpus_dirs:
   - test/core/security/corpus/alts_credentials_corpus
   maxlen: 2048
+- name: alts_target_name_override_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h
+  src:
+  - test/core/tsi/alts/fake_handshaker/handshaker.proto
+  - test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+  - test/core/end2end/cq_verifier.cc
+  - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
+  - test/core/tsi/alts/handshaker/alts_target_name_override_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: alts_util_test
   gtest: true
   build: test

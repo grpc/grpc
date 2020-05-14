@@ -56,7 +56,7 @@ namespace gcp {
 class FakeHandshakerService : public HandshakerService::Service {
  public:
   explicit FakeHandshakerService(int expected_max_concurrent_rpcs,
-                                 std::string expected_target_name)
+                                 const std::string& expected_target_name)
       : expected_max_concurrent_rpcs_(expected_max_concurrent_rpcs),
         expected_target_name_(expected_target_name) {}
 
@@ -286,7 +286,7 @@ class FakeHandshakerService : public HandshakerService::Service {
 };
 
 std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
-    int expected_max_concurrent_rpcs, std::string expected_target_name) {
+    int expected_max_concurrent_rpcs, const std::string& expected_target_name) {
   return std::unique_ptr<grpc::Service>{new grpc::gcp::FakeHandshakerService(
       expected_max_concurrent_rpcs, expected_target_name)};
 }
