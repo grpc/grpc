@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>gRPC &#8212; gRPC Python 1.28.1 documentation</title>
+    <title>gRPC &#8212; gRPC Python 1.29.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -31,7 +31,7 @@
 
 
 
-<p class="blurb">1.28.1</p>
+<p class="blurb">1.29.0</p>
 
 
 
@@ -135,9 +135,9 @@ Or, if you would like dive in with more extensive usage of gRPC Python, check <a
 </div>
 <div class="section" id="create-client">
 <h3>Create Client<a class="headerlink" href="#create-client" title="Permalink to this headline">¶</a></h3>
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.insecure_channel">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">insecure_channel</code><span class="sig-paren">(</span><em class="sig-param">target</em>, <em class="sig-param">options=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#insecure_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.insecure_channel" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">insecure_channel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">target</span></em>, <em class="sig-param"><span class="n">options</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">compression</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#insecure_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.insecure_channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an insecure Channel to a server.</p>
 <p>The returned Channel is thread-safe.</p>
 <dl class="field-list simple">
@@ -156,9 +156,9 @@ used over the lifetime of the channel. This is an EXPERIMENTAL option.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.secure_channel">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">secure_channel</code><span class="sig-paren">(</span><em class="sig-param">target</em>, <em class="sig-param">credentials</em>, <em class="sig-param">options=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#secure_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.secure_channel" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">secure_channel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">target</span></em>, <em class="sig-param"><span class="n">credentials</span></em>, <em class="sig-param"><span class="n">options</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">compression</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#secure_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.secure_channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a secure Channel to a server.</p>
 <p>The returned Channel is thread-safe.</p>
 <dl class="field-list simple">
@@ -178,9 +178,9 @@ used over the lifetime of the channel. This is an EXPERIMENTAL option.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.intercept_channel">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">intercept_channel</code><span class="sig-paren">(</span><em class="sig-param">channel</em>, <em class="sig-param">*interceptors</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#intercept_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.intercept_channel" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">intercept_channel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">channel</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">interceptors</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#intercept_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.intercept_channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Intercepts a channel through a set of interceptors.</p>
 <p>This is an EXPERIMENTAL API.</p>
 <dl class="field-list simple">
@@ -211,9 +211,9 @@ Interceptors are given control in the order they are listed.</p></li>
 </div>
 <div class="section" id="create-client-credentials">
 <h3>Create Client Credentials<a class="headerlink" href="#create-client-credentials" title="Permalink to this headline">¶</a></h3>
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.ssl_channel_credentials">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ssl_channel_credentials</code><span class="sig-paren">(</span><em class="sig-param">root_certificates=None</em>, <em class="sig-param">private_key=None</em>, <em class="sig-param">certificate_chain=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ssl_channel_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ssl_channel_credentials" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ssl_channel_credentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">root_certificates</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">private_key</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">certificate_chain</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ssl_channel_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ssl_channel_credentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a ChannelCredentials for use with an SSL-enabled Channel.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -233,9 +233,9 @@ to use or None if no certificate chain should be used.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.metadata_call_credentials">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">metadata_call_credentials</code><span class="sig-paren">(</span><em class="sig-param">metadata_plugin</em>, <em class="sig-param">name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#metadata_call_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.metadata_call_credentials" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">metadata_call_credentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metadata_plugin</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#metadata_call_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.metadata_call_credentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Construct CallCredentials from an AuthMetadataPlugin.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -250,9 +250,9 @@ to use or None if no certificate chain should be used.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.access_token_call_credentials">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">access_token_call_credentials</code><span class="sig-paren">(</span><em class="sig-param">access_token</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#access_token_call_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.access_token_call_credentials" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">access_token_call_credentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">access_token</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#access_token_call_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.access_token_call_credentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Construct CallCredentials from an access token.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -266,9 +266,9 @@ authorization header, for example
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.composite_call_credentials">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">composite_call_credentials</code><span class="sig-paren">(</span><em class="sig-param">*call_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#composite_call_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.composite_call_credentials" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">composite_call_credentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">call_credentials</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#composite_call_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.composite_call_credentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compose multiple CallCredentials to make a new CallCredentials.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -280,9 +280,9 @@ authorization header, for example
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.composite_channel_credentials">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">composite_channel_credentials</code><span class="sig-paren">(</span><em class="sig-param">channel_credentials</em>, <em class="sig-param">*call_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#composite_channel_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.composite_channel_credentials" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">composite_channel_credentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">channel_credentials</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">call_credentials</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#composite_channel_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.composite_channel_credentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compose a ChannelCredentials and one or more CallCredentials objects.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -301,9 +301,9 @@ authorization header, for example
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.local_channel_credentials">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">local_channel_credentials</code><span class="sig-paren">(</span><em class="sig-param">local_connect_type=grpc.LocalConnectionType.LOCAL_TCP</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#local_channel_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.local_channel_credentials" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">local_channel_credentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">local_connect_type</span><span class="o">=</span><span class="default_value">grpc.LocalConnectionType.LOCAL_TCP</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#local_channel_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.local_channel_credentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a local ChannelCredentials used for local connections.</p>
 <p>This is an EXPERIMENTAL API.</p>
 <p>Local credentials are used by local TCP endpoints (e.g. localhost:10000)
@@ -330,9 +330,9 @@ grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)</p>
 </div>
 <div class="section" id="create-server">
 <h3>Create Server<a class="headerlink" href="#create-server" title="Permalink to this headline">¶</a></h3>
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.server">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">server</code><span class="sig-paren">(</span><em class="sig-param">thread_pool</em>, <em class="sig-param">handlers=None</em>, <em class="sig-param">interceptors=None</em>, <em class="sig-param">options=None</em>, <em class="sig-param">maximum_concurrent_rpcs=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.server" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">server</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">thread_pool</span></em>, <em class="sig-param"><span class="n">handlers</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">interceptors</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">options</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">maximum_concurrent_rpcs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">compression</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a Server with which RPCs can be serviced.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -365,9 +365,9 @@ lifetime of the server unless overridden. This is an EXPERIMENTAL option.</p></l
 </div>
 <div class="section" id="create-server-credentials">
 <h3>Create Server Credentials<a class="headerlink" href="#create-server-credentials" title="Permalink to this headline">¶</a></h3>
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.ssl_server_credentials">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ssl_server_credentials</code><span class="sig-paren">(</span><em class="sig-param">private_key_certificate_chain_pairs</em>, <em class="sig-param">root_certificates=None</em>, <em class="sig-param">require_client_auth=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ssl_server_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ssl_server_credentials" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ssl_server_credentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">private_key_certificate_chain_pairs</span></em>, <em class="sig-param"><span class="n">root_certificates</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">require_client_auth</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ssl_server_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ssl_server_credentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a ServerCredentials for use with an SSL-enabled Server.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -389,9 +389,9 @@ object is an argument to add_secure_port() method during server setup.</p>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.ssl_server_certificate_configuration">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ssl_server_certificate_configuration</code><span class="sig-paren">(</span><em class="sig-param">private_key_certificate_chain_pairs</em>, <em class="sig-param">root_certificates=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ssl_server_certificate_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ssl_server_certificate_configuration" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ssl_server_certificate_configuration</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">private_key_certificate_chain_pairs</span></em>, <em class="sig-param"><span class="n">root_certificates</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ssl_server_certificate_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ssl_server_certificate_configuration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a ServerCertificateConfiguration for use with a Server.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -413,9 +413,9 @@ certificates that the server will use to verify client authentication.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.dynamic_ssl_server_credentials">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">dynamic_ssl_server_credentials</code><span class="sig-paren">(</span><em class="sig-param">initial_certificate_configuration</em>, <em class="sig-param">certificate_configuration_fetcher</em>, <em class="sig-param">require_client_authentication=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#dynamic_ssl_server_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.dynamic_ssl_server_credentials" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">dynamic_ssl_server_credentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">initial_certificate_configuration</span></em>, <em class="sig-param"><span class="n">certificate_configuration_fetcher</span></em>, <em class="sig-param"><span class="n">require_client_authentication</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#dynamic_ssl_server_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.dynamic_ssl_server_credentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a ServerCredentials for use with an SSL-enabled Server.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -441,9 +441,9 @@ require clients to be authenticated.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.local_server_credentials">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">local_server_credentials</code><span class="sig-paren">(</span><em class="sig-param">local_connect_type=grpc.LocalConnectionType.LOCAL_TCP</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#local_server_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.local_server_credentials" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">local_server_credentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">local_connect_type</span><span class="o">=</span><span class="default_value">grpc.LocalConnectionType.LOCAL_TCP</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#local_server_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.local_server_credentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a local ServerCredentials used for local connections.</p>
 <p>This is an EXPERIMENTAL API.</p>
 <p>Local credentials are used by local TCP endpoints (e.g. localhost:10000)
@@ -470,17 +470,17 @@ grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)</p>
 </div>
 <div class="section" id="local-connection-type">
 <h3>Local Connection Type<a class="headerlink" href="#local-connection-type" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.LocalConnectionType">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">LocalConnectionType</code><a class="reference internal" href="_modules/grpc.html#LocalConnectionType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.LocalConnectionType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Types of local connection for local credential creation.</p>
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.LocalConnectionType.UDS">
 <code class="sig-name descname">UDS</code><a class="headerlink" href="#grpc.LocalConnectionType.UDS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unix domain socket connections</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.LocalConnectionType.LOCAL_TCP">
 <code class="sig-name descname">LOCAL_TCP</code><a class="headerlink" href="#grpc.LocalConnectionType.LOCAL_TCP" title="Permalink to this definition">¶</a></dt>
 <dd><p>Local TCP connections.</p>
@@ -491,17 +491,17 @@ grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)</p>
 </div>
 <div class="section" id="rpc-method-handlers">
 <h3>RPC Method Handlers<a class="headerlink" href="#rpc-method-handlers" title="Permalink to this headline">¶</a></h3>
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.unary_unary_rpc_method_handler">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">unary_unary_rpc_method_handler</code><span class="sig-paren">(</span><em class="sig-param">behavior</em>, <em class="sig-param">request_deserializer=None</em>, <em class="sig-param">response_serializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#unary_unary_rpc_method_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.unary_unary_rpc_method_handler" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">unary_unary_rpc_method_handler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">behavior</span></em>, <em class="sig-param"><span class="n">request_deserializer</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">response_serializer</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#unary_unary_rpc_method_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.unary_unary_rpc_method_handler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an RpcMethodHandler for a unary-unary RPC method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>behavior</strong> – The implementation of an RPC that accepts one request
 and returns one response.</p></li>
-<li><p><strong>request_deserializer</strong> – An optional behavior for request deserialization.</p></li>
-<li><p><strong>response_serializer</strong> – An optional behavior for response serialization.</p></li>
+<li><p><strong>request_deserializer</strong> – An optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for request deserialization.</p></li>
+<li><p><strong>response_serializer</strong> – An optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for response serialization.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -510,17 +510,17 @@ and returns one response.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.unary_stream_rpc_method_handler">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">unary_stream_rpc_method_handler</code><span class="sig-paren">(</span><em class="sig-param">behavior</em>, <em class="sig-param">request_deserializer=None</em>, <em class="sig-param">response_serializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#unary_stream_rpc_method_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.unary_stream_rpc_method_handler" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">unary_stream_rpc_method_handler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">behavior</span></em>, <em class="sig-param"><span class="n">request_deserializer</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">response_serializer</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#unary_stream_rpc_method_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.unary_stream_rpc_method_handler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an RpcMethodHandler for a unary-stream RPC method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>behavior</strong> – The implementation of an RPC that accepts one request
 and returns an iterator of response values.</p></li>
-<li><p><strong>request_deserializer</strong> – An optional behavior for request deserialization.</p></li>
-<li><p><strong>response_serializer</strong> – An optional behavior for response serialization.</p></li>
+<li><p><strong>request_deserializer</strong> – An optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for request deserialization.</p></li>
+<li><p><strong>response_serializer</strong> – An optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for response serialization.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -529,17 +529,17 @@ and returns an iterator of response values.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.stream_unary_rpc_method_handler">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">stream_unary_rpc_method_handler</code><span class="sig-paren">(</span><em class="sig-param">behavior</em>, <em class="sig-param">request_deserializer=None</em>, <em class="sig-param">response_serializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#stream_unary_rpc_method_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.stream_unary_rpc_method_handler" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">stream_unary_rpc_method_handler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">behavior</span></em>, <em class="sig-param"><span class="n">request_deserializer</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">response_serializer</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#stream_unary_rpc_method_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.stream_unary_rpc_method_handler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an RpcMethodHandler for a stream-unary RPC method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>behavior</strong> – The implementation of an RPC that accepts an iterator of
 request values and returns a single response value.</p></li>
-<li><p><strong>request_deserializer</strong> – An optional behavior for request deserialization.</p></li>
-<li><p><strong>response_serializer</strong> – An optional behavior for response serialization.</p></li>
+<li><p><strong>request_deserializer</strong> – An optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for request deserialization.</p></li>
+<li><p><strong>response_serializer</strong> – An optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for response serialization.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -548,17 +548,17 @@ request values and returns a single response value.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.stream_stream_rpc_method_handler">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">stream_stream_rpc_method_handler</code><span class="sig-paren">(</span><em class="sig-param">behavior</em>, <em class="sig-param">request_deserializer=None</em>, <em class="sig-param">response_serializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#stream_stream_rpc_method_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.stream_stream_rpc_method_handler" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">stream_stream_rpc_method_handler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">behavior</span></em>, <em class="sig-param"><span class="n">request_deserializer</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">response_serializer</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#stream_stream_rpc_method_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.stream_stream_rpc_method_handler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an RpcMethodHandler for a stream-stream RPC method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>behavior</strong> – The implementation of an RPC that accepts an iterator of
 request values and returns an iterator of response values.</p></li>
-<li><p><strong>request_deserializer</strong> – An optional behavior for request deserialization.</p></li>
-<li><p><strong>response_serializer</strong> – An optional behavior for response serialization.</p></li>
+<li><p><strong>request_deserializer</strong> – An optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for request deserialization.</p></li>
+<li><p><strong>response_serializer</strong> – An optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for response serialization.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -567,9 +567,9 @@ request values and returns an iterator of response values.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.method_handlers_generic_handler">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">method_handlers_generic_handler</code><span class="sig-paren">(</span><em class="sig-param">service</em>, <em class="sig-param">method_handlers</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#method_handlers_generic_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.method_handlers_generic_handler" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">method_handlers_generic_handler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service</span></em>, <em class="sig-param"><span class="n">method_handlers</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#method_handlers_generic_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.method_handlers_generic_handler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a GenericRpcHandler from RpcMethodHandlers.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -590,9 +590,9 @@ with add_generic_rpc_handlers() before starting the server.</p>
 </div>
 <div class="section" id="channel-ready-future">
 <h3>Channel Ready Future<a class="headerlink" href="#channel-ready-future" title="Permalink to this headline">¶</a></h3>
-<dl class="function">
+<dl class="py function">
 <dt id="grpc.channel_ready_future">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">channel_ready_future</code><span class="sig-paren">(</span><em class="sig-param">channel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#channel_ready_future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.channel_ready_future" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">channel_ready_future</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">channel</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#channel_ready_future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.channel_ready_future" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a Future that tracks when a Channel is ready.</p>
 <p>Cancelling the Future does not affect the channel’s state machine.
 It merely decouples the Future from channel state machine.</p>
@@ -610,36 +610,36 @@ ChannelConnectivity.READY.</p>
 </div>
 <div class="section" id="channel-connectivity">
 <h3>Channel Connectivity<a class="headerlink" href="#channel-connectivity" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.ChannelConnectivity">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ChannelConnectivity</code><a class="reference internal" href="_modules/grpc.html#ChannelConnectivity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ChannelConnectivity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mirrors grpc_connectivity_state in the gRPC Core.</p>
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.ChannelConnectivity.IDLE">
 <code class="sig-name descname">IDLE</code><a class="headerlink" href="#grpc.ChannelConnectivity.IDLE" title="Permalink to this definition">¶</a></dt>
 <dd><p>The channel is idle.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.ChannelConnectivity.CONNECTING">
 <code class="sig-name descname">CONNECTING</code><a class="headerlink" href="#grpc.ChannelConnectivity.CONNECTING" title="Permalink to this definition">¶</a></dt>
 <dd><p>The channel is connecting.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.ChannelConnectivity.READY">
 <code class="sig-name descname">READY</code><a class="headerlink" href="#grpc.ChannelConnectivity.READY" title="Permalink to this definition">¶</a></dt>
 <dd><p>The channel is ready to conduct RPCs.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.ChannelConnectivity.TRANSIENT_FAILURE">
 <code class="sig-name descname">TRANSIENT_FAILURE</code><a class="headerlink" href="#grpc.ChannelConnectivity.TRANSIENT_FAILURE" title="Permalink to this definition">¶</a></dt>
 <dd><p>The channel has seen a failure from which it expects
 to recover.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.ChannelConnectivity.SHUTDOWN">
 <code class="sig-name descname">SHUTDOWN</code><a class="headerlink" href="#grpc.ChannelConnectivity.SHUTDOWN" title="Permalink to this definition">¶</a></dt>
 <dd><p>The channel has seen a failure from which it cannot recover.</p>
@@ -650,108 +650,108 @@ to recover.</p>
 </div>
 <div class="section" id="grpc-status-code">
 <h3>gRPC Status Code<a class="headerlink" href="#grpc-status-code" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.StatusCode">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">StatusCode</code><a class="reference internal" href="_modules/grpc.html#StatusCode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StatusCode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mirrors grpc_status_code in the gRPC Core.</p>
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.OK">
 <code class="sig-name descname">OK</code><a class="headerlink" href="#grpc.StatusCode.OK" title="Permalink to this definition">¶</a></dt>
 <dd><p>Not an error; returned on success</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.CANCELLED">
 <code class="sig-name descname">CANCELLED</code><a class="headerlink" href="#grpc.StatusCode.CANCELLED" title="Permalink to this definition">¶</a></dt>
 <dd><p>The operation was cancelled (typically by the caller).</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.UNKNOWN">
 <code class="sig-name descname">UNKNOWN</code><a class="headerlink" href="#grpc.StatusCode.UNKNOWN" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unknown error.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.INVALID_ARGUMENT">
 <code class="sig-name descname">INVALID_ARGUMENT</code><a class="headerlink" href="#grpc.StatusCode.INVALID_ARGUMENT" title="Permalink to this definition">¶</a></dt>
 <dd><p>Client specified an invalid argument.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.DEADLINE_EXCEEDED">
 <code class="sig-name descname">DEADLINE_EXCEEDED</code><a class="headerlink" href="#grpc.StatusCode.DEADLINE_EXCEEDED" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deadline expired before operation could complete.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.NOT_FOUND">
 <code class="sig-name descname">NOT_FOUND</code><a class="headerlink" href="#grpc.StatusCode.NOT_FOUND" title="Permalink to this definition">¶</a></dt>
 <dd><p>Some requested entity (e.g., file or directory) was not found.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.ALREADY_EXISTS">
 <code class="sig-name descname">ALREADY_EXISTS</code><a class="headerlink" href="#grpc.StatusCode.ALREADY_EXISTS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Some entity that we attempted to create (e.g., file or directory)
 already exists.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.PERMISSION_DENIED">
 <code class="sig-name descname">PERMISSION_DENIED</code><a class="headerlink" href="#grpc.StatusCode.PERMISSION_DENIED" title="Permalink to this definition">¶</a></dt>
 <dd><p>The caller does not have permission to execute the specified
 operation.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.UNAUTHENTICATED">
 <code class="sig-name descname">UNAUTHENTICATED</code><a class="headerlink" href="#grpc.StatusCode.UNAUTHENTICATED" title="Permalink to this definition">¶</a></dt>
 <dd><p>The request does not have valid authentication credentials for the
 operation.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.RESOURCE_EXHAUSTED">
 <code class="sig-name descname">RESOURCE_EXHAUSTED</code><a class="headerlink" href="#grpc.StatusCode.RESOURCE_EXHAUSTED" title="Permalink to this definition">¶</a></dt>
 <dd><p>Some resource has been exhausted, perhaps a per-user quota, or
 perhaps the entire file system is out of space.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.FAILED_PRECONDITION">
 <code class="sig-name descname">FAILED_PRECONDITION</code><a class="headerlink" href="#grpc.StatusCode.FAILED_PRECONDITION" title="Permalink to this definition">¶</a></dt>
 <dd><p>Operation was rejected because the system is not in a state
 required for the operation’s execution.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.ABORTED">
 <code class="sig-name descname">ABORTED</code><a class="headerlink" href="#grpc.StatusCode.ABORTED" title="Permalink to this definition">¶</a></dt>
 <dd><p>The operation was aborted, typically due to a concurrency issue
 like sequencer check failures, transaction aborts, etc.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.UNIMPLEMENTED">
 <code class="sig-name descname">UNIMPLEMENTED</code><a class="headerlink" href="#grpc.StatusCode.UNIMPLEMENTED" title="Permalink to this definition">¶</a></dt>
 <dd><p>Operation is not implemented or not supported/enabled in this service.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.INTERNAL">
 <code class="sig-name descname">INTERNAL</code><a class="headerlink" href="#grpc.StatusCode.INTERNAL" title="Permalink to this definition">¶</a></dt>
 <dd><p>Internal errors.  Means some invariants expected by underlying
 system has been broken.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.UNAVAILABLE">
 <code class="sig-name descname">UNAVAILABLE</code><a class="headerlink" href="#grpc.StatusCode.UNAVAILABLE" title="Permalink to this definition">¶</a></dt>
 <dd><p>The service is currently unavailable.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.StatusCode.DATA_LOSS">
 <code class="sig-name descname">DATA_LOSS</code><a class="headerlink" href="#grpc.StatusCode.DATA_LOSS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unrecoverable data loss or corruption.</p>
@@ -762,13 +762,25 @@ system has been broken.</p>
 </div>
 <div class="section" id="channel-object">
 <h3>Channel Object<a class="headerlink" href="#channel-object" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.Channel">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">Channel</code><a class="reference internal" href="_modules/grpc.html#Channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords RPC invocation via generic methods on client-side.</p>
 <p>Channel objects implement the Context Manager type, although they need not
 support being entered and exited multiple times.</p>
-<dl class="method">
+<dl class="py method">
+<dt id="grpc.Channel.__enter__">
+<code class="sig-name descname">__enter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.__enter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.__enter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enters the runtime context related to the channel object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="grpc.Channel.__exit__">
+<code class="sig-name descname">__exit__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">exc_type</span></em>, <em class="sig-param"><span class="n">exc_val</span></em>, <em class="sig-param"><span class="n">exc_tb</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.__exit__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.__exit__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exits the runtime context related to the channel object.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="grpc.Channel.close">
 <em class="property">abstract </em><code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Closes this Channel and releases all resources held by it.</p>
@@ -777,17 +789,17 @@ Channel and it is not valid to invoke new RPCs with the Channel.</p>
 <p>This method is idempotent.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Channel.stream_stream">
-<em class="property">abstract </em><code class="sig-name descname">stream_stream</code><span class="sig-paren">(</span><em class="sig-param">method</em>, <em class="sig-param">request_serializer=None</em>, <em class="sig-param">response_deserializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.stream_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.stream_stream" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">stream_stream</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">method</span></em>, <em class="sig-param"><span class="n">request_serializer</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">response_deserializer</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.stream_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.stream_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a StreamStreamMultiCallable for a stream-stream method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> – The name of the RPC method.</p></li>
-<li><p><strong>request_serializer</strong> – Optional behaviour for serializing the request
+<li><p><strong>request_serializer</strong> – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
 message. Request goes unserialized in case None is passed.</p></li>
-<li><p><strong>response_deserializer</strong> – Optional behaviour for deserializing the
+<li><p><strong>response_deserializer</strong> – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
 response message. Response goes undeserialized in case None
 is passed.</p></li>
 </ul>
@@ -798,17 +810,17 @@ is passed.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Channel.stream_unary">
-<em class="property">abstract </em><code class="sig-name descname">stream_unary</code><span class="sig-paren">(</span><em class="sig-param">method</em>, <em class="sig-param">request_serializer=None</em>, <em class="sig-param">response_deserializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.stream_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.stream_unary" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">stream_unary</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">method</span></em>, <em class="sig-param"><span class="n">request_serializer</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">response_deserializer</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.stream_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.stream_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a StreamUnaryMultiCallable for a stream-unary method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> – The name of the RPC method.</p></li>
-<li><p><strong>request_serializer</strong> – Optional behaviour for serializing the request
+<li><p><strong>request_serializer</strong> – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
 message. Request goes unserialized in case None is passed.</p></li>
-<li><p><strong>response_deserializer</strong> – Optional behaviour for deserializing the
+<li><p><strong>response_deserializer</strong> – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
 response message. Response goes undeserialized in case None is
 passed.</p></li>
 </ul>
@@ -819,9 +831,9 @@ passed.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Channel.subscribe">
-<em class="property">abstract </em><code class="sig-name descname">subscribe</code><span class="sig-paren">(</span><em class="sig-param">callback</em>, <em class="sig-param">try_to_connect=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.subscribe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.subscribe" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">subscribe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">callback</span></em>, <em class="sig-param"><span class="n">try_to_connect</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.subscribe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.subscribe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Subscribe to this Channel’s connectivity state machine.</p>
 <p>A Channel may be in any of the states described by ChannelConnectivity.
 This method allows application to monitor the state transitions.
@@ -843,17 +855,17 @@ runtime decides when to connect.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Channel.unary_stream">
-<em class="property">abstract </em><code class="sig-name descname">unary_stream</code><span class="sig-paren">(</span><em class="sig-param">method</em>, <em class="sig-param">request_serializer=None</em>, <em class="sig-param">response_deserializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.unary_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.unary_stream" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">unary_stream</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">method</span></em>, <em class="sig-param"><span class="n">request_serializer</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">response_deserializer</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.unary_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.unary_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a UnaryStreamMultiCallable for a unary-stream method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> – The name of the RPC method.</p></li>
-<li><p><strong>request_serializer</strong> – Optional behaviour for serializing the request
+<li><p><strong>request_serializer</strong> – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
 message. Request goes unserialized in case None is passed.</p></li>
-<li><p><strong>response_deserializer</strong> – Optional behaviour for deserializing the
+<li><p><strong>response_deserializer</strong> – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
 response message. Response goes undeserialized in case None is
 passed.</p></li>
 </ul>
@@ -864,17 +876,17 @@ passed.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Channel.unary_unary">
-<em class="property">abstract </em><code class="sig-name descname">unary_unary</code><span class="sig-paren">(</span><em class="sig-param">method</em>, <em class="sig-param">request_serializer=None</em>, <em class="sig-param">response_deserializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.unary_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.unary_unary" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">unary_unary</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">method</span></em>, <em class="sig-param"><span class="n">request_serializer</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">response_deserializer</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.unary_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.unary_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a UnaryUnaryMultiCallable for a unary-unary method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> – The name of the RPC method.</p></li>
-<li><p><strong>request_serializer</strong> – Optional behaviour for serializing the request
+<li><p><strong>request_serializer</strong> – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
 message. Request goes unserialized in case None is passed.</p></li>
-<li><p><strong>response_deserializer</strong> – Optional behaviour for deserializing the
+<li><p><strong>response_deserializer</strong> – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
 response message. Response goes undeserialized in case None
 is passed.</p></li>
 </ul>
@@ -885,9 +897,9 @@ is passed.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Channel.unsubscribe">
-<em class="property">abstract </em><code class="sig-name descname">unsubscribe</code><span class="sig-paren">(</span><em class="sig-param">callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.unsubscribe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.unsubscribe" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">unsubscribe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">callback</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.unsubscribe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.unsubscribe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unsubscribes a subscribed callback from this Channel’s connectivity.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -904,13 +916,13 @@ is passed.</p></li>
 </div>
 <div class="section" id="server-object">
 <h3>Server Object<a class="headerlink" href="#server-object" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.Server">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">Server</code><a class="reference internal" href="_modules/grpc.html#Server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Services RPCs.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Server.add_generic_rpc_handlers">
-<em class="property">abstract </em><code class="sig-name descname">add_generic_rpc_handlers</code><span class="sig-paren">(</span><em class="sig-param">generic_rpc_handlers</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.add_generic_rpc_handlers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.add_generic_rpc_handlers" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">add_generic_rpc_handlers</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">generic_rpc_handlers</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.add_generic_rpc_handlers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.add_generic_rpc_handlers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Registers GenericRpcHandlers with this Server.</p>
 <p>This method is only safe to call before the server is started.</p>
 <dl class="field-list simple">
@@ -923,9 +935,9 @@ is passed.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Server.add_insecure_port">
-<em class="property">abstract </em><code class="sig-name descname">add_insecure_port</code><span class="sig-paren">(</span><em class="sig-param">address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.add_insecure_port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.add_insecure_port" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">add_insecure_port</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">address</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.add_insecure_port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.add_insecure_port" title="Permalink to this definition">¶</a></dt>
 <dd><p>Opens an insecure port for accepting RPCs.</p>
 <p>This method may only be called before starting the server.</p>
 <dl class="field-list simple">
@@ -939,9 +951,9 @@ or not specified in the address, then gRPC runtime will choose a port.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Server.add_secure_port">
-<em class="property">abstract </em><code class="sig-name descname">add_secure_port</code><span class="sig-paren">(</span><em class="sig-param">address</em>, <em class="sig-param">server_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.add_secure_port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.add_secure_port" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">add_secure_port</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">address</span></em>, <em class="sig-param"><span class="n">server_credentials</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.add_secure_port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.add_secure_port" title="Permalink to this definition">¶</a></dt>
 <dd><p>Opens a secure port for accepting RPCs.</p>
 <p>This method may only be called before starting the server.</p>
 <dl class="field-list simple">
@@ -959,16 +971,16 @@ runtime will choose a port.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Server.start">
 <em class="property">abstract </em><code class="sig-name descname">start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.start" title="Permalink to this definition">¶</a></dt>
 <dd><p>Starts this Server.</p>
 <p>This method may only be called once. (i.e. it is not idempotent).</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Server.stop">
-<em class="property">abstract </em><code class="sig-name descname">stop</code><span class="sig-paren">(</span><em class="sig-param">grace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.stop" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">stop</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">grace</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stops this Server.</p>
 <p>This method immediately stop service of new RPCs in all cases.</p>
 <p>If a grace period is specified, this method returns immediately
@@ -995,9 +1007,9 @@ all handlers have terminated.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Server.wait_for_termination">
-<code class="sig-name descname">wait_for_termination</code><span class="sig-paren">(</span><em class="sig-param">timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.wait_for_termination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.wait_for_termination" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">wait_for_termination</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.wait_for_termination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.wait_for_termination" title="Permalink to this definition">¶</a></dt>
 <dd><p>Block current thread until the server stops.</p>
 <p>This is an EXPERIMENTAL API.</p>
 <p>The wait will not consume computational resources during blocking, and
@@ -1024,9 +1036,9 @@ operation in seconds.</p>
 </div>
 <div class="section" id="authentication-authorization-objects">
 <h3>Authentication &amp; Authorization Objects<a class="headerlink" href="#authentication-authorization-objects" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.ChannelCredentials">
-<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ChannelCredentials</code><span class="sig-paren">(</span><em class="sig-param">credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ChannelCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ChannelCredentials" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ChannelCredentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">credentials</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ChannelCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ChannelCredentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>An encapsulation of the data required to create a secure Channel.</p>
 <p>This class has no supported interface - it exists to define the type of its
 instances and its instances exist to be passed to other functions. For
@@ -1034,9 +1046,9 @@ example, ssl_channel_credentials returns an instance of this class and
 secure_channel requires an instance of this class.</p>
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.CallCredentials">
-<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">CallCredentials</code><span class="sig-paren">(</span><em class="sig-param">credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#CallCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.CallCredentials" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">CallCredentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">credentials</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#CallCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.CallCredentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>An encapsulation of the data required to assert an identity over a call.</p>
 <p>A CallCredentials has to be used with secure Channel, otherwise the
 metadata will not be transmitted to the server.</p>
@@ -1046,17 +1058,17 @@ identity for every call over that Channel.</p>
 instances and its instances exist to be passed to other functions.</p>
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.AuthMetadataContext">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">AuthMetadataContext</code><a class="reference internal" href="_modules/grpc.html#AuthMetadataContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provides information to call credentials metadata plugins.</p>
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.AuthMetadataContext.service_url">
 <code class="sig-name descname">service_url</code><a class="headerlink" href="#grpc.AuthMetadataContext.service_url" title="Permalink to this definition">¶</a></dt>
 <dd><p>A string URL of the service being called into.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.AuthMetadataContext.method_name">
 <code class="sig-name descname">method_name</code><a class="headerlink" href="#grpc.AuthMetadataContext.method_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>A string of the fully qualified method name being called.</p>
@@ -1064,13 +1076,13 @@ instances and its instances exist to be passed to other functions.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.AuthMetadataPluginCallback">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">AuthMetadataPluginCallback</code><a class="reference internal" href="_modules/grpc.html#AuthMetadataPluginCallback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataPluginCallback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback object received by a metadata plugin.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.AuthMetadataPluginCallback.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">metadata</em>, <em class="sig-param">error</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#AuthMetadataPluginCallback.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataPluginCallback.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metadata</span></em>, <em class="sig-param"><span class="n">error</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#AuthMetadataPluginCallback.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataPluginCallback.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Passes to the gRPC runtime authentication metadata for an RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1084,15 +1096,15 @@ instances and its instances exist to be passed to other functions.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.AuthMetadataPlugin">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">AuthMetadataPlugin</code><a class="reference internal" href="_modules/grpc.html#AuthMetadataPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataPlugin" title="Permalink to this definition">¶</a></dt>
 <dd><p>A specification for custom authentication.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.AuthMetadataPlugin.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">context</em>, <em class="sig-param">callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#AuthMetadataPlugin.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataPlugin.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">context</span></em>, <em class="sig-param"><span class="n">callback</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#AuthMetadataPlugin.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataPlugin.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implements authentication by passing metadata to a callback.</p>
-<p>Implementations of this method must not block.</p>
+<p>This method will be invoked asynchronously in a separate thread.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1107,17 +1119,17 @@ synchronously or asynchronously.</p></li>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.ServerCredentials">
-<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ServerCredentials</code><span class="sig-paren">(</span><em class="sig-param">credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServerCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServerCredentials" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ServerCredentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">credentials</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServerCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServerCredentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>An encapsulation of the data required to open a secure port on a Server.</p>
 <p>This class has no supported interface - it exists to define the type of its
 instances and its instances exist to be passed to other functions.</p>
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.ServerCertificateConfiguration">
-<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ServerCertificateConfiguration</code><span class="sig-paren">(</span><em class="sig-param">certificate_configuration</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServerCertificateConfiguration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServerCertificateConfiguration" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ServerCertificateConfiguration</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">certificate_configuration</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServerCertificateConfiguration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServerCertificateConfiguration" title="Permalink to this definition">¶</a></dt>
 <dd><p>A certificate configuration for use with an SSL-enabled Server.</p>
 <p>Instances of this class can be returned in the certificate configuration
 fetching callback.</p>
@@ -1129,7 +1141,7 @@ other functions.</p>
 </div>
 <div class="section" id="grpc-exceptions">
 <h3>gRPC Exceptions<a class="headerlink" href="#grpc-exceptions" title="Permalink to this headline">¶</a></h3>
-<dl class="exception">
+<dl class="py exception">
 <dt id="grpc.RpcError">
 <em class="property">exception </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">RpcError</code><a class="reference internal" href="_modules/grpc.html#RpcError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Raised by the gRPC library to indicate non-OK-status RPC termination.</p>
@@ -1138,13 +1150,13 @@ other functions.</p>
 </div>
 <div class="section" id="shared-context">
 <h3>Shared Context<a class="headerlink" href="#shared-context" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.RpcContext">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">RpcContext</code><a class="reference internal" href="_modules/grpc.html#RpcContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provides RPC-related information and action.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.RpcContext.add_callback">
-<em class="property">abstract </em><code class="sig-name descname">add_callback</code><span class="sig-paren">(</span><em class="sig-param">callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#RpcContext.add_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcContext.add_callback" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">add_callback</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">callback</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#RpcContext.add_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcContext.add_callback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Registers a callback to be called on RPC termination.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1161,14 +1173,14 @@ already terminated or some other reason).</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.RpcContext.cancel">
 <em class="property">abstract </em><code class="sig-name descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#RpcContext.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcContext.cancel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancels the RPC.</p>
 <p>Idempotent and has no effect if the RPC has already terminated.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.RpcContext.is_active">
 <em class="property">abstract </em><code class="sig-name descname">is_active</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#RpcContext.is_active"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcContext.is_active" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes whether the RPC is active or has terminated.</p>
@@ -1182,7 +1194,7 @@ already terminated or some other reason).</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.RpcContext.time_remaining">
 <em class="property">abstract </em><code class="sig-name descname">time_remaining</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#RpcContext.time_remaining"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcContext.time_remaining" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes the length of allowed time remaining for the RPC.</p>
@@ -1200,11 +1212,11 @@ timed out, or None if no deadline was specified for the RPC.</p>
 </div>
 <div class="section" id="client-side-context">
 <h3>Client-Side Context<a class="headerlink" href="#client-side-context" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.Call">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">Call</code><a class="reference internal" href="_modules/grpc.html#Call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Call" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invocation-side utility object for an RPC.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Call.code">
 <em class="property">abstract </em><code class="sig-name descname">code</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Call.code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Call.code" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the status code sent by the server.</p>
@@ -1216,7 +1228,7 @@ timed out, or None if no deadline was specified for the RPC.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Call.details">
 <em class="property">abstract </em><code class="sig-name descname">details</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Call.details"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Call.details" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the details sent by the server.</p>
@@ -1228,7 +1240,7 @@ timed out, or None if no deadline was specified for the RPC.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Call.initial_metadata">
 <em class="property">abstract </em><code class="sig-name descname">initial_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Call.initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Call.initial_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the initial metadata sent by the server.</p>
@@ -1240,7 +1252,7 @@ timed out, or None if no deadline was specified for the RPC.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Call.trailing_metadata">
 <em class="property">abstract </em><code class="sig-name descname">trailing_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Call.trailing_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Call.trailing_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the trailing metadata sent by the server.</p>
@@ -1257,44 +1269,44 @@ timed out, or None if no deadline was specified for the RPC.</p>
 </div>
 <div class="section" id="client-side-interceptor">
 <h3>Client-Side Interceptor<a class="headerlink" href="#client-side-interceptor" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.ClientCallDetails">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ClientCallDetails</code><a class="reference internal" href="_modules/grpc.html#ClientCallDetails"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ClientCallDetails" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes an RPC to be invoked.</p>
 <p>This is an EXPERIMENTAL API.</p>
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.ClientCallDetails.method">
 <code class="sig-name descname">method</code><a class="headerlink" href="#grpc.ClientCallDetails.method" title="Permalink to this definition">¶</a></dt>
 <dd><p>The method name of the RPC.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.ClientCallDetails.timeout">
 <code class="sig-name descname">timeout</code><a class="headerlink" href="#grpc.ClientCallDetails.timeout" title="Permalink to this definition">¶</a></dt>
 <dd><p>An optional duration of time in seconds to allow for the RPC.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.ClientCallDetails.metadata">
 <code class="sig-name descname">metadata</code><a class="headerlink" href="#grpc.ClientCallDetails.metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to
 the service-side of the RPC.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.ClientCallDetails.credentials">
 <code class="sig-name descname">credentials</code><a class="headerlink" href="#grpc.ClientCallDetails.credentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>An optional CallCredentials for the RPC.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.ClientCallDetails.wait_for_ready">
 <code class="sig-name descname">wait_for_ready</code><a class="headerlink" href="#grpc.ClientCallDetails.wait_for_ready" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is an EXPERIMENTAL argument. An optional flag t
 enable wait for ready mechanism.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.ClientCallDetails.compression">
 <code class="sig-name descname">compression</code><a class="headerlink" href="#grpc.ClientCallDetails.compression" title="Permalink to this definition">¶</a></dt>
 <dd><p>An element of grpc.compression, e.g.
@@ -1303,14 +1315,14 @@ grpc.compression.Gzip. This is an EXPERIMENTAL option.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.UnaryUnaryClientInterceptor">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">UnaryUnaryClientInterceptor</code><a class="reference internal" href="_modules/grpc.html#UnaryUnaryClientInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryClientInterceptor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords intercepting unary-unary invocations.</p>
 <p>This is an EXPERIMENTAL API.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.UnaryUnaryClientInterceptor.intercept_unary_unary">
-<em class="property">abstract </em><code class="sig-name descname">intercept_unary_unary</code><span class="sig-paren">(</span><em class="sig-param">continuation</em>, <em class="sig-param">client_call_details</em>, <em class="sig-param">request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryClientInterceptor.intercept_unary_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryClientInterceptor.intercept_unary_unary" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">intercept_unary_unary</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">continuation</span></em>, <em class="sig-param"><span class="n">client_call_details</span></em>, <em class="sig-param"><span class="n">request</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryClientInterceptor.intercept_unary_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryClientInterceptor.intercept_unary_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Intercepts a unary-unary invocation asynchronously.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1344,14 +1356,14 @@ Call-Future’s exception value will be an RpcError.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.UnaryStreamClientInterceptor">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">UnaryStreamClientInterceptor</code><a class="reference internal" href="_modules/grpc.html#UnaryStreamClientInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamClientInterceptor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords intercepting unary-stream invocations.</p>
 <p>This is an EXPERIMENTAL API.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.UnaryStreamClientInterceptor.intercept_unary_stream">
-<em class="property">abstract </em><code class="sig-name descname">intercept_unary_stream</code><span class="sig-paren">(</span><em class="sig-param">continuation</em>, <em class="sig-param">client_call_details</em>, <em class="sig-param">request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryStreamClientInterceptor.intercept_unary_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamClientInterceptor.intercept_unary_stream" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">intercept_unary_stream</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">continuation</span></em>, <em class="sig-param"><span class="n">client_call_details</span></em>, <em class="sig-param"><span class="n">request</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryStreamClientInterceptor.intercept_unary_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamClientInterceptor.intercept_unary_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Intercepts a unary-stream invocation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1383,14 +1395,14 @@ the RPC with non-OK status.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.StreamUnaryClientInterceptor">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">StreamUnaryClientInterceptor</code><a class="reference internal" href="_modules/grpc.html#StreamUnaryClientInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryClientInterceptor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords intercepting stream-unary invocations.</p>
 <p>This is an EXPERIMENTAL API.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.StreamUnaryClientInterceptor.intercept_stream_unary">
-<em class="property">abstract </em><code class="sig-name descname">intercept_stream_unary</code><span class="sig-paren">(</span><em class="sig-param">continuation</em>, <em class="sig-param">client_call_details</em>, <em class="sig-param">request_iterator</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryClientInterceptor.intercept_stream_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryClientInterceptor.intercept_stream_unary" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">intercept_stream_unary</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">continuation</span></em>, <em class="sig-param"><span class="n">client_call_details</span></em>, <em class="sig-param"><span class="n">request_iterator</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryClientInterceptor.intercept_stream_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryClientInterceptor.intercept_stream_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Intercepts a stream-unary invocation asynchronously.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1423,14 +1435,14 @@ Call-Future’s exception value will be an RpcError.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.StreamStreamClientInterceptor">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">StreamStreamClientInterceptor</code><a class="reference internal" href="_modules/grpc.html#StreamStreamClientInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamClientInterceptor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords intercepting stream-stream invocations.</p>
 <p>This is an EXPERIMENTAL API.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.StreamStreamClientInterceptor.intercept_stream_stream">
-<em class="property">abstract </em><code class="sig-name descname">intercept_stream_stream</code><span class="sig-paren">(</span><em class="sig-param">continuation</em>, <em class="sig-param">client_call_details</em>, <em class="sig-param">request_iterator</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamStreamClientInterceptor.intercept_stream_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamClientInterceptor.intercept_stream_stream" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">intercept_stream_stream</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">continuation</span></em>, <em class="sig-param"><span class="n">client_call_details</span></em>, <em class="sig-param"><span class="n">request_iterator</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamStreamClientInterceptor.intercept_stream_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamClientInterceptor.intercept_stream_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Intercepts a stream-stream invocation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1465,13 +1477,13 @@ the RPC with non-OK status.</p>
 </div>
 <div class="section" id="service-side-context">
 <h3>Service-Side Context<a class="headerlink" href="#service-side-context" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.ServicerContext">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ServicerContext</code><a class="reference internal" href="_modules/grpc.html#ServicerContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>A context object passed to method implementations.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.abort">
-<em class="property">abstract </em><code class="sig-name descname">abort</code><span class="sig-paren">(</span><em class="sig-param">code</em>, <em class="sig-param">details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.abort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.abort" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">abort</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">code</span></em>, <em class="sig-param"><span class="n">details</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.abort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.abort" title="Permalink to this definition">¶</a></dt>
 <dd><p>Raises an exception to terminate the RPC with a non-OK status.</p>
 <p>The code and details passed as arguments will supercede any existing
 ones.</p>
@@ -1491,9 +1503,9 @@ termination of the RPC.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.abort_with_status">
-<em class="property">abstract </em><code class="sig-name descname">abort_with_status</code><span class="sig-paren">(</span><em class="sig-param">status</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.abort_with_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.abort_with_status" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">abort_with_status</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">status</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.abort_with_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.abort_with_status" title="Permalink to this definition">¶</a></dt>
 <dd><p>Raises an exception to terminate the RPC with a non-OK status.</p>
 <p>The status passed as argument will supercede any existing status code,
 status message and trailing metadata.</p>
@@ -1510,7 +1522,7 @@ StatusCode.OK.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.auth_context">
 <em class="property">abstract </em><code class="sig-name descname">auth_context</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.auth_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.auth_context" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the auth context for the call.</p>
@@ -1521,7 +1533,7 @@ StatusCode.OK.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.disable_next_message_compression">
 <code class="sig-name descname">disable_next_message_compression</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.disable_next_message_compression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.disable_next_message_compression" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disables compression for the next response message.</p>
@@ -1530,7 +1542,7 @@ StatusCode.OK.</p>
 server creation or set on the call.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.invocation_metadata">
 <em class="property">abstract </em><code class="sig-name descname">invocation_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.invocation_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.invocation_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the metadata from the sent by the client.</p>
@@ -1541,7 +1553,7 @@ server creation or set on the call.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.peer">
 <em class="property">abstract </em><code class="sig-name descname">peer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.peer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.peer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Identifies the peer that invoked the RPC being serviced.</p>
@@ -1553,7 +1565,7 @@ The string format is determined by gRPC runtime.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.peer_identities">
 <em class="property">abstract </em><code class="sig-name descname">peer_identities</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.peer_identities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.peer_identities" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets one or more peer identity(s).</p>
@@ -1567,7 +1579,7 @@ authenticated. Each identity is returned as a raw bytes type.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.peer_identity_key">
 <em class="property">abstract </em><code class="sig-name descname">peer_identity_key</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.peer_identity_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.peer_identity_key" title="Permalink to this definition">¶</a></dt>
 <dd><p>The auth property used to identify the peer.</p>
@@ -1581,9 +1593,9 @@ peer identity, or None if the call is not authenticated.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.send_initial_metadata">
-<em class="property">abstract </em><code class="sig-name descname">send_initial_metadata</code><span class="sig-paren">(</span><em class="sig-param">initial_metadata</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.send_initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">send_initial_metadata</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">initial_metadata</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.send_initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sends the initial metadata value to the client.</p>
 <p>This method need not be called by implementations if they have no
 metadata to add to what the gRPC runtime will transmit.</p>
@@ -1594,9 +1606,9 @@ metadata to add to what the gRPC runtime will transmit.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.set_code">
-<em class="property">abstract </em><code class="sig-name descname">set_code</code><span class="sig-paren">(</span><em class="sig-param">code</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.set_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.set_code" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">set_code</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">code</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.set_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.set_code" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the value to be used as status code upon RPC completion.</p>
 <p>This method need not be called by method implementations if they wish
 the gRPC runtime to determine the status code of the RPC.</p>
@@ -1607,9 +1619,9 @@ the gRPC runtime to determine the status code of the RPC.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.set_compression">
-<code class="sig-name descname">set_compression</code><span class="sig-paren">(</span><em class="sig-param">compression</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.set_compression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.set_compression" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_compression</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">compression</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.set_compression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.set_compression" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the compression algorithm to be used for the entire call.</p>
 <p>This is an EXPERIMENTAL method.</p>
 <dl class="field-list simple">
@@ -1620,9 +1632,9 @@ grpc.compression.Gzip.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.set_details">
-<em class="property">abstract </em><code class="sig-name descname">set_details</code><span class="sig-paren">(</span><em class="sig-param">details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.set_details"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.set_details" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">set_details</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">details</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.set_details"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.set_details" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the value to be used as detail string upon RPC completion.</p>
 <p>This method need not be called by method implementations if they have
 no details to transmit.</p>
@@ -1634,9 +1646,9 @@ termination of the RPC.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServicerContext.set_trailing_metadata">
-<em class="property">abstract </em><code class="sig-name descname">set_trailing_metadata</code><span class="sig-paren">(</span><em class="sig-param">trailing_metadata</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.set_trailing_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.set_trailing_metadata" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">set_trailing_metadata</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">trailing_metadata</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.set_trailing_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.set_trailing_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the trailing metadata for the RPC.</p>
 <p>Sets the trailing metadata to be sent upon completion of the RPC.</p>
 <p>If this method is invoked multiple times throughout the lifetime of an
@@ -1656,43 +1668,43 @@ metadata to add to what the gRPC runtime will transmit.</p>
 </div>
 <div class="section" id="service-side-handler">
 <h3>Service-Side Handler<a class="headerlink" href="#service-side-handler" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.RpcMethodHandler">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">RpcMethodHandler</code><a class="reference internal" href="_modules/grpc.html#RpcMethodHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcMethodHandler" title="Permalink to this definition">¶</a></dt>
 <dd><p>An implementation of a single RPC method.</p>
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.RpcMethodHandler.request_streaming">
 <code class="sig-name descname">request_streaming</code><a class="headerlink" href="#grpc.RpcMethodHandler.request_streaming" title="Permalink to this definition">¶</a></dt>
 <dd><p>Whether the RPC supports exactly one request message
 or any arbitrary number of request messages.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.RpcMethodHandler.response_streaming">
 <code class="sig-name descname">response_streaming</code><a class="headerlink" href="#grpc.RpcMethodHandler.response_streaming" title="Permalink to this definition">¶</a></dt>
 <dd><p>Whether the RPC supports exactly one response message
 or any arbitrary number of response messages.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.RpcMethodHandler.request_deserializer">
 <code class="sig-name descname">request_deserializer</code><a class="headerlink" href="#grpc.RpcMethodHandler.request_deserializer" title="Permalink to this definition">¶</a></dt>
-<dd><p>A callable behavior that accepts a byte string and
+<dd><p>A callable <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> that accepts a byte string and
 returns an object suitable to be passed to this object’s business
 logic, or None to indicate that this object’s business logic should be
 passed the raw request bytes.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.RpcMethodHandler.response_serializer">
 <code class="sig-name descname">response_serializer</code><a class="headerlink" href="#grpc.RpcMethodHandler.response_serializer" title="Permalink to this definition">¶</a></dt>
-<dd><p>A callable behavior that accepts an object produced
+<dd><p>A callable <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> that accepts an object produced
 by this object’s business logic and returns a byte string, or None to
 indicate that the byte strings produced by this object’s business logic
 should be transmitted on the wire as they are.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.RpcMethodHandler.unary_unary">
 <code class="sig-name descname">unary_unary</code><a class="headerlink" href="#grpc.RpcMethodHandler.unary_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>This object’s application-specific business logic as a
@@ -1701,7 +1713,7 @@ and returns a response value. Only non-None if both request_streaming
 and response_streaming are False.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.RpcMethodHandler.unary_stream">
 <code class="sig-name descname">unary_stream</code><a class="headerlink" href="#grpc.RpcMethodHandler.unary_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>This object’s application-specific business logic as a
@@ -1710,7 +1722,7 @@ and returns an iterator of response values. Only non-None if
 request_streaming is False and response_streaming is True.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.RpcMethodHandler.stream_unary">
 <code class="sig-name descname">stream_unary</code><a class="headerlink" href="#grpc.RpcMethodHandler.stream_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>This object’s application-specific business logic as a
@@ -1719,7 +1731,7 @@ ServicerContext object and returns a response value. Only non-None if
 request_streaming is True and response_streaming is False.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.RpcMethodHandler.stream_stream">
 <code class="sig-name descname">stream_stream</code><a class="headerlink" href="#grpc.RpcMethodHandler.stream_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>This object’s application-specific business logic as a
@@ -1731,17 +1743,17 @@ True.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.HandlerCallDetails">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">HandlerCallDetails</code><a class="reference internal" href="_modules/grpc.html#HandlerCallDetails"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.HandlerCallDetails" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes an RPC that has just arrived for service.</p>
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.HandlerCallDetails.method">
 <code class="sig-name descname">method</code><a class="headerlink" href="#grpc.HandlerCallDetails.method" title="Permalink to this definition">¶</a></dt>
 <dd><p>The method name of the RPC.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.HandlerCallDetails.invocation_metadata">
 <code class="sig-name descname">invocation_metadata</code><a class="headerlink" href="#grpc.HandlerCallDetails.invocation_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>The <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> sent by the client.</p>
@@ -1749,13 +1761,13 @@ True.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.GenericRpcHandler">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">GenericRpcHandler</code><a class="reference internal" href="_modules/grpc.html#GenericRpcHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.GenericRpcHandler" title="Permalink to this definition">¶</a></dt>
 <dd><p>An implementation of arbitrarily many RPC methods.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.GenericRpcHandler.service">
-<em class="property">abstract </em><code class="sig-name descname">service</code><span class="sig-paren">(</span><em class="sig-param">handler_call_details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#GenericRpcHandler.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.GenericRpcHandler.service" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">service</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">handler_call_details</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#GenericRpcHandler.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.GenericRpcHandler.service" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the handler for servicing the RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1770,7 +1782,7 @@ implementation chooses to service this RPC, or None otherwise.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.ServiceRpcHandler">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ServiceRpcHandler</code><a class="reference internal" href="_modules/grpc.html#ServiceRpcHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServiceRpcHandler" title="Permalink to this definition">¶</a></dt>
 <dd><p>An implementation of RPC methods belonging to a service.</p>
@@ -1779,7 +1791,7 @@ implementation chooses to service this RPC, or None otherwise.</p>
 returned by service_name(), and ‘Service.Method’ is the method
 name.  A service can have multiple method names, but only a single
 service name.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServiceRpcHandler.service_name">
 <em class="property">abstract </em><code class="sig-name descname">service_name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServiceRpcHandler.service_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServiceRpcHandler.service_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns this service’s name.</p>
@@ -1795,14 +1807,14 @@ service name.</p>
 </div>
 <div class="section" id="service-side-interceptor">
 <h3>Service-Side Interceptor<a class="headerlink" href="#service-side-interceptor" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.ServerInterceptor">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ServerInterceptor</code><a class="reference internal" href="_modules/grpc.html#ServerInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServerInterceptor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords intercepting incoming RPCs on the service-side.</p>
 <p>This is an EXPERIMENTAL API.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.ServerInterceptor.intercept_service">
-<em class="property">abstract </em><code class="sig-name descname">intercept_service</code><span class="sig-paren">(</span><em class="sig-param">continuation</em>, <em class="sig-param">handler_call_details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServerInterceptor.intercept_service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServerInterceptor.intercept_service" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">intercept_service</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">continuation</span></em>, <em class="sig-param"><span class="n">handler_call_details</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServerInterceptor.intercept_service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServerInterceptor.intercept_service" title="Permalink to this definition">¶</a></dt>
 <dd><p>Intercepts incoming RPCs before handing them over to a handler.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1827,13 +1839,13 @@ interceptor chooses to service this RPC, or None otherwise.</p>
 </div>
 <div class="section" id="multi-callable-interfaces">
 <h3>Multi-Callable Interfaces<a class="headerlink" href="#multi-callable-interfaces" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.UnaryUnaryMultiCallable">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">UnaryUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords invoking a unary-unary RPC from client-side.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.UnaryUnaryMultiCallable.__call__">
-<em class="property">abstract </em><code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">request</em>, <em class="sig-param">timeout=None</em>, <em class="sig-param">metadata=None</em>, <em class="sig-param">credentials=None</em>, <em class="sig-param">wait_for_ready=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metadata</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">credentials</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wait_for_ready</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">compression</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synchronously invokes the underlying RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1862,9 +1874,9 @@ grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.UnaryUnaryMultiCallable.future">
-<em class="property">abstract </em><code class="sig-name descname">future</code><span class="sig-paren">(</span><em class="sig-param">request</em>, <em class="sig-param">timeout=None</em>, <em class="sig-param">metadata=None</em>, <em class="sig-param">credentials=None</em>, <em class="sig-param">wait_for_ready=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">future</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metadata</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">credentials</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wait_for_ready</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">compression</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1892,9 +1904,9 @@ the returned Call-Future’s exception value will be an RpcError.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.UnaryUnaryMultiCallable.with_call">
-<em class="property">abstract </em><code class="sig-name descname">with_call</code><span class="sig-paren">(</span><em class="sig-param">request</em>, <em class="sig-param">timeout=None</em>, <em class="sig-param">metadata=None</em>, <em class="sig-param">credentials=None</em>, <em class="sig-param">wait_for_ready=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">with_call</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metadata</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">credentials</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wait_for_ready</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">compression</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synchronously invokes the underlying RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1925,13 +1937,13 @@ grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.UnaryStreamMultiCallable">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">UnaryStreamMultiCallable</code><a class="reference internal" href="_modules/grpc.html#UnaryStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords invoking a unary-stream RPC from client-side.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.UnaryStreamMultiCallable.__call__">
-<em class="property">abstract </em><code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">request</em>, <em class="sig-param">timeout=None</em>, <em class="sig-param">metadata=None</em>, <em class="sig-param">credentials=None</em>, <em class="sig-param">wait_for_ready=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metadata</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">credentials</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wait_for_ready</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">compression</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes the underlying RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1960,13 +1972,13 @@ RPC with non-OK status.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.StreamUnaryMultiCallable">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">StreamUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords invoking a stream-unary RPC from client-side.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.StreamUnaryMultiCallable.__call__">
-<em class="property">abstract </em><code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">request_iterator</em>, <em class="sig-param">timeout=None</em>, <em class="sig-param">metadata=None</em>, <em class="sig-param">credentials=None</em>, <em class="sig-param">wait_for_ready=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request_iterator</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metadata</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">credentials</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wait_for_ready</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">compression</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synchronously invokes the underlying RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1996,9 +2008,9 @@ grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.StreamUnaryMultiCallable.future">
-<em class="property">abstract </em><code class="sig-name descname">future</code><span class="sig-paren">(</span><em class="sig-param">request_iterator</em>, <em class="sig-param">timeout=None</em>, <em class="sig-param">metadata=None</em>, <em class="sig-param">credentials=None</em>, <em class="sig-param">wait_for_ready=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">future</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request_iterator</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metadata</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">credentials</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wait_for_ready</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">compression</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC on the client.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2026,9 +2038,9 @@ be an RpcError.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.StreamUnaryMultiCallable.with_call">
-<em class="property">abstract </em><code class="sig-name descname">with_call</code><span class="sig-paren">(</span><em class="sig-param">request_iterator</em>, <em class="sig-param">timeout=None</em>, <em class="sig-param">metadata=None</em>, <em class="sig-param">credentials=None</em>, <em class="sig-param">wait_for_ready=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">with_call</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request_iterator</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metadata</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">credentials</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wait_for_ready</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">compression</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synchronously invokes the underlying RPC on the client.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2060,13 +2072,13 @@ grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.StreamStreamMultiCallable">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">StreamStreamMultiCallable</code><a class="reference internal" href="_modules/grpc.html#StreamStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords invoking a stream-stream RPC on client-side.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.StreamStreamMultiCallable.__call__">
-<em class="property">abstract </em><code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">request_iterator</em>, <em class="sig-param">timeout=None</em>, <em class="sig-param">metadata=None</em>, <em class="sig-param">credentials=None</em>, <em class="sig-param">wait_for_ready=None</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request_iterator</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metadata</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">credentials</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wait_for_ready</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">compression</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes the underlying RPC on the client.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2098,27 +2110,27 @@ RPC with non-OK status.</p>
 </div>
 <div class="section" id="future-interfaces">
 <h3>Future Interfaces<a class="headerlink" href="#future-interfaces" title="Permalink to this headline">¶</a></h3>
-<dl class="exception">
+<dl class="py exception">
 <dt id="grpc.FutureTimeoutError">
 <em class="property">exception </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">FutureTimeoutError</code><a class="reference internal" href="_modules/grpc.html#FutureTimeoutError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.FutureTimeoutError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates that a method call on a Future timed out.</p>
 </dd></dl>
 
-<dl class="exception">
+<dl class="py exception">
 <dt id="grpc.FutureCancelledError">
 <em class="property">exception </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">FutureCancelledError</code><a class="reference internal" href="_modules/grpc.html#FutureCancelledError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.FutureCancelledError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates that the computation underlying a Future was cancelled.</p>
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.Future">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">Future</code><a class="reference internal" href="_modules/grpc.html#Future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future" title="Permalink to this definition">¶</a></dt>
 <dd><p>A representation of a computation in another control flow.</p>
 <p>Computations represented by a Future may be yet to be begun,
 may be ongoing, or may have already completed.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Future.add_done_callback">
-<em class="property">abstract </em><code class="sig-name descname">add_done_callback</code><span class="sig-paren">(</span><em class="sig-param">fn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.add_done_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.add_done_callback" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">add_done_callback</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fn</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.add_done_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.add_done_callback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a function to be called at completion of the computation.</p>
 <p>The callback will be passed this Future object describing the outcome
 of the computation.  Callbacks will be invoked after the future is
@@ -2134,7 +2146,7 @@ will not terminate any threads of execution.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Future.cancel">
 <em class="property">abstract </em><code class="sig-name descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.cancel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Attempts to cancel the computation.</p>
@@ -2160,7 +2172,7 @@ will not terminate any threads of execution.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Future.cancelled">
 <em class="property">abstract </em><code class="sig-name descname">cancelled</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.cancelled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.cancelled" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes whether the computation was cancelled.</p>
@@ -2182,7 +2194,7 @@ available.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Future.done">
 <em class="property">abstract </em><code class="sig-name descname">done</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.done"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.done" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes whether the computation has taken place.</p>
@@ -2200,9 +2212,9 @@ This is exactly opposite of the running() method’s result.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Future.exception">
-<em class="property">abstract </em><code class="sig-name descname">exception</code><span class="sig-paren">(</span><em class="sig-param">timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.exception"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.exception" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">exception</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.exception"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.exception" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the exception raised by the computation.</p>
 <p>This method may return immediately or may block.</p>
 <dl class="field-list simple">
@@ -2225,9 +2237,9 @@ did not raise an exception.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Future.result">
-<em class="property">abstract </em><code class="sig-name descname">result</code><span class="sig-paren">(</span><em class="sig-param">timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.result" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">result</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.result" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the result of the computation or raises its exception.</p>
 <p>This method may return immediately or may block.</p>
 <dl class="field-list simple">
@@ -2251,7 +2263,7 @@ computations’s termination.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Future.running">
 <em class="property">abstract </em><code class="sig-name descname">running</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.running"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.running" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes whether the computation is taking place.</p>
@@ -2266,9 +2278,9 @@ currently executing.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc.Future.traceback">
-<em class="property">abstract </em><code class="sig-name descname">traceback</code><span class="sig-paren">(</span><em class="sig-param">timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.traceback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.traceback" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">traceback</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.traceback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.traceback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Access the traceback of the exception raised by the computation.</p>
 <p>This method may return immediately or may block.</p>
 <dl class="field-list simple">
@@ -2296,24 +2308,24 @@ if the computation did not raise an exception.</p>
 </div>
 <div class="section" id="compression">
 <h3>Compression<a class="headerlink" href="#compression" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc.Compression">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">Compression</code><a class="reference internal" href="_modules/grpc.html#Compression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Compression" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates the compression method to be used for an RPC.</p>
 <p>This enumeration is part of an EXPERIMENTAL API.</p>
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.Compression.NoCompression">
 <code class="sig-name descname">NoCompression</code><a class="headerlink" href="#grpc.Compression.NoCompression" title="Permalink to this definition">¶</a></dt>
 <dd><p>Do not use compression algorithm.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.Compression.Deflate">
 <code class="sig-name descname">Deflate</code><a class="headerlink" href="#grpc.Compression.Deflate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use “Deflate” compression algorithm.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="grpc.Compression.Gzip">
 <code class="sig-name descname">Gzip</code><a class="headerlink" href="#grpc.Compression.Gzip" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use “Gzip” compression algorithm.</p>

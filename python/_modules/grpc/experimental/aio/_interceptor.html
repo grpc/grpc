@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc.experimental.aio._interceptor &#8212; gRPC Python 1.28.1 documentation</title>
+    <title>grpc.experimental.aio._interceptor &#8212; gRPC Python 1.29.0 documentation</title>
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.28.1</p>
+<p class="blurb">1.29.0</p>
 
 
 
@@ -105,7 +105,7 @@
 <span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">functools</span>
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Awaitable</span>
 
 <span class="kn">import</span> <span class="nn">grpc</span>
 <span class="kn">from</span> <span class="nn">grpc._cython</span> <span class="kn">import</span> <span class="n">cygrpc</span>
@@ -117,6 +117,34 @@
                       <span class="n">MetadataType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">,</span> <span class="n">DoneCallbackType</span><span class="p">)</span>
 
 <span class="n">_LOCAL_CANCELLATION_DETAILS</span> <span class="o">=</span> <span class="s1">&#39;Locally cancelled by application!&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">ServerInterceptor</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Affords intercepting incoming RPCs on the service-side.</span>
+
+<span class="sd">    This is an EXPERIMENTAL API.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">intercept_service</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">grpc</span><span class="o">.</span><span class="n">HandlerCallDetails</span><span class="p">],</span> <span class="n">Awaitable</span><span class="p">[</span>
+                <span class="n">grpc</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">]],</span>
+            <span class="n">handler_call_details</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">HandlerCallDetails</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">grpc</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Intercepts incoming RPCs before handing them over to a handler.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            continuation: A function that takes a HandlerCallDetails and</span>
+<span class="sd">                proceeds to invoke the next interceptor in the chain, if any,</span>
+<span class="sd">                or the RPC handler lookup logic, with the call details passed</span>
+<span class="sd">                as an argument, and returns an RpcMethodHandler instance if</span>
+<span class="sd">                the RPC is considered serviced, or None otherwise.</span>
+<span class="sd">            handler_call_details: A HandlerCallDetails describing the RPC.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An RpcMethodHandler with which the RPC may be serviced if the</span>
+<span class="sd">            interceptor chooses to service this RPC, or None otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="ClientCallDetails"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ClientCallDetails">[docs]</a><span class="k">class</span> <span class="nc">ClientCallDetails</span><span class="p">(</span>
@@ -221,10 +249,10 @@
                  <span class="n">loop</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">AbstractEventLoop</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">channel</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">loop</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">ensure_future</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invoke</span><span class="p">(</span>
-            <span class="n">interceptors</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span>
-            <span class="n">wait_for_ready</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">request_serializer</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="p">),</span>
-                                                        <span class="n">loop</span><span class="o">=</span><span class="n">loop</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_invoke</span><span class="p">(</span><span class="n">interceptors</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span>
+                         <span class="n">wait_for_ready</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">request_serializer</span><span class="p">,</span>
+                         <span class="n">response_deserializer</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pending_add_done_callbacks</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_fire_pending_add_done_callbacks</span><span class="p">)</span>
@@ -389,7 +417,11 @@
     <span class="k">def</span> <span class="fm">__await__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">call</span> <span class="o">=</span> <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="fm">__await__</span><span class="p">()</span>
         <span class="n">response</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">call</span><span class="o">.</span><span class="fm">__await__</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">response</span></div>
+        <span class="k">return</span> <span class="n">response</span>
+
+<div class="viewcode-block" id="InterceptedUnaryUnaryCall.wait_for_connection"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.InterceptedUnaryUnaryCall.wait_for_connection">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">wait_for_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">call</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">call</span><span class="o">.</span><span class="n">wait_for_connection</span><span class="p">()</span></div></div>
 
 
 <span class="k">class</span> <span class="nc">UnaryUnaryCallResponse</span><span class="p">(</span><span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryUnaryCall</span><span class="p">):</span>
@@ -435,6 +467,9 @@
             <span class="c1"># for telling the interpreter that __await__ is a generator.</span>
             <span class="k">yield</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">wait_for_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
 </pre></div>
 
           </div>

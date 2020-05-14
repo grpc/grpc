@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc.experimental.aio._server &#8212; gRPC Python 1.28.1 documentation</title>
+    <title>grpc.experimental.aio._server &#8212; gRPC Python 1.29.0 documentation</title>
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.28.1</p>
+<p class="blurb">1.29.0</p>
 
 
 
@@ -112,6 +112,7 @@
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_base_server</span>
 <span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">ChannelArgumentType</span>
+<span class="kn">from</span> <span class="nn">._interceptor</span> <span class="kn">import</span> <span class="n">ServerInterceptor</span>
 
 
 <span class="k">def</span> <span class="nf">_augment_channel_arguments</span><span class="p">(</span><span class="n">base_options</span><span class="p">:</span> <span class="n">ChannelArgumentType</span><span class="p">,</span>
@@ -130,6 +131,15 @@
                  <span class="n">maximum_concurrent_rpcs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
                  <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">interceptors</span><span class="p">:</span>
+            <span class="n">invalid_interceptors</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">interceptor</span> <span class="k">for</span> <span class="n">interceptor</span> <span class="ow">in</span> <span class="n">interceptors</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interceptor</span><span class="p">,</span> <span class="n">ServerInterceptor</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="n">invalid_interceptors</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Interceptor must be ServerInterceptor, the &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;following are invalid: </span><span class="si">{</span><span class="n">invalid_interceptors</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_server</span> <span class="o">=</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioServer</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">,</span> <span class="n">generic_handlers</span><span class="p">,</span> <span class="n">interceptors</span><span class="p">,</span>
             <span class="n">_augment_channel_arguments</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">compression</span><span class="p">),</span>
@@ -241,7 +251,11 @@
 <span class="sd">        The Cython AioServer doesn&#39;t hold a ref-count to this class. It should</span>
 <span class="sd">        be safe to slightly extend the underlying Cython object&#39;s life span.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_server&#39;</span><span class="p">):</span>
+            <span class="n">cygrpc</span><span class="o">.</span><span class="n">schedule_coro_threadsafe</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="p">)</span>
 
 
 <div class="viewcode-block" id="server"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.server">[docs]</a><span class="k">def</span> <span class="nf">server</span><span class="p">(</span><span class="n">migration_thread_pool</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Executor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>

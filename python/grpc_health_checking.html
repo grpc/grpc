@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>gRPC Health Checking &#8212; gRPC Python 1.28.1 documentation</title>
+    <title>gRPC Health Checking &#8212; gRPC Python 1.29.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -31,7 +31,7 @@
 
 
 
-<p class="blurb">1.28.1</p>
+<p class="blurb">1.29.0</p>
 
 
 
@@ -93,20 +93,20 @@
 <h1>gRPC Health Checking<a class="headerlink" href="#grpc-health-checking" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
+<dl class="py class">
 <dt id="grpc_health.v1.health.HealthServicer">
-<em class="property">class </em><code class="sig-prename descclassname">grpc_health.v1.health.</code><code class="sig-name descname">HealthServicer</code><span class="sig-paren">(</span><em class="sig-param">experimental_non_blocking=True</em>, <em class="sig-param">experimental_thread_pool=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">grpc_health.v1.health.</code><code class="sig-name descname">HealthServicer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">experimental_non_blocking</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">experimental_thread_pool</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Servicer handling RPCs for service statuses.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="grpc_health.v1.health.HealthServicer.Check">
-<code class="sig-name descname">Check</code><span class="sig-paren">(</span><em class="sig-param">request</em>, <em class="sig-param">context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.Check"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.Check" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">Check</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request</span></em>, <em class="sig-param"><span class="n">context</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.Check"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.Check" title="Permalink to this definition">¶</a></dt>
 <dd><p>If the requested service is unknown, the call will fail with status
 NOT_FOUND.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc_health.v1.health.HealthServicer.Watch">
-<code class="sig-name descname">Watch</code><span class="sig-paren">(</span><em class="sig-param">request</em>, <em class="sig-param">context</em>, <em class="sig-param">send_response_callback=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.Watch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.Watch" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">Watch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request</span></em>, <em class="sig-param"><span class="n">context</span></em>, <em class="sig-param"><span class="n">send_response_callback</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.Watch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.Watch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs a watch for the serving status of the requested service.
 The server will immediately send back a message indicating the current
 serving status.  It will then subsequently send a new message whenever
@@ -122,7 +122,7 @@ call.  If the call terminates with any other status (including OK),
 clients should retry the call with appropriate exponential backoff.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc_health.v1.health.HealthServicer.enter_graceful_shutdown">
 <code class="sig-name descname">enter_graceful_shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.enter_graceful_shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.enter_graceful_shutdown" title="Permalink to this definition">¶</a></dt>
 <dd><p>Permanently sets the status of all services to NOT_SERVING.</p>
@@ -132,9 +132,9 @@ of a service will be ignored.</p>
 <p>This is an EXPERIMENTAL API.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="grpc_health.v1.health.HealthServicer.set">
-<code class="sig-name descname">set</code><span class="sig-paren">(</span><em class="sig-param">service</em>, <em class="sig-param">status</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.set" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service</span></em>, <em class="sig-param"><span class="n">status</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.set" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the status of a service.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

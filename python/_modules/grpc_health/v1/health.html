@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc_health.v1.health &#8212; gRPC Python 1.28.1 documentation</title>
+    <title>grpc_health.v1.health &#8212; gRPC Python 1.29.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.28.1</p>
+<p class="blurb">1.29.0</p>
 
 
 
@@ -172,7 +172,7 @@
                  <span class="n">experimental_non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                  <span class="n">experimental_thread_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_server_status</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_server_status</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">HealthCheckResponse</span><span class="o">.</span><span class="n">SERVING</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_send_response_callbacks</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Watch</span><span class="o">.</span><span class="vm">__func__</span><span class="o">.</span><span class="n">experimental_non_blocking</span> <span class="o">=</span> <span class="n">experimental_non_blocking</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Watch</span><span class="o">.</span><span class="vm">__func__</span><span class="o">.</span><span class="n">experimental_thread_pool</span> <span class="o">=</span> <span class="n">experimental_thread_pool</span>

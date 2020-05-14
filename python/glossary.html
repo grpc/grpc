@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Glossary &#8212; gRPC Python 1.28.1 documentation</title>
+    <title>Glossary &#8212; gRPC Python 1.29.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.28.1</p>
+<p class="blurb">1.29.0</p>
 
 
 
@@ -96,6 +96,17 @@ the key must end with ‘-bin’, i.e.
 <code class="docutils literal notranslate"><span class="pre">('binary-metadata-bin',</span> <span class="pre">b'\\x00\\xFF')</span></code></p>
 </dd>
 <dt id="term-metadata">metadata</dt><dd><p>A sequence of metadatum.</p>
+</dd>
+<dt id="term-serializer">serializer</dt><dd><p>A callable function that encodes an object into bytes. Applications are
+allowed to provide any customized serializer, so there isn’t a restriction
+for the input object (i.e. even <code class="docutils literal notranslate"><span class="pre">None</span></code>). On the server-side, the
+serializer is invoked with server handler’s return value; on the
+client-side, the serializer is invoked with outbound message objects.</p>
+</dd>
+<dt id="term-deserializer">deserializer</dt><dd><p>A callable function that decodes bytes into an object. Same as serializer,
+the returned object doesn’t have restrictions (i.e. <code class="docutils literal notranslate"><span class="pre">None</span></code> allowed). The
+deserializer is invoked with inbound message bytes on both the server side
+and the client-side.</p>
 </dd>
 </dl>
 </div>
