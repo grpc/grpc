@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc &#8212; gRPC Python 1.28.1 documentation</title>
+    <title>grpc &#8212; gRPC Python 1.29.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.28.1</p>
+<p class="blurb">1.29.0</p>
 
 
 
@@ -715,7 +715,7 @@
 <div class="viewcode-block" id="AuthMetadataPlugin.__call__"><a class="viewcode-back" href="../grpc.html#grpc.AuthMetadataPlugin.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Implements authentication by passing metadata to a callback.</span>
 
-<span class="sd">        Implementations of this method must not block.</span>
+<span class="sd">        This method will be invoked asynchronously in a separate thread.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">          context: An AuthMetadataContext providing information on the RPC that</span>
@@ -1081,9 +1081,9 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">          method: The name of the RPC method.</span>
-<span class="sd">          request_serializer: Optional behaviour for serializing the request</span>
+<span class="sd">          request_serializer: Optional :term:`serializer` for serializing the request</span>
 <span class="sd">            message. Request goes unserialized in case None is passed.</span>
-<span class="sd">          response_deserializer: Optional behaviour for deserializing the</span>
+<span class="sd">          response_deserializer: Optional :term:`deserializer` for deserializing the</span>
 <span class="sd">            response message. Response goes undeserialized in case None</span>
 <span class="sd">            is passed.</span>
 
@@ -1101,9 +1101,9 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">          method: The name of the RPC method.</span>
-<span class="sd">          request_serializer: Optional behaviour for serializing the request</span>
+<span class="sd">          request_serializer: Optional :term:`serializer` for serializing the request</span>
 <span class="sd">            message. Request goes unserialized in case None is passed.</span>
-<span class="sd">          response_deserializer: Optional behaviour for deserializing the</span>
+<span class="sd">          response_deserializer: Optional :term:`deserializer` for deserializing the</span>
 <span class="sd">            response message. Response goes undeserialized in case None is</span>
 <span class="sd">            passed.</span>
 
@@ -1121,9 +1121,9 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">          method: The name of the RPC method.</span>
-<span class="sd">          request_serializer: Optional behaviour for serializing the request</span>
+<span class="sd">          request_serializer: Optional :term:`serializer` for serializing the request</span>
 <span class="sd">            message. Request goes unserialized in case None is passed.</span>
-<span class="sd">          response_deserializer: Optional behaviour for deserializing the</span>
+<span class="sd">          response_deserializer: Optional :term:`deserializer` for deserializing the</span>
 <span class="sd">            response message. Response goes undeserialized in case None is</span>
 <span class="sd">            passed.</span>
 
@@ -1141,9 +1141,9 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">          method: The name of the RPC method.</span>
-<span class="sd">          request_serializer: Optional behaviour for serializing the request</span>
+<span class="sd">          request_serializer: Optional :term:`serializer` for serializing the request</span>
 <span class="sd">            message. Request goes unserialized in case None is passed.</span>
-<span class="sd">          response_deserializer: Optional behaviour for deserializing the</span>
+<span class="sd">          response_deserializer: Optional :term:`deserializer` for deserializing the</span>
 <span class="sd">            response message. Response goes undeserialized in case None</span>
 <span class="sd">            is passed.</span>
 
@@ -1161,6 +1161,14 @@
 
 <span class="sd">        This method is idempotent.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Channel.__enter__"><a class="viewcode-back" href="../grpc.html#grpc.Channel.__enter__">[docs]</a>    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enters the runtime context related to the channel object.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Channel.__exit__"><a class="viewcode-back" href="../grpc.html#grpc.Channel.__exit__">[docs]</a>    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Exits the runtime context related to the channel object.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
@@ -1350,11 +1358,11 @@
 <span class="sd">        or any arbitrary number of request messages.</span>
 <span class="sd">      response_streaming: Whether the RPC supports exactly one response message</span>
 <span class="sd">        or any arbitrary number of response messages.</span>
-<span class="sd">      request_deserializer: A callable behavior that accepts a byte string and</span>
+<span class="sd">      request_deserializer: A callable :term:`deserializer` that accepts a byte string and</span>
 <span class="sd">        returns an object suitable to be passed to this object&#39;s business</span>
 <span class="sd">        logic, or None to indicate that this object&#39;s business logic should be</span>
 <span class="sd">        passed the raw request bytes.</span>
-<span class="sd">      response_serializer: A callable behavior that accepts an object produced</span>
+<span class="sd">      response_serializer: A callable :term:`serializer` that accepts an object produced</span>
 <span class="sd">        by this object&#39;s business logic and returns a byte string, or None to</span>
 <span class="sd">        indicate that the byte strings produced by this object&#39;s business logic</span>
 <span class="sd">        should be transmitted on the wire as they are.</span>
@@ -1575,8 +1583,8 @@
 <span class="sd">    Args:</span>
 <span class="sd">      behavior: The implementation of an RPC that accepts one request</span>
 <span class="sd">        and returns one response.</span>
-<span class="sd">      request_deserializer: An optional behavior for request deserialization.</span>
-<span class="sd">      response_serializer: An optional behavior for response serialization.</span>
+<span class="sd">      request_deserializer: An optional :term:`deserializer` for request deserialization.</span>
+<span class="sd">      response_serializer: An optional :term:`serializer` for response serialization.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      An RpcMethodHandler object that is typically used by grpc.Server.</span>
@@ -1595,8 +1603,8 @@
 <span class="sd">    Args:</span>
 <span class="sd">      behavior: The implementation of an RPC that accepts one request</span>
 <span class="sd">        and returns an iterator of response values.</span>
-<span class="sd">      request_deserializer: An optional behavior for request deserialization.</span>
-<span class="sd">      response_serializer: An optional behavior for response serialization.</span>
+<span class="sd">      request_deserializer: An optional :term:`deserializer` for request deserialization.</span>
+<span class="sd">      response_serializer: An optional :term:`serializer` for response serialization.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      An RpcMethodHandler object that is typically used by grpc.Server.</span>
@@ -1615,8 +1623,8 @@
 <span class="sd">    Args:</span>
 <span class="sd">      behavior: The implementation of an RPC that accepts an iterator of</span>
 <span class="sd">        request values and returns a single response value.</span>
-<span class="sd">      request_deserializer: An optional behavior for request deserialization.</span>
-<span class="sd">      response_serializer: An optional behavior for response serialization.</span>
+<span class="sd">      request_deserializer: An optional :term:`deserializer` for request deserialization.</span>
+<span class="sd">      response_serializer: An optional :term:`serializer` for response serialization.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      An RpcMethodHandler object that is typically used by grpc.Server.</span>
@@ -1635,8 +1643,8 @@
 <span class="sd">    Args:</span>
 <span class="sd">      behavior: The implementation of an RPC that accepts an iterator of</span>
 <span class="sd">        request values and returns an iterator of response values.</span>
-<span class="sd">      request_deserializer: An optional behavior for request deserialization.</span>
-<span class="sd">      response_serializer: An optional behavior for response serialization.</span>
+<span class="sd">      request_deserializer: An optional :term:`deserializer` for request deserialization.</span>
+<span class="sd">      response_serializer: An optional :term:`serializer` for response serialization.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      An RpcMethodHandler object that is typically used by grpc.Server.</span>

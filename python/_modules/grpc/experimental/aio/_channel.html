@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc.experimental.aio._channel &#8212; gRPC Python 1.28.1 documentation</title>
+    <title>grpc.experimental.aio._channel &#8212; gRPC Python 1.29.0 documentation</title>
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.28.1</p>
+<p class="blurb">1.29.0</p>
 
 
 
@@ -104,7 +104,7 @@
 
 <span class="kn">import</span> <span class="nn">asyncio</span>
 <span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">AsyncIterable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
 
 <span class="kn">import</span> <span class="nn">grpc</span>
 <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_common</span><span class="p">,</span> <span class="n">_compression</span><span class="p">,</span> <span class="n">_grpcio_metadata</span>
@@ -116,7 +116,7 @@
 <span class="kn">from</span> <span class="nn">._interceptor</span> <span class="kn">import</span> <span class="p">(</span><span class="n">InterceptedUnaryUnaryCall</span><span class="p">,</span>
                            <span class="n">UnaryUnaryClientInterceptor</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="p">(</span><span class="n">ChannelArgumentType</span><span class="p">,</span> <span class="n">DeserializingFunction</span><span class="p">,</span> <span class="n">MetadataType</span><span class="p">,</span>
-                      <span class="n">SerializingFunction</span><span class="p">)</span>
+                      <span class="n">SerializingFunction</span><span class="p">,</span> <span class="n">RequestIterableType</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_timeout_to_deadline</span>
 
 <span class="n">_IMMUTABLE_EMPTY_TUPLE</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()</span>
@@ -235,7 +235,7 @@
                                <span class="n">_base_channel</span><span class="o">.</span><span class="n">StreamUnaryMultiCallable</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">request_async_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AsyncIterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="n">_IMMUTABLE_EMPTY_TUPLE</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -247,7 +247,7 @@
 
         <span class="n">deadline</span> <span class="o">=</span> <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
 
-        <span class="n">call</span> <span class="o">=</span> <span class="n">StreamUnaryCall</span><span class="p">(</span><span class="n">request_async_iterator</span><span class="p">,</span> <span class="n">deadline</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
+        <span class="n">call</span> <span class="o">=</span> <span class="n">StreamUnaryCall</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">,</span> <span class="n">deadline</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
                                <span class="n">credentials</span><span class="p">,</span> <span class="n">wait_for_ready</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
                                <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
                                <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
@@ -259,7 +259,7 @@
                                 <span class="n">_base_channel</span><span class="o">.</span><span class="n">StreamStreamMultiCallable</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">request_async_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AsyncIterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="n">_IMMUTABLE_EMPTY_TUPLE</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -271,7 +271,7 @@
 
         <span class="n">deadline</span> <span class="o">=</span> <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
 
-        <span class="n">call</span> <span class="o">=</span> <span class="n">StreamStreamCall</span><span class="p">(</span><span class="n">request_async_iterator</span><span class="p">,</span> <span class="n">deadline</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
+        <span class="n">call</span> <span class="o">=</span> <span class="n">StreamStreamCall</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">,</span> <span class="n">deadline</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
                                 <span class="n">credentials</span><span class="p">,</span> <span class="n">wait_for_ready</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
@@ -329,7 +329,7 @@
     <span class="k">async</span> <span class="k">def</span> <span class="fm">__aexit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">):</span>  <span class="c1"># pylint: disable=too-many-branches</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">closed</span><span class="p">():</span>
             <span class="k">return</span>
 
@@ -341,7 +341,27 @@
         <span class="n">calls</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">call_tasks</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span><span class="p">:</span>
-            <span class="n">stack</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">get_stack</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">stack</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">get_stack</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">attribute_error</span><span class="p">:</span>
+                <span class="c1"># NOTE(lidiz) tl;dr: If the Task is created with a CPython</span>
+                <span class="c1"># object, it will trigger AttributeError.</span>
+                <span class="c1">#</span>
+                <span class="c1"># In the global finalizer, the event loop schedules</span>
+                <span class="c1"># a CPython PyAsyncGenAThrow object.</span>
+                <span class="c1"># https://github.com/python/cpython/blob/00e45877e33d32bb61aa13a2033e3bba370bda4d/Lib/asyncio/base_events.py#L484</span>
+                <span class="c1">#</span>
+                <span class="c1"># However, the PyAsyncGenAThrow object is written in C and</span>
+                <span class="c1"># failed to include the normal Python frame objects. Hence,</span>
+                <span class="c1"># this exception is a false negative, and it is safe to ignore</span>
+                <span class="c1"># the failure. It is fixed by https://github.com/python/cpython/pull/18669,</span>
+                <span class="c1"># but not available until 3.9 or 3.8.3. So, we have to keep it</span>
+                <span class="c1"># for a while.</span>
+                <span class="c1"># TODO(lidiz) drop this hack after 3.8 deprecation</span>
+                <span class="k">if</span> <span class="s1">&#39;frame&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">attribute_error</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span>
 
             <span class="c1"># If the Task is created by a C-extension, the stack will be empty.</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">stack</span><span class="p">:</span>

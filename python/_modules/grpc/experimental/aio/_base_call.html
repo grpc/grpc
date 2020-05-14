@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc.experimental.aio._base_call &#8212; gRPC Python 1.28.1 documentation</title>
+    <title>grpc.experimental.aio._base_call &#8212; gRPC Python 1.29.0 documentation</title>
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.28.1</p>
+<p class="blurb">1.29.0</p>
 
 
 
@@ -204,6 +204,19 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">          The details string of the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Call.wait_for_connection"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Call.wait_for_connection">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">wait_for_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Waits until connected to peer and raises aio.AioRpcError if failed.</span>
+
+<span class="sd">        This is an EXPERIMENTAL method.</span>
+
+<span class="sd">        This method ensures the RPC has been successfully connected. Otherwise,</span>
+<span class="sd">        an AioRpcError will be raised to explain the reason of the connection</span>
+<span class="sd">        failure.</span>
+
+<span class="sd">        This method is recommended for building retry mechanisms.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div></div>
 
 
