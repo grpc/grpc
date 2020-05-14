@@ -45,18 +45,31 @@ class XdsApi {
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
 
-  struct RdsRoute {
-    std::string service;
-    std::string method;
-    std::string cluster_name;
-
-    bool operator==(const RdsRoute& other) const {
-      return (service == other.service && method == other.method &&
-              cluster_name == other.cluster_name);
-    }
-  };
-
   struct RdsUpdate {
+    struct RdsRoute {
+      std::string service;
+      std::string method;
+      // TODO(donnadionne): When we can use absl::variant<>, consider using that
+      // here, to enforce the fact that only one of cluster_name and
+      // weighted_clusters can be set.
+      std::string cluster_name;
+      struct ClusterWeight {
+        std::string name;
+        uint32_t weight;
+
+        bool operator==(const ClusterWeight& other) const {
+          return (name == other.name && weight == other.weight);
+        }
+      };
+      std::vector<ClusterWeight> weighted_clusters;
+
+      bool operator==(const RdsRoute& other) const {
+        return (service == other.service && method == other.method &&
+                cluster_name == other.cluster_name &&
+                weighted_clusters == other.weighted_clusters);
+      }
+    };
+
     std::vector<RdsRoute> routes;
 
     bool operator==(const RdsUpdate& other) const {
@@ -276,6 +289,7 @@ class XdsApi {
   // load_reporting_interval for client-side load reporting. If there is any
   // error, the output config is invalid.
   grpc_error* ParseLrsResponse(const grpc_slice& encoded_response,
+                               bool* send_all_clusters,
                                std::set<std::string>* cluster_names,
                                grpc_millis* load_reporting_interval);
 

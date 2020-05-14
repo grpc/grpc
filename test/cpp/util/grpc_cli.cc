@@ -68,10 +68,10 @@ DEFINE_string(outfile, "", "Output file (default is stdout)");
 static bool SimplePrint(const grpc::string& outfile,
                         const grpc::string& output) {
   if (outfile.empty()) {
-    std::cout << output << std::endl;
+    std::cout << output << std::flush;
   } else {
     std::ofstream output_file(outfile, std::ios::app | std::ios::binary);
-    output_file << output << std::endl;
+    output_file << output << std::flush;
     output_file.close();
   }
   return true;

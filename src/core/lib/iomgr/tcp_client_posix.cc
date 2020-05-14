@@ -302,9 +302,13 @@ void grpc_tcp_client_create_from_prepared_fd(
     return;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
+    grpc_error* error = GRPC_OS_ERROR(errno, "connect");
+    char* addr_str = grpc_sockaddr_to_uri(addr);
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
+                               grpc_slice_from_copied_string(addr_str));
+    gpr_free(addr_str);
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
-                            GRPC_OS_ERROR(errno, "connect"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return;
   }
 

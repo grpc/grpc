@@ -20,40 +20,20 @@
 
 #include "src/core/lib/gprpp/host_port.h"
 
-#include <string.h>
-
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gpr/string.h"
 
 namespace grpc_core {
 
 std::string JoinHostPort(absl::string_view host, int port) {
-  if (host[0] != '[' && host.rfind(':') != host.npos) {
+  if (!host.empty() && host[0] != '[' && host.rfind(':') != host.npos) {
     // IPv6 literals must be enclosed in brackets.
     return absl::StrFormat("[%s]:%d", host, port);
   }
   // Ordinary non-bracketed host:port.
   return absl::StrFormat("%s:%d", host, port);
-}
-
-int JoinHostPort(grpc_core::UniquePtr<char>* out, const char* host, int port) {
-  char* tmp;
-  int ret;
-  if (host[0] != '[' && strchr(host, ':') != nullptr) {
-    /* IPv6 literals must be enclosed in brackets. */
-    ret = gpr_asprintf(&tmp, "[%s]:%d", host, port);
-  } else {
-    /* Ordinary non-bracketed host:port. */
-    ret = gpr_asprintf(&tmp, "%s:%d", host, port);
-  }
-  out->reset(tmp);
-  return ret;
 }
 
 namespace {

@@ -18,6 +18,8 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
@@ -65,6 +67,7 @@ class CdsLb : public LoadBalancingPolicy {
         : parent_(std::move(parent)) {}
     void OnClusterChanged(XdsApi::CdsUpdate cluster_data) override;
     void OnError(grpc_error* error) override;
+    void OnResourceDoesNotExist() override;
 
    private:
     RefCountedPtr<CdsLb> parent_;
@@ -208,6 +211,25 @@ void CdsLb::ClusterWatcher::OnError(grpc_error* error) {
         absl::make_unique<TransientFailurePicker>(error));
   } else {
     GRPC_ERROR_UNREF(error);
+  }
+}
+
+void CdsLb::ClusterWatcher::OnResourceDoesNotExist() {
+  gpr_log(GPR_ERROR, "[cdslb %p] CDS resource for %s does not exist",
+          parent_.get(), parent_->config_->cluster().c_str());
+  // Go into TRANSIENT_FAILURE if we have not yet created the child
+  // policy (i.e., we have not yet received data from xds).  Otherwise,
+  // we keep running with the data we had previously.
+  // TODO(roth): Once traffic splitting is implemented, this should be
+  // fixed to report TRANSIENT_FAILURE unconditionally.
+  if (parent_->child_policy_ == nullptr) {
+    parent_->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        absl::make_unique<TransientFailurePicker>(
+            GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat("CDS resource \"", parent_->config_->cluster(),
+                             "\" does not exist")
+                    .c_str())));
   }
 }
 

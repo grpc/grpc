@@ -666,17 +666,21 @@ typedef unsigned __int64 uint64_t;
 #endif /* GPR_ATTRIBUTE_NO_TSAN (1) */
 
 /* GRPC_TSAN_ENABLED will be defined, when compiled with thread sanitizer. */
+#ifndef GRPC_TSAN_SUPPRESSED
 #if defined(__SANITIZE_THREAD__)
 #define GRPC_TSAN_ENABLED
 #elif GPR_HAS_FEATURE(thread_sanitizer)
 #define GRPC_TSAN_ENABLED
 #endif
+#endif
 
 /* GRPC_ASAN_ENABLED will be defined, when compiled with address sanitizer. */
+#ifndef GRPC_ASAN_SUPPRESSED
 #if defined(__SANITIZE_ADDRESS__)
 #define GRPC_ASAN_ENABLED
 #elif GPR_HAS_FEATURE(address_sanitizer)
 #define GRPC_ASAN_ENABLED
+#endif
 #endif
 
 /* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */
