@@ -1226,21 +1226,102 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     stub2_ = grpc::testing::EchoTest2Service::NewStub(channel_);
   }
 
-  void ResetBackendCounters() {
-    for (auto& backend : backends_) backend->backend_service()->ResetCounters();
+  enum RpcService {
+    SERVICE_ECHO,
+    SERVICE_ECHO1,
+    SERVICE_ECHO2,
+  };
+
+  enum RpcMethod {
+    METHOD_ECHO,
+    METHOD_ECHO1,
+    METHOD_ECHO2,
+  };
+
+  struct RpcOptions {
+    RpcService service = SERVICE_ECHO;
+    RpcMethod method = METHOD_ECHO;
+    int timeout_ms = 1000;
+    bool wait_for_ready = false;
+    bool server_fail = false;
+
+    RpcOptions() {}
+
+    RpcOptions& set_rpc_service(RpcService rpc_service) {
+      service = rpc_service;
+      return *this;
+    }
+
+    RpcOptions& set_rpc_method(RpcMethod rpc_method) {
+      method = rpc_method;
+      return *this;
+    }
+
+    RpcOptions& set_timeout_ms(int rpc_timeout_ms) {
+      timeout_ms = rpc_timeout_ms;
+      return *this;
+    }
+
+    RpcOptions& set_wait_for_ready(bool rpc_wait_for_ready) {
+      wait_for_ready = rpc_wait_for_ready;
+      return *this;
+    }
+
+    RpcOptions& set_server_fail(bool rpc_server_fail) {
+      server_fail = rpc_server_fail;
+      return *this;
+    }
+  };
+
+  template <typename Stub>
+  Status SendRpcMethod(Stub* stub, const RpcOptions& rpc_options,
+                       ClientContext* context, EchoRequest& request,
+                       EchoResponse* response) {
+    switch (rpc_options.method) {
+      case METHOD_ECHO:
+        return (*stub)->Echo(context, request, response);
+      case METHOD_ECHO1:
+        return (*stub)->Echo1(context, request, response);
+      case METHOD_ECHO2:
+        return (*stub)->Echo2(context, request, response);
+    }
   }
 
-  bool SeenAllBackends(size_t start_index = 0, size_t stop_index = 0) {
+  void ResetBackendCounters(size_t start_index = 0, size_t stop_index = 0) {
     if (stop_index == 0) stop_index = backends_.size();
     for (size_t i = start_index; i < stop_index; ++i) {
-      if (backends_[i]->backend_service()->request_count() == 0) return false;
+      backends_[i]->backend_service()->ResetCounters();
+      backends_[i]->backend_service1()->ResetCounters();
+      backends_[i]->backend_service2()->ResetCounters();
+    }
+  }
+
+  bool SeenAllBackends(size_t start_index = 0, size_t stop_index = 0,
+                       const RpcOptions& rpc_options = RpcOptions()) {
+    if (stop_index == 0) stop_index = backends_.size();
+    for (size_t i = start_index; i < stop_index; ++i) {
+      switch (rpc_options.service) {
+        case SERVICE_ECHO:
+          if (backends_[i]->backend_service()->request_count() == 0)
+            return false;
+          break;
+        case SERVICE_ECHO1:
+          if (backends_[i]->backend_service1()->request_count() == 0)
+            return false;
+          break;
+        case SERVICE_ECHO2:
+          if (backends_[i]->backend_service2()->request_count() == 0)
+            return false;
+          break;
+      }
     }
     return true;
   }
 
   void SendRpcAndCount(int* num_total, int* num_ok, int* num_failure,
-                       int* num_drops) {
-    const Status status = SendRpc();
+                       int* num_drops,
+                       const RpcOptions& rpc_options = RpcOptions()) {
+    const Status status = SendRpc(rpc_options);
     if (status.ok()) {
       ++*num_ok;
     } else {
@@ -1253,15 +1334,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     ++*num_total;
   }
 
-  std::tuple<int, int, int> WaitForAllBackends(size_t start_index = 0,
-                                               size_t stop_index = 0,
-                                               bool reset_counters = true) {
+  std::tuple<int, int, int> WaitForAllBackends(
+      size_t start_index = 0, size_t stop_index = 0, bool reset_counters = true,
+      const RpcOptions& rpc_options = RpcOptions()) {
     int num_ok = 0;
     int num_failure = 0;
     int num_drops = 0;
     int num_total = 0;
-    while (!SeenAllBackends(start_index, stop_index)) {
-      SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops);
+    while (!SeenAllBackends(start_index, stop_index, rpc_options)) {
+      SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops,
+                      rpc_options);
     }
     if (reset_counters) ResetBackendCounters();
     gpr_log(GPR_INFO,
@@ -1375,67 +1457,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       backend_ports.push_back(backends_[i]->port());
     }
     return backend_ports;
-  }
-
-  enum RpcService {
-    SERVICE_ECHO,
-    SERVICE_ECHO1,
-    SERVICE_ECHO2,
-  };
-
-  enum RpcMethod {
-    METHOD_ECHO,
-    METHOD_ECHO1,
-    METHOD_ECHO2,
-  };
-
-  struct RpcOptions {
-    RpcService service = SERVICE_ECHO;
-    RpcMethod method = METHOD_ECHO;
-    int timeout_ms = 1000;
-    bool wait_for_ready = false;
-    bool server_fail = false;
-
-    RpcOptions() {}
-
-    RpcOptions& set_rpc_service(RpcService rpc_service) {
-      service = rpc_service;
-      return *this;
-    }
-
-    RpcOptions& set_rpc_method(RpcMethod rpc_method) {
-      method = rpc_method;
-      return *this;
-    }
-
-    RpcOptions& set_timeout_ms(int rpc_timeout_ms) {
-      timeout_ms = rpc_timeout_ms;
-      return *this;
-    }
-
-    RpcOptions& set_wait_for_ready(bool rpc_wait_for_ready) {
-      wait_for_ready = rpc_wait_for_ready;
-      return *this;
-    }
-
-    RpcOptions& set_server_fail(bool rpc_server_fail) {
-      server_fail = rpc_server_fail;
-      return *this;
-    }
-  };
-
-  template <typename Stub>
-  Status SendRpcMethod(Stub* stub, const RpcOptions& rpc_options,
-                       ClientContext* context, EchoRequest& request,
-                       EchoResponse* response) {
-    switch (rpc_options.method) {
-      case METHOD_ECHO:
-        return (*stub)->Echo(context, request, response);
-      case METHOD_ECHO1:
-        return (*stub)->Echo1(context, request, response);
-      case METHOD_ECHO2:
-        return (*stub)->Echo2(context, request, response);
-    }
   }
 
   Status SendRpc(const RpcOptions& rpc_options = RpcOptions(),
@@ -2607,9 +2628,10 @@ TEST_P(LdsRdsTest, RouteHasNoRouteAction) {
   EXPECT_EQ(response_state.error_message, "No RouteAction found in route.");
 }
 
-// Tests that LDS client should send a NACK if RouteAction has a
-// cluster_specifier other than cluster in the LDS response.
-TEST_P(LdsRdsTest, RouteActionHasNoCluster) {
+// Tests that LDS client should send a NACK if route has a
+// cluster_specifier other than cluster or weighted_clusters in the LDS
+// response.
+TEST_P(LdsRdsTest, RouteActionUnsupportedClusterSpecifier) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   route_config.mutable_virtual_hosts(0)
@@ -2622,7 +2644,126 @@ TEST_P(LdsRdsTest, RouteActionHasNoCluster) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No cluster found in RouteAction.");
+  EXPECT_EQ(response_state.error_message,
+            "No cluster or weighted_clusters found in RouteAction.");
+}
+
+TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  route1->mutable_route()->set_cluster("");
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "RouteAction cluster contains empty cluster name.");
+}
+
+TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  const size_t kWeight75 = 75;
+  const char* kNewCluster1Name = "new_cluster_1";
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* weighted_cluster1 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster1->set_name(kNewCluster1Name);
+  weighted_cluster1->mutable_weight()->set_value(kWeight75);
+  route1->mutable_route()
+      ->mutable_weighted_clusters()
+      ->mutable_total_weight()
+      ->set_value(kWeight75 + 1);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "RouteAction weighted_cluster has incorrect total weight");
+}
+
+TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  const size_t kWeight75 = 75;
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* weighted_cluster1 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster1->set_name("");
+  weighted_cluster1->mutable_weight()->set_value(kWeight75);
+  route1->mutable_route()
+      ->mutable_weighted_clusters()
+      ->mutable_total_weight()
+      ->set_value(kWeight75);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(
+      response_state.error_message,
+      "RouteAction weighted_cluster cluster contains empty cluster name.");
+}
+
+TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  const size_t kWeight75 = 75;
+  const char* kNewCluster1Name = "new_cluster_1";
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* weighted_cluster1 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster1->set_name(kNewCluster1Name);
+  route1->mutable_route()
+      ->mutable_weighted_clusters()
+      ->mutable_total_weight()
+      ->set_value(kWeight75);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "RouteAction weighted_cluster cluster missing weight");
 }
 
 // Tests that LDS client times out when no response received.
@@ -2785,6 +2926,370 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(kNumEcho2Rpcs, backends_[3]->backend_service2()->request_count());
+}
+
+TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const size_t kNumEcho1Rpcs = 1000;
+  const size_t kNumEchoRpcs = 10;
+  const size_t kWeight75 = 75;
+  const size_t kWeight25 = 25;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster2.set_name(kNewCluster2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Populating Route Configurations for LDS.
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* weighted_cluster1 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster1->set_name(kNewCluster1Name);
+  weighted_cluster1->mutable_weight()->set_value(kWeight75);
+  auto* weighted_cluster2 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster2->set_name(kNewCluster2Name);
+  weighted_cluster2->mutable_weight()->set_value(kWeight25);
+  route1->mutable_route()
+      ->mutable_weighted_clusters()
+      ->mutable_total_weight()
+      ->set_value(kWeight75 + kWeight25);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  SetRouteConfiguration(0, new_route_config);
+  WaitForAllBackends(0, 1);
+  WaitForAllBackends(1, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  const int weight_75_request_count =
+      backends_[1]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  const int weight_25_request_count =
+      backends_[2]->backend_service1()->request_count();
+  const double kErrorTolerance = 0.2;
+  EXPECT_THAT(weight_75_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
+                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(weight_25_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
+                                             (1 + kErrorTolerance))));
+}
+
+TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewCluster2Name = "anew_cluster_2";
+  const char* kNewCluster3Name = "new_cluster_3";
+  const size_t kNumEcho1Rpcs = 1000;
+  const size_t kNumEchoRpcs = 10;
+  const size_t kWeight75 = 75;
+  const size_t kWeight25 = 25;
+  const size_t kWeight50 = 50;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  AdsServiceImpl::EdsResourceArgs args3({
+      {"locality0", GetBackendPorts(3, 4)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args3, kNewCluster3Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster2.set_name(kNewCluster2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  Cluster new_cluster3 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster3.set_name(kNewCluster3Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
+  // Populating Route Configurations.
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* weighted_cluster1 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster1->set_name(kNewCluster1Name);
+  weighted_cluster1->mutable_weight()->set_value(kWeight75);
+  auto* weighted_cluster2 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster2->set_name(kNewCluster2Name);
+  weighted_cluster2->mutable_weight()->set_value(kWeight25);
+  route1->mutable_route()
+      ->mutable_weighted_clusters()
+      ->mutable_total_weight()
+      ->set_value(kWeight75 + kWeight25);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  SetRouteConfiguration(0, new_route_config);
+  WaitForAllBackends(0, 1);
+  WaitForAllBackends(1, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  const int weight_75_request_count =
+      backends_[1]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  const int weight_25_request_count =
+      backends_[2]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
+  const double kErrorTolerance = 0.2;
+  EXPECT_THAT(weight_75_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
+                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(weight_25_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
+                                             (1 + kErrorTolerance))));
+  // Change Route Configurations: same clusters different weights.
+  weighted_cluster1->mutable_weight()->set_value(kWeight50);
+  weighted_cluster2->mutable_weight()->set_value(kWeight50);
+  // Change default route to a new cluster to help to identify when new polices
+  // are seen by the client.
+  default_route->mutable_route()->set_cluster(kNewCluster3Name);
+  SetRouteConfiguration(0, new_route_config);
+  ResetBackendCounters();
+  WaitForAllBackends(3, 4);
+  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  const int weight_50_request_count_1 =
+      backends_[1]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  const int weight_50_request_count_2 =
+      backends_[2]->backend_service1()->request_count();
+  EXPECT_EQ(kNumEchoRpcs, backends_[3]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
+  EXPECT_THAT(weight_50_request_count_1,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
+                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(weight_50_request_count_2,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
+                                             (1 + kErrorTolerance))));
+}
+
+TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
+  ResetStub(/*failover_timeout=*/0,
+            /*expected_targets=*/"",
+            /*xds_resource_does_not_exist_timeout*/ 0,
+            /*xds_routing_enabled=*/true);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewCluster2Name = "anew_cluster_2";
+  const char* kNewCluster3Name = "new_cluster_3";
+  const size_t kNumEcho1Rpcs = 1000;
+  const size_t kNumEchoRpcs = 10;
+  const size_t kWeight75 = 75;
+  const size_t kWeight25 = 25;
+  const size_t kWeight50 = 50;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  AdsServiceImpl::EdsResourceArgs args3({
+      {"locality0", GetBackendPorts(3, 4)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args3, kNewCluster3Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster2.set_name(kNewCluster2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  Cluster new_cluster3 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster3.set_name(kNewCluster3Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
+  // Populating Route Configurations.
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* weighted_cluster1 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster1->set_name(kNewCluster1Name);
+  weighted_cluster1->mutable_weight()->set_value(kWeight75);
+  auto* weighted_cluster2 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster2->set_name(kDefaultResourceName);
+  weighted_cluster2->mutable_weight()->set_value(kWeight25);
+  route1->mutable_route()
+      ->mutable_weighted_clusters()
+      ->mutable_total_weight()
+      ->set_value(kWeight75 + kWeight25);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  SetRouteConfiguration(0, new_route_config);
+  WaitForAllBackends(0, 1);
+  WaitForAllBackends(1, 2, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  int weight_25_request_count =
+      backends_[0]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  int weight_75_request_count =
+      backends_[1]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
+  const double kErrorTolerance = 0.2;
+  EXPECT_THAT(weight_75_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
+                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(weight_25_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
+                                             (1 + kErrorTolerance))));
+  // Change Route Configurations: new set of clusters with different weights.
+  weighted_cluster1->mutable_weight()->set_value(kWeight50);
+  weighted_cluster2->set_name(kNewCluster2Name);
+  weighted_cluster2->mutable_weight()->set_value(kWeight50);
+  SetRouteConfiguration(0, new_route_config);
+  ResetBackendCounters();
+  WaitForAllBackends(2, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  const int weight_50_request_count_1 =
+      backends_[1]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  const int weight_50_request_count_2 =
+      backends_[2]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
+  EXPECT_THAT(weight_50_request_count_1,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
+                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(weight_50_request_count_2,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
+                                             (1 + kErrorTolerance))));
+  // Change Route Configurations.
+  weighted_cluster1->mutable_weight()->set_value(kWeight75);
+  weighted_cluster2->set_name(kNewCluster3Name);
+  weighted_cluster2->mutable_weight()->set_value(kWeight25);
+  SetRouteConfiguration(0, new_route_config);
+  ResetBackendCounters();
+  WaitForAllBackends(3, 4, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  weight_75_request_count = backends_[1]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
+  weight_25_request_count = backends_[3]->backend_service1()->request_count();
+  EXPECT_THAT(weight_75_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
+                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(weight_25_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
+                                             (1 + kErrorTolerance))));
 }
 
 using CdsTest = BasicTest;

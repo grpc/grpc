@@ -88,8 +88,6 @@ typedef enum {
   GRPC_ERROR_STR_OS_ERROR,
   /// syscall that generated this error
   GRPC_ERROR_STR_SYSCALL,
-  /// source address of the socket associated with this error
-  GRPC_ERROR_STR_SOURCE_ADDRESS,
   /// peer that we were trying to communicate when this error occurred
   GRPC_ERROR_STR_TARGET_ADDRESS,
   /// grpc status message associated with this error

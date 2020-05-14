@@ -1,6 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup>
+  <!-- 
+    'Grpc_SkipNativeLibsCopy' should not be enabled in normal use.
+
+    It only exists to support special scenarios where user wants to copy the native libraries
+    to output directory themselves, in a separate build step or script.
+
+    Only use this flag if you really know what you're doing. It's your responsibility to ensure that matching versions of 
+    the Grpc.Core.dll assembly and the native libraries are used at all times.
+  -->
+  <ItemGroup Condition="'$(Grpc_SkipNativeLibsCopy)' != 'true'">
     <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win\native\grpc_csharp_ext.x86.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <Link>grpc_csharp_ext.x86.dll</Link>

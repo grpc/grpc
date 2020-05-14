@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,4 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Struct.new('Status', :code, :details, :metadata, :debug_error_string)
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
+py_test(
+    name = "grpc_status_test",
+    size = "small",
+    srcs = ["grpc_status_test.py"],
+    imports = ["../../"],
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_status/grpc_status",
+        "//src/python/grpcio_tests/tests_aio/unit:_test_base",
+        requirement("protobuf"),
+        requirement("googleapis-common-protos"),
+    ],
+)
