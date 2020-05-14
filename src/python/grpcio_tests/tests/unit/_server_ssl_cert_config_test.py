@@ -161,9 +161,10 @@ class _ServerSSLCertReloadTest(
         else:
             with self.assertRaises(grpc.RpcError) as exception_context:
                 client_stub.UnUn(request)
-            self.assertTrue(
-                exception_context.exception.code() in [
-                    grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.UNKNOWN])
+            self.assertEqual(exception_context.exception.code(), grpc.StatusCode.UNAVAILABLE)
+            #self.assertTrue(
+            #    exception_context.exception.code() in [
+            #        grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.UNKNOWN])
 
     def _do_one_shot_client_rpc(self,
                                 expect_success,

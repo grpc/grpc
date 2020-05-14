@@ -246,7 +246,6 @@ static void verify_matches(expectation* e, grpc_event* ev) {
 void cq_verify(cq_verifier* v) {
   const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
   while (v->first_expectation != nullptr) {
-    // gpr_log(GPR_ERROR, "Entered |cq_verify| while loop");
     grpc_event ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       fail_no_event_received(v);
@@ -255,12 +254,6 @@ void cq_verify(cq_verifier* v) {
     expectation* e;
     expectation* prev = nullptr;
     for (e = v->first_expectation; e != nullptr; e = e->next) {
-      // gpr_log(GPR_ERROR, "Entered |cq_verify| for loop");
-      // if (e->tag != nullptr && ev.tag != nullptr) {
-      //  gpr_log(GPR_ERROR, "Tags are %d and %d",
-      //  reinterpret_cast<intptr_t>(e->tag),
-      //  reinterpret_cast<intptr_t>(ev.tag));
-      //}
       if (e->tag == ev.tag) {
         verify_matches(e, &ev);
         if (e == v->first_expectation) v->first_expectation = e->next;
