@@ -18,15 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <fcntl.h>
 #include <gmock/gmock.h>
-#include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include <functional>
 #include <set>
 #include <thread>
@@ -66,7 +60,7 @@ void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
 class FakeHandshakeServer {
  public:
   FakeHandshakeServer(bool check_num_concurrent_rpcs,
-                      std::string expected_target_name) {
+                      const std::string& expected_target_name) {
     int port = grpc_pick_unused_port_or_die();
     address_ = grpc_core::JoinHostPort("localhost", port);
     service_ = grpc::gcp::CreateFakeHandshakerService(
