@@ -151,9 +151,9 @@ static void test_bad_ping(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  //if (config.feature_mask & FEATURE_MASK_CUSTOM) {
-  //CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  //cq_verify(cqv);
+  // if (config.feature_mask & FEATURE_MASK_CUSTOM) {
+  // CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  // cq_verify(cqv);
   //}
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
