@@ -150,12 +150,12 @@ namespace Grpc.Core.Tests
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
-            Assert.IsTrue(ex.Status.DebugErrorString.Contains("Error received from peer"));  // a different debug error string set by grpc client
+            StringAssert.Contains("Error received from peer", ex.Status.DebugErrorString, "Is \"Error received from peer\" still a valid substring to search for in the client-generated error message from C-core?");
             Assert.AreEqual(0, ex.Trailers.Count);
 
             var ex2 = Assert.ThrowsAsync<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unauthenticated, ex2.Status.StatusCode);
-            Assert.IsTrue(ex2.Status.DebugErrorString.Contains("Error received from peer"));  // a different debug error string set by grpc client
+            StringAssert.Contains("Error received from peer", ex2.Status.DebugErrorString, "Is \"Error received from peer\" still a valid substring to search for in the client-generated error message from C-core?");
             Assert.AreEqual(0, ex2.Trailers.Count);
         }
 
