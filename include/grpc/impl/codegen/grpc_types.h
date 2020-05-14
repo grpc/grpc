@@ -272,13 +272,15 @@ typedef struct {
     grpc_ssl_session_cache*). (use grpc_ssl_session_cache_arg_vtable() to fetch
     an appropriate pointer arg vtable) */
 #define GRPC_SSL_SESSION_CACHE_ARG "grpc.ssl_session_cache"
-/** The caller of the secure_channel_create functions may override the target
-    name used when conducting the ALTS handshake. If this argument is not
-    specified, the target name used for ALTS handshake will be the target
-    parameter (assuming that the secure channel is an ALTS channel). This
-    argument has an additional side effect of configuring the default authority
-    header on the channel. If this parameter is specified and the underlying is
-    not an ALTS channel, it will just be ignored. */
+/** This should only be used for testing or when the client targets a raw
+    IP address in the channel to their service. The caller of the
+    secure_channel_create functions may override the target  name used when
+    conducting the ALTS handshake. If this argument is not specified, the
+    target name used for ALTS handshake will be the target parameter (assuming
+    that the secure channel is an ALTS channel). This argument has an
+    additional side effect of configuring the default authority header on
+    the channel. If this parameter is specified and the underlying is not an
+    ALTS channel, it will just be ignored. */
 #define GRPC_ALTS_TARGET_NAME_OVERRIDE_ARG "grpc.alts_target_name_override"
 /** If non-zero, it will determine the maximum frame size used by TSI's frame
  *  protector.
