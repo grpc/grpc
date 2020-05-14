@@ -1051,7 +1051,11 @@ grpc_error* RouteConfigParse(
             return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "Prefix contains empty service name");
           }
-          rds_route.service = std::string(prefix_elements[0]);
+          if (i < size - 1) {
+            // Default route needs to ignore matchers, so only set for the other
+            // routes.
+            rds_route.service = std::string(prefix_elements[0]);
+          }
         }
       }
     } else if (envoy_api_v2_route_RouteMatch_has_path(match)) {
@@ -1076,12 +1080,17 @@ grpc_error* RouteConfigParse(
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Path contains empty method name");
       }
-      rds_route.service = std::string(path_elements[0]);
-      rds_route.method = std::string(path_elements[1]);
+      if (i < size - 1) {
+        // Default route needs to ignore matchers, so only set for the other
+        // routes.
+        rds_route.service = std::string(path_elements[0]);
+        rds_route.method = std::string(path_elements[1]);
+      }
+    } else if (envoy_api_v2_route_RouteMatch_has_safe_regex(match)) {
+      gpr_log(GPR_INFO, "RouteMatch path_specifier safe regex ignored for now");
     } else {
-      // TODO(donnadionne): We may change this behavior once we decide how to
-      // handle unsupported fields.
-      continue;
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "No supported path_specifier found in RouteMatch.");
     }
     if (!envoy_api_v2_route_Route_has_route(route)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -1152,12 +1161,6 @@ grpc_error* RouteConfigParse(
   }
   if (rds_update->routes.empty()) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid routes specified.");
-  } else {
-    if (!rds_update->routes.back().service.empty() ||
-        !rds_update->routes.back().method.empty()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Default route must have empty service and method");
-    }
   }
   return GRPC_ERROR_NONE;
 }

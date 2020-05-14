@@ -2349,24 +2349,20 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that LDS client should send a NACK if route match has non-empty prefix
-// as the only route (default) in the LDS response.
-TEST_P(LdsRdsTest, RouteMatchHasNonemptyPrefix) {
+// Tests that LDS client should ignore non-empty prefix in the default route.
+TEST_P(LdsRdsTest, RouteMatchIgnoreNonemptyPrefixInDefaultRoute) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_match()
-      ->set_prefix("/nonempty_prefix/");
+      ->set_prefix("/grpc.testing.EchoTest1Service/");
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Default route must have empty service and method");
+  (void)SendRpc();
+  EXPECT_EQ(RouteConfigurationResponseState(0).state,
+            AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
