@@ -257,12 +257,12 @@ TEST(AltsTargetNameOverrideTest,
   // shutdown and destroy the client and server
   grpc_channel_destroy(channel);
   grpc_server_shutdown_and_notify(server, cq, nullptr);
-  grpc_server_destroy(server);
   grpc_completion_queue_shutdown(cq);
   while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                     nullptr)
              .type != GRPC_QUEUE_SHUTDOWN)
     ;
+  grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
   // Verify that the alts target override was sent in the authority header.
   // Note that we verify that "alts.test.name.override" was sent in the
