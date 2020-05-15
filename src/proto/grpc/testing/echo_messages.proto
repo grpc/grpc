@@ -51,6 +51,7 @@ message RequestParams {
   int32 backend_channel_idx = 16; // which backend to send request to
   bool echo_metadata_initially = 17;
   bool server_notify_client_when_started = 18;
+  bool finish_with_failure = 19;
 }
 
 message EchoRequest {
