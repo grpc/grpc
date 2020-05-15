@@ -72,7 +72,7 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   grpc_event event =  grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
                                          grpc_timeout_seconds_to_deadline(5),
                                          nullptr);
-  gpr_log(GPR_INFO, "Event type is: %s", event.type);
+  gpr_log(GPR_INFO, "Event type is: %d\n", (int) event.type);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
