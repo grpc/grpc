@@ -379,6 +379,7 @@
       'target_name': 'gpr',
       'type': 'static_library',
       'dependencies': [
+        'absl/types:variant',
         'absl/types:optional',
         'absl/time:time',
         'absl/synchronization:synchronization',

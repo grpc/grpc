@@ -612,6 +612,7 @@ grpc_cc_library(
         "absl/synchronization",
         "absl/time:time",
         "absl/types:optional",
+        "absl/types:variant",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,

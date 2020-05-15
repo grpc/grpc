@@ -26,6 +26,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+#include "absl/types/variant.h"
+
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
   GPR_ASSERT(a.clock_type == b.clock_type);
@@ -260,4 +263,10 @@ gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
   // function in unit tests. (e.g. https://github.com/grpc/grpc/pull/22655)
   return gpr_time_add(gpr_now(clock_type),
                       gpr_time_sub(t, gpr_now(t.clock_type)));
+}
+
+void temp_variant_test() {
+  auto v1 = absl::variant<int, std::string>("abc");
+  auto v2 = absl::variant<int, std::string>(10);
+  v2 = v1;
 }
