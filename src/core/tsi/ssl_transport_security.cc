@@ -1808,12 +1808,22 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     return TSI_INVALID_ARGUMENT;
   }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
+  if (ssl_context != nullptr) {
+    SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
+  }
+#else
+  // |TLS_method| and |SSL_CTX_set_min_proto_version| are not available in
+  // OpenSSL versions < 1.1.0.
+  ssl_context = SSL_CTX_new(TLSv1_2_method());
+#endif
+
   if (ssl_context == nullptr) {
     gpr_log(GPR_ERROR, "Could not create ssl context.");
     return TSI_INVALID_ARGUMENT;
   }
-  SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
+
   // TODO: Allow user to set min/max TLS version.
   // https://github.com/grpc/grpc/issues/22403
 
@@ -1971,13 +1981,22 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
   for (i = 0; i < options->num_key_cert_pairs; i++) {
     do {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
       impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
+      if (impl->ssl_contexts[i] != nullptr) {
+        SSL_CTX_set_min_proto_version(impl->ssl_contexts[i], TLS1_2_VERSION);
+      }
+#else
+      // |TLS_method| and |SSL_CTX_set_min_proto_version| are not available in
+      // OpenSSL versions < 1.1.0.
+      impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
+#endif
       if (impl->ssl_contexts[i] == nullptr) {
         gpr_log(GPR_ERROR, "Could not create ssl context.");
         result = TSI_OUT_OF_RESOURCES;
         break;
       }
-      SSL_CTX_set_min_proto_version(impl->ssl_contexts[i], TLS1_2_VERSION);
+
       // TODO: Allow user to set min/max TLS version.
       // https://github.com/grpc/grpc/issues/22403
       result = populate_ssl_context(impl->ssl_contexts[i],

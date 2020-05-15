@@ -307,8 +307,7 @@ unsigned int parse_h2_length(const char *field) {
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
     // Make an TLS endpoint to receive Cronet's transmission
-    SSL_CTX *ctx = SSL_CTX_new(TLS_method());
-    SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
+    SSL_CTX *ctx = SSL_CTX_new(TLSv1_2_server_method());
     init_ctx(ctx);
     SSL *ssl = SSL_new(ctx);
     SSL_set_fd(ssl, s);
