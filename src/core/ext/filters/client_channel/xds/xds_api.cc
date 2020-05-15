@@ -31,6 +31,8 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -127,10 +129,23 @@ const char* XdsApi::kCdsTypeUrl = "type.googleapis.com/envoy.api.v2.Cluster";
 const char* XdsApi::kEdsTypeUrl =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 
+namespace {
+
+bool XdsRoutingEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
+}  // namespace
+
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
                const XdsBootstrap::Node* node)
     : client_(client),
       tracer_(tracer),
+      xds_routing_enabled_(XdsRoutingEnabled()),
       node_(node),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string())),
@@ -1566,7 +1581,6 @@ grpc_error* EdsResponseParse(
 grpc_error* XdsApi::ParseAdsResponse(
     const grpc_slice& encoded_response, const std::string& expected_server_name,
     const std::string& expected_route_config_name,
-    const bool xds_routing_enabled,
     const std::set<absl::string_view>& expected_cluster_names,
     const std::set<absl::string_view>& expected_eds_service_names,
     absl::optional<LdsUpdate>* lds_update,
@@ -1598,10 +1612,10 @@ grpc_error* XdsApi::ParseAdsResponse(
   // Parse the response according to the resource type.
   if (*type_url == kLdsTypeUrl) {
     return LdsResponseParse(client_, tracer_, response, expected_server_name,
-                            xds_routing_enabled, lds_update, arena.ptr());
+                            xds_routing_enabled_, lds_update, arena.ptr());
   } else if (*type_url == kRdsTypeUrl) {
     return RdsResponseParse(client_, tracer_, response, expected_server_name,
-                            expected_route_config_name, xds_routing_enabled,
+                            expected_route_config_name, xds_routing_enabled_,
                             rds_update, arena.ptr());
   } else if (*type_url == kCdsTypeUrl) {
     return CdsResponseParse(client_, tracer_, response, expected_cluster_names,

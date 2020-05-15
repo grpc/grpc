@@ -1177,8 +1177,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   void ResetStub(int failover_timeout = 0,
                  const grpc::string& expected_targets = "",
-                 int xds_resource_does_not_exist_timeout = 0,
-                 bool xds_routing_enabled = false) {
+                 int xds_resource_does_not_exist_timeout = 0) {
     ChannelArguments args;
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
@@ -1186,9 +1185,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (xds_resource_does_not_exist_timeout > 0) {
       args.SetInt(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS,
                   xds_resource_does_not_exist_timeout);
-    }
-    if (xds_routing_enabled) {
-      args.SetInt(GRPC_ARG_XDS_ROUTING_ENABLED, 1);
     }
     // If the parent channel is using the fake resolver, we inject the
     // response generator for the parent here, and then SetNextResolution()
@@ -2372,10 +2368,7 @@ TEST_P(LdsRdsTest, RouteMatchHasNonemptyPrefix) {
 // Tests that LDS client should send a NACK if route match has a prefix
 // string with no "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNonEmptyNoSlash) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2390,15 +2383,13 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNonEmptyNoSlash) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "Prefix does not start with a /");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
 // string does not end with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoEndingSlash) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2411,15 +2402,13 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoEndingSlash) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "Prefix not in the required format of /service/");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
 // string does not start with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2431,15 +2420,13 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "Prefix does not start with a /");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
 // string with extra content outside of "/service/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2451,15 +2438,13 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "Prefix does not end with a /");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
 // string "//".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoContent) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2471,15 +2456,13 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoContent) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "Prefix contains empty service name");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route match has path
 // but it's empty.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2494,15 +2477,13 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "Path if set cannot be empty");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route match has path
 // string does not start with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2517,15 +2498,13 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "Path does not start with a /");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route match has path
 // string that ends with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEndsWithSlash) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2541,15 +2520,13 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEndsWithSlash) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "Path not in the required format of /service/method");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route match has path
 // string that misses "/" between service and method.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMiddleSlash) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2565,15 +2542,13 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMiddleSlash) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "Path not in the required format of /service/method");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route match has path
 // string that is missing service.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2588,15 +2563,13 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "Path contains empty service name");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route match has path
 // string that is missing method.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2611,6 +2584,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "Path contains empty method name");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route has an action other than
@@ -2649,10 +2623,7 @@ TEST_P(LdsRdsTest, RouteActionUnsupportedClusterSpecifier) {
 }
 
 TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2669,13 +2640,11 @@ TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "RouteAction cluster contains empty cluster name.");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const size_t kWeight75 = 75;
   const char* kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config =
@@ -2701,13 +2670,11 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "RouteAction weighted_cluster has incorrect total weight");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const size_t kWeight75 = 75;
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2733,13 +2700,11 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   EXPECT_EQ(
       response_state.error_message,
       "RouteAction weighted_cluster cluster contains empty cluster name.");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const size_t kWeight75 = 75;
   const char* kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config =
@@ -2764,6 +2729,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "RouteAction weighted_cluster cluster missing weight");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client times out when no response received.
@@ -2782,10 +2748,7 @@ TEST_P(LdsRdsTest, Timeout) {
 // Tests that LDS client should choose the default route (with no matching
 // specified) after unable to find a match with previous routes.
 TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumEcho1Rpcs = 10;
@@ -2855,13 +2818,11 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(kNumEcho2Rpcs, backends_[3]->backend_service2()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumEcho1Rpcs = 10;
@@ -2926,13 +2887,11 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(kNumEcho2Rpcs, backends_[3]->backend_service2()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumEcho1Rpcs = 1000;
@@ -3009,13 +2968,11 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
                                              (1 - kErrorTolerance)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
                                              (1 + kErrorTolerance))));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "anew_cluster_2";
   const char* kNewCluster3Name = "new_cluster_3";
@@ -3137,13 +3094,11 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
                                              (1 - kErrorTolerance)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
                                              (1 + kErrorTolerance))));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "anew_cluster_2";
   const char* kNewCluster3Name = "new_cluster_3";
@@ -3290,6 +3245,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
                                              (1 - kErrorTolerance)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
                                              (1 + kErrorTolerance))));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 using CdsTest = BasicTest;
