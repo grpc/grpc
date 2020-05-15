@@ -185,6 +185,9 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         EXPECT_TRUE(initial_metadata_sent_);
       }
       EXPECT_EQ(ctx_->IsCancelled(), on_cancel_invoked_);
+      if (req_->has_param() && req_->param().finish_with_failure()) {
+        EXPECT_TRUE(on_cancel_invoked_);
+      }
       async_cancel_check_.join();
       if (rpc_wait_thread_.joinable()) {
         rpc_wait_thread_.join();
@@ -290,6 +293,10 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
       if (req_->has_param() && req_->param().echo_peer()) {
         resp_->mutable_param()->set_peer(ctx_->peer());
+      }
+      if (req_->has_param() && req_->param().finish_with_failure()) {
+        Finish(grpc::Status(grpc::StatusCode::UNAVAILABLE, "unavailable"));
+        return;
       }
       Finish(Status::OK);
     }

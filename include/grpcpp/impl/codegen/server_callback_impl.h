@@ -425,9 +425,9 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// still abstract, so derived classes MUST override it to be instantiated.
   void OnDone() override = 0;
 
-  /// Notifies the application that this RPC has been cancelled. This is an
-  /// override (from the internal base class) but not final, so derived classes
-  /// should override it if they want to take action.
+  /// Notifies the application that this RPC has been cancelled or otherwise
+  /// failed. This is an override (from the internal base class) but not final,
+  /// so derived classes should override it if they want to take action.
   void OnCancel() override {}
 
  private:
