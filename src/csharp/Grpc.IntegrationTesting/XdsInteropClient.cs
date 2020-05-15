@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -37,6 +38,8 @@ namespace Grpc.IntegrationTesting
             public int NumChannels { get; set; }
 
             [Option("qps", Default = 1)]
+
+            // The desired QPS per channel.
             public int Qps { get; set; }
 
             [Option("server", Default = "localhost:8080")]
@@ -117,16 +120,26 @@ namespace Grpc.IntegrationTesting
             var client = new TestService.TestServiceClient(channel);
 
             var inflightTasks = new List<Task>();
-            int millisPerQuery = (int)(1000.0 / options.Qps);  // qps value is per-channel
+            long rpcsStarted = 0;
+            var stopwatch = Stopwatch.StartNew();
             while (!cancellationToken.IsCancellationRequested)
             {
                 inflightTasks.Add(RunSingleRpcAsync(client, cancellationToken));
+                rpcsStarted++;
 
+                // only cleanup calls that have already completed, calls that are still inflight will be cleaned up later.
                 await CleanupCompletedTasksAsync(inflightTasks);
 
                 Console.WriteLine($"Currently {inflightTasks.Count} in-flight RPCs");
-                await Task.Delay(millisPerQuery);  // not accurate, but good enough for low QPS.
+
+                // if needed, wait a bit before we start the next RPC.
+                int nextDueInMillis = (int) Math.Max(0, (1000 * rpcsStarted / options.Qps) - stopwatch.ElapsedMilliseconds);
+                if (nextDueInMillis > 0)
+                {
+                    await Task.Delay(nextDueInMillis);
+                }
             }
+            stopwatch.Stop();
 
             Console.WriteLine($"Shutting down channel {channelId}");
             await channel.ShutdownAsync();
