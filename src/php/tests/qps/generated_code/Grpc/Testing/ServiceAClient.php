@@ -46,6 +46,7 @@ class ServiceAClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\Request $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\Response
      */
     public function MethodA1(\Grpc\Testing\Request $argument,
       $metadata = [], $options = []) {
@@ -62,6 +63,7 @@ class ServiceAClient extends \Grpc\BaseStub {
      * Method A2 leading comment 2
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\Response
      */
     public function MethodA2($metadata = [], $options = []) {
         return $this->_clientStreamRequest('/grpc.testing.ServiceA/MethodA2',
@@ -74,6 +76,7 @@ class ServiceAClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\Request $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\Response
      */
     public function MethodA3(\Grpc\Testing\Request $argument,
       $metadata = [], $options = []) {
@@ -87,6 +90,7 @@ class ServiceAClient extends \Grpc\BaseStub {
      * Method A4 leading comment 1
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\Response
      */
     public function MethodA4($metadata = [], $options = []) {
         return $this->_bidiRequest('/grpc.testing.ServiceA/MethodA4',

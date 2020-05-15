@@ -18,8 +18,6 @@
 
 #include "test/cpp/util/grpc_tool.h"
 
-#include <sstream>
-
 #include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -32,14 +30,20 @@
 #include <grpcpp/server_context.h>
 #include <gtest/gtest.h>
 
+#include <sstream>
+
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.pb.h"
-#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
+
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -48,29 +52,35 @@ using grpc::testing::EchoResponse;
 
 #define ECHO_TEST_SERVICE_SUMMARY \
   "Echo\n"                        \
+  "Echo1\n"                       \
+  "Echo2\n"                       \
   "CheckClientInitialMetadata\n"  \
   "RequestStream\n"               \
   "ResponseStream\n"              \
   "BidiStream\n"                  \
   "Unimplemented\n"
 
-#define ECHO_TEST_SERVICE_DESCRIPTION                                         \
-  "filename: src/proto/grpc/testing/echo.proto\n"                             \
-  "package: grpc.testing;\n"                                                  \
-  "service EchoTestService {\n"                                               \
-  "  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
-  "{}\n"                                                                      \
-  "  rpc CheckClientInitialMetadata(grpc.testing.SimpleRequest) returns "     \
-  "(grpc.testing.SimpleResponse) {}\n"                                        \
-  "  rpc RequestStream(stream grpc.testing.EchoRequest) returns "             \
-  "(grpc.testing.EchoResponse) {}\n"                                          \
-  "  rpc ResponseStream(grpc.testing.EchoRequest) returns (stream "           \
-  "grpc.testing.EchoResponse) {}\n"                                           \
-  "  rpc BidiStream(stream grpc.testing.EchoRequest) returns (stream "        \
-  "grpc.testing.EchoResponse) {}\n"                                           \
-  "  rpc Unimplemented(grpc.testing.EchoRequest) returns "                    \
-  "(grpc.testing.EchoResponse) {}\n"                                          \
-  "}\n"                                                                       \
+#define ECHO_TEST_SERVICE_DESCRIPTION                                          \
+  "filename: src/proto/grpc/testing/echo.proto\n"                              \
+  "package: grpc.testing;\n"                                                   \
+  "service EchoTestService {\n"                                                \
+  "  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) "  \
+  "{}\n"                                                                       \
+  "  rpc Echo1(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
+  "{}\n"                                                                       \
+  "  rpc Echo2(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
+  "{}\n"                                                                       \
+  "  rpc CheckClientInitialMetadata(grpc.testing.SimpleRequest) returns "      \
+  "(grpc.testing.SimpleResponse) {}\n"                                         \
+  "  rpc RequestStream(stream grpc.testing.EchoRequest) returns "              \
+  "(grpc.testing.EchoResponse) {}\n"                                           \
+  "  rpc ResponseStream(grpc.testing.EchoRequest) returns (stream "            \
+  "grpc.testing.EchoResponse) {}\n"                                            \
+  "  rpc BidiStream(stream grpc.testing.EchoRequest) returns (stream "         \
+  "grpc.testing.EchoResponse) {}\n"                                            \
+  "  rpc Unimplemented(grpc.testing.EchoRequest) returns "                     \
+  "(grpc.testing.EchoResponse) {}\n"                                           \
+  "}\n"                                                                        \
   "\n"
 
 #define ECHO_METHOD_DESCRIPTION                                               \
@@ -121,8 +131,16 @@ class TestCliCredentials final : public grpc::testing::CliCredentials {
     if (!secure_) {
       return InsecureChannelCredentials();
     }
+    grpc_slice ca_slice;
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                                 grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+    const char* test_root_cert =
+        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
     SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
-    return grpc::SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
+    std::shared_ptr<grpc::ChannelCredentials> credential_ptr =
+        grpc::SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
+    grpc_slice_unref(ca_slice);
+    return credential_ptr;
   }
   const grpc::string GetCredentialUsage() const override { return ""; }
 
@@ -240,9 +258,18 @@ class GrpcToolTest : public ::testing::Test {
     // Setup server
     ServerBuilder builder;
     std::shared_ptr<grpc::ServerCredentials> creds;
+    grpc_slice cert_slice, key_slice;
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+    const char* server_cert =
+        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+    const char* server_key =
+        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+    SslServerCredentialsOptions::PemKeyCertPair pkcp = {server_key,
+                                                        server_cert};
     if (secure) {
-      SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-                                                          test_server1_cert};
       SslServerCredentialsOptions ssl_opts;
       ssl_opts.pem_root_certs = "";
       ssl_opts.pem_key_cert_pairs.push_back(pkcp);
@@ -253,6 +280,8 @@ class GrpcToolTest : public ::testing::Test {
     builder.AddListeningPort(server_address.str(), creds);
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
+    grpc_slice_unref(cert_slice);
+    grpc_slice_unref(key_slice);
     return server_address.str();
   }
 
@@ -1103,7 +1132,8 @@ TEST_F(GrpcToolTest, CallCommandWithMetadata) {
 
 TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
   // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'"
-  const char* argv[] = {"grpc_cli", "call", "localhost:10000", "Echo",
+  const char* argv[] = {"grpc_cli", "call", "localhost:10000",
+                        "grpc.testing.EchoTestService.Echo",
                         "message: 'Hello'"};
   FLAGS_protofiles = "src/proto/grpc/testing/echo.proto";
   char* test_srcdir = gpr_getenv("TEST_SRCDIR");

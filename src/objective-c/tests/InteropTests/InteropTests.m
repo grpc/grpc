@@ -39,6 +39,7 @@
 
 #define TEST_TIMEOUT 32
 
+static const int kTestRetries = 3;
 extern const char *kCFStreamVarName;
 
 // Convenience constructors for the generated proto messages:
@@ -382,6 +383,36 @@ static dispatch_once_t initGlobalInterceptorFactory;
   RMTTestService *_service;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+- (void)retriableTest:(SEL)selector retries:(int)retries timeout:(NSTimeInterval)timeout {
+  for (int i = 0; i < retries; i++) {
+    NSDate *waitUntil = [[NSDate date] dateByAddingTimeInterval:timeout];
+    NSCondition *cv = [[NSCondition alloc] init];
+    __block BOOL done = NO;
+    [cv lock];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0), ^{
+      [self performSelector:selector];
+      [cv lock];
+      done = YES;
+      [cv signal];
+      [cv unlock];
+    });
+    while (!done && [waitUntil timeIntervalSinceNow] > 0) {
+      [cv waitUntilDate:waitUntil];
+    }
+    if (done) {
+      [cv unlock];
+      break;
+    } else {
+      [cv unlock];
+      [self tearDown];
+      [self setUp];
+    }
+  }
+}
+#pragma clang diagnostic pop
+
 + (XCTestSuite *)defaultTestSuite {
   if (self == [InteropTests class]) {
     return [XCTestSuite testSuiteWithName:@"InteropTestsEmptySuite"];
@@ -721,14 +752,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-- (void)testConcurrentRPCsWithErrors {
-  NSMutableArray *completeExpectations = [NSMutableArray array];
-  int num_rpcs = 10;
-  for (int i = 0; i < num_rpcs; ++i) {
-    [completeExpectations
-        addObject:[self expectationWithDescription:
-                            [NSString stringWithFormat:@"Received trailer for RPC %d", i]]];
-
+- (void)concurrentRPCsWithErrors {
+  const int kNumRpcs = 10;
+  __block int completedCallCount = 0;
+  NSCondition *cv = [[NSCondition alloc] init];
+  NSDate *waitUntil = [[NSDate date] dateByAddingTimeInterval:TEST_TIMEOUT];
+  [cv lock];
+  for (int i = 0; i < kNumRpcs; ++i) {
     RMTSimpleRequest *request = [RMTSimpleRequest message];
     request.responseType = RMTPayloadType_Compressable;
     request.responseSize = 314159;
@@ -739,20 +769,33 @@ static dispatch_once_t initGlobalInterceptorFactory;
       request.responseStatus.code = GRPC_STATUS_CANCELLED;
     }
 
-    [_service unaryCallWithRequest:request
-                           handler:^(RMTSimpleResponse *response, NSError *error) {
-                             if (error == nil) {
-                               RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
-                               expectedResponse.payload.type = RMTPayloadType_Compressable;
-                               expectedResponse.payload.body =
-                                   [NSMutableData dataWithLength:314159];
-                               XCTAssertEqualObjects(response, expectedResponse);
-                             }
-                             [completeExpectations[i] fulfill];
-                           }];
+    GRPCProtoCall *call = [_service
+        RPCToUnaryCallWithRequest:request
+                          handler:^(RMTSimpleResponse *response, NSError *error) {
+                            if (error == nil) {
+                              RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
+                              expectedResponse.payload.type = RMTPayloadType_Compressable;
+                              expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
+                              XCTAssertEqualObjects(response, expectedResponse);
+                            }
+                            // DEBUG
+                            [cv lock];
+                            if (++completedCallCount == kNumRpcs) {
+                              [cv signal];
+                            }
+                            [cv unlock];
+                          }];
+    [call setResponseDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)];
+    [call start];
   }
+  while (completedCallCount<kNumRpcs && [waitUntil timeIntervalSinceNow]> 0) {
+    [cv waitUntilDate:waitUntil];
+  }
+  [cv unlock];
+}
 
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+- (void)testConcurrentRPCsWithErrors {
+  [self retriableTest:@selector(concurrentRPCsWithErrors) retries:kTestRetries timeout:10];
 }
 
 - (void)testPacketCoalescing {

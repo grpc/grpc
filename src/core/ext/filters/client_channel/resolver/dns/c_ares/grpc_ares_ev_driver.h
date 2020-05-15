@@ -40,11 +40,11 @@ ares_channel* grpc_ares_ev_driver_get_channel_locked(
 
 /* Creates a new grpc_ares_ev_driver. Returns GRPC_ERROR_NONE if \a ev_driver is
    created successfully. */
-grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
-                                              grpc_pollset_set* pollset_set,
-                                              int query_timeout_ms,
-                                              grpc_core::Combiner* combiner,
-                                              grpc_ares_request* request);
+grpc_error* grpc_ares_ev_driver_create_locked(
+    grpc_ares_ev_driver** ev_driver, grpc_pollset_set* pollset_set,
+    int query_timeout_ms,
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer,
+    grpc_ares_request* request);
 
 /* Called back when all DNS lookups have completed. */
 void grpc_ares_ev_driver_on_queries_complete_locked(
@@ -90,12 +90,13 @@ class GrpcPolledFdFactory {
   /* Creates a new wrapped fd for the current platform */
   virtual GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set,
-      Combiner* combiner) = 0;
+      std::shared_ptr<grpc_core::WorkSerializer> work_serializer) = 0;
   /* Optionally configures the ares channel after creation */
   virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
 };
 
-std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Combiner* combiner);
+std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
 }  // namespace grpc_core
 

@@ -1122,6 +1122,9 @@ class _ChannelCallState(object):
     def reset_postfork_child(self):
         self.managed_calls = 0
 
+    def __del__(self):
+        self.channel.close(cygrpc.StatusCode.cancelled, 'Channel deallocated!')
+
 
 def _run_channel_spin_thread(state):
 

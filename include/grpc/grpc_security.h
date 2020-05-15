@@ -714,6 +714,10 @@ GRPCAPI grpc_server_credentials* grpc_local_server_credentials_create(
 /** --- TLS channel/server credentials ---
  * It is used for experimental purpose for now and subject to change. */
 
+/** Struct for indicating errors. It is used for
+ *  experimental purpose for now and subject to change. */
+typedef struct grpc_tls_error_details grpc_tls_error_details;
+
 /** Config for TLS key materials. It is used for
  *  experimental purpose for now and subject to change. */
 typedef struct grpc_tls_key_materials_config grpc_tls_key_materials_config;
@@ -857,7 +861,7 @@ struct grpc_tls_credential_reload_arg {
   void* cb_user_data;
   grpc_tls_key_materials_config* key_materials_config;
   grpc_ssl_certificate_config_reload_status status;
-  const char* error_details;
+  grpc_tls_error_details* error_details;
   grpc_tls_credential_reload_config* config;
   void* context;
   void (*destroy_context)(void* ctx);
@@ -935,7 +939,7 @@ struct grpc_tls_server_authorization_check_arg {
   const char* peer_cert;
   const char* peer_cert_full_chain;
   grpc_status_code status;
-  const char* error_details;
+  grpc_tls_error_details* error_details;
   grpc_tls_server_authorization_check_config* config;
   void* context;
   void (*destroy_context)(void* ctx);

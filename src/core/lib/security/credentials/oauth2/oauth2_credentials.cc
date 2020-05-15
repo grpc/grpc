@@ -23,6 +23,8 @@
 
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
@@ -32,7 +34,6 @@
 
 #include "absl/strings/str_format.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -669,7 +670,7 @@ grpc_error* ValidateStsCredentialsOptions(
     void operator()(grpc_uri* uri) { grpc_uri_destroy(uri); }
   };
   *sts_url_out = nullptr;
-  InlinedVector<grpc_error*, 3> error_list;
+  absl::InlinedVector<grpc_error*, 3> error_list;
   std::unique_ptr<grpc_uri, GrpcUriDeleter> sts_url(
       options->token_exchange_service_uri != nullptr
           ? grpc_uri_parse(options->token_exchange_service_uri, false)

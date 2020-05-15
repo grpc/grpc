@@ -68,9 +68,9 @@
 
     <PropertyGroup>
       <!-- First try environment variable. -->
-      <Protobuf_ToolsOs>$(PROTOBUF_TOOLS_OS)</Protobuf_ToolsOs>
-      <Protobuf_ToolsCpu>$(PROTOBUF_TOOLS_CPU)</Protobuf_ToolsCpu>
-      <Protobuf_ProtocFullPath>$(PROTOBUF_PROTOC)</Protobuf_ProtocFullPath>
+      <Protobuf_ToolsOs Condition=" '$(Protobuf_ToolsOs)' == '' ">$(PROTOBUF_TOOLS_OS)</Protobuf_ToolsOs>
+      <Protobuf_ToolsCpu Condition=" '$(Protobuf_ToolsCpu)' == '' ">$(PROTOBUF_TOOLS_CPU)</Protobuf_ToolsCpu>
+      <Protobuf_ProtocFullPath Condition=" '$(Protobuf_ProtocFullPath)' == '' ">$(PROTOBUF_PROTOC)</Protobuf_ProtocFullPath>
 
       <!-- Next try OS and CPU resolved by ProtoToolsPlatform. -->
       <Protobuf_ToolsOs Condition=" '$(Protobuf_ToolsOs)' == '' ">$(_Protobuf_ToolsOs)</Protobuf_ToolsOs>
@@ -137,7 +137,7 @@
         <ProtoRoot>%(RelativeDir)</ProtoRoot>
       </Protobuf_Compile>
       <!-- Remove files not for compile. -->
-      <Protobuf_Compile Remove="@(Protobuf_Compile)" Condition=" !%(ProtoCompile) " />
+      <Protobuf_Compile Remove="@(Protobuf_Compile)" Condition=" '%(ProtoCompile)' != 'true' " />
       <!-- Ensure invariant Source=%(Identity). -->
       <Protobuf_Compile>
         <Source>%(Identity)</Source>

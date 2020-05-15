@@ -11,6 +11,7 @@
 #include "envoy/type/matcher/string.upb.h"
 #include "envoy/type/matcher/regex.upb.h"
 #include "envoy/annotations/deprecation.upb.h"
+#include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"

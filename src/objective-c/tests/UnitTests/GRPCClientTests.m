@@ -307,10 +307,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
         expectedUserAgent = [expectedUserAgent stringByAppendingString:GRPC_C_VERSION_STRING];
         expectedUserAgent = [expectedUserAgent stringByAppendingString:@" ("];
         expectedUserAgent = [expectedUserAgent stringByAppendingString:@GPR_PLATFORM_STRING];
-        expectedUserAgent = [expectedUserAgent stringByAppendingString:@"; chttp2; "];
-        expectedUserAgent = [expectedUserAgent
-            stringByAppendingString:[NSString stringWithUTF8String:grpc_g_stands_for()]];
-        expectedUserAgent = [expectedUserAgent stringByAppendingString:@")"];
+        expectedUserAgent = [expectedUserAgent stringByAppendingString:@"; chttp2)"];
         XCTAssertEqualObjects(userAgent, expectedUserAgent);
 
         // Change in format of user-agent field in a direction that does not match the regex will

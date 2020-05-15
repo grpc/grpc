@@ -25,4 +25,4 @@
 
 const char* grpc_version_string(void) { return "10.0.0"; }
 
-const char* grpc_g_stands_for(void) { return "gringotts"; }
+const char* grpc_g_stands_for(void) { return "gradius"; }

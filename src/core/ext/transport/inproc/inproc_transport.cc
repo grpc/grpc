@@ -764,6 +764,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error* error) {
       // Nothing further will try to receive from this stream, so finish off
       // any outstanding send_message op
       s->send_message_op->payload->send_message.send_message.reset();
+      s->send_message_op->payload->send_message.stream_write_closed = true;
       complete_if_batch_end_locked(
           s, new_err, s->send_message_op,
           "op_state_machine scheduling send-message-on-complete");

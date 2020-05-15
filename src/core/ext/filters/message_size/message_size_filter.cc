@@ -187,12 +187,8 @@ static void recv_message_ready(void* user_data, grpc_error* error) {
     grpc_error* new_error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+    error = grpc_error_add_child(GRPC_ERROR_REF(error), new_error);
     GRPC_ERROR_UNREF(calld->error);
-    if (error == GRPC_ERROR_NONE) {
-      error = new_error;
-    } else {
-      error = grpc_error_add_child(error, new_error);
-    }
     calld->error = GRPC_ERROR_REF(error);
     gpr_free(message_string);
   } else {

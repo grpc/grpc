@@ -80,9 +80,8 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     auto port_num = port();
     // Negative port number means inproc server, so no listen port needed
     if (port_num >= 0) {
-      grpc_core::UniquePtr<char> server_address;
-      grpc_core::JoinHostPort(&server_address, "::", port_num);
-      builder->AddListeningPort(server_address.get(),
+      std::string server_address = grpc_core::JoinHostPort("::", port_num);
+      builder->AddListeningPort(server_address.c_str(),
                                 Server::CreateServerCredentials(config));
     }
 

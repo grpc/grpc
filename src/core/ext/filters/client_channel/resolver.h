@@ -27,8 +27,8 @@
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
@@ -45,7 +45,7 @@ namespace grpc_core {
 /// DNS).
 ///
 /// Note: All methods with a "Locked" suffix must be called from the
-/// combiner passed to the constructor.
+/// work_serializer passed to the constructor.
 class Resolver : public InternallyRefCounted<Resolver> {
  public:
   /// Results returned by the resolver.
@@ -87,7 +87,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
   // Not copyable nor movable.
   Resolver(const Resolver&) = delete;
   Resolver& operator=(const Resolver&) = delete;
-  virtual ~Resolver();
+  virtual ~Resolver() = default;
 
   /// Starts resolving.
   virtual void StartLocked() = 0;
@@ -115,30 +115,28 @@ class Resolver : public InternallyRefCounted<Resolver> {
   /// implementations.  At that point, this method can go away.
   virtual void ResetBackoffLocked() {}
 
-  // Note: This must be invoked while holding the combiner.
+  // Note: This must be invoked while holding the work_serializer.
   void Orphan() override {
     ShutdownLocked();
     Unref();
   }
 
  protected:
-  /// Does NOT take ownership of the reference to \a combiner.
-  // TODO(roth): Once we have a C++-like interface for combiners, this
-  // API should change to take a RefCountedPtr<>, so that we always take
-  // ownership of a new ref.
-  explicit Resolver(Combiner* combiner,
-                    std::unique_ptr<ResultHandler> result_handler);
+  Resolver(std::shared_ptr<WorkSerializer> work_serializer,
+           std::unique_ptr<ResultHandler> result_handler);
 
   /// Shuts down the resolver.
   virtual void ShutdownLocked() = 0;
 
-  Combiner* combiner() const { return combiner_; }
+  std::shared_ptr<WorkSerializer> work_serializer() const {
+    return work_serializer_;
+  }
 
   ResultHandler* result_handler() const { return result_handler_.get(); }
 
  private:
+  std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
-  Combiner* combiner_;
 };
 
 }  // namespace grpc_core

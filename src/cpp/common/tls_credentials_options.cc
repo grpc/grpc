@@ -18,6 +18,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpcpp/security/tls_credentials_options.h>
+
+#include "absl/container/inlined_vector.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/common/tls_credentials_options_util.h"
 
@@ -68,8 +70,7 @@ grpc_ssl_certificate_config_reload_status TlsCredentialReloadArg::status()
 }
 
 grpc::string TlsCredentialReloadArg::error_details() const {
-  grpc::string cpp_error_details(c_arg_->error_details);
-  return cpp_error_details;
+  return c_arg_->error_details->error_details();
 }
 
 void TlsCredentialReloadArg::set_cb_user_data(void* cb_user_data) {
@@ -112,7 +113,7 @@ void TlsCredentialReloadArg::set_key_materials(
     c_arg_->key_materials_config = grpc_tls_key_materials_config_create();
   }
   /** Convert |pem_key_cert_pair_list| to an inlined vector of ssl pairs. **/
-  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
+  ::absl::InlinedVector<::grpc_core::PemKeyCertPair, 1>
       c_pem_key_cert_pair_list;
   for (const auto& key_cert_pair : pem_key_cert_pair_list) {
     c_pem_key_cert_pair_list.emplace_back(
@@ -129,7 +130,7 @@ void TlsCredentialReloadArg::set_key_materials_config(
     c_arg_->key_materials_config = nullptr;
     return;
   }
-  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
+  ::absl::InlinedVector<::grpc_core::PemKeyCertPair, 1>
       c_pem_key_cert_pair_list;
   for (const auto& key_cert_pair :
        key_materials_config->pem_key_cert_pair_list()) {
@@ -159,7 +160,7 @@ void TlsCredentialReloadArg::set_status(
 
 void TlsCredentialReloadArg::set_error_details(
     const grpc::string& error_details) {
-  c_arg_->error_details = gpr_strdup(error_details.c_str());
+  c_arg_->error_details->set_error_details(error_details.c_str());
 }
 
 void TlsCredentialReloadArg::OnCredentialReloadDoneCallback() {
@@ -221,8 +222,7 @@ grpc_status_code TlsServerAuthorizationCheckArg::status() const {
 }
 
 grpc::string TlsServerAuthorizationCheckArg::error_details() const {
-  grpc::string cpp_error_details(c_arg_->error_details);
-  return cpp_error_details;
+  return c_arg_->error_details->error_details();
 }
 
 void TlsServerAuthorizationCheckArg::set_cb_user_data(void* cb_user_data) {
@@ -254,7 +254,7 @@ void TlsServerAuthorizationCheckArg::set_status(grpc_status_code status) {
 
 void TlsServerAuthorizationCheckArg::set_error_details(
     const grpc::string& error_details) {
-  c_arg_->error_details = gpr_strdup(error_details.c_str());
+  c_arg_->error_details->set_error_details(error_details.c_str());
 }
 
 void TlsServerAuthorizationCheckArg::OnServerAuthorizationCheckDoneCallback() {
@@ -280,6 +280,25 @@ TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
 TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {}
 
 /** gRPC TLS credential options API implementation **/
+TlsCredentialsOptions::TlsCredentialsOptions(
+    grpc_tls_server_verification_option server_verification_option,
+    std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
+    std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
+    std::shared_ptr<TlsServerAuthorizationCheckConfig>
+        server_authorization_check_config)
+    : TlsCredentialsOptions(
+          GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, server_verification_option,
+          std::move(key_materials_config), std::move(credential_reload_config),
+          std::move(server_authorization_check_config)) {}
+
+TlsCredentialsOptions::TlsCredentialsOptions(
+    grpc_ssl_client_certificate_request_type cert_request_type,
+    std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
+    std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config)
+    : TlsCredentialsOptions(cert_request_type, GRPC_TLS_SERVER_VERIFICATION,
+                            std::move(key_materials_config),
+                            std::move(credential_reload_config), nullptr) {}
+
 TlsCredentialsOptions::TlsCredentialsOptions(
     grpc_ssl_client_certificate_request_type cert_request_type,
     grpc_tls_server_verification_option server_verification_option,

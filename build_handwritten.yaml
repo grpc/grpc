@@ -14,8 +14,8 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 10.0.0
   csharp_major_version: 2
-  g_stands_for: gringotts
-  version: 1.29.0-dev
+  g_stands_for: gradius
+  version: 1.30.0-dev
 targets:
 - name: check_epollexclusive
   build: tool

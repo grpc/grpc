@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include "src/core/lib/iomgr/resolve_address.h"
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the
@@ -56,20 +58,13 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* addr);
 /* Set IP port number of a sockaddr */
 int grpc_sockaddr_set_port(const grpc_resolved_address* addr, int port);
 
-/* Converts a sockaddr into a newly-allocated human-readable string.
-
-   Currently, only the AF_INET and AF_INET6 families are recognized.
-   If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6 addresses are
-   displayed as plain IPv4.
-
-   Usage is similar to gpr_asprintf: returns the number of bytes written
-   (excluding the final '\0'), and *out points to a string which must later be
-   destroyed using gpr_free().
-
-   In the unlikely event of an error, returns -1 and sets *out to NULL.
-   The existing value of errno is always preserved. */
-int grpc_sockaddr_to_string(char** out, const grpc_resolved_address* addr,
-                            int normalize);
+// Converts a sockaddr into a newly-allocated human-readable string.
+//
+// Currently, only the AF_INET and AF_INET6 families are recognized.
+// If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6 addresses are
+// displayed as plain IPv4.
+std::string grpc_sockaddr_to_string(const grpc_resolved_address* addr,
+                                    bool normalize);
 
 void grpc_string_to_sockaddr(grpc_resolved_address* out, char* addr, int port);
 

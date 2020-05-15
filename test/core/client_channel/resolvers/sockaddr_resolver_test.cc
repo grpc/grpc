@@ -24,11 +24,11 @@
 
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 #include "test/core/util/test_config.h"
 
-static grpc_core::Combiner* g_combiner;
+static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
@@ -46,7 +46,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;
-  args.combiner = g_combiner;
+  args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
@@ -67,7 +67,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;
-  args.combiner = g_combiner;
+  args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
@@ -79,7 +79,8 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
-  g_combiner = grpc_combiner_create();
+  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
+  g_work_serializer = &work_serializer;
 
   grpc_core::ResolverFactory* ipv4 =
       grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
@@ -100,10 +101,6 @@ int main(int argc, char** argv) {
   test_fails(ipv6, "ipv6:[::]:123456");
   test_fails(ipv6, "ipv6:www.google.com");
 
-  {
-    grpc_core::ExecCtx exec_ctx;
-    GRPC_COMBINER_UNREF(g_combiner, "test");
-  }
   grpc_shutdown();
 
   return 0;

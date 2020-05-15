@@ -46,9 +46,8 @@ int main(int /*argc*/, char** argv) {
   gpr_asprintf(&args[0], "%s/fling_server%s", root,
                gpr_subprocess_binary_extension());
   args[1] = const_cast<char*>("--bind");
-  grpc_core::UniquePtr<char> joined;
-  grpc_core::JoinHostPort(&joined, "::", port);
-  args[2] = joined.get();
+  std::string joined = grpc_core::JoinHostPort("::", port);
+  args[2] = const_cast<char*>(joined.c_str());
   args[3] = const_cast<char*>("--no-secure");
   svr = gpr_subprocess_create(4, (const char**)args);
   gpr_free(args[0]);
@@ -57,8 +56,8 @@ int main(int /*argc*/, char** argv) {
   gpr_asprintf(&args[0], "%s/fling_client%s", root,
                gpr_subprocess_binary_extension());
   args[1] = const_cast<char*>("--target");
-  grpc_core::JoinHostPort(&joined, "127.0.0.1", port);
-  args[2] = joined.get();
+  joined = grpc_core::JoinHostPort("127.0.0.1", port);
+  args[2] = const_cast<char*>(joined.c_str());
   args[3] = const_cast<char*>("--scenario=ping-pong-stream");
   args[4] = const_cast<char*>("--no-secure");
   args[5] = nullptr;

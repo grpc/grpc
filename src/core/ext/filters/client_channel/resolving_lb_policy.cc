@@ -47,10 +47,8 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
@@ -128,7 +126,8 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     parent_->resolver_->RequestReresolutionLocked();
   }
 
-  void AddTraceEvent(TraceSeverity severity, StringView message) override {
+  void AddTraceEvent(TraceSeverity severity,
+                     absl::string_view message) override {
     if (parent_->resolver_ == nullptr) return;  // Shutting down.
     parent_->channel_control_helper()->AddTraceEvent(severity, message);
   }
@@ -152,7 +151,7 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
       process_resolver_result_user_data_(process_resolver_result_user_data) {
   GPR_ASSERT(process_resolver_result != nullptr);
   resolver_ = ResolverRegistry::CreateResolver(
-      target_uri_.get(), args.args, interested_parties(), combiner(),
+      target_uri_.get(), args.args, interested_parties(), work_serializer(),
       absl::make_unique<ResolverResultHandler>(Ref()));
   // Since the validity of args has been checked when create the channel,
   // CreateResolver() must return a non-null result.
@@ -247,7 +246,7 @@ OrphanablePtr<LoadBalancingPolicy>
 ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
     const grpc_channel_args& args) {
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.channel_control_helper =
       absl::make_unique<ResolvingControlHelper>(Ref());
   lb_policy_args.args = &args;
@@ -289,7 +288,7 @@ void ResolvingLoadBalancingPolicy::ConcatenateAndAddChannelTraceLocked(
     size_t len = 0;
     grpc_core::UniquePtr<char> message(gpr_strvec_flatten(&v, &len));
     channel_control_helper()->AddTraceEvent(ChannelControlHelper::TRACE_INFO,
-                                            StringView(message.get()));
+                                            absl::string_view(message.get()));
     gpr_strvec_destroy(&v);
   }
 }

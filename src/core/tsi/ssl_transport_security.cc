@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/tsi/grpc_shadow_boringssl.h"
-
 #include "src/core/tsi/ssl_transport_security.h"
 
 #include <limits.h>
@@ -41,6 +39,9 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
+
+#include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
 
 extern "C" {
 #include <openssl/bio.h>
@@ -238,7 +239,7 @@ static void ssl_info_callback(const SSL* ssl, int where, int ret) {
 
 /* Returns 1 if name looks like an IP address, 0 otherwise.
    This is a very rough heuristic, and only handles IPv6 in hexadecimal form. */
-static int looks_like_ip_address(grpc_core::StringView name) {
+static int looks_like_ip_address(absl::string_view name) {
   size_t dot_count = 0;
   size_t num_size = 0;
   for (size_t i = 0; i < name.size(); ++i) {
@@ -345,12 +346,9 @@ static tsi_result add_pem_certificate(X509* cert, tsi_peer_property* property) {
 /* Gets the subject SANs from an X509 cert as a tsi_peer_property. */
 static tsi_result add_subject_alt_names_properties_to_peer(
     tsi_peer* peer, GENERAL_NAMES* subject_alt_names,
-    size_t subject_alt_name_count) {
+    size_t subject_alt_name_count, int* current_insert_index) {
   size_t i;
   tsi_result result = TSI_OK;
-
-  /* Reset for DNS entries filtering. */
-  peer->property_count -= subject_alt_name_count;
 
   for (i = 0; i < subject_alt_name_count; i++) {
     GENERAL_NAME* subject_alt_name =
@@ -376,7 +374,17 @@ static tsi_result add_subject_alt_names_properties_to_peer(
       result = tsi_construct_string_peer_property(
           TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
           reinterpret_cast<const char*>(name), static_cast<size_t>(name_size),
-          &peer->properties[peer->property_count++]);
+          &peer->properties[(*current_insert_index)++]);
+      if (result != TSI_OK) {
+        OPENSSL_free(name);
+        break;
+      }
+      if (subject_alt_name->type == GEN_URI) {
+        result = tsi_construct_string_peer_property(
+            TSI_X509_URI_PEER_PROPERTY, reinterpret_cast<const char*>(name),
+            static_cast<size_t>(name_size),
+            &peer->properties[(*current_insert_index)++]);
+      }
       OPENSSL_free(name);
     } else if (subject_alt_name->type == GEN_IPADD) {
       char ntop_buf[INET6_ADDRSTRLEN];
@@ -401,7 +409,7 @@ static tsi_result add_subject_alt_names_properties_to_peer(
 
       result = tsi_construct_string_peer_property_from_cstring(
           TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, name,
-          &peer->properties[peer->property_count++]);
+          &peer->properties[(*current_insert_index)++]);
     }
     if (result != TSI_OK) break;
   }
@@ -424,26 +432,35 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   property_count = (include_certificate_type ? static_cast<size_t>(1) : 0) +
                    2 /* common name, certificate */ +
                    static_cast<size_t>(subject_alt_name_count);
+  for (int i = 0; i < subject_alt_name_count; i++) {
+    GENERAL_NAME* subject_alt_name =
+        sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
+    if (subject_alt_name->type == GEN_URI) {
+      property_count += 1;
+    }
+  }
   result = tsi_construct_peer(property_count, peer);
   if (result != TSI_OK) return result;
+  int current_insert_index = 0;
   do {
     if (include_certificate_type) {
       result = tsi_construct_string_peer_property_from_cstring(
           TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
-          &peer->properties[0]);
+          &peer->properties[current_insert_index++]);
       if (result != TSI_OK) break;
     }
     result = peer_property_from_x509_common_name(
-        cert, &peer->properties[include_certificate_type ? 1 : 0]);
+        cert, &peer->properties[current_insert_index++]);
     if (result != TSI_OK) break;
 
-    result = add_pem_certificate(
-        cert, &peer->properties[include_certificate_type ? 2 : 1]);
+    result =
+        add_pem_certificate(cert, &peer->properties[current_insert_index++]);
     if (result != TSI_OK) break;
 
     if (subject_alt_name_count != 0) {
       result = add_subject_alt_names_properties_to_peer(
-          peer, subject_alt_names, static_cast<size_t>(subject_alt_name_count));
+          peer, subject_alt_names, static_cast<size_t>(subject_alt_name_count),
+          &current_insert_index);
       if (result != TSI_OK) break;
     }
   } while (0);
@@ -452,6 +469,8 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
     sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
   }
   if (result != TSI_OK) tsi_peer_destruct(peer);
+
+  GPR_ASSERT((int)peer->property_count == current_insert_index);
   return result;
 }
 
@@ -1645,8 +1664,8 @@ static void tsi_ssl_server_handshaker_factory_destroy(
   gpr_free(self);
 }
 
-static int does_entry_match_name(grpc_core::StringView entry,
-                                 grpc_core::StringView name) {
+static int does_entry_match_name(absl::string_view entry,
+                                 absl::string_view name) {
   if (entry.empty()) return 0;
 
   /* Take care of '.' terminations. */
@@ -1658,7 +1677,7 @@ static int does_entry_match_name(grpc_core::StringView entry,
     if (entry.empty()) return 0;
   }
 
-  if (name == entry) {
+  if (absl::EqualsIgnoreCase(name, entry)) {
     return 1; /* Perfect match. */
   }
   if (entry.front() != '*') return 0;
@@ -1669,23 +1688,21 @@ static int does_entry_match_name(grpc_core::StringView entry,
     return 0;
   }
   size_t name_subdomain_pos = name.find('.');
-  if (name_subdomain_pos == grpc_core::StringView::npos) return 0;
+  if (name_subdomain_pos == absl::string_view::npos) return 0;
   if (name_subdomain_pos >= name.size() - 2) return 0;
-  grpc_core::StringView name_subdomain =
+  absl::string_view name_subdomain =
       name.substr(name_subdomain_pos + 1); /* Starts after the dot. */
   entry.remove_prefix(2);                  /* Remove *. */
   size_t dot = name_subdomain.find('.');
-  if (dot == grpc_core::StringView::npos || dot == name_subdomain.size() - 1) {
-    grpc_core::UniquePtr<char> name_subdomain_cstr(
-        grpc_core::StringViewToCString(name_subdomain));
+  if (dot == absl::string_view::npos || dot == name_subdomain.size() - 1) {
     gpr_log(GPR_ERROR, "Invalid toplevel subdomain: %s",
-            name_subdomain_cstr.get());
+            std::string(name_subdomain).c_str());
     return 0;
   }
   if (name_subdomain.back() == '.') {
     name_subdomain.remove_suffix(1);
   }
-  return !entry.empty() && name_subdomain == entry;
+  return !entry.empty() && absl::EqualsIgnoreCase(name_subdomain, entry);
 }
 
 static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
@@ -1707,7 +1724,7 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
     }
   }
   gpr_log(GPR_ERROR, "No match found for server name: %s.", servername);
-  return SSL_TLSEXT_ERR_ALERT_WARNING;
+  return SSL_TLSEXT_ERR_NOACK;
 }
 
 #if TSI_OPENSSL_ALPN_SUPPORT
@@ -2058,8 +2075,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
 /* --- tsi_ssl utils. --- */
 
-int tsi_ssl_peer_matches_name(const tsi_peer* peer,
-                              grpc_core::StringView name) {
+int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name) {
   size_t i = 0;
   size_t san_count = 0;
   const tsi_peer_property* cn_property = nullptr;
@@ -2073,7 +2089,7 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer,
                TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
       san_count++;
 
-      grpc_core::StringView entry(property->value.data, property->value.length);
+      absl::string_view entry(property->value.data, property->value.length);
       if (!like_ip && does_entry_match_name(entry, name)) {
         return 1;
       } else if (like_ip && name == entry) {
@@ -2088,8 +2104,8 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer,
 
   /* If there's no SAN, try the CN, but only if its not like an IP Address */
   if (san_count == 0 && cn_property != nullptr && !like_ip) {
-    if (does_entry_match_name(grpc_core::StringView(cn_property->value.data,
-                                                    cn_property->value.length),
+    if (does_entry_match_name(absl::string_view(cn_property->value.data,
+                                                cn_property->value.length),
                               name)) {
       return 1;
     }

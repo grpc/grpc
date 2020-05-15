@@ -16,7 +16,7 @@ py_grpc_library(
 
 py_library(
     name = "grpc_channelz",
-    srcs = ["channelz.py"],
+    srcs = glob(["*.py"]),
     imports = ["../../"],
     deps = [
         ":channelz_py_pb2",
