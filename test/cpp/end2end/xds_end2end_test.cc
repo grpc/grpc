@@ -2349,24 +2349,20 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that LDS client should send a NACK if route match has non-empty prefix
-// as the only route (default) in the LDS response.
-TEST_P(LdsRdsTest, RouteMatchHasNonemptyPrefix) {
+// Tests that LDS client should ignore non-empty prefix in the default route.
+TEST_P(LdsRdsTest, RouteMatchIgnoreNonemptyPrefixInDefaultRoute) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_match()
-      ->set_prefix("/nonempty_prefix/");
+      ->set_prefix("/grpc.testing.EchoTest1Service/");
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Default route must have empty service and method");
+  (void)SendRpc();
+  EXPECT_EQ(RouteConfigurationResponseState(0).state,
+            AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
@@ -2393,27 +2389,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNonEmptyNoSlash) {
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
-// string does not end with "/".
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoEndingSlash) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service");
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Prefix not in the required format of /service/");
-}
-
-// Tests that LDS client should send a NACK if route match has a prefix
 // string does not start with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   ResetStub(/*failover_timeout=*/0,
@@ -2431,69 +2406,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "Prefix does not start with a /");
-}
-
-// Tests that LDS client should send a NACK if route match has a prefix
-// string with extra content outside of "/service/".
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/Echo1");
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "Prefix does not end with a /");
-}
-
-// Tests that LDS client should send a NACK if route match has a prefix
-// string "//".
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoContent) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("//");
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "Prefix contains empty service name");
-}
-
-// Tests that LDS client should send a NACK if route match has path
-// but it's empty.
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  route1->mutable_match()->set_path("");
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "Path if set cannot be empty");
 }
 
 // Tests that LDS client should send a NACK if route match has path
@@ -2517,100 +2429,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "Path does not start with a /");
-}
-
-// Tests that LDS client should send a NACK if route match has path
-// string that ends with "/".
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEndsWithSlash) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1/");
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Path not in the required format of /service/method");
-}
-
-// Tests that LDS client should send a NACK if route match has path
-// string that misses "/" between service and method.
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMiddleSlash) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service.Echo1");
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Path not in the required format of /service/method");
-}
-
-// Tests that LDS client should send a NACK if route match has path
-// string that is missing service.
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  route1->mutable_match()->set_path("//Echo1");
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "Path contains empty service name");
-}
-
-// Tests that LDS client should send a NACK if route match has path
-// string that is missing method.
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
-  ResetStub(/*failover_timeout=*/0,
-            /*expected_targets=*/"",
-            /*xds_resource_does_not_exist_timeout*/ 0,
-            /*xds_routing_enabled=*/true);
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultResourceName);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/");
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "Path contains empty method name");
 }
 
 // Tests that LDS client should send a NACK if route has an action other than

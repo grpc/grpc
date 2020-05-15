@@ -51,8 +51,8 @@ constexpr char kXdsRouting[] = "xds_routing_experimental";
 class XdsRoutingLbConfig : public LoadBalancingPolicy::Config {
  public:
   struct Matcher {
-    std::string service;
-    std::string method;
+    std::string prefix;
+    std::string path;
   };
   struct Route {
     Matcher matcher;
@@ -225,13 +225,11 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
       break;
     }
   }
-  std::vector<absl::string_view> path_elements =
-      absl::StrSplit(path.substr(1), '/');
   for (const Route& route : route_table_) {
-    if ((path_elements[0] == route.matcher.service &&
-         (path_elements[1] == route.matcher.method ||
-          route.matcher.method.empty())) ||
-        (route.matcher.service.empty() && route.matcher.method.empty())) {
+    if ((!route.matcher.prefix.empty() &&
+         path.find(route.matcher.prefix) != std::string::npos) ||
+        (!route.matcher.path.empty() && path == route.matcher.path) ||
+        (route.matcher.prefix.empty() && route.matcher.path.empty())) {
       return route.picker->Pick(args);
     }
   }
@@ -683,10 +681,14 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no valid routes configured");
       error_list.push_back(error);
     }
-    if (!route_table.back().matcher.service.empty() ||
-        !route_table.back().matcher.method.empty()) {
+    for (const XdsRoutingLbConfig::Route& route : route_table) {
+      gpr_log(GPR_INFO, "donna route info: %s and %s",
+              route.matcher.prefix.c_str(), route.matcher.path.c_str());
+    }
+    if (!route_table.back().matcher.prefix.empty() ||
+        !route_table.back().matcher.path.empty()) {
       grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "default route must not contain service or method");
+          "default route must not contain prefix or path");
       error_list.push_back(error);
     }
     if (!actions_to_be_used.empty()) {
@@ -731,7 +733,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     return error_list;
   }
 
-  static std::vector<grpc_error*> ParseMethodName(
+  /*static std::vector<grpc_error*> ParseMethodName(
       const Json& json, XdsRoutingLbConfig::Matcher* route_config) {
     std::vector<grpc_error*> error_list;
     if (json.type() != Json::Type::OBJECT) {
@@ -764,7 +766,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           "service is empty when method is not"));
     }
     return error_list;
-  }
+  }*/
 
   static std::vector<grpc_error*> ParseRoute(
       const Json& json, const XdsRoutingLbConfig::ActionMap& action_map,
@@ -776,17 +778,24 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           "value should be of type object"));
       return error_list;
     }
-    // Parse MethodName.
-    auto it = json.object_value().find("methodName");
-    if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:methodName error:required field missing"));
-    } else {
-      std::vector<grpc_error*> method_name_errors =
-          ParseMethodName(it->second, &route->matcher);
-      if (!method_name_errors.empty()) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-            "field:methodName", &method_name_errors));
+    // Parse Path Matcher: prefix.
+    auto it = json.object_value().find("prefix");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:prefix error: should be string"));
+      } else {
+        route->matcher.prefix = it->second.string_value();
+      }
+    }
+    // Parse Path Matcher: path.
+    it = json.object_value().find("path");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:path error: should be string"));
+      } else {
+        route->matcher.path = it->second.string_value();
       }
     }
     // Parse action.

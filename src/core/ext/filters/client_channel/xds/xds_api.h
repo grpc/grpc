@@ -47,11 +47,38 @@ class XdsApi {
 
   struct RdsUpdate {
     struct RdsRoute {
-      std::string service;
-      std::string method;
       // TODO(donnadionne): When we can use absl::variant<>, consider using that
-      // here, to enforce the fact that only one of cluster_name and
-      // weighted_clusters can be set.
+      // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
+      struct PathMatcher {
+        absl::optional<std::string> path;
+        absl::optional<std::string> prefix;
+        absl::optional<std::string> regex;
+      };
+
+      struct HeaderMatcher {
+        struct Int64Range {
+          int64_t start;
+          int64_t end;
+        };
+        std::string name;
+        absl::optional<std::string> exact_match;
+        absl::optional<std::string> regex_match;
+        absl::optional<Int64Range> range_match;
+        absl::optional<bool> present_match;
+        absl::optional<std::string> prefix_match;
+        absl::optional<std::string> suffix_match;
+        bool invert_match;
+      };
+
+      struct Fraction {
+        uint32_t numberator;
+        uint32_t denominator;
+      };
+
+      PathMatcher path_matcher;
+      std::vector<HeaderMatcher> headers;
+      Fraction match_fraction;
+
       std::string cluster_name;
       struct ClusterWeight {
         std::string name;
@@ -64,8 +91,7 @@ class XdsApi {
       std::vector<ClusterWeight> weighted_clusters;
 
       bool operator==(const RdsRoute& other) const {
-        return (service == other.service && method == other.method &&
-                cluster_name == other.cluster_name &&
+        return (cluster_name == other.cluster_name &&
                 weighted_clusters == other.weighted_clusters);
       }
     };
