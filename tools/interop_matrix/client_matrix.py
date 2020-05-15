@@ -105,6 +105,8 @@ LANG_RELEASE_MATRIX = {
             ('v1.25.0', ReleaseInfo()),
             ('v1.26.0', ReleaseInfo()),
             ('v1.27.3', ReleaseInfo()),
+            ('v1.28.1', ReleaseInfo()),
+            ('v1.29.0', ReleaseInfo()),
         ]),
     'go':
         OrderedDict([
@@ -272,6 +274,8 @@ LANG_RELEASE_MATRIX = {
             ('v1.25.0', ReleaseInfo(runtimes=['python'])),
             ('v1.26.0', ReleaseInfo(runtimes=['python'])),
             ('v1.27.3', ReleaseInfo(runtimes=['python'])),
+            ('v1.28.1', ReleaseInfo(runtimes=['python'])),
+            ('v1.29.0', ReleaseInfo(runtimes=['python'])),
         ]),
     'node':
         OrderedDict([
@@ -330,6 +334,8 @@ LANG_RELEASE_MATRIX = {
             # go ahead and upload the docker image for new releases.
             ('v1.26.0', ReleaseInfo()),
             ('v1.27.3', ReleaseInfo()),
+            ('v1.28.1', ReleaseInfo()),
+            ('v1.29.0', ReleaseInfo()),
         ]),
     'php':
         OrderedDict([
@@ -361,6 +367,8 @@ LANG_RELEASE_MATRIX = {
             ('v1.25.0', ReleaseInfo()),
             ('v1.26.0', ReleaseInfo()),
             ('v1.27.3', ReleaseInfo()),
+            ('v1.28.1', ReleaseInfo()),
+            ('v1.29.0', ReleaseInfo()),
         ]),
     'csharp':
         OrderedDict([
@@ -397,5 +405,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.25.0', ReleaseInfo()),
             ('v1.26.0', ReleaseInfo()),
             ('v1.27.3', ReleaseInfo()),
+            ('v1.28.1', ReleaseInfo()),
+            ('v1.29.0', ReleaseInfo()),
         ]),
 }
