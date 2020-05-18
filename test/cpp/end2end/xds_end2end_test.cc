@@ -2362,7 +2362,27 @@ TEST_P(LdsRdsTest, RouteMatchHasNonemptyPrefix) {
   balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
-            "Default route must have empty service and method");
+            "Default route must have empty prefix.");
+}
+
+// Tests that LDS client should send a NACK if route match has path specifier
+// besides prefix as the only route (default) in the LDS response.
+TEST_P(LdsRdsTest, RouteMatchHasUnsupportedSpecifier) {
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_match()
+      ->set_path("");
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "No prefix field found in Default RouteMatch.");
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix

@@ -1043,7 +1043,20 @@ grpc_error* RouteConfigParse(
     const envoy_api_v2_route_RouteMatch* match =
         envoy_api_v2_route_Route_match(route);
     XdsApi::RdsUpdate::RdsRoute rds_route;
-    if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
+    if (!xds_routing_enabled) {
+      // if xds routing is not enabled, we must be working on the default route;
+      // in this case, we must have an empty or single slash prefix.
+      if (!envoy_api_v2_route_RouteMatch_has_prefix(match)) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "No prefix field found in Default RouteMatch.");
+      }
+      const upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
+      if (!upb_strview_eql(prefix, upb_strview_makez("")) &&
+          !upb_strview_eql(prefix, upb_strview_makez("/"))) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Default route must have empty prefix.");
+      }
+    } else if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
       upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
       // Empty prefix "" is accepted.
       if (prefix.size > 0) {
@@ -1093,9 +1106,12 @@ grpc_error* RouteConfigParse(
       }
       rds_route.service = std::string(path_elements[0]);
       rds_route.method = std::string(path_elements[1]);
+    } else if (envoy_api_v2_route_RouteMatch_has_regex(match)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Unsupported path specifier: regex");
     } else {
-      // TODO(donnadionne): We may change this behavior once we decide how to
-      // handle unsupported fields.
+      // Path specifier types will be supported, ignore but not reject until
+      // they are implemented.
       continue;
     }
     if (!envoy_api_v2_route_Route_has_route(route)) {
@@ -1167,12 +1183,13 @@ grpc_error* RouteConfigParse(
   }
   if (rds_update->routes.empty()) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid routes specified.");
-  } else {
-    if (!rds_update->routes.back().service.empty() ||
-        !rds_update->routes.back().method.empty()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Default route must have empty service and method");
-    }
+  }
+  // The last route's matchers, tho validated, should always be ignored.
+  if (!rds_update->routes.back().service.empty()) {
+    rds_update->routes.back().service = "";
+  }
+  if (!rds_update->routes.back().method.empty()) {
+    rds_update->routes.back().method = "";
   }
   return GRPC_ERROR_NONE;
 }
