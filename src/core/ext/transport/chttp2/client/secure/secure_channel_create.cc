@@ -108,15 +108,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
     // authority table was present or because the target was not present
     // in the table), fall back to using the original server URI.
     if (authority == nullptr) {
-      char* ssl_override = const_cast<char*>(grpc_channel_args_find_string(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG));
-      char* alts_override = const_cast<char*>(grpc_channel_args_find_string(args, GRPC_ALTS_TARGET_NAME_OVERRIDE_ARG));
-      if (ssl_override != nullptr) {
-        authority = grpc_core::UniquePtr<char>(gpr_strdup(ssl_override));
-      } else if (alts_override != nullptr) {
-        authority = grpc_core::UniquePtr<char>(gpr_strdup(alts_override));
-      } else {
-        authority = ResolverRegistry::GetDefaultAuthority(server_uri_str);
-      }
+      authority = ResolverRegistry::GetDefaultAuthority(server_uri_str);
     }
     grpc_arg args_to_add[2];
     size_t num_args_to_add = 0;

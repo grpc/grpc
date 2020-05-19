@@ -63,6 +63,19 @@ grpc_alts_credentials::create_security_connector(
       this->Ref(), std::move(call_creds), target_name);
 }
 
+grpc_channel_args* grpc_alts_credentials::update_arguments(grpc_channel_args* args) {
+  if (grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY) == nullptr) {
+    const char* target_name_override = const_cast<char*>(grpc_channel_args_find_string(args, GRPC_ALTS_TARGET_NAME_OVERRIDE_ARG));
+    if (target_name_override != nullptr) {
+      grpc_arg override_arg = grpc_channel_arg_string_create(GRPC_ARG_DEFAULT_AUTHORITY, gpr_strdup(target_name_override));
+      grpc_channel_args* prev = args;
+      args = grpc_channel_args_copy_and_add(args, &override_arg, 1);
+      grpc_channel_args_destroy(prev);
+    }
+  }
+  return args;
+}
+
 grpc_alts_server_credentials::grpc_alts_server_credentials(
     const grpc_alts_credentials_options* options,
     const char* handshaker_service_url)
