@@ -21,11 +21,6 @@
 
 require dirname(__FILE__).'/vendor/autoload.php';
 
-@include_once dirname(__FILE__).'/Helloworld/GreeterClient.php';
-@include_once dirname(__FILE__).'/Helloworld/HelloReply.php';
-@include_once dirname(__FILE__).'/Helloworld/HelloRequest.php';
-@include_once dirname(__FILE__).'/GPBMetadata/Helloworld.php';
-
 function greet($name)
 {
     $client = new Helloworld\GreeterClient('localhost:50051', [
