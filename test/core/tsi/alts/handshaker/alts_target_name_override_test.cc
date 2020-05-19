@@ -172,8 +172,8 @@ std::string PerformCallAndGetAuthorityHeader(grpc_channel* channel,
   cq_verify(cqv);
   GPR_ASSERT(status == GRPC_STATUS_OK);
   // Extract the authority header
-  grpc_core::UniquePtr<char> authority_header(
-      grpc_slice_to_c_string(call_details.host));
+  std::string authority_header(
+      grpc_core::StringViewFromSlice(call_details.host));
   // cleanup
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -183,7 +183,7 @@ std::string PerformCallAndGetAuthorityHeader(grpc_channel* channel,
   grpc_call_unref(c);
   grpc_call_unref(s);
   cq_verifier_destroy(cqv);
-  return std::string(authority_header.get());
+  return authority_header;
 }
 
 // Perform a few ALTS handshakes sequentially (using the fake, in-process ALTS
