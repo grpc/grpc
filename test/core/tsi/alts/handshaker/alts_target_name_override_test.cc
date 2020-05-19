@@ -104,14 +104,7 @@ std::string PerformCallAndGetAuthorityHeader(grpc_channel* channel,
   grpc_call_error error;
   grpc_slice details;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  grpc_slice request_payload_slice = grpc_slice_from_copied_string("request");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice response_payload_slice = grpc_slice_from_copied_string("response");
-  grpc_byte_buffer* response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_byte_buffer* response_payload_recv = nullptr;
+  int was_cancelled;
   // Start a call
   c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
@@ -128,10 +121,6 @@ std::string PerformCallAndGetAuthorityHeader(grpc_channel* channel,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
-  op->flags = 0;
-  op->reserved = nullptr;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
   op->reserved = nullptr;
@@ -141,8 +130,6 @@ std::string PerformCallAndGetAuthorityHeader(grpc_channel* channel,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
@@ -166,18 +153,14 @@ std::string PerformCallAndGetAuthorityHeader(grpc_channel* channel,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload;
-  op->flags = 0;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -197,10 +180,6 @@ std::string PerformCallAndGetAuthorityHeader(grpc_channel* channel,
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(response_payload);
-  grpc_byte_buffer_destroy(request_payload_recv);
-  grpc_byte_buffer_destroy(response_payload_recv);
   grpc_call_unref(c);
   grpc_call_unref(s);
   cq_verifier_destroy(cqv);
