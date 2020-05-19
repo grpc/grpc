@@ -92,11 +92,15 @@ grpc_ssl_credentials::create_security_connector(
   return sc;
 }
 
-grpc_channel_args* grpc_ssl_credentials::update_arguments(grpc_channel_args* args) {
-  if (grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY) == nullptr) {
-    char* target_name_override = const_cast<char*>(grpc_channel_args_find_string(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG));
+grpc_channel_args* grpc_ssl_credentials::update_arguments(
+    grpc_channel_args* args) {
+  if (grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY) ==
+      nullptr) {
+    char* target_name_override = const_cast<char*>(
+        grpc_channel_args_find_string(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG));
     if (target_name_override != nullptr) {
-      grpc_arg override_arg = grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), target_name_override);
+      grpc_arg override_arg = grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), target_name_override);
       grpc_channel_args* prev = args;
       args = grpc_channel_args_copy_and_add(args, &override_arg, 1);
       grpc_channel_args_destroy(prev);

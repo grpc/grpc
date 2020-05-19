@@ -219,7 +219,8 @@ grpc_channel* grpc_channel_create(const char* target,
   // ensuring that shutdown is deferred until that point.
   grpc_init();
   grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(input_args, nullptr, 0);
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(input_args, nullptr, 0);
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
     auto channel_args_mutator =
         grpc_channel_args_get_client_channel_creation_mutator();
