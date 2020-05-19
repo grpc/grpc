@@ -652,6 +652,11 @@ void op_state_machine_locked(inproc_stream* s, grpc_error* error) {
                          0, dest, nullptr, destfilled);
       }
       s->trailing_md_sent = true;
+      if (s->send_trailing_md_op->payload->send_trailing_metadata
+              .sent_trailing_metadata) {
+        *s->send_trailing_md_op->payload->send_trailing_metadata
+             .sent_trailing_metadata = true;
+      }
       if (!s->t->is_client && s->trailing_md_recvd && s->recv_trailing_md_op) {
         INPROC_LOG(GPR_INFO,
                    "op_state_machine %p scheduling trailing-metadata-ready", s);
