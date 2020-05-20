@@ -32,8 +32,8 @@ class TestChannelReady(AioTestBase):
 
     async def setUp(self):
         address, self._port, self._socket = get_socket(listen=False)
-        self._channel = aio.insecure_channel(f"{address}:{self._port}")
         self._socket.close()
+        self._channel = aio.insecure_channel(f"{address}:{self._port}")
 
     async def tearDown(self):
         await self._channel.close()
