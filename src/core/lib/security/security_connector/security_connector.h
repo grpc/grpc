@@ -151,7 +151,7 @@ class grpc_server_security_connector : public grpc_security_connector {
   grpc_server_security_connector(
       const char* url_scheme,
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
-  ~grpc_server_security_connector() override = default;
+  ~grpc_server_security_connector() override;
 
   virtual void add_handshakers(const grpc_channel_args* args,
                                grpc_pollset_set* interested_parties,
