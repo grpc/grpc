@@ -79,7 +79,7 @@ g_stands_for = "gringotts"
 
 core_version = "10.0.0"
 
-version = "1.29.0"
+version = "1.29.1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
