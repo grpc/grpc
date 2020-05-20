@@ -7,8 +7,8 @@
   },
   "autoload": {
     "psr-4": {
-      "": "route_guide/",
-      "GPBMetadata\\": "GPBMetadata/",
+      "Routeguide\\": "route_guide/Routeguide/",
+      "GPBMetadata\\": ["GPBMetadata/","route_guide/GPBMetadata/"],
       "Helloworld\\": "Helloworld/"
     }
   }
