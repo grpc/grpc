@@ -2991,6 +2991,76 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
+TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const size_t kNumEchoRpcs = 1000;
+  const size_t kWeight75 = 75;
+  const size_t kWeight25 = 25;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster2.set_name(kNewCluster2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Populating Route Configurations for LDS.
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("");
+  auto* weighted_cluster1 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster1->set_name(kNewCluster1Name);
+  weighted_cluster1->mutable_weight()->set_value(kWeight75);
+  auto* weighted_cluster2 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster2->set_name(kNewCluster2Name);
+  weighted_cluster2->mutable_weight()->set_value(kWeight25);
+  route1->mutable_route()
+      ->mutable_weighted_clusters()
+      ->mutable_total_weight()
+      ->set_value(kWeight75 + kWeight25);
+  SetRouteConfiguration(0, new_route_config);
+  WaitForAllBackends(1, 3);
+  CheckRpcSendOk(kNumEchoRpcs);
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
+  const int weight_75_request_count =
+      backends_[1]->backend_service()->request_count();
+  const int weight_25_request_count =
+      backends_[2]->backend_service()->request_count();
+  const double kErrorTolerance = 0.2;
+  EXPECT_THAT(weight_75_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEchoRpcs * kWeight75 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEchoRpcs * kWeight75 / 100 *
+                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(weight_25_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEchoRpcs * kWeight25 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEchoRpcs * kWeight25 / 100 *
+                                             (1 + kErrorTolerance))));
+}
+
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
