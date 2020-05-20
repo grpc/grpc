@@ -611,6 +611,7 @@ def test_traffic_splitting(gcp, original_backend_service, instance_group,
                         got_instance_percentage, expected_instance_percentage)
             else:
                 logger.info("success")
+                break
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_instances(gcp, alternate_backend_service, [])
