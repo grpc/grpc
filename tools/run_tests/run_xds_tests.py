@@ -537,6 +537,10 @@ def test_secondary_locality_gets_requests_on_primary_failure(
 
 def test_traffic_splitting(gcp, original_backend_service, instance_group,
                            alternate_backend_service, same_zone_instance_group):
+    # This test start with all traffic going to original_backend_service. Then
+    # it updates URL-map to set default action to traffic splitting between
+    # original and alternate. It waits for all backends in both services to
+    # receive traffic, then verifies that weights are expected.
     logger.info('Running test_traffic_splitting')
 
     logger.info('waiting for original to become healthy')
@@ -584,7 +588,8 @@ def test_traffic_splitting(gcp, original_backend_service, instance_group,
         wait_until_all_rpcs_go_to_given_backends(
             original_backend_instances + alternate_backend_instances,
             _WAIT_FOR_STATS_SEC)
-        # Verify that weights between two services is expected.
+
+        # Verify that weights between two services are expected.
         retry_count = 3
         for i in range(retry_count):
             stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
