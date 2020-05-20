@@ -971,6 +971,76 @@ MatchType DomainPatternMatchType(const std::string& domain_pattern) {
   return INVALID_MATCH;
 }
 
+grpc_error* RouteActionParse(const envoy_api_v2_route_Route* route,
+                             XdsApi::RdsUpdate::RdsRoute* rds_route) {
+  if (!envoy_api_v2_route_Route_has_route(route)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "No RouteAction found in route.");
+  }
+  const envoy_api_v2_route_RouteAction* route_action =
+      envoy_api_v2_route_Route_route(route);
+  // Get the cluster or weighted_clusters in the RouteAction.
+  if (envoy_api_v2_route_RouteAction_has_cluster(route_action)) {
+    const upb_strview cluster_name =
+        envoy_api_v2_route_RouteAction_cluster(route_action);
+    if (cluster_name.size == 0) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "RouteAction cluster contains empty cluster name.");
+    }
+    rds_route->cluster_name = UpbStringToStdString(cluster_name);
+  } else if (envoy_api_v2_route_RouteAction_has_weighted_clusters(
+                 route_action)) {
+    const envoy_api_v2_route_WeightedCluster* weighted_cluster =
+        envoy_api_v2_route_RouteAction_weighted_clusters(route_action);
+    uint32_t total_weight = 100;
+    const google_protobuf_UInt32Value* weight =
+        envoy_api_v2_route_WeightedCluster_total_weight(weighted_cluster);
+    if (weight != nullptr) {
+      total_weight = google_protobuf_UInt32Value_value(weight);
+    }
+    size_t clusters_size;
+    const envoy_api_v2_route_WeightedCluster_ClusterWeight* const* clusters =
+        envoy_api_v2_route_WeightedCluster_clusters(weighted_cluster,
+                                                    &clusters_size);
+    uint32_t sum_of_weights = 0;
+    for (size_t j = 0; j < clusters_size; ++j) {
+      const envoy_api_v2_route_WeightedCluster_ClusterWeight* cluster_weight =
+          clusters[j];
+      XdsApi::RdsUpdate::RdsRoute::ClusterWeight cluster;
+      cluster.name = UpbStringToStdString(
+          envoy_api_v2_route_WeightedCluster_ClusterWeight_name(
+              cluster_weight));
+      if (cluster.name.empty()) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "RouteAction weighted_cluster cluster contains empty cluster "
+            "name.");
+      }
+      const google_protobuf_UInt32Value* weight =
+          envoy_api_v2_route_WeightedCluster_ClusterWeight_weight(
+              cluster_weight);
+      if (weight == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "RouteAction weighted_cluster cluster missing weight");
+      }
+      cluster.weight = google_protobuf_UInt32Value_value(weight);
+      sum_of_weights += cluster.weight;
+      rds_route->weighted_clusters.emplace_back(std::move(cluster));
+    }
+    if (total_weight != sum_of_weights) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "RouteAction weighted_cluster has incorrect total weight");
+    }
+    if (rds_route->weighted_clusters.empty()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "RouteAction weighted_cluster has no valid clusters specified.");
+    }
+  } else {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "No cluster or weighted_clusters found in RouteAction.");
+  }
+  return GRPC_ERROR_NONE;
+}
+
 grpc_error* RouteConfigParse(
     XdsClient* client, TraceFlag* tracer,
     const envoy_api_v2_RouteConfiguration* route_config,
@@ -1037,26 +1107,35 @@ grpc_error* RouteConfigParse(
   }
   // If xds_routing is not configured, only look at the last one in the route
   // list (the default route)
-  size_t start_index = xds_routing_enabled ? 0 : size - 1;
-  for (size_t i = start_index; i < size; ++i) {
+  if (!xds_routing_enabled) {
+    const envoy_api_v2_route_Route* route = routes[size - 1];
+    const envoy_api_v2_route_RouteMatch* match =
+        envoy_api_v2_route_Route_match(route);
+    XdsApi::RdsUpdate::RdsRoute rds_route;
+    // if xds routing is not enabled, we must be working on the default route;
+    // in this case, we must have an empty or single slash prefix.
+    if (!envoy_api_v2_route_RouteMatch_has_prefix(match)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "No prefix field found in Default RouteMatch.");
+    }
+    const upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
+    if (!upb_strview_eql(prefix, upb_strview_makez("")) &&
+        !upb_strview_eql(prefix, upb_strview_makez("/"))) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Default route must have empty prefix.");
+    }
+    grpc_error* error = RouteActionParse(route, &rds_route);
+    if (error != GRPC_ERROR_NONE) return error;
+    rds_update->routes.emplace_back(std::move(rds_route));
+    return GRPC_ERROR_NONE;
+  }
+  // Loop over the whole list of routes
+  for (size_t i = 0; i < size; ++i) {
     const envoy_api_v2_route_Route* route = routes[i];
     const envoy_api_v2_route_RouteMatch* match =
         envoy_api_v2_route_Route_match(route);
     XdsApi::RdsUpdate::RdsRoute rds_route;
-    if (!xds_routing_enabled) {
-      // if xds routing is not enabled, we must be working on the default route;
-      // in this case, we must have an empty or single slash prefix.
-      if (!envoy_api_v2_route_RouteMatch_has_prefix(match)) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "No prefix field found in Default RouteMatch.");
-      }
-      const upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
-      if (!upb_strview_eql(prefix, upb_strview_makez("")) &&
-          !upb_strview_eql(prefix, upb_strview_makez("/"))) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Default route must have empty prefix.");
-      }
-    } else if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
+    if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
       upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
       // Empty prefix "" is accepted.
       if (prefix.size > 0) {
@@ -1106,90 +1185,17 @@ grpc_error* RouteConfigParse(
       }
       rds_route.service = std::string(path_elements[0]);
       rds_route.method = std::string(path_elements[1]);
-    } else if (envoy_api_v2_route_RouteMatch_has_regex(match)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unsupported path specifier: regex");
     } else {
       // Path specifier types will be supported, ignore but not reject until
       // they are implemented.
       continue;
     }
-    if (!envoy_api_v2_route_Route_has_route(route)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "No RouteAction found in route.");
-    }
-    const envoy_api_v2_route_RouteAction* route_action =
-        envoy_api_v2_route_Route_route(route);
-    // Get the cluster or weighted_clusters in the RouteAction.
-    if (envoy_api_v2_route_RouteAction_has_cluster(route_action)) {
-      const upb_strview cluster_name =
-          envoy_api_v2_route_RouteAction_cluster(route_action);
-      if (cluster_name.size == 0) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "RouteAction cluster contains empty cluster name.");
-      }
-      rds_route.cluster_name = UpbStringToStdString(cluster_name);
-    } else if (envoy_api_v2_route_RouteAction_has_weighted_clusters(
-                   route_action)) {
-      const envoy_api_v2_route_WeightedCluster* weighted_cluster =
-          envoy_api_v2_route_RouteAction_weighted_clusters(route_action);
-      uint32_t total_weight = 100;
-      const google_protobuf_UInt32Value* weight =
-          envoy_api_v2_route_WeightedCluster_total_weight(weighted_cluster);
-      if (weight != nullptr) {
-        total_weight = google_protobuf_UInt32Value_value(weight);
-      }
-      size_t clusters_size;
-      const envoy_api_v2_route_WeightedCluster_ClusterWeight* const* clusters =
-          envoy_api_v2_route_WeightedCluster_clusters(weighted_cluster,
-                                                      &clusters_size);
-      uint32_t sum_of_weights = 0;
-      for (size_t j = 0; j < clusters_size; ++j) {
-        const envoy_api_v2_route_WeightedCluster_ClusterWeight* cluster_weight =
-            clusters[j];
-        XdsApi::RdsUpdate::RdsRoute::ClusterWeight cluster;
-        cluster.name = UpbStringToStdString(
-            envoy_api_v2_route_WeightedCluster_ClusterWeight_name(
-                cluster_weight));
-        if (cluster.name.empty()) {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "RouteAction weighted_cluster cluster contains empty cluster "
-              "name.");
-        }
-        const google_protobuf_UInt32Value* weight =
-            envoy_api_v2_route_WeightedCluster_ClusterWeight_weight(
-                cluster_weight);
-        if (weight == nullptr) {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "RouteAction weighted_cluster cluster missing weight");
-        }
-        cluster.weight = google_protobuf_UInt32Value_value(weight);
-        sum_of_weights += cluster.weight;
-        rds_route.weighted_clusters.emplace_back(std::move(cluster));
-      }
-      if (total_weight != sum_of_weights) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "RouteAction weighted_cluster has incorrect total weight");
-      }
-      if (rds_route.weighted_clusters.empty()) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "RouteAction weighted_cluster has no valid clusters specified.");
-      }
-    } else {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "No cluster or weighted_clusters found in RouteAction.");
-    }
+    grpc_error* error = RouteActionParse(route, &rds_route);
+    if (error != GRPC_ERROR_NONE) return error;
     rds_update->routes.emplace_back(std::move(rds_route));
   }
   if (rds_update->routes.empty()) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid routes specified.");
-  }
-  // The last route's matchers, tho validated, should always be ignored.
-  if (!rds_update->routes.back().service.empty()) {
-    rds_update->routes.back().service = "";
-  }
-  if (!rds_update->routes.back().method.empty()) {
-    rds_update->routes.back().method = "";
   }
   return GRPC_ERROR_NONE;
 }
