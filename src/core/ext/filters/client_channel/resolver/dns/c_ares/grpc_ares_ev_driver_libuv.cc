@@ -31,7 +31,7 @@
 #include <grpc/support/time.h>
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
@@ -41,19 +41,16 @@ void ares_uv_poll_close_cb(uv_handle_t* handle) { delete handle; }
 
 class GrpcPolledFdLibuv : public GrpcPolledFd {
  public:
-  GrpcPolledFdLibuv(ares_socket_t as, Combiner* combiner)
-      : as_(as), combiner_(combiner) {
+  GrpcPolledFdLibuv(ares_socket_t as,
+                    std::shared_ptr<WorkSerializer> work_serializer)
+      : as_(as), work_serializer_(std::move(work_serializer)) {
     gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, (intptr_t)as);
     handle_ = new uv_poll_t();
     uv_poll_init_socket(uv_default_loop(), handle_, as);
     handle_->data = this;
-    GRPC_COMBINER_REF(combiner_, "libuv ares event driver");
   }
 
-  ~GrpcPolledFdLibuv() {
-    gpr_free(name_);
-    GRPC_COMBINER_UNREF(combiner_, "libuv ares event driver");
-  }
+  ~GrpcPolledFdLibuv() { gpr_free(name_); }
 
   void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
     GPR_ASSERT(read_closure_ == nullptr);
@@ -109,7 +106,7 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
   grpc_closure* read_closure_ = nullptr;
   grpc_closure* write_closure_ = nullptr;
   int poll_events_ = 0;
-  Combiner* combiner_;
+  std::shared_ptr<WorkSerializer> work_serializer_;
 };
 
 struct AresUvPollCbArg {
@@ -121,14 +118,14 @@ struct AresUvPollCbArg {
   int events;
 };
 
-static void ares_uv_poll_cb_locked(void* arg, grpc_error* error) {
-  std::unique_ptr<AresUvPollCbArg> arg_struct(
-      reinterpret_cast<AresUvPollCbArg*>(arg));
+static void ares_uv_poll_cb_locked(AresUvPollCbArg* arg) {
+  std::unique_ptr<AresUvPollCbArg> arg_struct(arg);
   uv_poll_t* handle = arg_struct->handle;
   int status = arg_struct->status;
   int events = arg_struct->events;
   GrpcPolledFdLibuv* polled_fd =
       reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
+  grpc_error* error = GRPC_ERROR_NONE;
   if (status < 0) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("cares polling error");
     error =
@@ -155,24 +152,23 @@ void ares_uv_poll_cb(uv_poll_t* handle, int status, int events) {
   GrpcPolledFdLibuv* polled_fd =
       reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
   AresUvPollCbArg* arg = new AresUvPollCbArg(handle, status, events);
-  polled_fd->combiner_->Run(
-      GRPC_CLOSURE_CREATE(ares_uv_poll_cb_locked, arg, nullptr),
-      GRPC_ERROR_NONE);
+  polled_fd->work_serializer_->Run([arg]() { ares_uv_poll_cb_locked(arg); },
+                                   DEBUG_LOCATION);
 }
 
 class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {
  public:
-  GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
-                                      grpc_pollset_set* driver_pollset_set,
-                                      Combiner* combiner) override {
-    return new GrpcPolledFdLibuv(as, combiner);
+  GrpcPolledFd* NewGrpcPolledFdLocked(
+      ares_socket_t as, grpc_pollset_set* driver_pollset_set,
+      std::shared_ptr<WorkSerializer> work_serializer) override {
+    return new GrpcPolledFdLibuv(as, std::move(work_serializer));
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {}
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    Combiner* combiner) {
+    std::shared_ptr<WorkSerializer> work_serializer) {
   return absl::make_unique<GrpcPolledFdFactoryLibuv>();
 }
 

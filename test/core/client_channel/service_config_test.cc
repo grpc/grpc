@@ -464,7 +464,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"does_not_exist\":{} },\n"
-      "    { \"xds_experimental\":{ \"balancerName\": \"fake:///lb\" } }\n"
+      "    { \"eds_experimental\":{ \"clusterName\": \"foo\" } }\n"
       "  ]\n"
       "}";
   grpc_error* error = GRPC_ERROR_NONE;
@@ -474,7 +474,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
       static_cast<grpc_core::internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "xds_experimental");
+  EXPECT_STREQ(lb_config->name(), "eds_experimental");
 }
 
 TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
@@ -544,14 +544,14 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingPolicy) {
 }
 
 TEST_F(ClientChannelParserTest, LoadBalancingPolicyXdsNotAllowed) {
-  const char* test_json = "{\"loadBalancingPolicy\":\"xds_experimental\"}";
+  const char* test_json = "{\"loadBalancingPolicy\":\"eds_experimental\"}";
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   std::regex regex(
       "Service config parsing error.*referenced_errors.*"
       "Global Params.*referenced_errors.*"
       "Client channel global parser.*referenced_errors.*"
-      "field:loadBalancingPolicy error:xds_experimental requires "
+      "field:loadBalancingPolicy error:eds_experimental requires "
       "a config. Please use loadBalancingConfig instead.");
   VerifyRegexMatch(error, regex);
 }

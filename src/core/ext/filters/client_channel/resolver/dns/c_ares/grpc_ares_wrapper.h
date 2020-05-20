@@ -25,6 +25,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 #define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
 
@@ -66,7 +67,7 @@ extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms,
-    grpc_core::Combiner* combiner);
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
 /* Cancel the pending grpc_ares_request \a request */
 extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);

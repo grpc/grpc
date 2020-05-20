@@ -34,9 +34,9 @@ namespace grpc_core {
 //
 
 XdsClusterDropStats::XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
-                                         StringView lrs_server_name,
-                                         StringView cluster_name,
-                                         StringView eds_service_name)
+                                         absl::string_view lrs_server_name,
+                                         absl::string_view cluster_name,
+                                         absl::string_view eds_service_name)
     : xds_client_(std::move(xds_client)),
       lrs_server_name_(lrs_server_name),
       cluster_name_(cluster_name),
@@ -64,8 +64,8 @@ void XdsClusterDropStats::AddCallDropped(const std::string& category) {
 //
 
 XdsClusterLocalityStats::XdsClusterLocalityStats(
-    RefCountedPtr<XdsClient> xds_client, StringView lrs_server_name,
-    StringView cluster_name, StringView eds_service_name,
+    RefCountedPtr<XdsClient> xds_client, absl::string_view lrs_server_name,
+    absl::string_view cluster_name, absl::string_view eds_service_name,
     RefCountedPtr<XdsLocalityName> name)
     : xds_client_(std::move(xds_client)),
       lrs_server_name_(lrs_server_name),

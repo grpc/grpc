@@ -25,6 +25,7 @@ cd /var/local/git/grpc
 VIRTUAL_ENV=$(mktemp -d)
 virtualenv "$VIRTUAL_ENV"
 PYTHON="$VIRTUAL_ENV"/bin/python
+"$PYTHON" -m pip install --upgrade pip
 "$PYTHON" -m pip install --upgrade grpcio-tools google-api-python-client google-auth-httplib2 oauth2client
 
 # Prepare generated Python code.
@@ -47,7 +48,7 @@ touch "$TOOLS_DIR"/src/proto/grpc/testing/__init__.py
 
 bazel build //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
 
-GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,cds_lb,xds_lb "$PYTHON" \
+GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
     --test_case=all \
     --project_id=grpc-testing \

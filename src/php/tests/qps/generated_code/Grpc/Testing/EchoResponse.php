@@ -16,15 +16,25 @@ class EchoResponse extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>string message = 1;</code>
      */
-    private $message = '';
+    protected $message = '';
     /**
      * Generated from protobuf field <code>.grpc.testing.ResponseParams param = 2;</code>
      */
-    private $param = null;
+    protected $param = null;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type string $message
+     *     @type \Grpc\Testing\ResponseParams $param
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\EchoMessages::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

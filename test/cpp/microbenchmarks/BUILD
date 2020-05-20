@@ -206,7 +206,6 @@ grpc_cc_test(
     srcs = [
         "bm_fullstack_streaming_pump.cc",
     ],
-    flaky = True,  # TODO(b/150422385)
     tags = [
         "no_mac",  # to emulate "excluded_poll_engines: poll"
         "no_windows",
@@ -283,7 +282,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_opencensus_plugin",
     srcs = ["bm_opencensus_plugin.cc"],
-    flaky = True,  # TODO(b/151696309)
     language = "C++",
     deps = [
         ":helpers_secure",

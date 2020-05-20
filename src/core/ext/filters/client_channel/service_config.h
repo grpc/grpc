@@ -21,10 +21,11 @@
 
 #include <unordered_map>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
@@ -89,7 +90,8 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   };
 
   static constexpr int kNumPreallocatedParsers = 4;
-  typedef InlinedVector<std::unique_ptr<ParsedConfig>, kNumPreallocatedParsers>
+  typedef absl::InlinedVector<std::unique_ptr<ParsedConfig>,
+                              kNumPreallocatedParsers>
       ParsedConfigVector;
 
   /// When a service config is applied to a call in the client_channel_filter,
@@ -127,7 +129,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   /// Creates a new service config from parsing \a json_string.
   /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(StringView json_string,
+  static RefCountedPtr<ServiceConfig> Create(absl::string_view json_string,
                                              grpc_error** error);
 
   ServiceConfig(std::string json_string, Json json, grpc_error** error);
@@ -175,7 +177,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   std::string json_string_;
   Json json_;
 
-  InlinedVector<std::unique_ptr<ParsedConfig>, kNumPreallocatedParsers>
+  absl::InlinedVector<std::unique_ptr<ParsedConfig>, kNumPreallocatedParsers>
       parsed_global_configs_;
   // A map from the method name to the parsed config vector. Note that we are
   // using a raw pointer and not a unique pointer so that we can use the same
@@ -186,7 +188,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   const ParsedConfigVector* default_method_config_vector_ = nullptr;
   // Storage for all the vectors that are being used in
   // parsed_method_configs_table_.
-  InlinedVector<std::unique_ptr<ParsedConfigVector>, 32>
+  absl::InlinedVector<std::unique_ptr<ParsedConfigVector>, 32>
       parsed_method_config_vectors_storage_;
 };
 

@@ -57,8 +57,7 @@ class TlsChannelSecurityConnector final
 
   int cmp(const grpc_security_connector* other_sc) const override;
 
-  bool check_call_host(grpc_core::StringView host,
-                       grpc_auth_context* auth_context,
+  bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error** error) override;
 
@@ -98,8 +97,8 @@ class TlsChannelSecurityConnector final
 
   grpc_core::Mutex mu_;
   grpc_closure* on_peer_checked_;
-  grpc_core::UniquePtr<char> target_name_;
-  grpc_core::UniquePtr<char> overridden_target_name_;
+  std::string target_name_;
+  std::string overridden_target_name_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   grpc_tls_server_authorization_check_arg* check_arg_;
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;

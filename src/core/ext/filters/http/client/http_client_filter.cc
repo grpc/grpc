@@ -31,6 +31,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
@@ -120,7 +121,8 @@ static grpc_error* client_filter_incoming_metadata(grpc_metadata_batch* b) {
                   GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "Received http2 :status header with non-200 OK status"),
                   GRPC_ERROR_STR_VALUE, grpc_slice_from_copied_string(val)),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED),
+              GRPC_ERROR_INT_GRPC_STATUS,
+              grpc_http2_status_to_grpc_status(atoi(val))),
           GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_copied_string(msg));
       gpr_free(val);
       gpr_free(msg);
@@ -538,9 +540,8 @@ static grpc_core::ManagedMemorySlice user_agent_from_args(
     }
   }
 
-  gpr_asprintf(&tmp, "%sgrpc-c/%s (%s; %s; %s)", is_first ? "" : " ",
-               grpc_version_string(), GPR_PLATFORM_STRING, transport_name,
-               grpc_g_stands_for());
+  gpr_asprintf(&tmp, "%sgrpc-c/%s (%s; %s)", is_first ? "" : " ",
+               grpc_version_string(), GPR_PLATFORM_STRING, transport_name);
   is_first = 0;
   gpr_strvec_add(&v, tmp);
 

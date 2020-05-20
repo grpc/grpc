@@ -160,7 +160,7 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobin* parent_;
 
     size_t last_picked_index_;
-    InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
+    absl::InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
   };
 
   void ShutdownLocked() override;

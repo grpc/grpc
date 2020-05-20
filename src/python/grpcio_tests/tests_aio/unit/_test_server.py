@@ -47,7 +47,7 @@ async def _maybe_echo_status(request: messages_pb2.SimpleRequest,
                                      request.response_status.message)
 
 
-class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
+class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 
     async def UnaryCall(self, request, context):
         await _maybe_echo_metadata(context)
@@ -102,7 +102,7 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
                                                  response_parameters.size))
 
 
-def _create_extra_generic_handler(servicer: _TestServiceServicer):
+def _create_extra_generic_handler(servicer: TestServiceServicer):
     # Add programatically extra methods not provided by the proto file
     # that are used during the tests
     rpc_method_handlers = {
@@ -123,7 +123,7 @@ async def start_test_server(port=0,
                             interceptors=None):
     server = aio.server(options=(('grpc.so_reuseport', 0),),
                         interceptors=interceptors)
-    servicer = _TestServiceServicer()
+    servicer = TestServiceServicer()
     test_pb2_grpc.add_TestServiceServicer_to_server(servicer, server)
 
     server.add_generic_rpc_handlers((_create_extra_generic_handler(servicer),))

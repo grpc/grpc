@@ -499,7 +499,7 @@ class PHPLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + \
+        return _SKIP_SERVER_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
             _SKIP_SPECIAL_STATUS_MESSAGE + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
@@ -528,7 +528,7 @@ class PHP7Language:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + \
+        return _SKIP_SERVER_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
             _SKIP_SPECIAL_STATUS_MESSAGE + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
@@ -786,9 +786,9 @@ _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
     'java', 'go', 'python', 'c++'
 ]
 
-_LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
+_LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++', 'python']
 
-_SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
+_SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++', 'python']
 
 _TRANSPORT_SECURITY_OPTIONS = ['tls', 'alts', 'insecure']
 

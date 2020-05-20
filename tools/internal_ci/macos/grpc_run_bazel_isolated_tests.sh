@@ -21,7 +21,7 @@ cd $(dirname $0)/../../..
 ./tools/run_tests/start_port_server.py
 
 # run cfstream_test separately because it messes with the network
-tools/bazel test $RUN_TESTS_FLAGS --spawn_strategy=standalone --genrule_strategy=standalone --test_output=all //test/cpp/end2end:cfstream_test
+tools/bazel test $RUN_TESTS_FLAGS --spawn_strategy=standalone --genrule_strategy=standalone --test_output=all --copt="-DGRPC_CFSTREAM=1" //test/cpp/end2end:cfstream_test
 
 # Make sure time is in sync before running time_jump_test because the test does
 # NTP sync before exiting. Bazel gets confused if test end time < start time.

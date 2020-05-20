@@ -26,22 +26,39 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/tsi/transport_security.h"
-#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/test_config.h"
+
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 namespace {
 
 enum CredReloadResult { FAIL, SUCCESS, UNCHANGED, ASYNC };
 
 void SetKeyMaterials(grpc_tls_key_materials_config* config) {
-  const grpc_ssl_pem_key_cert_pair pem_key_pair = {
-      test_server1_key,
-      test_server1_cert,
-  };
-  const auto* pem_key_pair_ptr = &pem_key_pair;
-  grpc_tls_key_materials_config_set_key_materials(config, test_root_cert,
-                                                  &pem_key_pair_ptr, 1);
+  grpc_slice ca_slice, cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  const char* ca_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  const char* server_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* server_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+  const auto* pem_key_cert_pair_ptr = &pem_key_cert_pair;
+  grpc_tls_key_materials_config_set_key_materials(config, ca_cert,
+                                                  &pem_key_cert_pair_ptr, 1);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  grpc_slice_unref(ca_slice);
 }
 
 int CredReloadSuccess(void* /*config_user_data*/,

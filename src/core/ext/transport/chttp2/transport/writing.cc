@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
@@ -54,8 +55,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
     /* ping already in-flight: wait */
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "%s: Ping delayed [%p]: already pinging",
+        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+      gpr_log(GPR_INFO, "%s: Ping delayed [%s]: already pinging",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string);
     }
     return;
@@ -64,8 +66,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
       t->ping_policy.max_pings_without_data != 0) {
     /* need to receive something of substance before sending a ping again */
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "%s: Ping delayed [%p]: too many recent pings: %d/%d",
+        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+      gpr_log(GPR_INFO, "%s: Ping delayed [%s]: too many recent pings: %d/%d",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string,
               t->ping_state.pings_before_data_required,
               t->ping_policy.max_pings_without_data);
@@ -78,16 +81,19 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
       (t->keepalive_permit_without_calls == 0 &&
        grpc_chttp2_stream_map_size(&t->stream_map) == 0)
           ? 7200 * GPR_MS_PER_SEC
-          : t->ping_policy.min_sent_ping_interval_without_data;
+          : (t->ping_policy.min_sent_ping_interval_without_data +
+             GPR_MS_PER_SEC); /* A second is added to deal with network delays
+                                 and timing imprecision */
   grpc_millis next_allowed_ping =
       t->ping_state.last_ping_sent_time + next_allowed_ping_interval;
 
   if (next_allowed_ping > now) {
     /* not enough elapsed time between successive pings */
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
+        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
       gpr_log(GPR_INFO,
-              "%s: Ping delayed [%p]: not enough time elapsed since last ping. "
+              "%s: Ping delayed [%s]: not enough time elapsed since last ping. "
               " Last ping %f: Next ping %f: Now %f",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string,
               static_cast<double>(t->ping_state.last_ping_sent_time),
@@ -116,7 +122,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   GRPC_STATS_INC_HTTP2_PINGS_SENT();
   t->ping_state.last_ping_sent_time = now;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-      GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
+      GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
+      GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
     gpr_log(GPR_INFO, "%s: Ping sent [%s]: %d/%d",
             t->is_client ? "CLIENT" : "SERVER", t->peer_string,
             t->ping_state.pings_before_data_required,

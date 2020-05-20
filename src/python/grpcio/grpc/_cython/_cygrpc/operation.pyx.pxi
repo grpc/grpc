@@ -49,7 +49,10 @@ cdef class SendInitialMetadataOperation(Operation):
 cdef class SendMessageOperation(Operation):
 
   def __cinit__(self, bytes message, int flags):
-    self._message = message
+    if message is None:
+      self._message = b''
+    else:
+      self._message = message
     self._flags = flags
 
   def type(self):

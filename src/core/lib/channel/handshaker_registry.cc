@@ -18,9 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/memory.h"
 
 #include <string.h>
@@ -44,7 +45,7 @@ class HandshakerFactoryList {
                       HandshakeManager* handshake_mgr);
 
  private:
-  InlinedVector<std::unique_ptr<HandshakerFactory>, 2> factories_;
+  absl::InlinedVector<std::unique_ptr<HandshakerFactory>, 2> factories_;
 };
 
 HandshakerFactoryList* g_handshaker_factory_lists = nullptr;
