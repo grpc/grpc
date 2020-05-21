@@ -60,9 +60,8 @@ Finally, run your client:
 python client.py xds-experimental:///my-backend
 ```
 
-Alternatively, but you can use it as a sanity check if
-you'd like. If you don't have it, install
-[`grpcurl`](https://github.com/fullstorydev/grpcurl/releases). This will allow
+Alternatively, `grpcurl` can be used to test your server. If you don't have it,
+install [`grpcurl`](https://github.com/fullstorydev/grpcurl/releases). This will allow
 you to manually test the service.
 
 Exercise your server's application-layer service:
