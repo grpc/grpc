@@ -114,12 +114,7 @@ abstract class AbstractCall
     protected function _serializeMessage($data)
     {
         // Proto3 implementation
-       if (method_exists($data, 'serializeToString')) {
-            return $data->serializeToString();
-        }
-
-        // Protobuf-PHP implementation
-        return $data->serialize();
+        return $data->serializeToString();
     }
 
     /**
