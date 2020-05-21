@@ -154,9 +154,7 @@ class PythonArtifact:
                 (self.platform, self.arch),
                 'tools/run_tests/artifacts/build_artifact_python.sh',
                 environ=environ,
-                timeout_seconds=60 * 60,
-                docker_base_image='quay.io/pypa/{}_{}'.format(
-                    self.platform, 'x86' if self.arch == 'x86' else 'x64'))
+                timeout_seconds=60 * 60)
         elif self.platform == 'windows':
             if 'Python27' in self.py_version:
                 environ['EXT_COMPILER'] = 'mingw32'
