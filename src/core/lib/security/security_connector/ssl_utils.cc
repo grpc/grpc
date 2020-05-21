@@ -302,8 +302,14 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
     GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
                    ctx.get(), peer_identity_property_name) == 1);
   }
-  // SPIFFE ID should be unique.
-  if (spiffe_id_count == 1 && spiffe_length > 0 && spiffe_data != nullptr) {
+  // SPIFFE ID should be unique. If we find more than one SPIFFE IDs, we log
+  // the error without returning the error.
+  if (spiffe_id_count > 1) {
+    gpr_log(GPR_INFO, "Invalid SPIFFE ID: SPIFFE ID should be unique.");
+  }
+  if (spiffe_id_count == 1) {
+    GPR_ASSERT(spiffe_length > 0);
+    GPR_ASSERT(spiffe_data != nullptr);
     grpc_auth_context_add_property(ctx.get(), GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
                                    spiffe_data, spiffe_length);
   }
