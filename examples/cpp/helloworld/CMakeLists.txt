@@ -17,7 +17,7 @@
 # See cmake_externalproject/CMakeLists.txt for all-in-one cmake build
 # that automatically builds all the dependencies before building helloworld.
 
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.13.0)
 
 project(HelloWorld C CXX)
 
@@ -44,7 +44,7 @@ if(GRPC_AS_SUBMODULE)
   #
   # A more robust approach to add dependency on gRPC is using
   # cmake's ExternalProject_Add (see cmake_externalproject/CMakeLists.txt).
-  
+
   # Include the gRPC's cmake build (normally grpc source code would live
   # in a git submodule called "third_party/grpc", but this example lives in
   # the same repository as gRPC sources, so we just look a few directories up)
