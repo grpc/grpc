@@ -24,6 +24,7 @@ import helloworld_pb2_grpc
 
 _DESCRIPTION = "Get a greeting from a server."
 
+
 def run(server_address):
     with grpc.insecure_channel(server_address) as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
