@@ -49,6 +49,7 @@ if [ "$SCHEME" == "tvOS-sample" ]; then
     -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ALLOWED=NO \ 
     | $TEST_PATH/verbose_time.sh \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v "^$" -
@@ -61,6 +62,7 @@ else
     -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ALLOWED=NO \
     | $TEST_PATH/verbose_time.sh \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v "^$" -
