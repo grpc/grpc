@@ -76,25 +76,12 @@ void HandshakerFactoryList::AddHandshakers(const grpc_channel_args* args,
 
 void HandshakerRegistry::Init() {
   GPR_ASSERT(g_handshaker_factory_lists == nullptr);
-  g_handshaker_factory_lists =
-      static_cast<HandshakerFactoryList*>(gpr_malloc_aligned(
-          sizeof(*g_handshaker_factory_lists) * NUM_HANDSHAKER_TYPES,
-          GPR_MAX_ALIGNMENT));
-
-  GPR_ASSERT(g_handshaker_factory_lists != nullptr);
-  for (auto idx = 0; idx < NUM_HANDSHAKER_TYPES; ++idx) {
-    auto factory_list = g_handshaker_factory_lists + idx;
-    new (factory_list) HandshakerFactoryList();
-  }
+  g_handshaker_factory_lists = new HandshakerFactoryList[NUM_HANDSHAKER_TYPES];
 }
 
 void HandshakerRegistry::Shutdown() {
   GPR_ASSERT(g_handshaker_factory_lists != nullptr);
-  for (auto idx = 0; idx < NUM_HANDSHAKER_TYPES; ++idx) {
-    auto factory_list = g_handshaker_factory_lists + idx;
-    factory_list->~HandshakerFactoryList();
-  }
-  gpr_free_aligned(g_handshaker_factory_lists);
+  delete[] g_handshaker_factory_lists;
   g_handshaker_factory_lists = nullptr;
 }
 
