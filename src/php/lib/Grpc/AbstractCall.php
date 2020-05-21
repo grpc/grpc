@@ -114,9 +114,7 @@ abstract class AbstractCall
     protected function _serializeMessage($data)
     {
         // Proto3 implementation
-        if (method_exists($data, 'encode')) {
-            return $data->encode();
-        } elseif (method_exists($data, 'serializeToString')) {
+       if (method_exists($data, 'serializeToString')) {
             return $data->serializeToString();
         }
 
@@ -141,12 +139,7 @@ abstract class AbstractCall
         if (is_array($this->deserialize)) {
             list($className, $deserializeFunc) = $this->deserialize;
             $obj = new $className();
-            if (method_exists($obj, $deserializeFunc)) {
-                $obj->$deserializeFunc($value);
-            } else {
-                $obj->mergeFromString($value);
-            }
-
+            $obj->mergeFromString($value);
             return $obj;
         }
 
