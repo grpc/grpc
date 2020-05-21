@@ -26,6 +26,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -241,7 +244,6 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
 }
 
 // Creates a new LB policy.
-// Updates trace_strings to indicate what was done.
 OrphanablePtr<LoadBalancingPolicy>
 ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
     const grpc_channel_args& args) {
@@ -265,31 +267,21 @@ void ResolvingLoadBalancingPolicy::MaybeAddTraceMessagesForAddressChangesLocked(
     bool resolution_contains_addresses, TraceStringVector* trace_strings) {
   if (!resolution_contains_addresses &&
       previous_resolution_contained_addresses_) {
-    trace_strings->push_back(gpr_strdup("Address list became empty"));
+    trace_strings->push_back("Address list became empty");
   } else if (resolution_contains_addresses &&
              !previous_resolution_contained_addresses_) {
-    trace_strings->push_back(gpr_strdup("Address list became non-empty"));
+    trace_strings->push_back("Address list became non-empty");
   }
   previous_resolution_contained_addresses_ = resolution_contains_addresses;
 }
 
 void ResolvingLoadBalancingPolicy::ConcatenateAndAddChannelTraceLocked(
-    TraceStringVector* trace_strings) const {
-  if (!trace_strings->empty()) {
-    gpr_strvec v;
-    gpr_strvec_init(&v);
-    gpr_strvec_add(&v, gpr_strdup("Resolution event: "));
-    bool is_first = 1;
-    for (size_t i = 0; i < trace_strings->size(); ++i) {
-      if (!is_first) gpr_strvec_add(&v, gpr_strdup(", "));
-      is_first = false;
-      gpr_strvec_add(&v, (*trace_strings)[i]);
-    }
-    size_t len = 0;
-    grpc_core::UniquePtr<char> message(gpr_strvec_flatten(&v, &len));
+    const TraceStringVector& trace_strings) const {
+  if (!trace_strings.empty()) {
+    std::string message =
+        absl::StrCat("Resolution event: ", absl::StrJoin(trace_strings, ", "));
     channel_control_helper()->AddTraceEvent(ChannelControlHelper::TRACE_INFO,
-                                            absl::string_view(message.get()));
-    gpr_strvec_destroy(&v);
+                                            message);
   }
 }
 
@@ -314,7 +306,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   // Process the resolver result.
   RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config;
   bool service_config_changed = false;
-  char* service_config_error_string = nullptr;
+  std::string service_config_error_string;
   if (process_resolver_result_ != nullptr) {
     grpc_error* service_config_error = GRPC_ERROR_NONE;
     bool no_valid_service_config = false;
@@ -322,8 +314,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
         process_resolver_result_user_data_, result, &lb_policy_config,
         &service_config_error, &no_valid_service_config);
     if (service_config_error != GRPC_ERROR_NONE) {
-      service_config_error_string =
-          gpr_strdup(grpc_error_string(service_config_error));
+      service_config_error_string = grpc_error_string(service_config_error);
       if (no_valid_service_config) {
         // We received an invalid service config and we don't have a
         // fallback service config.
@@ -344,15 +335,14 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   if (service_config_changed) {
     // TODO(ncteisen): might be worth somehow including a snippet of the
     // config in the trace, at the risk of bloating the trace logs.
-    trace_strings.push_back(gpr_strdup("Service config changed"));
+    trace_strings.push_back("Service config changed");
   }
-  if (service_config_error_string != nullptr) {
-    trace_strings.push_back(service_config_error_string);
-    service_config_error_string = nullptr;
+  if (!service_config_error_string.empty()) {
+    trace_strings.push_back(service_config_error_string.c_str());
   }
   MaybeAddTraceMessagesForAddressChangesLocked(resolution_contains_addresses,
                                                &trace_strings);
-  ConcatenateAndAddChannelTraceLocked(&trace_strings);
+  ConcatenateAndAddChannelTraceLocked(trace_strings);
 }
 
 }  // namespace grpc_core
