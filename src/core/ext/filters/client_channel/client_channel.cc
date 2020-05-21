@@ -3164,10 +3164,9 @@ void CallData::OnComplete(void* arg, grpc_error* error) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-    char* batch_str = grpc_transport_stream_op_batch_string(&batch_data->batch);
     gpr_log(GPR_INFO, "chand=%p calld=%p: got on_complete, error=%s, batch=%s",
-            chand, calld, grpc_error_string(error), batch_str);
-    gpr_free(batch_str);
+            chand, calld, grpc_error_string(error),
+            grpc_transport_stream_op_batch_string(&batch_data->batch).c_str());
   }
   SubchannelCallRetryState* retry_state =
       static_cast<SubchannelCallRetryState*>(
@@ -3240,10 +3239,8 @@ void CallData::AddClosureForSubchannelBatch(
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, StartBatchInCallCombiner,
                     batch, grpc_schedule_on_exec_ctx);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-    char* batch_str = grpc_transport_stream_op_batch_string(batch);
     gpr_log(GPR_INFO, "chand=%p calld=%p: starting subchannel batch: %s", chand,
-            this, batch_str);
-    gpr_free(batch_str);
+            this, grpc_transport_stream_op_batch_string(batch).c_str());
   }
   closures->Add(&batch->handler_private.closure, GRPC_ERROR_NONE,
                 "start_subchannel_batch");
