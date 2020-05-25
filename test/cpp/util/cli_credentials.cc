@@ -229,7 +229,8 @@ const grpc::string CliCredentials::GetCredentialUsage() const {
          "    --ssl_client_cert        ; Client cert for ssl\n"
          "    --ssl_client_key         ; Client private key for ssl\n"
          "    --local_connect_type     ; Set to local_tcp or uds\n"
-         "    --channel_creds_type     ; Set to insecure, ssl, gdc, alts, or local\n"
+         "    --channel_creds_type     ; Set to insecure, ssl, gdc, alts, or "
+         "local\n"
          "    --call_creds             ; Set to none, or"
          " access_token=<token>\n";
 }
