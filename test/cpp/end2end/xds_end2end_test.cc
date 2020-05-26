@@ -1925,7 +1925,7 @@ TEST_P(XdsResolverOnlyTest, ListenerRemoved) {
       AdsServiceImpl::BuildEdsResource(args));
   // We need to wait for all backends to come online.
   WaitForAllBackends();
-  // Unset CDS resource.
+  // Unset LDS resource.
   balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl,
                                               kDefaultResourceName);
   // Wait for RPCs to start failing.
@@ -1938,7 +1938,7 @@ TEST_P(XdsResolverOnlyTest, ListenerRemoved) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that things keep workng if the cluster resource disappears.
+// Tests that we go into TRANSIENT_FAILURE if the Cluster disappears.
 TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -1952,8 +1952,11 @@ TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
   // Unset CDS resource.
   balancers_[0]->ads_service()->UnsetResource(kCdsTypeUrl,
                                               kDefaultResourceName);
-  // Make sure RPCs are still succeeding.
-  CheckRpcSendOk(100 * num_backends_);
+  // Wait for RPCs to start failing.
+  do {
+  } while (SendRpc(RpcOptions(), nullptr).ok());
+  // Make sure RPCs are still failing.
+  CheckRpcSendFailure(1000);
   // Make sure we ACK'ed the update.
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
@@ -2362,7 +2365,27 @@ TEST_P(LdsRdsTest, RouteMatchHasNonemptyPrefix) {
   balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
-            "Default route must have empty service and method");
+            "Default route must have empty prefix.");
+}
+
+// Tests that LDS client should send a NACK if route match has path specifier
+// besides prefix as the only route (default) in the LDS response.
+TEST_P(LdsRdsTest, RouteMatchHasUnsupportedSpecifier) {
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_match()
+      ->set_path("");
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "No prefix field found in Default RouteMatch.");
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
@@ -2969,6 +2992,76 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
                                ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
                                              (1 + kErrorTolerance))));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
+}
+
+TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const size_t kNumEchoRpcs = 1000;
+  const size_t kWeight75 = 75;
+  const size_t kWeight25 = 25;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster2.set_name(kNewCluster2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Populating Route Configurations for LDS.
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("");
+  auto* weighted_cluster1 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster1->set_name(kNewCluster1Name);
+  weighted_cluster1->mutable_weight()->set_value(kWeight75);
+  auto* weighted_cluster2 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster2->set_name(kNewCluster2Name);
+  weighted_cluster2->mutable_weight()->set_value(kWeight25);
+  route1->mutable_route()
+      ->mutable_weighted_clusters()
+      ->mutable_total_weight()
+      ->set_value(kWeight75 + kWeight25);
+  SetRouteConfiguration(0, new_route_config);
+  WaitForAllBackends(1, 3);
+  CheckRpcSendOk(kNumEchoRpcs);
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
+  const int weight_75_request_count =
+      backends_[1]->backend_service()->request_count();
+  const int weight_25_request_count =
+      backends_[2]->backend_service()->request_count();
+  const double kErrorTolerance = 0.2;
+  EXPECT_THAT(weight_75_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEchoRpcs * kWeight75 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEchoRpcs * kWeight75 / 100 *
+                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(weight_25_request_count,
+              ::testing::AllOf(::testing::Ge(kNumEchoRpcs * kWeight25 / 100 *
+                                             (1 - kErrorTolerance)),
+                               ::testing::Le(kNumEchoRpcs * kWeight25 / 100 *
+                                             (1 + kErrorTolerance))));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {

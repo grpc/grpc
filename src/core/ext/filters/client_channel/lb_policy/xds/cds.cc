@@ -215,22 +215,17 @@ void CdsLb::ClusterWatcher::OnError(grpc_error* error) {
 }
 
 void CdsLb::ClusterWatcher::OnResourceDoesNotExist() {
-  gpr_log(GPR_ERROR, "[cdslb %p] CDS resource for %s does not exist",
+  gpr_log(GPR_ERROR,
+          "[cdslb %p] CDS resource for %s does not exist -- reporting "
+          "TRANSIENT_FAILURE",
           parent_.get(), parent_->config_->cluster().c_str());
-  // Go into TRANSIENT_FAILURE if we have not yet created the child
-  // policy (i.e., we have not yet received data from xds).  Otherwise,
-  // we keep running with the data we had previously.
-  // TODO(roth): Once traffic splitting is implemented, this should be
-  // fixed to report TRANSIENT_FAILURE unconditionally.
-  if (parent_->child_policy_ == nullptr) {
-    parent_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::make_unique<TransientFailurePicker>(
-            GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrCat("CDS resource \"", parent_->config_->cluster(),
-                             "\" does not exist")
-                    .c_str())));
-  }
+  parent_->channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::make_unique<TransientFailurePicker>(
+          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("CDS resource \"", parent_->config_->cluster(),
+                           "\" does not exist")
+                  .c_str())));
 }
 
 //
