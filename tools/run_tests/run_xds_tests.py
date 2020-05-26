@@ -307,7 +307,8 @@ def wait_until_all_rpcs_go_to_given_backends(backends,
                                    allow_failures=False)
 
 
-def compareDistributions(actual_distribution, expected_distribution, threshold):
+def compare_distributions(actual_distribution, expected_distribution,
+                          threshold):
     """Compare if two distributions are similar.
 
     Args:
@@ -543,7 +544,7 @@ def test_traffic_splitting(gcp, original_backend_service, instance_group,
     # receive traffic, then verifies that weights are expected.
     logger.info('Running test_traffic_splitting')
 
-    logger.info('waiting for original to become healthy')
+    logger.info('waiting for original backends to become healthy')
     wait_for_healthy_backends(gcp, original_backend_service, instance_group)
 
     patch_backend_instances(gcp, alternate_backend_service,
@@ -560,25 +561,26 @@ def test_traffic_splitting(gcp, original_backend_service, instance_group,
     logger.info('alternate backends instances: %s', alternate_backend_instances)
 
     # Start with all traffic going to original_backend_service.
-    logger.info('waiting for traffic to all go to original')
+    logger.info('waiting for traffic to all go to original backends')
     wait_until_all_rpcs_go_to_given_backends(original_backend_instances,
                                              _WAIT_FOR_STATS_SEC)
 
     try:
-        # Path urlmap, change route action to traffic splitting between original
-        # and alternate.
+        # Patch urlmap, change route action to traffic splitting between
+        # original and alternate.
         logger.info('patching url map with traffic splitting')
-        expected_service_percentage = [20, 80]
-        patch_url_map_weighted_backend_services(
-            gcp, {
-                original_backend_service: expected_service_percentage[0],
-                alternate_backend_service: expected_service_percentage[1],
+        original_service_percentage, alternate_service_percentage = 20, 80
+        patch_url_map_backend_service(
+            gcp,
+            services_with_weights={
+                original_backend_service: original_service_percentage,
+                alternate_backend_service: alternate_service_percentage,
             })
+        # Split percentage between instances: [20,80] -> [10,10,40,40].
         expected_instance_percentage = [
-            expected_service_percentage[0] * 1.0 /
-            len(original_backend_instances)
+            original_service_percentage * 1.0 / len(original_backend_instances)
         ] * len(original_backend_instances) + [
-            expected_service_percentage[1] * 1.0 /
+            alternate_service_percentage * 1.0 /
             len(alternate_backend_instances)
         ] * len(alternate_backend_instances)
 
@@ -602,14 +604,14 @@ def test_traffic_splitting(gcp, original_backend_service, instance_group,
             ]
 
             try:
-                compareDistributions(got_instance_percentage,
-                                     expected_instance_percentage, 5)
+                compare_distributions(got_instance_percentage,
+                                      expected_instance_percentage, 5)
             except Exception as e:
-                logger.warning('attempt %d', i)
-                logger.warning('got percentage: %s', got_instance_percentage)
-                logger.warning('expected percentage: %s',
-                               expected_instance_percentage)
-                logger.warning(e)
+                logger.info('attempt %d', i)
+                logger.info('got percentage: %s', got_instance_percentage)
+                logger.info('expected percentage: %s',
+                            expected_instance_percentage)
+                logger.info(e)
                 if i == retry_count - 1:
                     raise Exception(
                         'RPC distribution (%s) differs from expected (%s)',
@@ -1069,42 +1071,32 @@ def resize_instance_group(gcp,
         time.sleep(2)
 
 
-def patch_url_map_backend_service(gcp, backend_service):
-    '''change url_map's backend service'''
+def patch_url_map_backend_service(gcp,
+                                  backend_service=None,
+                                  services_with_weights=None):
+    '''change url_map's backend service
+
+    Only one of backend_service and service_with_weights can be not None.
+    '''
+    if backend_service and services_with_weights:
+        raise ValueError(
+            'both backend_service and service_with_weights are not None.')
+
+    default_service = backend_service.url if backend_service else None
+    default_route_action = {
+        'weightedBackendServices': [{
+            'backendService': service.url,
+            'weight': w,
+        } for service, w in services_with_weights.items()]
+    } if services_withWeights else None
+
     config = {
         'defaultService':
             backend_service.url,
         'pathMatchers': [{
             'name': _PATH_MATCHER_NAME,
-            'defaultService': backend_service.url,
-            'defaultRouteAction': None,
-        }]
-    }
-    logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.urlMaps().patch(
-        project=gcp.project, urlMap=gcp.url_map.name,
-        body=config).execute(num_retries=_GCP_API_RETRIES)
-    wait_for_global_operation(gcp, result['name'])
-
-
-def patch_url_map_weighted_backend_services(gcp, servicesWithWeights):
-    '''
-    change url_map's only path matcher's default route action
-    to traffic splitting. serviceWithWeights is a map from service
-    to weights.
-    '''
-    weightedBackendServices = [{
-        'backendService': service.url,
-        'weight': w,
-    } for service, w in servicesWithWeights.items()]
-    logger.debug('patching route action to %s', weightedBackendServices)
-    config = {
-        'pathMatchers': [{
-            'name': _PATH_MATCHER_NAME,
-            'defaultService': None,
-            'defaultRouteAction': {
-                'weightedBackendServices': weightedBackendServices
-            }
+            'defaultService': default_service,
+            'defaultRouteAction': default_route_action,
         }]
     }
     logger.debug('Sending GCP request with body=%s', config)
