@@ -13,6 +13,8 @@ def cc_grpc_library(
         generate_mocks = False,
         use_external = False,
         grpc_only = False,
+        include_prefix = None,
+        strip_include_prefix = None,
         **kwargs):
     """Generates C++ grpc classes for services defined in a proto file.
 
@@ -40,12 +42,15 @@ def cc_grpc_library(
           well known protos. Deprecated, the well known protos should be
           specified as explicit dependencies of the proto_library target
           (passed in srcs parameter) instead. False by default.
-        generate_mocks (bool): when True, Google Mock code for client stub is
+        generate_mocks (bool): When True, Google Mock code for client stub is
           generated. False by default.
         use_external (bool): Not used.
-        grpc_only (bool): if True, generate only grpc library, expecting
+        grpc_only (bool): If True, generate only grpc library, expecting
           protobuf messages library (cc_proto_library target) to be passed as
           deps. False by default (will become True by default eventually).
+        include_prefix (str): If set, forwarded to generated cc_library target.
+        strip_include_prefix (str): If set, forwarded to generated cc_library
+          target.
         **kwargs: rest of arguments, e.g., compatible_with and visibility
     """
     if len(srcs) > 1:
@@ -98,6 +103,8 @@ def cc_grpc_library(
             name = name,
             srcs = [":" + codegen_grpc_target],
             hdrs = [":" + codegen_grpc_target],
+            include_prefix = include_prefix,
+            strip_include_prefix = strip_include_prefix,
             deps = deps +
                    extra_deps +
                    ["@com_github_grpc_grpc//:grpc++_codegen_proto"],
