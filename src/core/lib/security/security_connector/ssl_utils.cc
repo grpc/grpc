@@ -43,8 +43,10 @@
 #ifndef INSTALL_PREFIX
 static const char* installed_roots_path = "/usr/share/grpc/roots.pem";
 #else
+#define QUOTE(x) #x
+#define EXPAND_AND_QUOTE(x) QUOTE(x)
 static const char* installed_roots_path =
-    INSTALL_PREFIX "/share/grpc/roots.pem";
+    EXPAND_AND_QUOTE(INSTALL_PREFIX) "/share/grpc/roots.pem";
 #endif
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
