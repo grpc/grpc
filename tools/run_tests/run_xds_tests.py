@@ -592,7 +592,9 @@ def test_traffic_splitting(gcp, original_backend_service, instance_group,
             _WAIT_FOR_STATS_SEC)
 
         # Verify that weights between two services are expected.
-        retry_count = 3
+        retry_count = 10
+        # Each attempt takes about 10 seconds, 10 retries is equivalent to 100
+        # seconds timeout.
         for i in range(retry_count):
             stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
             got_instance_count = [
