@@ -582,6 +582,8 @@ def add_instance_group(gcp, zone, name, size):
     instance_group = InstanceGroup(config['name'], result['instanceGroup'],
                                    zone)
     gcp.instance_groups.append(instance_group)
+    wait_for_instance_group_to_reach_expected_size(gcp, instance_group, size,
+                                                   _WAIT_FOR_OPERATION_SEC)
     return instance_group
 
 
@@ -936,14 +938,8 @@ def resize_instance_group(gcp,
                             instance_group.zone,
                             result['name'],
                             timeout_sec=360)
-    start_time = time.time()
-    while True:
-        current_size = len(get_instance_names(gcp, instance_group))
-        if current_size == new_size:
-            break
-        if time.time() - start_time > timeout_sec:
-            raise Exception('Failed to resize primary instance group')
-        time.sleep(2)
+    wait_for_instance_group_to_reach_expected_size(gcp, instance_group,
+                                                   new_size, timeout_sec)
 
 
 def patch_url_map_backend_service(gcp, backend_service):
@@ -960,6 +956,20 @@ def patch_url_map_backend_service(gcp, backend_service):
         project=gcp.project, urlMap=gcp.url_map.name,
         body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
+
+
+def wait_for_instance_group_to_reach_expected_size(gcp, instance_group,
+                                                   expected_size, timeout_sec):
+    start_time = time.time()
+    while True:
+        current_size = len(get_instance_names(gcp, instance_group))
+        if current_size == expected_size:
+            break
+        if time.time() - start_time > timeout_sec:
+            raise Exception(
+                'Instance group had expected size %d but actual size %d' %
+                (expected_size, current_size))
+        time.sleep(2)
 
 
 def wait_for_global_operation(gcp,
