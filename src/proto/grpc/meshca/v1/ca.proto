@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package google.security.meshca.v1;
+
+import "google/protobuf/duration.proto";
+
+// Certificate request message.
+message MeshCertificateRequest {
+  // The request ID must be a valid UUID with the exception that zero UUID is
+  // not supported (00000000-0000-0000-0000-000000000000).
+  string request_id = 1;
+
+  // PEM-encoded certificate request.
+  string csr = 2;
+
+  // Requested certificate validity period.
+  google.protobuf.Duration validity = 3;
+
+  // A path to a Private CA CertificateAuthority resource, in the format
+  // `projects/*/locations/*/certificateAuthorities/*`.
+  string certificate_authority = 4;
+}
+
+// Certificate response message.
+message MeshCertificateResponse {
+  // PEM-encoded certificate chain.
+  // Leaf cert is element '0'. Root cert is element 'n-1'.
+  repeated string cert_chain = 1;
+}
+
+// Service for managing certificates issued by the ASM CA.
+service MeshCertificateService {
+  // Using provided CSR, returns a signed certificate that represents an Istio
+  // workload identity.
+  rpc CreateCertificate(MeshCertificateRequest)
+      returns (MeshCertificateResponse) {
+  }
+}

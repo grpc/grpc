@@ -155,6 +155,7 @@ void grpc_init(void) {
     /* register channel finalization AFTER all plugins, to ensure that it's run
      * at the appropriate time */
     grpc_register_security_filters();
+    grpc_register_certificate_providers();
     register_builtin_channel_init();
     grpc_tracer_init();
     /* no more changes to channel init pipelines */

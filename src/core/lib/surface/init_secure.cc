@@ -24,6 +24,8 @@
 #include <string.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/security/certificate_provider/google_mesh_ca.h"
+#include "src/core/lib/security/certificate_provider/registry.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
@@ -78,4 +80,11 @@ void grpc_register_security_filters(void) {
                                    maybe_prepend_server_auth_filter, nullptr);
 }
 
-void grpc_security_init() { grpc_core::SecurityRegisterHandshakerFactories(); }
+void grpc_security_init() {
+  grpc_core::SecurityRegisterHandshakerFactories();
+  grpc_core::CertificateProviderRegistry::InitRegistry();
+}
+
+void grpc_register_certificate_providers(void) {
+  grpc_core::RegisterGoogleMeshCaProvider();
+}

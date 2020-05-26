@@ -1806,6 +1806,9 @@ grpc_cc_library(
         "src/core/lib/security/transport/tsi_error.cc",
         "src/core/lib/security/util/json_util.cc",
         "src/core/lib/surface/init_secure.cc",
+        "src/core/lib/security/certificate_provider/google_mesh_ca.cc",
+        "src/core/lib/security/certificate_provider/registry.cc",
+        "src/core/lib/security/certificate_provider/store.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
@@ -1842,6 +1845,15 @@ grpc_cc_library(
         "src/core/lib/security/transport/target_authority_table.h",
         "src/core/lib/security/transport/tsi_error.h",
         "src/core/lib/security/util/json_util.h",
+        "src/core/lib/security/certificate_provider/config.h",
+        "src/core/lib/security/certificate_provider/factory.h",
+        "src/core/lib/security/certificate_provider/registry.h",
+        "src/core/lib/security/certificate_provider/provider.h",
+        "src/core/lib/security/certificate_provider/store.h",
+        "src/core/lib/security/certificate_provider/google_mesh_ca.h",
+    ],
+    external_deps = [
+        "absl/strings",
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
@@ -1850,6 +1862,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_transport_chttp2_alpn",
         "tsi",
+        "meshca_upb",
     ],
 )
 
@@ -3054,6 +3067,23 @@ grpc_cc_library(
     language = "c++",
     deps = [
         ":google_api_upb",
+    ],
+)
+
+grpc_cc_library (
+    name = "meshca_upb",
+    srcs = [
+        "src/core/ext/upb-generated/src/proto/grpc/meshca/v1/ca.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/src/proto/grpc/meshca/v1/ca.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        "google_api_upb",
     ],
 )
 
