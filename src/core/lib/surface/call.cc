@@ -1894,6 +1894,10 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
+	if (nops != 1) {  // must be only op in batch
+          error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+          goto done_with_error;
+	}
         call->requested_final_op = true;
         call->final_op.server.cancelled =
             op->data.recv_close_on_server.cancelled;
