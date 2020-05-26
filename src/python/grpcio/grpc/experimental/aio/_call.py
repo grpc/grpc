@@ -25,10 +25,10 @@ from grpc import _common
 from grpc._cython import cygrpc
 
 from . import _base_call
+from ._metadata import Metadata
 from ._typing import (DeserializingFunction, DoneCallbackType, MetadataType,
                       MetadatumType, RequestIterableType, RequestType,
                       ResponseType, SerializingFunction)
-from ._metadata import Metadata
 
 __all__ = 'AioRpcError', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
 
@@ -84,8 +84,8 @@ class AioRpcError(grpc.RpcError):
         super().__init__(self)
         self._code = code
         self._details = details
-        self._initial_metadata = initial_metadata or Metadata()
-        self._trailing_metadata = trailing_metadata or Metadata()
+        self._initial_metadata = Metadata(*(initial_metadata or ()))
+        self._trailing_metadata = Metadata(*(trailing_metadata or ()))
         self._debug_error_string = debug_error_string
 
     def code(self) -> grpc.StatusCode:
@@ -205,10 +205,13 @@ class Call:
         return self._cython_call.time_remaining()
 
     async def initial_metadata(self) -> MetadataType:
-        return await self._cython_call.initial_metadata()
+        raw_metadata_tuple = await self._cython_call.initial_metadata()
+        return Metadata(*(raw_metadata_tuple or ()))
 
     async def trailing_metadata(self) -> MetadataType:
-        return (await self._cython_call.status()).trailing_metadata()
+        raw_metadata_tuple = (await
+                              self._cython_call.status()).trailing_metadata()
+        return Metadata(*(raw_metadata_tuple or ()))
 
     async def code(self) -> grpc.StatusCode:
         cygrpc_code = (await self._cython_call.status()).code()

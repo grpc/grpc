@@ -28,7 +28,7 @@ def seen_metadata(expected: MetadataType, actual: MetadataType):
 def seen_metadatum(expected_key: MetadataKey, expected_value: MetadataValue,
                    actual: MetadataType) -> bool:
     obtained = actual[expected_key]
-    assert obtained == expected_value
+    return obtained == expected_value
 
 
 async def block_until_certain_state(channel: aio.Channel,

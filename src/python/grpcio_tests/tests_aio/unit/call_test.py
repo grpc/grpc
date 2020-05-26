@@ -102,11 +102,11 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
     async def test_call_initial_metadata_awaitable(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
-        self.assertEqual((), await call.initial_metadata())
+        self.assertEqual(await call.initial_metadata(), aio.Metadata())
 
     async def test_call_trailing_metadata_awaitable(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
-        self.assertEqual((), await call.trailing_metadata())
+        self.assertEqual(await call.trailing_metadata(), aio.Metadata())
 
     async def test_call_initial_metadata_cancelable(self):
         coro_started = asyncio.Event()
@@ -122,7 +122,7 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
         # Test that initial metadata can still be asked thought
         # a cancellation happened with the previous task
-        self.assertEqual((), await call.initial_metadata())
+        self.assertEqual(await call.initial_metadata(), aio.Metadata())
 
     async def test_call_initial_metadata_multiple_waiters(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
@@ -134,8 +134,8 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         task2 = self.loop.create_task(coro())
 
         await call
-
-        self.assertEqual([(), ()], await asyncio.gather(*[task1, task2]))
+        expected = [aio.Metadata() for _ in range(2)]
+        self.assertEqual(await asyncio.gather(*[task1, task2]), expected)
 
     async def test_call_code_cancelable(self):
         coro_started = asyncio.Event()

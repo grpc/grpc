@@ -55,15 +55,15 @@ _INITIAL_METADATA_FOR_GENERIC_HANDLER = aio.Metadata(
 _INVALID_METADATA_TEST_CASES = (
     (
         TypeError,
-        aio.Metadata((42, 42),),
+        ((42, 42),),
     ),
     (
         TypeError,
-        aio.Metadata(({}, {}),),
+        ((None, {}),),
     ),
     (
         TypeError,
-        aio.Metadata(('normal', object()),),
+        (('normal', object()),),
     ),
 )
 
@@ -100,13 +100,13 @@ class _TestGenericHandlerForMethods(grpc.GenericRpcHandler):
     async def _test_server_to_client(request, context):
         assert _REQUEST == request
         await context.send_initial_metadata(
-            _INITIAL_METADATA_FROM_SERVER_TO_CLIENT)
+            tuple(_INITIAL_METADATA_FROM_SERVER_TO_CLIENT))
         return _RESPONSE
 
     @staticmethod
     async def _test_trailing_metadata(request, context):
         assert _REQUEST == request
-        context.set_trailing_metadata(_TRAILING_METADATA)
+        context.set_trailing_metadata(tuple(_TRAILING_METADATA))
         return _RESPONSE
 
     @staticmethod
@@ -115,21 +115,21 @@ class _TestGenericHandlerForMethods(grpc.GenericRpcHandler):
         assert _common.seen_metadata(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
                                      context.invocation_metadata())
         await context.send_initial_metadata(
-            _INITIAL_METADATA_FROM_SERVER_TO_CLIENT)
+            tuple(_INITIAL_METADATA_FROM_SERVER_TO_CLIENT))
         yield _RESPONSE
-        context.set_trailing_metadata(_TRAILING_METADATA)
+        context.set_trailing_metadata(tuple(_TRAILING_METADATA))
 
     @staticmethod
     async def _test_stream_unary(request_iterator, context):
         assert _common.seen_metadata(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
                                      context.invocation_metadata())
         await context.send_initial_metadata(
-            _INITIAL_METADATA_FROM_SERVER_TO_CLIENT)
+            tuple(_INITIAL_METADATA_FROM_SERVER_TO_CLIENT))
 
         async for request in request_iterator:
             assert _REQUEST == request
 
-        context.set_trailing_metadata(_TRAILING_METADATA)
+        context.set_trailing_metadata(tuple(_TRAILING_METADATA))
         return _RESPONSE
 
     @staticmethod
@@ -137,13 +137,13 @@ class _TestGenericHandlerForMethods(grpc.GenericRpcHandler):
         assert _common.seen_metadata(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
                                      context.invocation_metadata())
         await context.send_initial_metadata(
-            _INITIAL_METADATA_FROM_SERVER_TO_CLIENT)
+            tuple(_INITIAL_METADATA_FROM_SERVER_TO_CLIENT))
 
         async for request in request_iterator:
             assert _REQUEST == request
 
         yield _RESPONSE
-        context.set_trailing_metadata(_TRAILING_METADATA)
+        context.set_trailing_metadata(tuple(_TRAILING_METADATA))
 
     def service(self, handler_call_details):
         return self._routing_table.get(handler_call_details.method)
@@ -193,6 +193,7 @@ class TestMetadata(AioTestBase):
     async def test_from_server_to_client(self):
         multicallable = self._client.unary_unary(_TEST_SERVER_TO_CLIENT)
         call = multicallable(_REQUEST)
+
         self.assertEqual(_INITIAL_METADATA_FROM_SERVER_TO_CLIENT, await
                          call.initial_metadata())
         self.assertEqual(_RESPONSE, await call)
@@ -207,8 +208,8 @@ class TestMetadata(AioTestBase):
 
     async def test_from_client_to_server_with_list(self):
         multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
-        call = multicallable(
-            _REQUEST, metadata=list(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER))
+        call = multicallable(_REQUEST,
+                             metadata=_INITIAL_METADATA_FROM_CLIENT_TO_SERVER)
         self.assertEqual(_RESPONSE, await call)
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 

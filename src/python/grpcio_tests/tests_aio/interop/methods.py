@@ -293,12 +293,13 @@ async def _custom_metadata(stub: test_pb2_grpc.TestServiceStub):
     )
 
     async def _validate_metadata(call):
-        initial_metadata = dict(await call.initial_metadata())
+        initial_metadata = await call.initial_metadata()
         if initial_metadata[_INITIAL_METADATA_KEY] != initial_metadata_value:
             raise ValueError('expected initial metadata %s, got %s' %
                              (initial_metadata_value,
                               initial_metadata[_INITIAL_METADATA_KEY]))
-        trailing_metadata = dict(await call.trailing_metadata())
+
+        trailing_metadata = await call.trailing_metadata()
         if trailing_metadata[_TRAILING_METADATA_KEY] != trailing_metadata_value:
             raise ValueError('expected trailing metadata %s, got %s' %
                              (trailing_metadata_value,

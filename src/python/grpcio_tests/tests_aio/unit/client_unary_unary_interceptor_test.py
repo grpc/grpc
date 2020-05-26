@@ -302,8 +302,8 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             self.assertEqual(type(response), messages_pb2.SimpleResponse)
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
             self.assertEqual(await call.details(), '')
-            self.assertEqual(await call.initial_metadata(), ())
-            self.assertEqual(await call.trailing_metadata(), ())
+            self.assertEqual(await call.initial_metadata(), aio.Metadata())
+            self.assertEqual(await call.trailing_metadata(), aio.Metadata())
 
     async def test_call_ok_awaited(self):
 
@@ -331,8 +331,8 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             self.assertEqual(type(response), messages_pb2.SimpleResponse)
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
             self.assertEqual(await call.details(), '')
-            self.assertEqual(await call.initial_metadata(), ())
-            self.assertEqual(await call.trailing_metadata(), ())
+            self.assertEqual(await call.initial_metadata(), aio.Metadata())
+            self.assertEqual(await call.trailing_metadata(), aio.Metadata())
 
     async def test_call_rpc_error(self):
 
@@ -364,8 +364,8 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             self.assertEqual(await call.code(),
                              grpc.StatusCode.DEADLINE_EXCEEDED)
             self.assertEqual(await call.details(), 'Deadline Exceeded')
-            self.assertEqual(await call.initial_metadata(), ())
-            self.assertEqual(await call.trailing_metadata(), ())
+            self.assertEqual(await call.initial_metadata(), aio.Metadata())
+            self.assertEqual(await call.trailing_metadata(), aio.Metadata())
 
     async def test_call_rpc_error_awaited(self):
 
@@ -398,8 +398,8 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             self.assertEqual(await call.code(),
                              grpc.StatusCode.DEADLINE_EXCEEDED)
             self.assertEqual(await call.details(), 'Deadline Exceeded')
-            self.assertEqual(await call.initial_metadata(), ())
-            self.assertEqual(await call.trailing_metadata(), ())
+            self.assertEqual(await call.initial_metadata(), aio.Metadata())
+            self.assertEqual(await call.trailing_metadata(), aio.Metadata())
 
     async def test_cancel_before_rpc(self):
 
@@ -541,8 +541,10 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
             self.assertEqual(await call.details(),
                              _LOCAL_CANCEL_DETAILS_EXPECTATION)
-            self.assertEqual(await call.initial_metadata(), tuple())
-            self.assertEqual(await call.trailing_metadata(), None)
+            self.assertEqual(await call.initial_metadata(), aio.Metadata())
+            self.assertEqual(
+                await call.trailing_metadata(), aio.Metadata(),
+                "When the raw response is None, empty metadata is returned")
 
     async def test_initial_metadata_modification(self):
 
