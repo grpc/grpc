@@ -38,7 +38,7 @@ if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   set +ex  # rvm script is very verbose and exits with errorcode
   # Advice from https://github.com/Homebrew/homebrew-cask/issues/8629#issuecomment-68641176
-  brew update && brew upgrade brew-cask && brew cleanup && brew cask cleanup
+  brew update && brew upgrade brew-cask && brew upgrade gnupg && brew cleanup && brew cask cleanup
   set -e  # rvm commands are very verbose
   source $HOME/.rvm/scripts/rvm
   for RUBY_VERSION in 2.5.0 2.7.0; do
