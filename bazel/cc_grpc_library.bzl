@@ -13,8 +13,10 @@ def cc_grpc_library(
         generate_mocks = False,
         use_external = False,
         grpc_only = False,
-        include_prefix = None,
-        strip_include_prefix = None,
+        proto_args = {},
+        cc_proto_args = {},
+        grpc_args = {},
+        cc_args = {},
         **kwargs):
     """Generates C++ grpc classes for services defined in a proto file.
 
@@ -48,9 +50,14 @@ def cc_grpc_library(
         grpc_only (bool): If True, generate only grpc library, expecting
           protobuf messages library (cc_proto_library target) to be passed as
           deps. False by default (will become True by default eventually).
-        include_prefix (str): If set, forwarded to generated cc_library target.
-        strip_include_prefix (str): If set, forwarded to generated cc_library
-          target.
+        proto_args (dict): Args which are forwarded only to the generated
+          proto_library target.
+        cc_proto_args (dict): Args which are forwarded only to the generated
+          cc_proto_library target.
+        grpc_args (dict): Args which are forwarded only to the underlying grpc
+          genrule.
+        cc_args (dict): Args which are forwarded only to the generated
+          cc_library target.
         **kwargs: rest of arguments, e.g., compatible_with and visibility
     """
     if len(srcs) > 1:
@@ -60,6 +67,10 @@ def cc_grpc_library(
 
     extra_deps = []
     proto_targets = []
+    proto_kwargs = dict(proto_args, **kwargs)
+    cc_proto_kwargs = dict(cc_proto_args, **kwargs)
+    grpc_kwargs = dict(grpc_args, **kwargs)
+    cc_kwargs = dict(cc_args, **kwargs)
 
     if not grpc_only:
         proto_target = "_" + name + "_only"
@@ -73,13 +84,13 @@ def cc_grpc_library(
             name = proto_target,
             srcs = srcs,
             deps = proto_deps,
-            **kwargs
+            **proto_kwargs
         )
 
         native.cc_proto_library(
             name = cc_proto_target,
             deps = [":" + proto_target],
-            **kwargs
+            **cc_proto_kwargs
         )
         extra_deps.append(":" + cc_proto_target)
         proto_targets.append(proto_target)
@@ -96,17 +107,15 @@ def cc_grpc_library(
             plugin = "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
             well_known_protos = well_known_protos,
             generate_mocks = generate_mocks,
-            **kwargs
+            **grpc_kwargs
         )
 
         native.cc_library(
             name = name,
             srcs = [":" + codegen_grpc_target],
             hdrs = [":" + codegen_grpc_target],
-            include_prefix = include_prefix,
-            strip_include_prefix = strip_include_prefix,
             deps = deps +
                    extra_deps +
                    ["@com_github_grpc_grpc//:grpc++_codegen_proto"],
-            **kwargs
+            **cc_kwargs
         )
