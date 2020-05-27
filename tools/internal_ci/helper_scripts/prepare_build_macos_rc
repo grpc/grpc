@@ -39,6 +39,8 @@ then
   # Advice from https://github.com/Homebrew/homebrew-cask/issues/8629#issuecomment-68641176
   brew update
   rm -f /usr/local/bin/gpg
+  rm -f /usr/local/bin/gpgconf
+  rm -f /usr/local/bin/gpgsm
   brew upgrade gnupg
   brew upgrade brew-cask
   brew cleanup
