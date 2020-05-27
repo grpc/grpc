@@ -22,12 +22,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <vector>
-
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -130,42 +124,60 @@ void gpr_cmdline_on_extra_arg(
 /* recursively descend argument list, adding the last element
    to s first - so that arguments are added in the order they were
    added to the list by api calls */
-static void add_args_to_usage(arg* a, std::vector<std::string>* s) {
-  if (a == nullptr) return;
-  add_args_to_usage(a->next, s);
+static void add_args_to_usage(gpr_strvec* s, arg* a) {
+  char* tmp;
+
+  if (!a) return;
+  add_args_to_usage(s, a->next);
+
   switch (a->type) {
     case ARGTYPE_BOOL:
-      s->push_back(absl::StrFormat(" [--%s|--no-%s]", a->name, a->name));
+      gpr_asprintf(&tmp, " [--%s|--no-%s]", a->name, a->name);
+      gpr_strvec_add(s, tmp);
       break;
     case ARGTYPE_STRING:
-      s->push_back(absl::StrFormat(" [--%s=string]", a->name));
+      gpr_asprintf(&tmp, " [--%s=string]", a->name);
+      gpr_strvec_add(s, tmp);
       break;
     case ARGTYPE_INT:
-      s->push_back(absl::StrFormat(" [--%s=int]", a->name));
+      gpr_asprintf(&tmp, " [--%s=int]", a->name);
+      gpr_strvec_add(s, tmp);
       break;
   }
 }
 
-std::string gpr_cmdline_usage_string(gpr_cmdline* cl, const char* argv0) {
+char* gpr_cmdline_usage_string(gpr_cmdline* cl, const char* argv0) {
+  /* TODO(ctiller): make this prettier */
+  gpr_strvec s;
+  char* tmp;
   const char* name = strrchr(argv0, '/');
-  if (name != nullptr) {
+
+  if (name) {
     name++;
   } else {
     name = argv0;
   }
 
-  std::vector<std::string> s;
-  s.push_back(absl::StrCat("Usage: ", name));
-  add_args_to_usage(cl->args, &s);
+  gpr_strvec_init(&s);
+
+  gpr_asprintf(&tmp, "Usage: %s", name);
+  gpr_strvec_add(&s, tmp);
+  add_args_to_usage(&s, cl->args);
   if (cl->extra_arg) {
-    s.push_back(absl::StrFormat(" [%s...]", cl->extra_arg_name));
+    gpr_asprintf(&tmp, " [%s...]", cl->extra_arg_name);
+    gpr_strvec_add(&s, tmp);
   }
-  s.push_back("\n");
-  return absl::StrJoin(s, "");
+  gpr_strvec_add(&s, gpr_strdup("\n"));
+
+  tmp = gpr_strvec_flatten(&s, nullptr);
+  gpr_strvec_destroy(&s);
+  return tmp;
 }
 
 static int print_usage_and_die(gpr_cmdline* cl) {
-  fprintf(stderr, "%s", gpr_cmdline_usage_string(cl, cl->argv0).c_str());
+  char* usage = gpr_cmdline_usage_string(cl, cl->argv0);
+  fprintf(stderr, "%s", usage);
+  gpr_free(usage);
   if (!cl->survive_failure) {
     exit(1);
   }

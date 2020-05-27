@@ -34,10 +34,6 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -142,51 +138,64 @@ static int check_stack(const char* file, int line, const char* transport_name,
   }
 
   // build up our expectation list
-  std::vector<std::string> parts;
+  gpr_strvec v;
+  gpr_strvec_init(&v);
   va_list args;
   va_start(args, channel_stack_type);
   for (;;) {
     char* a = va_arg(args, char*);
     if (a == nullptr) break;
-    parts.push_back(a);
+    if (v.count != 0) gpr_strvec_add(&v, gpr_strdup(", "));
+    gpr_strvec_add(&v, gpr_strdup(a));
   }
   va_end(args);
-  std::string expect = absl::StrJoin(parts, ", ");
+  char* expect = gpr_strvec_flatten(&v, nullptr);
+  gpr_strvec_destroy(&v);
 
   // build up our "got" list
-  parts.clear();
+  gpr_strvec_init(&v);
   grpc_channel_stack_builder_iterator* it =
       grpc_channel_stack_builder_create_iterator_at_first(builder);
   while (grpc_channel_stack_builder_move_next(it)) {
     const char* name = grpc_channel_stack_builder_iterator_filter_name(it);
     if (name == nullptr) continue;
-    parts.push_back(name);
+    if (v.count != 0) gpr_strvec_add(&v, gpr_strdup(", "));
+    gpr_strvec_add(&v, gpr_strdup(name));
   }
-  std::string got = absl::StrJoin(parts, ", ");
+  char* got = gpr_strvec_flatten(&v, nullptr);
+  gpr_strvec_destroy(&v);
   grpc_channel_stack_builder_iterator_destroy(it);
 
   // figure out result, log if there's an error
   int result = 0;
-  if (got != expect) {
-    parts.clear();
+  if (0 != strcmp(got, expect)) {
+    gpr_strvec_init(&v);
+    gpr_strvec_add(&v, gpr_strdup("{"));
     for (size_t i = 0; i < channel_args->num_args; i++) {
-      std::string value;
+      if (i > 0) gpr_strvec_add(&v, gpr_strdup(", "));
+      gpr_strvec_add(&v, gpr_strdup(channel_args->args[i].key));
+      gpr_strvec_add(&v, gpr_strdup("="));
       switch (channel_args->args[i].type) {
         case GRPC_ARG_INTEGER: {
-          value = absl::StrCat(channel_args->args[i].value.integer);
+          char* tmp;
+          gpr_asprintf(&tmp, "%d", channel_args->args[i].value.integer);
+          gpr_strvec_add(&v, tmp);
           break;
         }
         case GRPC_ARG_STRING:
-          value = channel_args->args[i].value.string;
+          gpr_strvec_add(&v, gpr_strdup(channel_args->args[i].value.string));
           break;
         case GRPC_ARG_POINTER: {
-          value = absl::StrFormat("%p", channel_args->args[i].value.pointer.p);
+          char* tmp;
+          gpr_asprintf(&tmp, "%p", channel_args->args[i].value.pointer.p);
+          gpr_strvec_add(&v, tmp);
           break;
         }
       }
-      parts.push_back(absl::StrCat(channel_args->args[i].key, "=", value));
     }
-    std::string args_str = absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+    gpr_strvec_add(&v, gpr_strdup("}"));
+    char* args_str = gpr_strvec_flatten(&v, nullptr);
+    gpr_strvec_destroy(&v);
 
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR,
             "**************************************************");
@@ -195,11 +204,16 @@ static int check_stack(const char* file, int line, const char* transport_name,
         "FAILED transport=%s; stack_type=%s; channel_args=%s:", transport_name,
         grpc_channel_stack_type_string(
             static_cast<grpc_channel_stack_type>(channel_stack_type)),
-        args_str.c_str());
-    gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "EXPECTED: %s", expect.c_str());
-    gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "GOT:      %s", got.c_str());
+        args_str);
+    gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "EXPECTED: %s", expect);
+    gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "GOT:      %s", got);
     result = 1;
+
+    gpr_free(args_str);
   }
+
+  gpr_free(got);
+  gpr_free(expect);
 
   {
     grpc_core::ExecCtx exec_ctx;
