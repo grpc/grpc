@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/strings/str_join.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/slice.h>
@@ -524,10 +523,12 @@ namespace grpc_core {
 
 namespace {
 
-void MaybeAddToBody(const char* field_name, const char* field,
-                    std::vector<std::string>* body) {
+void MaybeAddToBody(gpr_strvec* body_strvec, const char* field_name,
+                    const char* field) {
   if (field == nullptr || strlen(field) == 0) return;
-  body->push_back(absl::StrFormat("&%s=%s", field_name, field));
+  char* new_query;
+  gpr_asprintf(&new_query, "&%s=%s", field_name, field);
+  gpr_strvec_add(body_strvec, new_query);
 }
 
 grpc_error* LoadTokenFile(const char* path, gpr_slice* token) {
@@ -607,18 +608,20 @@ class StsTokenFetcherCredentials
 
   grpc_error* FillBody(char** body, size_t* body_length) {
     *body = nullptr;
-    std::vector<std::string> body_parts;
+    gpr_strvec body_strvec;
+    gpr_strvec_init(&body_strvec);
     grpc_slice subject_token = grpc_empty_slice();
     grpc_slice actor_token = grpc_empty_slice();
     grpc_error* err = GRPC_ERROR_NONE;
 
-    auto cleanup = [&body, &body_length, &body_parts, &subject_token,
+    auto cleanup = [&body, &body_length, &body_strvec, &subject_token,
                     &actor_token, &err]() {
       if (err == GRPC_ERROR_NONE) {
-        std::string body_str = absl::StrJoin(body_parts, "");
-        *body = gpr_strdup(body_str.c_str());
-        *body_length = body_str.size();
+        *body = gpr_strvec_flatten(&body_strvec, body_length);
+      } else {
+        gpr_free(*body);
       }
+      gpr_strvec_destroy(&body_strvec);
       grpc_slice_unref_internal(subject_token);
       grpc_slice_unref_internal(actor_token);
       return err;
@@ -626,23 +629,23 @@ class StsTokenFetcherCredentials
 
     err = LoadTokenFile(subject_token_path_.get(), &subject_token);
     if (err != GRPC_ERROR_NONE) return cleanup();
-    body_parts.push_back(absl::StrFormat(
-        GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING,
+    gpr_asprintf(
+        body, GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING,
         reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(subject_token)),
-        subject_token_type_.get()));
-    MaybeAddToBody("resource", resource_.get(), &body_parts);
-    MaybeAddToBody("audience", audience_.get(), &body_parts);
-    MaybeAddToBody("scope", scope_.get(), &body_parts);
-    MaybeAddToBody("requested_token_type", requested_token_type_.get(),
-                   &body_parts);
+        subject_token_type_.get());
+    gpr_strvec_add(&body_strvec, *body);
+    MaybeAddToBody(&body_strvec, "resource", resource_.get());
+    MaybeAddToBody(&body_strvec, "audience", audience_.get());
+    MaybeAddToBody(&body_strvec, "scope", scope_.get());
+    MaybeAddToBody(&body_strvec, "requested_token_type",
+                   requested_token_type_.get());
     if ((actor_token_path_ != nullptr) && *actor_token_path_ != '\0') {
       err = LoadTokenFile(actor_token_path_.get(), &actor_token);
       if (err != GRPC_ERROR_NONE) return cleanup();
       MaybeAddToBody(
-          "actor_token",
-          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(actor_token)),
-          &body_parts);
-      MaybeAddToBody("actor_token_type", actor_token_type_.get(), &body_parts);
+          &body_strvec, "actor_token",
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(actor_token)));
+      MaybeAddToBody(&body_strvec, "actor_token_type", actor_token_type_.get());
     }
     return cleanup();
   }

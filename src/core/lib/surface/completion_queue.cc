@@ -23,11 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <vector>
-
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
@@ -435,14 +430,15 @@ static const cq_vtable g_cq_vtable[] = {
 
 grpc_core::TraceFlag grpc_cq_pluck_trace(false, "queue_pluck");
 
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)     \
-  do {                                                   \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) &&       \
-        (GRPC_TRACE_FLAG_ENABLED(grpc_cq_pluck_trace) || \
-         (event)->type != GRPC_QUEUE_TIMEOUT)) {         \
-      gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq,      \
-              grpc_event_string(event).c_str());         \
-    }                                                    \
+#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)      \
+  do {                                                    \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) &&        \
+        (GRPC_TRACE_FLAG_ENABLED(grpc_cq_pluck_trace) ||  \
+         (event)->type != GRPC_QUEUE_TIMEOUT)) {          \
+      char* _ev = grpc_event_string(event);               \
+      gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev); \
+      gpr_free(_ev);                                      \
+    }                                                     \
   } while (0)
 
 static void on_pollset_shutdown_done(void* cq, grpc_error* error);
@@ -955,14 +951,21 @@ class ExecCtxNext : public grpc_core::ExecCtx {
 #ifndef NDEBUG
 static void dump_pending_tags(grpc_completion_queue* cq) {
   if (!GRPC_TRACE_FLAG_ENABLED(grpc_trace_pending_tags)) return;
-  std::vector<std::string> parts;
-  parts.push_back("PENDING TAGS:");
+
+  gpr_strvec v;
+  gpr_strvec_init(&v);
+  gpr_strvec_add(&v, gpr_strdup("PENDING TAGS:"));
   gpr_mu_lock(cq->mu);
   for (size_t i = 0; i < cq->outstanding_tag_count; i++) {
-    parts.push_back(absl::StrFormat(" %p", cq->outstanding_tags[i]));
+    char* s;
+    gpr_asprintf(&s, " %p", cq->outstanding_tags[i]);
+    gpr_strvec_add(&v, s);
   }
   gpr_mu_unlock(cq->mu);
-  gpr_log(GPR_DEBUG, "%s", absl::StrJoin(parts, "").c_str());
+  char* out = gpr_strvec_flatten(&v, nullptr);
+  gpr_strvec_destroy(&v);
+  gpr_log(GPR_DEBUG, "%s", out);
+  gpr_free(out);
 }
 #else
 static void dump_pending_tags(grpc_completion_queue* /*cq*/) {}

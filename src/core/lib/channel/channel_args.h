@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string>
-
 #include <grpc/grpc.h>
 
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -118,7 +116,7 @@ grpc_arg grpc_channel_arg_pointer_create(char* name, void* value,
 
 // Returns a string representing channel args in human-readable form.
 // Callers takes ownership of result.
-std::string grpc_channel_args_string(const grpc_channel_args* args);
+char* grpc_channel_args_string(const grpc_channel_args* args);
 
 // Takes ownership of the old_args
 typedef grpc_channel_args* (*grpc_channel_args_client_channel_creation_mutator)(
