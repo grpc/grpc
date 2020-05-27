@@ -50,12 +50,52 @@ constexpr char kXdsRouting[] = "xds_routing_experimental";
 // Config for xds_routing LB policy.
 class XdsRoutingLbConfig : public LoadBalancingPolicy::Config {
  public:
-  struct Matcher {
-    std::string service;
-    std::string method;
-  };
   struct Route {
-    Matcher matcher;
+    enum class PathMatcherType {
+      PREFIX,
+      PATH,
+      REGEX,
+    };
+
+    struct PathMatcher {
+      std::string prefix;
+      std::string path;
+      std::string regex;
+    };
+
+    enum class HeaderMatcherType {
+      EXACT,
+      REGEX,
+      RANGE,
+      PRESENT,
+      PREFIX,
+      SUFFIX,
+    };
+
+    struct HeaderMatcherContent {
+      struct Int64Range {
+        int64_t start;
+        int64_t end;
+      };
+      std::string name;
+      std::string exact_match;
+      std::string regex_match;
+      Int64Range range_match;
+      bool present_match;
+      std::string prefix_match;
+      std::string suffix_match;
+      bool invert_match;
+    };
+
+    struct HeaderMatcher {
+      HeaderMatcherType type;
+      HeaderMatcherContent content;
+    };
+
+    PathMatcherType path_matcher_type;
+    PathMatcher path_matcher;
+    std::vector<HeaderMatcher> headers;
+    uint32_t runtime_fraction_numerator_out_of_1M;
     std::string action;
   };
   using RouteTable = std::vector<Route>;
@@ -109,7 +149,10 @@ class XdsRoutingLb : public LoadBalancingPolicy {
   class RoutePicker : public SubchannelPicker {
    public:
     struct Route {
-      XdsRoutingLbConfig::Matcher matcher;
+      XdsRoutingLbConfig::Route::PathMatcher path_matcher;
+      XdsRoutingLbConfig::Route::PathMatcherType path_matcher_type;
+      std::vector<XdsRoutingLbConfig::Route::HeaderMatcher> headers;
+      uint32_t runtime_fraction_numerator_out_of_1M;
       RefCountedPtr<ChildPickerWrapper> picker;
     };
 
@@ -225,13 +268,15 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
       break;
     }
   }
-  std::vector<absl::string_view> path_elements =
-      absl::StrSplit(path.substr(1), '/');
   for (const Route& route : route_table_) {
-    if ((path_elements[0] == route.matcher.service &&
-         (path_elements[1] == route.matcher.method ||
-          route.matcher.method.empty())) ||
-        (route.matcher.service.empty() && route.matcher.method.empty())) {
+    if ((route.path_matcher_type ==
+             XdsRoutingLbConfig::Route::PathMatcherType::PREFIX &&
+         path.find(route.path_matcher.prefix) != std::string::npos) ||
+        (route.path_matcher_type ==
+             XdsRoutingLbConfig::Route::PathMatcherType::PATH &&
+         path == route.path_matcher.path) ||
+        (route.path_matcher.prefix.empty() &&
+         route.path_matcher.path.empty())) {
       return route.picker->Pick(args);
     }
   }
@@ -358,7 +403,11 @@ void XdsRoutingLb::UpdateStateLocked() {
       RoutePicker::RouteTable route_table;
       for (const auto& config_route : config_->route_table()) {
         RoutePicker::Route route;
-        route.matcher = config_route.matcher;
+        route.path_matcher_type = config_route.path_matcher_type;
+        route.path_matcher = config_route.path_matcher;
+        route.headers = config_route.headers;
+        route.runtime_fraction_numerator_out_of_1M =
+            config_route.runtime_fraction_numerator_out_of_1M;
         route.picker = actions_[config_route.action]->picker_wrapper();
         if (route.picker == nullptr) {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
@@ -683,10 +732,10 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no valid routes configured");
       error_list.push_back(error);
     }
-    if (!route_table.back().matcher.service.empty() ||
-        !route_table.back().matcher.method.empty()) {
+    if (!route_table.back().path_matcher.prefix.empty() ||
+        !route_table.back().path_matcher.path.empty()) {
       grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "default route must not contain service or method");
+          "default route must not contain prefix or path");
       error_list.push_back(error);
     }
     if (!actions_to_be_used.empty()) {
@@ -731,41 +780,6 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     return error_list;
   }
 
-  static std::vector<grpc_error*> ParseMethodName(
-      const Json& json, XdsRoutingLbConfig::Matcher* route_config) {
-    std::vector<grpc_error*> error_list;
-    if (json.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "value should be of type object"));
-      return error_list;
-    }
-    // Parse service
-    auto it = json.object_value().find("service");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:service error: should be string"));
-      } else {
-        route_config->service = it->second.string_value();
-      }
-    }
-    // Parse method
-    it = json.object_value().find("method");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:method error: should be string"));
-      } else {
-        route_config->method = it->second.string_value();
-      }
-    }
-    if (route_config->service.empty() && !route_config->method.empty()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "service is empty when method is not"));
-    }
-    return error_list;
-  }
-
   static std::vector<grpc_error*> ParseRoute(
       const Json& json, const XdsRoutingLbConfig::ActionMap& action_map,
       XdsRoutingLbConfig::Route* route,
@@ -776,17 +790,164 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           "value should be of type object"));
       return error_list;
     }
-    // Parse MethodName.
-    auto it = json.object_value().find("methodName");
+    // Parse Path Matcher: prefix.
+    auto it = json.object_value().find("prefix");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:prefix error: should be string"));
+      } else {
+        route->path_matcher_type =
+            XdsRoutingLbConfig::Route::PathMatcherType::PREFIX;
+        route->path_matcher.prefix = it->second.string_value();
+      }
+    }
+    // Parse Path Matcher: path.
+    it = json.object_value().find("path");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:path error: should be string"));
+      } else {
+        route->path_matcher_type =
+            XdsRoutingLbConfig::Route::PathMatcherType::PATH;
+        route->path_matcher.path = it->second.string_value();
+      }
+    }
+    // Parse Path Matcher: regex.
+    it = json.object_value().find("regex");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:regex error: should be string"));
+      } else {
+        route->path_matcher_type =
+            XdsRoutingLbConfig::Route::PathMatcherType::REGEX;
+        route->path_matcher.path = it->second.string_value();
+      }
+    }
+    // Parse Header Matcher: headers.
+    it = json.object_value().find("headers");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::ARRAY) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:headers error: should be array"));
+      } else {
+        const Json::Array& array = it->second.array_value();
+        for (size_t i = 0; i < array.size(); ++i) {
+          const Json& header_json = array[i];
+          if (header_json.type() != Json::Type::OBJECT) {
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "value should be of type object"));
+          } else {
+            XdsRoutingLbConfig::Route::HeaderMatcher header_matcher;
+            auto header_it = header_json.object_value().find("name");
+            if (header_it == header_json.object_value().end()) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:name error:required field missing"));
+            } else {
+              if (header_it->second.type() != Json::Type::STRING) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:name error: should be string"));
+              } else {
+                header_matcher.content.name = header_it->second.string_value();
+              }
+            }
+            header_it = header_json.object_value().find("invert_match");
+            if (header_it != header_json.object_value().end()) {
+              if (header_it->second.type() == Json::Type::JSON_TRUE) {
+                header_matcher.content.invert_match = true;
+              } else if (header_it->second.type() == Json::Type::JSON_FALSE) {
+                header_matcher.content.invert_match = false;
+              } else {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:present_match error: should be boolean"));
+              }
+            }
+            header_it = header_json.object_value().find("exact_match");
+            if (header_it != header_json.object_value().end()) {
+              if (header_it->second.type() != Json::Type::STRING) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:exact_match error: should be string"));
+              } else {
+                header_matcher.type =
+                    XdsRoutingLbConfig::Route::HeaderMatcherType::EXACT;
+                header_matcher.content.exact_match =
+                    header_it->second.string_value();
+                route->headers.emplace_back(std::move(header_matcher));
+              }
+            }
+            header_it = header_json.object_value().find("regex_match");
+            if (header_it != header_json.object_value().end()) {
+              if (header_it->second.type() != Json::Type::STRING) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:regex_match error: should be string"));
+              } else {
+                header_matcher.type =
+                    XdsRoutingLbConfig::Route::HeaderMatcherType::REGEX;
+                header_matcher.content.regex_match =
+                    header_it->second.string_value();
+                route->headers.emplace_back(std::move(header_matcher));
+              }
+            }
+            header_it = header_json.object_value().find("range_match");
+            if (header_it != header_json.object_value().end()) {
+              gpr_log(GPR_INFO, "Found header matcher type range, todo later");
+            }
+            header_it = header_json.object_value().find("present_match");
+            if (header_it != header_json.object_value().end()) {
+              header_matcher.type =
+                  XdsRoutingLbConfig::Route::HeaderMatcherType::PRESENT;
+              if (header_it->second.type() == Json::Type::JSON_TRUE) {
+                header_matcher.content.present_match = true;
+                route->headers.emplace_back(std::move(header_matcher));
+              } else if (header_it->second.type() == Json::Type::JSON_FALSE) {
+                header_matcher.content.present_match = false;
+                route->headers.emplace_back(std::move(header_matcher));
+              } else {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:present_match error: should be boolean"));
+              }
+            }
+            header_it = header_json.object_value().find("prefix_match");
+            if (header_it != header_json.object_value().end()) {
+              if (header_it->second.type() != Json::Type::STRING) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:prefix_match error: should be string"));
+              } else {
+                header_matcher.type =
+                    XdsRoutingLbConfig::Route::HeaderMatcherType::PREFIX;
+                header_matcher.content.prefix_match =
+                    header_it->second.string_value();
+                route->headers.emplace_back(std::move(header_matcher));
+              }
+            }
+            header_it = header_json.object_value().find("suffix_match");
+            if (header_it != header_json.object_value().end()) {
+              if (header_it->second.type() != Json::Type::STRING) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:suffix_match error: should be string"));
+              } else {
+                header_matcher.type =
+                    XdsRoutingLbConfig::Route::HeaderMatcherType::SUFFIX;
+                header_matcher.content.suffix_match =
+                    header_it->second.string_value();
+                route->headers.emplace_back(std::move(header_matcher));
+              }
+            }
+          }
+        }
+      }
+    }
+    // Parse Fraction numerator.
+    it = json.object_value().find("fraction_numerator");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:methodName error:required field missing"));
-    } else {
-      std::vector<grpc_error*> method_name_errors =
-          ParseMethodName(it->second, &route->matcher);
-      if (!method_name_errors.empty()) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-            "field:methodName", &method_name_errors));
+      if (it->second.type() != Json::Type::NUMBER) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:fraction_numerator error:must be of type number"));
+      } else {
+        route->runtime_fraction_numerator_out_of_1M =
+            gpr_parse_nonnegative_int(it->second.string_value().c_str());
       }
     }
     // Parse action.

@@ -47,11 +47,54 @@ class XdsApi {
 
   struct RdsUpdate {
     struct RdsRoute {
-      std::string service;
-      std::string method;
       // TODO(donnadionne): When we can use absl::variant<>, consider using that
-      // here, to enforce the fact that only one of cluster_name and
-      // weighted_clusters can be set.
+      // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
+      enum class PathMatcherType {
+        PATH,
+        PREFIX,
+        REGEX,
+      };
+
+      struct PathMatcher {
+        std::string path;
+        std::string prefix;
+        std::string regex;
+      };
+
+      enum class HeaderMatcherType {
+        EXACT,
+        REGEX,
+        RANGE,
+        PRESENT,
+        PREFIX,
+        SUFFIX,
+      };
+
+      struct HeaderMatcherContent {
+        struct Int64Range {
+          int64_t start;
+          int64_t end;
+        };
+        std::string name;
+        std::string exact_match;
+        std::string regex_match;
+        Int64Range range_match;
+        bool present_match;
+        std::string prefix_match;
+        std::string suffix_match;
+        bool invert_match;
+      };
+
+      struct HeaderMatcher {
+        HeaderMatcherType type;
+        HeaderMatcherContent content;
+      };
+
+      PathMatcherType path_matcher_type;
+      PathMatcher path_matcher;
+      std::vector<HeaderMatcher> headers;
+      uint32_t runtime_fraction_numerator_out_of_1M;
+
       std::string cluster_name;
       struct ClusterWeight {
         std::string name;
@@ -64,8 +107,9 @@ class XdsApi {
       std::vector<ClusterWeight> weighted_clusters;
 
       bool operator==(const RdsRoute& other) const {
-        return (service == other.service && method == other.method &&
-                cluster_name == other.cluster_name &&
+        // TODO @donnadionne: implement this properly with all the fields
+        // finalized.
+        return (cluster_name == other.cluster_name &&
                 weighted_clusters == other.weighted_clusters);
       }
     };
