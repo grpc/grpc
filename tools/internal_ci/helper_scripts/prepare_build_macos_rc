@@ -37,11 +37,10 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   brew update
-  # special case for https://github.com/grpc/grpc/issues/23027
+  # special case fix for https://github.com/grpc/grpc/issues/23027
   rm -f /usr/local/bin/gpg
   rm -f /usr/local/bin/gpgconf
   rm -f /usr/local/bin/gpgsm
-  brew upgrade gnupg
   # end https://github.com/grpc/grpc/issues/23027
   brew cleanup
   set +ex
