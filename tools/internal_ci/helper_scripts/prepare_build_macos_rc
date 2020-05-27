@@ -38,12 +38,14 @@ if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   # Advice from https://github.com/Homebrew/homebrew-cask/issues/8629#issuecomment-68641176
   brew update
+  rm -f /usr/local/bin/gpg
   brew upgrade gnupg
   brew upgrade brew-cask
   brew cleanup
   brew cask cleanup
-  set +x  # rvm commands are very verbose
+  set +ex  # rvm commands are very verbose
   source $HOME/.rvm/scripts/rvm
+  set -e
   for RUBY_VERSION in 2.5.0 2.7.0; do
     rvm --debug requirements "ruby-${RUBY_VERSION}"
     time rvm install "$RUBY_VERSION"
