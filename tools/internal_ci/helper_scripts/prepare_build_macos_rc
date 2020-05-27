@@ -42,7 +42,6 @@ then
   rm -f /usr/local/bin/gpgconf
   rm -f /usr/local/bin/gpgsm
   brew upgrade gnupg
-  brew upgrade brew-cask
   brew cleanup
   brew cask cleanup
   set +ex  # rvm commands are very verbose
