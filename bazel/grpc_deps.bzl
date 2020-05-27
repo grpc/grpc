@@ -72,6 +72,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "re2",
+        actual = "@com_github_google_re2//:re2",
+    ) 
+
+    native.bind(
         name = "gflags",
         actual = "@com_github_gflags_gflags//:gflags",
     )
@@ -205,6 +210,17 @@ def grpc_deps():
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/090faecb454fbd6e6e17a75ef8146acb037118d4.tar.gz",
                 "https://github.com/google/benchmark/archive/090faecb454fbd6e6e17a75ef8146acb037118d4.tar.gz",
+            ],
+        )
+
+    if "com_github_google_re2" not in native.existing_rules():
+        http_archive(
+            name = "com_github_google_re2",
+            sha256 = "77c34387d39f9d77c36821cd5207fe634cbdd9e67976ee75e882dd4c6195ec8b",
+            strip_prefix = "re2-52b4b94b00f094d4a86c9b6bbb8276b21ec53505",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/52b4b94b00f094d4a86c9b6bbb8276b21ec5350.tar.gz",
+                "https://github.com/google/re2/archive/52b4b94b00f094d4a86c9b6bbb8276b21ec5350.tar.gz",
             ],
         )
 

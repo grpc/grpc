@@ -23,6 +23,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "re2/re2.h"
+#include "re2/regexp.h"
 
 #include <grpc/grpc.h>
 
@@ -227,6 +229,10 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
   }
   std::vector<absl::string_view> path_elements =
       absl::StrSplit(path.substr(1), '/');
+  static LazyRE2 hostportish_re = {"([^:{}\\s,]+):([0-9]+)"};
+  if (RE2::FullMatch(path.data(), *hostportish_re)) {
+    gpr_log(GPR_INFO, "test re2");
+  }
   for (const Route& route : route_table_) {
     if ((path_elements[0] == route.matcher.service &&
          (path_elements[1] == route.matcher.method ||
