@@ -17,6 +17,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="testdata\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Grpc.Tools\build\_grpc\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Grpc.Tools\build\_protobuf\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Grpc.Tools\Grpc.Tools.csproj" />
   </ItemGroup>
 
