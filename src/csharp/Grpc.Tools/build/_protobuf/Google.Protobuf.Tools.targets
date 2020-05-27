@@ -100,7 +100,6 @@
           Condition=" '@(Protobuf)' != '' "
           DependsOnTargets=" Protobuf_BeforeCompile;
                              Protobuf_ResolvePlatform;
-                             _Protobuf_SetProtoRoot;
                              _Protobuf_SelectFiles;
                              Protobuf_PrepareCompile;
                              _Protobuf_AugmentLanguageCompile;
@@ -141,7 +140,8 @@
   </Target>
 
   <!-- Select files that should be compiled. -->
-  <Target Name="_Protobuf_SelectFiles">
+  <Target Name="_Protobuf_SelectFiles"
+          DependsOnTargets=" _Protobuf_SetProtoRoot">
     <ItemGroup>
       <!-- Files with explicit metadata. -->
       <Protobuf_Compile Include="@(Protobuf_Rooted)" />
