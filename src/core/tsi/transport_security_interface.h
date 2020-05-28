@@ -208,11 +208,10 @@ typedef struct tsi_peer_property {
   } value;
 } tsi_peer_property;
 
-typedef struct {
+struct tsi_peer {
   tsi_peer_property* properties;
   size_t property_count;
-} tsi_peer;
-
+};
 /* Destructs the tsi_peer object. */
 void tsi_peer_destruct(tsi_peer* self);
 

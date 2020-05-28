@@ -97,12 +97,11 @@ void gpr_string_split(const char* input, const char* sep, char*** strs,
 char* gpr_format_timespec(gpr_timespec);
 
 /* A vector of strings... for building up a final string one piece at a time */
-typedef struct {
+struct gpr_strvec {
   char** strs;
   size_t count;
   size_t capacity;
-} gpr_strvec;
-
+};
 /* Initialize/destroy */
 void gpr_strvec_init(gpr_strvec* strs);
 void gpr_strvec_destroy(gpr_strvec* strs);

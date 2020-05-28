@@ -2401,10 +2401,10 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API);
 }
 
-typedef struct {
+struct cancel_stream_cb_args {
   grpc_error* error;
   grpc_chttp2_transport* t;
-} cancel_stream_cb_args;
+};
 
 static void cancel_stream_cb(void* user_data, uint32_t /*key*/, void* stream) {
   cancel_stream_cb_args* args = static_cast<cancel_stream_cb_args*>(user_data);

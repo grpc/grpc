@@ -32,7 +32,7 @@ typedef struct grpc_chttp2_hpack_parser grpc_chttp2_hpack_parser;
 typedef grpc_error* (*grpc_chttp2_hpack_parser_state)(
     grpc_chttp2_hpack_parser* p, const uint8_t* beg, const uint8_t* end);
 
-typedef struct {
+struct grpc_chttp2_hpack_parser_string {
   bool copied;
   struct {
     grpc_slice referenced;
@@ -42,8 +42,7 @@ typedef struct {
       uint32_t capacity;
     } copied;
   } data;
-} grpc_chttp2_hpack_parser_string;
-
+};
 struct grpc_chttp2_hpack_parser {
   /* user specified callback for each header output */
   grpc_error* (*on_header)(void* user_data, grpc_mdelem md);
