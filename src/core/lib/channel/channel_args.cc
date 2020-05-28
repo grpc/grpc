@@ -342,7 +342,7 @@ grpc_arg grpc_channel_arg_pointer_create(
 }
 
 std::string grpc_channel_args_string(const grpc_channel_args* args) {
-  if (args == nullptr) return nullptr;
+  if (args == nullptr) return "";
   std::vector<std::string> arg_strings;
   for (size_t i = 0; i < args->num_args; ++i) {
     const grpc_arg& arg = args->args[i];
