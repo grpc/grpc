@@ -2043,7 +2043,7 @@ namespace {
 std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
   return absl::StrFormat(
       "      \"cds:%s\":{\n"
-      "        \"child_policy\":[ {\n"
+      "        \"childPolicy\":[ {\n"
       "          \"cds_experimental\":{\n"
       "            \"cluster\": \"%s\"\n"
       "          }\n"
@@ -2073,7 +2073,7 @@ std::string CreateServiceConfigActionWeightedCluster(
   std::vector<std::string> config_parts;
   config_parts.push_back(
       absl::StrFormat("      \"weighted:%s\":{\n"
-                      "        \"child_policy\":[ {\n"
+                      "        \"childPolicy\":[ {\n"
                       "          \"weighted_target_experimental\":{\n"
                       "            \"targets\":{\n",
                       name));

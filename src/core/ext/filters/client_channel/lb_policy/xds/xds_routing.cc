@@ -712,7 +712,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           "value should be of type object"));
       return error_list;
     }
-    auto it = json.object_value().find("child_policy");
+    auto it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
       error_list.push_back(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("did not find childPolicy"));
