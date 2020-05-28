@@ -675,8 +675,8 @@ typedef struct grpc_op {
     struct grpc_op_recv_close_on_server {
       /** out argument, set to 1 if the call failed at the server for
           a reason other than a non-OK status (cancel, deadline
-          exceeded, network failure, etc.), 0 otherwise (method ran to
-          completion and got any status from the server) */
+          exceeded, network failure, etc.), 0 otherwise (RPC processing ran to
+          completion and was able to provide any status from the server) */
       int* cancelled;
     } recv_close_on_server;
   } data;
