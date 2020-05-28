@@ -67,6 +67,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "concurrent_connectivity_test",
     srcs = ["concurrent_connectivity_test.cc"],
+    flaky = True,  # TODO(b/157516542)
     language = "C++",
     deps = [
         "//:gpr",
