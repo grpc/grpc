@@ -32,6 +32,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -715,11 +716,18 @@ grpc_channel_args* EdsLb::CreateChildPolicyArgsLocked(
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1),
   };
+  absl::InlinedVector<const char*, 1> args_to_remove;
   if (xds_client_from_channel_ == nullptr) {
     args_to_add.emplace_back(xds_client_->MakeChannelArg());
+  } else if (!config_->lrs_load_reporting_server_name().has_value()) {
+    // Remove XdsClient from channel args, so that its presence doesn't
+    // prevent us from sharing subchannels between channels.
+    // If load reporting is enabled, this happens in the LRS policy instead.
+    args_to_remove.push_back(GRPC_ARG_XDS_CLIENT);
   }
-  return grpc_channel_args_copy_and_add(args, args_to_add.data(),
-                                        args_to_add.size());
+  return grpc_channel_args_copy_and_add_and_remove(
+      args, args_to_remove.data(), args_to_remove.size(), args_to_add.data(),
+      args_to_add.size());
 }
 
 OrphanablePtr<LoadBalancingPolicy> EdsLb::CreateChildPolicyLocked(
