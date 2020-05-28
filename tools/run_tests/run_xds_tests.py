@@ -1087,7 +1087,7 @@ def patch_url_map_backend_service(gcp,
             'backendService': service.url,
             'weight': w,
         } for service, w in services_with_weights.items()]
-    } if services_withWeights else None
+    } if services_with_weights else None
 
     config = {
         'defaultService':
