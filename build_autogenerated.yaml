@@ -3170,6 +3170,7 @@ targets:
   uses_polling: false
 - name: concurrent_connectivity_test
   build: test
+  run: false
   language: c
   headers: []
   src:
