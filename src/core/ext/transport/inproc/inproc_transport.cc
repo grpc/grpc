@@ -812,24 +812,6 @@ void op_state_machine_locked(inproc_stream* s, grpc_error* error) {
           "op_state_machine %p has trailing md but not yet waiting for it", s);
     }
   }
-  if (!s->t->is_client && s->trailing_md_sent &&
-      (s->recv_trailing_md_op != nullptr)) {
-    // In this case, we don't care to receive the write-close from the client
-    // because we have already sent status and the RPC is over as far as we
-    // are concerned.
-    INPROC_LOG(GPR_INFO, "op_state_machine %p scheduling trailing-md-ready %p",
-               s, new_err);
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION,
-        s->recv_trailing_md_op->payload->recv_trailing_metadata
-            .recv_trailing_metadata_ready,
-        GRPC_ERROR_REF(new_err));
-    complete_if_batch_end_locked(
-        s, new_err, s->recv_trailing_md_op,
-        "op_state_machine scheduling recv-trailing-md-on-complete");
-    s->trailing_md_recvd = true;
-    s->recv_trailing_md_op = nullptr;
-  }
   if (s->trailing_md_recvd && s->recv_message_op) {
     // No further message will come on this stream, so finish off the
     // recv_message_op
