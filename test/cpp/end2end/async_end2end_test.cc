@@ -351,6 +351,52 @@ TEST_P(AsyncEnd2endTest, SimpleRpc) {
   SendRpc(1);
 }
 
+TEST_P(AsyncEnd2endTest, SimpleRpcWithExpectedError) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+  ErrorStatus error_status;
+
+  send_request.set_message(GetParam().message_content);
+  error_status.set_code(1);  // CANCELLED
+  error_status.set_error_message("cancel error message");
+  *send_request.mutable_param()->mutable_expected_error() = error_status;
+
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
+      stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+
+  srv_ctx.AsyncNotifyWhenDone(tag(5));
+  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
+                        cq_.get(), tag(2));
+
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
+
+  Verifier().Expect(2, true).Verify(cq_.get());
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  send_response.set_message(recv_request.message());
+  response_writer.Finish(
+      send_response,
+      Status(
+          static_cast<StatusCode>(recv_request.param().expected_error().code()),
+          recv_request.param().expected_error().error_message()),
+      tag(3));
+  Verifier().Expect(3, true).Expect(4, true).Expect(5, true).Verify(cq_.get());
+
+  EXPECT_EQ(recv_response.message(), "");
+  EXPECT_EQ(recv_status.error_code(), error_status.code());
+  EXPECT_EQ(recv_status.error_message(), error_status.error_message());
+  EXPECT_FALSE(srv_ctx.IsCancelled());
+}
+
 TEST_P(AsyncEnd2endTest, SequentialRpcs) {
   ResetStub();
   SendRpc(10);
@@ -1856,9 +1902,10 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
     }
 #ifndef MEMORY_SANITIZER
     // 4MB message processing with SSL is very slow under msan
-    // (causes timeouts) and doesn't really increase the signal from tests
+    // (causes timeouts) and doesn't really increase the signal from tests.
+    // Reserve 100 bytes for other fields of the message proto.
     messages.push_back(
-        grpc::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 10, 'a'));
+        grpc::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
 #endif
   }
 

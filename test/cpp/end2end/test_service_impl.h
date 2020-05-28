@@ -229,9 +229,6 @@ class TestMultipleServiceImpl : public RpcService {
     if (request->has_param() && request->param().echo_peer()) {
       response->mutable_param()->set_peer(context->peer());
     }
-    if (request->has_param() && request->param().finish_with_failure()) {
-      return Status::CANCELLED;
-    }
     return Status::OK;
   }
 

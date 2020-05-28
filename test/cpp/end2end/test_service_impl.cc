@@ -186,7 +186,7 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
       EXPECT_EQ(ctx_->IsCancelled(), on_cancel_invoked_);
       // Validate that finishing with a non-OK status doesn't cause cancellation
-      if (req_->has_param() && req_->param().finish_with_failure()) {
+      if (req_->has_param() && req_->param().has_expected_error()) {
         EXPECT_FALSE(on_cancel_invoked_);
       }
       async_cancel_check_.join();
@@ -294,10 +294,6 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
       if (req_->has_param() && req_->param().echo_peer()) {
         resp_->mutable_param()->set_peer(ctx_->peer());
-      }
-      if (req_->has_param() && req_->param().finish_with_failure()) {
-        Finish(grpc::Status(grpc::StatusCode::UNAVAILABLE, "unavailable"));
-        return;
       }
       Finish(Status::OK);
     }
