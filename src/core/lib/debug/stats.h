@@ -21,11 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include <grpc/support/atm.h>
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-
-#include <string>
 
 typedef struct grpc_stats_data {
   gpr_atm counters[GRPC_STATS_COUNTER_COUNT];
