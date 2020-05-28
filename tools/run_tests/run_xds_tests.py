@@ -1090,8 +1090,6 @@ def patch_url_map_backend_service(gcp,
     } if services_with_weights else None
 
     config = {
-        'defaultService':
-            backend_service.url,
         'pathMatchers': [{
             'name': _PATH_MATCHER_NAME,
             'defaultService': default_service,
