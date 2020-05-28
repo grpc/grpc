@@ -12,9 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(RE2_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/re2)
-
-set(_gRPC_RE2_INCLUDE_DIR "${RE2_ROOT_DIR}")
-set(_gRPC_RE2_GRPC_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/core/ext/re2-generated")
-
+set(_gRPC_RE2_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/re2")
 set(_gRPC_RE2_LIBRARIES re2)
