@@ -39,7 +39,7 @@ def create_channel_option(compression):
              int(compression)),) if compression else ()
 
 
-def augment_metadata(metadata, compression) -> tuple:
+def augment_metadata(metadata, compression):
     if not metadata and not compression:
         return None
     base_metadata = tuple(metadata) if metadata else ()
