@@ -69,11 +69,10 @@ static void drain_cq(grpc_completion_queue* cq) {
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  grpc_event event =  grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(15),
-                                         nullptr);
-  gpr_log(GPR_INFO, "Event type is: %d\n", (int) event.type);
-  gpr_log(GPR_INFO, "Event tag is: %d\n", event.tag);
+  grpc_event event = grpc_completion_queue_pluck(
+      f->shutdown_cq, tag(1000), grpc_timeout_seconds_to_deadline(30), nullptr);
+  gpr_log(GPR_INFO, "Event type is: %d\n", (int)event.type);
+  gpr_log(GPR_INFO, "Event tag is: %p\n", event.tag);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -282,6 +281,7 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
 // Simple request via a CLIENT_SUBCHANNEL filter that always fails to
 // initialize the call.
 static void test_client_subchannel_filter(grpc_end2end_test_config config) {
+  gpr_log(GPR_INFO, "Starting |test_client_subchannel_filter|.");
   grpc_call* c;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
@@ -306,6 +306,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
   GPR_ASSERT(c);
+  gpr_log(GPR_INFO, "Called |grpc_channel_create_call|.");
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -345,6 +346,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
+  gpr_log(GPR_INFO, "Called |grpc_call_start_batch|.");
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
@@ -364,10 +366,12 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
   GPR_ASSERT(c);
+  gpr_log(GPR_INFO, "Called |grpc_channel_create_call| for a second time.");
 
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
+  gpr_log(GPR_INFO, "Called |grpc_call_start_batch| for a second time.");
 
   CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
   cq_verify(cqv);
@@ -388,8 +392,12 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
 
+  gpr_log(GPR_INFO, "About to call |end_test|.");
   end_test(&f);
+  gpr_log(GPR_INFO, "Called |end_test|.");
   config.tear_down_data(&f);
+  gpr_log(GPR_INFO, "Ending");
+  GPR_ASSERT(0);
 }
 
 /*******************************************************************************

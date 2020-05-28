@@ -952,6 +952,7 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
                                         size_t* unprotected_bytes_size,
                                         unsigned char* protected_output_frames,
                                         size_t* protected_output_frames_size) {
+  gpr_log(GPR_INFO, "Entered |ssl_protector_protect|.");
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
   int read_from_ssl;
@@ -1006,6 +1007,7 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
 static tsi_result ssl_protector_protect_flush(
     tsi_frame_protector* self, unsigned char* protected_output_frames,
     size_t* protected_output_frames_size, size_t* still_pending_size) {
+  gpr_log(GPR_INFO, "Entered |ssl_protector_protect_flush|.");
   tsi_result result = TSI_OK;
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
@@ -1014,26 +1016,34 @@ static tsi_result ssl_protector_protect_flush(
 
   if (impl->buffer_offset != 0) {
     result = do_ssl_write(impl->ssl, impl->buffer, impl->buffer_offset);
-    if (result != TSI_OK) return result;
+    if (result != TSI_OK) {
+      gpr_log(GPR_INFO, "Exiting here...");
+      return result;
+    }
     impl->buffer_offset = 0;
   }
 
   pending = static_cast<int>(BIO_pending(impl->network_io));
   GPR_ASSERT(pending >= 0);
   *still_pending_size = static_cast<size_t>(pending);
-  if (*still_pending_size == 0) return TSI_OK;
+  if (*still_pending_size == 0) {
+    gpr_log(GPR_INFO, "Exiting here...");
+    return TSI_OK;
+  }
 
   GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
   read_from_ssl = BIO_read(impl->network_io, protected_output_frames,
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl <= 0) {
     gpr_log(GPR_ERROR, "Could not read from BIO after SSL_write.");
+    gpr_log(GPR_INFO, "Exiting here...");
     return TSI_INTERNAL_ERROR;
   }
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   pending = static_cast<int>(BIO_pending(impl->network_io));
   GPR_ASSERT(pending >= 0);
   *still_pending_size = static_cast<size_t>(pending);
+  gpr_log(GPR_INFO, "Exiting here...");
   return TSI_OK;
 }
 
@@ -1041,6 +1051,7 @@ static tsi_result ssl_protector_unprotect(
     tsi_frame_protector* self, const unsigned char* protected_frames_bytes,
     size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
     size_t* unprotected_bytes_size) {
+  gpr_log(GPR_INFO, "Entered |ssl_protector_unprotect|.");
   tsi_result result = TSI_OK;
   int written_into_ssl = 0;
   size_t output_bytes_size = *unprotected_bytes_size;
@@ -1081,6 +1092,7 @@ static tsi_result ssl_protector_unprotect(
 }
 
 static void ssl_protector_destroy(tsi_frame_protector* self) {
+  gpr_log(GPR_INFO, "Entered |ssl_protector_destroy|.");
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
   if (impl->buffer != nullptr) gpr_free(impl->buffer);
@@ -1164,6 +1176,7 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
 /* --- tsi_handshaker_result methods implementation. ---*/
 static tsi_result ssl_handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
+  gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_extract_peer|.");
   tsi_result result = TSI_OK;
   const unsigned char* alpn_selected = nullptr;
   unsigned int alpn_selected_len;
@@ -1232,6 +1245,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
 static tsi_result ssl_handshaker_result_create_frame_protector(
     const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
     tsi_frame_protector** protector) {
+  gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_create_frame_protector|.");
   size_t actual_max_output_protected_frame_size =
       TSI_SSL_MAX_PROTECTED_FRAME_SIZE_UPPER_BOUND;
   tsi_ssl_handshaker_result* impl =
@@ -1285,6 +1299,7 @@ static tsi_result ssl_handshaker_result_get_unused_bytes(
 }
 
 static void ssl_handshaker_result_destroy(tsi_handshaker_result* self) {
+  gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_destroy|.");
   tsi_ssl_handshaker_result* impl =
       reinterpret_cast<tsi_ssl_handshaker_result*>(self);
   SSL_free(impl->ssl);
@@ -1304,6 +1319,7 @@ static const tsi_handshaker_result_vtable handshaker_result_vtable = {
 static tsi_result ssl_handshaker_result_create(
     tsi_ssl_handshaker* handshaker, const unsigned char* unused_bytes,
     size_t unused_bytes_size, tsi_handshaker_result** handshaker_result) {
+  gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_create|.");
   if (handshaker == nullptr || handshaker_result == nullptr ||
       (unused_bytes_size > 0 && unused_bytes == nullptr)) {
     return TSI_INVALID_ARGUMENT;
