@@ -45,6 +45,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Grpc.Tools", "Grpc.Tools\Gr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Grpc.Tools.Tests", "Grpc.Tools.Tests\Grpc.Tools.Tests.csproj", "{AEBE9BD8-E433-45B7-8B3D-D458EDBBCFC4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc.IntegrationTesting.XdsClient", "Grpc.IntegrationTesting.XdsClient\Grpc.IntegrationTesting.XdsClient.csproj", "{7306313A-4853-4CFF-B913-0FCB1A497449}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -135,6 +137,10 @@ Global
 		{AEBE9BD8-E433-45B7-8B3D-D458EDBBCFC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AEBE9BD8-E433-45B7-8B3D-D458EDBBCFC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AEBE9BD8-E433-45B7-8B3D-D458EDBBCFC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7306313A-4853-4CFF-B913-0FCB1A497449}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7306313A-4853-4CFF-B913-0FCB1A497449}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7306313A-4853-4CFF-B913-0FCB1A497449}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7306313A-4853-4CFF-B913-0FCB1A497449}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

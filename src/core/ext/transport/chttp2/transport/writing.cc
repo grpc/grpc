@@ -57,7 +57,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-      gpr_log(GPR_INFO, "%s: Ping delayed [%p]: already pinging",
+      gpr_log(GPR_INFO, "%s: Ping delayed [%s]: already pinging",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string);
     }
     return;
@@ -68,7 +68,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-      gpr_log(GPR_INFO, "%s: Ping delayed [%p]: too many recent pings: %d/%d",
+      gpr_log(GPR_INFO, "%s: Ping delayed [%s]: too many recent pings: %d/%d",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string,
               t->ping_state.pings_before_data_required,
               t->ping_policy.max_pings_without_data);
@@ -81,7 +81,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
       (t->keepalive_permit_without_calls == 0 &&
        grpc_chttp2_stream_map_size(&t->stream_map) == 0)
           ? 7200 * GPR_MS_PER_SEC
-          : t->ping_policy.min_sent_ping_interval_without_data;
+          : (t->ping_policy.min_sent_ping_interval_without_data +
+             GPR_MS_PER_SEC); /* A second is added to deal with network delays
+                                 and timing imprecision */
   grpc_millis next_allowed_ping =
       t->ping_state.last_ping_sent_time + next_allowed_ping_interval;
 
@@ -91,7 +93,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
       gpr_log(GPR_INFO,
-              "%s: Ping delayed [%p]: not enough time elapsed since last ping. "
+              "%s: Ping delayed [%s]: not enough time elapsed since last ping. "
               " Last ping %f: Next ping %f: Now %f",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string,
               static_cast<double>(t->ping_state.last_ping_sent_time),

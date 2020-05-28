@@ -441,6 +441,12 @@ class CallData {
       return calld_->backend_metric_data_;
     }
 
+    absl::string_view ExperimentalGetCallAttribute(const char* key) override {
+      auto it = calld_->call_attributes_.find(key);
+      if (it == calld_->call_attributes_.end()) return absl::string_view();
+      return it->second;
+    }
+
    private:
     CallData* calld_;
   };
@@ -762,6 +768,7 @@ class CallData {
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
   ServiceConfig::CallData service_config_call_data_;
   const ClientChannelMethodParsedConfig* method_params_ = nullptr;
+  std::map<const char*, absl::string_view> call_attributes_;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 

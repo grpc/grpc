@@ -271,7 +271,6 @@ class XdsApi {
       const grpc_slice& encoded_response,
       const std::string& expected_server_name,
       const std::string& expected_route_config_name,
-      const bool xds_routing_enabled,
       const std::set<absl::string_view>& expected_cluster_names,
       const std::set<absl::string_view>& expected_eds_service_names,
       absl::optional<LdsUpdate>* lds_update,
@@ -296,6 +295,7 @@ class XdsApi {
  private:
   XdsClient* client_;
   TraceFlag* tracer_;
+  const bool xds_routing_enabled_;
   const XdsBootstrap::Node* node_;
   const std::string build_version_;
   const std::string user_agent_name_;

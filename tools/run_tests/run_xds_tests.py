@@ -198,6 +198,7 @@ _WAIT_FOR_OPERATION_SEC = 300
 _INSTANCE_GROUP_SIZE = args.instance_group_size
 _NUM_TEST_RPCS = 10 * args.qps
 _WAIT_FOR_STATS_SEC = 180
+_WAIT_FOR_VALID_CONFIG_SEC = 60
 _WAIT_FOR_URL_MAP_PATCH_SEC = 300
 _CONNECTION_TIMEOUT_SEC = 60
 _GCP_API_RETRIES = 5
@@ -226,9 +227,9 @@ _BOOTSTRAP_TEMPLATE = """
 # TODO(ericgribkoff) Add change_backend_service to this list once TD no longer
 # sends an update with no localities when adding the MIG to the backend service
 # can race with the URL map patch.
-# TODO(ericgribkoff) Add new_instance_group_receives_traffic, ping_pong, and
-# round_robin when empty update issue is resolved.
-_TESTS_TO_FAIL_ON_RPC_FAILURE = []
+_TESTS_TO_FAIL_ON_RPC_FAILURE = [
+    'new_instance_group_receives_traffic', 'ping_pong', 'round_robin'
+]
 _TESTS_USING_SECONDARY_IG = [
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure'
@@ -582,6 +583,8 @@ def add_instance_group(gcp, zone, name, size):
     instance_group = InstanceGroup(config['name'], result['instanceGroup'],
                                    zone)
     gcp.instance_groups.append(instance_group)
+    wait_for_instance_group_to_reach_expected_size(gcp, instance_group, size,
+                                                   _WAIT_FOR_OPERATION_SEC)
     return instance_group
 
 
@@ -936,14 +939,8 @@ def resize_instance_group(gcp,
                             instance_group.zone,
                             result['name'],
                             timeout_sec=360)
-    start_time = time.time()
-    while True:
-        current_size = len(get_instance_names(gcp, instance_group))
-        if current_size == new_size:
-            break
-        if time.time() - start_time > timeout_sec:
-            raise Exception('Failed to resize primary instance group')
-        time.sleep(2)
+    wait_for_instance_group_to_reach_expected_size(gcp, instance_group,
+                                                   new_size, timeout_sec)
 
 
 def patch_url_map_backend_service(gcp, backend_service):
@@ -960,6 +957,20 @@ def patch_url_map_backend_service(gcp, backend_service):
         project=gcp.project, urlMap=gcp.url_map.name,
         body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
+
+
+def wait_for_instance_group_to_reach_expected_size(gcp, instance_group,
+                                                   expected_size, timeout_sec):
+    start_time = time.time()
+    while True:
+        current_size = len(get_instance_names(gcp, instance_group))
+        if current_size == expected_size:
+            break
+        if time.time() - start_time > timeout_sec:
+            raise Exception(
+                'Instance group had expected size %d but actual size %d' %
+                (expected_size, current_size))
+        time.sleep(2)
 
 
 def wait_for_global_operation(gcp,
@@ -1019,6 +1030,15 @@ def wait_for_healthy_backends(gcp,
         time.sleep(2)
     raise Exception('Not all backends became healthy within %d seconds: %s' %
                     (timeout_sec, result))
+
+
+def wait_for_config_propagation(gcp, instance_group, client_cmd, client_env):
+    """Use client to verify config propagation from GCP->TD->client"""
+    instance_names = get_instance_names(gcp, instance_group)
+    client_process = subprocess.Popen(shlex.split(client_cmd), env=client_env)
+    wait_until_all_rpcs_go_to_given_backends(instance_names,
+                                             _WAIT_FOR_VALID_CONFIG_SEC)
+    client_process.terminate()
 
 
 def get_instance_names(gcp, instance_group):
@@ -1205,6 +1225,13 @@ try:
             test_log_file = open(test_log_filename, 'w+')
             client_process = None
             if test_case in _TESTS_TO_FAIL_ON_RPC_FAILURE:
+                wait_for_config_propagation(
+                    gcp, instance_group,
+                    args.client_cmd.format(server_uri=server_uri,
+                                           stats_port=args.stats_port,
+                                           qps=args.qps,
+                                           fail_on_failed_rpc=False),
+                    client_env)
                 fail_on_failed_rpc = '--fail_on_failed_rpc=true'
             else:
                 fail_on_failed_rpc = '--fail_on_failed_rpc=false'

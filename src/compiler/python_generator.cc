@@ -100,7 +100,7 @@ void PrivateGenerator::PrintAllComments(StringVector comments,
     // of the generated code.
     out->Print(
         "\"\"\"Missing associated documentation comment in .proto "
-        "file\"\"\"\n");
+        "file.\"\"\"\n");
     return;
   }
   out->Print("\"\"\"");

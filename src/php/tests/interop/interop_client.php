@@ -117,6 +117,53 @@ function performLargeUnary($stub, $fillUsername = false,
 }
 
 /**
+ * Run the client_compressed_unary test.
+ *
+ * @param $stub Stub object that has service methods
+ */
+function clientCompressedUnary($stub)
+{
+    $request_len = 271828;
+    $response_len = 314159;
+    $falseBoolValue = new Grpc\Testing\BoolValue(['value' => false]);
+    $trueBoolValue = new Grpc\Testing\BoolValue(['value' => true]);
+    // 1. Probing for compression-checks support
+    $payload = new Grpc\Testing\Payload([
+        'body' => str_repeat("\0", $request_len),
+    ]);
+    $request = new Grpc\Testing\SimpleRequest([
+        'payload' => $payload,
+        'response_size' => $response_len,
+        'expect_compressed' => $trueBoolValue, // lie
+    ]);
+    list($result, $status) = $stub->UnaryCall($request, [], [])->wait();
+    hardAssert(
+        $status->code === GRPC\STATUS_INVALID_ARGUMENT,
+        'Received unexpected UnaryCall status code: ' .
+            $status->code
+    );
+    // 2. with/without compressed message
+    foreach ([true, false] as $compression) {
+        $request->setExpectCompressed($compression ? $trueBoolValue : $falseBoolValue);
+        $metadata = $compression ? [
+            'grpc-internal-encoding-request' => ['gzip'],
+        ] : [];
+        list($result, $status) = $stub->UnaryCall($request, $metadata, [])->wait();
+        hardAssertIfStatusOk($status);
+        hardAssert($result !== null, 'Call returned a null response');
+        $payload = $result->getPayload();
+        hardAssert(
+            strlen($payload->getBody()) === $response_len,
+            'Payload had the wrong length'
+        );
+        hardAssert(
+            $payload->getBody() === str_repeat("\0", $response_len),
+            'Payload had the wrong content'
+        );
+    }
+}
+
+/**
  * Run the service account credentials auth test.
  *
  * @param $stub Stub object that has service methods
@@ -254,6 +301,68 @@ function clientStreaming($stub)
     hardAssertIfStatusOk($status);
     hardAssert($result->getAggregatedPayloadSize() === 74922,
                'aggregated_payload_size was incorrect');
+}
+
+/**
+ * Run the client_compressed_streaming test.
+ *
+ * @param $stub Stub object that has service methods
+ */
+function clientCompressedStreaming($stub)
+{
+    $request_len = 27182;
+    $request2_len = 45904;
+    $response_len = 73086;
+    $falseBoolValue = new Grpc\Testing\BoolValue(['value' => false]);
+    $trueBoolValue = new Grpc\Testing\BoolValue(['value' => true]);
+
+    // 1. Probing for compression-checks support
+
+    $payload = new Grpc\Testing\Payload([
+        'body' => str_repeat("\0", $request_len),
+    ]);
+    $request = new Grpc\Testing\StreamingInputCallRequest([
+        'payload' => $payload,
+        'expect_compressed' => $trueBoolValue, // lie
+    ]);
+
+    $call = $stub->StreamingInputCall();
+    $call->write($request);
+    list($result, $status) = $call->wait();
+    hardAssert(
+        $status->code === GRPC\STATUS_INVALID_ARGUMENT,
+        'Received unexpected StreamingInputCall status code: ' .
+            $status->code
+    );
+
+    // 2. write compressed message
+
+    $call = $stub->StreamingInputCall([
+        'grpc-internal-encoding-request' => ['gzip'],
+    ]);
+    $request->setExpectCompressed($trueBoolValue);
+    $call->write($request);
+
+    // 3. write uncompressed message
+
+    $payload2 = new Grpc\Testing\Payload([
+        'body' => str_repeat("\0", $request2_len),
+    ]);
+    $request->setPayload($payload2);
+    $request->setExpectCompressed($falseBoolValue);
+    $call->write($request, [
+        'flags' => 0x02 // GRPC_WRITE_NO_COMPRESS
+    ]);
+
+    // 4. verify response
+
+    list($result, $status) = $call->wait();
+
+    hardAssertIfStatusOk($status);
+    hardAssert(
+        $result->getAggregatedPayloadSize() === $response_len,
+        'aggregated_payload_size was incorrect'
+    );
 }
 
 /**
@@ -672,6 +781,12 @@ function interop_main($args, $stub = false)
             break;
         case 'per_rpc_creds':
             perRpcCreds($stub, $args);
+            break;
+        case 'client_compressed_unary':
+            clientCompressedUnary($stub);
+            break;
+        case 'client_compressed_streaming':
+            clientCompressedStreaming($stub);
             break;
         default:
             echo "Unsupported test case $test_case\n";

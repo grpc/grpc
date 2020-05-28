@@ -27,5 +27,4 @@ RUN /opt/python/cp27-cp27mu/bin/pip install --upgrade cython
 RUN /opt/python/cp35-cp35m/bin/pip install --upgrade cython
 RUN /opt/python/cp36-cp36m/bin/pip install --upgrade cython
 RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
-RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
