@@ -3676,6 +3676,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/service_config.cc \
+    src/core/ext/filters/client_channel/service_config_parser.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/client_channel/xds/xds_api.cc \
@@ -4320,6 +4321,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/service_config.cc \
+    src/core/ext/filters/client_channel/service_config_parser.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/client_channel/xds/xds_api.cc \
