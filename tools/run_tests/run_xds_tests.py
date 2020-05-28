@@ -52,6 +52,7 @@ _TEST_CASES = [
     'round_robin',
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure',
+    'traffic_splitting',
 ]
 
 
@@ -103,7 +104,7 @@ argp.add_argument('--zone', default='us-central1-a')
 argp.add_argument('--secondary_zone',
                   default='us-west1-b',
                   help='Zone to use for secondary TD locality tests')
-argp.add_argument('--qps', default=10, type=int, help='Client QPS')
+argp.add_argument('--qps', default=100, type=int, help='Client QPS')
 argp.add_argument(
     '--wait_for_backend_sec',
     default=1200,
@@ -198,6 +199,7 @@ _WAIT_FOR_OPERATION_SEC = 300
 _INSTANCE_GROUP_SIZE = args.instance_group_size
 _NUM_TEST_RPCS = 10 * args.qps
 _WAIT_FOR_STATS_SEC = 180
+_WAIT_FOR_VALID_CONFIG_SEC = 60
 _WAIT_FOR_URL_MAP_PATCH_SEC = 300
 _CONNECTION_TIMEOUT_SEC = 60
 _GCP_API_RETRIES = 5
@@ -226,9 +228,9 @@ _BOOTSTRAP_TEMPLATE = """
 # TODO(ericgribkoff) Add change_backend_service to this list once TD no longer
 # sends an update with no localities when adding the MIG to the backend service
 # can race with the URL map patch.
-# TODO(ericgribkoff) Add new_instance_group_receives_traffic, ping_pong, and
-# round_robin when empty update issue is resolved.
-_TESTS_TO_FAIL_ON_RPC_FAILURE = []
+_TESTS_TO_FAIL_ON_RPC_FAILURE = [
+    'new_instance_group_receives_traffic', 'ping_pong', 'round_robin'
+]
 _TESTS_USING_SECONDARY_IG = [
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure'
@@ -290,7 +292,7 @@ def _verify_rpcs_to_given_backends(backends, timeout_sec, num_rpcs,
 
 def wait_until_all_rpcs_go_to_given_backends_or_fail(backends,
                                                      timeout_sec,
-                                                     num_rpcs=100):
+                                                     num_rpcs=_NUM_TEST_RPCS):
     _verify_rpcs_to_given_backends(backends,
                                    timeout_sec,
                                    num_rpcs,
@@ -299,11 +301,47 @@ def wait_until_all_rpcs_go_to_given_backends_or_fail(backends,
 
 def wait_until_all_rpcs_go_to_given_backends(backends,
                                              timeout_sec,
-                                             num_rpcs=100):
+                                             num_rpcs=_NUM_TEST_RPCS):
     _verify_rpcs_to_given_backends(backends,
                                    timeout_sec,
                                    num_rpcs,
                                    allow_failures=False)
+
+
+def compare_distributions(actual_distribution, expected_distribution,
+                          threshold):
+    """Compare if two distributions are similar.
+
+    Args:
+      actual_distribution: A list of floats, contains the actual distribution.
+      expected_distribution: A list of floats, contains the expected distribution.
+      threshold: Number within [0,100], the threshold percentage by which the
+        actual distribution can differ from the expected distribution.
+
+    Returns:
+      The similarity between the distributions as a boolean. Returns true if the
+      actual distribution lies within the threshold of the expected
+      distribution, false otherwise.
+    
+    Raises:
+      ValueError: if threshold is not with in [0,100].
+      Exception: containing detailed error messages.
+    """
+    if len(expected_distribution) != len(actual_distribution):
+        raise Exception(
+            'Error: expected and actual distributions have different size (%d vs %d)'
+            % (len(expected_distribution), len(actual_distribution)))
+    if threshold < 0 or threshold > 100:
+        raise ValueError('Value error: Threshold should be between 0 to 100')
+    threshold_fraction = threshold / 100.0
+    for expected, actual in zip(expected_distribution, actual_distribution):
+        if actual < (expected * (1 - threshold_fraction)):
+            raise Exception("actual(%f) < expected(%f-%d%%)" %
+                            (actual, expected, threshold))
+        if actual > (expected * (1 + threshold_fraction)):
+            raise Exception("actual(%f) > expected(%f+%d%%)" %
+                            (actual, expected, threshold))
+    return True
 
 
 def test_backends_restart(gcp, backend_service, instance_group):
@@ -499,6 +537,96 @@ def test_secondary_locality_gets_requests_on_primary_failure(
         patch_backend_instances(gcp, backend_service, [primary_instance_group])
 
 
+def test_traffic_splitting(gcp, original_backend_service, instance_group,
+                           alternate_backend_service, same_zone_instance_group):
+    # This test start with all traffic going to original_backend_service. Then
+    # it updates URL-map to set default action to traffic splitting between
+    # original and alternate. It waits for all backends in both services to
+    # receive traffic, then verifies that weights are expected.
+    logger.info('Running test_traffic_splitting')
+
+    logger.info('waiting for original backends to become healthy')
+    wait_for_healthy_backends(gcp, original_backend_service, instance_group)
+
+    patch_backend_instances(gcp, alternate_backend_service,
+                            [same_zone_instance_group])
+    logger.info('waiting for alternate to become healthy')
+    wait_for_healthy_backends(gcp, alternate_backend_service,
+                              same_zone_instance_group)
+
+    original_backend_instances = get_instance_names(gcp, instance_group)
+    logger.info('original backends instances: %s', original_backend_instances)
+
+    alternate_backend_instances = get_instance_names(gcp,
+                                                     same_zone_instance_group)
+    logger.info('alternate backends instances: %s', alternate_backend_instances)
+
+    # Start with all traffic going to original_backend_service.
+    logger.info('waiting for traffic to all go to original backends')
+    wait_until_all_rpcs_go_to_given_backends(original_backend_instances,
+                                             _WAIT_FOR_STATS_SEC)
+
+    try:
+        # Patch urlmap, change route action to traffic splitting between
+        # original and alternate.
+        logger.info('patching url map with traffic splitting')
+        original_service_percentage, alternate_service_percentage = 20, 80
+        patch_url_map_backend_service(
+            gcp,
+            services_with_weights={
+                original_backend_service: original_service_percentage,
+                alternate_backend_service: alternate_service_percentage,
+            })
+        # Split percentage between instances: [20,80] -> [10,10,40,40].
+        expected_instance_percentage = [
+            original_service_percentage * 1.0 / len(original_backend_instances)
+        ] * len(original_backend_instances) + [
+            alternate_service_percentage * 1.0 /
+            len(alternate_backend_instances)
+        ] * len(alternate_backend_instances)
+
+        # Wait for traffic to go to both services.
+        logger.info(
+            'waiting for traffic to go to all backends (including alternate)')
+        wait_until_all_rpcs_go_to_given_backends(
+            original_backend_instances + alternate_backend_instances,
+            _WAIT_FOR_STATS_SEC)
+
+        # Verify that weights between two services are expected.
+        retry_count = 10
+        # Each attempt takes about 10 seconds, 10 retries is equivalent to 100
+        # seconds timeout.
+        for i in range(retry_count):
+            stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
+            got_instance_count = [
+                stats.rpcs_by_peer[i] for i in original_backend_instances
+            ] + [stats.rpcs_by_peer[i] for i in alternate_backend_instances]
+            total_count = sum(got_instance_count)
+            got_instance_percentage = [
+                x * 100.0 / total_count for x in got_instance_count
+            ]
+
+            try:
+                compare_distributions(got_instance_percentage,
+                                      expected_instance_percentage, 5)
+            except Exception as e:
+                logger.info('attempt %d', i)
+                logger.info('got percentage: %s', got_instance_percentage)
+                logger.info('expected percentage: %s',
+                            expected_instance_percentage)
+                logger.info(e)
+                if i == retry_count - 1:
+                    raise Exception(
+                        'RPC distribution (%s) differs from expected (%s)',
+                        got_instance_percentage, expected_instance_percentage)
+            else:
+                logger.info("success")
+                break
+    finally:
+        patch_url_map_backend_service(gcp, original_backend_service)
+        patch_backend_instances(gcp, alternate_backend_service, [])
+
+
 def get_startup_script(path_to_server_binary, service_port):
     if path_to_server_binary:
         return "nohup %s --port=%d 1>/dev/null &" % (path_to_server_binary,
@@ -582,6 +710,8 @@ def add_instance_group(gcp, zone, name, size):
     instance_group = InstanceGroup(config['name'], result['instanceGroup'],
                                    zone)
     gcp.instance_groups.append(instance_group)
+    wait_for_instance_group_to_reach_expected_size(gcp, instance_group, size,
+                                                   _WAIT_FOR_OPERATION_SEC)
     return instance_group
 
 
@@ -936,23 +1066,36 @@ def resize_instance_group(gcp,
                             instance_group.zone,
                             result['name'],
                             timeout_sec=360)
-    start_time = time.time()
-    while True:
-        current_size = len(get_instance_names(gcp, instance_group))
-        if current_size == new_size:
-            break
-        if time.time() - start_time > timeout_sec:
-            raise Exception('Failed to resize primary instance group')
-        time.sleep(2)
+    wait_for_instance_group_to_reach_expected_size(gcp, instance_group,
+                                                   new_size, timeout_sec)
 
 
-def patch_url_map_backend_service(gcp, backend_service):
+def patch_url_map_backend_service(gcp,
+                                  backend_service=None,
+                                  services_with_weights=None):
+    '''change url_map's backend service
+
+    Only one of backend_service and service_with_weights can be not None.
+    '''
+    if backend_service and services_with_weights:
+        raise ValueError(
+            'both backend_service and service_with_weights are not None.')
+
+    default_service = backend_service.url if backend_service else None
+    default_route_action = {
+        'weightedBackendServices': [{
+            'backendService': service.url,
+            'weight': w,
+        } for service, w in services_with_weights.items()]
+    } if services_withWeights else None
+
     config = {
         'defaultService':
             backend_service.url,
         'pathMatchers': [{
             'name': _PATH_MATCHER_NAME,
-            'defaultService': backend_service.url,
+            'defaultService': default_service,
+            'defaultRouteAction': default_route_action,
         }]
     }
     logger.debug('Sending GCP request with body=%s', config)
@@ -960,6 +1103,20 @@ def patch_url_map_backend_service(gcp, backend_service):
         project=gcp.project, urlMap=gcp.url_map.name,
         body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
+
+
+def wait_for_instance_group_to_reach_expected_size(gcp, instance_group,
+                                                   expected_size, timeout_sec):
+    start_time = time.time()
+    while True:
+        current_size = len(get_instance_names(gcp, instance_group))
+        if current_size == expected_size:
+            break
+        if time.time() - start_time > timeout_sec:
+            raise Exception(
+                'Instance group had expected size %d but actual size %d' %
+                (expected_size, current_size))
+        time.sleep(2)
 
 
 def wait_for_global_operation(gcp,
@@ -1019,6 +1176,15 @@ def wait_for_healthy_backends(gcp,
         time.sleep(2)
     raise Exception('Not all backends became healthy within %d seconds: %s' %
                     (timeout_sec, result))
+
+
+def wait_for_config_propagation(gcp, instance_group, client_cmd, client_env):
+    """Use client to verify config propagation from GCP->TD->client"""
+    instance_names = get_instance_names(gcp, instance_group)
+    client_process = subprocess.Popen(shlex.split(client_cmd), env=client_env)
+    wait_until_all_rpcs_go_to_given_backends(instance_names,
+                                             _WAIT_FOR_VALID_CONFIG_SEC)
+    client_process.terminate()
 
 
 def get_instance_names(gcp, instance_group):
@@ -1205,6 +1371,13 @@ try:
             test_log_file = open(test_log_filename, 'w+')
             client_process = None
             if test_case in _TESTS_TO_FAIL_ON_RPC_FAILURE:
+                wait_for_config_propagation(
+                    gcp, instance_group,
+                    args.client_cmd.format(server_uri=server_uri,
+                                           stats_port=args.stats_port,
+                                           qps=args.qps,
+                                           fail_on_failed_rpc=False),
+                    client_env)
                 fail_on_failed_rpc = '--fail_on_failed_rpc=true'
             else:
                 fail_on_failed_rpc = '--fail_on_failed_rpc=false'
@@ -1245,6 +1418,10 @@ try:
                     test_secondary_locality_gets_requests_on_primary_failure(
                         gcp, backend_service, instance_group,
                         secondary_zone_instance_group)
+                elif test_case == 'traffic_splitting':
+                    test_traffic_splitting(gcp, backend_service, instance_group,
+                                           alternate_backend_service,
+                                           same_zone_instance_group)
                 else:
                     logger.error('Unknown test case: %s', test_case)
                     sys.exit(1)

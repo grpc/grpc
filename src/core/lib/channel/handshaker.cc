@@ -20,8 +20,6 @@
 
 #include <string.h>
 
-#include "absl/strings/str_format.h"
-
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -39,16 +37,19 @@ TraceFlag grpc_handshaker_trace(false, "handshaker");
 
 namespace {
 
-std::string HandshakerArgsString(HandshakerArgs* args) {
+char* HandshakerArgsString(HandshakerArgs* args) {
+  char* args_str = grpc_channel_args_string(args->args);
   size_t num_args = args->args != nullptr ? args->args->num_args : 0;
   size_t read_buffer_length =
       args->read_buffer != nullptr ? args->read_buffer->length : 0;
-  return absl::StrFormat(
-      "{endpoint=%p, args=%p {size=%" PRIuPTR
-      ": %s}, read_buffer=%p (length=%" PRIuPTR "), exit_early=%d}",
-      args->endpoint, args->args, num_args,
-      grpc_channel_args_string(args->args), args->read_buffer,
-      read_buffer_length, args->exit_early);
+  char* str;
+  gpr_asprintf(&str,
+               "{endpoint=%p, args=%p {size=%" PRIuPTR
+               ": %s}, read_buffer=%p (length=%" PRIuPTR "), exit_early=%d}",
+               args->endpoint, args->args, num_args, args_str,
+               args->read_buffer, read_buffer_length, args->exit_early);
+  gpr_free(args_str);
+  return str;
 }
 
 }  // namespace
@@ -126,11 +127,12 @@ void HandshakeManager::Shutdown(grpc_error* why) {
 // Returns true if we've scheduled the on_handshake_done callback.
 bool HandshakeManager::CallNextHandshakerLocked(grpc_error* error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
+    char* args_str = HandshakerArgsString(&args_);
     gpr_log(GPR_INFO,
             "handshake_manager %p: error=%s shutdown=%d index=%" PRIuPTR
             ", args=%s",
-            this, grpc_error_string(error), is_shutdown_, index_,
-            HandshakerArgsString(&args_).c_str());
+            this, grpc_error_string(error), is_shutdown_, index_, args_str);
+    gpr_free(args_str);
   }
   GPR_ASSERT(index_ <= handshakers_.size());
   // If we got an error or we've been shut down or we're exiting early or

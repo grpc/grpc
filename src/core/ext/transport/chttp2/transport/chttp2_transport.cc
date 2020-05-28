@@ -1356,8 +1356,10 @@ static void perform_stream_op_locked(void* stream_op,
   s->context = op->payload->context;
   s->traced = op->is_traced;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p",
-            grpc_transport_stream_op_batch_string(op).c_str(), op->on_complete);
+    char* str = grpc_transport_stream_op_batch_string(op);
+    gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p", str,
+            op->on_complete);
+    gpr_free(str);
     if (op->send_initial_metadata) {
       log_metadata(op_payload->send_initial_metadata.send_initial_metadata,
                    s->id, t->is_client, true);
@@ -1652,8 +1654,9 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   }
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "perform_stream_op[s=%p]: %s", s,
-            grpc_transport_stream_op_batch_string(op).c_str());
+    char* str = grpc_transport_stream_op_batch_string(op);
+    gpr_log(GPR_INFO, "perform_stream_op[s=%p]: %s", s, str);
+    gpr_free(str);
   }
 
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");
@@ -1842,8 +1845,9 @@ static void perform_transport_op_locked(void* stream_op,
 static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "perform_transport_op[t=%p]: %s", t,
-            grpc_transport_op_string(op).c_str());
+    char* msg = grpc_transport_op_string(op);
+    gpr_log(GPR_INFO, "perform_transport_op[t=%p]: %s", t, msg);
+    gpr_free(msg);
   }
   op->handler_private.extra_arg = gt;
   GRPC_CHTTP2_REF_TRANSPORT(t, "transport_op");

@@ -23,12 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <string>
-#include <vector>
-
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
@@ -177,19 +171,21 @@ int byte_buffer_eq_string(grpc_byte_buffer* bb, const char* str) {
 
 static bool is_probably_integer(void* p) { return ((uintptr_t)p) < 1000000; }
 
-namespace {
+static void expectation_to_strvec(gpr_strvec* buf, expectation* e) {
+  char* tmp;
 
-std::string ExpectationString(const expectation& e) {
-  std::string out;
-  if (is_probably_integer(e.tag)) {
-    out = absl::StrFormat("tag(%" PRIdPTR ") ", (intptr_t)e.tag);
+  if (is_probably_integer(e->tag)) {
+    gpr_asprintf(&tmp, "tag(%" PRIdPTR ") ", (intptr_t)e->tag);
   } else {
-    out = absl::StrFormat("%p ", e.tag);
+    gpr_asprintf(&tmp, "%p ", e->tag);
   }
-  switch (e.type) {
+  gpr_strvec_add(buf, tmp);
+
+  switch (e->type) {
     case GRPC_OP_COMPLETE:
-      absl::StrAppendFormat(&out, "GRPC_OP_COMPLETE success=%d %s:%d",
-                            e.success, e.file, e.line);
+      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE success=%d %s:%d", e->success,
+                   e->file, e->line);
+      gpr_strvec_add(buf, tmp);
       break;
     case GRPC_QUEUE_TIMEOUT:
     case GRPC_QUEUE_SHUTDOWN:
@@ -197,22 +193,27 @@ std::string ExpectationString(const expectation& e) {
       abort();
       break;
   }
-  return out;
 }
 
-std::string ExpectationsString(const cq_verifier& v) {
-  std::vector<std::string> expectations;
-  for (expectation* e = v.first_expectation; e != nullptr; e = e->next) {
-    expectations.push_back(ExpectationString(*e));
+static void expectations_to_strvec(gpr_strvec* buf, cq_verifier* v) {
+  expectation* e;
+
+  for (e = v->first_expectation; e != nullptr; e = e->next) {
+    expectation_to_strvec(buf, e);
+    gpr_strvec_add(buf, gpr_strdup("\n"));
   }
-  return absl::StrJoin(expectations, "\n");
 }
-
-}  // namespace
 
 static void fail_no_event_received(cq_verifier* v) {
-  gpr_log(GPR_ERROR, "no event received, but expected:%s",
-          ExpectationsString(*v).c_str());
+  gpr_strvec buf;
+  char* msg;
+  gpr_strvec_init(&buf);
+  gpr_strvec_add(&buf, gpr_strdup("no event received, but expected:\n"));
+  expectations_to_strvec(&buf, v);
+  msg = gpr_strvec_flatten(&buf, nullptr);
+  gpr_log(GPR_ERROR, "%s", msg);
+  gpr_strvec_destroy(&buf);
+  gpr_free(msg);
   abort();
 }
 
@@ -221,8 +222,13 @@ static void verify_matches(expectation* e, grpc_event* ev) {
   switch (e->type) {
     case GRPC_OP_COMPLETE:
       if (e->check_success && e->success != ev->success) {
-        gpr_log(GPR_ERROR, "actual success does not match expected: %s",
-                ExpectationString(*e).c_str());
+        gpr_strvec expected;
+        gpr_strvec_init(&expected);
+        expectation_to_strvec(&expected, e);
+        char* s = gpr_strvec_flatten(&expected, nullptr);
+        gpr_strvec_destroy(&expected);
+        gpr_log(GPR_ERROR, "actual success does not match expected: %s", s);
+        gpr_free(s);
         abort();
       }
       break;
@@ -258,9 +264,16 @@ void cq_verify(cq_verifier* v) {
       prev = e;
     }
     if (e == nullptr) {
-      gpr_log(GPR_ERROR, "cq returned unexpected event: %s",
-              grpc_event_string(&ev).c_str());
-      gpr_log(GPR_ERROR, "expected tags:\n%s", ExpectationsString(*v).c_str());
+      char* s = grpc_event_string(&ev);
+      gpr_log(GPR_ERROR, "cq returned unexpected event: %s", s);
+      gpr_free(s);
+      gpr_strvec expectations;
+      gpr_strvec_init(&expectations);
+      expectations_to_strvec(&expectations, v);
+      s = gpr_strvec_flatten(&expectations, nullptr);
+      gpr_strvec_destroy(&expectations);
+      gpr_log(GPR_ERROR, "expected tags:\n%s", s);
+      gpr_free(s);
       abort();
     }
   }
@@ -277,8 +290,9 @@ void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
 
   ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
-    gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s",
-            grpc_event_string(&ev).c_str());
+    char* s = grpc_event_string(&ev);
+    gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s", s);
+    gpr_free(s);
     abort();
   }
 }

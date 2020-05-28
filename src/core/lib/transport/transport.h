@@ -408,9 +408,8 @@ void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* op, grpc_error* error,
     grpc_core::CallCombiner* call_combiner);
 
-std::string grpc_transport_stream_op_batch_string(
-    grpc_transport_stream_op_batch* op);
-std::string grpc_transport_op_string(grpc_transport_op* op);
+char* grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch* op);
+char* grpc_transport_op_string(grpc_transport_op* op);
 
 /* Send a batch of operations on a transport
 

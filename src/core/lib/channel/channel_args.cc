@@ -21,11 +21,6 @@
 #include <limits.h>
 #include <string.h>
 
-#include <vector>
-
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/log.h>
@@ -341,28 +336,32 @@ grpc_arg grpc_channel_arg_pointer_create(
   return arg;
 }
 
-std::string grpc_channel_args_string(const grpc_channel_args* args) {
+char* grpc_channel_args_string(const grpc_channel_args* args) {
   if (args == nullptr) return nullptr;
-  std::vector<std::string> arg_strings;
+  gpr_strvec v;
+  gpr_strvec_init(&v);
   for (size_t i = 0; i < args->num_args; ++i) {
     const grpc_arg& arg = args->args[i];
-    std::string arg_string;
+    char* s;
     switch (arg.type) {
       case GRPC_ARG_INTEGER:
-        arg_string = absl::StrFormat("%s=%d", arg.key, arg.value.integer);
+        gpr_asprintf(&s, "%s=%d", arg.key, arg.value.integer);
         break;
       case GRPC_ARG_STRING:
-        arg_string = absl::StrFormat("%s=%s", arg.key, arg.value.string);
+        gpr_asprintf(&s, "%s=%s", arg.key, arg.value.string);
         break;
       case GRPC_ARG_POINTER:
-        arg_string = absl::StrFormat("%s=%p", arg.key, arg.value.pointer.p);
+        gpr_asprintf(&s, "%s=%p", arg.key, arg.value.pointer.p);
         break;
       default:
-        arg_string = "arg with unknown type";
+        gpr_asprintf(&s, "arg with unknown type");
     }
-    arg_strings.push_back(arg_string);
+    gpr_strvec_add(&v, s);
   }
-  return absl::StrJoin(arg_strings, ", ");
+  char* result =
+      gpr_strjoin_sep(const_cast<const char**>(v.strs), v.count, ", ", nullptr);
+  gpr_strvec_destroy(&v);
+  return result;
 }
 
 namespace {

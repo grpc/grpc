@@ -81,7 +81,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  using TraceStringVector = absl::InlinedVector<const char*, 3>;
+  using TraceStringVector = absl::InlinedVector<char*, 3>;
 
   class ResolverResultHandler;
   class ResolvingControlHelper;
@@ -99,7 +99,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void MaybeAddTraceMessagesForAddressChangesLocked(
       bool resolution_contains_addresses, TraceStringVector* trace_strings);
   void ConcatenateAndAddChannelTraceLocked(
-      const TraceStringVector& trace_strings) const;
+      TraceStringVector* trace_strings) const;
   void OnResolverResultChangedLocked(Resolver::Result result);
 
   // Passed in from caller at construction time.

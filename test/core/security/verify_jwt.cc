@@ -37,9 +37,10 @@ typedef struct {
 } synchronizer;
 
 static void print_usage_and_exit(gpr_cmdline* cl, const char* argv0) {
-  std::string usage = gpr_cmdline_usage_string(cl, argv0);
-  fprintf(stderr, "%s", usage.c_str());
+  char* usage = gpr_cmdline_usage_string(cl, argv0);
+  fprintf(stderr, "%s", usage);
   fflush(stderr);
+  gpr_free(usage);
   gpr_cmdline_destroy(cl);
   exit(1);
 }
