@@ -29,10 +29,12 @@ function greet($name)
     $request = new Helloworld\HelloRequest();
     $request->setName($name);
     list($reply, $status) = $client->SayHello($request)->wait();
-    $message = $reply->getMessage();
-
-    return $message;
+    if ($status->code !== Grpc\STATUS_OK) {
+        echo "ERROR: ".$status->code.", ".$status->details."\n";
+        exit(1);
+    }
+    echo $reply->getMessage()."\n";
 }
 
 $name = !empty($argv[1]) ? $argv[1] : 'world';
-echo greet($name)."\n";
+greet($name);
