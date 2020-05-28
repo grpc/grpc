@@ -52,7 +52,7 @@ _TEST_CASES = [
     'round_robin',
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure',
-    'traffic_splitting',
+    # 'traffic_splitting',
 ]
 
 
