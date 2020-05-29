@@ -71,14 +71,10 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   virtual ~ObjectiveCGrpcGenerator() {}
 
  public:
-  uint64_t GetSupportedFeatures() const override {
-    return FEATURE_PROTO3_OPTIONAL;
-  }
-
   virtual bool Generate(const grpc::protobuf::FileDescriptor* file,
                         const ::grpc::string& parameter,
                         grpc::protobuf::compiler::GeneratorContext* context,
-                        ::grpc::string* error) const override {
+                        ::grpc::string* error) const {
     if (file->service_count() == 0) {
       // No services.  Do nothing.
       return true;

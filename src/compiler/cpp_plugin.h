@@ -34,14 +34,10 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   CppGrpcGenerator() {}
   virtual ~CppGrpcGenerator() {}
 
-  uint64_t GetSupportedFeatures() const override {
-    return FEATURE_PROTO3_OPTIONAL;
-  }
-
   virtual bool Generate(const grpc::protobuf::FileDescriptor* file,
                         const grpc::string& parameter,
                         grpc::protobuf::compiler::GeneratorContext* context,
-                        grpc::string* error) const override {
+                        grpc::string* error) const {
     if (file->options().cc_generic_services()) {
       *error =
           "cpp grpc proto compiler plugin does not work with generic "
