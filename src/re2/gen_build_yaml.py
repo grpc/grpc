@@ -34,10 +34,12 @@ out['libs'] = [{
     'secure':
         False,
     'src':
-        sorted(glob.glob('third_party/re2/re2/*.cc')),
+        sorted(glob.glob('third_party/re2/re2/*.cc') +
+               glob.glob('third_party/re2/util/*.cc')),
     'headers':
         sorted(
-            glob.glob('third_party/re2/re2/*.h')),
+            glob.glob('third_party/re2/re2/*.h') +
+            glob.glob('third_party/re2/util/*.h')),
 }]
 
 print(yaml.dump(out))
