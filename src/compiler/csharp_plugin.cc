@@ -29,14 +29,10 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   CSharpGrpcGenerator() {}
   ~CSharpGrpcGenerator() {}
 
-  uint64_t GetSupportedFeatures() const override {
-    return FEATURE_PROTO3_OPTIONAL;
-  }
-
   bool Generate(const grpc::protobuf::FileDescriptor* file,
                 const grpc::string& parameter,
                 grpc::protobuf::compiler::GeneratorContext* context,
-                grpc::string* error) const override {
+                grpc::string* error) const {
     std::vector<std::pair<grpc::string, grpc::string> > options;
     grpc::protobuf::compiler::ParseGeneratorParameter(parameter, &options);
 

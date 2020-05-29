@@ -875,10 +875,6 @@ static bool ParseParameters(const grpc::string& parameter,
   return true;
 }
 
-uint64_t PythonGrpcGenerator::GetSupportedFeatures() const {
-  return FEATURE_PROTO3_OPTIONAL;
-}
-
 bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
                                    const grpc::string& parameter,
                                    GeneratorContext* context,

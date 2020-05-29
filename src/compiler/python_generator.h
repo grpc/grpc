@@ -44,12 +44,10 @@ class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   PythonGrpcGenerator(const GeneratorConfiguration& config);
   ~PythonGrpcGenerator();
 
-  uint64_t GetSupportedFeatures() const override;
-
   bool Generate(const grpc::protobuf::FileDescriptor* file,
                 const grpc::string& parameter,
                 grpc::protobuf::compiler::GeneratorContext* context,
-                grpc::string* error) const override;
+                grpc::string* error) const;
 
  private:
   GeneratorConfiguration config_;
