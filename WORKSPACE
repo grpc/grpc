@@ -43,6 +43,7 @@ rbe_autoconfig(
         # and older release branches select workers solely based on gce_machine_type.
         # Worker pools needs to be configured with care to avoid accidentally running
         # linux jobs on windows pool and vice versa (which would lead to a test breakage)
+        # TODO(jtattermusch): use the "labels" property to select the right executor pool
         os_family = "Linux",
     ),
     # use exec_properties instead of deprecated remote_execution_properties
