@@ -2387,4 +2387,10 @@ RefCountedPtr<XdsClient> XdsClient::GetFromChannelArgs(
   return nullptr;
 }
 
+grpc_channel_args* XdsClient::RemoveFromChannelArgs(
+    const grpc_channel_args& args) {
+  const char* arg_name = GRPC_ARG_XDS_CLIENT;
+  return grpc_channel_args_copy_and_remove(&args, &arg_name, 1);
+}
+
 }  // namespace grpc_core
