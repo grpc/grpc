@@ -6280,6 +6280,12 @@ LIBRE2_SRC = \
     third_party/re2/re2/tostring.cc \
     third_party/re2/re2/unicode_casefold.cc \
     third_party/re2/re2/unicode_groups.cc \
+    third_party/re2/util/benchmark.cc \
+    third_party/re2/util/fuzz.cc \
+    third_party/re2/util/pcre.cc \
+    third_party/re2/util/rune.cc \
+    third_party/re2/util/strutil.cc \
+    third_party/re2/util/test.cc \
 
 PUBLIC_HEADERS_CXX += \
 
