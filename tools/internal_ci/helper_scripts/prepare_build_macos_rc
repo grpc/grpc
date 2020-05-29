@@ -67,7 +67,7 @@ then
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
 
   # set xcode version for Obj-C tests
-  sudo xcode-select -switch /Applications/Xcode_11.5.app/Contents/Developer/
+  sudo xcode-select -switch /Applications/Xcode_11.3.app/Contents/Developer/
 
   # Needed for ios-binary-size
   time pip install --user pyyaml pyjwt cryptography requests
