@@ -61,6 +61,7 @@
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
       deps.append("${_gRPC_CARES_LIBRARIES}")
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
+      deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
@@ -313,6 +314,7 @@
   include(cmake/cares.cmake)
   include(cmake/gflags.cmake)
   include(cmake/protobuf.cmake)
+  include(cmake/re2.cmake)
   include(cmake/ssl.cmake)
   include(cmake/upb.cmake)
   include(cmake/zlib.cmake)
@@ -563,6 +565,7 @@
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
@@ -642,6 +645,7 @@
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
@@ -739,7 +743,7 @@
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "gpr openssl"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "upb", "cares", "z"] + list_absl_lib_files_for("grpc"))}"
+    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"] + list_absl_lib_files_for("grpc"))}"
     ""
     "grpc.pc")
 

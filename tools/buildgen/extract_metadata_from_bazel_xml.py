@@ -209,6 +209,8 @@ def _external_dep_name_from_bazel_dependency(bazel_dep):
         # special case for add dependency on one of the absl libraries (there is not just one absl library)
         prefixlen = len('@com_google_absl//')
         return bazel_dep[prefixlen:]
+    elif bazel_dep == '//external:re2':
+        return 're2'
     elif bazel_dep == '//external:upb_lib':
         return 'upb'
     elif bazel_dep == '//external:benchmark':
