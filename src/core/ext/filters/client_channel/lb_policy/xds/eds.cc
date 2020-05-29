@@ -149,6 +149,8 @@ class EdsLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
+  void MaybeDestroyChildPolicyLocked();
+
   void UpdatePriorityList(XdsApi::PriorityListUpdate priority_list_update);
   void UpdateChildPolicyLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
@@ -264,7 +266,9 @@ RefCountedPtr<SubchannelInterface> EdsLb::Helper::CreateSubchannel(
 
 void EdsLb::Helper::UpdateState(grpc_connectivity_state state,
                                 std::unique_ptr<SubchannelPicker> picker) {
-  if (eds_policy_->shutting_down_) return;
+  if (eds_policy_->shutting_down_ || eds_policy_->child_policy_ == nullptr) {
+    return;
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
     gpr_log(GPR_INFO, "[edslb %p] child policy updated state=%s picker=%p",
             eds_policy_.get(), ConnectivityStateName(state), picker.get());
@@ -352,6 +356,7 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
         absl::make_unique<TransientFailurePicker>(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "EDS resource does not exist")));
+    eds_policy_->MaybeDestroyChildPolicyLocked();
   }
 
  private:
@@ -398,11 +403,7 @@ void EdsLb::ShutdownLocked() {
   // Drop our ref to the child's picker, in case it's holding a ref to
   // the child.
   child_picker_.reset();
-  if (child_policy_ != nullptr) {
-    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
-                                     interested_parties());
-    child_policy_.reset();
-  }
+  MaybeDestroyChildPolicyLocked();
   drop_stats_.reset();
   // Cancel the endpoint watch here instead of in our dtor if we are using the
   // xds resolver, because the watcher holds a ref to us and we might not be
@@ -420,6 +421,14 @@ void EdsLb::ShutdownLocked() {
     xds_client_from_channel_.reset();
   }
   xds_client_.reset();
+}
+
+void EdsLb::MaybeDestroyChildPolicyLocked() {
+  if (child_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
+                                     interested_parties());
+    child_policy_.reset();
+  }
 }
 
 void EdsLb::UpdateLocked(UpdateArgs args) {
