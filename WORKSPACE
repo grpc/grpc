@@ -18,12 +18,12 @@ register_toolchains(
     "//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows",
 )
 
-load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_exec_properties_dict", "custom_exec_properties")
+load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_rbe_exec_properties_dict", "custom_exec_properties")
 
 custom_exec_properties(
     name = "grpc_custom_exec_properties",
     constants = {
-        "LARGE_MACHINE": create_exec_properties_dict(gce_machine_type = "n1-standard-8"),
+        "LARGE_MACHINE": create_rbe_exec_properties_dict(gce_machine_type = "n1-standard-8"),
     },
 )
 
@@ -32,7 +32,7 @@ load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 # Create toolchain configuration for remote execution.
 rbe_autoconfig(
     name = "rbe_default",
-    exec_properties = create_exec_properties_dict(
+    exec_properties = create_rbe_exec_properties_dict(
         docker_add_capabilities = "SYS_PTRACE",
         docker_privileged = True,
         # n1-highmem-2 is the default (small machine) machine type. Targets
