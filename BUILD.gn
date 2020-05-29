@@ -983,6 +983,7 @@ config("grpc_config") {
         ":gpr",
         ":address_sorting",
         ":upb",
+        ":re2",
         ":absl/types:optional",
         ":absl/strings:strings",
         ":absl/container:inlined_vector",
@@ -1280,6 +1281,7 @@ config("grpc_config") {
         ":gpr",
         ":address_sorting",
         ":upb",
+        ":re2",
     ]
     
     public_configs = [

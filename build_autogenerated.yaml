@@ -120,6 +120,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
   secure: false
 - name: end2end_tests
   build: private
@@ -229,6 +230,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
   secure: true
 - name: gpr
   build: all
@@ -1155,6 +1157,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
   - absl/types:optional
   - absl/strings:strings
   - absl/container:inlined_vector
@@ -1174,6 +1177,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
   dll: only
 - name: grpc_test_util
   build: private
@@ -1224,6 +1228,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: grpc_test_util_unsecure
   build: private
   language: c
@@ -1273,6 +1278,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
   secure: false
 - name: grpc_unsecure
   build: all
@@ -1936,6 +1942,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
   - absl/types:optional
   - absl/strings:strings
   - absl/container:inlined_vector
@@ -1964,6 +1971,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   defaults: benchmark
 - name: grpc++
@@ -2247,6 +2255,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
   baselib: true
   dll: true
 - name: grpc++_alts
@@ -2265,6 +2274,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
   baselib: true
 - name: grpc++_error_details
   build: all
@@ -2283,6 +2293,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: grpc++_reflection
   build: all
   language: c++
@@ -2302,6 +2313,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: grpc++_test
   build: private
   language: c++
@@ -2321,6 +2333,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: grpc++_test_config
   build: private
   language: c++
@@ -2359,6 +2372,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: grpc++_unsecure
   build: all
   language: c++
@@ -2629,6 +2643,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
   baselib: true
   dll: true
   secure: false
@@ -2690,6 +2705,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - re2
 targets:
 - name: algorithm_test
   build: test
@@ -2703,6 +2719,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: alloc_test
   build: test
@@ -2716,6 +2733,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: alpn_test
   build: test
@@ -2729,6 +2747,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: alts_counter_test
   build: test
   language: c
@@ -2743,6 +2762,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: alts_crypt_test
   build: test
   language: c
@@ -2757,6 +2777,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: alts_crypter_test
   build: test
   language: c
@@ -2771,6 +2792,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: alts_frame_protector_test
   build: test
   language: c
@@ -2787,6 +2809,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: alts_grpc_record_protocol_test
   build: test
   language: c
@@ -2801,6 +2824,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: alts_handshaker_client_test
   build: test
   language: c
@@ -2815,6 +2839,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: alts_iovec_record_protocol_test
   build: test
   language: c
@@ -2829,6 +2854,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: alts_security_connector_test
   build: test
   language: c
@@ -2841,6 +2867,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: alts_tsi_handshaker_test
   build: test
   language: c
@@ -2855,6 +2882,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: alts_tsi_utils_test
   build: test
   language: c
@@ -2869,6 +2897,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: alts_zero_copy_grpc_protector_test
   build: test
   language: c
@@ -2883,6 +2912,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: arena_test
   build: test
   language: c
@@ -2895,6 +2925,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: auth_context_test
   build: test
@@ -2908,6 +2939,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: avl_test
   build: test
@@ -2921,6 +2953,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: b64_test
   build: test
@@ -2934,6 +2967,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: bad_server_response_test
   build: test
@@ -2949,6 +2983,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: bad_ssl_alpn_test
   build: test
   language: c
@@ -2963,6 +2998,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -2981,6 +3017,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -2997,6 +3034,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: bin_encoder_test
   build: test
@@ -3010,6 +3048,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: buffer_list_test
   build: test
@@ -3023,6 +3062,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: channel_args_test
   build: test
   language: c
@@ -3035,6 +3075,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: channel_create_test
   build: test
@@ -3048,6 +3089,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: channel_stack_builder_test
   build: test
   language: c
@@ -3060,6 +3102,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: channel_stack_test
   build: test
   language: c
@@ -3072,6 +3115,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: check_gcp_environment_linux_test
   build: test
@@ -3085,6 +3129,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: check_gcp_environment_windows_test
   build: test
   language: c
@@ -3097,6 +3142,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: client_ssl_test
   build: test
   language: c
@@ -3109,6 +3155,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3125,6 +3172,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: combiner_test
   build: test
@@ -3138,6 +3186,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3155,6 +3204,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: compression_test
   build: test
   language: c
@@ -3167,6 +3217,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: concurrent_connectivity_test
   build: test
@@ -3180,6 +3231,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: connection_refused_test
   build: test
   language: c
@@ -3194,6 +3246,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: cpu_test
   build: test
   language: c
@@ -3206,6 +3259,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: dns_resolver_connectivity_using_ares_resolver_test
   build: test
@@ -3219,6 +3273,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   args:
   - --resolver=ares
 - name: dns_resolver_connectivity_using_native_resolver_test
@@ -3233,6 +3288,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   args:
   - --resolver=native
 - name: dns_resolver_cooldown_test
@@ -3247,6 +3303,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: dns_resolver_test
   build: test
   language: c
@@ -3259,6 +3316,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: dualstack_socket_test
   build: test
   language: c
@@ -3273,6 +3331,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3291,6 +3350,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: env_test
   build: test
   language: c
@@ -3303,6 +3363,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: error_test
   build: test
@@ -3318,6 +3379,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: ev_epollex_linux_test
   build: test
@@ -3331,6 +3393,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3347,6 +3410,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: fake_transport_security_test
   build: test
   language: c
@@ -3361,6 +3425,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -3373,6 +3438,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3389,6 +3455,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3410,6 +3477,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3431,6 +3499,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3447,6 +3516,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3469,6 +3539,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: frame_handler_test
   build: test
   language: c
@@ -3483,6 +3554,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: goaway_server_test
   build: test
   language: c
@@ -3497,6 +3569,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: grpc_alts_credentials_options_test
   build: test
   language: c
@@ -3509,6 +3582,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: grpc_byte_buffer_reader_test
   build: test
   language: c
@@ -3521,6 +3595,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: grpc_completion_queue_test
   build: test
@@ -3534,6 +3609,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: grpc_ipv6_loopback_available_test
   build: test
   language: c
@@ -3546,6 +3622,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: handshake_server_with_readahead_handshaker_test
   build: test
   language: c
@@ -3560,6 +3637,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3576,6 +3654,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3592,6 +3671,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: host_port_test
   build: test
@@ -3605,6 +3685,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: hpack_encoder_test
   build: test
@@ -3618,6 +3699,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: hpack_parser_test
   build: test
@@ -3631,6 +3713,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: hpack_table_test
   build: test
@@ -3644,6 +3727,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: httpcli_test
   build: test
@@ -3662,6 +3746,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3683,6 +3768,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3699,6 +3785,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: inproc_callback_test
   build: test
@@ -3713,6 +3800,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: invalid_call_argument_test
   build: test
@@ -3728,6 +3816,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: json_token_test
   build: test
   language: c
@@ -3740,6 +3829,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: jwt_verifier_test
   build: test
@@ -3753,6 +3843,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: lame_client_test
   build: test
@@ -3768,6 +3859,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: load_file_test
   build: test
   language: c
@@ -3780,6 +3872,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: log_test
   build: test
@@ -3793,6 +3886,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: manual_constructor_test
   build: test
@@ -3806,6 +3900,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: message_compress_test
   build: test
@@ -3819,6 +3914,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: metadata_test
   build: test
@@ -3832,6 +3928,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: minimal_stack_is_minimal_test
   build: test
   language: c
@@ -3844,6 +3941,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: mpmcqueue_test
   build: test
@@ -3857,6 +3955,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: mpscq_test
   build: test
@@ -3870,6 +3969,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3889,6 +3989,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: murmur_hash_test
   build: test
   language: c
@@ -3901,6 +4002,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: no_server_test
   build: test
@@ -3916,6 +4018,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: num_external_connectivity_watchers_test
   build: test
   language: c
@@ -3928,6 +4031,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: parse_address_test
   build: test
   language: c
@@ -3940,6 +4044,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: parse_address_with_named_scope_id_test
   build: test
   language: c
@@ -3952,6 +4057,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -3974,6 +4080,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: percent_encoding_test
   build: test
@@ -3987,6 +4094,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: public_headers_must_be_c89
   build: test
@@ -4000,6 +4108,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: resolve_address_using_ares_resolver_posix_test
   build: test
   language: c
@@ -4012,6 +4121,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   args:
   - --resolver=ares
   platforms:
@@ -4030,6 +4140,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   args:
   - --resolver=ares
 - name: resolve_address_using_native_resolver_posix_test
@@ -4044,6 +4155,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   args:
   - --resolver=native
   platforms:
@@ -4062,6 +4174,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   args:
   - --resolver=native
 - name: resource_quota_test
@@ -4076,6 +4189,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: secure_channel_create_test
   build: test
   language: c
@@ -4088,6 +4202,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: secure_endpoint_test
   build: test
   language: c
@@ -4102,6 +4217,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: security_connector_test
   build: test
   language: c
@@ -4114,6 +4230,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: sequential_connectivity_test
   build: test
   run: false
@@ -4127,6 +4244,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: server_chttp2_test
   build: test
   language: c
@@ -4139,6 +4257,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: server_ssl_test
   build: test
   language: c
@@ -4153,6 +4272,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -4169,6 +4289,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: slice_buffer_test
   build: test
   language: c
@@ -4181,6 +4302,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: slice_string_helpers_test
   build: test
@@ -4194,6 +4316,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: sockaddr_resolver_test
   build: test
@@ -4207,6 +4330,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: sockaddr_utils_test
   build: test
   language: c
@@ -4219,6 +4343,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: socket_utils_test
   build: test
   language: c
@@ -4231,6 +4356,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -4247,6 +4373,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: ssl_credentials_test
   build: test
@@ -4260,6 +4387,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: ssl_transport_security_test
   build: test
   language: c
@@ -4274,6 +4402,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -4290,6 +4419,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: stream_compression_test
   build: test
@@ -4303,6 +4433,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: stream_map_test
   build: test
@@ -4316,6 +4447,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: stream_owned_slice_test
   build: test
   language: c
@@ -4328,6 +4460,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: string_test
   build: test
@@ -4341,6 +4474,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: sync_test
   build: test
@@ -4354,6 +4488,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: tcp_client_posix_test
   build: test
@@ -4367,6 +4502,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -4385,6 +4521,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -4400,6 +4537,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -4416,6 +4554,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: test_core_security_credentials_test
   build: test
@@ -4429,6 +4568,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: test_core_slice_slice_test
   build: test
   language: c
@@ -4441,6 +4581,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: thd_test
   build: test
@@ -4454,6 +4595,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: threadpool_test
   build: test
@@ -4467,6 +4609,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: time_averaged_stats_test
   build: test
@@ -4480,6 +4623,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: timeout_encoding_test
   build: test
@@ -4493,6 +4637,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: timer_heap_test
   build: test
@@ -4506,6 +4651,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: timer_list_test
   build: test
@@ -4519,6 +4665,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: tls_test
   build: test
@@ -4532,6 +4679,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: transport_security_common_api_test
   build: test
@@ -4545,6 +4693,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: transport_security_test
   build: test
   language: c
@@ -4557,6 +4706,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: udp_server_test
   build: test
   language: c
@@ -4569,6 +4719,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -4585,6 +4736,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: useful_test
   build: test
   language: c
@@ -4597,6 +4749,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: varint_test
   build: test
@@ -4610,6 +4763,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: address_sorting_test
   gtest: true
@@ -4627,6 +4781,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -4652,6 +4807,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -4670,6 +4826,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -4694,6 +4851,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -4712,6 +4870,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/security/corpus/alts_credentials_corpus
   maxlen: 2048
@@ -4731,6 +4890,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: async_end2end_test
   gtest: true
   build: test
@@ -4751,6 +4911,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: auth_property_iterator_test
   gtest: true
   build: test
@@ -4766,6 +4927,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: backoff_test
   gtest: true
@@ -4780,6 +4942,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: bad_streaming_id_bad_client_test
   gtest: true
@@ -4798,6 +4961,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: badreq_bad_client_test
   gtest: true
   build: test
@@ -4815,6 +4979,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: bdp_estimator_test
   gtest: true
   build: test
@@ -4828,6 +4993,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -4848,6 +5014,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -4869,6 +5036,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -4891,6 +5059,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -4913,6 +5082,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -4944,6 +5114,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -4974,6 +5145,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -4995,6 +5167,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5017,6 +5190,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5039,6 +5213,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5060,6 +5235,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5081,6 +5257,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5102,6 +5279,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5124,6 +5302,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5147,6 +5326,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5169,6 +5349,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5191,6 +5372,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5214,6 +5396,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5235,6 +5418,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5257,6 +5441,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5279,6 +5464,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5302,6 +5488,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -5324,6 +5511,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: byte_stream_test
   gtest: true
@@ -5338,6 +5526,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: cancel_ares_query_test
   gtest: true
@@ -5359,6 +5548,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: cfstream_test
   gtest: true
   build: test
@@ -5380,6 +5570,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: channel_arguments_test
   gtest: true
   build: test
@@ -5394,6 +5585,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: channel_filter_test
   gtest: true
@@ -5409,6 +5601,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: channel_trace_test
   gtest: true
@@ -5427,6 +5620,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: channelz_registry_test
   gtest: true
   build: test
@@ -5441,6 +5635,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: channelz_service_test
   gtest: true
@@ -5463,6 +5658,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: channelz_test
   gtest: true
   build: test
@@ -5480,6 +5676,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: cli_call_test
   gtest: true
   build: test
@@ -5512,6 +5709,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: client_callback_end2end_test
   gtest: true
   build: test
@@ -5534,6 +5732,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: client_channel_stress_test
   gtest: true
   build: test
@@ -5557,6 +5756,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -5575,6 +5775,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/end2end/fuzzers/client_fuzzer_corpus
   dict: test/core/end2end/fuzzers/hpack.dictionary
@@ -5601,6 +5802,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: client_lb_end2end_test
   gtest: true
   build: test
@@ -5626,6 +5828,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -5644,6 +5847,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: codegen_test_minimal
   gtest: true
@@ -5659,6 +5863,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: connection_prefix_bad_client_test
   gtest: true
@@ -5677,6 +5882,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: connectivity_state_test
   gtest: true
   build: test
@@ -5690,6 +5896,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: context_list_test
   gtest: true
   build: test
@@ -5703,6 +5910,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: delegating_channel_test
   gtest: true
@@ -5724,6 +5932,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: destroy_grpclb_channel_with_active_connect_stress_test
   gtest: true
   build: test
@@ -5739,6 +5948,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test
@@ -5756,6 +5966,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: end2end_test
   gtest: true
   build: test
@@ -5781,6 +5992,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: error_details_test
   gtest: true
   build: test
@@ -5797,6 +6009,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: eventmanager_libuv_test
   gtest: true
   build: test
@@ -5810,6 +6023,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: exception_test
   gtest: true
@@ -5829,6 +6043,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: filter_end2end_test
   gtest: true
   build: test
@@ -5848,6 +6063,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: flaky_network_test
   gtest: true
   build: test
@@ -5869,6 +6085,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -5888,6 +6105,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: global_config_env_test
   gtest: true
   build: test
@@ -5901,6 +6119,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -5919,6 +6138,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: grpc_cli
   build: test
@@ -5948,6 +6168,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
@@ -6024,6 +6245,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: grpc_tool_test
   gtest: true
   build: test
@@ -6056,6 +6278,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -6076,6 +6299,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: grpclb_end2end_test
   gtest: true
   build: test
@@ -6099,6 +6323,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -6117,6 +6342,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: head_of_line_blocking_bad_client_test
   gtest: true
   build: test
@@ -6134,6 +6360,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: headers_bad_client_test
   gtest: true
   build: test
@@ -6151,6 +6378,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: health_service_end2end_test
   gtest: true
   build: test
@@ -6175,6 +6403,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: hpack_parser_fuzzer_test
   build: fuzzer
   language: c++
@@ -6189,6 +6418,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/transport/chttp2/hpack_parser_corpus
   dict: test/core/end2end/fuzzers/hpack.dictionary
@@ -6212,6 +6442,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: http_request_fuzzer_test
   build: fuzzer
   language: c++
@@ -6226,6 +6457,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/http/request_corpus
   maxlen: 2048
@@ -6243,6 +6475,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/http/response_corpus
   maxlen: 2048
@@ -6267,6 +6500,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: initial_settings_frame_bad_client_test
   gtest: true
   build: test
@@ -6284,6 +6518,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: interop_client
   build: test
   run: false
@@ -6309,6 +6544,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: interop_server
   build: test
   run: false
@@ -6331,6 +6567,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: interop_test
   build: test
   language: c++
@@ -6346,6 +6583,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -6364,6 +6602,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/json/corpus
   maxlen: 512
@@ -6380,6 +6619,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: large_metadata_bad_client_test
   gtest: true
@@ -6398,6 +6638,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: lb_get_cpu_stats_test
   gtest: true
   build: test
@@ -6417,6 +6658,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: lb_load_data_store_test
   gtest: true
   build: test
@@ -6434,6 +6676,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: linux_system_roots_test
   gtest: true
   build: test
@@ -6447,6 +6690,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: message_allocator_end2end_test
   gtest: true
   build: test
@@ -6467,6 +6711,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: mock_test
   gtest: true
   build: test
@@ -6487,6 +6732,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: nanopb_fuzzer_response_test
   build: fuzzer
   language: c++
@@ -6501,6 +6747,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/nanopb/corpus_response
   maxlen: 128
@@ -6518,6 +6765,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/nanopb/corpus_serverlist
   maxlen: 128
@@ -6539,6 +6787,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: noop-benchmark
   build: test
   language: c++
@@ -6551,6 +6800,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -6567,6 +6817,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: out_of_bounds_bad_client_test
   gtest: true
   build: test
@@ -6584,6 +6835,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c++
@@ -6598,6 +6850,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/slice/percent_decode_corpus
   maxlen: 32
@@ -6615,6 +6868,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/slice/percent_encode_corpus
   maxlen: 32
@@ -6631,6 +6885,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: port_sharing_end2end_test
   gtest: true
   build: test
@@ -6651,6 +6906,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -6675,6 +6931,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: proto_utils_test
   gtest: true
   build: test
@@ -6689,6 +6946,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: qps_json_driver
   build: test
@@ -6741,6 +6999,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: qps_worker
   build: test
   run: false
@@ -6783,6 +7042,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: raw_end2end_test
   gtest: true
   build: test
@@ -6804,6 +7064,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: ref_counted_ptr_test
   gtest: true
   build: test
@@ -6817,6 +7078,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: ref_counted_test
   gtest: true
   build: test
@@ -6830,6 +7092,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: retry_throttle_test
   gtest: true
   build: test
@@ -6843,6 +7106,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: secure_auth_context_test
   gtest: true
@@ -6859,6 +7123,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: server_builder_plugin_test
   gtest: true
   build: test
@@ -6880,6 +7145,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: server_builder_test
   gtest: true
   build: test
@@ -6897,6 +7163,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -6918,6 +7185,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -6938,6 +7206,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: server_early_return_test
   gtest: true
   build: test
@@ -6956,6 +7225,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: server_fuzzer
   build: fuzzer
   language: c++
@@ -6970,6 +7240,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/end2end/fuzzers/server_fuzzer_corpus
   dict: test/core/end2end/fuzzers/hpack.dictionary
@@ -6996,6 +7267,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: server_registered_method_bad_client_test
   gtest: true
   build: test
@@ -7013,6 +7285,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: server_request_call_test
   gtest: true
   build: test
@@ -7030,6 +7303,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -7055,6 +7329,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: service_config_test
   gtest: true
   build: test
@@ -7068,6 +7343,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: settings_timeout_test
   gtest: true
   build: test
@@ -7082,6 +7358,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: shutdown_test
   gtest: true
   build: test
@@ -7101,6 +7378,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: simple_request_bad_client_test
   gtest: true
   build: test
@@ -7118,6 +7396,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: slice_hash_table_test
   gtest: true
   build: test
@@ -7131,6 +7410,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: slice_weak_hash_table_test
   gtest: true
@@ -7145,6 +7425,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: ssl_server_fuzzer
   build: fuzzer
@@ -7160,6 +7441,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
   maxlen: 2048
@@ -7176,6 +7458,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: stats_test
   gtest: true
   build: test
@@ -7189,6 +7472,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: status_metadata_test
   gtest: true
@@ -7203,6 +7487,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: status_util_test
   gtest: true
@@ -7217,6 +7502,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: streaming_throughput_test
   gtest: true
@@ -7237,6 +7523,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -7255,6 +7542,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: test_cpp_client_credentials_test
   gtest: true
@@ -7270,6 +7558,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: test_cpp_util_slice_test
   gtest: true
   build: test
@@ -7285,6 +7574,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: test_cpp_util_time_test
   gtest: true
@@ -7301,6 +7591,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   uses_polling: false
 - name: thread_manager_test
   gtest: true
@@ -7318,6 +7609,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: thread_stress_test
   gtest: true
   build: test
@@ -7337,6 +7629,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -7356,6 +7649,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -7374,6 +7668,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: tls_security_connector_test
   gtest: true
   build: test
@@ -7387,6 +7682,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: unknown_frame_bad_client_test
   gtest: true
   build: test
@@ -7404,6 +7700,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: uri_fuzzer_test
   build: fuzzer
   language: c++
@@ -7418,6 +7715,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   corpus_dirs:
   - test/core/client_channel/uri_corpus
   maxlen: 128
@@ -7438,6 +7736,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: work_serializer_test
   gtest: true
   build: test
@@ -7451,6 +7750,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -7509,6 +7809,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -7526,6 +7827,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: xds_end2end_test
   gtest: true
   build: test
@@ -7553,6 +7855,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
   platforms:
   - linux
   - posix
@@ -7575,6 +7878,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 - name: xds_interop_server
   build: test
   run: false
@@ -7593,4 +7897,5 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - re2
 tests: []
