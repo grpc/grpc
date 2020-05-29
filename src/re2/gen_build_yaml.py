@@ -33,8 +33,6 @@ out['libs'] = [{
         'c++',
     'secure':
         False,
-    'defaults':
-        're2',
     'src':
         sorted(glob.glob('third_party/re2/re2/*.cc')),
     'headers':
