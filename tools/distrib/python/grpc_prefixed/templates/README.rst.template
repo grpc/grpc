@@ -1,0 +1,1 @@
+The official package of {{ name_long }} is `{{ destination_package }} <https://pypi.org/project/{{ destination_package }}/>`_.
