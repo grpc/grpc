@@ -20,6 +20,7 @@ agnostic. A quick executable command:
 """
 
 import dataclasses
+import datetime
 import logging
 import os
 import shutil
@@ -37,6 +38,7 @@ env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.join(WORK_PATH, 'templates')))
 
 LOGGER = logging.getLogger(__name__)
+POPEN_TIMEOUT_S = datetime.timedelta(minutes=1).total_seconds()
 
 
 @dataclasses.dataclass
@@ -84,12 +86,12 @@ def generate_package(meta: PackageMeta) -> None:
                            cwd=package_path,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT)
-    returncode = job.wait()
+    outs, _ = job.communicate(timeout=POPEN_TIMEOUT_S)
 
     # Logs result
-    if returncode != 0:
-        LOGGER.error('Wheel creation failed with %d', returncode)
-        LOGGER.error(job.stdout)
+    if job.returncode != 0:
+        LOGGER.error('Wheel creation failed with %d', job.returncode)
+        LOGGER.error(outs)
     else:
         LOGGER.info('Package <%s> generated', meta.name)
 
