@@ -27,4 +27,5 @@ MetadataType = Sequence[MetadatumType]
 ChannelArgumentType = Sequence[Tuple[str, Any]]
 EOFType = type(EOF)
 DoneCallbackType = Callable[[Any], None]
-RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]
+RequestIterableType = Union[Iterable[RequestType], AsyncIterable[RequestType]]
+ResponseIterableType = AsyncIterable[ResponseType]

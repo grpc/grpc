@@ -242,38 +242,23 @@ class Channel(_base_channel.Channel):
         self._stream_unary_interceptors = []
         self._stream_stream_interceptors = []
 
-        if interceptors:
-            attrs_and_interceptor_classes = ((self._unary_unary_interceptors,
-                                              UnaryUnaryClientInterceptor),
-                                             (self._unary_stream_interceptors,
-                                              UnaryStreamClientInterceptor),
-                                             (self._stream_unary_interceptors,
-                                              StreamUnaryClientInterceptor),
-                                             (self._stream_stream_interceptors,
-                                              StreamStreamClientInterceptor))
-
-            # pylint: disable=cell-var-from-loop
-            for attr, interceptor_class in attrs_and_interceptor_classes:
-                attr.extend([
-                    interceptor for interceptor in interceptors
-                    if isinstance(interceptor, interceptor_class)
-                ])
-
-            invalid_interceptors = set(interceptors) - set(
-                self._unary_unary_interceptors) - set(
-                    self._unary_stream_interceptors) - set(
-                        self._stream_unary_interceptors) - set(
-                            self._stream_stream_interceptors)
-
-            if invalid_interceptors:
-                raise ValueError(
-                    "Interceptor must be " +
-                    "{} or ".format(UnaryUnaryClientInterceptor.__name__) +
-                    "{} or ".format(UnaryStreamClientInterceptor.__name__) +
-                    "{} or ".format(StreamUnaryClientInterceptor.__name__) +
-                    "{}. ".format(StreamStreamClientInterceptor.__name__) +
-                    "The following are invalid: {}".format(invalid_interceptors)
-                )
+        if interceptors is not None:
+            for interceptor in interceptors:
+                if isinstance(interceptor, UnaryUnaryClientInterceptor):
+                    self._unary_unary_interceptors.append(interceptor)
+                elif isinstance(interceptor, UnaryStreamClientInterceptor):
+                    self._unary_stream_interceptors.append(interceptor)
+                elif isinstance(interceptor, StreamUnaryClientInterceptor):
+                    self._stream_unary_interceptors.append(interceptor)
+                elif isinstance(interceptor, StreamStreamClientInterceptor):
+                    self._stream_stream_interceptors.append(interceptor)
+                else:
+                    raise ValueError(
+                        "Interceptor {} must be ".format(interceptor) +
+                        "{} or ".format(UnaryUnaryClientInterceptor.__name__) +
+                        "{} or ".format(UnaryStreamClientInterceptor.__name__) +
+                        "{} or ".format(StreamUnaryClientInterceptor.__name__) +
+                        "{}. ".format(StreamStreamClientInterceptor.__name__))
 
         self._loop = asyncio.get_event_loop()
         self._channel = cygrpc.AioChannel(

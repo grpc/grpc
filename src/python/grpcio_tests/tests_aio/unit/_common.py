@@ -15,7 +15,8 @@
 import asyncio
 import grpc
 from grpc.experimental import aio
-from grpc.experimental.aio._typing import MetadataType, MetadatumType
+from grpc.experimental.aio._typing import MetadataType, MetadatumType, RequestIterableType
+from grpc.experimental.aio._typing import ResponseIterableType, RequestType, ResponseType
 
 from tests.unit.framework.common import test_constants
 
@@ -37,7 +38,7 @@ async def block_until_certain_state(channel: aio.Channel,
         state = channel.get_state()
 
 
-def inject_callbacks(call):
+def inject_callbacks(call: aio.Call):
     first_callback_ran = asyncio.Event()
 
     def first_callback(call):
@@ -68,29 +69,29 @@ def inject_callbacks(call):
 
 class CountingRequestIterator:
 
-    def __init__(self, request_iterator):
+    def __init__(self, request_iterator: RequestIterableType) -> None:
         self.request_cnt = 0
         self._request_iterator = request_iterator
 
-    async def _forward_requests(self):
+    async def _forward_requests(self) -> RequestType:
         async for request in self._request_iterator:
             self.request_cnt += 1
             yield request
 
-    def __aiter__(self):
+    def __aiter__(self) -> RequestIterableType:
         return self._forward_requests()
 
 
 class CountingResponseIterator:
 
-    def __init__(self, response_iterator):
+    def __init__(self, response_iterator: ResponseIterableType) -> None:
         self.response_cnt = 0
         self._response_iterator = response_iterator
 
-    async def _forward_responses(self):
+    async def _forward_responses(self) -> ResponseType:
         async for response in self._response_iterator:
             self.response_cnt += 1
             yield response
 
-    def __aiter__(self):
+    def __aiter__(self) -> ResponseIterableType:
         return self._forward_responses()
