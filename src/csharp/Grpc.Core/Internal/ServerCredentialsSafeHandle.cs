@@ -43,6 +43,7 @@ namespace Grpc.Core.Internal
             ServerCredentialsOptionsSafeHandle serverCredentialsOptions;
             if (serverCertificateConfigCallbackTag == IntPtr.Zero)
             {
+                GrpcPreconditions.CheckArgument(keyCertPairCertChainArray.Length == keyCertPairPrivateKeyArray.Length);
                 ServerCertificateConfigSafeHandle serverCertificateConfig =
                     ServerCertificateConfigSafeHandle.CreateSslServerCertificateConfig(pemRootCerts, keyCertPairCertChainArray, keyCertPairPrivateKeyArray); // Remember that this is unnecessary if using CreateSslServerCredentialsOptionsUsingConfigFetcher
                 serverCredentialsOptions =
