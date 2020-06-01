@@ -28,7 +28,7 @@ out['libs'] = [{
     'name':
         're2',
     'build' :
-        'private',
+        'all',
     'language':
         'c++',
     'secure':
