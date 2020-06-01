@@ -19,6 +19,7 @@ def fork_handlers_and_grpc_init():
     grpc_init()
 
 
+# TODO: Propagate contextvars.
 class ForkManagedThread(object):
     def __init__(self, target, args=()):
         self._thread = threading.Thread(target=target, args=args)
