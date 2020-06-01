@@ -3667,7 +3667,6 @@ if(gRPC_INSTALL)
 endif()
 
 endif()
-if(gRPC_BUILD_TESTS)
 
 add_library(re2
   third_party/re2/re2/bitstate.cc
@@ -3725,20 +3724,23 @@ target_include_directories(re2
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(re2
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 
+
+if(gRPC_INSTALL)
+  install(TARGETS re2 EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
 endif()
+
 
 add_library(upb
   third_party/upb/upb/decode.c
