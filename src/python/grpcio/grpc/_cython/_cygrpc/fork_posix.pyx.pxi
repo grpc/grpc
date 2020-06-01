@@ -94,6 +94,26 @@ def fork_handlers_and_grpc_init():
                 _fork_state.fork_handler_registered = True
 
 
+def _contextvars_supported():
+    return sys.version_info[0] == 3 and sys.version_info[1] >= 7
+
+
+if _contextvars_supported():
+    import contextvars
+    def _run_with_context(target):
+        ctx = contextvars.copy_context()
+        def _run(*args):
+            ctx.run(target, *args)
+        return _run
+else:
+    # NOTE(rbellevi): `contextvars` was not introduced until 3.7. On earlier
+    # interpreters, we simply do not propagate contextvars between threads.
+    def _run_with_context(target):
+        def _run(*args):
+            target(*args)
+        return _run
+
+
 class ForkManagedThread(object):
     def __init__(self, target, args=()):
         if _GRPC_ENABLE_FORK_SUPPORT:
@@ -102,9 +122,9 @@ class ForkManagedThread(object):
                     target(*args)
                 finally:
                     _fork_state.active_thread_count.decrement()
-            self._thread = threading.Thread(target=managed_target, args=args)
+            self._thread = threading.Thread(target=_run_with_context(managed_target), args=args)
         else:
-            self._thread = threading.Thread(target=target, args=args)
+            self._thread = threading.Thread(target=_run_with_context(target), args=args)
 
     def setDaemon(self, daemonic):
         self._thread.daemon = daemonic
