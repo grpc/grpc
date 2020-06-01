@@ -94,8 +94,12 @@ def fork_handlers_and_grpc_init():
                 _fork_state.fork_handler_registered = True
 
 
-def _contextvars_supported():
-    return sys.version_info[0] == 3 and sys.version_info[1] >= 7
+def contextvars_supported():
+    try:
+        import contextvars
+        return True
+    except ImportError:
+        return False
 
 
 if _contextvars_supported():
