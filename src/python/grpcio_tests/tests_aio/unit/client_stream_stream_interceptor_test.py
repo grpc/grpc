@@ -91,8 +91,8 @@ class TestStreamStreamClientInterceptor(AioTestBase):
                 response_cnt = 0
                 async for response in call:
                     response_cnt += 1
-                    self.assertIs(type(response),
-                                  messages_pb2.StreamingOutputCallResponse)
+                    self.assertIsInstance(
+                        response, messages_pb2.StreamingOutputCallResponse)
                     self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
                                      len(response.payload.body))
 

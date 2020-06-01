@@ -962,7 +962,7 @@ class UnaryStreamCallResponseIterator(_StreamCallResponseIterator,
 
 class StreamStreamCallResponseIterator(_StreamCallResponseIterator,
                                        _base_call.StreamStreamCall):
-    """UnaryStreamCall class wich uses an alternative response iterator."""
+    """StreamStreamCall class wich uses an alternative response iterator."""
 
     async def read(self) -> ResponseType:
         # Behind the scenes everyting goes through the
