@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -245,9 +247,7 @@ static void simple_request_body(grpc_end2end_test_config config,
 
   grpc_stats_collect(after);
 
-  char* stats = grpc_stats_data_as_json(after);
-  gpr_log(GPR_DEBUG, "%s", stats);
-  gpr_free(stats);
+  gpr_log(GPR_DEBUG, "%s", grpc_stats_data_as_json(after).c_str());
 
   GPR_ASSERT(after->counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED] -
                  before->counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED] ==
