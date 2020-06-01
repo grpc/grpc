@@ -34,7 +34,11 @@ def _unary_unary_handler(request, context):
 
 
 def contextvars_supported():
-    return sys.version_info[0] == 3 and sys.version_info[1] >= 7
+    try:
+        import contextvars
+        return True
+    except ImportError:
+        return False
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
