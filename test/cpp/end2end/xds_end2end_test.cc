@@ -1204,8 +1204,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (!expected_targets.empty()) {
       args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
     }
-    grpc::string scheme =
-        GetParam().use_xds_resolver() ? "xds-experimental" : "fake";
+    grpc::string scheme = GetParam().use_xds_resolver() ? "xds" : "fake";
     std::ostringstream uri;
     uri << scheme << ":///" << kApplicationTargetName_;
     // TODO(dgq): templatize tests to run everything using both secure and

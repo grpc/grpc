@@ -57,4 +57,4 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,cds_lb,eds_lb,priority_l
     --gcp_suffix=$(date '+%s') \
     --only_stable_gcp_apis \
     --verbose \
-    --client_cmd='ruby src/ruby/pb/test/xds_client.rb --server=xds-experimental:///{server_uri} --stats_port={stats_port} --qps={qps}'
+    --client_cmd='ruby src/ruby/pb/test/xds_client.rb --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps}'
