@@ -2869,8 +2869,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        ":proto_gen_validate_upb",
         ":google_api_upbdefs",
+        ":proto_gen_validate_upb",
     ],
 )
 
@@ -2935,8 +2935,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        ":udpa_annotations_upb",
         ":google_api_upbdefs",
+        ":udpa_annotations_upb",
     ],
 )
 
@@ -3025,7 +3025,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         ":google_api_upb",
-    ]
+    ],
 )
 
 # Once upb code-gen issue is resolved, replace grpc_lb_upb with this.
