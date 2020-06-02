@@ -108,6 +108,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
   Status RunClient(
       ServerContext* ctx,
       ServerReaderWriter<ClientStatus, ClientArgs>* stream) override {
+    gpr_log(GPR_INFO, "RunClient: Entering");
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Client worker busy");
@@ -122,6 +123,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
   Status RunServer(
       ServerContext* ctx,
       ServerReaderWriter<ServerStatus, ServerArgs>* stream) override {
+    gpr_log(GPR_INFO, "RunServer: Entering");
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Server worker busy");
@@ -287,6 +289,15 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
   builder->RegisterService(impl_.get());
 
   server_ = builder->BuildAndStart();
+  if (server_ == nullptr) {
+    gpr_log(GPR_ERROR,
+            "QpsWorker: Fail to BuildAndStart(driver_port=%d, server_port=%d)",
+            driver_port, server_port);
+  } else {
+    gpr_log(GPR_INFO,
+            "QpsWorker: BuildAndStart(driver_port=%d, server_port=%d) done",
+            driver_port, server_port);
+  }
 }
 
 QpsWorker::~QpsWorker() {}

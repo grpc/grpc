@@ -31,12 +31,15 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
 #include "envoy/api/v2/cds.upb.h"
 #include "envoy/api/v2/cds.upbdefs.h"
+#include "envoy/api/v2/cluster.upbdefs.h"
 #include "envoy/api/v2/core/address.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
 #include "envoy/api/v2/core/config_source.upb.h"
@@ -45,11 +48,13 @@
 #include "envoy/api/v2/discovery.upbdefs.h"
 #include "envoy/api/v2/eds.upb.h"
 #include "envoy/api/v2/eds.upbdefs.h"
+#include "envoy/api/v2/endpoint.upbdefs.h"
 #include "envoy/api/v2/endpoint/endpoint.upb.h"
 #include "envoy/api/v2/endpoint/load_report.upb.h"
 #include "envoy/api/v2/lds.upb.h"
 #include "envoy/api/v2/rds.upb.h"
 #include "envoy/api/v2/rds.upbdefs.h"
+#include "envoy/api/v2/route.upbdefs.h"
 #include "envoy/api/v2/route/route.upb.h"
 #include "envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h"
 #include "envoy/config/listener/v2/api_listener.upb.h"
@@ -133,10 +138,23 @@ const char* XdsApi::kCdsTypeUrl = "type.googleapis.com/envoy.api.v2.Cluster";
 const char* XdsApi::kEdsTypeUrl =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 
+namespace {
+
+bool XdsRoutingEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
+}  // namespace
+
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
                const XdsBootstrap::Node* node)
     : client_(client),
       tracer_(tracer),
+      xds_routing_enabled_(XdsRoutingEnabled()),
       node_(node),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string())),
@@ -293,6 +311,10 @@ envoy_api_v2_DiscoveryRequest* CreateDiscoveryRequest(
     GRPC_ERROR_UNREF(error);
   }
   return request;
+}
+
+inline std::string UpbStringToStdString(const upb_strview& str) {
+  return std::string(str.data, str.size);
 }
 
 void MaybeLogDiscoveryRequest(XdsClient* client, TraceFlag* tracer,
@@ -527,6 +549,76 @@ MatchType DomainPatternMatchType(const std::string& domain_pattern) {
   return INVALID_MATCH;
 }
 
+grpc_error* RouteActionParse(const envoy_api_v2_route_Route* route,
+                             XdsApi::RdsUpdate::RdsRoute* rds_route) {
+  if (!envoy_api_v2_route_Route_has_route(route)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "No RouteAction found in route.");
+  }
+  const envoy_api_v2_route_RouteAction* route_action =
+      envoy_api_v2_route_Route_route(route);
+  // Get the cluster or weighted_clusters in the RouteAction.
+  if (envoy_api_v2_route_RouteAction_has_cluster(route_action)) {
+    const upb_strview cluster_name =
+        envoy_api_v2_route_RouteAction_cluster(route_action);
+    if (cluster_name.size == 0) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "RouteAction cluster contains empty cluster name.");
+    }
+    rds_route->cluster_name = UpbStringToStdString(cluster_name);
+  } else if (envoy_api_v2_route_RouteAction_has_weighted_clusters(
+                 route_action)) {
+    const envoy_api_v2_route_WeightedCluster* weighted_cluster =
+        envoy_api_v2_route_RouteAction_weighted_clusters(route_action);
+    uint32_t total_weight = 100;
+    const google_protobuf_UInt32Value* weight =
+        envoy_api_v2_route_WeightedCluster_total_weight(weighted_cluster);
+    if (weight != nullptr) {
+      total_weight = google_protobuf_UInt32Value_value(weight);
+    }
+    size_t clusters_size;
+    const envoy_api_v2_route_WeightedCluster_ClusterWeight* const* clusters =
+        envoy_api_v2_route_WeightedCluster_clusters(weighted_cluster,
+                                                    &clusters_size);
+    uint32_t sum_of_weights = 0;
+    for (size_t j = 0; j < clusters_size; ++j) {
+      const envoy_api_v2_route_WeightedCluster_ClusterWeight* cluster_weight =
+          clusters[j];
+      XdsApi::RdsUpdate::RdsRoute::ClusterWeight cluster;
+      cluster.name = UpbStringToStdString(
+          envoy_api_v2_route_WeightedCluster_ClusterWeight_name(
+              cluster_weight));
+      if (cluster.name.empty()) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "RouteAction weighted_cluster cluster contains empty cluster "
+            "name.");
+      }
+      const google_protobuf_UInt32Value* weight =
+          envoy_api_v2_route_WeightedCluster_ClusterWeight_weight(
+              cluster_weight);
+      if (weight == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "RouteAction weighted_cluster cluster missing weight");
+      }
+      cluster.weight = google_protobuf_UInt32Value_value(weight);
+      sum_of_weights += cluster.weight;
+      rds_route->weighted_clusters.emplace_back(std::move(cluster));
+    }
+    if (total_weight != sum_of_weights) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "RouteAction weighted_cluster has incorrect total weight");
+    }
+    if (rds_route->weighted_clusters.empty()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "RouteAction weighted_cluster has no valid clusters specified.");
+    }
+  } else {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "No cluster or weighted_clusters found in RouteAction.");
+  }
+  return GRPC_ERROR_NONE;
+}
+
 grpc_error* RouteConfigParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_api_v2_RouteConfiguration* route_config,
@@ -593,12 +685,34 @@ grpc_error* RouteConfigParse(
   }
   // If xds_routing is not configured, only look at the last one in the route
   // list (the default route)
-  size_t start_index = xds_routing_enabled ? 0 : size - 1;
-  for (size_t i = start_index; i < size; ++i) {
+  if (!xds_routing_enabled) {
+    const envoy_api_v2_route_Route* route = routes[size - 1];
+    const envoy_api_v2_route_RouteMatch* match =
+        envoy_api_v2_route_Route_match(route);
+    XdsApi::RdsUpdate::RdsRoute rds_route;
+    // if xds routing is not enabled, we must be working on the default route;
+    // in this case, we must have an empty or single slash prefix.
+    if (!envoy_api_v2_route_RouteMatch_has_prefix(match)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "No prefix field found in Default RouteMatch.");
+    }
+    const upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
+    if (!upb_strview_eql(prefix, upb_strview_makez("")) &&
+        !upb_strview_eql(prefix, upb_strview_makez("/"))) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Default route must have empty prefix.");
+    }
+    grpc_error* error = RouteActionParse(route, &rds_route);
+    if (error != GRPC_ERROR_NONE) return error;
+    rds_update->routes.emplace_back(std::move(rds_route));
+    return GRPC_ERROR_NONE;
+  }
+  // Loop over the whole list of routes
+  for (size_t i = 0; i < size; ++i) {
     const envoy_api_v2_route_Route* route = routes[i];
     const envoy_api_v2_route_RouteMatch* match =
         envoy_api_v2_route_Route_match(route);
-    XdsApi::RdsRoute rds_route;
+    XdsApi::RdsUpdate::RdsRoute rds_route;
     if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
       upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
       // Empty prefix "" is accepted.
@@ -650,38 +764,16 @@ grpc_error* RouteConfigParse(
       rds_route.service = std::string(path_elements[0]);
       rds_route.method = std::string(path_elements[1]);
     } else {
-      // TODO(donnadionne): We may change this behavior once we decide how to
-      // handle unsupported fields.
+      // Path specifier types will be supported, ignore but not reject until
+      // they are implemented.
       continue;
     }
-    if (!envoy_api_v2_route_Route_has_route(route)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "No RouteAction found in route.");
-    }
-    const envoy_api_v2_route_RouteAction* route_action =
-        envoy_api_v2_route_Route_route(route);
-    // Get the cluster in the RouteAction.
-    if (!envoy_api_v2_route_RouteAction_has_cluster(route_action)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "No cluster found in RouteAction.");
-    }
-    const upb_strview action =
-        envoy_api_v2_route_RouteAction_cluster(route_action);
-    if (action.size == 0) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "RouteAction contains empty cluster.");
-    }
-    rds_route.cluster_name = std::string(action.data, action.size);
+    grpc_error* error = RouteActionParse(route, &rds_route);
+    if (error != GRPC_ERROR_NONE) return error;
     rds_update->routes.emplace_back(std::move(rds_route));
   }
   if (rds_update->routes.empty()) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid routes specified.");
-  } else {
-    if (!rds_update->routes.back().service.empty() ||
-        !rds_update->routes.back().method.empty()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Default route must have empty service and method");
-    }
   }
   return GRPC_ERROR_NONE;
 }
@@ -766,12 +858,10 @@ grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
           "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
     }
     // Get the route_config_name.
-    const upb_strview route_config_name =
-        envoy_config_filter_network_http_connection_manager_v2_Rds_route_config_name(
-            rds);
     lds_update->emplace();
-    (*lds_update)->route_config_name =
-        std::string(route_config_name.data, route_config_name.size);
+    (*lds_update)->route_config_name = UpbStringToStdString(
+        envoy_config_filter_network_http_connection_manager_v2_Rds_route_config_name(
+            rds));
     return GRPC_ERROR_NONE;
   }
   return GRPC_ERROR_NONE;
@@ -874,8 +964,7 @@ grpc_error* CdsResponseParse(
     upb_strview service_name =
         envoy_api_v2_Cluster_EdsClusterConfig_service_name(eds_cluster_config);
     if (service_name.size != 0) {
-      cds_update.eds_service_name =
-          std::string(service_name.data, service_name.size);
+      cds_update.eds_service_name = UpbStringToStdString(service_name);
     }
     // Check the LB policy.
     if (envoy_api_v2_Cluster_lb_policy(cluster) !=
@@ -893,7 +982,7 @@ grpc_error* CdsResponseParse(
       }
       cds_update.lrs_load_reporting_server_name.emplace("");
     }
-    cds_update_map->emplace(std::string(cluster_name.data, cluster_name.size),
+    cds_update_map->emplace(UpbStringToStdString(cluster_name),
                             std::move(cds_update));
   }
   return GRPC_ERROR_NONE;
@@ -954,8 +1043,8 @@ grpc_error* LocalityParse(
   upb_strview zone = envoy_api_v2_core_Locality_region(locality);
   upb_strview sub_zone = envoy_api_v2_core_Locality_sub_zone(locality);
   output_locality->name = MakeRefCounted<XdsLocalityName>(
-      std::string(region.data, region.size), std::string(zone.data, zone.size),
-      std::string(sub_zone.data, sub_zone.size));
+      UpbStringToStdString(region), UpbStringToStdString(zone),
+      UpbStringToStdString(sub_zone));
   // Parse the addresses.
   size_t size;
   const envoy_api_v2_endpoint_LbEndpoint* const* lb_endpoints =
@@ -1005,8 +1094,7 @@ grpc_error* DropParseAndAppend(
   }
   // Cap numerator to 1000000.
   numerator = GPR_MIN(numerator, 1000000);
-  drop_config->AddCategory(std::string(category.data, category.size),
-                           numerator);
+  drop_config->AddCategory(UpbStringToStdString(category), numerator);
   return GRPC_ERROR_NONE;
 }
 
@@ -1086,7 +1174,7 @@ grpc_error* EdsResponseParse(
         if (error != GRPC_ERROR_NONE) return error;
       }
     }
-    eds_update_map->emplace(std::string(cluster_name.data, cluster_name.size),
+    eds_update_map->emplace(UpbStringToStdString(cluster_name),
                             std::move(eds_update));
   }
   return GRPC_ERROR_NONE;
@@ -1097,7 +1185,6 @@ grpc_error* EdsResponseParse(
 grpc_error* XdsApi::ParseAdsResponse(
     const grpc_slice& encoded_response, const std::string& expected_server_name,
     const std::string& expected_route_config_name,
-    const bool xds_routing_enabled,
     const std::set<absl::string_view>& expected_cluster_names,
     const std::set<absl::string_view>& expected_eds_service_names,
     absl::optional<LdsUpdate>* lds_update,
@@ -1120,21 +1207,21 @@ grpc_error* XdsApi::ParseAdsResponse(
   // Record the type_url, the version_info, and the nonce of the response.
   upb_strview type_url_strview =
       envoy_api_v2_DiscoveryResponse_type_url(response);
-  *type_url = std::string(type_url_strview.data, type_url_strview.size);
+  *type_url = UpbStringToStdString(type_url_strview);
   upb_strview version_info =
       envoy_api_v2_DiscoveryResponse_version_info(response);
-  *version = std::string(version_info.data, version_info.size);
+  *version = UpbStringToStdString(version_info);
   upb_strview nonce_strview = envoy_api_v2_DiscoveryResponse_nonce(response);
-  *nonce = std::string(nonce_strview.data, nonce_strview.size);
+  *nonce = UpbStringToStdString(nonce_strview);
   // Parse the response according to the resource type.
   if (*type_url == kLdsTypeUrl) {
     return LdsResponseParse(client_, tracer_, symtab_.ptr(), response,
-                            expected_server_name, xds_routing_enabled,
+                            expected_server_name, xds_routing_enabled_,
                             lds_update, arena.ptr());
   } else if (*type_url == kRdsTypeUrl) {
     return RdsResponseParse(client_, tracer_, symtab_.ptr(), response,
                             expected_server_name, expected_route_config_name,
-                            xds_routing_enabled, rds_update, arena.ptr());
+                            xds_routing_enabled_, rds_update, arena.ptr());
   } else if (*type_url == kCdsTypeUrl) {
     return CdsResponseParse(client_, tracer_, symtab_.ptr(), response,
                             expected_cluster_names, cds_update_map,

@@ -24,12 +24,11 @@ from grpc._cython import cygrpc
 from . import _base_call, _base_channel
 from ._call import (StreamStreamCall, StreamUnaryCall, UnaryStreamCall,
                     UnaryUnaryCall)
-from ._interceptor import (InterceptedUnaryUnaryCall,
-                           InterceptedUnaryStreamCall,
-                           InterceptedStreamUnaryCall, ClientInterceptor,
-                           UnaryUnaryClientInterceptor,
-                           UnaryStreamClientInterceptor,
-                           StreamUnaryClientInterceptor)
+from ._interceptor import (
+    InterceptedUnaryUnaryCall, InterceptedUnaryStreamCall,
+    InterceptedStreamUnaryCall, InterceptedStreamStreamCall, ClientInterceptor,
+    UnaryUnaryClientInterceptor, UnaryStreamClientInterceptor,
+    StreamUnaryClientInterceptor, StreamStreamClientInterceptor)
 from ._typing import (ChannelArgumentType, DeserializingFunction, MetadataType,
                       SerializingFunction, RequestIterableType)
 from ._utils import _timeout_to_deadline
@@ -200,10 +199,17 @@ class StreamStreamMultiCallable(_BaseMultiCallable,
 
         deadline = _timeout_to_deadline(timeout)
 
-        call = StreamStreamCall(request_iterator, deadline, metadata,
-                                credentials, wait_for_ready, self._channel,
-                                self._method, self._request_serializer,
-                                self._response_deserializer, self._loop)
+        if not self._interceptors:
+            call = StreamStreamCall(request_iterator, deadline, metadata,
+                                    credentials, wait_for_ready, self._channel,
+                                    self._method, self._request_serializer,
+                                    self._response_deserializer, self._loop)
+        else:
+            call = InterceptedStreamStreamCall(
+                self._interceptors, request_iterator, deadline, metadata,
+                credentials, wait_for_ready, self._channel, self._method,
+                self._request_serializer, self._response_deserializer,
+                self._loop)
 
         return call
 
@@ -214,6 +220,7 @@ class Channel(_base_channel.Channel):
     _unary_unary_interceptors: List[UnaryUnaryClientInterceptor]
     _unary_stream_interceptors: List[UnaryStreamClientInterceptor]
     _stream_unary_interceptors: List[StreamUnaryClientInterceptor]
+    _stream_stream_interceptors: List[StreamStreamClientInterceptor]
 
     def __init__(self, target: str, options: ChannelArgumentType,
                  credentials: Optional[grpc.ChannelCredentials],
@@ -233,35 +240,25 @@ class Channel(_base_channel.Channel):
         self._unary_unary_interceptors = []
         self._unary_stream_interceptors = []
         self._stream_unary_interceptors = []
+        self._stream_stream_interceptors = []
 
-        if interceptors:
-            attrs_and_interceptor_classes = ((self._unary_unary_interceptors,
-                                              UnaryUnaryClientInterceptor),
-                                             (self._unary_stream_interceptors,
-                                              UnaryStreamClientInterceptor),
-                                             (self._stream_unary_interceptors,
-                                              StreamUnaryClientInterceptor))
-
-            # pylint: disable=cell-var-from-loop
-            for attr, interceptor_class in attrs_and_interceptor_classes:
-                attr.extend([
-                    interceptor for interceptor in interceptors
-                    if isinstance(interceptor, interceptor_class)
-                ])
-
-            invalid_interceptors = set(interceptors) - set(
-                self._unary_unary_interceptors) - set(
-                    self._unary_stream_interceptors) - set(
-                        self._stream_unary_interceptors)
-
-            if invalid_interceptors:
-                raise ValueError(
-                    "Interceptor must be " +
-                    "{} or ".format(UnaryUnaryClientInterceptor.__name__) +
-                    "{} or ".format(UnaryStreamClientInterceptor.__name__) +
-                    "{}. ".format(StreamUnaryClientInterceptor.__name__) +
-                    "The following are invalid: {}".format(invalid_interceptors)
-                )
+        if interceptors is not None:
+            for interceptor in interceptors:
+                if isinstance(interceptor, UnaryUnaryClientInterceptor):
+                    self._unary_unary_interceptors.append(interceptor)
+                elif isinstance(interceptor, UnaryStreamClientInterceptor):
+                    self._unary_stream_interceptors.append(interceptor)
+                elif isinstance(interceptor, StreamUnaryClientInterceptor):
+                    self._stream_unary_interceptors.append(interceptor)
+                elif isinstance(interceptor, StreamStreamClientInterceptor):
+                    self._stream_stream_interceptors.append(interceptor)
+                else:
+                    raise ValueError(
+                        "Interceptor {} must be ".format(interceptor) +
+                        "{} or ".format(UnaryUnaryClientInterceptor.__name__) +
+                        "{} or ".format(UnaryStreamClientInterceptor.__name__) +
+                        "{} or ".format(StreamUnaryClientInterceptor.__name__) +
+                        "{}. ".format(StreamStreamClientInterceptor.__name__))
 
         self._loop = asyncio.get_event_loop()
         self._channel = cygrpc.AioChannel(
@@ -411,7 +408,8 @@ class Channel(_base_channel.Channel):
     ) -> StreamStreamMultiCallable:
         return StreamStreamMultiCallable(self._channel, _common.encode(method),
                                          request_serializer,
-                                         response_deserializer, None,
+                                         response_deserializer,
+                                         self._stream_stream_interceptors,
                                          self._loop)
 
 

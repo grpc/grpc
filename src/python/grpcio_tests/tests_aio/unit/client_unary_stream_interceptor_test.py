@@ -21,6 +21,7 @@ import grpc
 from grpc.experimental import aio
 from tests_aio.unit._constants import UNREACHABLE_TARGET
 from tests_aio.unit._common import inject_callbacks
+from tests_aio.unit._common import CountingResponseIterator
 from tests_aio.unit._test_server import start_test_server
 from tests_aio.unit._test_base import AioTestBase
 from tests.unit.framework.common import test_constants
@@ -32,21 +33,6 @@ _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7
 _RESPONSE_PAYLOAD_SIZE = 7
 _RESPONSE_INTERVAL_US = int(_SHORT_TIMEOUT_S * 1000 * 1000)
-
-
-class _CountingResponseIterator:
-
-    def __init__(self, response_iterator):
-        self.response_cnt = 0
-        self._response_iterator = response_iterator
-
-    async def _forward_responses(self):
-        async for response in self._response_iterator:
-            self.response_cnt += 1
-            yield response
-
-    def __aiter__(self):
-        return self._forward_responses()
 
 
 class _UnaryStreamInterceptorEmpty(aio.UnaryStreamClientInterceptor):
@@ -65,7 +51,7 @@ class _UnaryStreamInterceptorWithResponseIterator(
     async def intercept_unary_stream(self, continuation, client_call_details,
                                      request):
         call = await continuation(client_call_details, request)
-        self.response_iterator = _CountingResponseIterator(call)
+        self.response_iterator = CountingResponseIterator(call)
         return self.response_iterator
 
     def assert_in_final_state(self, test: unittest.TestCase):

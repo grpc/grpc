@@ -116,7 +116,17 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Returns the backend metric data returned by the server for the call,
     /// or null if no backend metric data was returned.
+    // TODO(roth): Move this out of CallState, since it should not be
+    // accessible to the picker, only to the recv_trailing_metadata_ready
+    // callback.  It should instead be in its own interface.
     virtual const BackendMetricData* GetBackendMetricData() = 0;
+
+    /// EXPERIMENTAL API.
+    /// Returns the value of the call attribute \a key.
+    /// Keys are static strings, so an attribute can be accessed by an LB
+    /// policy implementation only if it knows about the internal key.
+    /// Returns a null string_view if key not found.
+    virtual absl::string_view ExperimentalGetCallAttribute(const char* key) = 0;
   };
 
   /// Interface for accessing metadata.
@@ -186,7 +196,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// call to the chosen backend.
     MetadataInterface* initial_metadata;
     /// An interface for accessing call state.  Can be used to allocate
-    /// data associated with the call in an efficient way.
+    /// memory associated with the call in an efficient way.
     CallState* call_state;
   };
 
@@ -228,6 +238,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// does not take ownership, so any data that needs to be used after
     /// returning must be copied.
     /// The call state can be used to obtain backend metric data.
+    // TODO(roth): The arguments to this callback should be moved into a
+    // struct, so that we can later add new fields without breaking
+    // existing implementations.
     std::function<void(grpc_error*, MetadataInterface*, CallState*)>
         recv_trailing_metadata_ready;
   };
@@ -256,9 +269,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// A proxy object implemented by the client channel and used by the
   /// LB policy to communicate with the channel.
-  // TODO(juanlishen): Consider adding a mid-layer subclass that helps handle
-  // things like swapping in pending policy when it's ready. Currently, we are
-  // duplicating the logic in many subclasses.
   class ChannelControlHelper {
    public:
     ChannelControlHelper() = default;

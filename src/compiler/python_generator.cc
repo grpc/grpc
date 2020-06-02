@@ -100,7 +100,7 @@ void PrivateGenerator::PrintAllComments(StringVector comments,
     // of the generated code.
     out->Print(
         "\"\"\"Missing associated documentation comment in .proto "
-        "file\"\"\"\n");
+        "file.\"\"\"\n");
     return;
   }
   out->Print("\"\"\"");
@@ -873,6 +873,10 @@ static bool ParseParameters(const grpc::string& parameter,
     return false;
   }
   return true;
+}
+
+uint64_t PythonGrpcGenerator::GetSupportedFeatures() const {
+  return FEATURE_PROTO3_OPTIONAL;
 }
 
 bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
