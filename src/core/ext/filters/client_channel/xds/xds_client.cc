@@ -812,12 +812,17 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
         GRPC_ERROR_REF(state.error), !sent_initial_message_);
     state.subscribed_resources[xds_client()->server_name_]->Start(Ref());
   } else if (type_url == XdsApi::kRdsTypeUrl) {
-    resource_names.insert(xds_client()->lds_result_->route_config_name);
+    std::string name = (xds_client()->lds_result_.has_value()
+                            ? xds_client()->lds_result_->route_config_name
+                            : xds_client()->server_name_);
+    resource_names.insert(name);
     request_payload_slice = xds_client()->api_.CreateRdsRequest(
-        xds_client()->lds_result_->route_config_name, state.version,
-        state.nonce, GRPC_ERROR_REF(state.error), !sent_initial_message_);
-    state.subscribed_resources[xds_client()->lds_result_->route_config_name]
-        ->Start(Ref());
+        name, state.version, state.nonce, GRPC_ERROR_REF(state.error),
+        !sent_initial_message_);
+    auto resource_it = state.subscribed_resources.find(name);
+    if (resource_it != state.subscribed_resources.end()) {
+      resource_it->second->Start(Ref());
+    }
   } else if (type_url == XdsApi::kCdsTypeUrl) {
     resource_names = ClusterNamesForRequest();
     request_payload_slice = xds_client()->api_.CreateCdsRequest(
