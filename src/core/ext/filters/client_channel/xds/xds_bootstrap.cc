@@ -23,6 +23,8 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/string_util.h>
@@ -36,47 +38,36 @@ namespace grpc_core {
 
 namespace {
 
-UniquePtr<char> BootstrapString(const XdsBootstrap& bootstrap) {
-  gpr_strvec v;
-  gpr_strvec_init(&v);
-  char* tmp;
+std::string BootstrapString(const XdsBootstrap& bootstrap) {
+  std::vector<std::string> parts;
   if (bootstrap.node() != nullptr) {
-    gpr_asprintf(&tmp,
-                 "node={\n"
-                 "  id=\"%s\",\n"
-                 "  cluster=\"%s\",\n"
-                 "  locality={\n"
-                 "    region=\"%s\",\n"
-                 "    zone=\"%s\",\n"
-                 "    subzone=\"%s\"\n"
-                 "  },\n"
-                 "  metadata=%s,\n"
-                 "},\n",
-                 bootstrap.node()->id.c_str(),
-                 bootstrap.node()->cluster.c_str(),
-                 bootstrap.node()->locality_region.c_str(),
-                 bootstrap.node()->locality_zone.c_str(),
-                 bootstrap.node()->locality_subzone.c_str(),
-                 bootstrap.node()->metadata.Dump().c_str());
-    gpr_strvec_add(&v, tmp);
+    parts.push_back(absl::StrFormat(
+        "node={\n"
+        "  id=\"%s\",\n"
+        "  cluster=\"%s\",\n"
+        "  locality={\n"
+        "    region=\"%s\",\n"
+        "    zone=\"%s\",\n"
+        "    subzone=\"%s\"\n"
+        "  },\n"
+        "  metadata=%s,\n"
+        "},\n",
+        bootstrap.node()->id, bootstrap.node()->cluster,
+        bootstrap.node()->locality_region, bootstrap.node()->locality_zone,
+        bootstrap.node()->locality_subzone, bootstrap.node()->metadata.Dump()));
   }
-  gpr_asprintf(&tmp,
-               "servers=[\n"
-               "  {\n"
-               "    uri=\"%s\",\n"
-               "    creds=[\n",
-               bootstrap.server().server_uri.c_str());
-  gpr_strvec_add(&v, tmp);
-  for (size_t i = 0; i < bootstrap.server().channel_creds.size(); ++i) {
-    const auto& creds = bootstrap.server().channel_creds[i];
-    gpr_asprintf(&tmp, "      {type=\"%s\", config=%s},\n", creds.type.c_str(),
-                 creds.config.Dump().c_str());
-    gpr_strvec_add(&v, tmp);
+  parts.push_back(
+      absl::StrFormat("servers=[\n"
+                      "  {\n"
+                      "    uri=\"%s\",\n"
+                      "    creds=[\n",
+                      bootstrap.server().server_uri));
+  for (const auto& creds : bootstrap.server().channel_creds) {
+    parts.push_back(absl::StrFormat("      {type=\"%s\", config=%s},\n",
+                                    creds.type, creds.config.Dump()));
   }
-  gpr_strvec_add(&v, gpr_strdup("    ]\n  }\n]"));
-  UniquePtr<char> result(gpr_strvec_flatten(&v, nullptr));
-  gpr_strvec_destroy(&v);
-  return result;
+  parts.push_back("    ]\n  }\n]");
+  return absl::StrJoin(parts, "");
 }
 
 }  // namespace
@@ -121,7 +112,7 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(XdsClient* client,
   if (*error == GRPC_ERROR_NONE && GRPC_TRACE_FLAG_ENABLED(*tracer)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] Bootstrap config for creating xds client:\n%s",
-            client, BootstrapString(*result).get());
+            client, BootstrapString(*result).c_str());
   }
   return result;
 }

@@ -2043,7 +2043,7 @@ namespace {
 std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
   return absl::StrFormat(
       "      \"cds:%s\":{\n"
-      "        \"child_policy\":[ {\n"
+      "        \"childPolicy\":[ {\n"
       "          \"cds_experimental\":{\n"
       "            \"cluster\": \"%s\"\n"
       "          }\n"
@@ -2073,7 +2073,7 @@ std::string CreateServiceConfigActionWeightedCluster(
   std::vector<std::string> config_parts;
   config_parts.push_back(
       absl::StrFormat("      \"weighted:%s\":{\n"
-                      "        \"child_policy\":[ {\n"
+                      "        \"childPolicy\":[ {\n"
                       "          \"weighted_target_experimental\":{\n"
                       "            \"targets\":{\n",
                       name));
@@ -2385,6 +2385,12 @@ RefCountedPtr<XdsClient> XdsClient::GetFromChannelArgs(
       grpc_channel_args_find_pointer<XdsClient>(&args, GRPC_ARG_XDS_CLIENT);
   if (xds_client != nullptr) return xds_client->Ref();
   return nullptr;
+}
+
+grpc_channel_args* XdsClient::RemoveFromChannelArgs(
+    const grpc_channel_args& args) {
+  const char* arg_name = GRPC_ARG_XDS_CLIENT;
+  return grpc_channel_args_copy_and_remove(&args, &arg_name, 1);
 }
 
 }  // namespace grpc_core
