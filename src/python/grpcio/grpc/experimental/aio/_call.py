@@ -26,9 +26,9 @@ from grpc._cython import cygrpc
 
 from . import _base_call
 from ._metadata import Metadata
-from ._typing import (DeserializingFunction, DoneCallbackType,
-                      MetadatumType, RequestIterableType, RequestType,
-                      ResponseType, SerializingFunction)
+from ._typing import (DeserializingFunction, DoneCallbackType, MetadatumType,
+                      RequestIterableType, RequestType, ResponseType,
+                      SerializingFunction)
 
 __all__ = 'AioRpcError', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
 
