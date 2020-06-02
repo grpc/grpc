@@ -94,28 +94,6 @@ def fork_handlers_and_grpc_init():
                 _fork_state.fork_handler_registered = True
 
 
-def _contextvars_supported():
-    try:
-        import contextvars
-        return True
-    except ImportError:
-        return False
-
-
-if _contextvars_supported():
-    import contextvars
-    def _run_with_context(target):
-        ctx = contextvars.copy_context()
-        def _run(*args):
-            ctx.run(target, *args)
-        return _run
-else:
-    # NOTE(rbellevi): `contextvars` was not introduced until 3.7. On earlier
-    # interpreters, we simply do not propagate contextvars between threads.
-    def _run_with_context(target):
-        def _run(*args):
-            target(*args)
-        return _run
 
 
 class ForkManagedThread(object):

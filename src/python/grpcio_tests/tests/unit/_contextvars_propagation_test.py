@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test of propagation of contextvars between threads."""
+"""Test of propagation of contextvars to AuthMetadataPlugin threads.."""
 
 import contextlib
 import logging
@@ -28,9 +28,6 @@ _REQUEST = b"0000"
 
 def _unary_unary_handler(request, context):
     return request
-
-
-# TODO: Test for <3.7 and 3.7+.
 
 
 def contextvars_supported():
@@ -109,8 +106,6 @@ class ContextVarsPropagationTest(unittest.TestCase):
                 response = stub(_REQUEST)
                 self.assertEqual(_REQUEST, response)
                 test_call_credentials.assert_called(self)
-
-    # TODO: Test simple unary-unary.
 
 
 if __name__ == '__main__':
