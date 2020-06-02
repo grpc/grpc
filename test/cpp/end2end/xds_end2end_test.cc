@@ -922,7 +922,10 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       const SubscriptionNameMap& subscription_name_map,
       const std::set<std::string>& resources_added_to_response,
       DiscoveryResponse* response) {
-    resource_type_response_state_[resource_type].state = ResponseState::SENT;
+    auto& response_state = resource_type_response_state_[resource_type];
+    if (response_state.state == ResponseState::NOT_SENT) {
+      response_state.state = ResponseState::SENT;
+    }
     response->set_type_url(resource_type);
     response->set_version_info(absl::StrCat(version));
     response->set_nonce(absl::StrCat(version));
