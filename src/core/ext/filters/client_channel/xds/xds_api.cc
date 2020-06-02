@@ -828,9 +828,9 @@ grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
           envoy_config_filter_network_http_connection_manager_v2_HttpConnectionManager_route_config(
               http_connection_manager);
       XdsApi::RdsUpdate rds_update;
-      grpc_error* error = RouteConfigParse(
-          client, tracer, symtab, route_config, expected_server_name,
-          xds_routing_enabled, &rds_update);
+      grpc_error* error = RouteConfigParse(client, tracer, symtab, route_config,
+                                           expected_server_name,
+                                           xds_routing_enabled, &rds_update);
       if (error != GRPC_ERROR_NONE) return error;
       lds_update->emplace();
       (*lds_update)->rds_update.emplace(std::move(rds_update));
