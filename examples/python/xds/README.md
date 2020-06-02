@@ -3,11 +3,8 @@ gRPC Hostname Example
 
 The hostname example is a Hello World server whose response includes its
 hostname. It also supports health and reflection services. This makes it a good
-server to test infrastructure, like load balancing.
-
-The example requires grpc to already be built. You are strongly encouraged
-to check out a git release tag, since there will already be a build of gRPC
-available.
+server to test infrastructure, like load balancing .This example depends on a
+gRPC version of 1.28.1 or newer.
 
 ### Run the example
 
