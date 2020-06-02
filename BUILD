@@ -2646,6 +2646,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        ":envoy_ads_upb",
         ":envoy_annotations_upbdefs",
         ":envoy_core_upbdefs",
         ":envoy_type_upbdefs",
@@ -2689,6 +2690,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        ":envoy_annotations_upb",
         ":google_api_upbdefs",
     ],
 )
@@ -2763,6 +2765,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        ":envoy_core_upb",
         ":envoy_type_upbdefs",
         ":google_api_upbdefs",
         ":proto_gen_validate_upbdefs",
@@ -2826,6 +2829,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        ":envoy_type_upb",
         ":google_api_upbdefs",
         ":proto_gen_validate_upbdefs",
     ],
@@ -2865,6 +2869,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        ":proto_gen_validate_upb",
         ":google_api_upbdefs",
     ],
 )
@@ -2930,6 +2935,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        ":udpa_annotations_upb",
         ":google_api_upbdefs",
     ],
 )
@@ -3017,6 +3023,9 @@ grpc_cc_library(
         "upb_textformat_lib",
     ],
     language = "c++",
+    deps = [
+        ":google_api_upb",
+    ]
 )
 
 # Once upb code-gen issue is resolved, replace grpc_lb_upb with this.
