@@ -94,7 +94,7 @@ def fork_handlers_and_grpc_init():
                 _fork_state.fork_handler_registered = True
 
 
-def contextvars_supported():
+def _contextvars_supported():
     try:
         import contextvars
         return True
