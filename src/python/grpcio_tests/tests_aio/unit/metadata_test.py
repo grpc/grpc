@@ -213,7 +213,7 @@ class TestMetadata(AioTestBase):
     async def test_from_client_to_server_with_list(self):
         multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
         call = multicallable(_REQUEST,
-                             metadata=_INITIAL_METADATA_FROM_CLIENT_TO_SERVER)
+                             metadata=list(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER))
         self.assertEqual(_RESPONSE, await call)
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
