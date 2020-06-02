@@ -45,6 +45,7 @@ try:
             "third_party/upb/upb/port_undef.inc",
             "third_party/upb/upb/table.int.h",
             "third_party/upb/upb/upb.h",
+            "third_party/upb/upb/upb.hpp",
         ],
         'secure': False,
     }]
