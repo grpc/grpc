@@ -15,16 +15,27 @@
 using System;
 using Grpc.Core;
 using Helloworld;
+using CommandLine;
 
 namespace GreeterClient
 {
     class Program
     {
+        private class Options
+        {
+            [Option("server", Default = "localhost:50051", HelpText = "The address of the server")]
+            public string Server { get; set; }
+        }
+
         public static void Main(string[] args)
         {
-            // TODO: specify server address..
+            Parser.Default.ParseArguments<Options>(args)
+                   .WithParsed<Options>(options => RunClient(options));
+        }
 
-            Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
+        private static void RunClient(Options options)
+        {
+            Channel channel = new Channel(options.Server, ChannelCredentials.Insecure);
 
             var client = new Greeter.GreeterClient(channel);
             String user = "you";

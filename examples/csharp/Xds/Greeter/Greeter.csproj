@@ -9,6 +9,7 @@
     <PackageReference Include="Grpc.Core" Version="2.29.0" />
     <PackageReference Include="Grpc.HealthCheck" Version="2.29.0" />
     <PackageReference Include="Grpc.Reflection" Version="2.29.0"/>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
     <PackageReference Include="Grpc.Tools" Version="2.29.0" PrivateAssets="All" />
   </ItemGroup>
 

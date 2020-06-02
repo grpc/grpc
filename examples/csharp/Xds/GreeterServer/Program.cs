@@ -22,6 +22,7 @@ using Grpc.Health;
 using Grpc.Health.V1;
 using Grpc.Reflection;
 using Grpc.Reflection.V1Alpha;
+using CommandLine;
 
 namespace GreeterServer
 {
@@ -30,16 +31,28 @@ namespace GreeterServer
         // Server side handler of the SayHello RPC
         public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
         {
-            String hostName = Dns.GetHostName();  // TODO: make hostname configurable
+            String hostName = Dns.GetHostName();
             return Task.FromResult(new HelloReply { Message = $"Hello {request.Name} from {hostName}!"});
         }
     }
 
     class Program
     {
-        const int Port = 50051;  // TODO: make port configurable
+        class Options
+        {
+            [Option("port", Default = 50051, HelpText = "The port to listen on.")]
+            public int Port { get; set; }
+
+            // TODO: make hostname configurable
+        }
 
         public static void Main(string[] args)
+        {
+            Parser.Default.ParseArguments<Options>(args)
+                   .WithParsed<Options>(options => RunServer(options));
+        }
+
+        private static void RunServer(Options options)
         {
             var serviceDescriptors = new [] {Greeter.Descriptor, Health.Descriptor, ServerReflection.Descriptor};
             var greeterImpl = new GreeterImpl();
@@ -49,7 +62,7 @@ namespace GreeterServer
             Server server = new Server
             {
                 Services = { Greeter.BindService(greeterImpl), Health.BindService(healthServiceImpl), ServerReflection.BindService(reflectionImpl) },
-                Ports = { new ServerPort("localhost", Port, ServerCredentials.Insecure) }   // TODO: don't listen on just localhost
+                Ports = { new ServerPort("[::]", options.Port, ServerCredentials.Insecure) }
             };
             server.Start();
 
@@ -61,7 +74,7 @@ namespace GreeterServer
             // Mark overall server status as healthy.
             healthServiceImpl.SetStatus("", HealthCheckResponse.Types.ServingStatus.Serving);
 
-            Console.WriteLine("Greeter server listening on port " + Port);
+            Console.WriteLine("Greeter server listening on port " + options.Port);
             Console.WriteLine("Press any key to stop the server...");
             Console.ReadKey();
 

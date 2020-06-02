@@ -54,7 +54,7 @@ Finally, run your client:
 
 ```
 cd GreeterClient
-dotnet run -- xds-experimental:///my-backend 
+dotnet run --server xds-experimental:///my-backend
 ```
 
 VERIFYING THE SERVER
