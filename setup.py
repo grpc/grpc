@@ -55,9 +55,7 @@ if 'linux' in sys.platform:
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
-RE2_INCLUDE = (os.path.join('third_party', 're2', 're2'),
-               os.path.join('third_party', 're2', 'util'),
-               )
+RE2_INCLUDE = (os.path.join('third_party', 're2'),)
 SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src',
                             'include'),)
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
