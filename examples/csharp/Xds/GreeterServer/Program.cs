@@ -30,14 +30,14 @@ namespace GreeterServer
         // Server side handler of the SayHello RPC
         public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
         {
-            String hostName = Dns.GetHostName();
+            String hostName = Dns.GetHostName();  // TODO: make hostname configurable
             return Task.FromResult(new HelloReply { Message = $"Hello {request.Name} from {hostName}!"});
         }
     }
 
     class Program
     {
-        const int Port = 50051;
+        const int Port = 50051;  // TODO: make port configurable
 
         public static void Main(string[] args)
         {
@@ -49,7 +49,7 @@ namespace GreeterServer
             Server server = new Server
             {
                 Services = { Greeter.BindService(greeterImpl), Health.BindService(healthServiceImpl), ServerReflection.BindService(reflectionImpl) },
-                Ports = { new ServerPort("localhost", Port, ServerCredentials.Insecure) }
+                Ports = { new ServerPort("localhost", Port, ServerCredentials.Insecure) }   // TODO: don't listen on just localhost
             };
             server.Start();
 
