@@ -36,7 +36,9 @@ class BuildFileFunctions(object):
     pass
 
   def cc_library(self, **kwargs):
-    if kwargs["name"] == "amalgamation" or kwargs["name"] == "upbc_generator":
+    if kwargs["name"].endswith("amalgamation"):
+      return
+    if kwargs["name"] == "upbc_generator":
       return
     if kwargs["name"] == "lupb":
       return
