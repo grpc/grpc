@@ -52,7 +52,7 @@ _TEST_CASES = [
     'round_robin',
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure',
-    'traffic_splitting',
+    # 'traffic_splitting',
 ]
 
 
@@ -1087,11 +1087,9 @@ def patch_url_map_backend_service(gcp,
             'backendService': service.url,
             'weight': w,
         } for service, w in services_with_weights.items()]
-    } if services_withWeights else None
+    } if services_with_weights else None
 
     config = {
-        'defaultService':
-            backend_service.url,
         'pathMatchers': [{
             'name': _PATH_MATCHER_NAME,
             'defaultService': default_service,

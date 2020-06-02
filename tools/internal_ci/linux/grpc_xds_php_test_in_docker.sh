@@ -70,4 +70,4 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,cds_lb,eds_lb,priority_l
   --gcp_suffix=$(date '+%s') \
   --only_stable_gcp_apis \
   --verbose \
-  --client_cmd='php -d extension=grpc.so -d extension=pthreads.so src/php/tests/interop/xds_client.php --server=xds-experimental:///{server_uri} --stats_port={stats_port} --qps={qps}'
+  --client_cmd='php -d extension=grpc.so -d extension=pthreads.so src/php/tests/interop/xds_client.php --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps}'

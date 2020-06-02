@@ -3176,6 +3176,7 @@ targets:
   uses_polling: false
 - name: concurrent_connectivity_test
   build: test
+  run: false
   language: c
   headers: []
   src:
@@ -5348,6 +5349,7 @@ targets:
 - name: cancel_ares_query_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
