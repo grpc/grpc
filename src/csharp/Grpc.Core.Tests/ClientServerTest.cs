@@ -144,18 +144,18 @@ namespace Grpc.Core.Tests
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
-                context.Status = new Status(StatusCode.Unauthenticated, "", "this DebugErrorString value should not be transmitted to the client");
+                context.Status = new Status(StatusCode.Unauthenticated, "", new DebugErrorException("this DebugErrorString value should not be transmitted to the client"));
                 return Task.FromResult("");
             });
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
-            StringAssert.Contains("Error received from peer", ex.Status.DebugErrorString, "Is \"Error received from peer\" still a valid substring to search for in the client-generated error message from C-core?");
+            StringAssert.Contains("Error received from peer", ex.Status.DebugErrorException.Message, "Is \"Error received from peer\" still a valid substring to search for in the client-generated error message from C-core?");
             Assert.AreEqual(0, ex.Trailers.Count);
 
             var ex2 = Assert.ThrowsAsync<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unauthenticated, ex2.Status.StatusCode);
-            StringAssert.Contains("Error received from peer", ex2.Status.DebugErrorString, "Is \"Error received from peer\" still a valid substring to search for in the client-generated error message from C-core?");
+            StringAssert.Contains("Error received from peer", ex2.Status.DebugErrorException.Message, "Is \"Error received from peer\" still a valid substring to search for in the client-generated error message from C-core?");
             Assert.AreEqual(0, ex2.Trailers.Count);
         }
 

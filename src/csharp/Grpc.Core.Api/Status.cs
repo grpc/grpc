@@ -14,6 +14,8 @@
 // limitations under the License.
 #endregion
 
+using System;
+
 namespace Grpc.Core
 {
     /// <summary>
@@ -47,12 +49,12 @@ namespace Grpc.Core
         /// </summary>
         /// <param name="statusCode">Status code.</param>
         /// <param name="detail">Detail.</param>
-        /// <param name="debugErrorString">Optional internal error string.</param>
-        public Status(StatusCode statusCode, string detail, string debugErrorString)
+        /// <param name="debugErrorException">Optional internal error details.</param>
+        public Status(StatusCode statusCode, string detail, Exception debugErrorException)
         {
             StatusCode = statusCode;
             Detail = detail;
-            DebugErrorString = debugErrorString;
+            DebugErrorException = debugErrorException;
         }
 
         /// <summary>
@@ -70,20 +72,20 @@ namespace Grpc.Core
         /// This field will be only populated on a client and its value is generated locally,
         /// based on the internal state of the gRPC client stack (i.e. the value is never sent over the wire).
         /// Note that this field is available only for debugging purposes, the application logic should
-        /// never rely on values of this field (it should should <c>StatusCode</c> and <c>Detail</c> instead).
+        /// never rely on values of this field (it should use <c>StatusCode</c> and <c>Detail</c> instead).
         /// Example: when a client fails to connect to a server, this field may provide additional details
         /// why the connection to the server has failed.
         /// </summary>
-        public string DebugErrorString { get; }
+        public Exception DebugErrorException { get; }
 
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents the current <see cref="Grpc.Core.Status"/>.
         /// </summary>
         public override string ToString()
         {
-            if (DebugErrorString != null)
+            if (DebugErrorException != null)
             {
-                return $"Status(StatusCode=\"{StatusCode}\", Detail=\"{Detail}\", DebugErrorString=\"{DebugErrorString}\")";
+                return $"Status(StatusCode=\"{StatusCode}\", Detail=\"{Detail}\", DebugErrorException=\"{DebugErrorException}\")";
             }
             return $"Status(StatusCode=\"{StatusCode}\", Detail=\"{Detail}\")";
         }
