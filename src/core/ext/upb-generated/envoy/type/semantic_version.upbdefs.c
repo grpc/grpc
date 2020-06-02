@@ -7,6 +7,7 @@
  * regenerated. */
 
 #include "upb/def.h"
+#include "envoy/type/semantic_version.upbdefs.h"
 
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern const upb_msglayout envoy_type_SemanticVersion_msginit;
@@ -15,14 +16,18 @@ static const upb_msglayout *layouts[1] = {
   &envoy_type_SemanticVersion_msginit,
 };
 
-static const char descriptor[257] =
-  "\n!envoy/type/semantic_version.proto\022\nenv"
-  "oy.type\032\035udpa/annotations/status.proto\"m"
-  "\n\017SemanticVersion\022!\n\014major_number\030\001 \001(\rR"
-  "\013majorNumber\022!\n\014minor_number\030\002 \001(\rR\013mino"
-  "rNumber\022\024\n\005patch\030\003 \001(\rR\005patchB:\n\030io.envo"
-  "yproxy.envoy.typeB\024SemanticVersionProtoP"
-  "\001\272\200\310\321\006\002\020\001b\006proto3";
+static const char descriptor[257] = {'\n', '!', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 's', 'e', 'm', 'a', 'n', 't', 'i', 'c', '_', 'v', 'e', 'r', 
+'s', 'i', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\022', '\n', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '\032', '\035', 'u', 
+'d', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 
+'o', 't', 'o', '\"', 'm', '\n', '\017', 'S', 'e', 'm', 'a', 'n', 't', 'i', 'c', 'V', 'e', 'r', 's', 'i', 'o', 'n', '\022', '!', '\n', 
+'\014', 'm', 'a', 'j', 'o', 'r', '_', 'n', 'u', 'm', 'b', 'e', 'r', '\030', '\001', ' ', '\001', '(', '\r', 'R', '\013', 'm', 'a', 'j', 'o', 
+'r', 'N', 'u', 'm', 'b', 'e', 'r', '\022', '!', '\n', '\014', 'm', 'i', 'n', 'o', 'r', '_', 'n', 'u', 'm', 'b', 'e', 'r', '\030', '\002', 
+' ', '\001', '(', '\r', 'R', '\013', 'm', 'i', 'n', 'o', 'r', 'N', 'u', 'm', 'b', 'e', 'r', '\022', '\024', '\n', '\005', 'p', 'a', 't', 'c', 
+'h', '\030', '\003', ' ', '\001', '(', '\r', 'R', '\005', 'p', 'a', 't', 'c', 'h', 'B', ':', '\n', '\030', 'i', 'o', '.', 'e', 'n', 'v', 'o', 
+'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', 'B', '\024', 'S', 'e', 'm', 'a', 'n', 't', 
+'i', 'c', 'V', 'e', 'r', 's', 'i', 'o', 'n', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\001', 'b', 
+'\006', 'p', 'r', 'o', 't', 'o', '3', 
+};
 
 static upb_def_init *deps[2] = {
   &udpa_annotations_status_proto_upbdefinit,

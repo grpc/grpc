@@ -7,6 +7,7 @@
  * regenerated. */
 
 #include "upb/def.h"
+#include "envoy/api/v2/listener/udp_listener_config.upbdefs.h"
 
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
 extern upb_def_init google_protobuf_struct_proto_upbdefinit;
@@ -20,22 +21,31 @@ static const upb_msglayout *layouts[2] = {
   &envoy_api_v2_listener_ActiveRawUdpListenerConfig_msginit,
 };
 
-static const char descriptor[583] =
-  "\n/envoy/api/v2/listener/udp_listener_con"
-  "fig.proto\022\025envoy.api.v2.listener\032\031google"
-  "/protobuf/any.proto\032\034google/protobuf/str"
-  "uct.proto\032\036udpa/annotations/migrate.prot"
-  "o\032\035udpa/annotations/status.proto\"\300\001\n\021Udp"
-  "ListenerConfig\022*\n\021udp_listener_name\030\001 \001("
-  "\tR\017udpListenerName\0225\n\006config\030\002 \001(\0132\027.goo"
-  "gle.protobuf.StructB\002\030\001H\000R\006config\0229\n\014typ"
-  "ed_config\030\003 \001(\0132\024.google.protobuf.AnyH\000R"
-  "\013typedConfigB\r\n\013config_type\"\034\n\032ActiveRaw"
-  "UdpListenerConfigB\233\001\n#io.envoyproxy.envo"
-  "y.api.v2.listenerB\026UdpListenerConfigProt"
-  "oP\001\252\002\027Envoy.Api.V2.ListenerNS\352\002\027Envoy.Ap"
-  "i.V2.ListenerNS\362\230\376\217\005\032\022\030envoy.config.list"
-  "ener.v3\272\200\310\321\006\002\020\001b\006proto3";
+static const char descriptor[583] = {'\n', '/', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'p', 'i', '/', 'v', '2', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'u', 
+'d', 'p', '_', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '_', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022', 
+'\025', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '\032', '\031', 'g', 
+'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'a', 'n', 'y', '.', 'p', 'r', 'o', 't', 'o', '\032', 
+'\034', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 's', 't', 'r', 'u', 'c', 't', '.', 'p', 
+'r', 'o', 't', 'o', '\032', '\036', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'm', 'i', 
+'g', 'r', 'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 
+'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\"', '\300', '\001', '\n', '\021', 'U', 'd', 'p', 
+'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'C', 'o', 'n', 'f', 'i', 'g', '\022', '*', '\n', '\021', 'u', 'd', 'p', '_', 'l', 'i', 's', 
+'t', 'e', 'n', 'e', 'r', '_', 'n', 'a', 'm', 'e', '\030', '\001', ' ', '\001', '(', '\t', 'R', '\017', 'u', 'd', 'p', 'L', 'i', 's', 't', 
+'e', 'n', 'e', 'r', 'N', 'a', 'm', 'e', '\022', '5', '\n', '\006', 'c', 'o', 'n', 'f', 'i', 'g', '\030', '\002', ' ', '\001', '(', '\013', '2', 
+'\027', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'S', 't', 'r', 'u', 'c', 't', 'B', 
+'\002', '\030', '\001', 'H', '\000', 'R', '\006', 'c', 'o', 'n', 'f', 'i', 'g', '\022', '9', '\n', '\014', 't', 'y', 'p', 'e', 'd', '_', 'c', 'o', 
+'n', 'f', 'i', 'g', '\030', '\003', ' ', '\001', '(', '\013', '2', '\024', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 
+'b', 'u', 'f', '.', 'A', 'n', 'y', 'H', '\000', 'R', '\013', 't', 'y', 'p', 'e', 'd', 'C', 'o', 'n', 'f', 'i', 'g', 'B', '\r', '\n', 
+'\013', 'c', 'o', 'n', 'f', 'i', 'g', '_', 't', 'y', 'p', 'e', '\"', '\034', '\n', '\032', 'A', 'c', 't', 'i', 'v', 'e', 'R', 'a', 'w', 
+'U', 'd', 'p', 'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'C', 'o', 'n', 'f', 'i', 'g', 'B', '\233', '\001', '\n', '#', 'i', 'o', '.', 
+'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'l', 
+'i', 's', 't', 'e', 'n', 'e', 'r', 'B', '\026', 'U', 'd', 'p', 'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'C', 'o', 'n', 'f', 'i', 
+'g', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\252', '\002', '\027', 'E', 'n', 'v', 'o', 'y', '.', 'A', 'p', 'i', '.', 'V', '2', '.', 'L', 
+'i', 's', 't', 'e', 'n', 'e', 'r', 'N', 'S', '\352', '\002', '\027', 'E', 'n', 'v', 'o', 'y', '.', 'A', 'p', 'i', '.', 'V', '2', '.', 
+'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'N', 'S', '\362', '\230', '\376', '\217', '\005', '\032', '\022', '\030', 'e', 'n', 'v', 'o', 'y', '.', 'c', 
+'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\001', 
+'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+};
 
 static upb_def_init *deps[5] = {
   &google_protobuf_any_proto_upbdefinit,

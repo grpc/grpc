@@ -7,18 +7,23 @@
  * regenerated. */
 
 #include "upb/def.h"
+#include "envoy/api/v2/listener/listener.upbdefs.h"
 
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init envoy_api_v2_listener_listener_components_proto_upbdefinit;
 
-static const char descriptor[259] =
-  "\n$envoy/api/v2/listener/listener.proto\022\025"
-  "envoy.api.v2.listener\032\035udpa/annotations/"
-  "status.proto\032/envoy/api/v2/listener/list"
-  "ener_components.protoBj\n#io.envoyproxy.e"
-  "nvoy.api.v2.listenerB\rListenerProtoP\001\252\002\027"
-  "Envoy.Api.V2.ListenerNS\352\002\027Envoy.Api.V2.L"
-  "istenerNSP\001b\006proto3";
+static const char descriptor[259] = {'\n', '$', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'p', 'i', '/', 'v', '2', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'l', 
+'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 
+'v', '2', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 
+'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '/', 'e', 'n', 'v', 'o', 'y', '/', 
+'a', 'p', 'i', '/', 'v', '2', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '_', 
+'c', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', 's', '.', 'p', 'r', 'o', 't', 'o', 'B', 'j', '\n', '#', 'i', 'o', '.', 'e', 'n', 
+'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'l', 'i', 's', 
+'t', 'e', 'n', 'e', 'r', 'B', '\r', 'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\252', '\002', '\027', 
+'E', 'n', 'v', 'o', 'y', '.', 'A', 'p', 'i', '.', 'V', '2', '.', 'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'N', 'S', '\352', '\002', 
+'\027', 'E', 'n', 'v', 'o', 'y', '.', 'A', 'p', 'i', '.', 'V', '2', '.', 'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'N', 'S', 'P', 
+'\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+};
 
 static upb_def_init *deps[3] = {
   &udpa_annotations_status_proto_upbdefinit,

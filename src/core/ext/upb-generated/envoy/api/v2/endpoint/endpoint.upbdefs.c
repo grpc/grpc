@@ -7,17 +7,21 @@
  * regenerated. */
 
 #include "upb/def.h"
+#include "envoy/api/v2/endpoint/endpoint.upbdefs.h"
 
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init envoy_api_v2_endpoint_endpoint_components_proto_upbdefinit;
 
-static const char descriptor[207] =
-  "\n$envoy/api/v2/endpoint/endpoint.proto\022\025"
-  "envoy.api.v2.endpoint\032\035udpa/annotations/"
-  "status.proto\032/envoy/api/v2/endpoint/endp"
-  "oint_components.protoB6\n#io.envoyproxy.e"
-  "nvoy.api.v2.endpointB\rEndpointProtoP\001P\001b"
-  "\006proto3";
+static const char descriptor[207] = {'\n', '$', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'p', 'i', '/', 'v', '2', '/', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '/', 'e', 
+'n', 'd', 'p', 'o', 'i', 'n', 't', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 
+'v', '2', '.', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 
+'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '/', 'e', 'n', 'v', 'o', 'y', '/', 
+'a', 'p', 'i', '/', 'v', '2', '/', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '/', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '_', 
+'c', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', 's', '.', 'p', 'r', 'o', 't', 'o', 'B', '6', '\n', '#', 'i', 'o', '.', 'e', 'n', 
+'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'e', 'n', 'd', 
+'p', 'o', 'i', 'n', 't', 'B', '\r', 'E', 'n', 'd', 'p', 'o', 'i', 'n', 't', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'P', '\001', 'b', 
+'\006', 'p', 'r', 'o', 't', 'o', '3', 
+};
 
 static upb_def_init *deps[3] = {
   &udpa_annotations_status_proto_upbdefinit,

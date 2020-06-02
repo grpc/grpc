@@ -7,6 +7,7 @@
  * regenerated. */
 
 #include "upb/def.h"
+#include "envoy/api/v2/auth/cert.upbdefs.h"
 
 extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
@@ -14,15 +15,20 @@ extern upb_def_init envoy_api_v2_auth_common_proto_upbdefinit;
 extern upb_def_init envoy_api_v2_auth_secret_proto_upbdefinit;
 extern upb_def_init envoy_api_v2_auth_tls_proto_upbdefinit;
 
-static const char descriptor[316] =
-  "\n\034envoy/api/v2/auth/cert.proto\022\021envoy.ap"
-  "i.v2.auth\032\036udpa/annotations/migrate.prot"
-  "o\032\035udpa/annotations/status.proto\032\036envoy/"
-  "api/v2/auth/common.proto\032\036envoy/api/v2/a"
-  "uth/secret.proto\032\033envoy/api/v2/auth/tls."
-  "protoB_\n\037io.envoyproxy.envoy.api.v2.auth"
-  "B\tCertProtoP\001\362\230\376\217\005+\022)envoy.extensions.tr"
-  "ansport_sockets.tls.v3P\002P\003P\004b\006proto3";
+static const char descriptor[316] = {'\n', '\034', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'p', 'i', '/', 'v', '2', '/', 'a', 'u', 't', 'h', '/', 'c', 'e', 'r', 't', '.', 
+'p', 'r', 'o', 't', 'o', '\022', '\021', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'a', 'u', 't', 'h', '\032', 
+'\036', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'm', 'i', 'g', 'r', 'a', 't', 'e', 
+'.', 'p', 'r', 'o', 't', 'o', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 
+'s', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '\036', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'p', 'i', '/', 'v', 
+'2', '/', 'a', 'u', 't', 'h', '/', 'c', 'o', 'm', 'm', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\032', '\036', 'e', 'n', 'v', 'o', 
+'y', '/', 'a', 'p', 'i', '/', 'v', '2', '/', 'a', 'u', 't', 'h', '/', 's', 'e', 'c', 'r', 'e', 't', '.', 'p', 'r', 'o', 't', 
+'o', '\032', '\033', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'p', 'i', '/', 'v', '2', '/', 'a', 'u', 't', 'h', '/', 't', 'l', 's', '.', 
+'p', 'r', 'o', 't', 'o', 'B', '_', '\n', '\037', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 
+'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'a', 'u', 't', 'h', 'B', '\t', 'C', 'e', 'r', 't', 'P', 'r', 'o', 't', 
+'o', 'P', '\001', '\362', '\230', '\376', '\217', '\005', '+', '\022', ')', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 
+'n', 's', '.', 't', 'r', 'a', 'n', 's', 'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '.', 't', 'l', 's', '.', 
+'v', '3', 'P', '\002', 'P', '\003', 'P', '\004', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+};
 
 static upb_def_init *deps[6] = {
   &udpa_annotations_migrate_proto_upbdefinit,

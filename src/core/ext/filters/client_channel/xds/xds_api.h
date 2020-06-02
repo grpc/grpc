@@ -28,12 +28,13 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
 
+#include "upb/def.hpp"
+
 #include <grpc/slice_buffer.h>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
-#include "upb/def.h"
 
 namespace grpc_core {
 

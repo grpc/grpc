@@ -7,18 +7,23 @@
  * regenerated. */
 
 #include "upb/def.h"
+#include "envoy/annotations/deprecation.upbdefs.h"
 
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
 
-static const char descriptor[283] =
-  "\n#envoy/annotations/deprecation.proto\022\021e"
-  "nvoy.annotations\032 google/protobuf/descri"
-  "ptor.proto:T\n\025disallowed_by_default\022\035.go"
-  "ogle.protobuf.FieldOptions\030\347\255\256Z \001(\010R\023dis"
-  "allowedByDefault:a\n\032disallowed_by_defaul"
-  "t_enum\022!.google.protobuf.EnumValueOption"
-  "s\030\365\316\266! \001(\010R\027disallowedByDefaultEnumb\006pro"
-  "to3";
+static const char descriptor[283] = {'\n', '#', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'd', 'e', 'p', 'r', 'e', 
+'c', 'a', 't', 'i', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\022', '\021', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'n', 'n', 'o', 't', 
+'a', 't', 'i', 'o', 'n', 's', '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 
+'e', 's', 'c', 'r', 'i', 'p', 't', 'o', 'r', '.', 'p', 'r', 'o', 't', 'o', ':', 'T', '\n', '\025', 'd', 'i', 's', 'a', 'l', 'l', 
+'o', 'w', 'e', 'd', '_', 'b', 'y', '_', 'd', 'e', 'f', 'a', 'u', 'l', 't', '\022', '\035', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 
+'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'F', 'i', 'e', 'l', 'd', 'O', 'p', 't', 'i', 'o', 'n', 's', '\030', '\347', '\255', '\256', 
+'Z', ' ', '\001', '(', '\010', 'R', '\023', 'd', 'i', 's', 'a', 'l', 'l', 'o', 'w', 'e', 'd', 'B', 'y', 'D', 'e', 'f', 'a', 'u', 'l', 
+'t', ':', 'a', '\n', '\032', 'd', 'i', 's', 'a', 'l', 'l', 'o', 'w', 'e', 'd', '_', 'b', 'y', '_', 'd', 'e', 'f', 'a', 'u', 'l', 
+'t', '_', 'e', 'n', 'u', 'm', '\022', '!', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 
+'E', 'n', 'u', 'm', 'V', 'a', 'l', 'u', 'e', 'O', 'p', 't', 'i', 'o', 'n', 's', '\030', '\365', '\316', '\266', '!', ' ', '\001', '(', '\010', 
+'R', '\027', 'd', 'i', 's', 'a', 'l', 'l', 'o', 'w', 'e', 'd', 'B', 'y', 'D', 'e', 'f', 'a', 'u', 'l', 't', 'E', 'n', 'u', 'm', 
+'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+};
 
 static upb_def_init *deps[2] = {
   &google_protobuf_descriptor_proto_upbdefinit,
