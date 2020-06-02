@@ -118,6 +118,7 @@ DECLARE_bool(batch);
 DECLARE_string(metadata);
 DECLARE_string(protofiles);
 DECLARE_string(proto_path);
+DECLARE_string(default_service_config);
 
 namespace {
 
@@ -1189,6 +1190,28 @@ TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
 
   FLAGS_channel_creds_type = "";
   FLAGS_ssl_target = "";
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, ConfiguringDefaultServiceConfig) {
+  // Test input "grpc_cli list localhost:<port>
+  // --default_service_config={\"loadBalancingConfig\":[{\"pick_first\":{}}]}"
+  std::stringstream output_stream;
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "ls", server_address.c_str()};
+  // Just check that the tool is still operational when --default_service_config
+  // is configured. This particular service config is in reality redundant with
+  // the channel's default configuration.
+  FLAGS_l = false;
+  FLAGS_default_service_config =
+      "{\"loadBalancingConfig\":[{\"pick_first\":{}}]}";
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  FLAGS_default_service_config = "";
+  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
+                          "grpc.testing.EchoTestService\n"
+                          "grpc.reflection.v1alpha.ServerReflection\n"));
   ShutdownServer();
 }
 
