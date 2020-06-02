@@ -31,7 +31,7 @@ const upb_msglayout envoy_type_metadata_v2_MetadataKey_msginit = {
 };
 
 static const upb_msglayout_field envoy_type_metadata_v2_MetadataKey_PathSegment__fields[1] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 9, 1},
 };
 
 const upb_msglayout envoy_type_metadata_v2_MetadataKey_PathSegment_msginit = {
@@ -48,10 +48,10 @@ static const upb_msglayout *const envoy_type_metadata_v2_MetadataKind_submsgs[4]
 };
 
 static const upb_msglayout_field envoy_type_metadata_v2_MetadataKind__fields[4] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, 1},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
-  {4, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 2, 11, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 3, 11, 1},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 0, 11, 1},
+  {4, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 1, 11, 1},
 };
 
 const upb_msglayout envoy_type_metadata_v2_MetadataKind_msginit = {

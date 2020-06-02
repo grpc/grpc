@@ -30,16 +30,17 @@ typedef void upb_msg;
  * members are public so generated code can initialize them, but users MUST NOT
  * read or write any of its members. */
 
-/* This isn't a real label according to descriptor.proto, but in the table we
- * use this for map fields instead of UPB_LABEL_REPEATED. */
+/* These aren't real labels according to descriptor.proto, but in the table we
+ * use these for map/packed fields instead of UPB_LABEL_REPEATED. */
 enum {
-  UPB_LABEL_MAP = 4
+  _UPB_LABEL_MAP = 4,
+  _UPB_LABEL_PACKED = 7  /* Low 3 bits are common with UPB_LABEL_REPEATED. */
 };
 
 typedef struct {
   uint32_t number;
   uint16_t offset;
-  int16_t presence;      /* If >0, hasbit_index+1.  If <0, oneof_index+1. */
+  int16_t presence;      /* If >0, hasbit_index.  If <0, -oneof_index. */
   uint16_t submsg_index;  /* undefined if descriptortype != MESSAGE or GROUP. */
   uint8_t descriptortype;
   uint8_t label;
@@ -80,10 +81,16 @@ extern char _upb_fieldtype_to_size[12];
 /* Creates a new messages with the given layout on the given arena. */
 upb_msg *_upb_msg_new(const upb_msglayout *l, upb_arena *a);
 
+/* Clears the given message. */
+void _upb_msg_clear(upb_msg *msg, const upb_msglayout *l);
+
+/* Discards the unknown fields for this message only. */
+void _upb_msg_discardunknown_shallow(upb_msg *msg);
+
 /* Adds unknown data (serialized protobuf data) to the given message.  The data
  * is copied into the message instance. */
-void upb_msg_addunknown(upb_msg *msg, const char *data, size_t len,
-                        upb_arena *arena);
+bool _upb_msg_addunknown(upb_msg *msg, const char *data, size_t len,
+                         upb_arena *arena);
 
 /* Returns a reference to the message's unknown data. */
 const char *upb_msg_getunknown(const upb_msg *msg, size_t *len);
@@ -102,6 +109,14 @@ UPB_INLINE bool _upb_clearhas(const void *msg, size_t idx) {
 
 UPB_INLINE bool _upb_has_oneof_field(const void *msg, size_t case_ofs, int32_t num) {
   return *PTR_AT(msg, case_ofs, int32_t) == num;
+}
+
+UPB_INLINE bool _upb_has_submsg_nohasbit(const void *msg, size_t ofs) {
+  return *PTR_AT(msg, ofs, const void*) != NULL;
+}
+
+UPB_INLINE bool _upb_isrepeated(const upb_msglayout_field *field) {
+  return (field->label & 3) == UPB_LABEL_REPEATED;
 }
 
 /** upb_array *****************************************************************/
@@ -132,6 +147,19 @@ void *_upb_array_resize_fallback(upb_array **arr_ptr, size_t size,
                                  upb_fieldtype_t type, upb_arena *arena);
 bool _upb_array_append_fallback(upb_array **arr_ptr, const void *value,
                                 upb_fieldtype_t type, upb_arena *arena);
+
+UPB_INLINE bool _upb_array_reserve(upb_array *arr, size_t size,
+                                   upb_arena *arena) {
+  if (arr->size < size) return _upb_array_realloc(arr, size, arena);
+  return true;
+}
+
+UPB_INLINE bool _upb_array_resize(upb_array *arr, size_t size,
+                                  upb_arena *arena) {
+  if (!_upb_array_reserve(arr, size, arena)) return false;
+  arr->len = size;
+  return true;
+}
 
 UPB_INLINE const void *_upb_array_accessor(const void *msg, size_t ofs,
                                            size_t *size) {
@@ -276,7 +304,7 @@ UPB_INLINE bool _upb_map_get(const upb_map *map, const void *key,
   upb_value tabval;
   upb_strview k = _upb_map_tokey(key, key_size);
   bool ret = upb_strtable_lookup2(&map->table, k.data, k.size, &tabval);
-  if (ret) {
+  if (ret && val) {
     _upb_map_fromvalue(tabval, val, val_size);
   }
   return ret;
@@ -287,8 +315,8 @@ UPB_INLINE void* _upb_map_next(const upb_map *map, size_t *iter) {
   it.t = &map->table;
   it.index = *iter;
   upb_strtable_next(&it);
-  if (upb_strtable_done(&it)) return NULL;
   *iter = it.index;
+  if (upb_strtable_done(&it)) return NULL;
   return (void*)str_tabent(&it);
 }
 
@@ -315,21 +343,21 @@ UPB_INLINE void _upb_map_clear(upb_map *map) {
 /* Message map operations, these get the map from the message first. */
 
 UPB_INLINE size_t _upb_msg_map_size(const upb_msg *msg, size_t ofs) {
-  upb_map *map = UPB_FIELD_AT(msg, upb_map *, ofs);
+  upb_map *map = *UPB_PTR_AT(msg, ofs, upb_map *);
   return map ? _upb_map_size(map) : 0;
 }
 
 UPB_INLINE bool _upb_msg_map_get(const upb_msg *msg, size_t ofs,
                                  const void *key, size_t key_size, void *val,
                                  size_t val_size) {
-  upb_map *map = UPB_FIELD_AT(msg, upb_map *, ofs);
+  upb_map *map = *UPB_PTR_AT(msg, ofs, upb_map *);
   if (!map) return false;
   return _upb_map_get(map, key, key_size, val, val_size);
 }
 
 UPB_INLINE void *_upb_msg_map_next(const upb_msg *msg, size_t ofs,
                                    size_t *iter) {
-  upb_map *map = UPB_FIELD_AT(msg, upb_map *, ofs);
+  upb_map *map = *UPB_PTR_AT(msg, ofs, upb_map *);
   if (!map) return NULL;
   return _upb_map_next(map, iter);
 }
@@ -346,13 +374,13 @@ UPB_INLINE bool _upb_msg_map_set(upb_msg *msg, size_t ofs, const void *key,
 
 UPB_INLINE bool _upb_msg_map_delete(upb_msg *msg, size_t ofs, const void *key,
                                     size_t key_size) {
-  upb_map *map = UPB_FIELD_AT(msg, upb_map *, ofs);
+  upb_map *map = *UPB_PTR_AT(msg, ofs, upb_map *);
   if (!map) return false;
   return _upb_map_delete(map, key, key_size);
 }
 
 UPB_INLINE void _upb_msg_map_clear(upb_msg *msg, size_t ofs) {
-  upb_map *map = UPB_FIELD_AT(msg, upb_map *, ofs);
+  upb_map *map = *UPB_PTR_AT(msg, ofs, upb_map *);
   if (!map) return;
   _upb_map_clear(map);
 }

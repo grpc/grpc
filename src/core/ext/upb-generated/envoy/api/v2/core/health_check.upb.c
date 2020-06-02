@@ -45,11 +45,11 @@ static const upb_msglayout_field envoy_api_v2_core_HealthCheck__fields[21] = {
   {5, UPB_SIZE(32, 56), 0, 8, 11, 1},
   {6, UPB_SIZE(36, 64), 0, 8, 11, 1},
   {7, UPB_SIZE(40, 72), 0, 6, 11, 1},
-  {8, UPB_SIZE(72, 136), UPB_SIZE(-77, -145), 3, 11, 1},
-  {9, UPB_SIZE(72, 136), UPB_SIZE(-77, -145), 4, 11, 1},
-  {11, UPB_SIZE(72, 136), UPB_SIZE(-77, -145), 2, 11, 1},
+  {8, UPB_SIZE(72, 136), UPB_SIZE(-76, -144), 3, 11, 1},
+  {9, UPB_SIZE(72, 136), UPB_SIZE(-76, -144), 4, 11, 1},
+  {11, UPB_SIZE(72, 136), UPB_SIZE(-76, -144), 2, 11, 1},
   {12, UPB_SIZE(44, 80), 0, 7, 11, 1},
-  {13, UPB_SIZE(72, 136), UPB_SIZE(-77, -145), 1, 11, 1},
+  {13, UPB_SIZE(72, 136), UPB_SIZE(-76, -144), 1, 11, 1},
   {14, UPB_SIZE(48, 88), 0, 7, 11, 1},
   {15, UPB_SIZE(52, 96), 0, 7, 11, 1},
   {16, UPB_SIZE(56, 104), 0, 7, 11, 1},
@@ -68,8 +68,8 @@ const upb_msglayout envoy_api_v2_core_HealthCheck_msginit = {
 };
 
 static const upb_msglayout_field envoy_api_v2_core_HealthCheck_Payload__fields[2] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 12, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 9, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 12, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_HealthCheck_Payload_msginit = {
@@ -148,8 +148,8 @@ static const upb_msglayout *const envoy_api_v2_core_HealthCheck_CustomHealthChec
 
 static const upb_msglayout_field envoy_api_v2_core_HealthCheck_CustomHealthCheck__fields[3] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, 1},
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 1, 11, 1},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 0, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit = {

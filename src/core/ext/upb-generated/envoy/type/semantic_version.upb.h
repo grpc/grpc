@@ -38,18 +38,18 @@ UPB_INLINE char *envoy_type_SemanticVersion_serialize(const envoy_type_SemanticV
   return upb_encode(msg, &envoy_type_SemanticVersion_msginit, arena, len);
 }
 
-UPB_INLINE uint32_t envoy_type_SemanticVersion_major_number(const envoy_type_SemanticVersion *msg) { return UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)); }
-UPB_INLINE uint32_t envoy_type_SemanticVersion_minor_number(const envoy_type_SemanticVersion *msg) { return UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(4, 4)); }
-UPB_INLINE uint32_t envoy_type_SemanticVersion_patch(const envoy_type_SemanticVersion *msg) { return UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(8, 8)); }
+UPB_INLINE uint32_t envoy_type_SemanticVersion_major_number(const envoy_type_SemanticVersion *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t); }
+UPB_INLINE uint32_t envoy_type_SemanticVersion_minor_number(const envoy_type_SemanticVersion *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t); }
+UPB_INLINE uint32_t envoy_type_SemanticVersion_patch(const envoy_type_SemanticVersion *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t); }
 
 UPB_INLINE void envoy_type_SemanticVersion_set_major_number(envoy_type_SemanticVersion *msg, uint32_t value) {
-  UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = value;
 }
 UPB_INLINE void envoy_type_SemanticVersion_set_minor_number(envoy_type_SemanticVersion *msg, uint32_t value) {
-  UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(4, 4)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = value;
 }
 UPB_INLINE void envoy_type_SemanticVersion_set_patch(envoy_type_SemanticVersion *msg, uint32_t value) {
-  UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(8, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t) = value;
 }
 
 #ifdef __cplusplus

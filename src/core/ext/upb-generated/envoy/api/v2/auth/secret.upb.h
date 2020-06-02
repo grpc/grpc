@@ -54,10 +54,11 @@ UPB_INLINE char *envoy_api_v2_auth_GenericSecret_serialize(const envoy_api_v2_au
   return upb_encode(msg, &envoy_api_v2_auth_GenericSecret_msginit, arena, len);
 }
 
-UPB_INLINE const struct envoy_api_v2_core_DataSource* envoy_api_v2_auth_GenericSecret_secret(const envoy_api_v2_auth_GenericSecret *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_DataSource*, UPB_SIZE(0, 0)); }
+UPB_INLINE bool envoy_api_v2_auth_GenericSecret_has_secret(const envoy_api_v2_auth_GenericSecret *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
+UPB_INLINE const struct envoy_api_v2_core_DataSource* envoy_api_v2_auth_GenericSecret_secret(const envoy_api_v2_auth_GenericSecret *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), const struct envoy_api_v2_core_DataSource*); }
 
 UPB_INLINE void envoy_api_v2_auth_GenericSecret_set_secret(envoy_api_v2_auth_GenericSecret *msg, struct envoy_api_v2_core_DataSource* value) {
-  UPB_FIELD_AT(msg, struct envoy_api_v2_core_DataSource*, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), struct envoy_api_v2_core_DataSource*) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_DataSource* envoy_api_v2_auth_GenericSecret_mutable_secret(envoy_api_v2_auth_GenericSecret *msg, upb_arena *arena) {
   struct envoy_api_v2_core_DataSource* sub = (struct envoy_api_v2_core_DataSource*)envoy_api_v2_auth_GenericSecret_secret(msg);
@@ -83,14 +84,15 @@ UPB_INLINE char *envoy_api_v2_auth_SdsSecretConfig_serialize(const envoy_api_v2_
   return upb_encode(msg, &envoy_api_v2_auth_SdsSecretConfig_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_api_v2_auth_SdsSecretConfig_name(const envoy_api_v2_auth_SdsSecretConfig *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct envoy_api_v2_core_ConfigSource* envoy_api_v2_auth_SdsSecretConfig_sds_config(const envoy_api_v2_auth_SdsSecretConfig *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_ConfigSource*, UPB_SIZE(8, 16)); }
+UPB_INLINE upb_strview envoy_api_v2_auth_SdsSecretConfig_name(const envoy_api_v2_auth_SdsSecretConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
+UPB_INLINE bool envoy_api_v2_auth_SdsSecretConfig_has_sds_config(const envoy_api_v2_auth_SdsSecretConfig *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
+UPB_INLINE const struct envoy_api_v2_core_ConfigSource* envoy_api_v2_auth_SdsSecretConfig_sds_config(const envoy_api_v2_auth_SdsSecretConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct envoy_api_v2_core_ConfigSource*); }
 
 UPB_INLINE void envoy_api_v2_auth_SdsSecretConfig_set_name(envoy_api_v2_auth_SdsSecretConfig *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_auth_SdsSecretConfig_set_sds_config(envoy_api_v2_auth_SdsSecretConfig *msg, struct envoy_api_v2_core_ConfigSource* value) {
-  UPB_FIELD_AT(msg, struct envoy_api_v2_core_ConfigSource*, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct envoy_api_v2_core_ConfigSource*) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_ConfigSource* envoy_api_v2_auth_SdsSecretConfig_mutable_sds_config(envoy_api_v2_auth_SdsSecretConfig *msg, upb_arena *arena) {
   struct envoy_api_v2_core_ConfigSource* sub = (struct envoy_api_v2_core_ConfigSource*)envoy_api_v2_auth_SdsSecretConfig_sds_config(msg);
@@ -123,9 +125,9 @@ typedef enum {
   envoy_api_v2_auth_Secret_type_generic_secret = 5,
   envoy_api_v2_auth_Secret_type_NOT_SET = 0
 } envoy_api_v2_auth_Secret_type_oneofcases;
-UPB_INLINE envoy_api_v2_auth_Secret_type_oneofcases envoy_api_v2_auth_Secret_type_case(const envoy_api_v2_auth_Secret* msg) { return (envoy_api_v2_auth_Secret_type_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(12, 24)); }
+UPB_INLINE envoy_api_v2_auth_Secret_type_oneofcases envoy_api_v2_auth_Secret_type_case(const envoy_api_v2_auth_Secret* msg) { return (envoy_api_v2_auth_Secret_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
 
-UPB_INLINE upb_strview envoy_api_v2_auth_Secret_name(const envoy_api_v2_auth_Secret *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+UPB_INLINE upb_strview envoy_api_v2_auth_Secret_name(const envoy_api_v2_auth_Secret *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
 UPB_INLINE bool envoy_api_v2_auth_Secret_has_tls_certificate(const envoy_api_v2_auth_Secret *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 2); }
 UPB_INLINE const struct envoy_api_v2_auth_TlsCertificate* envoy_api_v2_auth_Secret_tls_certificate(const envoy_api_v2_auth_Secret *msg) { return UPB_READ_ONEOF(msg, const struct envoy_api_v2_auth_TlsCertificate*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 2, NULL); }
 UPB_INLINE bool envoy_api_v2_auth_Secret_has_session_ticket_keys(const envoy_api_v2_auth_Secret *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 3); }
@@ -136,7 +138,7 @@ UPB_INLINE bool envoy_api_v2_auth_Secret_has_generic_secret(const envoy_api_v2_a
 UPB_INLINE const envoy_api_v2_auth_GenericSecret* envoy_api_v2_auth_Secret_generic_secret(const envoy_api_v2_auth_Secret *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_auth_GenericSecret*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 5, NULL); }
 
 UPB_INLINE void envoy_api_v2_auth_Secret_set_name(envoy_api_v2_auth_Secret *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_auth_Secret_set_tls_certificate(envoy_api_v2_auth_Secret *msg, struct envoy_api_v2_auth_TlsCertificate* value) {
   UPB_WRITE_ONEOF(msg, struct envoy_api_v2_auth_TlsCertificate*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 2);

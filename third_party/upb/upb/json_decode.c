@@ -157,15 +157,11 @@ static void jsondec_push(jsondec *d) {
 }
 
 static bool jsondec_seqnext(jsondec *d, char end_ch) {
+  bool is_first = d->is_first;
+  d->is_first = false;
   jsondec_skipws(d);
   if (*d->ptr == end_ch) return false;
-
-  if (d->is_first) {
-    d->is_first = false;
-  } else {
-    jsondec_parselit(d, ",");
-  }
-
+  if (!is_first) jsondec_parselit(d, ",");
   return true;
 }
 
@@ -405,7 +401,9 @@ static upb_strview jsondec_string(jsondec *d) {
 
     switch (ch) {
       case '"': {
-        upb_strview ret = {buf, end - buf};
+        upb_strview ret;
+        ret.data = buf;
+        ret.size = end - buf;
         return ret;
       }
       case '\\':
@@ -413,7 +411,7 @@ static upb_strview jsondec_string(jsondec *d) {
         if (*d->ptr == 'u') {
           d->ptr++;
           if (buf_end - end < 4) {
-            // Allow space for maximum-sized code point (4 bytes).
+            /* Allow space for maximum-sized code point (4 bytes). */
             jsondec_resize(d, &buf, &end, &buf_end);
           }
           end += jsondec_unicode(d, end);
@@ -770,7 +768,12 @@ static upb_msgval jsondec_enum(jsondec *d, const upb_fielddef *f) {
     upb_strview str = jsondec_string(d);
     upb_msgval val;
     if (!upb_enumdef_ntoi(e, str.data, str.size, &val.int32_val)) {
-      jsondec_err(d, "Unknown enumerator");
+      if (d->options & UPB_JSONDEC_IGNOREUNKNOWN) {
+        val.int32_val = 0;
+      } else {
+        jsondec_errf(d, "Unknown enumerator: '" UPB_STRVIEW_FORMAT "'",
+                     UPB_STRVIEW_ARGS(str));
+      }
     }
     return val;
   } else {
@@ -875,20 +878,22 @@ static void jsondec_field(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
 
   if (!f) {
     if ((d->options & UPB_JSONDEC_IGNOREUNKNOWN) == 0) {
-      jsondec_err(d, "Unknown field");
+      jsondec_errf(d, "Unknown field: '" UPB_STRVIEW_FORMAT "'",
+                   UPB_STRVIEW_ARGS(name));
     }
     jsondec_skipval(d);
     return;
   }
 
   if (upb_fielddef_containingoneof(f) &&
-      upb_msg_hasoneof(msg, upb_fielddef_containingoneof(f))) {
+      upb_msg_whichoneof(msg, upb_fielddef_containingoneof(f))) {
     jsondec_err(d, "More than one field for this oneof.");
   }
 
   if (jsondec_peek(d) == JD_NULL && !jsondec_isvalue(f)) {
     /* JSON "null" indicates a default value, so no need to set anything. */
-    return jsondec_null(d);
+    jsondec_null(d);
+    return;
   }
 
   preserved = d->debug_field;
@@ -912,7 +917,9 @@ static void jsondec_field(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
 
 static void jsondec_object(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
   jsondec_objstart(d);
-  while (jsondec_objnext(d)) jsondec_field(d, msg, m);
+  while (jsondec_objnext(d)) {
+    jsondec_field(d, msg, m);
+  }
   jsondec_objend(d);
 }
 
@@ -979,18 +986,16 @@ static int jsondec_nanos(jsondec *d, const char **ptr, const char *end) {
   return nanos;
 }
 
-// jsondec_epochdays(1970, 1, 1) == 1970-01-01 == 0
-static int jsondec_epochdays(int y, int m, int d) {
-  unsigned year_base = 4800;  /* Before minimum year, divisible by 100 & 400 */
-  unsigned epoch = 2472632;   /* Days between year_base and 1970 (Unix epoch) */
-  unsigned carry = (unsigned)m - 3 > m;
-  unsigned m_adj = m - 3 + (carry ? 12 : 0);   /* Month, counting from March */
-  unsigned y_adj = y + year_base - carry;  /* Year, positive and March-based */
-  unsigned base_days = (365 * 4 + 1) * y_adj / 4;    /* Approx days for year */
-  unsigned centuries = y_adj / 100;
-  unsigned extra_leap_days = (3 * centuries + 3) / 4; /* base_days correction */
-  unsigned year_days = (367 * (m_adj + 1)) / 12 - 30;  /* Counting from March */
-  return base_days - extra_leap_days + year_days + (d - 1) - epoch;
+/* jsondec_epochdays(1970, 1, 1) == 1970-01-01 == 0. */
+int jsondec_epochdays(int y, int m, int d) {
+  const uint32_t year_base = 4800;    /* Before min year, multiple of 400. */
+  const uint32_t m_adj = m - 3;       /* March-based month. */
+  const uint32_t carry = m_adj > m ? 1 : 0;
+  const uint32_t adjust = carry ? 12 : 0;
+  const uint32_t y_adj = y + year_base - carry;
+  const uint32_t month_days = ((m_adj + adjust) * 62719 + 769) / 2048;
+  const uint32_t leap_days = y_adj / 4 - y_adj / 100 + y_adj / 400;
+  return y_adj * 365 + leap_days + month_days + (d - 1) - 2472632;
 }
 
 static int64_t jsondec_unixtime(int y, int m, int d, int h, int min, int s) {
@@ -1007,7 +1012,7 @@ static void jsondec_timestamp(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
   if (str.size < 20) goto malformed;
 
   {
-    // 1972-01-01T01:00:00
+    /* 1972-01-01T01:00:00 */
     int year = jsondec_tsdigits(d, &ptr, 4, "-");
     int mon = jsondec_tsdigits(d, &ptr, 2, "-");
     int day = jsondec_tsdigits(d, &ptr, 2, "T");
@@ -1021,7 +1026,7 @@ static void jsondec_timestamp(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
   nanos.int32_val = jsondec_nanos(d, &ptr, end);
 
   {
-    // [+-]08:00 or Z
+    /* [+-]08:00 or Z */
     int ofs = 0;
     bool neg = false;
 
@@ -1064,7 +1069,7 @@ static void jsondec_duration(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
   const char *ptr = str.data;
   const char *end = ptr + str.size;
 
-  // "3.000000001s", "3s", etc.
+  /* "3.000000001s", "3s", etc. */
   ptr = jsondec_buftoint64(d, ptr, end, &seconds.int64_val);
   nanos.int32_val = jsondec_nanos(d, &ptr, end);
 
@@ -1313,10 +1318,10 @@ static void jsondec_any(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
   if (pre_type_data) {
     size_t len = pre_type_end - pre_type_data + 1;
     char *tmp = upb_arena_malloc(d->arena, len);
-    memcpy(tmp, pre_type_data, len - 1);
-    tmp[len - 1] = '}';
     const char *saved_ptr = d->ptr;
     const char *saved_end = d->end;
+    memcpy(tmp, pre_type_data, len - 1);
+    tmp[len - 1] = '}';
     d->ptr = tmp;
     d->end = tmp + len;
     d->is_first = true;
@@ -1400,6 +1405,6 @@ bool upb_json_decode(const char *buf, size_t size, upb_msg *msg,
 
   if (setjmp(d.err)) return false;
 
-  jsondec_object(&d, msg, m);
+  jsondec_tomsg(&d, msg, m);
   return true;
 }

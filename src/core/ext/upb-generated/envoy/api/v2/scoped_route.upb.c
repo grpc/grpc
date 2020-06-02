@@ -46,7 +46,7 @@ const upb_msglayout envoy_api_v2_ScopedRouteConfiguration_Key_msginit = {
 };
 
 static const upb_msglayout_field envoy_api_v2_ScopedRouteConfiguration_Key_Fragment__fields[1] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 9, 1},
 };
 
 const upb_msglayout envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_msginit = {

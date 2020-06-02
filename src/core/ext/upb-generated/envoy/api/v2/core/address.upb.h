@@ -64,14 +64,14 @@ UPB_INLINE char *envoy_api_v2_core_Pipe_serialize(const envoy_api_v2_core_Pipe *
   return upb_encode(msg, &envoy_api_v2_core_Pipe_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_api_v2_core_Pipe_path(const envoy_api_v2_core_Pipe *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)); }
-UPB_INLINE uint32_t envoy_api_v2_core_Pipe_mode(const envoy_api_v2_core_Pipe *msg) { return UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)); }
+UPB_INLINE upb_strview envoy_api_v2_core_Pipe_path(const envoy_api_v2_core_Pipe *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
+UPB_INLINE uint32_t envoy_api_v2_core_Pipe_mode(const envoy_api_v2_core_Pipe *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t); }
 
 UPB_INLINE void envoy_api_v2_core_Pipe_set_path(envoy_api_v2_core_Pipe *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_Pipe_set_mode(envoy_api_v2_core_Pipe *msg, uint32_t value) {
-  UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = value;
 }
 
 /* envoy.api.v2.core.SocketAddress */
@@ -93,22 +93,22 @@ typedef enum {
   envoy_api_v2_core_SocketAddress_port_specifier_named_port = 4,
   envoy_api_v2_core_SocketAddress_port_specifier_NOT_SET = 0
 } envoy_api_v2_core_SocketAddress_port_specifier_oneofcases;
-UPB_INLINE envoy_api_v2_core_SocketAddress_port_specifier_oneofcases envoy_api_v2_core_SocketAddress_port_specifier_case(const envoy_api_v2_core_SocketAddress* msg) { return (envoy_api_v2_core_SocketAddress_port_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(36, 64)); }
+UPB_INLINE envoy_api_v2_core_SocketAddress_port_specifier_oneofcases envoy_api_v2_core_SocketAddress_port_specifier_case(const envoy_api_v2_core_SocketAddress* msg) { return (envoy_api_v2_core_SocketAddress_port_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(36, 64), int32_t); }
 
-UPB_INLINE int32_t envoy_api_v2_core_SocketAddress_protocol(const envoy_api_v2_core_SocketAddress *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
-UPB_INLINE upb_strview envoy_api_v2_core_SocketAddress_address(const envoy_api_v2_core_SocketAddress *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 16)); }
+UPB_INLINE int32_t envoy_api_v2_core_SocketAddress_protocol(const envoy_api_v2_core_SocketAddress *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
+UPB_INLINE upb_strview envoy_api_v2_core_SocketAddress_address(const envoy_api_v2_core_SocketAddress *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 16), upb_strview); }
 UPB_INLINE bool envoy_api_v2_core_SocketAddress_has_port_value(const envoy_api_v2_core_SocketAddress *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(36, 64), 3); }
 UPB_INLINE uint32_t envoy_api_v2_core_SocketAddress_port_value(const envoy_api_v2_core_SocketAddress *msg) { return UPB_READ_ONEOF(msg, uint32_t, UPB_SIZE(28, 48), UPB_SIZE(36, 64), 3, 0); }
 UPB_INLINE bool envoy_api_v2_core_SocketAddress_has_named_port(const envoy_api_v2_core_SocketAddress *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(36, 64), 4); }
 UPB_INLINE upb_strview envoy_api_v2_core_SocketAddress_named_port(const envoy_api_v2_core_SocketAddress *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(28, 48), UPB_SIZE(36, 64), 4, upb_strview_make("", strlen(""))); }
-UPB_INLINE upb_strview envoy_api_v2_core_SocketAddress_resolver_name(const envoy_api_v2_core_SocketAddress *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(20, 32)); }
-UPB_INLINE bool envoy_api_v2_core_SocketAddress_ipv4_compat(const envoy_api_v2_core_SocketAddress *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)); }
+UPB_INLINE upb_strview envoy_api_v2_core_SocketAddress_resolver_name(const envoy_api_v2_core_SocketAddress *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), upb_strview); }
+UPB_INLINE bool envoy_api_v2_core_SocketAddress_ipv4_compat(const envoy_api_v2_core_SocketAddress *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool); }
 
 UPB_INLINE void envoy_api_v2_core_SocketAddress_set_protocol(envoy_api_v2_core_SocketAddress *msg, int32_t value) {
-  UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 UPB_INLINE void envoy_api_v2_core_SocketAddress_set_address(envoy_api_v2_core_SocketAddress *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 16), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_SocketAddress_set_port_value(envoy_api_v2_core_SocketAddress *msg, uint32_t value) {
   UPB_WRITE_ONEOF(msg, uint32_t, UPB_SIZE(28, 48), value, UPB_SIZE(36, 64), 3);
@@ -117,10 +117,10 @@ UPB_INLINE void envoy_api_v2_core_SocketAddress_set_named_port(envoy_api_v2_core
   UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(28, 48), value, UPB_SIZE(36, 64), 4);
 }
 UPB_INLINE void envoy_api_v2_core_SocketAddress_set_resolver_name(envoy_api_v2_core_SocketAddress *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(20, 32)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_SocketAddress_set_ipv4_compat(envoy_api_v2_core_SocketAddress *msg, bool value) {
-  UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool) = value;
 }
 
 /* envoy.api.v2.core.TcpKeepalive */
@@ -137,12 +137,15 @@ UPB_INLINE char *envoy_api_v2_core_TcpKeepalive_serialize(const envoy_api_v2_cor
   return upb_encode(msg, &envoy_api_v2_core_TcpKeepalive_msginit, arena, len);
 }
 
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_keepalive_probes(const envoy_api_v2_core_TcpKeepalive *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_keepalive_time(const envoy_api_v2_core_TcpKeepalive *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(4, 8)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_keepalive_interval(const envoy_api_v2_core_TcpKeepalive *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(8, 16)); }
+UPB_INLINE bool envoy_api_v2_core_TcpKeepalive_has_keepalive_probes(const envoy_api_v2_core_TcpKeepalive *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_keepalive_probes(const envoy_api_v2_core_TcpKeepalive *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_core_TcpKeepalive_has_keepalive_time(const envoy_api_v2_core_TcpKeepalive *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_keepalive_time(const envoy_api_v2_core_TcpKeepalive *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_core_TcpKeepalive_has_keepalive_interval(const envoy_api_v2_core_TcpKeepalive *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_keepalive_interval(const envoy_api_v2_core_TcpKeepalive *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_UInt32Value*); }
 
 UPB_INLINE void envoy_api_v2_core_TcpKeepalive_set_keepalive_probes(envoy_api_v2_core_TcpKeepalive *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_mutable_keepalive_probes(envoy_api_v2_core_TcpKeepalive *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_TcpKeepalive_keepalive_probes(msg);
@@ -154,7 +157,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_mu
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_TcpKeepalive_set_keepalive_time(envoy_api_v2_core_TcpKeepalive *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(4, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_mutable_keepalive_time(envoy_api_v2_core_TcpKeepalive *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_TcpKeepalive_keepalive_time(msg);
@@ -166,7 +169,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_mu
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_TcpKeepalive_set_keepalive_interval(envoy_api_v2_core_TcpKeepalive *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_mutable_keepalive_interval(envoy_api_v2_core_TcpKeepalive *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_TcpKeepalive_keepalive_interval(msg);
@@ -192,12 +195,15 @@ UPB_INLINE char *envoy_api_v2_core_BindConfig_serialize(const envoy_api_v2_core_
   return upb_encode(msg, &envoy_api_v2_core_BindConfig_msginit, arena, len);
 }
 
-UPB_INLINE const envoy_api_v2_core_SocketAddress* envoy_api_v2_core_BindConfig_source_address(const envoy_api_v2_core_BindConfig *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_core_SocketAddress*, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_BoolValue* envoy_api_v2_core_BindConfig_freebind(const envoy_api_v2_core_BindConfig *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(4, 8)); }
+UPB_INLINE bool envoy_api_v2_core_BindConfig_has_source_address(const envoy_api_v2_core_BindConfig *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
+UPB_INLINE const envoy_api_v2_core_SocketAddress* envoy_api_v2_core_BindConfig_source_address(const envoy_api_v2_core_BindConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), const envoy_api_v2_core_SocketAddress*); }
+UPB_INLINE bool envoy_api_v2_core_BindConfig_has_freebind(const envoy_api_v2_core_BindConfig *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
+UPB_INLINE const struct google_protobuf_BoolValue* envoy_api_v2_core_BindConfig_freebind(const envoy_api_v2_core_BindConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_BoolValue*); }
+UPB_INLINE bool envoy_api_v2_core_BindConfig_has_socket_options(const envoy_api_v2_core_BindConfig *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
 UPB_INLINE const struct envoy_api_v2_core_SocketOption* const* envoy_api_v2_core_BindConfig_socket_options(const envoy_api_v2_core_BindConfig *msg, size_t *len) { return (const struct envoy_api_v2_core_SocketOption* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len); }
 
 UPB_INLINE void envoy_api_v2_core_BindConfig_set_source_address(envoy_api_v2_core_BindConfig *msg, envoy_api_v2_core_SocketAddress* value) {
-  UPB_FIELD_AT(msg, envoy_api_v2_core_SocketAddress*, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), envoy_api_v2_core_SocketAddress*) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_SocketAddress* envoy_api_v2_core_BindConfig_mutable_source_address(envoy_api_v2_core_BindConfig *msg, upb_arena *arena) {
   struct envoy_api_v2_core_SocketAddress* sub = (struct envoy_api_v2_core_SocketAddress*)envoy_api_v2_core_BindConfig_source_address(msg);
@@ -209,7 +215,7 @@ UPB_INLINE struct envoy_api_v2_core_SocketAddress* envoy_api_v2_core_BindConfig_
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_BindConfig_set_freebind(envoy_api_v2_core_BindConfig *msg, struct google_protobuf_BoolValue* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_BoolValue*, UPB_SIZE(4, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_BoolValue*) = value;
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_core_BindConfig_mutable_freebind(envoy_api_v2_core_BindConfig *msg, upb_arena *arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_api_v2_core_BindConfig_freebind(msg);
@@ -253,7 +259,7 @@ typedef enum {
   envoy_api_v2_core_Address_address_pipe = 2,
   envoy_api_v2_core_Address_address_NOT_SET = 0
 } envoy_api_v2_core_Address_address_oneofcases;
-UPB_INLINE envoy_api_v2_core_Address_address_oneofcases envoy_api_v2_core_Address_address_case(const envoy_api_v2_core_Address* msg) { return (envoy_api_v2_core_Address_address_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(4, 8)); }
+UPB_INLINE envoy_api_v2_core_Address_address_oneofcases envoy_api_v2_core_Address_address_case(const envoy_api_v2_core_Address* msg) { return (envoy_api_v2_core_Address_address_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
 
 UPB_INLINE bool envoy_api_v2_core_Address_has_socket_address(const envoy_api_v2_core_Address *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
 UPB_INLINE const envoy_api_v2_core_SocketAddress* envoy_api_v2_core_Address_socket_address(const envoy_api_v2_core_Address *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_core_SocketAddress*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
@@ -299,14 +305,15 @@ UPB_INLINE char *envoy_api_v2_core_CidrRange_serialize(const envoy_api_v2_core_C
   return upb_encode(msg, &envoy_api_v2_core_CidrRange_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_api_v2_core_CidrRange_address_prefix(const envoy_api_v2_core_CidrRange *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_CidrRange_prefix_len(const envoy_api_v2_core_CidrRange *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(8, 16)); }
+UPB_INLINE upb_strview envoy_api_v2_core_CidrRange_address_prefix(const envoy_api_v2_core_CidrRange *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
+UPB_INLINE bool envoy_api_v2_core_CidrRange_has_prefix_len(const envoy_api_v2_core_CidrRange *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_CidrRange_prefix_len(const envoy_api_v2_core_CidrRange *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_UInt32Value*); }
 
 UPB_INLINE void envoy_api_v2_core_CidrRange_set_address_prefix(envoy_api_v2_core_CidrRange *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_CidrRange_set_prefix_len(envoy_api_v2_core_CidrRange *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_CidrRange_mutable_prefix_len(envoy_api_v2_core_CidrRange *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_CidrRange_prefix_len(msg);

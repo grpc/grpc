@@ -29,8 +29,8 @@ static const upb_msglayout *const envoy_api_v2_core_GrpcService_submsgs[4] = {
 };
 
 static const upb_msglayout_field envoy_api_v2_core_GrpcService__fields[4] = {
-  {1, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
-  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, 1},
+  {1, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 0, 11, 1},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 1, 11, 1},
   {3, UPB_SIZE(0, 0), 0, 3, 11, 1},
   {5, UPB_SIZE(4, 8), 0, 2, 11, 3},
 };
@@ -101,9 +101,9 @@ static const upb_msglayout *const envoy_api_v2_core_GrpcService_GoogleGrpc_Chann
 };
 
 static const upb_msglayout_field envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials__fields[3] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, 1},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 1, 11, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 2, 11, 1},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 0, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials_msginit = {
@@ -121,13 +121,13 @@ static const upb_msglayout *const envoy_api_v2_core_GrpcService_GoogleGrpc_CallC
 };
 
 static const upb_msglayout_field envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials__fields[7] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 4, 11, 1},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
-  {4, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 2, 11, 1},
-  {5, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 11, 1},
-  {6, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 1, 11, 1},
-  {7, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 3, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 9, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 4, 11, 1},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 9, 1},
+  {4, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 2, 11, 1},
+  {5, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 11, 1},
+  {6, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 1, 11, 1},
+  {7, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 3, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_msginit = {
@@ -165,8 +165,8 @@ static const upb_msglayout *const envoy_api_v2_core_GrpcService_GoogleGrpc_CallC
 
 static const upb_msglayout_field envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin__fields[3] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, 1},
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 1, 11, 1},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 0, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_msginit = {

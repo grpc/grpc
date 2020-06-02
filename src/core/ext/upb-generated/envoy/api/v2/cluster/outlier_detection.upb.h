@@ -42,29 +42,48 @@ UPB_INLINE char *envoy_api_v2_cluster_OutlierDetection_serialize(const envoy_api
   return upb_encode(msg, &envoy_api_v2_cluster_OutlierDetection_msginit, arena, len);
 }
 
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_consecutive_5xx(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(4, 8)); }
-UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_cluster_OutlierDetection_interval(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(8, 16)); }
-UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_cluster_OutlierDetection_base_ejection_time(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(12, 24)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_max_ejection_percent(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(16, 32)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_consecutive_5xx(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(20, 40)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_success_rate(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(24, 48)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_success_rate_minimum_hosts(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(28, 56)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_success_rate_request_volume(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(32, 64)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_success_rate_stdev_factor(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(36, 72)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_consecutive_gateway_failure(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(40, 80)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_consecutive_gateway_failure(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(44, 88)); }
-UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_split_external_local_origin_errors(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_consecutive_local_origin_failure(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(48, 96)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_consecutive_local_origin_failure(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(52, 104)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_local_origin_success_rate(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(56, 112)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_failure_percentage_threshold(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(60, 120)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_failure_percentage(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(64, 128)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_failure_percentage_local_origin(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(68, 136)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_failure_percentage_minimum_hosts(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(72, 144)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_failure_percentage_request_volume(const envoy_api_v2_cluster_OutlierDetection *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(76, 152)); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_consecutive_5xx(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_consecutive_5xx(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_interval(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
+UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_cluster_OutlierDetection_interval(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_Duration*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_base_ejection_time(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24)); }
+UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_cluster_OutlierDetection_base_ejection_time(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Duration*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_max_ejection_percent(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_max_ejection_percent(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_enforcing_consecutive_5xx(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(20, 40)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_consecutive_5xx(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_enforcing_success_rate(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(24, 48)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_success_rate(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 48), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_success_rate_minimum_hosts(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(28, 56)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_success_rate_minimum_hosts(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_success_rate_request_volume(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(32, 64)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_success_rate_request_volume(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 64), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_success_rate_stdev_factor(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(36, 72)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_success_rate_stdev_factor(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(36, 72), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_consecutive_gateway_failure(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(40, 80)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_consecutive_gateway_failure(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 80), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_enforcing_consecutive_gateway_failure(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(44, 88)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_consecutive_gateway_failure(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(44, 88), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_split_external_local_origin_errors(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_consecutive_local_origin_failure(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(48, 96)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_consecutive_local_origin_failure(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(48, 96), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_enforcing_consecutive_local_origin_failure(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(52, 104)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_consecutive_local_origin_failure(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(52, 104), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_enforcing_local_origin_success_rate(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(56, 112)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_local_origin_success_rate(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(56, 112), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_failure_percentage_threshold(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(60, 120)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_failure_percentage_threshold(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(60, 120), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_enforcing_failure_percentage(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(64, 128)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_failure_percentage(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(64, 128), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_enforcing_failure_percentage_local_origin(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(68, 136)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_enforcing_failure_percentage_local_origin(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(68, 136), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_failure_percentage_minimum_hosts(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(72, 144)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_failure_percentage_minimum_hosts(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(72, 144), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_OutlierDetection_has_failure_percentage_request_volume(const envoy_api_v2_cluster_OutlierDetection *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(76, 152)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_failure_percentage_request_volume(const envoy_api_v2_cluster_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(76, 152), const struct google_protobuf_UInt32Value*); }
 
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_consecutive_5xx(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(4, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_consecutive_5xx(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_consecutive_5xx(msg);
@@ -76,7 +95,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_interval(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_Duration* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_Duration*, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_Duration*) = value;
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_cluster_OutlierDetection_mutable_interval(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_cluster_OutlierDetection_interval(msg);
@@ -88,7 +107,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_cluster_OutlierDetectio
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_base_ejection_time(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_Duration* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_Duration*, UPB_SIZE(12, 24)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Duration*) = value;
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_cluster_OutlierDetection_mutable_base_ejection_time(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_cluster_OutlierDetection_base_ejection_time(msg);
@@ -100,7 +119,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_cluster_OutlierDetectio
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_max_ejection_percent(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(16, 32)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_max_ejection_percent(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_max_ejection_percent(msg);
@@ -112,7 +131,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_enforcing_consecutive_5xx(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(20, 40)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_enforcing_consecutive_5xx(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_enforcing_consecutive_5xx(msg);
@@ -124,7 +143,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_enforcing_success_rate(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(24, 48)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 48), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_enforcing_success_rate(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_enforcing_success_rate(msg);
@@ -136,7 +155,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_success_rate_minimum_hosts(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(28, 56)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 56), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_success_rate_minimum_hosts(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_success_rate_minimum_hosts(msg);
@@ -148,7 +167,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_success_rate_request_volume(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(32, 64)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 64), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_success_rate_request_volume(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_success_rate_request_volume(msg);
@@ -160,7 +179,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_success_rate_stdev_factor(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(36, 72)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(36, 72), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_success_rate_stdev_factor(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_success_rate_stdev_factor(msg);
@@ -172,7 +191,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_consecutive_gateway_failure(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(40, 80)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(40, 80), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_consecutive_gateway_failure(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_consecutive_gateway_failure(msg);
@@ -184,7 +203,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_enforcing_consecutive_gateway_failure(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(44, 88)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(44, 88), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_enforcing_consecutive_gateway_failure(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_enforcing_consecutive_gateway_failure(msg);
@@ -196,10 +215,10 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_split_external_local_origin_errors(envoy_api_v2_cluster_OutlierDetection *msg, bool value) {
-  UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = value;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_consecutive_local_origin_failure(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(48, 96)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(48, 96), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_consecutive_local_origin_failure(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_consecutive_local_origin_failure(msg);
@@ -211,7 +230,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_enforcing_consecutive_local_origin_failure(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(52, 104)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(52, 104), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_enforcing_consecutive_local_origin_failure(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_enforcing_consecutive_local_origin_failure(msg);
@@ -223,7 +242,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_enforcing_local_origin_success_rate(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(56, 112)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(56, 112), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_enforcing_local_origin_success_rate(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_enforcing_local_origin_success_rate(msg);
@@ -235,7 +254,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_failure_percentage_threshold(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(60, 120)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(60, 120), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_failure_percentage_threshold(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_failure_percentage_threshold(msg);
@@ -247,7 +266,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_enforcing_failure_percentage(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(64, 128)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(64, 128), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_enforcing_failure_percentage(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_enforcing_failure_percentage(msg);
@@ -259,7 +278,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_enforcing_failure_percentage_local_origin(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(68, 136)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(68, 136), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_enforcing_failure_percentage_local_origin(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_enforcing_failure_percentage_local_origin(msg);
@@ -271,7 +290,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_failure_percentage_minimum_hosts(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(72, 144)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(72, 144), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_failure_percentage_minimum_hosts(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_failure_percentage_minimum_hosts(msg);
@@ -283,7 +302,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_OutlierDetection_set_failure_percentage_request_volume(envoy_api_v2_cluster_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(76, 152)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(76, 152), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_OutlierDetection_mutable_failure_percentage_request_volume(envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_OutlierDetection_failure_percentage_request_volume(msg);

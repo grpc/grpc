@@ -44,24 +44,26 @@ UPB_INLINE char *udpa_data_orca_v1_OrcaLoadReport_serialize(const udpa_data_orca
   return upb_encode(msg, &udpa_data_orca_v1_OrcaLoadReport_msginit, arena, len);
 }
 
-UPB_INLINE double udpa_data_orca_v1_OrcaLoadReport_cpu_utilization(const udpa_data_orca_v1_OrcaLoadReport *msg) { return UPB_FIELD_AT(msg, double, UPB_SIZE(0, 0)); }
-UPB_INLINE double udpa_data_orca_v1_OrcaLoadReport_mem_utilization(const udpa_data_orca_v1_OrcaLoadReport *msg) { return UPB_FIELD_AT(msg, double, UPB_SIZE(8, 8)); }
-UPB_INLINE uint64_t udpa_data_orca_v1_OrcaLoadReport_rps(const udpa_data_orca_v1_OrcaLoadReport *msg) { return UPB_FIELD_AT(msg, uint64_t, UPB_SIZE(16, 16)); }
+UPB_INLINE double udpa_data_orca_v1_OrcaLoadReport_cpu_utilization(const udpa_data_orca_v1_OrcaLoadReport *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double); }
+UPB_INLINE double udpa_data_orca_v1_OrcaLoadReport_mem_utilization(const udpa_data_orca_v1_OrcaLoadReport *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), double); }
+UPB_INLINE uint64_t udpa_data_orca_v1_OrcaLoadReport_rps(const udpa_data_orca_v1_OrcaLoadReport *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint64_t); }
+UPB_INLINE bool udpa_data_orca_v1_OrcaLoadReport_has_request_cost(const udpa_data_orca_v1_OrcaLoadReport *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(24, 24)); }
 UPB_INLINE size_t udpa_data_orca_v1_OrcaLoadReport_request_cost_size(const udpa_data_orca_v1_OrcaLoadReport *msg) {return _upb_msg_map_size(msg, UPB_SIZE(24, 24)); }
 UPB_INLINE bool udpa_data_orca_v1_OrcaLoadReport_request_cost_get(const udpa_data_orca_v1_OrcaLoadReport *msg, upb_strview key, double *val) { return _upb_msg_map_get(msg, UPB_SIZE(24, 24), &key, 0, val, sizeof(*val)); }
 UPB_INLINE const udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry* udpa_data_orca_v1_OrcaLoadReport_request_cost_next(const udpa_data_orca_v1_OrcaLoadReport *msg, size_t* iter) { return (const udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry*)_upb_msg_map_next(msg, UPB_SIZE(24, 24), iter); }
+UPB_INLINE bool udpa_data_orca_v1_OrcaLoadReport_has_utilization(const udpa_data_orca_v1_OrcaLoadReport *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(28, 32)); }
 UPB_INLINE size_t udpa_data_orca_v1_OrcaLoadReport_utilization_size(const udpa_data_orca_v1_OrcaLoadReport *msg) {return _upb_msg_map_size(msg, UPB_SIZE(28, 32)); }
 UPB_INLINE bool udpa_data_orca_v1_OrcaLoadReport_utilization_get(const udpa_data_orca_v1_OrcaLoadReport *msg, upb_strview key, double *val) { return _upb_msg_map_get(msg, UPB_SIZE(28, 32), &key, 0, val, sizeof(*val)); }
 UPB_INLINE const udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry* udpa_data_orca_v1_OrcaLoadReport_utilization_next(const udpa_data_orca_v1_OrcaLoadReport *msg, size_t* iter) { return (const udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry*)_upb_msg_map_next(msg, UPB_SIZE(28, 32), iter); }
 
 UPB_INLINE void udpa_data_orca_v1_OrcaLoadReport_set_cpu_utilization(udpa_data_orca_v1_OrcaLoadReport *msg, double value) {
-  UPB_FIELD_AT(msg, double, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double) = value;
 }
 UPB_INLINE void udpa_data_orca_v1_OrcaLoadReport_set_mem_utilization(udpa_data_orca_v1_OrcaLoadReport *msg, double value) {
-  UPB_FIELD_AT(msg, double, UPB_SIZE(8, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), double) = value;
 }
 UPB_INLINE void udpa_data_orca_v1_OrcaLoadReport_set_rps(udpa_data_orca_v1_OrcaLoadReport *msg, uint64_t value) {
-  UPB_FIELD_AT(msg, uint64_t, UPB_SIZE(16, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint64_t) = value;
 }
 UPB_INLINE void udpa_data_orca_v1_OrcaLoadReport_request_cost_clear(udpa_data_orca_v1_OrcaLoadReport *msg) { _upb_msg_map_clear(msg, UPB_SIZE(24, 24)); }
 UPB_INLINE bool udpa_data_orca_v1_OrcaLoadReport_request_cost_set(udpa_data_orca_v1_OrcaLoadReport *msg, upb_strview key, double val, upb_arena *a) { return _upb_msg_map_set(msg, UPB_SIZE(24, 24), &key, 0, &val, sizeof(val), a); }

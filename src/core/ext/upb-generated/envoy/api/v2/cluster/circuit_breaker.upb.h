@@ -48,6 +48,7 @@ UPB_INLINE char *envoy_api_v2_cluster_CircuitBreakers_serialize(const envoy_api_
   return upb_encode(msg, &envoy_api_v2_cluster_CircuitBreakers_msginit, arena, len);
 }
 
+UPB_INLINE bool envoy_api_v2_cluster_CircuitBreakers_has_thresholds(const envoy_api_v2_cluster_CircuitBreakers *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
 UPB_INLINE const envoy_api_v2_cluster_CircuitBreakers_Thresholds* const* envoy_api_v2_cluster_CircuitBreakers_thresholds(const envoy_api_v2_cluster_CircuitBreakers *msg, size_t *len) { return (const envoy_api_v2_cluster_CircuitBreakers_Thresholds* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
 
 UPB_INLINE envoy_api_v2_cluster_CircuitBreakers_Thresholds** envoy_api_v2_cluster_CircuitBreakers_mutable_thresholds(envoy_api_v2_cluster_CircuitBreakers *msg, size_t *len) {
@@ -78,20 +79,26 @@ UPB_INLINE char *envoy_api_v2_cluster_CircuitBreakers_Thresholds_serialize(const
   return upb_encode(msg, &envoy_api_v2_cluster_CircuitBreakers_Thresholds_msginit, arena, len);
 }
 
-UPB_INLINE int32_t envoy_api_v2_cluster_CircuitBreakers_Thresholds_priority(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_connections(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(12, 16)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_pending_requests(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(16, 24)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_requests(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(20, 32)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_retries(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(24, 40)); }
-UPB_INLINE bool envoy_api_v2_cluster_CircuitBreakers_Thresholds_track_remaining(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_connection_pools(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(28, 48)); }
-UPB_INLINE const envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget* envoy_api_v2_cluster_CircuitBreakers_Thresholds_retry_budget(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget*, UPB_SIZE(32, 56)); }
+UPB_INLINE int32_t envoy_api_v2_cluster_CircuitBreakers_Thresholds_priority(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
+UPB_INLINE bool envoy_api_v2_cluster_CircuitBreakers_Thresholds_has_max_connections(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 16)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_connections(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 16), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_CircuitBreakers_Thresholds_has_max_pending_requests(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 24)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_pending_requests(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_CircuitBreakers_Thresholds_has_max_requests(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(20, 32)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_requests(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_CircuitBreakers_Thresholds_has_max_retries(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(24, 40)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_retries(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_CircuitBreakers_Thresholds_track_remaining(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool); }
+UPB_INLINE bool envoy_api_v2_cluster_CircuitBreakers_Thresholds_has_max_connection_pools(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(28, 48)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_connection_pools(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_api_v2_cluster_CircuitBreakers_Thresholds_has_retry_budget(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(32, 56)); }
+UPB_INLINE const envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget* envoy_api_v2_cluster_CircuitBreakers_Thresholds_retry_budget(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 56), const envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget*); }
 
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_priority(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, int32_t value) {
-  UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_max_connections(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(12, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 16), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_mutable_max_connections(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_connections(msg);
@@ -103,7 +110,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreak
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_max_pending_requests(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(16, 24)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_mutable_max_pending_requests(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_pending_requests(msg);
@@ -115,7 +122,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreak
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_max_requests(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(20, 32)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_mutable_max_requests(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_requests(msg);
@@ -127,7 +134,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreak
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_max_retries(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(24, 40)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_mutable_max_retries(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_retries(msg);
@@ -139,10 +146,10 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreak
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_track_remaining(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, bool value) {
-  UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool) = value;
 }
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_max_connection_pools(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(28, 48)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_mutable_max_connection_pools(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_connection_pools(msg);
@@ -154,7 +161,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreak
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_retry_budget(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget* value) {
-  UPB_FIELD_AT(msg, envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget*, UPB_SIZE(32, 56)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 56), envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget*) = value;
 }
 UPB_INLINE struct envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget* envoy_api_v2_cluster_CircuitBreakers_Thresholds_mutable_retry_budget(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, upb_arena *arena) {
   struct envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget* sub = (struct envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_retry_budget(msg);
@@ -180,11 +187,13 @@ UPB_INLINE char *envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_ser
   return upb_encode(msg, &envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_msginit, arena, len);
 }
 
-UPB_INLINE const struct envoy_type_Percent* envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_budget_percent(const envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget *msg) { return UPB_FIELD_AT(msg, const struct envoy_type_Percent*, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_min_retry_concurrency(const envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(4, 8)); }
+UPB_INLINE bool envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_has_budget_percent(const envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
+UPB_INLINE const struct envoy_type_Percent* envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_budget_percent(const envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), const struct envoy_type_Percent*); }
+UPB_INLINE bool envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_has_min_retry_concurrency(const envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_min_retry_concurrency(const envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_UInt32Value*); }
 
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_set_budget_percent(envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget *msg, struct envoy_type_Percent* value) {
-  UPB_FIELD_AT(msg, struct envoy_type_Percent*, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), struct envoy_type_Percent*) = value;
 }
 UPB_INLINE struct envoy_type_Percent* envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_mutable_budget_percent(envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget *msg, upb_arena *arena) {
   struct envoy_type_Percent* sub = (struct envoy_type_Percent*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_budget_percent(msg);
@@ -196,7 +205,7 @@ UPB_INLINE struct envoy_type_Percent* envoy_api_v2_cluster_CircuitBreakers_Thres
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_set_min_retry_concurrency(envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(4, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_mutable_min_retry_concurrency(envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget_min_retry_concurrency(msg);

@@ -16,6 +16,8 @@
  *
  */
 
+#include "upb/upb.hpp"
+
 #include <grpc/grpc.h>
 
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"

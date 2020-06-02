@@ -86,8 +86,8 @@ static const upb_msglayout_field envoy_api_v2_core_Node__fields[11] = {
   {4, UPB_SIZE(36, 72), 0, 3, 11, 1},
   {5, UPB_SIZE(16, 32), 0, 0, 9, 1},
   {6, UPB_SIZE(24, 48), 0, 0, 9, 1},
-  {7, UPB_SIZE(52, 104), UPB_SIZE(-61, -121), 0, 9, 1},
-  {8, UPB_SIZE(52, 104), UPB_SIZE(-61, -121), 1, 11, 1},
+  {7, UPB_SIZE(52, 104), UPB_SIZE(-60, -120), 0, 9, 1},
+  {8, UPB_SIZE(52, 104), UPB_SIZE(-60, -120), 1, 11, 1},
   {9, UPB_SIZE(40, 80), 0, 2, 11, 3},
   {10, UPB_SIZE(44, 88), 0, 0, 9, 3},
   {11, UPB_SIZE(48, 96), 0, 0, 11, 3},
@@ -104,7 +104,7 @@ static const upb_msglayout *const envoy_api_v2_core_Metadata_submsgs[1] = {
 };
 
 static const upb_msglayout_field envoy_api_v2_core_Metadata__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 4},
+  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout envoy_api_v2_core_Metadata_msginit = {
@@ -207,9 +207,9 @@ const upb_msglayout envoy_api_v2_core_HeaderMap_msginit = {
 };
 
 static const upb_msglayout_field envoy_api_v2_core_DataSource__fields[3] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 12, 1},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 9, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 12, 1},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 9, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_DataSource_msginit = {
@@ -257,8 +257,8 @@ static const upb_msglayout *const envoy_api_v2_core_AsyncDataSource_submsgs[2] =
 };
 
 static const upb_msglayout_field envoy_api_v2_core_AsyncDataSource__fields[2] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 0, 11, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 1, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_AsyncDataSource_msginit = {
@@ -274,8 +274,8 @@ static const upb_msglayout *const envoy_api_v2_core_TransportSocket_submsgs[2] =
 
 static const upb_msglayout_field envoy_api_v2_core_TransportSocket__fields[3] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, 1},
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 1, 11, 1},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 0, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_TransportSocket_msginit = {
