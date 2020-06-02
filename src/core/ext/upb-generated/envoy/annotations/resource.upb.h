@@ -38,10 +38,10 @@ UPB_INLINE char *envoy_annotations_ResourceAnnotation_serialize(const envoy_anno
   return upb_encode(msg, &envoy_annotations_ResourceAnnotation_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_annotations_ResourceAnnotation_type(const envoy_annotations_ResourceAnnotation *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+UPB_INLINE upb_strview envoy_annotations_ResourceAnnotation_type(const envoy_annotations_ResourceAnnotation *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
 
 UPB_INLINE void envoy_annotations_ResourceAnnotation_set_type(envoy_annotations_ResourceAnnotation *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 
 #ifdef __cplusplus

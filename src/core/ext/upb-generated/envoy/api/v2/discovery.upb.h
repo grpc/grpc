@@ -61,18 +61,20 @@ UPB_INLINE char *envoy_api_v2_DiscoveryRequest_serialize(const envoy_api_v2_Disc
   return upb_encode(msg, &envoy_api_v2_DiscoveryRequest_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_api_v2_DiscoveryRequest_version_info(const envoy_api_v2_DiscoveryRequest *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct envoy_api_v2_core_Node* envoy_api_v2_DiscoveryRequest_node(const envoy_api_v2_DiscoveryRequest *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_Node*, UPB_SIZE(24, 48)); }
+UPB_INLINE upb_strview envoy_api_v2_DiscoveryRequest_version_info(const envoy_api_v2_DiscoveryRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
+UPB_INLINE bool envoy_api_v2_DiscoveryRequest_has_node(const envoy_api_v2_DiscoveryRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(24, 48)); }
+UPB_INLINE const struct envoy_api_v2_core_Node* envoy_api_v2_DiscoveryRequest_node(const envoy_api_v2_DiscoveryRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 48), const struct envoy_api_v2_core_Node*); }
 UPB_INLINE upb_strview const* envoy_api_v2_DiscoveryRequest_resource_names(const envoy_api_v2_DiscoveryRequest *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(32, 64), len); }
-UPB_INLINE upb_strview envoy_api_v2_DiscoveryRequest_type_url(const envoy_api_v2_DiscoveryRequest *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)); }
-UPB_INLINE upb_strview envoy_api_v2_DiscoveryRequest_response_nonce(const envoy_api_v2_DiscoveryRequest *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 32)); }
-UPB_INLINE const struct google_rpc_Status* envoy_api_v2_DiscoveryRequest_error_detail(const envoy_api_v2_DiscoveryRequest *msg) { return UPB_FIELD_AT(msg, const struct google_rpc_Status*, UPB_SIZE(28, 56)); }
+UPB_INLINE upb_strview envoy_api_v2_DiscoveryRequest_type_url(const envoy_api_v2_DiscoveryRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
+UPB_INLINE upb_strview envoy_api_v2_DiscoveryRequest_response_nonce(const envoy_api_v2_DiscoveryRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_strview); }
+UPB_INLINE bool envoy_api_v2_DiscoveryRequest_has_error_detail(const envoy_api_v2_DiscoveryRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(28, 56)); }
+UPB_INLINE const struct google_rpc_Status* envoy_api_v2_DiscoveryRequest_error_detail(const envoy_api_v2_DiscoveryRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), const struct google_rpc_Status*); }
 
 UPB_INLINE void envoy_api_v2_DiscoveryRequest_set_version_info(envoy_api_v2_DiscoveryRequest *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_DiscoveryRequest_set_node(envoy_api_v2_DiscoveryRequest *msg, struct envoy_api_v2_core_Node* value) {
-  UPB_FIELD_AT(msg, struct envoy_api_v2_core_Node*, UPB_SIZE(24, 48)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 48), struct envoy_api_v2_core_Node*) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_Node* envoy_api_v2_DiscoveryRequest_mutable_node(envoy_api_v2_DiscoveryRequest *msg, upb_arena *arena) {
   struct envoy_api_v2_core_Node* sub = (struct envoy_api_v2_core_Node*)envoy_api_v2_DiscoveryRequest_node(msg);
@@ -94,13 +96,13 @@ UPB_INLINE bool envoy_api_v2_DiscoveryRequest_add_resource_names(envoy_api_v2_Di
       arena);
 }
 UPB_INLINE void envoy_api_v2_DiscoveryRequest_set_type_url(envoy_api_v2_DiscoveryRequest *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_DiscoveryRequest_set_response_nonce(envoy_api_v2_DiscoveryRequest *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 32)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_DiscoveryRequest_set_error_detail(envoy_api_v2_DiscoveryRequest *msg, struct google_rpc_Status* value) {
-  UPB_FIELD_AT(msg, struct google_rpc_Status*, UPB_SIZE(28, 56)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 56), struct google_rpc_Status*) = value;
 }
 UPB_INLINE struct google_rpc_Status* envoy_api_v2_DiscoveryRequest_mutable_error_detail(envoy_api_v2_DiscoveryRequest *msg, upb_arena *arena) {
   struct google_rpc_Status* sub = (struct google_rpc_Status*)envoy_api_v2_DiscoveryRequest_error_detail(msg);
@@ -126,15 +128,17 @@ UPB_INLINE char *envoy_api_v2_DiscoveryResponse_serialize(const envoy_api_v2_Dis
   return upb_encode(msg, &envoy_api_v2_DiscoveryResponse_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_api_v2_DiscoveryResponse_version_info(const envoy_api_v2_DiscoveryResponse *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)); }
+UPB_INLINE upb_strview envoy_api_v2_DiscoveryResponse_version_info(const envoy_api_v2_DiscoveryResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
+UPB_INLINE bool envoy_api_v2_DiscoveryResponse_has_resources(const envoy_api_v2_DiscoveryResponse *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(32, 64)); }
 UPB_INLINE const struct google_protobuf_Any* const* envoy_api_v2_DiscoveryResponse_resources(const envoy_api_v2_DiscoveryResponse *msg, size_t *len) { return (const struct google_protobuf_Any* const*)_upb_array_accessor(msg, UPB_SIZE(32, 64), len); }
-UPB_INLINE bool envoy_api_v2_DiscoveryResponse_canary(const envoy_api_v2_DiscoveryResponse *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)); }
-UPB_INLINE upb_strview envoy_api_v2_DiscoveryResponse_type_url(const envoy_api_v2_DiscoveryResponse *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 24)); }
-UPB_INLINE upb_strview envoy_api_v2_DiscoveryResponse_nonce(const envoy_api_v2_DiscoveryResponse *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(20, 40)); }
-UPB_INLINE const struct envoy_api_v2_core_ControlPlane* envoy_api_v2_DiscoveryResponse_control_plane(const envoy_api_v2_DiscoveryResponse *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_ControlPlane*, UPB_SIZE(28, 56)); }
+UPB_INLINE bool envoy_api_v2_DiscoveryResponse_canary(const envoy_api_v2_DiscoveryResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool); }
+UPB_INLINE upb_strview envoy_api_v2_DiscoveryResponse_type_url(const envoy_api_v2_DiscoveryResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview); }
+UPB_INLINE upb_strview envoy_api_v2_DiscoveryResponse_nonce(const envoy_api_v2_DiscoveryResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), upb_strview); }
+UPB_INLINE bool envoy_api_v2_DiscoveryResponse_has_control_plane(const envoy_api_v2_DiscoveryResponse *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(28, 56)); }
+UPB_INLINE const struct envoy_api_v2_core_ControlPlane* envoy_api_v2_DiscoveryResponse_control_plane(const envoy_api_v2_DiscoveryResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), const struct envoy_api_v2_core_ControlPlane*); }
 
 UPB_INLINE void envoy_api_v2_DiscoveryResponse_set_version_info(envoy_api_v2_DiscoveryResponse *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 UPB_INLINE struct google_protobuf_Any** envoy_api_v2_DiscoveryResponse_mutable_resources(envoy_api_v2_DiscoveryResponse *msg, size_t *len) {
   return (struct google_protobuf_Any**)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 64), len);
@@ -150,16 +154,16 @@ UPB_INLINE struct google_protobuf_Any* envoy_api_v2_DiscoveryResponse_add_resour
   return sub;
 }
 UPB_INLINE void envoy_api_v2_DiscoveryResponse_set_canary(envoy_api_v2_DiscoveryResponse *msg, bool value) {
-  UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = value;
 }
 UPB_INLINE void envoy_api_v2_DiscoveryResponse_set_type_url(envoy_api_v2_DiscoveryResponse *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 24)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_DiscoveryResponse_set_nonce(envoy_api_v2_DiscoveryResponse *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(20, 40)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_DiscoveryResponse_set_control_plane(envoy_api_v2_DiscoveryResponse *msg, struct envoy_api_v2_core_ControlPlane* value) {
-  UPB_FIELD_AT(msg, struct envoy_api_v2_core_ControlPlane*, UPB_SIZE(28, 56)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 56), struct envoy_api_v2_core_ControlPlane*) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_ControlPlane* envoy_api_v2_DiscoveryResponse_mutable_control_plane(envoy_api_v2_DiscoveryResponse *msg, upb_arena *arena) {
   struct envoy_api_v2_core_ControlPlane* sub = (struct envoy_api_v2_core_ControlPlane*)envoy_api_v2_DiscoveryResponse_control_plane(msg);
@@ -185,18 +189,21 @@ UPB_INLINE char *envoy_api_v2_DeltaDiscoveryRequest_serialize(const envoy_api_v2
   return upb_encode(msg, &envoy_api_v2_DeltaDiscoveryRequest_msginit, arena, len);
 }
 
-UPB_INLINE const struct envoy_api_v2_core_Node* envoy_api_v2_DeltaDiscoveryRequest_node(const envoy_api_v2_DeltaDiscoveryRequest *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_Node*, UPB_SIZE(16, 32)); }
-UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryRequest_type_url(const envoy_api_v2_DeltaDiscoveryRequest *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+UPB_INLINE bool envoy_api_v2_DeltaDiscoveryRequest_has_node(const envoy_api_v2_DeltaDiscoveryRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
+UPB_INLINE const struct envoy_api_v2_core_Node* envoy_api_v2_DeltaDiscoveryRequest_node(const envoy_api_v2_DeltaDiscoveryRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct envoy_api_v2_core_Node*); }
+UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryRequest_type_url(const envoy_api_v2_DeltaDiscoveryRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
 UPB_INLINE upb_strview const* envoy_api_v2_DeltaDiscoveryRequest_resource_names_subscribe(const envoy_api_v2_DeltaDiscoveryRequest *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(24, 48), len); }
 UPB_INLINE upb_strview const* envoy_api_v2_DeltaDiscoveryRequest_resource_names_unsubscribe(const envoy_api_v2_DeltaDiscoveryRequest *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(28, 56), len); }
+UPB_INLINE bool envoy_api_v2_DeltaDiscoveryRequest_has_initial_resource_versions(const envoy_api_v2_DeltaDiscoveryRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(32, 64)); }
 UPB_INLINE size_t envoy_api_v2_DeltaDiscoveryRequest_initial_resource_versions_size(const envoy_api_v2_DeltaDiscoveryRequest *msg) {return _upb_msg_map_size(msg, UPB_SIZE(32, 64)); }
 UPB_INLINE bool envoy_api_v2_DeltaDiscoveryRequest_initial_resource_versions_get(const envoy_api_v2_DeltaDiscoveryRequest *msg, upb_strview key, upb_strview *val) { return _upb_msg_map_get(msg, UPB_SIZE(32, 64), &key, 0, val, 0); }
 UPB_INLINE const envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry* envoy_api_v2_DeltaDiscoveryRequest_initial_resource_versions_next(const envoy_api_v2_DeltaDiscoveryRequest *msg, size_t* iter) { return (const envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry*)_upb_msg_map_next(msg, UPB_SIZE(32, 64), iter); }
-UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryRequest_response_nonce(const envoy_api_v2_DeltaDiscoveryRequest *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)); }
-UPB_INLINE const struct google_rpc_Status* envoy_api_v2_DeltaDiscoveryRequest_error_detail(const envoy_api_v2_DeltaDiscoveryRequest *msg) { return UPB_FIELD_AT(msg, const struct google_rpc_Status*, UPB_SIZE(20, 40)); }
+UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryRequest_response_nonce(const envoy_api_v2_DeltaDiscoveryRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
+UPB_INLINE bool envoy_api_v2_DeltaDiscoveryRequest_has_error_detail(const envoy_api_v2_DeltaDiscoveryRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(20, 40)); }
+UPB_INLINE const struct google_rpc_Status* envoy_api_v2_DeltaDiscoveryRequest_error_detail(const envoy_api_v2_DeltaDiscoveryRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct google_rpc_Status*); }
 
 UPB_INLINE void envoy_api_v2_DeltaDiscoveryRequest_set_node(envoy_api_v2_DeltaDiscoveryRequest *msg, struct envoy_api_v2_core_Node* value) {
-  UPB_FIELD_AT(msg, struct envoy_api_v2_core_Node*, UPB_SIZE(16, 32)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct envoy_api_v2_core_Node*) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_Node* envoy_api_v2_DeltaDiscoveryRequest_mutable_node(envoy_api_v2_DeltaDiscoveryRequest *msg, upb_arena *arena) {
   struct envoy_api_v2_core_Node* sub = (struct envoy_api_v2_core_Node*)envoy_api_v2_DeltaDiscoveryRequest_node(msg);
@@ -208,7 +215,7 @@ UPB_INLINE struct envoy_api_v2_core_Node* envoy_api_v2_DeltaDiscoveryRequest_mut
   return sub;
 }
 UPB_INLINE void envoy_api_v2_DeltaDiscoveryRequest_set_type_url(envoy_api_v2_DeltaDiscoveryRequest *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE upb_strview* envoy_api_v2_DeltaDiscoveryRequest_mutable_resource_names_subscribe(envoy_api_v2_DeltaDiscoveryRequest *msg, size_t *len) {
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 48), len);
@@ -235,10 +242,10 @@ UPB_INLINE bool envoy_api_v2_DeltaDiscoveryRequest_initial_resource_versions_set
 UPB_INLINE bool envoy_api_v2_DeltaDiscoveryRequest_initial_resource_versions_delete(envoy_api_v2_DeltaDiscoveryRequest *msg, upb_strview key) { return _upb_msg_map_delete(msg, UPB_SIZE(32, 64), &key, 0); }
 UPB_INLINE envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry* envoy_api_v2_DeltaDiscoveryRequest_initial_resource_versions_nextmutable(envoy_api_v2_DeltaDiscoveryRequest *msg, size_t* iter) { return (envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry*)_upb_msg_map_next(msg, UPB_SIZE(32, 64), iter); }
 UPB_INLINE void envoy_api_v2_DeltaDiscoveryRequest_set_response_nonce(envoy_api_v2_DeltaDiscoveryRequest *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_DeltaDiscoveryRequest_set_error_detail(envoy_api_v2_DeltaDiscoveryRequest *msg, struct google_rpc_Status* value) {
-  UPB_FIELD_AT(msg, struct google_rpc_Status*, UPB_SIZE(20, 40)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), struct google_rpc_Status*) = value;
 }
 UPB_INLINE struct google_rpc_Status* envoy_api_v2_DeltaDiscoveryRequest_mutable_error_detail(envoy_api_v2_DeltaDiscoveryRequest *msg, upb_arena *arena) {
   struct google_rpc_Status* sub = (struct google_rpc_Status*)envoy_api_v2_DeltaDiscoveryRequest_error_detail(msg);
@@ -281,14 +288,15 @@ UPB_INLINE char *envoy_api_v2_DeltaDiscoveryResponse_serialize(const envoy_api_v
   return upb_encode(msg, &envoy_api_v2_DeltaDiscoveryResponse_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryResponse_system_version_info(const envoy_api_v2_DeltaDiscoveryResponse *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryResponse_system_version_info(const envoy_api_v2_DeltaDiscoveryResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
+UPB_INLINE bool envoy_api_v2_DeltaDiscoveryResponse_has_resources(const envoy_api_v2_DeltaDiscoveryResponse *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(24, 48)); }
 UPB_INLINE const envoy_api_v2_Resource* const* envoy_api_v2_DeltaDiscoveryResponse_resources(const envoy_api_v2_DeltaDiscoveryResponse *msg, size_t *len) { return (const envoy_api_v2_Resource* const*)_upb_array_accessor(msg, UPB_SIZE(24, 48), len); }
-UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryResponse_type_url(const envoy_api_v2_DeltaDiscoveryResponse *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)); }
-UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryResponse_nonce(const envoy_api_v2_DeltaDiscoveryResponse *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 32)); }
+UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryResponse_type_url(const envoy_api_v2_DeltaDiscoveryResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
+UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryResponse_nonce(const envoy_api_v2_DeltaDiscoveryResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_strview); }
 UPB_INLINE upb_strview const* envoy_api_v2_DeltaDiscoveryResponse_removed_resources(const envoy_api_v2_DeltaDiscoveryResponse *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(28, 56), len); }
 
 UPB_INLINE void envoy_api_v2_DeltaDiscoveryResponse_set_system_version_info(envoy_api_v2_DeltaDiscoveryResponse *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE envoy_api_v2_Resource** envoy_api_v2_DeltaDiscoveryResponse_mutable_resources(envoy_api_v2_DeltaDiscoveryResponse *msg, size_t *len) {
   return (envoy_api_v2_Resource**)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 48), len);
@@ -304,10 +312,10 @@ UPB_INLINE struct envoy_api_v2_Resource* envoy_api_v2_DeltaDiscoveryResponse_add
   return sub;
 }
 UPB_INLINE void envoy_api_v2_DeltaDiscoveryResponse_set_type_url(envoy_api_v2_DeltaDiscoveryResponse *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_DeltaDiscoveryResponse_set_nonce(envoy_api_v2_DeltaDiscoveryResponse *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 32)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_strview) = value;
 }
 UPB_INLINE upb_strview* envoy_api_v2_DeltaDiscoveryResponse_mutable_removed_resources(envoy_api_v2_DeltaDiscoveryResponse *msg, size_t *len) {
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 56), len);
@@ -334,16 +342,17 @@ UPB_INLINE char *envoy_api_v2_Resource_serialize(const envoy_api_v2_Resource *ms
   return upb_encode(msg, &envoy_api_v2_Resource_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_api_v2_Resource_version(const envoy_api_v2_Resource *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_Any* envoy_api_v2_Resource_resource(const envoy_api_v2_Resource *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Any*, UPB_SIZE(16, 32)); }
-UPB_INLINE upb_strview envoy_api_v2_Resource_name(const envoy_api_v2_Resource *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)); }
+UPB_INLINE upb_strview envoy_api_v2_Resource_version(const envoy_api_v2_Resource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
+UPB_INLINE bool envoy_api_v2_Resource_has_resource(const envoy_api_v2_Resource *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
+UPB_INLINE const struct google_protobuf_Any* envoy_api_v2_Resource_resource(const envoy_api_v2_Resource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct google_protobuf_Any*); }
+UPB_INLINE upb_strview envoy_api_v2_Resource_name(const envoy_api_v2_Resource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
 UPB_INLINE upb_strview const* envoy_api_v2_Resource_aliases(const envoy_api_v2_Resource *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(20, 40), len); }
 
 UPB_INLINE void envoy_api_v2_Resource_set_version(envoy_api_v2_Resource *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_Resource_set_resource(envoy_api_v2_Resource *msg, struct google_protobuf_Any* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_Any*, UPB_SIZE(16, 32)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct google_protobuf_Any*) = value;
 }
 UPB_INLINE struct google_protobuf_Any* envoy_api_v2_Resource_mutable_resource(envoy_api_v2_Resource *msg, upb_arena *arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_api_v2_Resource_resource(msg);
@@ -355,7 +364,7 @@ UPB_INLINE struct google_protobuf_Any* envoy_api_v2_Resource_mutable_resource(en
   return sub;
 }
 UPB_INLINE void envoy_api_v2_Resource_set_name(envoy_api_v2_Resource *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
 }
 UPB_INLINE upb_strview* envoy_api_v2_Resource_mutable_aliases(envoy_api_v2_Resource *msg, size_t *len) {
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(20, 40), len);

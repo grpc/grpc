@@ -22,7 +22,7 @@ static const upb_msglayout *const envoy_api_v2_core_HttpUri_submsgs[1] = {
 
 static const upb_msglayout_field envoy_api_v2_core_HttpUri__fields[3] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(12, 24), UPB_SIZE(-21, -41), 0, 9, 1},
+  {2, UPB_SIZE(12, 24), UPB_SIZE(-20, -40), 0, 9, 1},
   {3, UPB_SIZE(8, 16), 0, 0, 11, 1},
 };
 

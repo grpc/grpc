@@ -40,10 +40,11 @@ UPB_INLINE char *envoy_config_listener_v2_ApiListener_serialize(const envoy_conf
   return upb_encode(msg, &envoy_config_listener_v2_ApiListener_msginit, arena, len);
 }
 
-UPB_INLINE const struct google_protobuf_Any* envoy_config_listener_v2_ApiListener_api_listener(const envoy_config_listener_v2_ApiListener *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Any*, UPB_SIZE(0, 0)); }
+UPB_INLINE bool envoy_config_listener_v2_ApiListener_has_api_listener(const envoy_config_listener_v2_ApiListener *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
+UPB_INLINE const struct google_protobuf_Any* envoy_config_listener_v2_ApiListener_api_listener(const envoy_config_listener_v2_ApiListener *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), const struct google_protobuf_Any*); }
 
 UPB_INLINE void envoy_config_listener_v2_ApiListener_set_api_listener(envoy_config_listener_v2_ApiListener *msg, struct google_protobuf_Any* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_Any*, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), struct google_protobuf_Any*) = value;
 }
 UPB_INLINE struct google_protobuf_Any* envoy_config_listener_v2_ApiListener_mutable_api_listener(envoy_config_listener_v2_ApiListener *msg, upb_arena *arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_listener_v2_ApiListener_api_listener(msg);

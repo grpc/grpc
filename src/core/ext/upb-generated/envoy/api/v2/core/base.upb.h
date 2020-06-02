@@ -137,18 +137,18 @@ UPB_INLINE char *envoy_api_v2_core_Locality_serialize(const envoy_api_v2_core_Lo
   return upb_encode(msg, &envoy_api_v2_core_Locality_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_api_v2_core_Locality_region(const envoy_api_v2_core_Locality *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
-UPB_INLINE upb_strview envoy_api_v2_core_Locality_zone(const envoy_api_v2_core_Locality *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)); }
-UPB_INLINE upb_strview envoy_api_v2_core_Locality_sub_zone(const envoy_api_v2_core_Locality *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 32)); }
+UPB_INLINE upb_strview envoy_api_v2_core_Locality_region(const envoy_api_v2_core_Locality *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
+UPB_INLINE upb_strview envoy_api_v2_core_Locality_zone(const envoy_api_v2_core_Locality *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
+UPB_INLINE upb_strview envoy_api_v2_core_Locality_sub_zone(const envoy_api_v2_core_Locality *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_strview); }
 
 UPB_INLINE void envoy_api_v2_core_Locality_set_region(envoy_api_v2_core_Locality *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_Locality_set_zone(envoy_api_v2_core_Locality *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_Locality_set_sub_zone(envoy_api_v2_core_Locality *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 32)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_strview) = value;
 }
 
 /* envoy.api.v2.core.BuildVersion */
@@ -165,11 +165,13 @@ UPB_INLINE char *envoy_api_v2_core_BuildVersion_serialize(const envoy_api_v2_cor
   return upb_encode(msg, &envoy_api_v2_core_BuildVersion_msginit, arena, len);
 }
 
-UPB_INLINE const struct envoy_type_SemanticVersion* envoy_api_v2_core_BuildVersion_version(const envoy_api_v2_core_BuildVersion *msg) { return UPB_FIELD_AT(msg, const struct envoy_type_SemanticVersion*, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_Struct* envoy_api_v2_core_BuildVersion_metadata(const envoy_api_v2_core_BuildVersion *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Struct*, UPB_SIZE(4, 8)); }
+UPB_INLINE bool envoy_api_v2_core_BuildVersion_has_version(const envoy_api_v2_core_BuildVersion *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
+UPB_INLINE const struct envoy_type_SemanticVersion* envoy_api_v2_core_BuildVersion_version(const envoy_api_v2_core_BuildVersion *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), const struct envoy_type_SemanticVersion*); }
+UPB_INLINE bool envoy_api_v2_core_BuildVersion_has_metadata(const envoy_api_v2_core_BuildVersion *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
+UPB_INLINE const struct google_protobuf_Struct* envoy_api_v2_core_BuildVersion_metadata(const envoy_api_v2_core_BuildVersion *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Struct*); }
 
 UPB_INLINE void envoy_api_v2_core_BuildVersion_set_version(envoy_api_v2_core_BuildVersion *msg, struct envoy_type_SemanticVersion* value) {
-  UPB_FIELD_AT(msg, struct envoy_type_SemanticVersion*, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), struct envoy_type_SemanticVersion*) = value;
 }
 UPB_INLINE struct envoy_type_SemanticVersion* envoy_api_v2_core_BuildVersion_mutable_version(envoy_api_v2_core_BuildVersion *msg, upb_arena *arena) {
   struct envoy_type_SemanticVersion* sub = (struct envoy_type_SemanticVersion*)envoy_api_v2_core_BuildVersion_version(msg);
@@ -181,7 +183,7 @@ UPB_INLINE struct envoy_type_SemanticVersion* envoy_api_v2_core_BuildVersion_mut
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_BuildVersion_set_metadata(envoy_api_v2_core_BuildVersion *msg, struct google_protobuf_Struct* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_Struct*, UPB_SIZE(4, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Struct*) = value;
 }
 UPB_INLINE struct google_protobuf_Struct* envoy_api_v2_core_BuildVersion_mutable_metadata(envoy_api_v2_core_BuildVersion *msg, upb_arena *arena) {
   struct google_protobuf_Struct* sub = (struct google_protobuf_Struct*)envoy_api_v2_core_BuildVersion_metadata(msg);
@@ -207,23 +209,24 @@ UPB_INLINE char *envoy_api_v2_core_Extension_serialize(const envoy_api_v2_core_E
   return upb_encode(msg, &envoy_api_v2_core_Extension_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_api_v2_core_Extension_name(const envoy_api_v2_core_Extension *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)); }
-UPB_INLINE upb_strview envoy_api_v2_core_Extension_category(const envoy_api_v2_core_Extension *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 24)); }
-UPB_INLINE upb_strview envoy_api_v2_core_Extension_type_descriptor(const envoy_api_v2_core_Extension *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(20, 40)); }
-UPB_INLINE const envoy_api_v2_core_BuildVersion* envoy_api_v2_core_Extension_version(const envoy_api_v2_core_Extension *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_core_BuildVersion*, UPB_SIZE(28, 56)); }
-UPB_INLINE bool envoy_api_v2_core_Extension_disabled(const envoy_api_v2_core_Extension *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)); }
+UPB_INLINE upb_strview envoy_api_v2_core_Extension_name(const envoy_api_v2_core_Extension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
+UPB_INLINE upb_strview envoy_api_v2_core_Extension_category(const envoy_api_v2_core_Extension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview); }
+UPB_INLINE upb_strview envoy_api_v2_core_Extension_type_descriptor(const envoy_api_v2_core_Extension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), upb_strview); }
+UPB_INLINE bool envoy_api_v2_core_Extension_has_version(const envoy_api_v2_core_Extension *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(28, 56)); }
+UPB_INLINE const envoy_api_v2_core_BuildVersion* envoy_api_v2_core_Extension_version(const envoy_api_v2_core_Extension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), const envoy_api_v2_core_BuildVersion*); }
+UPB_INLINE bool envoy_api_v2_core_Extension_disabled(const envoy_api_v2_core_Extension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool); }
 
 UPB_INLINE void envoy_api_v2_core_Extension_set_name(envoy_api_v2_core_Extension *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_Extension_set_category(envoy_api_v2_core_Extension *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 24)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_Extension_set_type_descriptor(envoy_api_v2_core_Extension *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(20, 40)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_Extension_set_version(envoy_api_v2_core_Extension *msg, envoy_api_v2_core_BuildVersion* value) {
-  UPB_FIELD_AT(msg, envoy_api_v2_core_BuildVersion*, UPB_SIZE(28, 56)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 56), envoy_api_v2_core_BuildVersion*) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_BuildVersion* envoy_api_v2_core_Extension_mutable_version(envoy_api_v2_core_Extension *msg, upb_arena *arena) {
   struct envoy_api_v2_core_BuildVersion* sub = (struct envoy_api_v2_core_BuildVersion*)envoy_api_v2_core_Extension_version(msg);
@@ -235,7 +238,7 @@ UPB_INLINE struct envoy_api_v2_core_BuildVersion* envoy_api_v2_core_Extension_mu
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_Extension_set_disabled(envoy_api_v2_core_Extension *msg, bool value) {
-  UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = value;
 }
 
 /* envoy.api.v2.core.Node */
@@ -257,30 +260,34 @@ typedef enum {
   envoy_api_v2_core_Node_user_agent_version_type_user_agent_build_version = 8,
   envoy_api_v2_core_Node_user_agent_version_type_NOT_SET = 0
 } envoy_api_v2_core_Node_user_agent_version_type_oneofcases;
-UPB_INLINE envoy_api_v2_core_Node_user_agent_version_type_oneofcases envoy_api_v2_core_Node_user_agent_version_type_case(const envoy_api_v2_core_Node* msg) { return (envoy_api_v2_core_Node_user_agent_version_type_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(60, 120)); }
+UPB_INLINE envoy_api_v2_core_Node_user_agent_version_type_oneofcases envoy_api_v2_core_Node_user_agent_version_type_case(const envoy_api_v2_core_Node* msg) { return (envoy_api_v2_core_Node_user_agent_version_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(60, 120), int32_t); }
 
-UPB_INLINE upb_strview envoy_api_v2_core_Node_id(const envoy_api_v2_core_Node *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
-UPB_INLINE upb_strview envoy_api_v2_core_Node_cluster(const envoy_api_v2_core_Node *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)); }
-UPB_INLINE const struct google_protobuf_Struct* envoy_api_v2_core_Node_metadata(const envoy_api_v2_core_Node *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Struct*, UPB_SIZE(32, 64)); }
-UPB_INLINE const envoy_api_v2_core_Locality* envoy_api_v2_core_Node_locality(const envoy_api_v2_core_Node *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_core_Locality*, UPB_SIZE(36, 72)); }
-UPB_INLINE upb_strview envoy_api_v2_core_Node_build_version(const envoy_api_v2_core_Node *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 32)); }
-UPB_INLINE upb_strview envoy_api_v2_core_Node_user_agent_name(const envoy_api_v2_core_Node *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(24, 48)); }
+UPB_INLINE upb_strview envoy_api_v2_core_Node_id(const envoy_api_v2_core_Node *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
+UPB_INLINE upb_strview envoy_api_v2_core_Node_cluster(const envoy_api_v2_core_Node *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
+UPB_INLINE bool envoy_api_v2_core_Node_has_metadata(const envoy_api_v2_core_Node *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(32, 64)); }
+UPB_INLINE const struct google_protobuf_Struct* envoy_api_v2_core_Node_metadata(const envoy_api_v2_core_Node *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 64), const struct google_protobuf_Struct*); }
+UPB_INLINE bool envoy_api_v2_core_Node_has_locality(const envoy_api_v2_core_Node *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(36, 72)); }
+UPB_INLINE const envoy_api_v2_core_Locality* envoy_api_v2_core_Node_locality(const envoy_api_v2_core_Node *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(36, 72), const envoy_api_v2_core_Locality*); }
+UPB_INLINE upb_strview envoy_api_v2_core_Node_build_version(const envoy_api_v2_core_Node *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_strview); }
+UPB_INLINE upb_strview envoy_api_v2_core_Node_user_agent_name(const envoy_api_v2_core_Node *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 48), upb_strview); }
 UPB_INLINE bool envoy_api_v2_core_Node_has_user_agent_version(const envoy_api_v2_core_Node *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(60, 120), 7); }
 UPB_INLINE upb_strview envoy_api_v2_core_Node_user_agent_version(const envoy_api_v2_core_Node *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(52, 104), UPB_SIZE(60, 120), 7, upb_strview_make("", strlen(""))); }
 UPB_INLINE bool envoy_api_v2_core_Node_has_user_agent_build_version(const envoy_api_v2_core_Node *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(60, 120), 8); }
 UPB_INLINE const envoy_api_v2_core_BuildVersion* envoy_api_v2_core_Node_user_agent_build_version(const envoy_api_v2_core_Node *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_core_BuildVersion*, UPB_SIZE(52, 104), UPB_SIZE(60, 120), 8, NULL); }
+UPB_INLINE bool envoy_api_v2_core_Node_has_extensions(const envoy_api_v2_core_Node *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(40, 80)); }
 UPB_INLINE const envoy_api_v2_core_Extension* const* envoy_api_v2_core_Node_extensions(const envoy_api_v2_core_Node *msg, size_t *len) { return (const envoy_api_v2_core_Extension* const*)_upb_array_accessor(msg, UPB_SIZE(40, 80), len); }
 UPB_INLINE upb_strview const* envoy_api_v2_core_Node_client_features(const envoy_api_v2_core_Node *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(44, 88), len); }
+UPB_INLINE bool envoy_api_v2_core_Node_has_listening_addresses(const envoy_api_v2_core_Node *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(48, 96)); }
 UPB_INLINE const struct envoy_api_v2_core_Address* const* envoy_api_v2_core_Node_listening_addresses(const envoy_api_v2_core_Node *msg, size_t *len) { return (const struct envoy_api_v2_core_Address* const*)_upb_array_accessor(msg, UPB_SIZE(48, 96), len); }
 
 UPB_INLINE void envoy_api_v2_core_Node_set_id(envoy_api_v2_core_Node *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_Node_set_cluster(envoy_api_v2_core_Node *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_Node_set_metadata(envoy_api_v2_core_Node *msg, struct google_protobuf_Struct* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_Struct*, UPB_SIZE(32, 64)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 64), struct google_protobuf_Struct*) = value;
 }
 UPB_INLINE struct google_protobuf_Struct* envoy_api_v2_core_Node_mutable_metadata(envoy_api_v2_core_Node *msg, upb_arena *arena) {
   struct google_protobuf_Struct* sub = (struct google_protobuf_Struct*)envoy_api_v2_core_Node_metadata(msg);
@@ -292,7 +299,7 @@ UPB_INLINE struct google_protobuf_Struct* envoy_api_v2_core_Node_mutable_metadat
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_Node_set_locality(envoy_api_v2_core_Node *msg, envoy_api_v2_core_Locality* value) {
-  UPB_FIELD_AT(msg, envoy_api_v2_core_Locality*, UPB_SIZE(36, 72)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(36, 72), envoy_api_v2_core_Locality*) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_Locality* envoy_api_v2_core_Node_mutable_locality(envoy_api_v2_core_Node *msg, upb_arena *arena) {
   struct envoy_api_v2_core_Locality* sub = (struct envoy_api_v2_core_Locality*)envoy_api_v2_core_Node_locality(msg);
@@ -304,10 +311,10 @@ UPB_INLINE struct envoy_api_v2_core_Locality* envoy_api_v2_core_Node_mutable_loc
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_Node_set_build_version(envoy_api_v2_core_Node *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 32)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_Node_set_user_agent_name(envoy_api_v2_core_Node *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(24, 48)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 48), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_Node_set_user_agent_version(envoy_api_v2_core_Node *msg, upb_strview value) {
   UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(52, 104), value, UPB_SIZE(60, 120), 7);
@@ -375,6 +382,7 @@ UPB_INLINE char *envoy_api_v2_core_Metadata_serialize(const envoy_api_v2_core_Me
   return upb_encode(msg, &envoy_api_v2_core_Metadata_msginit, arena, len);
 }
 
+UPB_INLINE bool envoy_api_v2_core_Metadata_has_filter_metadata(const envoy_api_v2_core_Metadata *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
 UPB_INLINE size_t envoy_api_v2_core_Metadata_filter_metadata_size(const envoy_api_v2_core_Metadata *msg) {return _upb_msg_map_size(msg, UPB_SIZE(0, 0)); }
 UPB_INLINE bool envoy_api_v2_core_Metadata_filter_metadata_get(const envoy_api_v2_core_Metadata *msg, upb_strview key, struct google_protobuf_Struct* *val) { return _upb_msg_map_get(msg, UPB_SIZE(0, 0), &key, 0, val, sizeof(*val)); }
 UPB_INLINE const envoy_api_v2_core_Metadata_FilterMetadataEntry* envoy_api_v2_core_Metadata_filter_metadata_next(const envoy_api_v2_core_Metadata *msg, size_t* iter) { return (const envoy_api_v2_core_Metadata_FilterMetadataEntry*)_upb_msg_map_next(msg, UPB_SIZE(0, 0), iter); }
@@ -391,6 +399,7 @@ UPB_INLINE upb_strview envoy_api_v2_core_Metadata_FilterMetadataEntry_key(const 
   _upb_msg_map_key(msg, &ret, 0);
   return ret;
 }
+UPB_INLINE bool envoy_api_v2_core_Metadata_FilterMetadataEntry_has_value(const envoy_api_v2_core_Metadata_FilterMetadataEntry *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
 UPB_INLINE const struct google_protobuf_Struct* envoy_api_v2_core_Metadata_FilterMetadataEntry_value(const envoy_api_v2_core_Metadata_FilterMetadataEntry *msg) {
   struct google_protobuf_Struct* ret;
   _upb_msg_map_value(msg, &ret, sizeof(ret));
@@ -415,14 +424,14 @@ UPB_INLINE char *envoy_api_v2_core_RuntimeUInt32_serialize(const envoy_api_v2_co
   return upb_encode(msg, &envoy_api_v2_core_RuntimeUInt32_msginit, arena, len);
 }
 
-UPB_INLINE uint32_t envoy_api_v2_core_RuntimeUInt32_default_value(const envoy_api_v2_core_RuntimeUInt32 *msg) { return UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)); }
-UPB_INLINE upb_strview envoy_api_v2_core_RuntimeUInt32_runtime_key(const envoy_api_v2_core_RuntimeUInt32 *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)); }
+UPB_INLINE uint32_t envoy_api_v2_core_RuntimeUInt32_default_value(const envoy_api_v2_core_RuntimeUInt32 *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t); }
+UPB_INLINE upb_strview envoy_api_v2_core_RuntimeUInt32_runtime_key(const envoy_api_v2_core_RuntimeUInt32 *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
 
 UPB_INLINE void envoy_api_v2_core_RuntimeUInt32_set_default_value(envoy_api_v2_core_RuntimeUInt32 *msg, uint32_t value) {
-  UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = value;
 }
 UPB_INLINE void envoy_api_v2_core_RuntimeUInt32_set_runtime_key(envoy_api_v2_core_RuntimeUInt32 *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 
 /* envoy.api.v2.core.RuntimeDouble */
@@ -439,14 +448,14 @@ UPB_INLINE char *envoy_api_v2_core_RuntimeDouble_serialize(const envoy_api_v2_co
   return upb_encode(msg, &envoy_api_v2_core_RuntimeDouble_msginit, arena, len);
 }
 
-UPB_INLINE double envoy_api_v2_core_RuntimeDouble_default_value(const envoy_api_v2_core_RuntimeDouble *msg) { return UPB_FIELD_AT(msg, double, UPB_SIZE(0, 0)); }
-UPB_INLINE upb_strview envoy_api_v2_core_RuntimeDouble_runtime_key(const envoy_api_v2_core_RuntimeDouble *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 8)); }
+UPB_INLINE double envoy_api_v2_core_RuntimeDouble_default_value(const envoy_api_v2_core_RuntimeDouble *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double); }
+UPB_INLINE upb_strview envoy_api_v2_core_RuntimeDouble_runtime_key(const envoy_api_v2_core_RuntimeDouble *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_strview); }
 
 UPB_INLINE void envoy_api_v2_core_RuntimeDouble_set_default_value(envoy_api_v2_core_RuntimeDouble *msg, double value) {
-  UPB_FIELD_AT(msg, double, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double) = value;
 }
 UPB_INLINE void envoy_api_v2_core_RuntimeDouble_set_runtime_key(envoy_api_v2_core_RuntimeDouble *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_strview) = value;
 }
 
 /* envoy.api.v2.core.RuntimeFeatureFlag */
@@ -463,11 +472,12 @@ UPB_INLINE char *envoy_api_v2_core_RuntimeFeatureFlag_serialize(const envoy_api_
   return upb_encode(msg, &envoy_api_v2_core_RuntimeFeatureFlag_msginit, arena, len);
 }
 
-UPB_INLINE const struct google_protobuf_BoolValue* envoy_api_v2_core_RuntimeFeatureFlag_default_value(const envoy_api_v2_core_RuntimeFeatureFlag *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(8, 16)); }
-UPB_INLINE upb_strview envoy_api_v2_core_RuntimeFeatureFlag_runtime_key(const envoy_api_v2_core_RuntimeFeatureFlag *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+UPB_INLINE bool envoy_api_v2_core_RuntimeFeatureFlag_has_default_value(const envoy_api_v2_core_RuntimeFeatureFlag *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
+UPB_INLINE const struct google_protobuf_BoolValue* envoy_api_v2_core_RuntimeFeatureFlag_default_value(const envoy_api_v2_core_RuntimeFeatureFlag *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_BoolValue*); }
+UPB_INLINE upb_strview envoy_api_v2_core_RuntimeFeatureFlag_runtime_key(const envoy_api_v2_core_RuntimeFeatureFlag *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
 
 UPB_INLINE void envoy_api_v2_core_RuntimeFeatureFlag_set_default_value(envoy_api_v2_core_RuntimeFeatureFlag *msg, struct google_protobuf_BoolValue* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_BoolValue*, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_BoolValue*) = value;
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_core_RuntimeFeatureFlag_mutable_default_value(envoy_api_v2_core_RuntimeFeatureFlag *msg, upb_arena *arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_api_v2_core_RuntimeFeatureFlag_default_value(msg);
@@ -479,7 +489,7 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_core_RuntimeFeatureFla
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_RuntimeFeatureFlag_set_runtime_key(envoy_api_v2_core_RuntimeFeatureFlag *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 
 /* envoy.api.v2.core.HeaderValue */
@@ -496,14 +506,14 @@ UPB_INLINE char *envoy_api_v2_core_HeaderValue_serialize(const envoy_api_v2_core
   return upb_encode(msg, &envoy_api_v2_core_HeaderValue_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_api_v2_core_HeaderValue_key(const envoy_api_v2_core_HeaderValue *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
-UPB_INLINE upb_strview envoy_api_v2_core_HeaderValue_value(const envoy_api_v2_core_HeaderValue *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)); }
+UPB_INLINE upb_strview envoy_api_v2_core_HeaderValue_key(const envoy_api_v2_core_HeaderValue *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
+UPB_INLINE upb_strview envoy_api_v2_core_HeaderValue_value(const envoy_api_v2_core_HeaderValue *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
 
 UPB_INLINE void envoy_api_v2_core_HeaderValue_set_key(envoy_api_v2_core_HeaderValue *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_HeaderValue_set_value(envoy_api_v2_core_HeaderValue *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
 }
 
 /* envoy.api.v2.core.HeaderValueOption */
@@ -520,11 +530,13 @@ UPB_INLINE char *envoy_api_v2_core_HeaderValueOption_serialize(const envoy_api_v
   return upb_encode(msg, &envoy_api_v2_core_HeaderValueOption_msginit, arena, len);
 }
 
-UPB_INLINE const envoy_api_v2_core_HeaderValue* envoy_api_v2_core_HeaderValueOption_header(const envoy_api_v2_core_HeaderValueOption *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_core_HeaderValue*, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_BoolValue* envoy_api_v2_core_HeaderValueOption_append(const envoy_api_v2_core_HeaderValueOption *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_BoolValue*, UPB_SIZE(4, 8)); }
+UPB_INLINE bool envoy_api_v2_core_HeaderValueOption_has_header(const envoy_api_v2_core_HeaderValueOption *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
+UPB_INLINE const envoy_api_v2_core_HeaderValue* envoy_api_v2_core_HeaderValueOption_header(const envoy_api_v2_core_HeaderValueOption *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), const envoy_api_v2_core_HeaderValue*); }
+UPB_INLINE bool envoy_api_v2_core_HeaderValueOption_has_append(const envoy_api_v2_core_HeaderValueOption *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
+UPB_INLINE const struct google_protobuf_BoolValue* envoy_api_v2_core_HeaderValueOption_append(const envoy_api_v2_core_HeaderValueOption *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_BoolValue*); }
 
 UPB_INLINE void envoy_api_v2_core_HeaderValueOption_set_header(envoy_api_v2_core_HeaderValueOption *msg, envoy_api_v2_core_HeaderValue* value) {
-  UPB_FIELD_AT(msg, envoy_api_v2_core_HeaderValue*, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), envoy_api_v2_core_HeaderValue*) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_HeaderValue* envoy_api_v2_core_HeaderValueOption_mutable_header(envoy_api_v2_core_HeaderValueOption *msg, upb_arena *arena) {
   struct envoy_api_v2_core_HeaderValue* sub = (struct envoy_api_v2_core_HeaderValue*)envoy_api_v2_core_HeaderValueOption_header(msg);
@@ -536,7 +548,7 @@ UPB_INLINE struct envoy_api_v2_core_HeaderValue* envoy_api_v2_core_HeaderValueOp
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_HeaderValueOption_set_append(envoy_api_v2_core_HeaderValueOption *msg, struct google_protobuf_BoolValue* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_BoolValue*, UPB_SIZE(4, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_BoolValue*) = value;
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_core_HeaderValueOption_mutable_append(envoy_api_v2_core_HeaderValueOption *msg, upb_arena *arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_api_v2_core_HeaderValueOption_append(msg);
@@ -562,6 +574,7 @@ UPB_INLINE char *envoy_api_v2_core_HeaderMap_serialize(const envoy_api_v2_core_H
   return upb_encode(msg, &envoy_api_v2_core_HeaderMap_msginit, arena, len);
 }
 
+UPB_INLINE bool envoy_api_v2_core_HeaderMap_has_headers(const envoy_api_v2_core_HeaderMap *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
 UPB_INLINE const envoy_api_v2_core_HeaderValue* const* envoy_api_v2_core_HeaderMap_headers(const envoy_api_v2_core_HeaderMap *msg, size_t *len) { return (const envoy_api_v2_core_HeaderValue* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
 
 UPB_INLINE envoy_api_v2_core_HeaderValue** envoy_api_v2_core_HeaderMap_mutable_headers(envoy_api_v2_core_HeaderMap *msg, size_t *len) {
@@ -598,7 +611,7 @@ typedef enum {
   envoy_api_v2_core_DataSource_specifier_inline_string = 3,
   envoy_api_v2_core_DataSource_specifier_NOT_SET = 0
 } envoy_api_v2_core_DataSource_specifier_oneofcases;
-UPB_INLINE envoy_api_v2_core_DataSource_specifier_oneofcases envoy_api_v2_core_DataSource_specifier_case(const envoy_api_v2_core_DataSource* msg) { return (envoy_api_v2_core_DataSource_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(8, 16)); }
+UPB_INLINE envoy_api_v2_core_DataSource_specifier_oneofcases envoy_api_v2_core_DataSource_specifier_case(const envoy_api_v2_core_DataSource* msg) { return (envoy_api_v2_core_DataSource_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(8, 16), int32_t); }
 
 UPB_INLINE bool envoy_api_v2_core_DataSource_has_filename(const envoy_api_v2_core_DataSource *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 1); }
 UPB_INLINE upb_strview envoy_api_v2_core_DataSource_filename(const envoy_api_v2_core_DataSource *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 1, upb_strview_make("", strlen(""))); }
@@ -631,11 +644,13 @@ UPB_INLINE char *envoy_api_v2_core_RetryPolicy_serialize(const envoy_api_v2_core
   return upb_encode(msg, &envoy_api_v2_core_RetryPolicy_msginit, arena, len);
 }
 
-UPB_INLINE const struct envoy_api_v2_core_BackoffStrategy* envoy_api_v2_core_RetryPolicy_retry_back_off(const envoy_api_v2_core_RetryPolicy *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_BackoffStrategy*, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_RetryPolicy_num_retries(const envoy_api_v2_core_RetryPolicy *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(4, 8)); }
+UPB_INLINE bool envoy_api_v2_core_RetryPolicy_has_retry_back_off(const envoy_api_v2_core_RetryPolicy *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
+UPB_INLINE const struct envoy_api_v2_core_BackoffStrategy* envoy_api_v2_core_RetryPolicy_retry_back_off(const envoy_api_v2_core_RetryPolicy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), const struct envoy_api_v2_core_BackoffStrategy*); }
+UPB_INLINE bool envoy_api_v2_core_RetryPolicy_has_num_retries(const envoy_api_v2_core_RetryPolicy *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_RetryPolicy_num_retries(const envoy_api_v2_core_RetryPolicy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_UInt32Value*); }
 
 UPB_INLINE void envoy_api_v2_core_RetryPolicy_set_retry_back_off(envoy_api_v2_core_RetryPolicy *msg, struct envoy_api_v2_core_BackoffStrategy* value) {
-  UPB_FIELD_AT(msg, struct envoy_api_v2_core_BackoffStrategy*, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), struct envoy_api_v2_core_BackoffStrategy*) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_BackoffStrategy* envoy_api_v2_core_RetryPolicy_mutable_retry_back_off(envoy_api_v2_core_RetryPolicy *msg, upb_arena *arena) {
   struct envoy_api_v2_core_BackoffStrategy* sub = (struct envoy_api_v2_core_BackoffStrategy*)envoy_api_v2_core_RetryPolicy_retry_back_off(msg);
@@ -647,7 +662,7 @@ UPB_INLINE struct envoy_api_v2_core_BackoffStrategy* envoy_api_v2_core_RetryPoli
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_RetryPolicy_set_num_retries(envoy_api_v2_core_RetryPolicy *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(4, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_UInt32Value*) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_RetryPolicy_mutable_num_retries(envoy_api_v2_core_RetryPolicy *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_RetryPolicy_num_retries(msg);
@@ -673,12 +688,14 @@ UPB_INLINE char *envoy_api_v2_core_RemoteDataSource_serialize(const envoy_api_v2
   return upb_encode(msg, &envoy_api_v2_core_RemoteDataSource_msginit, arena, len);
 }
 
-UPB_INLINE const struct envoy_api_v2_core_HttpUri* envoy_api_v2_core_RemoteDataSource_http_uri(const envoy_api_v2_core_RemoteDataSource *msg) { return UPB_FIELD_AT(msg, const struct envoy_api_v2_core_HttpUri*, UPB_SIZE(8, 16)); }
-UPB_INLINE upb_strview envoy_api_v2_core_RemoteDataSource_sha256(const envoy_api_v2_core_RemoteDataSource *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
-UPB_INLINE const envoy_api_v2_core_RetryPolicy* envoy_api_v2_core_RemoteDataSource_retry_policy(const envoy_api_v2_core_RemoteDataSource *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_core_RetryPolicy*, UPB_SIZE(12, 24)); }
+UPB_INLINE bool envoy_api_v2_core_RemoteDataSource_has_http_uri(const envoy_api_v2_core_RemoteDataSource *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
+UPB_INLINE const struct envoy_api_v2_core_HttpUri* envoy_api_v2_core_RemoteDataSource_http_uri(const envoy_api_v2_core_RemoteDataSource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct envoy_api_v2_core_HttpUri*); }
+UPB_INLINE upb_strview envoy_api_v2_core_RemoteDataSource_sha256(const envoy_api_v2_core_RemoteDataSource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
+UPB_INLINE bool envoy_api_v2_core_RemoteDataSource_has_retry_policy(const envoy_api_v2_core_RemoteDataSource *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24)); }
+UPB_INLINE const envoy_api_v2_core_RetryPolicy* envoy_api_v2_core_RemoteDataSource_retry_policy(const envoy_api_v2_core_RemoteDataSource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const envoy_api_v2_core_RetryPolicy*); }
 
 UPB_INLINE void envoy_api_v2_core_RemoteDataSource_set_http_uri(envoy_api_v2_core_RemoteDataSource *msg, struct envoy_api_v2_core_HttpUri* value) {
-  UPB_FIELD_AT(msg, struct envoy_api_v2_core_HttpUri*, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct envoy_api_v2_core_HttpUri*) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_HttpUri* envoy_api_v2_core_RemoteDataSource_mutable_http_uri(envoy_api_v2_core_RemoteDataSource *msg, upb_arena *arena) {
   struct envoy_api_v2_core_HttpUri* sub = (struct envoy_api_v2_core_HttpUri*)envoy_api_v2_core_RemoteDataSource_http_uri(msg);
@@ -690,10 +707,10 @@ UPB_INLINE struct envoy_api_v2_core_HttpUri* envoy_api_v2_core_RemoteDataSource_
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_RemoteDataSource_set_sha256(envoy_api_v2_core_RemoteDataSource *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_RemoteDataSource_set_retry_policy(envoy_api_v2_core_RemoteDataSource *msg, envoy_api_v2_core_RetryPolicy* value) {
-  UPB_FIELD_AT(msg, envoy_api_v2_core_RetryPolicy*, UPB_SIZE(12, 24)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), envoy_api_v2_core_RetryPolicy*) = value;
 }
 UPB_INLINE struct envoy_api_v2_core_RetryPolicy* envoy_api_v2_core_RemoteDataSource_mutable_retry_policy(envoy_api_v2_core_RemoteDataSource *msg, upb_arena *arena) {
   struct envoy_api_v2_core_RetryPolicy* sub = (struct envoy_api_v2_core_RetryPolicy*)envoy_api_v2_core_RemoteDataSource_retry_policy(msg);
@@ -724,7 +741,7 @@ typedef enum {
   envoy_api_v2_core_AsyncDataSource_specifier_remote = 2,
   envoy_api_v2_core_AsyncDataSource_specifier_NOT_SET = 0
 } envoy_api_v2_core_AsyncDataSource_specifier_oneofcases;
-UPB_INLINE envoy_api_v2_core_AsyncDataSource_specifier_oneofcases envoy_api_v2_core_AsyncDataSource_specifier_case(const envoy_api_v2_core_AsyncDataSource* msg) { return (envoy_api_v2_core_AsyncDataSource_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(4, 8)); }
+UPB_INLINE envoy_api_v2_core_AsyncDataSource_specifier_oneofcases envoy_api_v2_core_AsyncDataSource_specifier_case(const envoy_api_v2_core_AsyncDataSource* msg) { return (envoy_api_v2_core_AsyncDataSource_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
 
 UPB_INLINE bool envoy_api_v2_core_AsyncDataSource_has_local(const envoy_api_v2_core_AsyncDataSource *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
 UPB_INLINE const envoy_api_v2_core_DataSource* envoy_api_v2_core_AsyncDataSource_local(const envoy_api_v2_core_AsyncDataSource *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_core_DataSource*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
@@ -775,16 +792,16 @@ typedef enum {
   envoy_api_v2_core_TransportSocket_config_type_typed_config = 3,
   envoy_api_v2_core_TransportSocket_config_type_NOT_SET = 0
 } envoy_api_v2_core_TransportSocket_config_type_oneofcases;
-UPB_INLINE envoy_api_v2_core_TransportSocket_config_type_oneofcases envoy_api_v2_core_TransportSocket_config_type_case(const envoy_api_v2_core_TransportSocket* msg) { return (envoy_api_v2_core_TransportSocket_config_type_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(12, 24)); }
+UPB_INLINE envoy_api_v2_core_TransportSocket_config_type_oneofcases envoy_api_v2_core_TransportSocket_config_type_case(const envoy_api_v2_core_TransportSocket* msg) { return (envoy_api_v2_core_TransportSocket_config_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
 
-UPB_INLINE upb_strview envoy_api_v2_core_TransportSocket_name(const envoy_api_v2_core_TransportSocket *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+UPB_INLINE upb_strview envoy_api_v2_core_TransportSocket_name(const envoy_api_v2_core_TransportSocket *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
 UPB_INLINE bool envoy_api_v2_core_TransportSocket_has_config(const envoy_api_v2_core_TransportSocket *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 2); }
 UPB_INLINE const struct google_protobuf_Struct* envoy_api_v2_core_TransportSocket_config(const envoy_api_v2_core_TransportSocket *msg) { return UPB_READ_ONEOF(msg, const struct google_protobuf_Struct*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 2, NULL); }
 UPB_INLINE bool envoy_api_v2_core_TransportSocket_has_typed_config(const envoy_api_v2_core_TransportSocket *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 3); }
 UPB_INLINE const struct google_protobuf_Any* envoy_api_v2_core_TransportSocket_typed_config(const envoy_api_v2_core_TransportSocket *msg) { return UPB_READ_ONEOF(msg, const struct google_protobuf_Any*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 3, NULL); }
 
 UPB_INLINE void envoy_api_v2_core_TransportSocket_set_name(envoy_api_v2_core_TransportSocket *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE void envoy_api_v2_core_TransportSocket_set_config(envoy_api_v2_core_TransportSocket *msg, struct google_protobuf_Struct* value) {
   UPB_WRITE_ONEOF(msg, struct google_protobuf_Struct*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 2);
@@ -825,11 +842,12 @@ UPB_INLINE char *envoy_api_v2_core_RuntimeFractionalPercent_serialize(const envo
   return upb_encode(msg, &envoy_api_v2_core_RuntimeFractionalPercent_msginit, arena, len);
 }
 
-UPB_INLINE const struct envoy_type_FractionalPercent* envoy_api_v2_core_RuntimeFractionalPercent_default_value(const envoy_api_v2_core_RuntimeFractionalPercent *msg) { return UPB_FIELD_AT(msg, const struct envoy_type_FractionalPercent*, UPB_SIZE(8, 16)); }
-UPB_INLINE upb_strview envoy_api_v2_core_RuntimeFractionalPercent_runtime_key(const envoy_api_v2_core_RuntimeFractionalPercent *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+UPB_INLINE bool envoy_api_v2_core_RuntimeFractionalPercent_has_default_value(const envoy_api_v2_core_RuntimeFractionalPercent *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
+UPB_INLINE const struct envoy_type_FractionalPercent* envoy_api_v2_core_RuntimeFractionalPercent_default_value(const envoy_api_v2_core_RuntimeFractionalPercent *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct envoy_type_FractionalPercent*); }
+UPB_INLINE upb_strview envoy_api_v2_core_RuntimeFractionalPercent_runtime_key(const envoy_api_v2_core_RuntimeFractionalPercent *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
 
 UPB_INLINE void envoy_api_v2_core_RuntimeFractionalPercent_set_default_value(envoy_api_v2_core_RuntimeFractionalPercent *msg, struct envoy_type_FractionalPercent* value) {
-  UPB_FIELD_AT(msg, struct envoy_type_FractionalPercent*, UPB_SIZE(8, 16)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct envoy_type_FractionalPercent*) = value;
 }
 UPB_INLINE struct envoy_type_FractionalPercent* envoy_api_v2_core_RuntimeFractionalPercent_mutable_default_value(envoy_api_v2_core_RuntimeFractionalPercent *msg, upb_arena *arena) {
   struct envoy_type_FractionalPercent* sub = (struct envoy_type_FractionalPercent*)envoy_api_v2_core_RuntimeFractionalPercent_default_value(msg);
@@ -841,7 +859,7 @@ UPB_INLINE struct envoy_type_FractionalPercent* envoy_api_v2_core_RuntimeFractio
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_RuntimeFractionalPercent_set_runtime_key(envoy_api_v2_core_RuntimeFractionalPercent *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 
 /* envoy.api.v2.core.ControlPlane */
@@ -858,10 +876,10 @@ UPB_INLINE char *envoy_api_v2_core_ControlPlane_serialize(const envoy_api_v2_cor
   return upb_encode(msg, &envoy_api_v2_core_ControlPlane_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_api_v2_core_ControlPlane_identifier(const envoy_api_v2_core_ControlPlane *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+UPB_INLINE upb_strview envoy_api_v2_core_ControlPlane_identifier(const envoy_api_v2_core_ControlPlane *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
 
 UPB_INLINE void envoy_api_v2_core_ControlPlane_set_identifier(envoy_api_v2_core_ControlPlane *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 
 #ifdef __cplusplus

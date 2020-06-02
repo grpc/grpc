@@ -48,10 +48,10 @@ UPB_INLINE char *grpc_health_v1_HealthCheckRequest_serialize(const grpc_health_v
   return upb_encode(msg, &grpc_health_v1_HealthCheckRequest_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview grpc_health_v1_HealthCheckRequest_service(const grpc_health_v1_HealthCheckRequest *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+UPB_INLINE upb_strview grpc_health_v1_HealthCheckRequest_service(const grpc_health_v1_HealthCheckRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
 
 UPB_INLINE void grpc_health_v1_HealthCheckRequest_set_service(grpc_health_v1_HealthCheckRequest *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 
 /* grpc.health.v1.HealthCheckResponse */
@@ -68,10 +68,10 @@ UPB_INLINE char *grpc_health_v1_HealthCheckResponse_serialize(const grpc_health_
   return upb_encode(msg, &grpc_health_v1_HealthCheckResponse_msginit, arena, len);
 }
 
-UPB_INLINE int32_t grpc_health_v1_HealthCheckResponse_status(const grpc_health_v1_HealthCheckResponse *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
+UPB_INLINE int32_t grpc_health_v1_HealthCheckResponse_status(const grpc_health_v1_HealthCheckResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
 
 UPB_INLINE void grpc_health_v1_HealthCheckResponse_set_status(grpc_health_v1_HealthCheckResponse *msg, int32_t value) {
-  UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 
 #ifdef __cplusplus

@@ -22,6 +22,8 @@
 
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
+#include "upb/upb.hpp"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

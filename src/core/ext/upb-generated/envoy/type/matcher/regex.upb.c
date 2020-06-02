@@ -20,7 +20,7 @@ static const upb_msglayout *const envoy_type_matcher_RegexMatcher_submsgs[1] = {
 };
 
 static const upb_msglayout_field envoy_type_matcher_RegexMatcher__fields[2] = {
-  {1, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
+  {1, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 0, 11, 1},
   {2, UPB_SIZE(0, 0), 0, 0, 9, 1},
 };
 

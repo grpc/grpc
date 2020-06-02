@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "upb/upb.hpp"
+
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 
