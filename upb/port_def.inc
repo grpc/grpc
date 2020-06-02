@@ -21,6 +21,7 @@
 * This file is private and must not be included by users!
 */
 #include <stdint.h>
+#include <stddef.h>
 
 #if UINTPTR_MAX == 0xffffffff
 #define UPB_SIZE(size32, size64) size32
@@ -28,20 +29,19 @@
 #define UPB_SIZE(size32, size64) size64
 #endif
 
-/* These macros aren't really "port", they are helper macros that we don't want
- * to leak.
+/* If we always read/write as a consistent type to each address, this shouldn't
+ * violate aliasing.
  */
-#define UPB_FIELD_AT(msg, fieldtype, offset) \
-  *(fieldtype*)((const char*)(msg) + offset)
+#define UPB_PTR_AT(msg, ofs, type) ((type*)((char*)(msg) + (ofs)))
 
 #define UPB_READ_ONEOF(msg, fieldtype, offset, case_offset, case_val, default) \
-  UPB_FIELD_AT(msg, int, case_offset) == case_val                              \
-      ? UPB_FIELD_AT(msg, fieldtype, offset)                                   \
+  *UPB_PTR_AT(msg, case_offset, int) == case_val                              \
+      ? *UPB_PTR_AT(msg, offset, fieldtype)                                   \
       : default
 
 #define UPB_WRITE_ONEOF(msg, fieldtype, offset, value, case_offset, case_val) \
-  UPB_FIELD_AT(msg, int, case_offset) = case_val;                             \
-  UPB_FIELD_AT(msg, fieldtype, offset) = value;
+  *UPB_PTR_AT(msg, case_offset, int) = case_val;                             \
+  *UPB_PTR_AT(msg, offset, fieldtype) = value;
 
 #define UPB_MAPTYPE_STRING 0
 
@@ -53,6 +53,11 @@
 #else
 #define UPB_INLINE static
 #endif
+
+#define UPB_ALIGN_UP(size, align) (((size) + (align) - 1) / (align) * (align))
+#define UPB_ALIGN_DOWN(size, align) ((size) / (align) * (align))
+#define UPB_ALIGN_MALLOC(size) UPB_ALIGN_UP(size, 16)
+#define UPB_ALIGN_OF(type) offsetof (struct { char c; type member; }, member)
 
 /* Hints to the compiler about likely/unlikely branches. */
 #if defined (__GNUC__) || defined(__clang__)
@@ -133,6 +138,8 @@ int msvc_vsnprintf(char* s, size_t n, const char* format, va_list arg);
 #ifdef NDEBUG
 #ifdef __GNUC__
 #define UPB_ASSUME(expr) if (!(expr)) __builtin_unreachable()
+#elif defined _MSC_VER
+#define UPB_ASSUME(expr) if (!(expr)) __assume(0)
 #else
 #define UPB_ASSUME(expr) do {} if (false && (expr))
 #endif

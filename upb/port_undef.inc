@@ -2,10 +2,14 @@
 
 #undef UPB_MAPTYPE_STRING
 #undef UPB_SIZE
-#undef UPB_FIELD_AT
+#undef UPB_PTR_AT
 #undef UPB_READ_ONEOF
 #undef UPB_WRITE_ONEOF
 #undef UPB_INLINE
+#undef UPB_ALIGN_UP
+#undef UPB_ALIGN_DOWN
+#undef UPB_ALIGN_MALLOC
+#undef UPB_ALIGN_OF
 #undef UPB_FORCEINLINE
 #undef UPB_NOINLINE
 #undef UPB_NORETURN

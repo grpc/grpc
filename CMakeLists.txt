@@ -72,7 +72,8 @@ add_library(upb
   upb/upb.c
   upb/decode.h
   upb/encode.h
-  upb/upb.h)
+  upb/upb.h
+  upb/upb.hpp)
 target_link_libraries(upb
   port)
 add_library(generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE)
@@ -84,9 +85,10 @@ add_library(reflection
   upb/msg.h
   upb/reflection.c
   upb/def.h
+  upb/def.hpp
   upb/reflection.h)
 target_link_libraries(reflection
-  descriptor_upbproto
+  descriptor_upb_proto
   port
   table
   upb)
@@ -132,7 +134,7 @@ add_library(upb_pb
   upb/pb/encoder.h
   upb/pb/textprinter.h)
 target_link_libraries(upb_pb
-  descriptor_upbproto
+  descriptor_upb_proto
   handlers
   port
   reflection
@@ -148,7 +150,7 @@ target_link_libraries(upb_json
   upb_pb)
 add_library(upb_cc_bindings INTERFACE)
 target_link_libraries(upb_cc_bindings INTERFACE
-  descriptor_upbproto
+  descriptor_upb_proto
   handlers
   port
   upb)
