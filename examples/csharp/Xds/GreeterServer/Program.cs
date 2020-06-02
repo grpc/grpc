@@ -28,11 +28,17 @@ namespace GreeterServer
 {
     class GreeterImpl : Greeter.GreeterBase
     {
+        private string hostname;
+
+        public GreeterImpl(string hostname)
+        {
+            this.hostname = hostname;
+        }
+
         // Server side handler of the SayHello RPC
         public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
         {
-            String hostName = Dns.GetHostName();
-            return Task.FromResult(new HelloReply { Message = $"Hello {request.Name} from {hostName}!"});
+            return Task.FromResult(new HelloReply { Message = $"Hello {request.Name} from {hostname}!"});
         }
     }
 
@@ -43,7 +49,8 @@ namespace GreeterServer
             [Option("port", Default = 50051, HelpText = "The port to listen on.")]
             public int Port { get; set; }
 
-            // TODO: make hostname configurable
+            [Option("hostname", Required = false, HelpText = "The name clients will see in responses. If not specified, machine's hostname will obtain automatically.")]
+            public string Hostname { get; set; }
         }
 
         public static void Main(string[] args)
@@ -54,8 +61,10 @@ namespace GreeterServer
 
         private static void RunServer(Options options)
         {
+            var hostName = options.Hostname ?? Dns.GetHostName();
+
             var serviceDescriptors = new [] {Greeter.Descriptor, Health.Descriptor, ServerReflection.Descriptor};
-            var greeterImpl = new GreeterImpl();
+            var greeterImpl = new GreeterImpl(hostName);
             var healthServiceImpl = new HealthServiceImpl();
             var reflectionImpl = new ReflectionServiceImpl(serviceDescriptors);
 
