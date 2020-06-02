@@ -104,13 +104,13 @@ class _TestGenericHandlerForMethods(grpc.GenericRpcHandler):
     async def _test_server_to_client(request, context):
         assert _REQUEST == request
         await context.send_initial_metadata(
-            tuple(_INITIAL_METADATA_FROM_SERVER_TO_CLIENT))
+            _INITIAL_METADATA_FROM_SERVER_TO_CLIENT)
         return _RESPONSE
 
     @staticmethod
     async def _test_trailing_metadata(request, context):
         assert _REQUEST == request
-        context.set_trailing_metadata(tuple(_TRAILING_METADATA))
+        context.set_trailing_metadata(_TRAILING_METADATA)
         return _RESPONSE
 
     @staticmethod
@@ -119,21 +119,21 @@ class _TestGenericHandlerForMethods(grpc.GenericRpcHandler):
         assert _common.seen_metadata(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
                                      context.invocation_metadata())
         await context.send_initial_metadata(
-            tuple(_INITIAL_METADATA_FROM_SERVER_TO_CLIENT))
+            _INITIAL_METADATA_FROM_SERVER_TO_CLIENT)
         yield _RESPONSE
-        context.set_trailing_metadata(tuple(_TRAILING_METADATA))
+        context.set_trailing_metadata(_TRAILING_METADATA)
 
     @staticmethod
     async def _test_stream_unary(request_iterator, context):
         assert _common.seen_metadata(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
                                      context.invocation_metadata())
         await context.send_initial_metadata(
-            tuple(_INITIAL_METADATA_FROM_SERVER_TO_CLIENT))
+            _INITIAL_METADATA_FROM_SERVER_TO_CLIENT)
 
         async for request in request_iterator:
             assert _REQUEST == request
 
-        context.set_trailing_metadata(tuple(_TRAILING_METADATA))
+        context.set_trailing_metadata(_TRAILING_METADATA)
         return _RESPONSE
 
     @staticmethod
@@ -141,13 +141,13 @@ class _TestGenericHandlerForMethods(grpc.GenericRpcHandler):
         assert _common.seen_metadata(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
                                      context.invocation_metadata())
         await context.send_initial_metadata(
-            tuple(_INITIAL_METADATA_FROM_SERVER_TO_CLIENT))
+            _INITIAL_METADATA_FROM_SERVER_TO_CLIENT)
 
         async for request in request_iterator:
             assert _REQUEST == request
 
         yield _RESPONSE
-        context.set_trailing_metadata(tuple(_TRAILING_METADATA))
+        context.set_trailing_metadata(_TRAILING_METADATA)
 
     def service(self, handler_call_details):
         return self._routing_table.get(handler_call_details.method)
