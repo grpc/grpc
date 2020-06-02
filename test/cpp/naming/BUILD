@@ -38,6 +38,7 @@ grpc_cc_test(
     name = "cancel_ares_query_test",
     srcs = ["cancel_ares_query_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,  # TODO(b/157516105)
     deps = [
         ":dns_test_util",
         "//:gpr",

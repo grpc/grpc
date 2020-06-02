@@ -28,9 +28,40 @@ python server.py
 
 3. Verify the Server
 
-This step is not strictly necessary, but you can use it as a sanity check if
-you'd like. If you don't have it, install
-[`grpcurl`](https://github.com/fullstorydev/grpcurl/releases). This will allow
+After configuring your xDS server to track the gRPC server we just started,
+create a bootstrap file as desribed in [gRFC A27](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md):
+
+```
+{
+  xds_servers": [
+    {
+      "server_uri": <string containing URI of xds server>,
+      "channel_creds": [
+        {
+          "type": <string containing channel cred type>,
+          "config": <JSON object containing config for the type>
+        }
+      ]
+    }
+  ],
+  "node": <JSON form of Node proto>
+}
+```
+
+Then point the `GRPC_XDS_BOOTSTRAP` environment variable at the bootstrap file:
+
+```
+export GRPC_XDS_BOOTSTRAP=/etc/xds-bootstrap.json
+```
+
+Finally, run your client:
+
+```
+python client.py xds:///my-backend
+```
+
+Alternatively, `grpcurl` can be used to test your server. If you don't have it,
+install [`grpcurl`](https://github.com/fullstorydev/grpcurl/releases). This will allow
 you to manually test the service.
 
 Exercise your server's application-layer service:

@@ -92,6 +92,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/service_config.cc \
+    src/core/ext/filters/client_channel/service_config_parser.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/client_channel/xds/xds_api.cc \
@@ -626,6 +627,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/cpu-intel.c \
     third_party/boringssl-with-bazel/src/crypto/cpu-ppc64le.c \
     third_party/boringssl-with-bazel/src/crypto/crypto.c \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c \
     third_party/boringssl-with-bazel/src/crypto/dh/check.c \
     third_party/boringssl-with-bazel/src/crypto/dh/dh.c \
@@ -636,6 +638,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_derive.c \
+    third_party/boringssl-with-bazel/src/crypto/ec_extra/hash_to_curve.c \
     third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_extra.c \
     third_party/boringssl-with-bazel/src/crypto/ecdsa_extra/ecdsa_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/engine/engine.c \
@@ -700,6 +703,8 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/thread_none.c \
     third_party/boringssl-with-bazel/src/crypto/thread_pthread.c \
     third_party/boringssl-with-bazel/src/crypto/thread_win.c \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/pmbtoken.c \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/trust_token.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_strex.c \
@@ -818,7 +823,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/ssl/tls13_server.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
-    third_party/boringssl-with-bazel/src/third_party/fiat/curve25519.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/encode.c \
     third_party/upb/upb/msg.c \
@@ -986,9 +990,9 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/rsa_extra)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/siphash)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/stack)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/trust_token)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/third_party/fiat)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
 fi

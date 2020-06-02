@@ -33,10 +33,14 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   PHPGrpcGenerator() {}
   ~PHPGrpcGenerator() {}
 
+  uint64_t GetSupportedFeatures() const override {
+    return FEATURE_PROTO3_OPTIONAL;
+  }
+
   bool Generate(const grpc::protobuf::FileDescriptor* file,
                 const grpc::string& parameter,
                 grpc::protobuf::compiler::GeneratorContext* context,
-                grpc::string* error) const {
+                grpc::string* error) const override {
     if (file->service_count() == 0) {
       return true;
     }

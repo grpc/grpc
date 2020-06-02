@@ -29,10 +29,14 @@ class RubyGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   RubyGrpcGenerator() {}
   ~RubyGrpcGenerator() {}
 
+  uint64_t GetSupportedFeatures() const override {
+    return FEATURE_PROTO3_OPTIONAL;
+  }
+
   bool Generate(const grpc::protobuf::FileDescriptor* file,
                 const grpc::string& /*parameter*/,
                 grpc::protobuf::compiler::GeneratorContext* context,
-                grpc::string* /*error*/) const {
+                grpc::string* /*error*/) const override {
     grpc::string code = grpc_ruby_generator::GetServices(file);
     if (code.size() == 0) {
       return true;  // don't generate a file if there are no services

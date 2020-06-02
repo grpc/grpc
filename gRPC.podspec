@@ -66,7 +66,8 @@ Pod::Spec.new do |s|
                       "src/objective-c/GRPCClient/GRPCCall+OAuth2.h",
                       "src/objective-c/GRPCClient/GRPCCall+Tests.h",
                       "src/objective-c/GRPCClient/GRPCCallLegacy.h",
-                      "src/objective-c/GRPCClient/GRPCTypes.h"
+                      "src/objective-c/GRPCClient/GRPCTypes.h",
+                      "src/objective-c/GRPCClient/GRPCTypes.m"
     ss.dependency "gRPC-RxLibrary/Interface", version
 
     ss.ios.deployment_target = '7.0'

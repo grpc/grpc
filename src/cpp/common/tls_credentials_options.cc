@@ -20,7 +20,6 @@
 #include <grpcpp/security/tls_credentials_options.h>
 
 #include "absl/container/inlined_vector.h"
-
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/common/tls_credentials_options_util.h"
 
@@ -281,6 +280,25 @@ TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
 TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {}
 
 /** gRPC TLS credential options API implementation **/
+TlsCredentialsOptions::TlsCredentialsOptions(
+    grpc_tls_server_verification_option server_verification_option,
+    std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
+    std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
+    std::shared_ptr<TlsServerAuthorizationCheckConfig>
+        server_authorization_check_config)
+    : TlsCredentialsOptions(
+          GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, server_verification_option,
+          std::move(key_materials_config), std::move(credential_reload_config),
+          std::move(server_authorization_check_config)) {}
+
+TlsCredentialsOptions::TlsCredentialsOptions(
+    grpc_ssl_client_certificate_request_type cert_request_type,
+    std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
+    std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config)
+    : TlsCredentialsOptions(cert_request_type, GRPC_TLS_SERVER_VERIFICATION,
+                            std::move(key_materials_config),
+                            std::move(credential_reload_config), nullptr) {}
+
 TlsCredentialsOptions::TlsCredentialsOptions(
     grpc_ssl_client_certificate_request_type cert_request_type,
     grpc_tls_server_verification_option server_verification_option,
