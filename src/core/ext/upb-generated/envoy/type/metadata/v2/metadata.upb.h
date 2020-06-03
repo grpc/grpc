@@ -56,11 +56,12 @@ UPB_INLINE char *envoy_type_metadata_v2_MetadataKey_serialize(const envoy_type_m
   return upb_encode(msg, &envoy_type_metadata_v2_MetadataKey_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_type_metadata_v2_MetadataKey_key(const envoy_type_metadata_v2_MetadataKey *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+UPB_INLINE upb_strview envoy_type_metadata_v2_MetadataKey_key(const envoy_type_metadata_v2_MetadataKey *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
+UPB_INLINE bool envoy_type_metadata_v2_MetadataKey_has_path(const envoy_type_metadata_v2_MetadataKey *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
 UPB_INLINE const envoy_type_metadata_v2_MetadataKey_PathSegment* const* envoy_type_metadata_v2_MetadataKey_path(const envoy_type_metadata_v2_MetadataKey *msg, size_t *len) { return (const envoy_type_metadata_v2_MetadataKey_PathSegment* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len); }
 
 UPB_INLINE void envoy_type_metadata_v2_MetadataKey_set_key(envoy_type_metadata_v2_MetadataKey *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 UPB_INLINE envoy_type_metadata_v2_MetadataKey_PathSegment** envoy_type_metadata_v2_MetadataKey_mutable_path(envoy_type_metadata_v2_MetadataKey *msg, size_t *len) {
   return (envoy_type_metadata_v2_MetadataKey_PathSegment**)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
@@ -94,7 +95,7 @@ typedef enum {
   envoy_type_metadata_v2_MetadataKey_PathSegment_segment_key = 1,
   envoy_type_metadata_v2_MetadataKey_PathSegment_segment_NOT_SET = 0
 } envoy_type_metadata_v2_MetadataKey_PathSegment_segment_oneofcases;
-UPB_INLINE envoy_type_metadata_v2_MetadataKey_PathSegment_segment_oneofcases envoy_type_metadata_v2_MetadataKey_PathSegment_segment_case(const envoy_type_metadata_v2_MetadataKey_PathSegment* msg) { return (envoy_type_metadata_v2_MetadataKey_PathSegment_segment_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(8, 16)); }
+UPB_INLINE envoy_type_metadata_v2_MetadataKey_PathSegment_segment_oneofcases envoy_type_metadata_v2_MetadataKey_PathSegment_segment_case(const envoy_type_metadata_v2_MetadataKey_PathSegment* msg) { return (envoy_type_metadata_v2_MetadataKey_PathSegment_segment_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(8, 16), int32_t); }
 
 UPB_INLINE bool envoy_type_metadata_v2_MetadataKey_PathSegment_has_key(const envoy_type_metadata_v2_MetadataKey_PathSegment *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 1); }
 UPB_INLINE upb_strview envoy_type_metadata_v2_MetadataKey_PathSegment_key(const envoy_type_metadata_v2_MetadataKey_PathSegment *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 1, upb_strview_make("", strlen(""))); }
@@ -124,7 +125,7 @@ typedef enum {
   envoy_type_metadata_v2_MetadataKind_kind_host = 4,
   envoy_type_metadata_v2_MetadataKind_kind_NOT_SET = 0
 } envoy_type_metadata_v2_MetadataKind_kind_oneofcases;
-UPB_INLINE envoy_type_metadata_v2_MetadataKind_kind_oneofcases envoy_type_metadata_v2_MetadataKind_kind_case(const envoy_type_metadata_v2_MetadataKind* msg) { return (envoy_type_metadata_v2_MetadataKind_kind_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(4, 8)); }
+UPB_INLINE envoy_type_metadata_v2_MetadataKind_kind_oneofcases envoy_type_metadata_v2_MetadataKind_kind_case(const envoy_type_metadata_v2_MetadataKind* msg) { return (envoy_type_metadata_v2_MetadataKind_kind_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
 
 UPB_INLINE bool envoy_type_metadata_v2_MetadataKind_has_request(const envoy_type_metadata_v2_MetadataKind *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
 UPB_INLINE const envoy_type_metadata_v2_MetadataKind_Request* envoy_type_metadata_v2_MetadataKind_request(const envoy_type_metadata_v2_MetadataKind *msg) { return UPB_READ_ONEOF(msg, const envoy_type_metadata_v2_MetadataKind_Request*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }

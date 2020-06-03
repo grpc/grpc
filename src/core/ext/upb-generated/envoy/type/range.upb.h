@@ -44,14 +44,14 @@ UPB_INLINE char *envoy_type_Int64Range_serialize(const envoy_type_Int64Range *ms
   return upb_encode(msg, &envoy_type_Int64Range_msginit, arena, len);
 }
 
-UPB_INLINE int64_t envoy_type_Int64Range_start(const envoy_type_Int64Range *msg) { return UPB_FIELD_AT(msg, int64_t, UPB_SIZE(0, 0)); }
-UPB_INLINE int64_t envoy_type_Int64Range_end(const envoy_type_Int64Range *msg) { return UPB_FIELD_AT(msg, int64_t, UPB_SIZE(8, 8)); }
+UPB_INLINE int64_t envoy_type_Int64Range_start(const envoy_type_Int64Range *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t); }
+UPB_INLINE int64_t envoy_type_Int64Range_end(const envoy_type_Int64Range *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t); }
 
 UPB_INLINE void envoy_type_Int64Range_set_start(envoy_type_Int64Range *msg, int64_t value) {
-  UPB_FIELD_AT(msg, int64_t, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t) = value;
 }
 UPB_INLINE void envoy_type_Int64Range_set_end(envoy_type_Int64Range *msg, int64_t value) {
-  UPB_FIELD_AT(msg, int64_t, UPB_SIZE(8, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t) = value;
 }
 
 /* envoy.type.Int32Range */
@@ -68,14 +68,14 @@ UPB_INLINE char *envoy_type_Int32Range_serialize(const envoy_type_Int32Range *ms
   return upb_encode(msg, &envoy_type_Int32Range_msginit, arena, len);
 }
 
-UPB_INLINE int32_t envoy_type_Int32Range_start(const envoy_type_Int32Range *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
-UPB_INLINE int32_t envoy_type_Int32Range_end(const envoy_type_Int32Range *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(4, 4)); }
+UPB_INLINE int32_t envoy_type_Int32Range_start(const envoy_type_Int32Range *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
+UPB_INLINE int32_t envoy_type_Int32Range_end(const envoy_type_Int32Range *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t); }
 
 UPB_INLINE void envoy_type_Int32Range_set_start(envoy_type_Int32Range *msg, int32_t value) {
-  UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 UPB_INLINE void envoy_type_Int32Range_set_end(envoy_type_Int32Range *msg, int32_t value) {
-  UPB_FIELD_AT(msg, int32_t, UPB_SIZE(4, 4)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
 }
 
 /* envoy.type.DoubleRange */
@@ -92,14 +92,14 @@ UPB_INLINE char *envoy_type_DoubleRange_serialize(const envoy_type_DoubleRange *
   return upb_encode(msg, &envoy_type_DoubleRange_msginit, arena, len);
 }
 
-UPB_INLINE double envoy_type_DoubleRange_start(const envoy_type_DoubleRange *msg) { return UPB_FIELD_AT(msg, double, UPB_SIZE(0, 0)); }
-UPB_INLINE double envoy_type_DoubleRange_end(const envoy_type_DoubleRange *msg) { return UPB_FIELD_AT(msg, double, UPB_SIZE(8, 8)); }
+UPB_INLINE double envoy_type_DoubleRange_start(const envoy_type_DoubleRange *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double); }
+UPB_INLINE double envoy_type_DoubleRange_end(const envoy_type_DoubleRange *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), double); }
 
 UPB_INLINE void envoy_type_DoubleRange_set_start(envoy_type_DoubleRange *msg, double value) {
-  UPB_FIELD_AT(msg, double, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double) = value;
 }
 UPB_INLINE void envoy_type_DoubleRange_set_end(envoy_type_DoubleRange *msg, double value) {
-  UPB_FIELD_AT(msg, double, UPB_SIZE(8, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), double) = value;
 }
 
 #ifdef __cplusplus

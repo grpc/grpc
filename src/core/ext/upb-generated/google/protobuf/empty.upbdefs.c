@@ -7,6 +7,7 @@
  * regenerated. */
 
 #include "upb/def.h"
+#include "google/protobuf/empty.upbdefs.h"
 
 extern const upb_msglayout google_protobuf_Empty_msginit;
 
@@ -14,12 +15,15 @@ static const upb_msglayout *layouts[1] = {
   &google_protobuf_Empty_msginit,
 };
 
-static const char descriptor[183] =
-  "\n\033google/protobuf/empty.proto\022\017google.pr"
-  "otobuf\"\007\n\005EmptyBv\n\023com.google.protobufB\n"
-  "EmptyProtoP\001Z\'github.com/golang/protobuf"
-  "/ptypes/empty\370\001\001\242\002\003GPB\252\002\036Google.Protobuf"
-  ".WellKnownTypesb\006proto3";
+static const char descriptor[183] = {'\n', '\033', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'e', 'm', 'p', 't', 'y', '.', 'p', 
+'r', 'o', 't', 'o', '\022', '\017', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '\"', '\007', '\n', '\005', 
+'E', 'm', 'p', 't', 'y', 'B', 'v', '\n', '\023', 'c', 'o', 'm', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 
+'b', 'u', 'f', 'B', '\n', 'E', 'm', 'p', 't', 'y', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', '\'', 'g', 'i', 't', 'h', 'u', 'b', 
+'.', 'c', 'o', 'm', '/', 'g', 'o', 'l', 'a', 'n', 'g', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'p', 't', 'y', 'p', 
+'e', 's', '/', 'e', 'm', 'p', 't', 'y', '\370', '\001', '\001', '\242', '\002', '\003', 'G', 'P', 'B', '\252', '\002', '\036', 'G', 'o', 'o', 'g', 'l', 
+'e', '.', 'P', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'W', 'e', 'l', 'l', 'K', 'n', 'o', 'w', 'n', 'T', 'y', 'p', 'e', 's', 
+'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+};
 
 static upb_def_init *deps[1] = {
   NULL

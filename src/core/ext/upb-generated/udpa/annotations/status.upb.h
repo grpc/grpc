@@ -45,14 +45,14 @@ UPB_INLINE char *udpa_annotations_StatusAnnotation_serialize(const udpa_annotati
   return upb_encode(msg, &udpa_annotations_StatusAnnotation_msginit, arena, len);
 }
 
-UPB_INLINE bool udpa_annotations_StatusAnnotation_work_in_progress(const udpa_annotations_StatusAnnotation *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)); }
-UPB_INLINE int32_t udpa_annotations_StatusAnnotation_package_version_status(const udpa_annotations_StatusAnnotation *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
+UPB_INLINE bool udpa_annotations_StatusAnnotation_work_in_progress(const udpa_annotations_StatusAnnotation *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool); }
+UPB_INLINE int32_t udpa_annotations_StatusAnnotation_package_version_status(const udpa_annotations_StatusAnnotation *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
 
 UPB_INLINE void udpa_annotations_StatusAnnotation_set_work_in_progress(udpa_annotations_StatusAnnotation *msg, bool value) {
-  UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool) = value;
 }
 UPB_INLINE void udpa_annotations_StatusAnnotation_set_package_version_status(udpa_annotations_StatusAnnotation *msg, int32_t value) {
-  UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 
 #ifdef __cplusplus

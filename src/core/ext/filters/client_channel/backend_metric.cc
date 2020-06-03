@@ -21,6 +21,7 @@
 #include "absl/strings/string_view.h"
 
 #include "udpa/data/orca/v1/orca_load_report.upb.h"
+#include "upb/upb.hpp"
 
 #include "src/core/lib/gprpp/map.h"
 

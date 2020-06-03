@@ -47,10 +47,10 @@ UPB_INLINE char *envoy_type_Percent_serialize(const envoy_type_Percent *msg, upb
   return upb_encode(msg, &envoy_type_Percent_msginit, arena, len);
 }
 
-UPB_INLINE double envoy_type_Percent_value(const envoy_type_Percent *msg) { return UPB_FIELD_AT(msg, double, UPB_SIZE(0, 0)); }
+UPB_INLINE double envoy_type_Percent_value(const envoy_type_Percent *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double); }
 
 UPB_INLINE void envoy_type_Percent_set_value(envoy_type_Percent *msg, double value) {
-  UPB_FIELD_AT(msg, double, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double) = value;
 }
 
 /* envoy.type.FractionalPercent */
@@ -67,14 +67,14 @@ UPB_INLINE char *envoy_type_FractionalPercent_serialize(const envoy_type_Fractio
   return upb_encode(msg, &envoy_type_FractionalPercent_msginit, arena, len);
 }
 
-UPB_INLINE uint32_t envoy_type_FractionalPercent_numerator(const envoy_type_FractionalPercent *msg) { return UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(8, 8)); }
-UPB_INLINE int32_t envoy_type_FractionalPercent_denominator(const envoy_type_FractionalPercent *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
+UPB_INLINE uint32_t envoy_type_FractionalPercent_numerator(const envoy_type_FractionalPercent *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t); }
+UPB_INLINE int32_t envoy_type_FractionalPercent_denominator(const envoy_type_FractionalPercent *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
 
 UPB_INLINE void envoy_type_FractionalPercent_set_numerator(envoy_type_FractionalPercent *msg, uint32_t value) {
-  UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(8, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t) = value;
 }
 UPB_INLINE void envoy_type_FractionalPercent_set_denominator(envoy_type_FractionalPercent *msg, int32_t value) {
-  UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 
 #ifdef __cplusplus

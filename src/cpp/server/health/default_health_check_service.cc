@@ -18,6 +18,8 @@
 
 #include <memory>
 
+#include "upb/upb.hpp"
+
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -25,6 +27,7 @@
 
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
+#include "upb/upb.hpp"
 
 #define MAX_SERVICE_NAME_LENGTH 200
 

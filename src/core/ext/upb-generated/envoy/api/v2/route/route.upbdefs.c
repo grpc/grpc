@@ -7,16 +7,20 @@
  * regenerated. */
 
 #include "upb/def.h"
+#include "envoy/api/v2/route/route.upbdefs.h"
 
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init envoy_api_v2_route_route_components_proto_upbdefinit;
 
-static const char descriptor[186] =
-  "\n\036envoy/api/v2/route/route.proto\022\022envoy."
-  "api.v2.route\032\035udpa/annotations/status.pr"
-  "oto\032)envoy/api/v2/route/route_components"
-  ".protoB0\n io.envoyproxy.envoy.api.v2.rou"
-  "teB\nRouteProtoP\001P\001b\006proto3";
+static const char descriptor[186] = {'\n', '\036', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'p', 'i', '/', 'v', '2', '/', 'r', 'o', 'u', 't', 'e', '/', 'r', 'o', 'u', 't', 
+'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\022', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'r', 'o', 'u', 
+'t', 'e', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 
+'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', ')', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'p', 'i', '/', 'v', '2', '/', 'r', 'o', 
+'u', 't', 'e', '/', 'r', 'o', 'u', 't', 'e', '_', 'c', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', 's', '.', 'p', 'r', 'o', 't', 
+'o', 'B', '0', '\n', ' ', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 
+'a', 'p', 'i', '.', 'v', '2', '.', 'r', 'o', 'u', 't', 'e', 'B', '\n', 'R', 'o', 'u', 't', 'e', 'P', 'r', 'o', 't', 'o', 'P', 
+'\001', 'P', '\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+};
 
 static upb_def_init *deps[3] = {
   &udpa_annotations_status_proto_upbdefinit,

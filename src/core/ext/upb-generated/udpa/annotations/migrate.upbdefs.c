@@ -7,6 +7,7 @@
  * regenerated. */
 
 #include "upb/def.h"
+#include "udpa/annotations/migrate.upbdefs.h"
 
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
 extern const upb_msglayout udpa_annotations_MigrateAnnotation_msginit;
@@ -19,29 +20,42 @@ static const upb_msglayout *layouts[3] = {
   &udpa_annotations_FileMigrateAnnotation_msginit,
 };
 
-static const char descriptor[855] =
-  "\n\036udpa/annotations/migrate.proto\022\020udpa.a"
-  "nnotations\032 google/protobuf/descriptor.p"
-  "roto\"+\n\021MigrateAnnotation\022\026\n\006rename\030\001 \001("
-  "\tR\006rename\"Y\n\026FieldMigrateAnnotation\022\026\n\006r"
-  "ename\030\001 \001(\tR\006rename\022\'\n\017oneof_promotion\030\002"
-  " \001(\tR\016oneofPromotion\"\?\n\025FileMigrateAnnot"
-  "ation\022&\n\017move_to_package\030\002 \001(\tR\rmoveToPa"
-  "ckage:p\n\017message_migrate\022\037.google.protob"
-  "uf.MessageOptions\030\216\343\377Q \001(\0132#.udpa.annota"
-  "tions.MigrateAnnotationR\016messageMigrate:"
-  "o\n\rfield_migrate\022\035.google.protobuf.Field"
-  "Options\030\216\343\377Q \001(\0132(.udpa.annotations.Fiel"
-  "dMigrateAnnotationR\014fieldMigrate:g\n\014enum"
-  "_migrate\022\034.google.protobuf.EnumOptions\030\216"
-  "\343\377Q \001(\0132#.udpa.annotations.MigrateAnnota"
-  "tionR\013enumMigrate:w\n\022enum_value_migrate\022"
-  "!.google.protobuf.EnumValueOptions\030\216\343\377Q "
-  "\001(\0132#.udpa.annotations.MigrateAnnotation"
-  "R\020enumValueMigrate:k\n\014file_migrate\022\034.goo"
-  "gle.protobuf.FileOptions\030\216\343\377Q \001(\0132\'.udpa"
-  ".annotations.FileMigrateAnnotationR\013file"
-  "Migrateb\006proto3";
+static const char descriptor[855] = {'\n', '\036', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'm', 'i', 'g', 'r', 'a', 't', 
+'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\020', 'u', 'd', 'p', 'a', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', 
+'\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'e', 's', 'c', 'r', 'i', 'p', 
+'t', 'o', 'r', '.', 'p', 'r', 'o', 't', 'o', '\"', '+', '\n', '\021', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'A', 'n', 'n', 'o', 't', 
+'a', 't', 'i', 'o', 'n', '\022', '\026', '\n', '\006', 'r', 'e', 'n', 'a', 'm', 'e', '\030', '\001', ' ', '\001', '(', '\t', 'R', '\006', 'r', 'e', 
+'n', 'a', 'm', 'e', '\"', 'Y', '\n', '\026', 'F', 'i', 'e', 'l', 'd', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'A', 'n', 'n', 'o', 't', 
+'a', 't', 'i', 'o', 'n', '\022', '\026', '\n', '\006', 'r', 'e', 'n', 'a', 'm', 'e', '\030', '\001', ' ', '\001', '(', '\t', 'R', '\006', 'r', 'e', 
+'n', 'a', 'm', 'e', '\022', '\'', '\n', '\017', 'o', 'n', 'e', 'o', 'f', '_', 'p', 'r', 'o', 'm', 'o', 't', 'i', 'o', 'n', '\030', '\002', 
+' ', '\001', '(', '\t', 'R', '\016', 'o', 'n', 'e', 'o', 'f', 'P', 'r', 'o', 'm', 'o', 't', 'i', 'o', 'n', '\"', '?', '\n', '\025', 'F', 
+'i', 'l', 'e', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'A', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', '\022', '&', '\n', '\017', 'm', 
+'o', 'v', 'e', '_', 't', 'o', '_', 'p', 'a', 'c', 'k', 'a', 'g', 'e', '\030', '\002', ' ', '\001', '(', '\t', 'R', '\r', 'm', 'o', 'v', 
+'e', 'T', 'o', 'P', 'a', 'c', 'k', 'a', 'g', 'e', ':', 'p', '\n', '\017', 'm', 'e', 's', 's', 'a', 'g', 'e', '_', 'm', 'i', 'g', 
+'r', 'a', 't', 'e', '\022', '\037', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'M', 'e', 
+'s', 's', 'a', 'g', 'e', 'O', 'p', 't', 'i', 'o', 'n', 's', '\030', '\216', '\343', '\377', 'Q', ' ', '\001', '(', '\013', '2', '#', '.', 'u', 
+'d', 'p', 'a', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '.', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'A', 'n', 
+'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 'R', '\016', 'm', 'e', 's', 's', 'a', 'g', 'e', 'M', 'i', 'g', 'r', 'a', 't', 'e', ':', 
+'o', '\n', '\r', 'f', 'i', 'e', 'l', 'd', '_', 'm', 'i', 'g', 'r', 'a', 't', 'e', '\022', '\035', '.', 'g', 'o', 'o', 'g', 'l', 'e', 
+'.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'F', 'i', 'e', 'l', 'd', 'O', 'p', 't', 'i', 'o', 'n', 's', '\030', '\216', '\343', 
+'\377', 'Q', ' ', '\001', '(', '\013', '2', '(', '.', 'u', 'd', 'p', 'a', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', 
+'.', 'F', 'i', 'e', 'l', 'd', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'A', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 'R', '\014', 
+'f', 'i', 'e', 'l', 'd', 'M', 'i', 'g', 'r', 'a', 't', 'e', ':', 'g', '\n', '\014', 'e', 'n', 'u', 'm', '_', 'm', 'i', 'g', 'r', 
+'a', 't', 'e', '\022', '\034', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'E', 'n', 'u', 
+'m', 'O', 'p', 't', 'i', 'o', 'n', 's', '\030', '\216', '\343', '\377', 'Q', ' ', '\001', '(', '\013', '2', '#', '.', 'u', 'd', 'p', 'a', '.', 
+'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '.', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'A', 'n', 'n', 'o', 't', 'a', 
+'t', 'i', 'o', 'n', 'R', '\013', 'e', 'n', 'u', 'm', 'M', 'i', 'g', 'r', 'a', 't', 'e', ':', 'w', '\n', '\022', 'e', 'n', 'u', 'm', 
+'_', 'v', 'a', 'l', 'u', 'e', '_', 'm', 'i', 'g', 'r', 'a', 't', 'e', '\022', '!', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 
+'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'E', 'n', 'u', 'm', 'V', 'a', 'l', 'u', 'e', 'O', 'p', 't', 'i', 'o', 'n', 's', '\030', 
+'\216', '\343', '\377', 'Q', ' ', '\001', '(', '\013', '2', '#', '.', 'u', 'd', 'p', 'a', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 
+'n', 's', '.', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'A', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 'R', '\020', 'e', 'n', 'u', 
+'m', 'V', 'a', 'l', 'u', 'e', 'M', 'i', 'g', 'r', 'a', 't', 'e', ':', 'k', '\n', '\014', 'f', 'i', 'l', 'e', '_', 'm', 'i', 'g', 
+'r', 'a', 't', 'e', '\022', '\034', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'F', 'i', 
+'l', 'e', 'O', 'p', 't', 'i', 'o', 'n', 's', '\030', '\216', '\343', '\377', 'Q', ' ', '\001', '(', '\013', '2', '\'', '.', 'u', 'd', 'p', 'a', 
+'.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '.', 'F', 'i', 'l', 'e', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'A', 
+'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 'R', '\013', 'f', 'i', 'l', 'e', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'b', '\006', 'p', 
+'r', 'o', 't', 'o', '3', 
+};
 
 static upb_def_init *deps[2] = {
   &google_protobuf_descriptor_proto_upbdefinit,

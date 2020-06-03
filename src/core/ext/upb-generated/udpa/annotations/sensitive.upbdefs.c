@@ -7,14 +7,18 @@
  * regenerated. */
 
 #include "upb/def.h"
+#include "udpa/annotations/sensitive.upbdefs.h"
 
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
 
-static const char descriptor[158] =
-  "\n udpa/annotations/sensitive.proto\022\020udpa"
-  ".annotations\032 google/protobuf/descriptor"
-  ".proto:>\n\tsensitive\022\035.google.protobuf.Fi"
-  "eldOptions\030\367\266\301$ \001(\010R\tsensitiveb\006proto3";
+static const char descriptor[158] = {'\n', ' ', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 'e', 'n', 's', 'i', 't', 
+'i', 'v', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\020', 'u', 'd', 'p', 'a', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 
+'n', 's', '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'e', 's', 'c', 'r', 
+'i', 'p', 't', 'o', 'r', '.', 'p', 'r', 'o', 't', 'o', ':', '>', '\n', '\t', 's', 'e', 'n', 's', 'i', 't', 'i', 'v', 'e', '\022', 
+'\035', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'F', 'i', 'e', 'l', 'd', 'O', 'p', 
+'t', 'i', 'o', 'n', 's', '\030', '\367', '\266', '\301', '$', ' ', '\001', '(', '\010', 'R', '\t', 's', 'e', 'n', 's', 'i', 't', 'i', 'v', 'e', 
+'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+};
 
 static upb_def_init *deps[2] = {
   &google_protobuf_descriptor_proto_upbdefinit,

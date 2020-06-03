@@ -467,6 +467,36 @@ function test_foo()
   assert_equal(set.file[1].name, "google/protobuf/descriptor.proto")
 end
 
+function test_gc()
+  local top = test_messages_proto3.TestAllTypesProto3()
+  local n = 100
+  local m
+
+  for i=1,n do
+    local inner = test_messages_proto3.TestAllTypesProto3()
+    m = inner
+    for j=1,n do
+      local tmp = m
+      m = test_messages_proto3.TestAllTypesProto3()
+      -- This will cause the arenas to fuse. But we stop referring to the child,
+      -- so the Lua object is eligible for collection (and therefore its original
+      -- arena can be collected too). Only the fusing will keep the C mem alivd.
+      m.recursive_message = tmp
+
+    end
+    top.recursive_message = m
+  end
+
+  collectgarbage()
+
+  for i=1,n do
+    -- Verify we can touch all the messages again and without accessing freed
+    -- memory.
+    m = m.recursive_message
+    assert_not_nil(m)
+  end
+end
+
 local stats = lunit.main()
 
 if stats.failed > 0 or stats.errors > 0 then

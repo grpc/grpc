@@ -37,8 +37,8 @@ static const upb_msglayout *const envoy_config_trace_v2_Tracing_Http_submsgs[2] 
 
 static const upb_msglayout_field envoy_config_trace_v2_Tracing_Http__fields[3] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, 1},
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 1, 11, 1},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_trace_v2_Tracing_Http_msginit = {

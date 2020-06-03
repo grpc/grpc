@@ -38,14 +38,14 @@ UPB_INLINE char *google_protobuf_Timestamp_serialize(const google_protobuf_Times
   return upb_encode(msg, &google_protobuf_Timestamp_msginit, arena, len);
 }
 
-UPB_INLINE int64_t google_protobuf_Timestamp_seconds(const google_protobuf_Timestamp *msg) { return UPB_FIELD_AT(msg, int64_t, UPB_SIZE(0, 0)); }
-UPB_INLINE int32_t google_protobuf_Timestamp_nanos(const google_protobuf_Timestamp *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(8, 8)); }
+UPB_INLINE int64_t google_protobuf_Timestamp_seconds(const google_protobuf_Timestamp *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t); }
+UPB_INLINE int32_t google_protobuf_Timestamp_nanos(const google_protobuf_Timestamp *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t); }
 
 UPB_INLINE void google_protobuf_Timestamp_set_seconds(google_protobuf_Timestamp *msg, int64_t value) {
-  UPB_FIELD_AT(msg, int64_t, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t) = value;
 }
 UPB_INLINE void google_protobuf_Timestamp_set_nanos(google_protobuf_Timestamp *msg, int32_t value) {
-  UPB_FIELD_AT(msg, int32_t, UPB_SIZE(8, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t) = value;
 }
 
 #ifdef __cplusplus

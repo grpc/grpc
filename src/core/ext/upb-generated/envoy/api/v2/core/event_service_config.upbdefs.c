@@ -7,6 +7,7 @@
  * regenerated. */
 
 #include "upb/def.h"
+#include "envoy/api/v2/core/event_service_config.upbdefs.h"
 
 extern upb_def_init envoy_api_v2_core_grpc_service_proto_upbdefinit;
 extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
@@ -18,18 +19,24 @@ static const upb_msglayout *layouts[1] = {
   &envoy_api_v2_core_EventServiceConfig_msginit,
 };
 
-static const char descriptor[420] =
-  "\n,envoy/api/v2/core/event_service_config"
-  ".proto\022\021envoy.api.v2.core\032$envoy/api/v2/"
-  "core/grpc_service.proto\032\036udpa/annotation"
-  "s/migrate.proto\032\035udpa/annotations/status"
-  ".proto\032\027validate/validate.proto\"y\n\022Event"
-  "ServiceConfig\022C\n\014grpc_service\030\001 \001(\0132\036.en"
-  "voy.api.v2.core.GrpcServiceH\000R\013grpcServi"
-  "ceB\036\n\027config_source_specifier\022\003\370B\001B`\n\037io"
-  ".envoyproxy.envoy.api.v2.coreB\027EventServ"
-  "iceConfigProtoP\001\362\230\376\217\005\026\022\024envoy.config.cor"
-  "e.v3\272\200\310\321\006\002\020\001b\006proto3";
+static const char descriptor[420] = {'\n', ',', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'p', 'i', '/', 'v', '2', '/', 'c', 'o', 'r', 'e', '/', 'e', 'v', 'e', 'n', 't', 
+'_', 's', 'e', 'r', 'v', 'i', 'c', 'e', '_', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022', '\021', 'e', 'n', 
+'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'c', 'o', 'r', 'e', '\032', '$', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'p', 
+'i', '/', 'v', '2', '/', 'c', 'o', 'r', 'e', '/', 'g', 'r', 'p', 'c', '_', 's', 'e', 'r', 'v', 'i', 'c', 'e', '.', 'p', 'r', 
+'o', 't', 'o', '\032', '\036', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'm', 'i', 'g', 
+'r', 'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 
+'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '\027', 'v', 'a', 'l', 'i', 'd', 'a', 't', 
+'e', '/', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', '\"', 'y', '\n', '\022', 'E', 'v', 'e', 'n', 't', 
+'S', 'e', 'r', 'v', 'i', 'c', 'e', 'C', 'o', 'n', 'f', 'i', 'g', '\022', 'C', '\n', '\014', 'g', 'r', 'p', 'c', '_', 's', 'e', 'r', 
+'v', 'i', 'c', 'e', '\030', '\001', ' ', '\001', '(', '\013', '2', '\036', '.', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', 
+'.', 'c', 'o', 'r', 'e', '.', 'G', 'r', 'p', 'c', 'S', 'e', 'r', 'v', 'i', 'c', 'e', 'H', '\000', 'R', '\013', 'g', 'r', 'p', 'c', 
+'S', 'e', 'r', 'v', 'i', 'c', 'e', 'B', '\036', '\n', '\027', 'c', 'o', 'n', 'f', 'i', 'g', '_', 's', 'o', 'u', 'r', 'c', 'e', '_', 
+'s', 'p', 'e', 'c', 'i', 'f', 'i', 'e', 'r', '\022', '\003', '\370', 'B', '\001', 'B', '`', '\n', '\037', 'i', 'o', '.', 'e', 'n', 'v', 'o', 
+'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'c', 'o', 'r', 'e', 'B', 
+'\027', 'E', 'v', 'e', 'n', 't', 'S', 'e', 'r', 'v', 'i', 'c', 'e', 'C', 'o', 'n', 'f', 'i', 'g', 'P', 'r', 'o', 't', 'o', 'P', 
+'\001', '\362', '\230', '\376', '\217', '\005', '\026', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 
+'e', '.', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+};
 
 static upb_def_init *deps[5] = {
   &envoy_api_v2_core_grpc_service_proto_upbdefinit,
