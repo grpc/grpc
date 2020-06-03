@@ -27,7 +27,7 @@ out = {}
 out['libs'] = [{
     'name':
         're2',
-    'build' :
+    'build':
         'all',
     'language':
         'c',
