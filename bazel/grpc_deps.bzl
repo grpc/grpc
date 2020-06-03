@@ -286,6 +286,17 @@ def grpc_deps():
             ],
         )
 
+    if "udpa" not in native.existing_rules():
+        http_archive(
+            name = "udpa",
+            sha256 = "1fd7857cb61daee7726fca8f4d55e4923774a8d00a53007a4093830dc0482685",
+            strip_prefix = "udpa-e8cd3a4bb307e2c810cffff99f93e96e6d7fee85",
+            urls = [
+                "https://storage.googleapis.com/grpc-udpa-mirror/github.com/cncf/udpa/archive/e8cd3a4bb307e2c810cffff99f93e96e6d7fee85.tar.gz",
+                "https://github.com/cncf/udpa/archive/e8cd3a4bb307e2c810cffff99f93e96e6d7fee85.tar.gz",
+            ],
+        )
+
     if "io_bazel_rules_go" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_go",
@@ -326,6 +337,17 @@ def grpc_deps():
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/libuv/libuv/archive/15ae750151ac9341e5945eb38f8982d59fb99201.tar.gz",
                 "https://github.com/libuv/libuv/archive/15ae750151ac9341e5945eb38f8982d59fb99201.tar.gz",
+            ],
+        )
+
+    if "com_google_googleapis" not in native.existing_rules():
+        http_archive(
+            name = "com_google_googleapis",
+            sha256 = "a45019af4d3290f02eaeb1ce10990166978c807cb33a9692141a076ba46d1405",
+            strip_prefix = "googleapis-82944da21578a53b74e547774cf62ed31a05b841",
+            urls = [
+                "https://storage.googleapis.com/grpc-googleapis-mirror/github.com/googleapis/googleapis/archive/82944da21578a53b74e547774cf62ed31a05b841.tar.gz",
+                "https://github.com/googleapis/googleapis/archive/82944da21578a53b74e547774cf62ed31a05b841.tar.gz",
             ],
         )
 
