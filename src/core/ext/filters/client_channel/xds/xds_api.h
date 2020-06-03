@@ -230,39 +230,13 @@ class XdsApi {
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
 
-  // Creates a request to nack an unsupported resource type.
+  // Creates an ADS request.
   // Takes ownership of \a error.
-  grpc_slice CreateUnsupportedTypeNackRequest(const std::string& type_url,
-                                              const std::string& nonce,
-                                              grpc_error* error);
-
-  // Creates an LDS request querying \a server_name.
-  // Takes ownership of \a error.
-  grpc_slice CreateLdsRequest(const std::string& server_name,
+  grpc_slice CreateAdsRequest(const std::string& type_url,
+                              const std::set<absl::string_view>& resource_names,
                               const std::string& version,
                               const std::string& nonce, grpc_error* error,
                               bool populate_node);
-
-  // Creates an RDS request querying \a route_config_name.
-  // Takes ownership of \a error.
-  grpc_slice CreateRdsRequest(const std::string& route_config_name,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error* error,
-                              bool populate_node);
-
-  // Creates a CDS request querying \a cluster_names.
-  // Takes ownership of \a error.
-  grpc_slice CreateCdsRequest(const std::set<absl::string_view>& cluster_names,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error* error,
-                              bool populate_node);
-
-  // Creates an EDS request querying \a eds_service_names.
-  // Takes ownership of \a error.
-  grpc_slice CreateEdsRequest(
-      const std::set<absl::string_view>& eds_service_names,
-      const std::string& version, const std::string& nonce, grpc_error* error,
-      bool populate_node);
 
   // Parses the ADS response and outputs the validated update for either CDS or
   // EDS. If the response can't be parsed at the top level, \a type_url will
@@ -270,7 +244,7 @@ class XdsApi {
   grpc_error* ParseAdsResponse(
       const grpc_slice& encoded_response,
       const std::string& expected_server_name,
-      const std::string& expected_route_config_name,
+      const std::set<absl::string_view>& expected_route_configuration_names,
       const std::set<absl::string_view>& expected_cluster_names,
       const std::set<absl::string_view>& expected_eds_service_names,
       absl::optional<LdsUpdate>* lds_update,
