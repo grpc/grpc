@@ -35,7 +35,9 @@ out['libs'] = [{
         False,
     'src':
         sorted(glob.glob('third_party/re2/re2/*.cc') +
-               glob.glob('third_party/re2/util/*.cc')),
+               glob.glob('third_party/re2/util/pcre.cc') +
+               glob.glob('third_party/re2/util/rune.cc') +
+               glob.glob('third_party/re2/util/strutil.cc')),
     'headers':
         sorted(
             glob.glob('third_party/re2/re2/*.h') +
