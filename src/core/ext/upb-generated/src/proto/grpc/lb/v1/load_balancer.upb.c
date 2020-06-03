@@ -20,8 +20,8 @@ static const upb_msglayout *const grpc_lb_v1_LoadBalanceRequest_submsgs[2] = {
 };
 
 static const upb_msglayout_field grpc_lb_v1_LoadBalanceRequest__fields[2] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 1, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 0, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
 };
 
 const upb_msglayout grpc_lb_v1_LoadBalanceRequest_msginit = {
@@ -78,9 +78,9 @@ static const upb_msglayout *const grpc_lb_v1_LoadBalanceResponse_submsgs[3] = {
 };
 
 static const upb_msglayout_field grpc_lb_v1_LoadBalanceResponse__fields[3] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 1, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 2, 11, 1},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 0, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, 1},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
 };
 
 const upb_msglayout grpc_lb_v1_LoadBalanceResponse_msginit = {

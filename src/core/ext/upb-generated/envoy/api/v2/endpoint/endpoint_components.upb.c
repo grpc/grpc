@@ -54,11 +54,11 @@ static const upb_msglayout *const envoy_api_v2_endpoint_LbEndpoint_submsgs[3] = 
 };
 
 static const upb_msglayout_field envoy_api_v2_endpoint_LbEndpoint__fields[5] = {
-  {1, UPB_SIZE(16, 24), UPB_SIZE(-24, -40), 1, 11, 1},
+  {1, UPB_SIZE(16, 24), UPB_SIZE(-25, -41), 1, 11, 1},
   {2, UPB_SIZE(0, 0), 0, 0, 14, 1},
   {3, UPB_SIZE(8, 8), 0, 0, 11, 1},
   {4, UPB_SIZE(12, 16), 0, 2, 11, 1},
-  {5, UPB_SIZE(16, 24), UPB_SIZE(-24, -40), 0, 9, 1},
+  {5, UPB_SIZE(16, 24), UPB_SIZE(-25, -41), 0, 9, 1},
 };
 
 const upb_msglayout envoy_api_v2_endpoint_LbEndpoint_msginit = {

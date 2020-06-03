@@ -47,12 +47,12 @@ static const upb_msglayout *const google_protobuf_Value_submsgs[2] = {
 };
 
 static const upb_msglayout_field google_protobuf_Value__fields[6] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 14, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 1, 1},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 9, 1},
-  {4, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 8, 1},
-  {5, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 1, 11, 1},
-  {6, UPB_SIZE(0, 0), UPB_SIZE(-8, -16), 0, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 14, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 1, 1},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
+  {4, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 8, 1},
+  {5, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 1, 11, 1},
+  {6, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 11, 1},
 };
 
 const upb_msglayout google_protobuf_Value_msginit = {

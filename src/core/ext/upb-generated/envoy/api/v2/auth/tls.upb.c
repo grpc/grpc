@@ -49,10 +49,10 @@ static const upb_msglayout_field envoy_api_v2_auth_DownstreamTlsContext__fields[
   {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
   {2, UPB_SIZE(4, 8), 0, 3, 11, 1},
   {3, UPB_SIZE(8, 16), 0, 3, 11, 1},
-  {4, UPB_SIZE(16, 32), UPB_SIZE(-20, -40), 2, 11, 1},
-  {5, UPB_SIZE(16, 32), UPB_SIZE(-20, -40), 1, 11, 1},
+  {4, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 2, 11, 1},
+  {5, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 1, 11, 1},
   {6, UPB_SIZE(12, 24), 0, 4, 11, 1},
-  {7, UPB_SIZE(16, 32), UPB_SIZE(-20, -40), 0, 8, 1},
+  {7, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 0, 8, 1},
 };
 
 const upb_msglayout envoy_api_v2_auth_DownstreamTlsContext_msginit = {
@@ -72,11 +72,11 @@ static const upb_msglayout *const envoy_api_v2_auth_CommonTlsContext_submsgs[6] 
 static const upb_msglayout_field envoy_api_v2_auth_CommonTlsContext__fields[7] = {
   {1, UPB_SIZE(0, 0), 0, 4, 11, 1},
   {2, UPB_SIZE(4, 8), 0, 3, 11, 3},
-  {3, UPB_SIZE(16, 32), UPB_SIZE(-20, -40), 0, 11, 1},
+  {3, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 0, 11, 1},
   {4, UPB_SIZE(8, 16), 0, 0, 9, 3},
   {6, UPB_SIZE(12, 24), 0, 2, 11, 3},
-  {7, UPB_SIZE(16, 32), UPB_SIZE(-20, -40), 2, 11, 1},
-  {8, UPB_SIZE(16, 32), UPB_SIZE(-20, -40), 1, 11, 1},
+  {7, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 2, 11, 1},
+  {8, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 1, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_auth_CommonTlsContext_msginit = {

@@ -30,8 +30,8 @@ static const upb_msglayout *const grpc_gcp_Identity_submsgs[1] = {
 };
 
 static const upb_msglayout_field grpc_gcp_Identity__fields[3] = {
-  {1, UPB_SIZE(4, 8), UPB_SIZE(-12, -24), 0, 9, 1},
-  {2, UPB_SIZE(4, 8), UPB_SIZE(-12, -24), 0, 9, 1},
+  {1, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, 1},
+  {2, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, 1},
   {3, UPB_SIZE(0, 0), 0, 0, 11, _UPB_LABEL_MAP},
 };
 
@@ -146,9 +146,9 @@ static const upb_msglayout *const grpc_gcp_HandshakerReq_submsgs[3] = {
 };
 
 static const upb_msglayout_field grpc_gcp_HandshakerReq__fields[3] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 1, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 2, 11, 1},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 0, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, 1},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
 };
 
 const upb_msglayout grpc_gcp_HandshakerReq_msginit = {

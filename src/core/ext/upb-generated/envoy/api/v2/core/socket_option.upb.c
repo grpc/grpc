@@ -19,8 +19,8 @@ static const upb_msglayout_field envoy_api_v2_core_SocketOption__fields[6] = {
   {1, UPB_SIZE(24, 24), 0, 0, 9, 1},
   {2, UPB_SIZE(0, 0), 0, 0, 3, 1},
   {3, UPB_SIZE(8, 8), 0, 0, 3, 1},
-  {4, UPB_SIZE(32, 40), UPB_SIZE(-40, -56), 0, 3, 1},
-  {5, UPB_SIZE(32, 40), UPB_SIZE(-40, -56), 0, 12, 1},
+  {4, UPB_SIZE(32, 40), UPB_SIZE(-41, -57), 0, 3, 1},
+  {5, UPB_SIZE(32, 40), UPB_SIZE(-41, -57), 0, 12, 1},
   {6, UPB_SIZE(16, 16), 0, 0, 14, 1},
 };
 

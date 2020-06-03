@@ -97,9 +97,9 @@ UPB_INLINE envoy_api_v2_core_SocketAddress_port_specifier_oneofcases envoy_api_v
 
 UPB_INLINE int32_t envoy_api_v2_core_SocketAddress_protocol(const envoy_api_v2_core_SocketAddress *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
 UPB_INLINE upb_strview envoy_api_v2_core_SocketAddress_address(const envoy_api_v2_core_SocketAddress *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 16), upb_strview); }
-UPB_INLINE bool envoy_api_v2_core_SocketAddress_has_port_value(const envoy_api_v2_core_SocketAddress *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(36, 64), 3); }
+UPB_INLINE bool envoy_api_v2_core_SocketAddress_has_port_value(const envoy_api_v2_core_SocketAddress *msg) { return _upb_getoneofcase(msg, UPB_SIZE(36, 64)) == 3; }
 UPB_INLINE uint32_t envoy_api_v2_core_SocketAddress_port_value(const envoy_api_v2_core_SocketAddress *msg) { return UPB_READ_ONEOF(msg, uint32_t, UPB_SIZE(28, 48), UPB_SIZE(36, 64), 3, 0); }
-UPB_INLINE bool envoy_api_v2_core_SocketAddress_has_named_port(const envoy_api_v2_core_SocketAddress *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(36, 64), 4); }
+UPB_INLINE bool envoy_api_v2_core_SocketAddress_has_named_port(const envoy_api_v2_core_SocketAddress *msg) { return _upb_getoneofcase(msg, UPB_SIZE(36, 64)) == 4; }
 UPB_INLINE upb_strview envoy_api_v2_core_SocketAddress_named_port(const envoy_api_v2_core_SocketAddress *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(28, 48), UPB_SIZE(36, 64), 4, upb_strview_make("", strlen(""))); }
 UPB_INLINE upb_strview envoy_api_v2_core_SocketAddress_resolver_name(const envoy_api_v2_core_SocketAddress *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), upb_strview); }
 UPB_INLINE bool envoy_api_v2_core_SocketAddress_ipv4_compat(const envoy_api_v2_core_SocketAddress *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool); }
@@ -261,9 +261,9 @@ typedef enum {
 } envoy_api_v2_core_Address_address_oneofcases;
 UPB_INLINE envoy_api_v2_core_Address_address_oneofcases envoy_api_v2_core_Address_address_case(const envoy_api_v2_core_Address* msg) { return (envoy_api_v2_core_Address_address_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
 
-UPB_INLINE bool envoy_api_v2_core_Address_has_socket_address(const envoy_api_v2_core_Address *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
+UPB_INLINE bool envoy_api_v2_core_Address_has_socket_address(const envoy_api_v2_core_Address *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 1; }
 UPB_INLINE const envoy_api_v2_core_SocketAddress* envoy_api_v2_core_Address_socket_address(const envoy_api_v2_core_Address *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_core_SocketAddress*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
-UPB_INLINE bool envoy_api_v2_core_Address_has_pipe(const envoy_api_v2_core_Address *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 2); }
+UPB_INLINE bool envoy_api_v2_core_Address_has_pipe(const envoy_api_v2_core_Address *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 2; }
 UPB_INLINE const envoy_api_v2_core_Pipe* envoy_api_v2_core_Address_pipe(const envoy_api_v2_core_Address *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_core_Pipe*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 2, NULL); }
 
 UPB_INLINE void envoy_api_v2_core_Address_set_socket_address(envoy_api_v2_core_Address *msg, envoy_api_v2_core_SocketAddress* value) {

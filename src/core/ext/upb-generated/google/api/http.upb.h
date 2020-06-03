@@ -91,18 +91,18 @@ typedef enum {
 UPB_INLINE google_api_HttpRule_pattern_oneofcases google_api_HttpRule_pattern_case(const google_api_HttpRule* msg) { return (google_api_HttpRule_pattern_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(36, 72), int32_t); }
 
 UPB_INLINE upb_strview google_api_HttpRule_selector(const google_api_HttpRule *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE bool google_api_HttpRule_has_get(const google_api_HttpRule *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(36, 72), 2); }
+UPB_INLINE bool google_api_HttpRule_has_get(const google_api_HttpRule *msg) { return _upb_getoneofcase(msg, UPB_SIZE(36, 72)) == 2; }
 UPB_INLINE upb_strview google_api_HttpRule_get(const google_api_HttpRule *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(28, 56), UPB_SIZE(36, 72), 2, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool google_api_HttpRule_has_put(const google_api_HttpRule *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(36, 72), 3); }
+UPB_INLINE bool google_api_HttpRule_has_put(const google_api_HttpRule *msg) { return _upb_getoneofcase(msg, UPB_SIZE(36, 72)) == 3; }
 UPB_INLINE upb_strview google_api_HttpRule_put(const google_api_HttpRule *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(28, 56), UPB_SIZE(36, 72), 3, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool google_api_HttpRule_has_post(const google_api_HttpRule *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(36, 72), 4); }
+UPB_INLINE bool google_api_HttpRule_has_post(const google_api_HttpRule *msg) { return _upb_getoneofcase(msg, UPB_SIZE(36, 72)) == 4; }
 UPB_INLINE upb_strview google_api_HttpRule_post(const google_api_HttpRule *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(28, 56), UPB_SIZE(36, 72), 4, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool google_api_HttpRule_has_delete(const google_api_HttpRule *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(36, 72), 5); }
+UPB_INLINE bool google_api_HttpRule_has_delete(const google_api_HttpRule *msg) { return _upb_getoneofcase(msg, UPB_SIZE(36, 72)) == 5; }
 UPB_INLINE upb_strview google_api_HttpRule_delete(const google_api_HttpRule *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(28, 56), UPB_SIZE(36, 72), 5, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool google_api_HttpRule_has_patch(const google_api_HttpRule *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(36, 72), 6); }
+UPB_INLINE bool google_api_HttpRule_has_patch(const google_api_HttpRule *msg) { return _upb_getoneofcase(msg, UPB_SIZE(36, 72)) == 6; }
 UPB_INLINE upb_strview google_api_HttpRule_patch(const google_api_HttpRule *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(28, 56), UPB_SIZE(36, 72), 6, upb_strview_make("", strlen(""))); }
 UPB_INLINE upb_strview google_api_HttpRule_body(const google_api_HttpRule *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
-UPB_INLINE bool google_api_HttpRule_has_custom(const google_api_HttpRule *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(36, 72), 8); }
+UPB_INLINE bool google_api_HttpRule_has_custom(const google_api_HttpRule *msg) { return _upb_getoneofcase(msg, UPB_SIZE(36, 72)) == 8; }
 UPB_INLINE const google_api_CustomHttpPattern* google_api_HttpRule_custom(const google_api_HttpRule *msg) { return UPB_READ_ONEOF(msg, const google_api_CustomHttpPattern*, UPB_SIZE(28, 56), UPB_SIZE(36, 72), 8, NULL); }
 UPB_INLINE bool google_api_HttpRule_has_additional_bindings(const google_api_HttpRule *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(24, 48)); }
 UPB_INLINE const google_api_HttpRule* const* google_api_HttpRule_additional_bindings(const google_api_HttpRule *msg, size_t *len) { return (const google_api_HttpRule* const*)_upb_array_accessor(msg, UPB_SIZE(24, 48), len); }

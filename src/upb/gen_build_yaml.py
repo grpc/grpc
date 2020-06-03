@@ -78,6 +78,7 @@ try:
             "third_party/upb/upb/port_undef.inc",
             "third_party/upb/upb/table.int.h",
             "third_party/upb/upb/upb.h",
+            "third_party/upb/upb/upb.hpp",
             "third_party/upb/upb/def.h",
             "third_party/upb/upb/reflection.h",
             "third_party/upb/upb/text_encode.h",

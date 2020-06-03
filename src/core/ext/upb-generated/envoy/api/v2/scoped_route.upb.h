@@ -119,7 +119,7 @@ typedef enum {
 } envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_type_oneofcases;
 UPB_INLINE envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_type_oneofcases envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_type_case(const envoy_api_v2_ScopedRouteConfiguration_Key_Fragment* msg) { return (envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(8, 16), int32_t); }
 
-UPB_INLINE bool envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_has_string_key(const envoy_api_v2_ScopedRouteConfiguration_Key_Fragment *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 1); }
+UPB_INLINE bool envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_has_string_key(const envoy_api_v2_ScopedRouteConfiguration_Key_Fragment *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 16)) == 1; }
 UPB_INLINE upb_strview envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_string_key(const envoy_api_v2_ScopedRouteConfiguration_Key_Fragment *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 1, upb_strview_make("", strlen(""))); }
 
 UPB_INLINE void envoy_api_v2_ScopedRouteConfiguration_Key_Fragment_set_string_key(envoy_api_v2_ScopedRouteConfiguration_Key_Fragment *msg, upb_strview value) {

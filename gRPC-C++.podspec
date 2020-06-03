@@ -748,7 +748,8 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/reflection.h',
                       'third_party/upb/upb/table.int.h',
                       'third_party/upb/upb/text_encode.h',
-                      'third_party/upb/upb/upb.h'
+                      'third_party/upb/upb/upb.h',
+                      'third_party/upb/upb/upb.hpp'
 
     ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
@@ -1230,7 +1231,8 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/reflection.h',
                               'third_party/upb/upb/table.int.h',
                               'third_party/upb/upb/text_encode.h',
-                              'third_party/upb/upb/upb.h'
+                              'third_party/upb/upb/upb.h',
+                              'third_party/upb/upb/upb.hpp'
   end
 
   s.subspec 'Protobuf' do |ss|

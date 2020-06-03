@@ -31,8 +31,8 @@ const upb_msglayout envoy_api_v2_core_Pipe_msginit = {
 static const upb_msglayout_field envoy_api_v2_core_SocketAddress__fields[6] = {
   {1, UPB_SIZE(0, 0), 0, 0, 14, 1},
   {2, UPB_SIZE(12, 16), 0, 0, 9, 1},
-  {3, UPB_SIZE(28, 48), UPB_SIZE(-36, -64), 0, 13, 1},
-  {4, UPB_SIZE(28, 48), UPB_SIZE(-36, -64), 0, 9, 1},
+  {3, UPB_SIZE(28, 48), UPB_SIZE(-37, -65), 0, 13, 1},
+  {4, UPB_SIZE(28, 48), UPB_SIZE(-37, -65), 0, 9, 1},
   {5, UPB_SIZE(20, 32), 0, 0, 9, 1},
   {6, UPB_SIZE(8, 8), 0, 0, 8, 1},
 };
@@ -83,8 +83,8 @@ static const upb_msglayout *const envoy_api_v2_core_Address_submsgs[2] = {
 };
 
 static const upb_msglayout_field envoy_api_v2_core_Address__fields[2] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 1, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 0, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_Address_msginit = {

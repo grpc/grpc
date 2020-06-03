@@ -78,11 +78,11 @@ static const upb_msglayout *const envoy_api_v2_core_ConfigSource_submsgs[4] = {
 };
 
 static const upb_msglayout_field envoy_api_v2_core_ConfigSource__fields[6] = {
-  {1, UPB_SIZE(12, 16), UPB_SIZE(-20, -32), 0, 9, 1},
-  {2, UPB_SIZE(12, 16), UPB_SIZE(-20, -32), 1, 11, 1},
-  {3, UPB_SIZE(12, 16), UPB_SIZE(-20, -32), 0, 11, 1},
+  {1, UPB_SIZE(12, 16), UPB_SIZE(-21, -33), 0, 9, 1},
+  {2, UPB_SIZE(12, 16), UPB_SIZE(-21, -33), 1, 11, 1},
+  {3, UPB_SIZE(12, 16), UPB_SIZE(-21, -33), 0, 11, 1},
   {4, UPB_SIZE(8, 8), 0, 3, 11, 1},
-  {5, UPB_SIZE(12, 16), UPB_SIZE(-20, -32), 2, 11, 1},
+  {5, UPB_SIZE(12, 16), UPB_SIZE(-21, -33), 2, 11, 1},
   {6, UPB_SIZE(0, 0), 0, 0, 14, 1},
 };
 

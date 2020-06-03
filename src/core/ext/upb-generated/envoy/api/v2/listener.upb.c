@@ -90,7 +90,7 @@ static const upb_msglayout *const envoy_api_v2_Listener_ConnectionBalanceConfig_
 };
 
 static const upb_msglayout_field envoy_api_v2_Listener_ConnectionBalanceConfig__fields[1] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 0, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_Listener_ConnectionBalanceConfig_msginit = {

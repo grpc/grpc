@@ -24,10 +24,10 @@ static const upb_msglayout *const envoy_type_tracing_v2_CustomTag_submsgs[4] = {
 
 static const upb_msglayout_field envoy_type_tracing_v2_CustomTag__fields[5] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 2, 11, 1},
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 0, 11, 1},
-  {4, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 1, 11, 1},
-  {5, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 3, 11, 1},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 2, 11, 1},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
+  {4, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, 1},
+  {5, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 3, 11, 1},
 };
 
 const upb_msglayout envoy_type_tracing_v2_CustomTag_msginit = {

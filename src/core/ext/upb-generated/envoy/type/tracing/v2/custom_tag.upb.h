@@ -64,13 +64,13 @@ typedef enum {
 UPB_INLINE envoy_type_tracing_v2_CustomTag_type_oneofcases envoy_type_tracing_v2_CustomTag_type_case(const envoy_type_tracing_v2_CustomTag* msg) { return (envoy_type_tracing_v2_CustomTag_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
 
 UPB_INLINE upb_strview envoy_type_tracing_v2_CustomTag_tag(const envoy_type_tracing_v2_CustomTag *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE bool envoy_type_tracing_v2_CustomTag_has_literal(const envoy_type_tracing_v2_CustomTag *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 2); }
+UPB_INLINE bool envoy_type_tracing_v2_CustomTag_has_literal(const envoy_type_tracing_v2_CustomTag *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 2; }
 UPB_INLINE const envoy_type_tracing_v2_CustomTag_Literal* envoy_type_tracing_v2_CustomTag_literal(const envoy_type_tracing_v2_CustomTag *msg) { return UPB_READ_ONEOF(msg, const envoy_type_tracing_v2_CustomTag_Literal*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 2, NULL); }
-UPB_INLINE bool envoy_type_tracing_v2_CustomTag_has_environment(const envoy_type_tracing_v2_CustomTag *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 3); }
+UPB_INLINE bool envoy_type_tracing_v2_CustomTag_has_environment(const envoy_type_tracing_v2_CustomTag *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 3; }
 UPB_INLINE const envoy_type_tracing_v2_CustomTag_Environment* envoy_type_tracing_v2_CustomTag_environment(const envoy_type_tracing_v2_CustomTag *msg) { return UPB_READ_ONEOF(msg, const envoy_type_tracing_v2_CustomTag_Environment*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 3, NULL); }
-UPB_INLINE bool envoy_type_tracing_v2_CustomTag_has_request_header(const envoy_type_tracing_v2_CustomTag *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 4); }
+UPB_INLINE bool envoy_type_tracing_v2_CustomTag_has_request_header(const envoy_type_tracing_v2_CustomTag *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 4; }
 UPB_INLINE const envoy_type_tracing_v2_CustomTag_Header* envoy_type_tracing_v2_CustomTag_request_header(const envoy_type_tracing_v2_CustomTag *msg) { return UPB_READ_ONEOF(msg, const envoy_type_tracing_v2_CustomTag_Header*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 4, NULL); }
-UPB_INLINE bool envoy_type_tracing_v2_CustomTag_has_metadata(const envoy_type_tracing_v2_CustomTag *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 5); }
+UPB_INLINE bool envoy_type_tracing_v2_CustomTag_has_metadata(const envoy_type_tracing_v2_CustomTag *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 5; }
 UPB_INLINE const envoy_type_tracing_v2_CustomTag_Metadata* envoy_type_tracing_v2_CustomTag_metadata(const envoy_type_tracing_v2_CustomTag *msg) { return UPB_READ_ONEOF(msg, const envoy_type_tracing_v2_CustomTag_Metadata*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 5, NULL); }
 
 UPB_INLINE void envoy_type_tracing_v2_CustomTag_set_tag(envoy_type_tracing_v2_CustomTag *msg, upb_strview value) {
