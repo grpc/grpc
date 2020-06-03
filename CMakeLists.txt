@@ -3697,8 +3697,8 @@ add_library(re2
 )
 
 set_target_properties(re2 PROPERTIES
-  VERSION ${gRPC_CPP_VERSION}
-  SOVERSION ${gRPC_CPP_SOVERSION}
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -3723,10 +3723,8 @@ target_include_directories(re2
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
-    ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(re2
-  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
