@@ -112,7 +112,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
                 local_credentials, call_credentials)
             with grpc.secure_channel(target, composite_credentials) as channel:
                 stub = channel.unary_unary(_UNARY_UNARY)
-                response = stub(_REQUEST)
+                response = stub(_REQUEST, wait_for_ready=True)
                 self.assertEqual(_REQUEST, response)
                 test_call_credentials.assert_called(self)
 
