@@ -30,7 +30,7 @@ out['libs'] = [{
     'build' :
         'all',
     'language':
-        'c++',
+        'c',
     'secure':
         False,
     'src':
