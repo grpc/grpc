@@ -93,7 +93,7 @@ namespace Grpc.Core.Internal
             IntPtr detailsPtr = Native.grpcsharp_batch_context_recv_status_on_client_details(this, out detailsLength);
             string details = MarshalUtils.PtrToStringUTF8(detailsPtr, (int)detailsLength.ToUInt32());
             string debugErrorString = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_error_string(this));
-            var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details, debugErrorString != null ? new DebugErrorException(debugErrorString) : null);
+            var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details, debugErrorString != null ? new CoreErrorDetailException(debugErrorString) : null);
 
             IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
             var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);

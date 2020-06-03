@@ -26,9 +26,9 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// Represents error details provides by C-core's debug_error_string
     /// </summary>
-    internal class DebugErrorException : Exception
+    internal class CoreErrorDetailException : Exception
     {
-        public DebugErrorException(string message) : base(message)
+        public CoreErrorDetailException(string message) : base(message)
         {
         }
     }

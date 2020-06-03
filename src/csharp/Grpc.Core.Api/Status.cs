@@ -46,15 +46,16 @@ namespace Grpc.Core
         /// Creates a new instance of <c>Status</c>.
         /// Users should not use this constructor, except for creating instances for testing.
         /// The debug error string should only be populated by gRPC internals.
+        /// Note: experimental API that can change or be removed without any prior notice.
         /// </summary>
         /// <param name="statusCode">Status code.</param>
         /// <param name="detail">Detail.</param>
-        /// <param name="debugErrorException">Optional internal error details.</param>
-        public Status(StatusCode statusCode, string detail, Exception debugErrorException)
+        /// <param name="debugException">Optional internal error details.</param>
+        public Status(StatusCode statusCode, string detail, Exception debugException)
         {
             StatusCode = statusCode;
             Detail = detail;
-            DebugErrorException = debugErrorException;
+            DebugException = debugException;
         }
 
         /// <summary>
@@ -75,17 +76,18 @@ namespace Grpc.Core
         /// never rely on values of this field (it should use <c>StatusCode</c> and <c>Detail</c> instead).
         /// Example: when a client fails to connect to a server, this field may provide additional details
         /// why the connection to the server has failed.
+        /// Note: experimental API that can change or be removed without any prior notice.
         /// </summary>
-        public Exception DebugErrorException { get; }
+        public Exception DebugException { get; }
 
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents the current <see cref="Grpc.Core.Status"/>.
         /// </summary>
         public override string ToString()
         {
-            if (DebugErrorException != null)
+            if (DebugException != null)
             {
-                return $"Status(StatusCode=\"{StatusCode}\", Detail=\"{Detail}\", DebugErrorException=\"{DebugErrorException}\")";
+                return $"Status(StatusCode=\"{StatusCode}\", Detail=\"{Detail}\", DebugException=\"{DebugException}\")";
             }
             return $"Status(StatusCode=\"{StatusCode}\", Detail=\"{Detail}\")";
         }
