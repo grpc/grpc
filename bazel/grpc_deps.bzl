@@ -74,7 +74,7 @@ def grpc_deps():
     native.bind(
         name = "re2",
         actual = "@com_github_google_re2//:re2",
-    ) 
+    )
 
     native.bind(
         name = "gflags",
