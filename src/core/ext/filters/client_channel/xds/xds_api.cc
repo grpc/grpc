@@ -270,42 +270,6 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
       arena);
 }
 
-envoy_api_v2_DiscoveryRequest* CreateDiscoveryRequest(
-    upb_arena* arena, const char* type_url, const std::string& version,
-    const std::string& nonce, grpc_error* error) {
-  // Create a request.
-  envoy_api_v2_DiscoveryRequest* request =
-      envoy_api_v2_DiscoveryRequest_new(arena);
-  // Set type_url.
-  envoy_api_v2_DiscoveryRequest_set_type_url(request,
-                                             upb_strview_makez(type_url));
-  // Set version_info.
-  if (!version.empty()) {
-    envoy_api_v2_DiscoveryRequest_set_version_info(
-        request, upb_strview_makez(version.c_str()));
-  }
-  // Set nonce.
-  if (!nonce.empty()) {
-    envoy_api_v2_DiscoveryRequest_set_response_nonce(
-        request, upb_strview_makez(nonce.c_str()));
-  }
-  // Set error_detail if it's a NACK.
-  if (error != GRPC_ERROR_NONE) {
-    grpc_slice error_description_slice;
-    GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
-                                  &error_description_slice));
-    upb_strview error_description_strview =
-        upb_strview_make(reinterpret_cast<const char*>(
-                             GPR_SLICE_START_PTR(error_description_slice)),
-                         GPR_SLICE_LENGTH(error_description_slice));
-    google_rpc_Status* error_detail =
-        envoy_api_v2_DiscoveryRequest_mutable_error_detail(request, arena);
-    google_rpc_Status_set_message(error_detail, error_description_strview);
-    GRPC_ERROR_UNREF(error);
-  }
-  return request;
-}
-
 inline absl::string_view UpbStringToAbsl(const upb_strview& str) {
   return absl::string_view(str.data, str.size);
 }
@@ -476,68 +440,43 @@ grpc_slice SerializeDiscoveryRequest(upb_arena* arena,
 
 }  // namespace
 
-grpc_slice XdsApi::CreateUnsupportedTypeNackRequest(const std::string& type_url,
-                                                    const std::string& nonce,
-                                                    grpc_error* error) {
-  upb::Arena arena;
-  envoy_api_v2_DiscoveryRequest* request = CreateDiscoveryRequest(
-      arena.ptr(), type_url.c_str(), /*version=*/"", nonce, error);
-  MaybeLogDiscoveryRequest(client_, tracer_, request);
-  return SerializeDiscoveryRequest(arena.ptr(), request);
-}
-
-grpc_slice XdsApi::CreateLdsRequest(const std::string& server_name,
-                                    const std::string& version,
-                                    const std::string& nonce, grpc_error* error,
-                                    bool populate_node) {
-  upb::Arena arena;
-  envoy_api_v2_DiscoveryRequest* request =
-      CreateDiscoveryRequest(arena.ptr(), kLdsTypeUrl, version, nonce, error);
-  // Populate node.
-  if (populate_node) {
-    envoy_api_v2_core_Node* node_msg =
-        envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
-    PopulateNode(arena.ptr(), node_, build_version_, user_agent_name_, "",
-                 node_msg);
-  }
-  // Add resource_name.
-  envoy_api_v2_DiscoveryRequest_add_resource_names(
-      request, upb_strview_make(server_name.data(), server_name.size()),
-      arena.ptr());
-  MaybeLogDiscoveryRequest(client_, tracer_, request);
-  return SerializeDiscoveryRequest(arena.ptr(), request);
-}
-
-grpc_slice XdsApi::CreateRdsRequest(const std::string& route_config_name,
-                                    const std::string& version,
-                                    const std::string& nonce, grpc_error* error,
-                                    bool populate_node) {
-  upb::Arena arena;
-  envoy_api_v2_DiscoveryRequest* request =
-      CreateDiscoveryRequest(arena.ptr(), kRdsTypeUrl, version, nonce, error);
-  // Populate node.
-  if (populate_node) {
-    envoy_api_v2_core_Node* node_msg =
-        envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
-    PopulateNode(arena.ptr(), node_, build_version_, user_agent_name_, "",
-                 node_msg);
-  }
-  // Add resource_name.
-  envoy_api_v2_DiscoveryRequest_add_resource_names(
-      request,
-      upb_strview_make(route_config_name.data(), route_config_name.size()),
-      arena.ptr());
-  MaybeLogDiscoveryRequest(client_, tracer_, request);
-  return SerializeDiscoveryRequest(arena.ptr(), request);
-}
-
-grpc_slice XdsApi::CreateCdsRequest(
-    const std::set<absl::string_view>& cluster_names,
+grpc_slice XdsApi::CreateAdsRequest(
+    const std::string& type_url,
+    const std::set<absl::string_view>& resource_names,
     const std::string& version, const std::string& nonce, grpc_error* error,
     bool populate_node) {
   upb::Arena arena;
+  // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
-      CreateDiscoveryRequest(arena.ptr(), kCdsTypeUrl, version, nonce, error);
+      envoy_api_v2_DiscoveryRequest_new(arena.ptr());
+  // Set type_url.
+  envoy_api_v2_DiscoveryRequest_set_type_url(
+      request, upb_strview_make(type_url.data(), type_url.size()));
+  // Set version_info.
+  if (!version.empty()) {
+    envoy_api_v2_DiscoveryRequest_set_version_info(
+        request, upb_strview_make(version.data(), version.size()));
+  }
+  // Set nonce.
+  if (!nonce.empty()) {
+    envoy_api_v2_DiscoveryRequest_set_response_nonce(
+        request, upb_strview_make(nonce.data(), nonce.size()));
+  }
+  // Set error_detail if it's a NACK.
+  if (error != GRPC_ERROR_NONE) {
+    grpc_slice error_description_slice;
+    GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                                  &error_description_slice));
+    upb_strview error_description_strview =
+        upb_strview_make(reinterpret_cast<const char*>(
+                             GPR_SLICE_START_PTR(error_description_slice)),
+                         GPR_SLICE_LENGTH(error_description_slice));
+    google_rpc_Status* error_detail =
+        envoy_api_v2_DiscoveryRequest_mutable_error_detail(request,
+                                                           arena.ptr());
+    google_rpc_Status_set_message(error_detail, error_description_strview);
+    GRPC_ERROR_UNREF(error);
+  }
   // Populate node.
   if (populate_node) {
     envoy_api_v2_core_Node* node_msg =
@@ -546,34 +485,9 @@ grpc_slice XdsApi::CreateCdsRequest(
                  node_msg);
   }
   // Add resource_names.
-  for (const auto& cluster_name : cluster_names) {
+  for (const auto& resource_name : resource_names) {
     envoy_api_v2_DiscoveryRequest_add_resource_names(
-        request, upb_strview_make(cluster_name.data(), cluster_name.size()),
-        arena.ptr());
-  }
-  MaybeLogDiscoveryRequest(client_, tracer_, request);
-  return SerializeDiscoveryRequest(arena.ptr(), request);
-}
-
-grpc_slice XdsApi::CreateEdsRequest(
-    const std::set<absl::string_view>& eds_service_names,
-    const std::string& version, const std::string& nonce, grpc_error* error,
-    bool populate_node) {
-  upb::Arena arena;
-  envoy_api_v2_DiscoveryRequest* request =
-      CreateDiscoveryRequest(arena.ptr(), kEdsTypeUrl, version, nonce, error);
-  // Populate node.
-  if (populate_node) {
-    envoy_api_v2_core_Node* node_msg =
-        envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
-    PopulateNode(arena.ptr(), node_, build_version_, user_agent_name_, "",
-                 node_msg);
-  }
-  // Add resource_names.
-  for (const auto& eds_service_name : eds_service_names) {
-    envoy_api_v2_DiscoveryRequest_add_resource_names(
-        request,
-        upb_strview_make(eds_service_name.data(), eds_service_name.size()),
+        request, upb_strview_make(resource_name.data(), resource_name.size()),
         arena.ptr());
   }
   MaybeLogDiscoveryRequest(client_, tracer_, request);
@@ -1285,13 +1199,13 @@ grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* RdsResponseParse(XdsClient* client, TraceFlag* tracer,
-                             const envoy_api_v2_DiscoveryResponse* response,
-                             const std::string& expected_server_name,
-                             const std::string& expected_route_config_name,
-                             const bool xds_routing_enabled,
-                             absl::optional<XdsApi::RdsUpdate>* rds_update,
-                             upb_arena* arena) {
+grpc_error* RdsResponseParse(
+    XdsClient* client, TraceFlag* tracer,
+    const envoy_api_v2_DiscoveryResponse* response,
+    const std::string& expected_server_name,
+    const std::set<absl::string_view>& expected_route_configuration_names,
+    const bool xds_routing_enabled,
+    absl::optional<XdsApi::RdsUpdate>* rds_update, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1312,10 +1226,14 @@ grpc_error* RdsResponseParse(XdsClient* client, TraceFlag* tracer,
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode route_config.");
     }
     // Check route_config_name. Ignore unexpected route_config.
-    const upb_strview name = envoy_api_v2_RouteConfiguration_name(route_config);
-    const upb_strview expected_name =
-        upb_strview_makez(expected_route_config_name.c_str());
-    if (!upb_strview_eql(name, expected_name)) continue;
+    const upb_strview route_config_name =
+        envoy_api_v2_RouteConfiguration_name(route_config);
+    absl::string_view route_config_name_strview(route_config_name.data,
+                                                route_config_name.size);
+    if (expected_route_configuration_names.find(route_config_name_strview) ==
+        expected_route_configuration_names.end()) {
+      continue;
+    }
     // Parse the route_config.
     XdsApi::RdsUpdate local_rds_update;
     grpc_error* error =
@@ -1600,7 +1518,7 @@ grpc_error* EdsResponseParse(
 
 grpc_error* XdsApi::ParseAdsResponse(
     const grpc_slice& encoded_response, const std::string& expected_server_name,
-    const std::string& expected_route_config_name,
+    const std::set<absl::string_view>& expected_route_configuration_names,
     const std::set<absl::string_view>& expected_cluster_names,
     const std::set<absl::string_view>& expected_eds_service_names,
     absl::optional<LdsUpdate>* lds_update,
@@ -1635,8 +1553,8 @@ grpc_error* XdsApi::ParseAdsResponse(
                             xds_routing_enabled_, lds_update, arena.ptr());
   } else if (*type_url == kRdsTypeUrl) {
     return RdsResponseParse(client_, tracer_, response, expected_server_name,
-                            expected_route_config_name, xds_routing_enabled_,
-                            rds_update, arena.ptr());
+                            expected_route_configuration_names,
+                            xds_routing_enabled_, rds_update, arena.ptr());
   } else if (*type_url == kCdsTypeUrl) {
     return CdsResponseParse(client_, tracer_, response, expected_cluster_names,
                             cds_update_map, arena.ptr());

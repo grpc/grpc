@@ -61,7 +61,7 @@ export CC=/usr/bin/gcc
   composer install && \
   ./bin/generate_proto_php.sh)
 
-GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
+GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_routing_lb,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
   --test_case=all \
   --project_id=grpc-testing \
