@@ -1612,10 +1612,8 @@
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/walker-inl.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/benchmark.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/benchmark.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/flags.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/fuzz.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/logging.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/malloc_counter.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/mix.h" role="src" />
@@ -1625,7 +1623,6 @@
     <file baseinstalldir="/" name="third_party/re2/util/rune.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/strutil.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/strutil.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/test.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/test.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
