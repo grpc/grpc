@@ -127,9 +127,9 @@ typedef enum {
 UPB_INLINE envoy_api_v2_auth_PrivateKeyProvider_config_type_oneofcases envoy_api_v2_auth_PrivateKeyProvider_config_type_case(const envoy_api_v2_auth_PrivateKeyProvider* msg) { return (envoy_api_v2_auth_PrivateKeyProvider_config_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
 
 UPB_INLINE upb_strview envoy_api_v2_auth_PrivateKeyProvider_provider_name(const envoy_api_v2_auth_PrivateKeyProvider *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE bool envoy_api_v2_auth_PrivateKeyProvider_has_config(const envoy_api_v2_auth_PrivateKeyProvider *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 2); }
+UPB_INLINE bool envoy_api_v2_auth_PrivateKeyProvider_has_config(const envoy_api_v2_auth_PrivateKeyProvider *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 2; }
 UPB_INLINE const struct google_protobuf_Struct* envoy_api_v2_auth_PrivateKeyProvider_config(const envoy_api_v2_auth_PrivateKeyProvider *msg) { return UPB_READ_ONEOF(msg, const struct google_protobuf_Struct*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 2, NULL); }
-UPB_INLINE bool envoy_api_v2_auth_PrivateKeyProvider_has_typed_config(const envoy_api_v2_auth_PrivateKeyProvider *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 3); }
+UPB_INLINE bool envoy_api_v2_auth_PrivateKeyProvider_has_typed_config(const envoy_api_v2_auth_PrivateKeyProvider *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 3; }
 UPB_INLINE const struct google_protobuf_Any* envoy_api_v2_auth_PrivateKeyProvider_typed_config(const envoy_api_v2_auth_PrivateKeyProvider *msg) { return UPB_READ_ONEOF(msg, const struct google_protobuf_Any*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 3, NULL); }
 
 UPB_INLINE void envoy_api_v2_auth_PrivateKeyProvider_set_provider_name(envoy_api_v2_auth_PrivateKeyProvider *msg, upb_strview value) {

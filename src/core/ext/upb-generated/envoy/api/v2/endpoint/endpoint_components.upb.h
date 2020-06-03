@@ -134,14 +134,14 @@ typedef enum {
 } envoy_api_v2_endpoint_LbEndpoint_host_identifier_oneofcases;
 UPB_INLINE envoy_api_v2_endpoint_LbEndpoint_host_identifier_oneofcases envoy_api_v2_endpoint_LbEndpoint_host_identifier_case(const envoy_api_v2_endpoint_LbEndpoint* msg) { return (envoy_api_v2_endpoint_LbEndpoint_host_identifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(24, 40), int32_t); }
 
-UPB_INLINE bool envoy_api_v2_endpoint_LbEndpoint_has_endpoint(const envoy_api_v2_endpoint_LbEndpoint *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(24, 40), 1); }
+UPB_INLINE bool envoy_api_v2_endpoint_LbEndpoint_has_endpoint(const envoy_api_v2_endpoint_LbEndpoint *msg) { return _upb_getoneofcase(msg, UPB_SIZE(24, 40)) == 1; }
 UPB_INLINE const envoy_api_v2_endpoint_Endpoint* envoy_api_v2_endpoint_LbEndpoint_endpoint(const envoy_api_v2_endpoint_LbEndpoint *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_endpoint_Endpoint*, UPB_SIZE(16, 24), UPB_SIZE(24, 40), 1, NULL); }
 UPB_INLINE int32_t envoy_api_v2_endpoint_LbEndpoint_health_status(const envoy_api_v2_endpoint_LbEndpoint *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
 UPB_INLINE bool envoy_api_v2_endpoint_LbEndpoint_has_metadata(const envoy_api_v2_endpoint_LbEndpoint *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 8)); }
 UPB_INLINE const struct envoy_api_v2_core_Metadata* envoy_api_v2_endpoint_LbEndpoint_metadata(const envoy_api_v2_endpoint_LbEndpoint *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const struct envoy_api_v2_core_Metadata*); }
 UPB_INLINE bool envoy_api_v2_endpoint_LbEndpoint_has_load_balancing_weight(const envoy_api_v2_endpoint_LbEndpoint *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 16)); }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_endpoint_LbEndpoint_load_balancing_weight(const envoy_api_v2_endpoint_LbEndpoint *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 16), const struct google_protobuf_UInt32Value*); }
-UPB_INLINE bool envoy_api_v2_endpoint_LbEndpoint_has_endpoint_name(const envoy_api_v2_endpoint_LbEndpoint *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(24, 40), 5); }
+UPB_INLINE bool envoy_api_v2_endpoint_LbEndpoint_has_endpoint_name(const envoy_api_v2_endpoint_LbEndpoint *msg) { return _upb_getoneofcase(msg, UPB_SIZE(24, 40)) == 5; }
 UPB_INLINE upb_strview envoy_api_v2_endpoint_LbEndpoint_endpoint_name(const envoy_api_v2_endpoint_LbEndpoint *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(16, 24), UPB_SIZE(24, 40), 5, upb_strview_make("", strlen(""))); }
 
 UPB_INLINE void envoy_api_v2_endpoint_LbEndpoint_set_endpoint(envoy_api_v2_endpoint_LbEndpoint *msg, envoy_api_v2_endpoint_Endpoint* value) {

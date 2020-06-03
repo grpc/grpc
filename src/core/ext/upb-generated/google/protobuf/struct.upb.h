@@ -104,17 +104,17 @@ typedef enum {
 } google_protobuf_Value_kind_oneofcases;
 UPB_INLINE google_protobuf_Value_kind_oneofcases google_protobuf_Value_kind_case(const google_protobuf_Value* msg) { return (google_protobuf_Value_kind_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(8, 16), int32_t); }
 
-UPB_INLINE bool google_protobuf_Value_has_null_value(const google_protobuf_Value *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 1); }
+UPB_INLINE bool google_protobuf_Value_has_null_value(const google_protobuf_Value *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 16)) == 1; }
 UPB_INLINE int32_t google_protobuf_Value_null_value(const google_protobuf_Value *msg) { return UPB_READ_ONEOF(msg, int32_t, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 1, google_protobuf_NULL_VALUE); }
-UPB_INLINE bool google_protobuf_Value_has_number_value(const google_protobuf_Value *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 2); }
+UPB_INLINE bool google_protobuf_Value_has_number_value(const google_protobuf_Value *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 16)) == 2; }
 UPB_INLINE double google_protobuf_Value_number_value(const google_protobuf_Value *msg) { return UPB_READ_ONEOF(msg, double, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 2, 0); }
-UPB_INLINE bool google_protobuf_Value_has_string_value(const google_protobuf_Value *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 3); }
+UPB_INLINE bool google_protobuf_Value_has_string_value(const google_protobuf_Value *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 16)) == 3; }
 UPB_INLINE upb_strview google_protobuf_Value_string_value(const google_protobuf_Value *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 3, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool google_protobuf_Value_has_bool_value(const google_protobuf_Value *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 4); }
+UPB_INLINE bool google_protobuf_Value_has_bool_value(const google_protobuf_Value *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 16)) == 4; }
 UPB_INLINE bool google_protobuf_Value_bool_value(const google_protobuf_Value *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 4, false); }
-UPB_INLINE bool google_protobuf_Value_has_struct_value(const google_protobuf_Value *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 5); }
+UPB_INLINE bool google_protobuf_Value_has_struct_value(const google_protobuf_Value *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 16)) == 5; }
 UPB_INLINE const google_protobuf_Struct* google_protobuf_Value_struct_value(const google_protobuf_Value *msg) { return UPB_READ_ONEOF(msg, const google_protobuf_Struct*, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 5, NULL); }
-UPB_INLINE bool google_protobuf_Value_has_list_value(const google_protobuf_Value *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 6); }
+UPB_INLINE bool google_protobuf_Value_has_list_value(const google_protobuf_Value *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 16)) == 6; }
 UPB_INLINE const google_protobuf_ListValue* google_protobuf_Value_list_value(const google_protobuf_Value *msg) { return UPB_READ_ONEOF(msg, const google_protobuf_ListValue*, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 6, NULL); }
 
 UPB_INLINE void google_protobuf_Value_set_null_value(google_protobuf_Value *msg, int32_t value) {

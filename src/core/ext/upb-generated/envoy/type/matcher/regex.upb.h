@@ -52,7 +52,7 @@ typedef enum {
 } envoy_type_matcher_RegexMatcher_engine_type_oneofcases;
 UPB_INLINE envoy_type_matcher_RegexMatcher_engine_type_oneofcases envoy_type_matcher_RegexMatcher_engine_type_case(const envoy_type_matcher_RegexMatcher* msg) { return (envoy_type_matcher_RegexMatcher_engine_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
 
-UPB_INLINE bool envoy_type_matcher_RegexMatcher_has_google_re2(const envoy_type_matcher_RegexMatcher *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 1); }
+UPB_INLINE bool envoy_type_matcher_RegexMatcher_has_google_re2(const envoy_type_matcher_RegexMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 1; }
 UPB_INLINE const envoy_type_matcher_RegexMatcher_GoogleRE2* envoy_type_matcher_RegexMatcher_google_re2(const envoy_type_matcher_RegexMatcher *msg) { return UPB_READ_ONEOF(msg, const envoy_type_matcher_RegexMatcher_GoogleRE2*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 1, NULL); }
 UPB_INLINE upb_strview envoy_type_matcher_RegexMatcher_regex(const envoy_type_matcher_RegexMatcher *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
 

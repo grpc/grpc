@@ -252,15 +252,15 @@ typedef enum {
 } envoy_api_v2_core_ConfigSource_config_source_specifier_oneofcases;
 UPB_INLINE envoy_api_v2_core_ConfigSource_config_source_specifier_oneofcases envoy_api_v2_core_ConfigSource_config_source_specifier_case(const envoy_api_v2_core_ConfigSource* msg) { return (envoy_api_v2_core_ConfigSource_config_source_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(20, 32), int32_t); }
 
-UPB_INLINE bool envoy_api_v2_core_ConfigSource_has_path(const envoy_api_v2_core_ConfigSource *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(20, 32), 1); }
+UPB_INLINE bool envoy_api_v2_core_ConfigSource_has_path(const envoy_api_v2_core_ConfigSource *msg) { return _upb_getoneofcase(msg, UPB_SIZE(20, 32)) == 1; }
 UPB_INLINE upb_strview envoy_api_v2_core_ConfigSource_path(const envoy_api_v2_core_ConfigSource *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(12, 16), UPB_SIZE(20, 32), 1, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool envoy_api_v2_core_ConfigSource_has_api_config_source(const envoy_api_v2_core_ConfigSource *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(20, 32), 2); }
+UPB_INLINE bool envoy_api_v2_core_ConfigSource_has_api_config_source(const envoy_api_v2_core_ConfigSource *msg) { return _upb_getoneofcase(msg, UPB_SIZE(20, 32)) == 2; }
 UPB_INLINE const envoy_api_v2_core_ApiConfigSource* envoy_api_v2_core_ConfigSource_api_config_source(const envoy_api_v2_core_ConfigSource *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_core_ApiConfigSource*, UPB_SIZE(12, 16), UPB_SIZE(20, 32), 2, NULL); }
-UPB_INLINE bool envoy_api_v2_core_ConfigSource_has_ads(const envoy_api_v2_core_ConfigSource *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(20, 32), 3); }
+UPB_INLINE bool envoy_api_v2_core_ConfigSource_has_ads(const envoy_api_v2_core_ConfigSource *msg) { return _upb_getoneofcase(msg, UPB_SIZE(20, 32)) == 3; }
 UPB_INLINE const envoy_api_v2_core_AggregatedConfigSource* envoy_api_v2_core_ConfigSource_ads(const envoy_api_v2_core_ConfigSource *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_core_AggregatedConfigSource*, UPB_SIZE(12, 16), UPB_SIZE(20, 32), 3, NULL); }
 UPB_INLINE bool envoy_api_v2_core_ConfigSource_has_initial_fetch_timeout(const envoy_api_v2_core_ConfigSource *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 8)); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_core_ConfigSource_initial_fetch_timeout(const envoy_api_v2_core_ConfigSource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const struct google_protobuf_Duration*); }
-UPB_INLINE bool envoy_api_v2_core_ConfigSource_has_self(const envoy_api_v2_core_ConfigSource *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(20, 32), 5); }
+UPB_INLINE bool envoy_api_v2_core_ConfigSource_has_self(const envoy_api_v2_core_ConfigSource *msg) { return _upb_getoneofcase(msg, UPB_SIZE(20, 32)) == 5; }
 UPB_INLINE const envoy_api_v2_core_SelfConfigSource* envoy_api_v2_core_ConfigSource_self(const envoy_api_v2_core_ConfigSource *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_core_SelfConfigSource*, UPB_SIZE(12, 16), UPB_SIZE(20, 32), 5, NULL); }
 UPB_INLINE int32_t envoy_api_v2_core_ConfigSource_resource_api_version(const envoy_api_v2_core_ConfigSource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
 

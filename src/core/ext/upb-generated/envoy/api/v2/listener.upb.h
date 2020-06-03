@@ -374,7 +374,7 @@ typedef enum {
 } envoy_api_v2_Listener_ConnectionBalanceConfig_balance_type_oneofcases;
 UPB_INLINE envoy_api_v2_Listener_ConnectionBalanceConfig_balance_type_oneofcases envoy_api_v2_Listener_ConnectionBalanceConfig_balance_type_case(const envoy_api_v2_Listener_ConnectionBalanceConfig* msg) { return (envoy_api_v2_Listener_ConnectionBalanceConfig_balance_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
 
-UPB_INLINE bool envoy_api_v2_Listener_ConnectionBalanceConfig_has_exact_balance(const envoy_api_v2_Listener_ConnectionBalanceConfig *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
+UPB_INLINE bool envoy_api_v2_Listener_ConnectionBalanceConfig_has_exact_balance(const envoy_api_v2_Listener_ConnectionBalanceConfig *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 1; }
 UPB_INLINE const envoy_api_v2_Listener_ConnectionBalanceConfig_ExactBalance* envoy_api_v2_Listener_ConnectionBalanceConfig_exact_balance(const envoy_api_v2_Listener_ConnectionBalanceConfig *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_Listener_ConnectionBalanceConfig_ExactBalance*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
 
 UPB_INLINE void envoy_api_v2_Listener_ConnectionBalanceConfig_set_exact_balance(envoy_api_v2_Listener_ConnectionBalanceConfig *msg, envoy_api_v2_Listener_ConnectionBalanceConfig_ExactBalance* value) {

@@ -46,7 +46,7 @@ typedef enum {
 } envoy_api_v2_core_EventServiceConfig_config_source_specifier_oneofcases;
 UPB_INLINE envoy_api_v2_core_EventServiceConfig_config_source_specifier_oneofcases envoy_api_v2_core_EventServiceConfig_config_source_specifier_case(const envoy_api_v2_core_EventServiceConfig* msg) { return (envoy_api_v2_core_EventServiceConfig_config_source_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
 
-UPB_INLINE bool envoy_api_v2_core_EventServiceConfig_has_grpc_service(const envoy_api_v2_core_EventServiceConfig *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
+UPB_INLINE bool envoy_api_v2_core_EventServiceConfig_has_grpc_service(const envoy_api_v2_core_EventServiceConfig *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 1; }
 UPB_INLINE const struct envoy_api_v2_core_GrpcService* envoy_api_v2_core_EventServiceConfig_grpc_service(const envoy_api_v2_core_EventServiceConfig *msg) { return UPB_READ_ONEOF(msg, const struct envoy_api_v2_core_GrpcService*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
 
 UPB_INLINE void envoy_api_v2_core_EventServiceConfig_set_grpc_service(envoy_api_v2_core_EventServiceConfig *msg, struct envoy_api_v2_core_GrpcService* value) {

@@ -97,7 +97,7 @@ typedef enum {
 } envoy_type_metadata_v2_MetadataKey_PathSegment_segment_oneofcases;
 UPB_INLINE envoy_type_metadata_v2_MetadataKey_PathSegment_segment_oneofcases envoy_type_metadata_v2_MetadataKey_PathSegment_segment_case(const envoy_type_metadata_v2_MetadataKey_PathSegment* msg) { return (envoy_type_metadata_v2_MetadataKey_PathSegment_segment_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(8, 16), int32_t); }
 
-UPB_INLINE bool envoy_type_metadata_v2_MetadataKey_PathSegment_has_key(const envoy_type_metadata_v2_MetadataKey_PathSegment *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 1); }
+UPB_INLINE bool envoy_type_metadata_v2_MetadataKey_PathSegment_has_key(const envoy_type_metadata_v2_MetadataKey_PathSegment *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 16)) == 1; }
 UPB_INLINE upb_strview envoy_type_metadata_v2_MetadataKey_PathSegment_key(const envoy_type_metadata_v2_MetadataKey_PathSegment *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 1, upb_strview_make("", strlen(""))); }
 
 UPB_INLINE void envoy_type_metadata_v2_MetadataKey_PathSegment_set_key(envoy_type_metadata_v2_MetadataKey_PathSegment *msg, upb_strview value) {
@@ -127,13 +127,13 @@ typedef enum {
 } envoy_type_metadata_v2_MetadataKind_kind_oneofcases;
 UPB_INLINE envoy_type_metadata_v2_MetadataKind_kind_oneofcases envoy_type_metadata_v2_MetadataKind_kind_case(const envoy_type_metadata_v2_MetadataKind* msg) { return (envoy_type_metadata_v2_MetadataKind_kind_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
 
-UPB_INLINE bool envoy_type_metadata_v2_MetadataKind_has_request(const envoy_type_metadata_v2_MetadataKind *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
+UPB_INLINE bool envoy_type_metadata_v2_MetadataKind_has_request(const envoy_type_metadata_v2_MetadataKind *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 1; }
 UPB_INLINE const envoy_type_metadata_v2_MetadataKind_Request* envoy_type_metadata_v2_MetadataKind_request(const envoy_type_metadata_v2_MetadataKind *msg) { return UPB_READ_ONEOF(msg, const envoy_type_metadata_v2_MetadataKind_Request*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
-UPB_INLINE bool envoy_type_metadata_v2_MetadataKind_has_route(const envoy_type_metadata_v2_MetadataKind *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 2); }
+UPB_INLINE bool envoy_type_metadata_v2_MetadataKind_has_route(const envoy_type_metadata_v2_MetadataKind *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 2; }
 UPB_INLINE const envoy_type_metadata_v2_MetadataKind_Route* envoy_type_metadata_v2_MetadataKind_route(const envoy_type_metadata_v2_MetadataKind *msg) { return UPB_READ_ONEOF(msg, const envoy_type_metadata_v2_MetadataKind_Route*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 2, NULL); }
-UPB_INLINE bool envoy_type_metadata_v2_MetadataKind_has_cluster(const envoy_type_metadata_v2_MetadataKind *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 3); }
+UPB_INLINE bool envoy_type_metadata_v2_MetadataKind_has_cluster(const envoy_type_metadata_v2_MetadataKind *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 3; }
 UPB_INLINE const envoy_type_metadata_v2_MetadataKind_Cluster* envoy_type_metadata_v2_MetadataKind_cluster(const envoy_type_metadata_v2_MetadataKind *msg) { return UPB_READ_ONEOF(msg, const envoy_type_metadata_v2_MetadataKind_Cluster*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 3, NULL); }
-UPB_INLINE bool envoy_type_metadata_v2_MetadataKind_has_host(const envoy_type_metadata_v2_MetadataKind *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 4); }
+UPB_INLINE bool envoy_type_metadata_v2_MetadataKind_has_host(const envoy_type_metadata_v2_MetadataKind *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 4; }
 UPB_INLINE const envoy_type_metadata_v2_MetadataKind_Host* envoy_type_metadata_v2_MetadataKind_host(const envoy_type_metadata_v2_MetadataKind *msg) { return UPB_READ_ONEOF(msg, const envoy_type_metadata_v2_MetadataKind_Host*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 4, NULL); }
 
 UPB_INLINE void envoy_type_metadata_v2_MetadataKind_set_request(envoy_type_metadata_v2_MetadataKind *msg, envoy_type_metadata_v2_MetadataKind_Request* value) {

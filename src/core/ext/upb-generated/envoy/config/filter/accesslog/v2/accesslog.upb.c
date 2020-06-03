@@ -29,8 +29,8 @@ static const upb_msglayout *const envoy_config_filter_accesslog_v2_AccessLog_sub
 static const upb_msglayout_field envoy_config_filter_accesslog_v2_AccessLog__fields[4] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
   {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
-  {3, UPB_SIZE(12, 24), UPB_SIZE(-16, -32), 2, 11, 1},
-  {4, UPB_SIZE(12, 24), UPB_SIZE(-16, -32), 1, 11, 1},
+  {3, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 2, 11, 1},
+  {4, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 1, 11, 1},
 };
 
 const upb_msglayout envoy_config_filter_accesslog_v2_AccessLog_msginit = {
@@ -54,17 +54,17 @@ static const upb_msglayout *const envoy_config_filter_accesslog_v2_AccessLogFilt
 };
 
 static const upb_msglayout_field envoy_config_filter_accesslog_v2_AccessLogFilter__fields[11] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 9, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 1, 11, 1},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 5, 11, 1},
-  {4, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 10, 11, 1},
-  {5, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 8, 11, 1},
-  {6, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 0, 11, 1},
-  {7, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 6, 11, 1},
-  {8, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 4, 11, 1},
-  {9, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 7, 11, 1},
-  {10, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 3, 11, 1},
-  {11, UPB_SIZE(0, 0), UPB_SIZE(-4, -8), 2, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 9, 11, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 5, 11, 1},
+  {4, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 10, 11, 1},
+  {5, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 8, 11, 1},
+  {6, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
+  {7, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 6, 11, 1},
+  {8, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 4, 11, 1},
+  {9, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 7, 11, 1},
+  {10, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, 1},
+  {11, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, 1},
 };
 
 const upb_msglayout envoy_config_filter_accesslog_v2_AccessLogFilter_msginit = {
@@ -214,8 +214,8 @@ static const upb_msglayout *const envoy_config_filter_accesslog_v2_ExtensionFilt
 
 static const upb_msglayout_field envoy_config_filter_accesslog_v2_ExtensionFilter__fields[3] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 1, 11, 1},
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-12, -24), 0, 11, 1},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, 1},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_filter_accesslog_v2_ExtensionFilter_msginit = {

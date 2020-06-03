@@ -128,13 +128,13 @@ typedef enum {
 UPB_INLINE envoy_api_v2_auth_Secret_type_oneofcases envoy_api_v2_auth_Secret_type_case(const envoy_api_v2_auth_Secret* msg) { return (envoy_api_v2_auth_Secret_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
 
 UPB_INLINE upb_strview envoy_api_v2_auth_Secret_name(const envoy_api_v2_auth_Secret *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE bool envoy_api_v2_auth_Secret_has_tls_certificate(const envoy_api_v2_auth_Secret *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 2); }
+UPB_INLINE bool envoy_api_v2_auth_Secret_has_tls_certificate(const envoy_api_v2_auth_Secret *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 2; }
 UPB_INLINE const struct envoy_api_v2_auth_TlsCertificate* envoy_api_v2_auth_Secret_tls_certificate(const envoy_api_v2_auth_Secret *msg) { return UPB_READ_ONEOF(msg, const struct envoy_api_v2_auth_TlsCertificate*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 2, NULL); }
-UPB_INLINE bool envoy_api_v2_auth_Secret_has_session_ticket_keys(const envoy_api_v2_auth_Secret *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 3); }
+UPB_INLINE bool envoy_api_v2_auth_Secret_has_session_ticket_keys(const envoy_api_v2_auth_Secret *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 3; }
 UPB_INLINE const struct envoy_api_v2_auth_TlsSessionTicketKeys* envoy_api_v2_auth_Secret_session_ticket_keys(const envoy_api_v2_auth_Secret *msg) { return UPB_READ_ONEOF(msg, const struct envoy_api_v2_auth_TlsSessionTicketKeys*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 3, NULL); }
-UPB_INLINE bool envoy_api_v2_auth_Secret_has_validation_context(const envoy_api_v2_auth_Secret *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 4); }
+UPB_INLINE bool envoy_api_v2_auth_Secret_has_validation_context(const envoy_api_v2_auth_Secret *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 4; }
 UPB_INLINE const struct envoy_api_v2_auth_CertificateValidationContext* envoy_api_v2_auth_Secret_validation_context(const envoy_api_v2_auth_Secret *msg) { return UPB_READ_ONEOF(msg, const struct envoy_api_v2_auth_CertificateValidationContext*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 4, NULL); }
-UPB_INLINE bool envoy_api_v2_auth_Secret_has_generic_secret(const envoy_api_v2_auth_Secret *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 5); }
+UPB_INLINE bool envoy_api_v2_auth_Secret_has_generic_secret(const envoy_api_v2_auth_Secret *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 5; }
 UPB_INLINE const envoy_api_v2_auth_GenericSecret* envoy_api_v2_auth_Secret_generic_secret(const envoy_api_v2_auth_Secret *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_auth_GenericSecret*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 5, NULL); }
 
 UPB_INLINE void envoy_api_v2_auth_Secret_set_name(envoy_api_v2_auth_Secret *msg, upb_strview value) {

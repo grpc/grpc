@@ -21,11 +21,11 @@ static const upb_msglayout *const envoy_type_matcher_StringMatcher_submsgs[1] = 
 };
 
 static const upb_msglayout_field envoy_type_matcher_StringMatcher__fields[6] = {
-  {1, UPB_SIZE(4, 8), UPB_SIZE(-12, -24), 0, 9, 1},
-  {2, UPB_SIZE(4, 8), UPB_SIZE(-12, -24), 0, 9, 1},
-  {3, UPB_SIZE(4, 8), UPB_SIZE(-12, -24), 0, 9, 1},
-  {4, UPB_SIZE(4, 8), UPB_SIZE(-12, -24), 0, 9, 1},
-  {5, UPB_SIZE(4, 8), UPB_SIZE(-12, -24), 0, 11, 1},
+  {1, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, 1},
+  {2, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, 1},
+  {3, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, 1},
+  {4, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, 1},
+  {5, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 11, 1},
   {6, UPB_SIZE(0, 0), 0, 0, 8, 1},
 };
 

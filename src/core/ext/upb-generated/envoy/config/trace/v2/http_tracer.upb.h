@@ -83,9 +83,9 @@ typedef enum {
 UPB_INLINE envoy_config_trace_v2_Tracing_Http_config_type_oneofcases envoy_config_trace_v2_Tracing_Http_config_type_case(const envoy_config_trace_v2_Tracing_Http* msg) { return (envoy_config_trace_v2_Tracing_Http_config_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
 
 UPB_INLINE upb_strview envoy_config_trace_v2_Tracing_Http_name(const envoy_config_trace_v2_Tracing_Http *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE bool envoy_config_trace_v2_Tracing_Http_has_config(const envoy_config_trace_v2_Tracing_Http *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 2); }
+UPB_INLINE bool envoy_config_trace_v2_Tracing_Http_has_config(const envoy_config_trace_v2_Tracing_Http *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 2; }
 UPB_INLINE const struct google_protobuf_Struct* envoy_config_trace_v2_Tracing_Http_config(const envoy_config_trace_v2_Tracing_Http *msg) { return UPB_READ_ONEOF(msg, const struct google_protobuf_Struct*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 2, NULL); }
-UPB_INLINE bool envoy_config_trace_v2_Tracing_Http_has_typed_config(const envoy_config_trace_v2_Tracing_Http *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 3); }
+UPB_INLINE bool envoy_config_trace_v2_Tracing_Http_has_typed_config(const envoy_config_trace_v2_Tracing_Http *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 3; }
 UPB_INLINE const struct google_protobuf_Any* envoy_config_trace_v2_Tracing_Http_typed_config(const envoy_config_trace_v2_Tracing_Http *msg) { return UPB_READ_ONEOF(msg, const struct google_protobuf_Any*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 3, NULL); }
 
 UPB_INLINE void envoy_config_trace_v2_Tracing_Http_set_name(envoy_config_trace_v2_Tracing_Http *msg, upb_strview value) {

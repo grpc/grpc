@@ -120,9 +120,9 @@ typedef enum {
 } grpc_gcp_Identity_identity_oneof_oneofcases;
 UPB_INLINE grpc_gcp_Identity_identity_oneof_oneofcases grpc_gcp_Identity_identity_oneof_case(const grpc_gcp_Identity* msg) { return (grpc_gcp_Identity_identity_oneof_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
 
-UPB_INLINE bool grpc_gcp_Identity_has_service_account(const grpc_gcp_Identity *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 1); }
+UPB_INLINE bool grpc_gcp_Identity_has_service_account(const grpc_gcp_Identity *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 1; }
 UPB_INLINE upb_strview grpc_gcp_Identity_service_account(const grpc_gcp_Identity *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(4, 8), UPB_SIZE(12, 24), 1, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool grpc_gcp_Identity_has_hostname(const grpc_gcp_Identity *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 2); }
+UPB_INLINE bool grpc_gcp_Identity_has_hostname(const grpc_gcp_Identity *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 2; }
 UPB_INLINE upb_strview grpc_gcp_Identity_hostname(const grpc_gcp_Identity *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(4, 8), UPB_SIZE(12, 24), 2, upb_strview_make("", strlen(""))); }
 UPB_INLINE bool grpc_gcp_Identity_has_attributes(const grpc_gcp_Identity *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
 UPB_INLINE size_t grpc_gcp_Identity_attributes_size(const grpc_gcp_Identity *msg) {return _upb_msg_map_size(msg, UPB_SIZE(0, 0)); }
@@ -465,11 +465,11 @@ typedef enum {
 } grpc_gcp_HandshakerReq_req_oneof_oneofcases;
 UPB_INLINE grpc_gcp_HandshakerReq_req_oneof_oneofcases grpc_gcp_HandshakerReq_req_oneof_case(const grpc_gcp_HandshakerReq* msg) { return (grpc_gcp_HandshakerReq_req_oneof_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
 
-UPB_INLINE bool grpc_gcp_HandshakerReq_has_client_start(const grpc_gcp_HandshakerReq *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
+UPB_INLINE bool grpc_gcp_HandshakerReq_has_client_start(const grpc_gcp_HandshakerReq *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 1; }
 UPB_INLINE const grpc_gcp_StartClientHandshakeReq* grpc_gcp_HandshakerReq_client_start(const grpc_gcp_HandshakerReq *msg) { return UPB_READ_ONEOF(msg, const grpc_gcp_StartClientHandshakeReq*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
-UPB_INLINE bool grpc_gcp_HandshakerReq_has_server_start(const grpc_gcp_HandshakerReq *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 2); }
+UPB_INLINE bool grpc_gcp_HandshakerReq_has_server_start(const grpc_gcp_HandshakerReq *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 2; }
 UPB_INLINE const grpc_gcp_StartServerHandshakeReq* grpc_gcp_HandshakerReq_server_start(const grpc_gcp_HandshakerReq *msg) { return UPB_READ_ONEOF(msg, const grpc_gcp_StartServerHandshakeReq*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 2, NULL); }
-UPB_INLINE bool grpc_gcp_HandshakerReq_has_next(const grpc_gcp_HandshakerReq *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 3); }
+UPB_INLINE bool grpc_gcp_HandshakerReq_has_next(const grpc_gcp_HandshakerReq *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 3; }
 UPB_INLINE const grpc_gcp_NextHandshakeMessageReq* grpc_gcp_HandshakerReq_next(const grpc_gcp_HandshakerReq *msg) { return UPB_READ_ONEOF(msg, const grpc_gcp_NextHandshakeMessageReq*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 3, NULL); }
 
 UPB_INLINE void grpc_gcp_HandshakerReq_set_client_start(grpc_gcp_HandshakerReq *msg, grpc_gcp_StartClientHandshakeReq* value) {

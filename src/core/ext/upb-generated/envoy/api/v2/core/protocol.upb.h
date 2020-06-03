@@ -252,7 +252,7 @@ typedef enum {
 } envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_header_format_oneofcases;
 UPB_INLINE envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_header_format_oneofcases envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_header_format_case(const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat* msg) { return (envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_header_format_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
 
-UPB_INLINE bool envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_has_proper_case_words(const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
+UPB_INLINE bool envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_has_proper_case_words(const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 1; }
 UPB_INLINE const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords* envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_proper_case_words(const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
 
 UPB_INLINE void envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_set_proper_case_words(envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat *msg, envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords* value) {

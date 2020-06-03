@@ -47,7 +47,7 @@ typedef enum {
 UPB_INLINE envoy_api_v2_core_HttpUri_http_upstream_type_oneofcases envoy_api_v2_core_HttpUri_http_upstream_type_case(const envoy_api_v2_core_HttpUri* msg) { return (envoy_api_v2_core_HttpUri_http_upstream_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(20, 40), int32_t); }
 
 UPB_INLINE upb_strview envoy_api_v2_core_HttpUri_uri(const envoy_api_v2_core_HttpUri *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE bool envoy_api_v2_core_HttpUri_has_cluster(const envoy_api_v2_core_HttpUri *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(20, 40), 2); }
+UPB_INLINE bool envoy_api_v2_core_HttpUri_has_cluster(const envoy_api_v2_core_HttpUri *msg) { return _upb_getoneofcase(msg, UPB_SIZE(20, 40)) == 2; }
 UPB_INLINE upb_strview envoy_api_v2_core_HttpUri_cluster(const envoy_api_v2_core_HttpUri *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(12, 24), UPB_SIZE(20, 40), 2, upb_strview_make("", strlen(""))); }
 UPB_INLINE bool envoy_api_v2_core_HttpUri_has_timeout(const envoy_api_v2_core_HttpUri *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_core_HttpUri_timeout(const envoy_api_v2_core_HttpUri *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_Duration*); }

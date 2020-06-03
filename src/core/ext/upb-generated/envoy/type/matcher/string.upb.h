@@ -53,15 +53,15 @@ typedef enum {
 } envoy_type_matcher_StringMatcher_match_pattern_oneofcases;
 UPB_INLINE envoy_type_matcher_StringMatcher_match_pattern_oneofcases envoy_type_matcher_StringMatcher_match_pattern_case(const envoy_type_matcher_StringMatcher* msg) { return (envoy_type_matcher_StringMatcher_match_pattern_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
 
-UPB_INLINE bool envoy_type_matcher_StringMatcher_has_exact(const envoy_type_matcher_StringMatcher *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 1); }
+UPB_INLINE bool envoy_type_matcher_StringMatcher_has_exact(const envoy_type_matcher_StringMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 1; }
 UPB_INLINE upb_strview envoy_type_matcher_StringMatcher_exact(const envoy_type_matcher_StringMatcher *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(4, 8), UPB_SIZE(12, 24), 1, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool envoy_type_matcher_StringMatcher_has_prefix(const envoy_type_matcher_StringMatcher *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 2); }
+UPB_INLINE bool envoy_type_matcher_StringMatcher_has_prefix(const envoy_type_matcher_StringMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 2; }
 UPB_INLINE upb_strview envoy_type_matcher_StringMatcher_prefix(const envoy_type_matcher_StringMatcher *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(4, 8), UPB_SIZE(12, 24), 2, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool envoy_type_matcher_StringMatcher_has_suffix(const envoy_type_matcher_StringMatcher *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 3); }
+UPB_INLINE bool envoy_type_matcher_StringMatcher_has_suffix(const envoy_type_matcher_StringMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 3; }
 UPB_INLINE upb_strview envoy_type_matcher_StringMatcher_suffix(const envoy_type_matcher_StringMatcher *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(4, 8), UPB_SIZE(12, 24), 3, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool envoy_type_matcher_StringMatcher_has_regex(const envoy_type_matcher_StringMatcher *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 4); }
+UPB_INLINE bool envoy_type_matcher_StringMatcher_has_regex(const envoy_type_matcher_StringMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 4; }
 UPB_INLINE upb_strview envoy_type_matcher_StringMatcher_regex(const envoy_type_matcher_StringMatcher *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(4, 8), UPB_SIZE(12, 24), 4, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool envoy_type_matcher_StringMatcher_has_safe_regex(const envoy_type_matcher_StringMatcher *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(12, 24), 5); }
+UPB_INLINE bool envoy_type_matcher_StringMatcher_has_safe_regex(const envoy_type_matcher_StringMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 5; }
 UPB_INLINE const struct envoy_type_matcher_RegexMatcher* envoy_type_matcher_StringMatcher_safe_regex(const envoy_type_matcher_StringMatcher *msg) { return UPB_READ_ONEOF(msg, const struct envoy_type_matcher_RegexMatcher*, UPB_SIZE(4, 8), UPB_SIZE(12, 24), 5, NULL); }
 UPB_INLINE bool envoy_type_matcher_StringMatcher_ignore_case(const envoy_type_matcher_StringMatcher *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool); }
 
