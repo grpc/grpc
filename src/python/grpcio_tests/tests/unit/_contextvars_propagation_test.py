@@ -85,6 +85,7 @@ if contextvars_supported():
             test.assertEqual(_EXPECTED_VALUE, self._recorded_value)
 
 else:
+
     def set_up_expected_context():
         pass
 
