@@ -83,6 +83,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     'io_bazel_rules_go',
     'build_bazel_rules_apple',
     'build_bazel_apple_support',
+    'com_github_google_re2',
 ]
 
 
