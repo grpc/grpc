@@ -19,5 +19,6 @@ readonly UPB_GENERATED_SRC=src/core/ext/upb-generated
 readonly UPB_TMP_OUTPUT="$(mktemp -d)"
 
 tools/codegen/core/gen_upb_api.sh "$UPB_TMP_OUTPUT"
+cp src/core/ext/upb-generated/gen_build_yaml.py $UPB_TMP_OUTPUT
 
 diff -rq "$UPB_GENERATED_SRC" "$UPB_TMP_OUTPUT"
