@@ -1910,8 +1910,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/combiner_test || ( echo test combiner_test failed ; exit 1 )
 	$(E) "[RUN]     Testing compression_test"
 	$(Q) $(BINDIR)/$(CONFIG)/compression_test || ( echo test compression_test failed ; exit 1 )
-	$(E) "[RUN]     Testing concurrent_connectivity_test"
-	$(Q) $(BINDIR)/$(CONFIG)/concurrent_connectivity_test || ( echo test concurrent_connectivity_test failed ; exit 1 )
 	$(E) "[RUN]     Testing connection_refused_test"
 	$(Q) $(BINDIR)/$(CONFIG)/connection_refused_test || ( echo test connection_refused_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cpu_test"
@@ -2184,8 +2182,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/byte_buffer_test || ( echo test byte_buffer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing byte_stream_test"
 	$(Q) $(BINDIR)/$(CONFIG)/byte_stream_test || ( echo test byte_stream_test failed ; exit 1 )
-	$(E) "[RUN]     Testing cancel_ares_query_test"
-	$(Q) $(BINDIR)/$(CONFIG)/cancel_ares_query_test || ( echo test cancel_ares_query_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_arguments_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_filter_test"
@@ -3676,6 +3672,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/service_config.cc \
+    src/core/ext/filters/client_channel/service_config_parser.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/client_channel/xds/xds_api.cc \
@@ -4320,6 +4317,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/service_config.cc \
+    src/core/ext/filters/client_channel/service_config_parser.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/client_channel/xds/xds_api.cc \
@@ -5913,6 +5911,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/cpu-intel.c \
     third_party/boringssl-with-bazel/src/crypto/cpu-ppc64le.c \
     third_party/boringssl-with-bazel/src/crypto/crypto.c \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c \
     third_party/boringssl-with-bazel/src/crypto/dh/check.c \
     third_party/boringssl-with-bazel/src/crypto/dh/dh.c \
@@ -5923,6 +5922,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_derive.c \
+    third_party/boringssl-with-bazel/src/crypto/ec_extra/hash_to_curve.c \
     third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_extra.c \
     third_party/boringssl-with-bazel/src/crypto/ecdsa_extra/ecdsa_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/engine/engine.c \
@@ -5987,6 +5987,8 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/thread_none.c \
     third_party/boringssl-with-bazel/src/crypto/thread_pthread.c \
     third_party/boringssl-with-bazel/src/crypto/thread_win.c \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/pmbtoken.c \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/trust_token.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_strex.c \
@@ -6105,7 +6107,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/ssl/tls13_server.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
-    third_party/boringssl-with-bazel/src/third_party/fiat/curve25519.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -19162,6 +19163,7 @@ BORINGSSL_CRYPTO_TEST_SRC = \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/md5/md5_test.cc \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/modes/gcm_test.cc \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/rand/ctrdrbg_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/rand/fork_detect_test.cc \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/sha/sha_test.cc \
     third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf_test.cc \
     third_party/boringssl-with-bazel/src/crypto/hmac_extra/hmac_test.cc \
@@ -19185,6 +19187,7 @@ BORINGSSL_CRYPTO_TEST_SRC = \
     third_party/boringssl-with-bazel/src/crypto/test/file_test_gtest.cc \
     third_party/boringssl-with-bazel/src/crypto/test/gtest_main.cc \
     third_party/boringssl-with-bazel/src/crypto/thread_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/trust_token_test.cc \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_test.cc \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_time_test.cc \
     third_party/boringssl-with-bazel/src/crypto/x509v3/tab_test.cc \
@@ -19286,6 +19289,8 @@ $(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/modes
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/rand/ctrdrbg_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/rand/fork_detect_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
 $(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/sha/sha_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
@@ -19331,6 +19336,8 @@ $(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/test/file_test_g
 $(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/thread_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/trust_token/trust_token_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/x509/x509_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 

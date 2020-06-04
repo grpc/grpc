@@ -20,6 +20,9 @@
 
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include "src/core/lib/gpr/string.h"
@@ -144,22 +147,17 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
 
   // Test sending more metadata than the server will accept.
-  gpr_strvec headers;
-  gpr_strvec_init(&headers);
+  std::vector<std::string> headers;
   for (i = 0; i < NUM_HEADERS; ++i) {
-    char* str;
-    gpr_asprintf(&str, "%s%02d%s",
-                 PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR, i,
-                 PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR);
-    gpr_strvec_add(&headers, str);
+    headers.push_back(absl::StrFormat(
+        "%s%02d%s", PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR, i,
+        PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR));
   }
-  size_t headers_len;
-  const char* client_headers = gpr_strvec_flatten(&headers, &headers_len);
-  gpr_strvec_destroy(&headers);
+  std::string client_headers = absl::StrJoin(headers, "");
   char client_payload[TOO_MUCH_METADATA_FROM_CLIENT_REQUEST_SIZE] =
       PFX_TOO_MUCH_METADATA_FROM_CLIENT_REQUEST;
   memcpy(client_payload + sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_REQUEST) - 1,
-         client_headers, headers_len);
+         client_headers.data(), client_headers.size());
   grpc_bad_client_arg args[2];
   args[0] = connection_preface_arg;
   args[1].client_validator = rst_stream_client_validator;
@@ -167,7 +165,6 @@ int main(int argc, char** argv) {
   args[1].client_payload_length = sizeof(client_payload) - 1;
 
   grpc_run_bad_client_test(server_verifier_request_call, args, 2, 0);
-  gpr_free((void*)client_headers);
 
   // Test sending more metadata than the client will accept.
   GRPC_RUN_BAD_CLIENT_TEST(server_verifier_sends_too_much_metadata,

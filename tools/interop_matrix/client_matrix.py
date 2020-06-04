@@ -218,6 +218,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.26.1', ReleaseInfo()),
             ('v1.27.2', ReleaseInfo()),
             ('v1.28.1', ReleaseInfo()),
+            ('v1.29.0', ReleaseInfo()),
         ]),
     'python':
         OrderedDict([

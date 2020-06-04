@@ -172,7 +172,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.8'
+    ss.dependency 'BoringSSL-GRPC', '0.0.9'
     abseil_version = '1.20200225.0'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
@@ -276,6 +276,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/server_address.h',
                       'src/core/ext/filters/client_channel/service_config.cc',
                       'src/core/ext/filters/client_channel/service_config.h',
+                      'src/core/ext/filters/client_channel/service_config_call_data.h',
+                      'src/core/ext/filters/client_channel/service_config_parser.cc',
+                      'src/core/ext/filters/client_channel/service_config_parser.h',
                       'src/core/ext/filters/client_channel/subchannel.cc',
                       'src/core/ext/filters/client_channel/subchannel.h',
                       'src/core/ext/filters/client_channel/subchannel_interface.h',
@@ -1082,6 +1085,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/retry_throttle.h',
                               'src/core/ext/filters/client_channel/server_address.h',
                               'src/core/ext/filters/client_channel/service_config.h',
+                              'src/core/ext/filters/client_channel/service_config_call_data.h',
+                              'src/core/ext/filters/client_channel/service_config_parser.h',
                               'src/core/ext/filters/client_channel/subchannel.h',
                               'src/core/ext/filters/client_channel/subchannel_interface.h',
                               'src/core/ext/filters/client_channel/subchannel_pool_interface.h',

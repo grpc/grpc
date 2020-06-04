@@ -50,6 +50,7 @@
 #include "src/core/ext/filters/client_channel/resolving_lb_policy.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/filters/client_channel/service_config_call_data.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -441,6 +442,12 @@ class CallData {
       return calld_->backend_metric_data_;
     }
 
+    absl::string_view ExperimentalGetCallAttribute(const char* key) override {
+      auto it = calld_->call_attributes_.find(key);
+      if (it == calld_->call_attributes_.end()) return absl::string_view();
+      return it->second;
+    }
+
    private:
     CallData* calld_;
   };
@@ -760,8 +767,8 @@ class CallData {
   grpc_call_context_element* call_context_;
 
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
-  ServiceConfig::CallData service_config_call_data_;
   const ClientChannelMethodParsedConfig* method_params_ = nullptr;
+  std::map<const char*, absl::string_view> call_attributes_;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 
@@ -3164,10 +3171,9 @@ void CallData::OnComplete(void* arg, grpc_error* error) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-    char* batch_str = grpc_transport_stream_op_batch_string(&batch_data->batch);
     gpr_log(GPR_INFO, "chand=%p calld=%p: got on_complete, error=%s, batch=%s",
-            chand, calld, grpc_error_string(error), batch_str);
-    gpr_free(batch_str);
+            chand, calld, grpc_error_string(error),
+            grpc_transport_stream_op_batch_string(&batch_data->batch).c_str());
   }
   SubchannelCallRetryState* retry_state =
       static_cast<SubchannelCallRetryState*>(
@@ -3240,10 +3246,8 @@ void CallData::AddClosureForSubchannelBatch(
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, StartBatchInCallCombiner,
                     batch, grpc_schedule_on_exec_ctx);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-    char* batch_str = grpc_transport_stream_op_batch_string(batch);
     gpr_log(GPR_INFO, "chand=%p calld=%p: starting subchannel batch: %s", chand,
-            this, batch_str);
-    gpr_free(batch_str);
+            this, grpc_transport_stream_op_batch_string(batch).c_str());
   }
   closures->Add(&batch->handler_private.closure, GRPC_ERROR_NONE,
                 "start_subchannel_batch");
@@ -3756,45 +3760,52 @@ void CallData::ApplyServiceConfigToCallLocked(grpc_call_element* elem) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: applying service config to call",
             chand, this);
   }
-  // Store a ref to the service_config in service_config_call_data_. Also, save
-  // a pointer to this in the call_context so that all future filters can access
-  // it.
-  service_config_call_data_ =
-      ServiceConfig::CallData(chand->service_config(), path_);
-  if (service_config_call_data_.service_config() != nullptr) {
-    call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value =
-        &service_config_call_data_;
+  auto service_config = chand->service_config();
+  if (service_config != nullptr) {
+    // Create a ServiceConfigCallData for the call.  This stores a ref to the
+    // ServiceConfig and caches the right set of parsed configs to use for
+    // the call.  The MethodConfig will store itself in the call context,
+    // so that it can be accessed by filters in the subchannel, and it
+    // will be cleaned up when the call ends.
+    const auto* method_params_vector =
+        service_config->GetMethodParsedConfigVector(path_);
+    auto* service_config_call_data = arena_->New<ServiceConfigCallData>(
+        std::move(service_config), method_params_vector, call_context_);
+    // Apply our own method params to the call.
     method_params_ = static_cast<ClientChannelMethodParsedConfig*>(
-        service_config_call_data_.GetMethodParsedConfig(
+        service_config_call_data->GetMethodParsedConfig(
             internal::ClientChannelServiceConfigParser::ParserIndex()));
-  }
-  retry_throttle_data_ = chand->retry_throttle_data();
-  if (method_params_ != nullptr) {
-    // If the deadline from the service config is shorter than the one
-    // from the client API, reset the deadline timer.
-    if (chand->deadline_checking_enabled() && method_params_->timeout() != 0) {
-      const grpc_millis per_method_deadline =
-          grpc_cycle_counter_to_millis_round_up(call_start_time_) +
-          method_params_->timeout();
-      if (per_method_deadline < deadline_) {
-        deadline_ = per_method_deadline;
-        grpc_deadline_state_reset(elem, deadline_);
+    if (method_params_ != nullptr) {
+      // If the deadline from the service config is shorter than the one
+      // from the client API, reset the deadline timer.
+      if (chand->deadline_checking_enabled() &&
+          method_params_->timeout() != 0) {
+        const grpc_millis per_method_deadline =
+            grpc_cycle_counter_to_millis_round_up(call_start_time_) +
+            method_params_->timeout();
+        if (per_method_deadline < deadline_) {
+          deadline_ = per_method_deadline;
+          grpc_deadline_state_reset(elem, deadline_);
+        }
+      }
+      // If the service config set wait_for_ready and the application
+      // did not explicitly set it, use the value from the service config.
+      uint32_t* send_initial_metadata_flags =
+          &pending_batches_[0]
+               .batch->payload->send_initial_metadata
+               .send_initial_metadata_flags;
+      if (method_params_->wait_for_ready().has_value() &&
+          !(*send_initial_metadata_flags &
+            GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)) {
+        if (method_params_->wait_for_ready().value()) {
+          *send_initial_metadata_flags |= GRPC_INITIAL_METADATA_WAIT_FOR_READY;
+        } else {
+          *send_initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
+        }
       }
     }
-    // If the service config set wait_for_ready and the application
-    // did not explicitly set it, use the value from the service config.
-    uint32_t* send_initial_metadata_flags =
-        &pending_batches_[0]
-             .batch->payload->send_initial_metadata.send_initial_metadata_flags;
-    if (method_params_->wait_for_ready().has_value() &&
-        !(*send_initial_metadata_flags &
-          GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)) {
-      if (method_params_->wait_for_ready().value()) {
-        *send_initial_metadata_flags |= GRPC_INITIAL_METADATA_WAIT_FOR_READY;
-      } else {
-        *send_initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
-      }
-    }
+    // Set retry throttle data for call.
+    retry_throttle_data_ = chand->retry_throttle_data();
   }
   // If no retry policy, disable retries.
   // TODO(roth): Remove this when adding support for transparent retries.

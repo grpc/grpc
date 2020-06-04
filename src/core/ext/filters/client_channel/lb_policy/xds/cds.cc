@@ -93,6 +93,8 @@ class CdsLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
+  void MaybeDestroyChildPolicyLocked();
+
   RefCountedPtr<CdsLbConfig> config_;
 
   // Current channel args from the resolver.
@@ -215,22 +217,18 @@ void CdsLb::ClusterWatcher::OnError(grpc_error* error) {
 }
 
 void CdsLb::ClusterWatcher::OnResourceDoesNotExist() {
-  gpr_log(GPR_ERROR, "[cdslb %p] CDS resource for %s does not exist",
+  gpr_log(GPR_ERROR,
+          "[cdslb %p] CDS resource for %s does not exist -- reporting "
+          "TRANSIENT_FAILURE",
           parent_.get(), parent_->config_->cluster().c_str());
-  // Go into TRANSIENT_FAILURE if we have not yet created the child
-  // policy (i.e., we have not yet received data from xds).  Otherwise,
-  // we keep running with the data we had previously.
-  // TODO(roth): Once traffic splitting is implemented, this should be
-  // fixed to report TRANSIENT_FAILURE unconditionally.
-  if (parent_->child_policy_ == nullptr) {
-    parent_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::make_unique<TransientFailurePicker>(
-            GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrCat("CDS resource \"", parent_->config_->cluster(),
-                             "\" does not exist")
-                    .c_str())));
-  }
+  parent_->channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::make_unique<TransientFailurePicker>(
+          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("CDS resource \"", parent_->config_->cluster(),
+                           "\" does not exist")
+                  .c_str())));
+  parent_->MaybeDestroyChildPolicyLocked();
 }
 
 //
@@ -245,7 +243,7 @@ RefCountedPtr<SubchannelInterface> CdsLb::Helper::CreateSubchannel(
 
 void CdsLb::Helper::UpdateState(grpc_connectivity_state state,
                                 std::unique_ptr<SubchannelPicker> picker) {
-  if (parent_->shutting_down_) return;
+  if (parent_->shutting_down_ || parent_->child_policy_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] state updated by child: %s", this,
             ConnectivityStateName(state));
@@ -292,11 +290,7 @@ void CdsLb::ShutdownLocked() {
     gpr_log(GPR_INFO, "[cdslb %p] shutting down", this);
   }
   shutting_down_ = true;
-  if (child_policy_ != nullptr) {
-    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
-                                     interested_parties());
-    child_policy_.reset();
-  }
+  MaybeDestroyChildPolicyLocked();
   if (xds_client_ != nullptr) {
     if (cluster_watcher_ != nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
@@ -306,6 +300,14 @@ void CdsLb::ShutdownLocked() {
       xds_client_->CancelClusterDataWatch(config_->cluster(), cluster_watcher_);
     }
     xds_client_.reset();
+  }
+}
+
+void CdsLb::MaybeDestroyChildPolicyLocked() {
+  if (child_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
+                                     interested_parties());
+    child_policy_.reset();
   }
 }
 
