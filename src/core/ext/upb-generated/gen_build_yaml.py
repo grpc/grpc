@@ -22,8 +22,7 @@ import yaml
 
 out = {}
 
-try:
-    out['libs'] = [
+out['libs'] = [
       {
         'name': 'google_api_upb',
         'build': 'all',
@@ -282,7 +281,7 @@ try:
         'language': 'c',
         'secure': False,
         'deps': [
-            'xds_ads_upb_proto'
+            'xds_ads_upb_proto',
             'upb_lib',
         ],
     },
@@ -293,7 +292,7 @@ try:
         'language': 'c',
         'secure': False,
         'deps': [
-            'xds_ads_upb_proto'
+            'xds_ads_upb_proto',
             'upb_lib',
         ],
     },
@@ -311,7 +310,7 @@ try:
         ],
         'secure': False,
         'deps': [
-            'proto_gen_validate_upb'
+            'proto_gen_validate_upb',
             'upb_lib',
         ],
     },
@@ -372,8 +371,6 @@ try:
 
 
 
-  ]
-except:
-    pass
+]
 
 print(yaml.dump(out))
