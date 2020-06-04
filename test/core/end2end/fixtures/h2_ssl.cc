@@ -42,6 +42,7 @@ struct fullstack_secure_fixture_data {
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
     grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+  gpr_log(GPR_INFO, "Entered |chttp2_create_fixture_secure_fullstack|.");
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
@@ -61,6 +62,7 @@ static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  size_t /*md_count*/,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void* user_data) {
+  gpr_log(GPR_INFO, "Entered |process_auth_failure|.");
   GPR_ASSERT(state == nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
@@ -68,6 +70,7 @@ static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
 static void chttp2_init_client_secure_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* client_args,
     grpc_channel_credentials* creds) {
+  gpr_log(GPR_INFO, "Entered |chttp2_init_client_secure_fullstack|.");
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
   f->client = grpc_secure_channel_create(creds, ffd->localaddr.c_str(),
@@ -79,6 +82,7 @@ static void chttp2_init_client_secure_fullstack(
 static void chttp2_init_server_secure_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* server_args,
     grpc_server_credentials* server_creds) {
+  gpr_log(GPR_INFO, "Entered |chttp2_init_server_secure_fullstack|.");
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
   if (f->server) {
@@ -93,6 +97,7 @@ static void chttp2_init_server_secure_fullstack(
 }
 
 void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
+  gpr_log(GPR_INFO, "Entered |chttp2_tear_down_secure_fullstack|.");
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
   delete ffd;
@@ -100,6 +105,7 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
 
 static void chttp2_init_client_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
+  gpr_log(GPR_INFO, "Entered |chttp2_init_client_simple_ssl_secure_fullstack|.");
   grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
   grpc_arg ssl_name_override = {
@@ -113,6 +119,7 @@ static void chttp2_init_client_simple_ssl_secure_fullstack(
 }
 
 static int fail_server_auth_check(grpc_channel_args* server_args) {
+  gpr_log(GPR_INFO, "Entered |fail_server_auth_check|.");
   size_t i;
   if (server_args == nullptr) return 0;
   for (i = 0; i < server_args->num_args; i++) {
@@ -126,6 +133,7 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
 
 static void chttp2_init_server_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* server_args) {
+  gpr_log(GPR_INFO, "Entered |chttp2_init_server_simple_ssl_secure_fullstack|.");
   grpc_slice cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));

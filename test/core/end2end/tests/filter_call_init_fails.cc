@@ -31,7 +31,7 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
 
-enum { TIMEOUT = 200000 };
+enum { TIMEOUT = 2000000 };
 
 static bool g_enable_server_channel_filter = false;
 static bool g_enable_client_channel_filter = false;
@@ -70,7 +70,7 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   grpc_event event = grpc_completion_queue_pluck(
-      f->shutdown_cq, tag(1000), grpc_timeout_seconds_to_deadline(30), nullptr);
+      f->shutdown_cq, tag(1000), grpc_timeout_seconds_to_deadline(100), nullptr);
   gpr_log(GPR_INFO, "Event type is: %d\n", (int)event.type);
   gpr_log(GPR_INFO, "Event tag is: %p\n", event.tag);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
@@ -397,7 +397,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   gpr_log(GPR_INFO, "Called |end_test|.");
   config.tear_down_data(&f);
   gpr_log(GPR_INFO, "Ending");
-  GPR_ASSERT(0);
+  //GPR_ASSERT(0);
 }
 
 /*******************************************************************************

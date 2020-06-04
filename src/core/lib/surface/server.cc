@@ -399,6 +399,7 @@ void shutdown_cleanup(void* arg, grpc_error* /*error*/) {
 
 void send_shutdown(grpc_channel* channel, bool send_goaway,
                    grpc_error* send_disconnect) {
+  gpr_log(GPR_INFO, "Entered |send_shutdown|.");
   struct shutdown_cleanup_args* sc =
       static_cast<struct shutdown_cleanup_args*>(gpr_malloc(sizeof(*sc)));
   GRPC_CLOSURE_INIT(&sc->closure, shutdown_cleanup, sc,
@@ -422,8 +423,9 @@ void send_shutdown(grpc_channel* channel, bool send_goaway,
 void channel_broadcaster_shutdown(channel_broadcaster* cb, bool send_goaway,
                                   grpc_error* force_disconnect) {
   size_t i;
-
+  gpr_log(GPR_INFO, "Entered |channel_broadcaster_shutdown|.");
   for (i = 0; i < cb->num_channels; i++) {
+    gpr_log(GPR_INFO, "Calling |send_shutdown| from the for loop.");
     send_shutdown(cb->channels[i], send_goaway,
                   GRPC_ERROR_REF(force_disconnect));
     GRPC_CHANNEL_INTERNAL_UNREF(cb->channels[i], "broadcast");
@@ -1562,6 +1564,7 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
     gpr_cv_wait(&server->starting_cv, &server->mu_global,
                 gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
+  gpr_log(GPR_INFO, "Past first while.");
 
   /* stay locked, and gather up some stuff to do */
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
@@ -1572,6 +1575,7 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
     gpr_mu_unlock(&server->mu_global);
     return;
   }
+  gpr_log(GPR_INFO, "Past first if.");
   server->shutdown_tags = static_cast<shutdown_tag*>(
       gpr_realloc(server->shutdown_tags,
                   sizeof(shutdown_tag) * (server->num_shutdown_tags + 1)));
@@ -1582,24 +1586,32 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
     gpr_mu_unlock(&server->mu_global);
     return;
   }
+  gpr_log(GPR_INFO, "Past second if.");
 
   server->last_shutdown_message_time = gpr_now(GPR_CLOCK_REALTIME);
 
+  gpr_log(GPR_INFO, "About to call |channel_broadcaster_init|.");
   channel_broadcaster_init(server, &broadcaster);
 
+  gpr_log(GPR_INFO, "About to call |gpr_atm_rel_store|.");
   gpr_atm_rel_store(&server->shutdown_flag, 1);
 
   /* collect all unregistered then registered calls */
+  gpr_log(GPR_INFO, "At second lock.");
   gpr_mu_lock(&server->mu_call);
   kill_pending_work_locked(
       server, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
   gpr_mu_unlock(&server->mu_call);
+  gpr_log(GPR_INFO, "At unlock.");
+
 
   maybe_finish_shutdown(server);
   gpr_mu_unlock(&server->mu_global);
+  gpr_log(GPR_INFO, "At another unlock.");
 
   /* Shutdown listeners */
   for (l = server->listeners; l; l = l->next) {
+    gpr_log(GPR_INFO, "Shutting down a listener");
     GRPC_CLOSURE_INIT(&l->destroy_done, listener_destroy_done, server,
                       grpc_schedule_on_exec_ctx);
     l->destroy(server, l->arg, &l->destroy_done);
@@ -1608,15 +1620,18 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
     }
   }
 
+  gpr_log(GPR_INFO, "About to call |channel_broadcaster_shutdown|.");
   channel_broadcaster_shutdown(&broadcaster, true /* send_goaway */,
                                GRPC_ERROR_NONE);
 
+  gpr_log(GPR_INFO, "Last if.");
   if (server->default_resource_user != nullptr) {
     grpc_resource_quota_unref(
         grpc_resource_user_quota(server->default_resource_user));
     grpc_resource_user_shutdown(server->default_resource_user);
     grpc_resource_user_unref(server->default_resource_user);
   }
+  gpr_log(GPR_INFO, "Done.");
 }
 
 void grpc_server_cancel_all_calls(grpc_server* server) {

@@ -20,6 +20,8 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
+#include <iostream>
+
 #include <limits.h>
 #include <string.h>
 
@@ -32,6 +34,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #endif
+
+#include <iostream>
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -114,6 +118,7 @@ typedef struct {
   unsigned char* outgoing_bytes_buffer;
   size_t outgoing_bytes_buffer_size;
   tsi_ssl_handshaker_factory* factory_ref;
+  bool is_client = false;
 } tsi_ssl_handshaker;
 
 typedef struct {
@@ -122,6 +127,7 @@ typedef struct {
   BIO* network_io;
   unsigned char* unused_bytes;
   size_t unused_bytes_size;
+  bool is_client = false;
 } tsi_ssl_handshaker_result;
 
 typedef struct {
@@ -131,6 +137,7 @@ typedef struct {
   unsigned char* buffer;
   size_t buffer_size;
   size_t buffer_offset;
+  bool is_client = false;
 } tsi_ssl_frame_protector;
 
 /* --- Library Initialization. ---*/
@@ -216,6 +223,19 @@ static const char* ssl_error_string(int error) {
   }
 }
 
+static std::string ssl_custom_get_errors() {
+  BIO* bio = BIO_new(BIO_s_mem());
+  ERR_print_errors(bio);
+  BUF_MEM* mem = nullptr;
+  std::string error_msg;
+  BIO_get_mem_ptr(bio, &mem);
+  if (mem != nullptr) {
+    error_msg.assign(mem->data, mem->length);
+  }
+  BIO_free_all(bio);
+  return error_msg;
+}
+
 /* TODO(jboeuf): Remove when we are past the debugging phase with this code. */
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
                                const char* msg) {
@@ -271,28 +291,48 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
   X509_NAME* subject_name = X509_get_subject_name(cert);
   int utf8_returned_size = 0;
   if (subject_name == nullptr) {
+    std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
     gpr_log(GPR_INFO, "Could not get subject name from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_index =
       X509_NAME_get_index_by_NID(subject_name, NID_commonName, -1);
   if (common_name_index == -1) {
+    std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
     gpr_log(GPR_INFO, "Could not get common name of subject from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_entry = X509_NAME_get_entry(subject_name, common_name_index);
   if (common_name_entry == nullptr) {
+    std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
     gpr_log(GPR_ERROR, "Could not get common name entry from certificate.");
     return TSI_INTERNAL_ERROR;
   }
   common_name_asn1 = X509_NAME_ENTRY_get_data(common_name_entry);
   if (common_name_asn1 == nullptr) {
+    std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
     gpr_log(GPR_ERROR,
             "Could not get common name entry asn1 from certificate.");
     return TSI_INTERNAL_ERROR;
   }
   utf8_returned_size = ASN1_STRING_to_UTF8(utf8, common_name_asn1);
   if (utf8_returned_size < 0) {
+    std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
     gpr_log(GPR_ERROR, "Could not extract utf8 from asn1 string.");
     return TSI_OUT_OF_RESOURCES;
   }
@@ -312,6 +352,10 @@ static tsi_result peer_property_from_x509_common_name(
       common_name = nullptr;
       common_name_size = 0;
     } else {
+      std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
       return result;
     }
   }
@@ -320,6 +364,10 @@ static tsi_result peer_property_from_x509_common_name(
       common_name == nullptr ? "" : reinterpret_cast<const char*>(common_name),
       common_name_size, property);
   OPENSSL_free(common_name);
+  std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
   return result;
 }
 
@@ -328,18 +376,30 @@ static tsi_result add_pem_certificate(X509* cert, tsi_peer_property* property) {
   BIO* bio = BIO_new(BIO_s_mem());
   if (!PEM_write_bio_X509(bio, cert)) {
     BIO_free(bio);
+    std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
     return TSI_INTERNAL_ERROR;
   }
   char* contents;
   long len = BIO_get_mem_data(bio, &contents);
   if (len <= 0) {
     BIO_free(bio);
+    std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
     return TSI_INTERNAL_ERROR;
   }
   tsi_result result = tsi_construct_string_peer_property(
       TSI_X509_PEM_CERT_PROPERTY, (const char*)contents,
       static_cast<size_t>(len), property);
   BIO_free(bio);
+  std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
   return result;
 }
 
@@ -413,6 +473,10 @@ static tsi_result add_subject_alt_names_properties_to_peer(
     }
     if (result != TSI_OK) break;
   }
+  std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
   return result;
 }
 
@@ -471,6 +535,10 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   if (result != TSI_OK) tsi_peer_destruct(peer);
 
   GPR_ASSERT((int)peer->property_count == current_insert_index);
+  std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
   return result;
 }
 
@@ -492,24 +560,42 @@ static tsi_result do_ssl_read(SSL* ssl, unsigned char* unprotected_bytes,
   read_from_ssl = SSL_read(ssl, unprotected_bytes,
                            static_cast<int>(*unprotected_bytes_size));
   if (read_from_ssl <= 0) {
+    std::string custom_errors = "";
     read_from_ssl = SSL_get_error(ssl, read_from_ssl);
     switch (read_from_ssl) {
       case SSL_ERROR_ZERO_RETURN: /* Received a close_notify alert. */
+        gpr_log(GPR_INFO, "Received close notify alert");
       case SSL_ERROR_WANT_READ:   /* We need more data to finish the frame. */
         *unprotected_bytes_size = 0;
+        custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
         return TSI_OK;
       case SSL_ERROR_WANT_WRITE:
         gpr_log(
             GPR_ERROR,
             "Peer tried to renegotiate SSL connection. This is unsupported.");
+        custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
         return TSI_UNIMPLEMENTED;
       case SSL_ERROR_SSL:
         gpr_log(GPR_ERROR, "Corruption detected.");
         log_ssl_error_stack();
+        custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
         return TSI_DATA_CORRUPTED;
       default:
         gpr_log(GPR_ERROR, "SSL_read failed with error %s.",
                 ssl_error_string(read_from_ssl));
+        custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
         return TSI_PROTOCOL_FAILURE;
     }
   }
@@ -529,10 +615,18 @@ static tsi_result do_ssl_write(SSL* ssl, unsigned char* unprotected_bytes,
     if (ssl_write_result == SSL_ERROR_WANT_READ) {
       gpr_log(GPR_ERROR,
               "Peer tried to renegotiate SSL connection. This is unsupported.");
+      std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
       return TSI_UNIMPLEMENTED;
     } else {
       gpr_log(GPR_ERROR, "SSL_write failed with error %s.",
               ssl_error_string(ssl_write_result));
+      std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
       return TSI_INTERNAL_ERROR;
     }
   }
@@ -549,7 +643,10 @@ static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
   GPR_ASSERT(pem_cert_chain_size <= INT_MAX);
   pem = BIO_new_mem_buf((void*)pem_cert_chain,
                         static_cast<int>(pem_cert_chain_size));
-  if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
+  if (pem == nullptr) {
+    gpr_log(GPR_INFO, "TSI OUT OF RESOURCES");
+    return TSI_OUT_OF_RESOURCES;
+  }
 
   do {
     certificate = PEM_read_bio_X509_AUX(pem, nullptr, nullptr, (void*)"");
@@ -582,6 +679,10 @@ static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
 
   if (certificate != nullptr) X509_free(certificate);
   BIO_free(pem);
+  std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
   return result;
 }
 
@@ -656,6 +757,10 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
   if (engine != nullptr) ENGINE_free(engine);
   if (private_key != nullptr) EVP_PKEY_free(private_key);
   if (engine_name != nullptr) gpr_free(engine_name);
+  std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
   return result;
 }
 #endif /* OPENSSL_IS_BORINGSSL */
@@ -682,6 +787,10 @@ static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
   } while (0);
   if (private_key != nullptr) EVP_PKEY_free(private_key);
   BIO_free(pem);
+  std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
   return result;
 }
 
@@ -767,6 +876,10 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
     }
   }
   BIO_free(pem);
+  std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
   return result;
 }
 
@@ -794,6 +907,10 @@ static tsi_result populate_ssl_context(
                                              strlen(key_cert_pair->cert_chain));
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Invalid cert chain file.");
+        std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
         return result;
       }
     }
@@ -802,6 +919,10 @@ static tsi_result populate_ssl_context(
                                        strlen(key_cert_pair->private_key));
       if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
         gpr_log(GPR_ERROR, "Invalid private key.");
+        std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
         return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
       }
     }
@@ -809,6 +930,10 @@ static tsi_result populate_ssl_context(
   if ((cipher_list != nullptr) &&
       !SSL_CTX_set_cipher_list(context, cipher_list)) {
     gpr_log(GPR_ERROR, "Invalid cipher list: %s.", cipher_list);
+    std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
     return TSI_INVALID_ARGUMENT;
   }
   {
@@ -816,6 +941,10 @@ static tsi_result populate_ssl_context(
     if (!SSL_CTX_set_tmp_ecdh(context, ecdh)) {
       gpr_log(GPR_ERROR, "Could not set ephemeral ECDH key.");
       EC_KEY_free(ecdh);
+      std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
       return TSI_INTERNAL_ERROR;
     }
     SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
@@ -831,17 +960,31 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
   X509* cert = nullptr;
   BIO* pem;
   pem = BIO_new_mem_buf((void*)pem_cert, static_cast<int>(strlen(pem_cert)));
-  if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
+  if (pem == nullptr) {
+    std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
+        return TSI_OUT_OF_RESOURCES;
+  }
 
   cert = PEM_read_bio_X509(pem, nullptr, nullptr, (void*)"");
   if (cert == nullptr) {
     gpr_log(GPR_ERROR, "Invalid certificate");
+    std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
     result = TSI_INVALID_ARGUMENT;
   } else {
     result = peer_from_x509(cert, 0, peer);
   }
   if (cert != nullptr) X509_free(cert);
   BIO_free(pem);
+  std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
   return result;
 }
 
@@ -853,7 +996,13 @@ static tsi_result build_alpn_protocol_name_list(
   unsigned char* current;
   *protocol_name_list = nullptr;
   *protocol_name_list_length = 0;
-  if (num_alpn_protocols == 0) return TSI_INVALID_ARGUMENT;
+  if (num_alpn_protocols == 0) {
+    std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
+        return TSI_INVALID_ARGUMENT;
+  }
   for (i = 0; i < num_alpn_protocols; i++) {
     size_t length =
         alpn_protocols[i] == nullptr ? 0 : strlen(alpn_protocols[i]);
@@ -878,8 +1027,16 @@ static tsi_result build_alpn_protocol_name_list(
   if ((current < *protocol_name_list) ||
       (static_cast<uintptr_t>(current - *protocol_name_list) !=
        *protocol_name_list_length)) {
+    std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
     return TSI_INTERNAL_ERROR;
   }
+  std::string custom_errors = ssl_custom_get_errors();
+        if (!custom_errors.empty()) {
+          gpr_log(GPR_INFO, "SSL errors: %s", custom_errors.c_str());
+        }
   return TSI_OK;
 }
 
@@ -952,9 +1109,19 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
                                         size_t* unprotected_bytes_size,
                                         unsigned char* protected_output_frames,
                                         size_t* protected_output_frames_size) {
-  gpr_log(GPR_INFO, "Entered |ssl_protector_protect|.");
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
+  if (unprotected_bytes_size != nullptr) {
+    std::cout << "*******************************" << std::endl;
+    std::string side = impl->is_client ? "From client side." : "From server side";
+    std::cout << side << std::endl;
+    std::cout << "Call to |ssl_protector_protect| with the following |unprotected_bytes|:" << std::endl;
+    std::string unprotected_bytestring = "";
+    for (size_t i = 0; i < *unprotected_bytes_size; i++) {
+      std::cout << std::hex << static_cast<int>(unprotected_bytes[i]) << " ";
+    }
+    std::cout << " " << std::endl;
+  }
   int read_from_ssl;
   size_t available;
   tsi_result result = TSI_OK;
@@ -972,6 +1139,7 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
       return TSI_INTERNAL_ERROR;
     }
     *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
+    gpr_log(GPR_INFO, "Exiting here with TSI OK");
     return TSI_OK;
   }
 
@@ -989,13 +1157,17 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
   /* If we can, prepare the buffer, send it to SSL_write and read. */
   memcpy(impl->buffer + impl->buffer_offset, unprotected_bytes, available);
   result = do_ssl_write(impl->ssl, impl->buffer, impl->buffer_size);
-  if (result != TSI_OK) return result;
+  if (result != TSI_OK) {
+    gpr_log(GPR_INFO, "Exiting here with TSI result: %d", static_cast<int>(result));
+    return result;
+  }
 
   GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
   read_from_ssl = BIO_read(impl->network_io, protected_output_frames,
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl < 0) {
     gpr_log(GPR_ERROR, "Could not read from BIO after SSL_write.");
+    gpr_log(GPR_INFO, "Exiting here with TSI INTERNAL ERROR");
     return TSI_INTERNAL_ERROR;
   }
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
@@ -1007,7 +1179,6 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
 static tsi_result ssl_protector_protect_flush(
     tsi_frame_protector* self, unsigned char* protected_output_frames,
     size_t* protected_output_frames_size, size_t* still_pending_size) {
-  gpr_log(GPR_INFO, "Entered |ssl_protector_protect_flush|.");
   tsi_result result = TSI_OK;
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
@@ -1017,7 +1188,7 @@ static tsi_result ssl_protector_protect_flush(
   if (impl->buffer_offset != 0) {
     result = do_ssl_write(impl->ssl, impl->buffer, impl->buffer_offset);
     if (result != TSI_OK) {
-      gpr_log(GPR_INFO, "Exiting here...");
+      gpr_log(GPR_INFO, "Exiting here with TSI result: %d", static_cast<int>(result));
       return result;
     }
     impl->buffer_offset = 0;
@@ -1027,7 +1198,7 @@ static tsi_result ssl_protector_protect_flush(
   GPR_ASSERT(pending >= 0);
   *still_pending_size = static_cast<size_t>(pending);
   if (*still_pending_size == 0) {
-    gpr_log(GPR_INFO, "Exiting here...");
+    gpr_log(GPR_INFO, "Exiting here with TSI OK");
     return TSI_OK;
   }
 
@@ -1036,22 +1207,22 @@ static tsi_result ssl_protector_protect_flush(
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl <= 0) {
     gpr_log(GPR_ERROR, "Could not read from BIO after SSL_write.");
-    gpr_log(GPR_INFO, "Exiting here...");
+    gpr_log(GPR_INFO, "Exiting here with TSI INTERNAL ERROR");
     return TSI_INTERNAL_ERROR;
   }
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   pending = static_cast<int>(BIO_pending(impl->network_io));
   GPR_ASSERT(pending >= 0);
   *still_pending_size = static_cast<size_t>(pending);
-  gpr_log(GPR_INFO, "Exiting here...");
+  gpr_log(GPR_INFO, "Exiting here with TSI OK");
   return TSI_OK;
 }
+
 
 static tsi_result ssl_protector_unprotect(
     tsi_frame_protector* self, const unsigned char* protected_frames_bytes,
     size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
     size_t* unprotected_bytes_size) {
-  gpr_log(GPR_INFO, "Entered |ssl_protector_unprotect|.");
   tsi_result result = TSI_OK;
   int written_into_ssl = 0;
   size_t output_bytes_size = *unprotected_bytes_size;
@@ -1061,10 +1232,36 @@ static tsi_result ssl_protector_unprotect(
 
   /* First, try to read remaining data from ssl. */
   result = do_ssl_read(impl->ssl, unprotected_bytes, unprotected_bytes_size);
-  if (result != TSI_OK) return result;
+  if (result != TSI_OK) {
+    gpr_log(GPR_INFO, "From unprotect, result is not ok.");
+    if (unprotected_bytes_size != nullptr) {
+      std::cout << "*******************************" << std::endl;
+      std::string side = impl->is_client ? "From client side." : "From server side";
+      std::cout << side << std::endl;
+      std::cout << "Call to |ssl_protector_unprotect| with the following |unprotected_bytes|:" << std::endl;
+      std::string unprotected_bytestring = "";
+      for (size_t i = 0; i < *unprotected_bytes_size; i++) {
+        std::cout << std::hex << static_cast<int>(unprotected_bytes[i]) << " ";
+      }
+      std::cout << " " << std::endl;
+    }
+    return result;
+  }
   if (*unprotected_bytes_size == output_bytes_size) {
     /* We have read everything we could and cannot process any more input. */
     *protected_frames_bytes_size = 0;
+    gpr_log(GPR_INFO, "From unprotect, have everything and cannot process any more input.");
+    if (unprotected_bytes_size != nullptr) {
+      std::cout << "*******************************" << std::endl;
+      std::string side = impl->is_client ? "From client side." : "From server side";
+      std::cout << side << std::endl;
+      std::cout << "Call to |ssl_protector_unprotect| with the following |unprotected_bytes|:" << std::endl;
+      std::string unprotected_bytestring = "";
+      for (size_t i = 0; i < *unprotected_bytes_size; i++) {
+        std::cout << std::hex << static_cast<int>(unprotected_bytes[i]) << " ";
+      }
+      std::cout << " " << std::endl;
+    }
     return TSI_OK;
   }
   output_bytes_offset = *unprotected_bytes_size;
@@ -1087,6 +1284,18 @@ static tsi_result ssl_protector_unprotect(
   if (result == TSI_OK) {
     /* Don't forget to output the total number of bytes read. */
     *unprotected_bytes_size += output_bytes_offset;
+  }
+  gpr_log(GPR_INFO, "From unprotect, about to return.");
+  if (unprotected_bytes_size != nullptr) {
+    std::cout << "*******************************" << std::endl;
+    std::string side = impl->is_client ? "From client side." : "From server side";
+    std::cout << side << std::endl;
+    std::cout << "Call to |ssl_protector_unprotect| with the following |unprotected_bytes|:" << std::endl;
+    std::string unprotected_bytestring = "";
+    for (size_t i = 0; i < *unprotected_bytes_size; i++) {
+      std::cout << std::hex << static_cast<int>(unprotected_bytes[i]) << " ";
+    }
+    std::cout << " " << std::endl;
   }
   return result;
 }
@@ -1254,6 +1463,8 @@ static tsi_result ssl_handshaker_result_create_frame_protector(
   tsi_ssl_frame_protector* protector_impl =
       static_cast<tsi_ssl_frame_protector*>(
           gpr_zalloc(sizeof(*protector_impl)));
+
+  protector_impl->is_client = impl->is_client;
 
   if (max_output_protected_frame_size != nullptr) {
     if (*max_output_protected_frame_size >
@@ -1474,6 +1685,8 @@ static tsi_result ssl_handshaker_next(
         unused_bytes_size == 0 ? nullptr : received_bytes + bytes_consumed;
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result);
+    tsi_ssl_handshaker_result* ssl_hs_result = reinterpret_cast<tsi_ssl_handshaker_result*>(*handshaker_result);
+    ssl_hs_result->is_client = impl->is_client;
     if (status == TSI_OK) {
       /* Indicates that the handshake has completed and that a handshaker_result
        * has been created. */
@@ -1567,6 +1780,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
 
   impl = static_cast<tsi_ssl_handshaker*>(gpr_zalloc(sizeof(*impl)));
   impl->ssl = ssl;
+  impl->is_client = is_client;
   impl->network_io = network_io;
   impl->result = TSI_HANDSHAKE_IN_PROGRESS;
   impl->outgoing_bytes_buffer_size =
@@ -1812,6 +2026,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
 tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     const tsi_ssl_client_handshaker_options* options,
     tsi_ssl_client_handshaker_factory** factory) {
+#ifdef OPENSSL_IS_BORINGSSL
+  gpr_log(GPR_INFO, "USING BORINGSSL ON CLIENT SIDE");
+#endif
+
   SSL_CTX* ssl_context = nullptr;
   tsi_ssl_client_handshaker_factory* impl = nullptr;
   tsi_result result = TSI_OK;
@@ -1827,8 +2045,13 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
   if (ssl_context != nullptr) {
-    SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
+    SSL_CTX_set_min_proto_version(ssl_context, TLS1_3_VERSION);
   }
+  //int my_ctx_options = SSL_OP_ALL;
+  //my_ctx_options |= SSL_OP_NO_TICKET;
+  //SSL_CTX_set_options(ssl_context, my_ctx_options);
+  //SSL_CTX_set_options(ssl_context, SSL_OP_NO_TICKET);
+  //SSL_CTX_set_session_cache_mode(ssl_context, SSL_SESS_CACHE_OFF);
 #else
   // |TLS_method| and |SSL_CTX_set_min_proto_version| are not available in
   // OpenSSL versions < 1.1.0.
@@ -1956,6 +2179,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
 tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     const tsi_ssl_server_handshaker_options* options,
     tsi_ssl_server_handshaker_factory** factory) {
+#ifdef OPENSSL_IS_BORINGSSL
+  gpr_log(GPR_INFO, "USING BORINGSSL ON SERVER SIDE");
+#endif
   tsi_ssl_server_handshaker_factory* impl = nullptr;
   tsi_result result = TSI_OK;
   size_t i = 0;
@@ -2000,8 +2226,13 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
       impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
       if (impl->ssl_contexts[i] != nullptr) {
-        SSL_CTX_set_min_proto_version(impl->ssl_contexts[i], TLS1_2_VERSION);
+        SSL_CTX_set_min_proto_version(impl->ssl_contexts[i], TLS1_3_VERSION);
       }
+      //int my_ctx_options = SSL_OP_ALL;
+      //my_ctx_options |= SSL_OP_NO_TICKET;
+      //SSL_CTX_set_options(impl->ssl_contexts[i], my_ctx_options);
+      //SSL_CTX_set_options(impl->ssl_contexts[i], SSL_OP_NO_TICKET);
+      //SSL_CTX_set_session_cache_mode(impl->ssl_contexts[i], SSL_SESS_CACHE_OFF);
 #else
       // |TLS_method| and |SSL_CTX_set_min_proto_version| are not available in
       // OpenSSL versions < 1.1.0.

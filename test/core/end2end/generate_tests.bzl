@@ -89,7 +89,7 @@ END2END_FIXTURES = {
     #    client_channel = False,
     #),
     "h2_ssl": _fixture_options(secure = True),
-    "h2_ssl_cred_reload": _fixture_options(secure = True),
+    #"h2_ssl_cred_reload": _fixture_options(secure = True),
     "h2_tls": _fixture_options(secure = True),
     #"h2_local_uds": _fixture_options(
     #    secure = True,
@@ -200,7 +200,7 @@ def _test_options(
 # maps test names to options
 END2END_TESTS = {
     #"bad_hostname": _test_options(needs_names = True),
-    "bad_ping": _test_options(needs_fullstack = True, proxyable = False),
+    #"bad_ping": _test_options(needs_fullstack = True, proxyable = False),
     #"binary_metadata": _test_options(),
     #"resource_quota_server": _test_options(
     #    proxyable = False,
@@ -236,7 +236,7 @@ END2END_TESTS = {
     #"disappearing_server": _test_options(needs_fullstack = True, needs_names = True),
     #"empty_batch": _test_options(),
     #"filter_causes_close": _test_options(),
-    "filter_call_init_fails": _test_options(),
+    #"filter_call_init_fails": _test_options(),
     #"filter_context": _test_options(),
     #"graceful_server_shutdown": _test_options(exclude_inproc = True),
     #"hpack_size": _test_options(

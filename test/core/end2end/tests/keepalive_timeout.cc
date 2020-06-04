@@ -18,6 +18,7 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <iostream>
 #include <stdio.h>
 #include <string.h>
 
@@ -109,7 +110,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   keepalive_arg_elems[0].value.integer = 3500;
   keepalive_arg_elems[1].type = GRPC_ARG_INTEGER;
   keepalive_arg_elems[1].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
-  keepalive_arg_elems[1].value.integer = 0;
+  keepalive_arg_elems[1].value.integer = 1; // The minimum timeout length.
   keepalive_arg_elems[2].type = GRPC_ARG_INTEGER;
   keepalive_arg_elems[2].key = const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
   keepalive_arg_elems[2].value.integer = 0;
@@ -222,6 +223,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
 
   end_test(&f);
   config.tear_down_data(&f);
+  GPR_ASSERT(0);
 }
 
 /* Verify that reads reset the keepalive ping timer. The client sends 30 pings
@@ -243,7 +245,7 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   keepalive_arg_elems[0].value.integer = 20 * kPingIntervalMS;
   keepalive_arg_elems[1].type = GRPC_ARG_INTEGER;
   keepalive_arg_elems[1].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
-  keepalive_arg_elems[1].value.integer = 0;
+  keepalive_arg_elems[1].value.integer = 1; // The minimum timeout length.
   keepalive_arg_elems[2].type = GRPC_ARG_INTEGER;
   keepalive_arg_elems[2].key = const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
   keepalive_arg_elems[2].value.integer = 0;
@@ -334,6 +336,7 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   for (i = 0; i < 30; i++) {
+    std::cout << "***********In loop " << i << std::endl;
     request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
 

@@ -33,8 +33,8 @@ static bool g_pre_init_called = false;
 extern void authority_not_supported_pre_init(void);
 extern void bad_hostname(grpc_end2end_test_config config);
 extern void bad_hostname_pre_init(void);**/
-extern void bad_ping(grpc_end2end_test_config config);
-extern void bad_ping_pre_init(void);
+//extern void bad_ping(grpc_end2end_test_config config);
+//extern void bad_ping_pre_init(void);
 /**extern void binary_metadata(grpc_end2end_test_config config);
 extern void binary_metadata_pre_init(void);
 extern void call_creds(grpc_end2end_test_config config);
@@ -69,8 +69,8 @@ extern void disappearing_server(grpc_end2end_test_config config);
 extern void disappearing_server_pre_init(void);
 extern void empty_batch(grpc_end2end_test_config config);
 extern void empty_batch_pre_init(void);**/
-extern void filter_call_init_fails(grpc_end2end_test_config config);
-extern void filter_call_init_fails_pre_init(void);
+//extern void filter_call_init_fails(grpc_end2end_test_config config);
+//extern void filter_call_init_fails_pre_init(void);
 /**extern void filter_causes_close(grpc_end2end_test_config config);
 extern void filter_causes_close_pre_init(void);
 extern void filter_context(grpc_end2end_test_config config);
@@ -194,7 +194,7 @@ void grpc_end2end_tests_pre_init(void) {
   g_pre_init_called = true;
   //authority_not_supported_pre_init();
   //bad_hostname_pre_init();
-  bad_ping_pre_init();
+  //bad_ping_pre_init();
   /**binary_metadata_pre_init();
   call_creds_pre_init();
   call_host_override_pre_init();
@@ -212,7 +212,7 @@ void grpc_end2end_tests_pre_init(void) {
   default_host_pre_init();
   disappearing_server_pre_init();
   empty_batch_pre_init();**/
-  filter_call_init_fails_pre_init();
+  //filter_call_init_fails_pre_init();
   /**filter_causes_close_pre_init();
   filter_context_pre_init();
   filter_latency_pre_init();
@@ -285,7 +285,7 @@ void grpc_end2end_tests(int argc, char **argv,
   if (argc <= 1) {
     //authority_not_supported(config);
     //bad_hostname(config);
-    bad_ping(config);
+    //bad_ping(config);
     /**binary_metadata(config);
     call_creds(config);
     call_host_override(config);
@@ -304,7 +304,7 @@ void grpc_end2end_tests(int argc, char **argv,
     disappearing_server(config);
     empty_batch(config);
     **/
-    filter_call_init_fails(config);
+    //filter_call_init_fails(config);
     /**
     filter_causes_close(config);
     filter_context(config);
@@ -379,10 +379,10 @@ void grpc_end2end_tests(int argc, char **argv,
       bad_hostname(config);
       continue;
     }**/
-    if (0 == strcmp("bad_ping", argv[i])) {
-      bad_ping(config);
-      continue;
-    }
+    //if (0 == strcmp("bad_ping", argv[i])) {
+    //  bad_ping(config);
+    //  continue;
+    //}
     /**
     if (0 == strcmp("binary_metadata", argv[i])) {
       binary_metadata(config);
@@ -452,10 +452,10 @@ void grpc_end2end_tests(int argc, char **argv,
       empty_batch(config);
       continue;
     }**/
-    if (0 == strcmp("filter_call_init_fails", argv[i])) {
-      filter_call_init_fails(config);
-      continue;
-    }
+    //if (0 == strcmp("filter_call_init_fails", argv[i])) {
+    //  filter_call_init_fails(config);
+    //  continue;
+    //}
     /**
     if (0 == strcmp("filter_causes_close", argv[i])) {
       filter_causes_close(config);
