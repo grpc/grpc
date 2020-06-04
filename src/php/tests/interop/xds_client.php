@@ -112,7 +112,7 @@ class ClientThread extends Thread {
                         $now_us + ($this->target_seconds_between_rpcs_ * 1e6);
                 echo sprintf(
                     "php xds: warning, rpc takes too long to finish. "
-                    . "Deficit %fms."
+                    . "Deficit %.1fms."
                     . "If you consistently see this, the qps is too high.\n",
                     round(abs($sleep_us / 1000), 1));
             } else {

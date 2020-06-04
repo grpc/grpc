@@ -114,8 +114,8 @@ def run_test_loop(stub, target_seconds_between_rpcs, fail_on_failed_rpcs)
       target_next_start = now + target_seconds_between_rpcs
       GRPC.logger.info(
         "ruby xds: warning, rpc takes too long to finish. " \
-        "Deficit = %fms. " \
-        "If you consistently see this, the qps is too high."
+        "Deficit = %.1fms. " \
+        "If you consistently see this, the qps is too high." \
         % [(sleep_seconds * 1000).abs().round(1)])
     else
       target_next_start += target_seconds_between_rpcs
