@@ -53,7 +53,7 @@ out['libs'] = [
         ],
         'secure': False,
         'deps': [
-            'upb_lib',
+            'upb',
         ],
     },
 
@@ -72,7 +72,7 @@ out['libs'] = [
         'secure': False,
         'deps': [
             'google_api_upb',
-            'upb_lib',
+            'upb',
         ],
     },
 
@@ -91,7 +91,7 @@ out['libs'] = [
         'secure': False,
         'deps': [
             'google_api_upb',
-            'upb_lib',
+            'upb',
         ],
     },
 
@@ -112,7 +112,7 @@ out['libs'] = [
         'secure': False,
         'deps': [
             'google_api_upb',
-            'upb_lib',
+            'upb',
         ],
     },
 
@@ -147,7 +147,7 @@ out['libs'] = [
             'google_api_upb',
             'proto_gen_validate_upb',
             'udpa_annotations_upb',
-            'upb_lib',
+            'upb',
         ],
     },
 
@@ -186,7 +186,7 @@ out['libs'] = [
             'google_api_upb',
             'proto_gen_validate_upb',
             'udpa_annotations_upb',
-            'upb_lib',
+            'upb',
         ],
     },
 
@@ -270,7 +270,7 @@ out['libs'] = [
             'google_api_upb',
             'proto_gen_validate_upb',
             'udpa_annotations_upb',
-            'upb_lib',
+            'upb',
         ],
     },
 
@@ -282,7 +282,7 @@ out['libs'] = [
         'secure': False,
         'deps': [
             'xds_ads_upb_proto',
-            'upb_lib',
+            'upb',
         ],
     },
 
@@ -293,7 +293,7 @@ out['libs'] = [
         'secure': False,
         'deps': [
             'xds_ads_upb_proto',
-            'upb_lib',
+            'upb',
         ],
     },
 
@@ -311,7 +311,7 @@ out['libs'] = [
         'secure': False,
         'deps': [
             'proto_gen_validate_upb',
-            'upb_lib',
+            'upb',
         ],
     },
 
@@ -327,7 +327,7 @@ out['libs'] = [
         ],
         'secure': False,
         'deps': [
-            'upb_lib',
+            'upb',
         ],
     },
 
@@ -344,7 +344,7 @@ out['libs'] = [
         'secure': False,
         'deps': [
             'google_api_upb',
-            'upb_lib',
+            'upb',
         ],
     },
 
@@ -365,7 +365,7 @@ out['libs'] = [
         ],
         'secure': False,
         'deps': [
-            'upb_lib',
+            'upb',
         ],
     },
 

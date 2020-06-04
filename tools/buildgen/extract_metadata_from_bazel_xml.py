@@ -277,6 +277,9 @@ def _expand_intermediate_deps(target_dict, public_dep_names, bazel_rules):
             # do not expand if a public dependency that depends on this has already been expanded
             pass
 
+        elif bazel_dep.endswith('_upb_proto'):
+            pass
+
         else:
             if bazel_dep in bazel_rules:
                 # this is an intermediate library, expand it
