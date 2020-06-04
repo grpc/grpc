@@ -6,6 +6,7 @@ load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
 load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
+load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
 
 def grpc_extra_deps():
     """Loads the extra dependencies.
@@ -26,6 +27,11 @@ def grpc_extra_deps():
     grpc_extra_deps()
     ```
     """
+    switched_rules_by_language(
+        name = "com_google_googleapis_imports",
+        cc = True,
+    )
+
     protobuf_deps()
 
     upb_deps()

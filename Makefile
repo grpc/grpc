@@ -1347,7 +1347,7 @@ $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 
 static: static_c static_cxx
 
-static_c: pc_c pc_c_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libupb.a
+static_c: pc_c pc_c_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.a $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb.a $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb.a $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb.a $(LIBDIR)/$(CONFIG)/libenvoy_type_upb.a $(LIBDIR)/$(CONFIG)/libenvoy_core_upb.a $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto.a $(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto.a $(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto.a $(LIBDIR)/$(CONFIG)/libudpa_orca_upb.a $(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto.a $(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto.a $(LIBDIR)/$(CONFIG)/libalts_upb_proto.a
 
 static_cxx: pc_cxx pc_cxx_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a
 
@@ -1355,7 +1355,7 @@ static_csharp: static_c
 
 shared: shared_c shared_cxx
 
-shared_c: pc_c pc_c_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+shared_c: pc_c pc_c_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
 
 shared_csharp: shared_c 
@@ -2400,6 +2400,32 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 	$(E) "[STRIP]   Stripping libupb.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[STRIP]   Stripping libgoogle_api_upb.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.a
+	$(E) "[STRIP]   Stripping libproto_gen_validate_upb.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb.a
+	$(E) "[STRIP]   Stripping libenvoy_annotations_upb.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb.a
+	$(E) "[STRIP]   Stripping libudpa_annotations_upb.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb.a
+	$(E) "[STRIP]   Stripping libenvoy_type_upb.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libenvoy_type_upb.a
+	$(E) "[STRIP]   Stripping libenvoy_core_upb.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libenvoy_core_upb.a
+	$(E) "[STRIP]   Stripping libxds_ads_upb_proto.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto.a
+	$(E) "[STRIP]   Stripping libxds_hcm_upb_proto.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto.a
+	$(E) "[STRIP]   Stripping libxds_lrs_upb_proto.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto.a
+	$(E) "[STRIP]   Stripping libudpa_orca_upb.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libudpa_orca_upb.a
+	$(E) "[STRIP]   Stripping libgrpc_health_upb_proto.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto.a
+	$(E) "[STRIP]   Stripping libgrpc_lb_upb_proto.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto.a
+	$(E) "[STRIP]   Stripping libalts_upb_proto.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libalts_upb_proto.a
 endif
 
 strip-static_cxx: static_cxx
@@ -2432,6 +2458,32 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 endif
 
 strip-shared_cxx: shared_cxx
@@ -3007,6 +3059,45 @@ install-static_c: static_c strip-static_c install-pkg-config_c
 	$(E) "[INSTALL] Installing libupb.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libupb.a $(prefix)/lib/libupb.a
+	$(E) "[INSTALL] Installing libgoogle_api_upb.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.a $(prefix)/lib/libgoogle_api_upb.a
+	$(E) "[INSTALL] Installing libproto_gen_validate_upb.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb.a $(prefix)/lib/libproto_gen_validate_upb.a
+	$(E) "[INSTALL] Installing libenvoy_annotations_upb.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb.a $(prefix)/lib/libenvoy_annotations_upb.a
+	$(E) "[INSTALL] Installing libudpa_annotations_upb.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb.a $(prefix)/lib/libudpa_annotations_upb.a
+	$(E) "[INSTALL] Installing libenvoy_type_upb.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libenvoy_type_upb.a $(prefix)/lib/libenvoy_type_upb.a
+	$(E) "[INSTALL] Installing libenvoy_core_upb.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libenvoy_core_upb.a $(prefix)/lib/libenvoy_core_upb.a
+	$(E) "[INSTALL] Installing libxds_ads_upb_proto.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto.a $(prefix)/lib/libxds_ads_upb_proto.a
+	$(E) "[INSTALL] Installing libxds_hcm_upb_proto.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto.a $(prefix)/lib/libxds_hcm_upb_proto.a
+	$(E) "[INSTALL] Installing libxds_lrs_upb_proto.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto.a $(prefix)/lib/libxds_lrs_upb_proto.a
+	$(E) "[INSTALL] Installing libudpa_orca_upb.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libudpa_orca_upb.a $(prefix)/lib/libudpa_orca_upb.a
+	$(E) "[INSTALL] Installing libgrpc_health_upb_proto.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto.a $(prefix)/lib/libgrpc_health_upb_proto.a
+	$(E) "[INSTALL] Installing libgrpc_lb_upb_proto.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto.a $(prefix)/lib/libgrpc_lb_upb_proto.a
+	$(E) "[INSTALL] Installing libalts_upb_proto.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libalts_upb_proto.a $(prefix)/lib/libalts_upb_proto.a
 
 install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
 	$(E) "[INSTALL] Installing libgrpc++.a"
@@ -3084,6 +3175,123 @@ ifeq ($(SYSTEM),MINGW32)
 else ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libupb.so.10
 	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libupb.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgoogle_api_upb.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgoogle_api_upb.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgoogle_api_upb.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libproto_gen_validate_upb.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libproto_gen_validate_upb.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libproto_gen_validate_upb.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libenvoy_annotations_upb.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libenvoy_annotations_upb.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libenvoy_annotations_upb.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libudpa_annotations_upb.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libudpa_annotations_upb.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libudpa_annotations_upb.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libenvoy_type_upb$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libenvoy_type_upb.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libenvoy_type_upb.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libenvoy_type_upb.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libenvoy_core_upb$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libenvoy_core_upb.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libenvoy_core_upb.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libenvoy_core_upb.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libxds_ads_upb_proto.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libxds_ads_upb_proto.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libxds_ads_upb_proto.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libxds_hcm_upb_proto.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libxds_hcm_upb_proto.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libxds_hcm_upb_proto.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libxds_lrs_upb_proto.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libxds_lrs_upb_proto.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libxds_lrs_upb_proto.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libudpa_orca_upb$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libudpa_orca_upb.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libudpa_orca_upb.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libudpa_orca_upb.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc_health_upb_proto.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_health_upb_proto.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_health_upb_proto.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc_lb_upb_proto.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_lb_upb_proto.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_lb_upb_proto.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libalts_upb_proto$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libalts_upb_proto.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libalts_upb_proto.so.10
+	$(Q) ln -sf $(SHARED_PREFIX)alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libalts_upb_proto.so
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
@@ -3727,146 +3935,6 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
-    src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
-    src/core/ext/upb-generated/envoy/annotations/deprecation.upbdefs.c \
-    src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
-    src/core/ext/upb-generated/envoy/annotations/resource.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/common.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/secret.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/tls.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cds.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/address.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/backoff.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/base.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/discovery.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/eds.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/lds.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/rds.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/srds.upbdefs.c \
-    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upbdefs.c \
-    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upbdefs.c \
-    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
-    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upbdefs.c \
-    src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upbdefs.c \
-    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
-    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upbdefs.c \
-    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
-    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/http.upb.c \
-    src/core/ext/upb-generated/envoy/type/http.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/regex.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/string.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
-    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/percent.upb.c \
-    src/core/ext/upb-generated/envoy/type/percent.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/range.upb.c \
-    src/core/ext/upb-generated/envoy/type/range.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/semantic_version.upb.c \
-    src/core/ext/upb-generated/envoy/type/semantic_version.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c \
-    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upbdefs.c \
-    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
-    src/core/ext/upb-generated/gogoproto/gogo.upbdefs.c \
-    src/core/ext/upb-generated/google/api/annotations.upb.c \
-    src/core/ext/upb-generated/google/api/annotations.upbdefs.c \
-    src/core/ext/upb-generated/google/api/http.upb.c \
-    src/core/ext/upb-generated/google/api/http.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/any.upb.c \
-    src/core/ext/upb-generated/google/protobuf/any.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upbdefs.c \
-    src/core/ext/upb-generated/google/rpc/status.upb.c \
-    src/core/ext/upb-generated/google/rpc/status.upbdefs.c \
-    src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/migrate.upbdefs.c \
-    src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/sensitive.upbdefs.c \
-    src/core/ext/upb-generated/udpa/annotations/status.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/status.upbdefs.c \
-    src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
-    src/core/ext/upb-generated/validate/validate.upb.c \
-    src/core/ext/upb-generated/validate/validate.upbdefs.c \
     src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
@@ -4437,143 +4505,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
-    src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
-    src/core/ext/upb-generated/envoy/annotations/deprecation.upbdefs.c \
-    src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
-    src/core/ext/upb-generated/envoy/annotations/resource.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/common.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/secret.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/tls.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cds.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/address.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/backoff.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/base.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/discovery.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/eds.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/lds.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/rds.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upbdefs.c \
-    src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/srds.upbdefs.c \
-    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upbdefs.c \
-    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upbdefs.c \
-    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
-    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upbdefs.c \
-    src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upbdefs.c \
-    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
-    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upbdefs.c \
-    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
-    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/http.upb.c \
-    src/core/ext/upb-generated/envoy/type/http.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/regex.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/string.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
-    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/percent.upb.c \
-    src/core/ext/upb-generated/envoy/type/percent.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/range.upb.c \
-    src/core/ext/upb-generated/envoy/type/range.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/semantic_version.upb.c \
-    src/core/ext/upb-generated/envoy/type/semantic_version.upbdefs.c \
-    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c \
-    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upbdefs.c \
-    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
-    src/core/ext/upb-generated/gogoproto/gogo.upbdefs.c \
-    src/core/ext/upb-generated/google/api/annotations.upb.c \
-    src/core/ext/upb-generated/google/api/annotations.upbdefs.c \
-    src/core/ext/upb-generated/google/api/http.upb.c \
-    src/core/ext/upb-generated/google/api/http.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/any.upb.c \
-    src/core/ext/upb-generated/google/protobuf/any.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upbdefs.c \
-    src/core/ext/upb-generated/google/rpc/status.upb.c \
-    src/core/ext/upb-generated/google/rpc/status.upbdefs.c \
-    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/migrate.upbdefs.c \
-    src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/sensitive.upbdefs.c \
-    src/core/ext/upb-generated/udpa/annotations/status.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/status.upbdefs.c \
-    src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
-    src/core/ext/upb-generated/validate/validate.upb.c \
-    src/core/ext/upb-generated/validate/validate.upbdefs.c \
     src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
@@ -6425,6 +6356,612 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBUPB_OBJS:.o=.dep)
+endif
+
+
+LIBGOOGLE_API_UPB_SRC = \
+    src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/http.upb.c \
+    src/core/ext/upb-generated/google/protobuf/any.upb.c \
+    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
+    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
+    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
+    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
+    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
+    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
+    src/core/ext/upb-generated/google/rpc/status.upb.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBGOOGLE_API_UPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGOOGLE_API_UPB_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libgoogle_api_upb.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGOOGLE_API_UPB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.a $(LIBGOOGLE_API_UPB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGOOGLE_API_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/google_api_upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgoogle_api_upb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGOOGLE_API_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libgoogle_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGOOGLE_API_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgoogle_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGOOGLE_API_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgoogle_api_upb.so.10 -o $(LIBDIR)/$(CONFIG)/libgoogle_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGOOGLE_API_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBGOOGLE_API_UPB_OBJS:.o=.dep)
+endif
+
+
+LIBPROTO_GEN_VALIDATE_UPB_SRC = \
+    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
+    src/core/ext/upb-generated/validate/validate.upb.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBPROTO_GEN_VALIDATE_UPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBPROTO_GEN_VALIDATE_UPB_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBPROTO_GEN_VALIDATE_UPB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb.a $(LIBPROTO_GEN_VALIDATE_UPB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBPROTO_GEN_VALIDATE_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/proto_gen_validate_upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBPROTO_GEN_VALIDATE_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgoogle_api_upb$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBPROTO_GEN_VALIDATE_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBPROTO_GEN_VALIDATE_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgoogle_api_upb -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libproto_gen_validate_upb.so.10 -o $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBPROTO_GEN_VALIDATE_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgoogle_api_upb -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBPROTO_GEN_VALIDATE_UPB_OBJS:.o=.dep)
+endif
+
+
+LIBENVOY_ANNOTATIONS_UPB_SRC = \
+    src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
+    src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBENVOY_ANNOTATIONS_UPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBENVOY_ANNOTATIONS_UPB_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBENVOY_ANNOTATIONS_UPB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb.a $(LIBENVOY_ANNOTATIONS_UPB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBENVOY_ANNOTATIONS_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/envoy_annotations_upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBENVOY_ANNOTATIONS_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgoogle_api_upb$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBENVOY_ANNOTATIONS_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBENVOY_ANNOTATIONS_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgoogle_api_upb -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libenvoy_annotations_upb.so.10 -o $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBENVOY_ANNOTATIONS_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgoogle_api_upb -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBENVOY_ANNOTATIONS_UPB_OBJS:.o=.dep)
+endif
+
+
+LIBUDPA_ANNOTATIONS_UPB_SRC = \
+    src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
+    src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
+    src/core/ext/upb-generated/udpa/annotations/status.upb.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBUDPA_ANNOTATIONS_UPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUDPA_ANNOTATIONS_UPB_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libudpa_annotations_upb.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBUDPA_ANNOTATIONS_UPB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb.a $(LIBUDPA_ANNOTATIONS_UPB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUDPA_ANNOTATIONS_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/udpa_annotations_upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libudpa_annotations_upb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUDPA_ANNOTATIONS_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgoogle_api_upb$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libudpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUDPA_ANNOTATIONS_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUDPA_ANNOTATIONS_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgoogle_api_upb -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libudpa_annotations_upb.so.10 -o $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUDPA_ANNOTATIONS_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgoogle_api_upb -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBUDPA_ANNOTATIONS_UPB_OBJS:.o=.dep)
+endif
+
+
+LIBENVOY_TYPE_UPB_SRC = \
+    src/core/ext/upb-generated/envoy/type/http.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
+    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
+    src/core/ext/upb-generated/envoy/type/percent.upb.c \
+    src/core/ext/upb-generated/envoy/type/range.upb.c \
+    src/core/ext/upb-generated/envoy/type/semantic_version.upb.c \
+    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBENVOY_TYPE_UPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBENVOY_TYPE_UPB_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libenvoy_type_upb.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBENVOY_TYPE_UPB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libenvoy_type_upb.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libenvoy_type_upb.a $(LIBENVOY_TYPE_UPB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libenvoy_type_upb.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBENVOY_TYPE_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/envoy_type_upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libenvoy_type_upb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBENVOY_TYPE_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lenvoy_annotations_upb$(SHARED_VERSION_CORE)-dll -lgoogle_api_upb$(SHARED_VERSION_CORE)-dll -lproto_gen_validate_upb$(SHARED_VERSION_CORE)-dll -ludpa_annotations_upb$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libenvoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBENVOY_TYPE_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libenvoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBENVOY_TYPE_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lenvoy_annotations_upb -lgoogle_api_upb -lproto_gen_validate_upb -ludpa_annotations_upb -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libenvoy_type_upb.so.10 -o $(LIBDIR)/$(CONFIG)/libenvoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBENVOY_TYPE_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lenvoy_annotations_upb -lgoogle_api_upb -lproto_gen_validate_upb -ludpa_annotations_upb -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libenvoy_type_upb$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libenvoy_type_upb$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBENVOY_TYPE_UPB_OBJS:.o=.dep)
+endif
+
+
+LIBENVOY_CORE_UPB_SRC = \
+    src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBENVOY_CORE_UPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBENVOY_CORE_UPB_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libenvoy_core_upb.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBENVOY_CORE_UPB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libenvoy_core_upb.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libenvoy_core_upb.a $(LIBENVOY_CORE_UPB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libenvoy_core_upb.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBENVOY_CORE_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/envoy_core_upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libenvoy_core_upb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBENVOY_CORE_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lenvoy_annotations_upb$(SHARED_VERSION_CORE)-dll -lenvoy_type_upb$(SHARED_VERSION_CORE)-dll -lgoogle_api_upb$(SHARED_VERSION_CORE)-dll -lproto_gen_validate_upb$(SHARED_VERSION_CORE)-dll -ludpa_annotations_upb$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libenvoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBENVOY_CORE_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libenvoy_type_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libenvoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBENVOY_CORE_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lenvoy_annotations_upb -lenvoy_type_upb -lgoogle_api_upb -lproto_gen_validate_upb -ludpa_annotations_upb -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libenvoy_core_upb.so.10 -o $(LIBDIR)/$(CONFIG)/libenvoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBENVOY_CORE_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lenvoy_annotations_upb -lenvoy_type_upb -lgoogle_api_upb -lproto_gen_validate_upb -ludpa_annotations_upb -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libenvoy_core_upb$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libenvoy_core_upb$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBENVOY_CORE_UPB_OBJS:.o=.dep)
+endif
+
+
+LIBXDS_ADS_UPB_PROTO_SRC = \
+    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/route.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
+    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
+    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
+    src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c \
+    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
+    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBXDS_ADS_UPB_PROTO_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBXDS_ADS_UPB_PROTO_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBXDS_ADS_UPB_PROTO_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto.a $(LIBXDS_ADS_UPB_PROTO_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBXDS_ADS_UPB_PROTO_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/envoy_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/envoy_core_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/envoy_type_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/udpa_annotations_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/xds_ads_upb_proto$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBXDS_ADS_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lenvoy_annotations_upb$(SHARED_VERSION_CORE)-dll -lenvoy_core_upb$(SHARED_VERSION_CORE)-dll -lenvoy_type_upb$(SHARED_VERSION_CORE)-dll -lgoogle_api_upb$(SHARED_VERSION_CORE)-dll -lproto_gen_validate_upb$(SHARED_VERSION_CORE)-dll -ludpa_annotations_upb$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBXDS_ADS_UPB_PROTO_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libenvoy_annotations_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libenvoy_core_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libenvoy_type_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libudpa_annotations_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBXDS_ADS_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lenvoy_annotations_upb -lenvoy_core_upb -lenvoy_type_upb -lgoogle_api_upb -lproto_gen_validate_upb -ludpa_annotations_upb -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libxds_ads_upb_proto.so.10 -o $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBXDS_ADS_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lenvoy_annotations_upb -lenvoy_core_upb -lenvoy_type_upb -lgoogle_api_upb -lproto_gen_validate_upb -ludpa_annotations_upb -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBXDS_ADS_UPB_PROTO_OBJS:.o=.dep)
+endif
+
+
+LIBXDS_HCM_UPB_PROTO_SRC = \
+
+PUBLIC_HEADERS_C += \
+
+LIBXDS_HCM_UPB_PROTO_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBXDS_HCM_UPB_PROTO_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBXDS_HCM_UPB_PROTO_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto.a $(LIBXDS_HCM_UPB_PROTO_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBXDS_HCM_UPB_PROTO_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/xds_hcm_upb_proto$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBXDS_HCM_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lxds_ads_upb_proto$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBXDS_HCM_UPB_PROTO_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBXDS_HCM_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lxds_ads_upb_proto -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libxds_hcm_upb_proto.so.10 -o $(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBXDS_HCM_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lxds_ads_upb_proto -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)xds_hcm_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libxds_hcm_upb_proto$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBXDS_HCM_UPB_PROTO_OBJS:.o=.dep)
+endif
+
+
+LIBXDS_LRS_UPB_PROTO_SRC = \
+
+PUBLIC_HEADERS_C += \
+
+LIBXDS_LRS_UPB_PROTO_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBXDS_LRS_UPB_PROTO_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBXDS_LRS_UPB_PROTO_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto.a $(LIBXDS_LRS_UPB_PROTO_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBXDS_LRS_UPB_PROTO_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/xds_ads_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/xds_lrs_upb_proto$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBXDS_LRS_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lxds_ads_upb_proto$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBXDS_LRS_UPB_PROTO_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libxds_ads_upb_proto.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBXDS_LRS_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lxds_ads_upb_proto -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libxds_lrs_upb_proto.so.10 -o $(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBXDS_LRS_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lxds_ads_upb_proto -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)xds_lrs_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libxds_lrs_upb_proto$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBXDS_LRS_UPB_PROTO_OBJS:.o=.dep)
+endif
+
+
+LIBUDPA_ORCA_UPB_SRC = \
+    src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBUDPA_ORCA_UPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUDPA_ORCA_UPB_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libudpa_orca_upb.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBUDPA_ORCA_UPB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libudpa_orca_upb.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libudpa_orca_upb.a $(LIBUDPA_ORCA_UPB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libudpa_orca_upb.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUDPA_ORCA_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/proto_gen_validate_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/udpa_orca_upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libudpa_orca_upb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUDPA_ORCA_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lproto_gen_validate_upb$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libudpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUDPA_ORCA_UPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libproto_gen_validate_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libudpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUDPA_ORCA_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lproto_gen_validate_upb -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libudpa_orca_upb.so.10 -o $(LIBDIR)/$(CONFIG)/libudpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUDPA_ORCA_UPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lproto_gen_validate_upb -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libudpa_orca_upb$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)udpa_orca_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libudpa_orca_upb$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBUDPA_ORCA_UPB_OBJS:.o=.dep)
+endif
+
+
+LIBGRPC_HEALTH_UPB_PROTO_SRC = \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBGRPC_HEALTH_UPB_PROTO_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_HEALTH_UPB_PROTO_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_HEALTH_UPB_PROTO_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto.a $(LIBGRPC_HEALTH_UPB_PROTO_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_HEALTH_UPB_PROTO_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_health_upb_proto$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_HEALTH_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_HEALTH_UPB_PROTO_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_HEALTH_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_health_upb_proto.so.10 -o $(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_HEALTH_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_health_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_health_upb_proto$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBGRPC_HEALTH_UPB_PROTO_OBJS:.o=.dep)
+endif
+
+
+LIBGRPC_LB_UPB_PROTO_SRC = \
+    src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBGRPC_LB_UPB_PROTO_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_LB_UPB_PROTO_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_LB_UPB_PROTO_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto.a $(LIBGRPC_LB_UPB_PROTO_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_LB_UPB_PROTO_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/google_api_upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_lb_upb_proto$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_LB_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgoogle_api_upb$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_LB_UPB_PROTO_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgoogle_api_upb.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_LB_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgoogle_api_upb -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_lb_upb_proto.so.10 -o $(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_LB_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgoogle_api_upb -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_lb_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_lb_upb_proto$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBGRPC_LB_UPB_PROTO_OBJS:.o=.dep)
+endif
+
+
+LIBALTS_UPB_PROTO_SRC = \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBALTS_UPB_PROTO_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBALTS_UPB_PROTO_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libalts_upb_proto.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBALTS_UPB_PROTO_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libalts_upb_proto.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libalts_upb_proto.a $(LIBALTS_UPB_PROTO_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libalts_upb_proto.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBALTS_UPB_PROTO_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/alts_upb_proto$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libalts_upb_proto$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBALTS_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lupb$(SHARED_VERSION_CORE)-dll
+else
+$(LIBDIR)/$(CONFIG)/libalts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBALTS_UPB_PROTO_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libalts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBALTS_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lupb
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libalts_upb_proto.so.10 -o $(LIBDIR)/$(CONFIG)/libalts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBALTS_UPB_PROTO_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lupb
+	$(Q) ln -sf $(SHARED_PREFIX)alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libalts_upb_proto$(SHARED_VERSION_CORE).so.10
+	$(Q) ln -sf $(SHARED_PREFIX)alts_upb_proto$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libalts_upb_proto$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBALTS_UPB_PROTO_OBJS:.o=.dep)
 endif
 
 
@@ -20115,9 +20652,6 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc: $
 src/core/ext/filters/client_channel/xds/xds_channel_secure.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc: $(OPENSSL_DEP)
-src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
