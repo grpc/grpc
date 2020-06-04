@@ -52,7 +52,7 @@ static void jsonenc_putbytes(jsonenc *e, const void *data, size_t len) {
     memcpy(e->ptr, data, len);
     e->ptr += len;
   } else {
-    memcpy(e->ptr, data, have);
+    if (have) memcpy(e->ptr, data, have);
     e->ptr += have;
     e->overflow += (len - have);
   }
@@ -117,7 +117,7 @@ static void jsonenc_timestamp(jsonenc *e, const upb_msg *msg,
    * Fliegel, H. F., and Van Flandern, T. C., "A Machine Algorithm for
    *   Processing Calendar Dates," Communications of the Association of
    *   Computing Machines, vol. 11 (1968), p. 657.  */
-  L = (seconds / 86400) + 68569 + 2440588;
+  L = (int)(seconds / 86400) + 68569 + 2440588;
   N = 4 * L / 146097;
   L = L - (146097 * N + 3) / 4;
   I = 4000 * (L + 1) / 1461001;
