@@ -290,6 +290,15 @@ inline void AddStringField(const char* name, const upb_strview& value,
   }
 }
 
+inline void AddUInt32ValueField(const char* name,
+                                const google_protobuf_UInt32Value* value,
+                                std::vector<std::string>* fields) {
+  if (value != nullptr) {
+    fields->emplace_back(absl::StrCat(
+        name, " { value: ", google_protobuf_UInt32Value_value(value), " }"));
+  }
+}
+
 inline void AddLocalityField(int indent_level,
                              const envoy_api_v2_core_Locality* locality,
                              std::vector<std::string>* fields) {
@@ -613,7 +622,34 @@ void MaybeLogRouteConfiguration(
                 envoy_api_v2_route_RouteAction_cluster_header(action), &fields);
           } else if (envoy_api_v2_route_RouteAction_has_weighted_clusters(
                          action)) {
-            fields.emplace_back("      weighted_clusters: <not printed>");
+            const envoy_api_v2_route_WeightedCluster* weighted_clusters =
+                envoy_api_v2_route_RouteAction_weighted_clusters(action);
+            fields.emplace_back("      weighted_clusters {");
+            size_t num_cluster_weights;
+            const envoy_api_v2_route_WeightedCluster_ClusterWeight* const*
+                cluster_weights = envoy_api_v2_route_WeightedCluster_clusters(
+                    weighted_clusters, &num_cluster_weights);
+            for (size_t i = 0; i < num_cluster_weights; ++i) {
+              const envoy_api_v2_route_WeightedCluster_ClusterWeight*
+                  cluster_weight = cluster_weights[i];
+              fields.emplace_back("        clusters {");
+              AddStringField(
+                  "          name",
+                  envoy_api_v2_route_WeightedCluster_ClusterWeight_name(
+                      cluster_weight),
+                  &fields);
+              AddUInt32ValueField(
+                  "          weight",
+                  envoy_api_v2_route_WeightedCluster_ClusterWeight_weight(
+                      cluster_weight),
+                  &fields);
+              fields.emplace_back("        }");
+            }
+            AddUInt32ValueField("        total_weight",
+                                envoy_api_v2_route_WeightedCluster_total_weight(
+                                    weighted_clusters),
+                                &fields);
+            fields.emplace_back("      }");
           }
           fields.emplace_back("    }");
         } else if (envoy_api_v2_route_Route_has_redirect(route)) {
@@ -774,14 +810,11 @@ void MaybeLogClusterLoadAssignment(
         fields.emplace_back("  }");
       }
       // load_balancing_weight
-      const google_protobuf_UInt32Value* lb_weight =
+      AddUInt32ValueField(
+          "  load_balancing_weight",
           envoy_api_v2_endpoint_LocalityLbEndpoints_load_balancing_weight(
-              locality_endpoint);
-      if (lb_weight != nullptr) {
-        fields.emplace_back(
-            absl::StrCat("  load_balancing_weight { value: ",
-                         google_protobuf_UInt32Value_value(lb_weight), " }"));
-      }
+              locality_endpoint),
+          &fields);
       // priority
       uint32_t priority =
           envoy_api_v2_endpoint_LocalityLbEndpoints_priority(locality_endpoint);
