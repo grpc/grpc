@@ -16,22 +16,14 @@ FROM php:7.3-zts-stretch
 
 RUN apt-get -qq update && apt-get -qq install -y \
   autoconf automake build-essential git libtool curl \
+  zlib1g-dev \
   python-all-dev \
   python3-all-dev \
   python-setuptools
 
 WORKDIR /tmp
 
-RUN git clone https://github.com/grpc/grpc
 RUN git clone https://github.com/krakjoe/pthreads
-
-RUN cd grpc && \
-  git submodule update --init --recursive && \
-  make && \
-  make install && \
-  cd third_party/protobuf && \
-  make install && \
-  ldconfig
 
 RUN cd pthreads && \
   phpize && \
@@ -47,4 +39,7 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
 
-WORKDIR /var/local/git/grpc
+RUN mkdir /var/local/jenkins
+
+# Define the default command.
+CMD ["bash"]

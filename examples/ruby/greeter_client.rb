@@ -29,8 +29,12 @@ def main
   user = ARGV.size > 0 ?  ARGV[0] : 'world'
   hostname = ARGV.size > 1 ?  ARGV[1] : 'localhost:50051'
   stub = Helloworld::Greeter::Stub.new(hostname, :this_channel_is_insecure)
-  message = stub.say_hello(Helloworld::HelloRequest.new(name: user)).message
-  p "Greeting: #{message}"
+  begin
+    message = stub.say_hello(Helloworld::HelloRequest.new(name: user)).message
+    p "Greeting: #{message}"
+  rescue GRPC::BadStatus => e
+    abort "ERROR: #{e.message}"
+  end
 end
 
 main
