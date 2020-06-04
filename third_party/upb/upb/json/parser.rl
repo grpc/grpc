@@ -642,7 +642,9 @@ static bool accumulate_append(upb_json_parser *p, const char *buf, size_t len,
   }
 
   if (p->accumulated != p->accumulate_buf) {
-    memcpy(p->accumulate_buf, p->accumulated, p->accumulated_len);
+    if (p->accumulated_len) {
+      memcpy(p->accumulate_buf, p->accumulated, p->accumulated_len);
+    }
     p->accumulated = p->accumulate_buf;
   }
 
@@ -973,6 +975,7 @@ static bool parse_number_from_buffer(upb_json_parser *p, const char *buf,
         upb_sink_putint32(p->top->sink, parser_getsel(p), (int32_t)val);
         return true;
       }
+      UPB_UNREACHABLE();
     }
     case UPB_TYPE_UINT32: {
       unsigned long val = strtoul(buf, &end, 0);
@@ -984,6 +987,7 @@ static bool parse_number_from_buffer(upb_json_parser *p, const char *buf,
         upb_sink_putuint32(p->top->sink, parser_getsel(p), (uint32_t)val);
         return true;
       }
+      UPB_UNREACHABLE();
     }
     /* XXX: We can't handle [u]int64 properly on 32-bit machines because
      * strto[u]ll isn't in C89. */
@@ -995,6 +999,7 @@ static bool parse_number_from_buffer(upb_json_parser *p, const char *buf,
         upb_sink_putint64(p->top->sink, parser_getsel(p), val);
         return true;
       }
+      UPB_UNREACHABLE();
     }
     case UPB_TYPE_UINT64: {
       unsigned long val = strtoul(p->accumulated, &end, 0);
@@ -1006,6 +1011,7 @@ static bool parse_number_from_buffer(upb_json_parser *p, const char *buf,
         upb_sink_putuint64(p->top->sink, parser_getsel(p), val);
         return true;
       }
+      UPB_UNREACHABLE();
     }
     default:
       break;
