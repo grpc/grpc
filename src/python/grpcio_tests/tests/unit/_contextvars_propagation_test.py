@@ -103,10 +103,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
     def test_propagation_to_auth_plugin(self):
         set_up_expected_context()
         with _server() as port:
-            # NOTE(rbellevi): We use a literal IPV6 address because 'localhost'
-            # is not recognized as a local address by the LocalCredentials
-            # implementation on Windows.
-            target = "[::1]:{}".format(port)
+            target = "localhost:{}".format(port)
             local_credentials = grpc.local_channel_credentials()
             test_call_credentials = TestCallCredentials()
             call_credentials = grpc.metadata_call_credentials(
