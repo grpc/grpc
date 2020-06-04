@@ -478,57 +478,77 @@ def test_round_robin(gcp, backend_service, instance_group):
 
 
 def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
-        gcp, backend_service, primary_instance_group,
-        secondary_zone_instance_group):
+        gcp, backend_service, primary_instance_group, secondary_instance_group):
     logger.info(
         'Running test_secondary_locality_gets_no_requests_on_partial_primary_failure'
     )
     try:
         patch_backend_instances(
             gcp, backend_service,
-            [primary_instance_group, secondary_zone_instance_group])
+            [primary_instance_group, secondary_instance_group])
         wait_for_healthy_backends(gcp, backend_service, primary_instance_group)
         wait_for_healthy_backends(gcp, backend_service,
-                                  secondary_zone_instance_group)
-        primary_instance_names = get_instance_names(gcp, instance_group)
-        secondary_instance_names = get_instance_names(
-            gcp, secondary_zone_instance_group)
+                                  secondary_instance_group)
+        # Ensure the backend patch has propagated before verifying which IG is
+        # primary. An unconditional wait is necessary since, prior to the patch,
+        # traffic can only go to primary_instance_group regardless of TD's
+        # assignment post-patch.
+        time.sleep(_WAIT_FOR_VALID_CONFIG_SEC)
+        if not is_primary_instance_group(gcp, primary_instance_group):
+            # Swap expectation of primary and secondary instance groups.
+            (primary_instance_group,
+             secondary_instance_group) = (secondary_instance_group,
+                                          primary_instance_group)
+        primary_instance_names = get_instance_names(gcp, primary_instance_group)
         wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
                                                  _WAIT_FOR_STATS_SEC)
         original_size = len(primary_instance_names)
-        resize_instance_group(gcp, primary_instance_group, original_size - 1)
-        remaining_instance_names = get_instance_names(gcp,
-                                                      primary_instance_group)
-        wait_until_all_rpcs_go_to_given_backends(remaining_instance_names,
-                                                 _WAIT_FOR_BACKEND_SEC)
+        try:
+            resize_instance_group(gcp, primary_instance_group,
+                                  original_size - 1)
+            remaining_instance_names = get_instance_names(
+                gcp, primary_instance_group)
+            wait_until_all_rpcs_go_to_given_backends(remaining_instance_names,
+                                                     _WAIT_FOR_BACKEND_SEC)
+        finally:
+            resize_instance_group(gcp, primary_instance_group, original_size)
     finally:
         patch_backend_instances(gcp, backend_service, [primary_instance_group])
-        resize_instance_group(gcp, primary_instance_group, original_size)
 
 
 def test_secondary_locality_gets_requests_on_primary_failure(
-        gcp, backend_service, primary_instance_group,
-        secondary_zone_instance_group):
+        gcp, backend_service, primary_instance_group, secondary_instance_group):
     logger.info(
         'Running test_secondary_locality_gets_requests_on_primary_failure')
     try:
         patch_backend_instances(
             gcp, backend_service,
-            [primary_instance_group, secondary_zone_instance_group])
+            [primary_instance_group, secondary_instance_group])
         wait_for_healthy_backends(gcp, backend_service, primary_instance_group)
         wait_for_healthy_backends(gcp, backend_service,
-                                  secondary_zone_instance_group)
+                                  secondary_instance_group)
+        # Ensure the backend patch has propagated before verifying which IG is
+        # primary. An unconditional wait is necessary since, prior to the patch,
+        # traffic can only go to primary_instance_group regardless of TD's
+        # assignment post-patch.
+        time.sleep(_WAIT_FOR_VALID_CONFIG_SEC)
+        if not is_primary_instance_group(gcp, primary_instance_group):
+            # Swap expectation of primary and secondary instance groups.
+            (primary_instance_group,
+             secondary_instance_group) = (secondary_instance_group,
+                                          primary_instance_group)
         primary_instance_names = get_instance_names(gcp, instance_group)
-        secondary_instance_names = get_instance_names(
-            gcp, secondary_zone_instance_group)
+        secondary_instance_names = get_instance_names(gcp,
+                                                      secondary_instance_group)
         wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
                                                  _WAIT_FOR_BACKEND_SEC)
         original_size = len(primary_instance_names)
-        resize_instance_group(gcp, primary_instance_group, 0)
-        wait_until_all_rpcs_go_to_given_backends(secondary_instance_names,
-                                                 _WAIT_FOR_BACKEND_SEC)
-
-        resize_instance_group(gcp, primary_instance_group, original_size)
+        try:
+            resize_instance_group(gcp, primary_instance_group, 0)
+            wait_until_all_rpcs_go_to_given_backends(secondary_instance_names,
+                                                     _WAIT_FOR_BACKEND_SEC)
+        finally:
+            resize_instance_group(gcp, primary_instance_group, original_size)
         new_instance_names = get_instance_names(gcp, primary_instance_group)
         wait_for_healthy_backends(gcp, backend_service, primary_instance_group)
         wait_until_all_rpcs_go_to_given_backends(new_instance_names,
@@ -636,6 +656,15 @@ def test_traffic_splitting(gcp, original_backend_service, instance_group,
         set_validate_for_proxyless(gcp, True)
 
 
+def is_primary_instance_group(gcp, instance_group):
+    # Clients may connect to a TD instance in a different region than the
+    # client, in which case primary/secondary assignments may not be based on
+    # the client's actual locality.
+    instance_names = get_instance_names(gcp, instance_group)
+    stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
+    return all(peer in instance_names for peer in stats.rpcs_by_peer.keys())
+
+
 def get_startup_script(path_to_server_binary, service_port):
     if path_to_server_binary:
         return "nohup %s --port=%d 1>/dev/null &" % (path_to_server_binary,
@@ -720,7 +749,7 @@ def add_instance_group(gcp, zone, name, size):
                                    zone)
     gcp.instance_groups.append(instance_group)
     wait_for_instance_group_to_reach_expected_size(gcp, instance_group, size,
-                                                   _WAIT_FOR_OPERATION_SEC)
+                                                   _WAIT_FOR_BACKEND_SEC)
     return instance_group
 
 
