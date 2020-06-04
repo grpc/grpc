@@ -23,7 +23,7 @@ import yaml
 out = {}
 
 out['libs'] = [
-      {
+    {
         'name': 'google_api_upb',
         'build': 'all',
         'language': 'c',
@@ -52,12 +52,9 @@ out['libs'] = [
             "src/core/ext/upb-generated/google/rpc/status.upb.h",
         ],
         'secure': False,
-        'deps': [
-            'upb',
-        ],
+        'deps': ['upb',],
     },
-
-      {
+    {
         'name': 'proto_gen_validate_upb',
         'build': 'all',
         'language': 'c',
@@ -75,8 +72,7 @@ out['libs'] = [
             'upb',
         ],
     },
-
-      {
+    {
         'name': 'envoy_annotations_upb',
         'build': 'all',
         'language': 'c',
@@ -94,20 +90,19 @@ out['libs'] = [
             'upb',
         ],
     },
-
-      {
+    {
         'name': 'udpa_annotations_upb',
         'build': 'all',
         'language': 'c',
         'src': [
-        "src/core/ext/upb-generated/udpa/annotations/migrate.upb.c",
-        "src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c",
-        "src/core/ext/upb-generated/udpa/annotations/status.upb.c",
+            "src/core/ext/upb-generated/udpa/annotations/migrate.upb.c",
+            "src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c",
+            "src/core/ext/upb-generated/udpa/annotations/status.upb.c",
         ],
         'headers': [
-        "src/core/ext/upb-generated/udpa/annotations/migrate.upb.h",
-        "src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h",
-        "src/core/ext/upb-generated/udpa/annotations/status.upb.h",
+            "src/core/ext/upb-generated/udpa/annotations/migrate.upb.h",
+            "src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h",
+            "src/core/ext/upb-generated/udpa/annotations/status.upb.h",
         ],
         'secure': False,
         'deps': [
@@ -115,33 +110,35 @@ out['libs'] = [
             'upb',
         ],
     },
-
-      {
-        'name': 'envoy_type_upb',
-        'build': 'all',
-        'language': 'c',
+    {
+        'name':
+            'envoy_type_upb',
+        'build':
+            'all',
+        'language':
+            'c',
         'src': [
-         "src/core/ext/upb-generated/envoy/type/http.upb.c",
-        "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c",
-        "src/core/ext/upb-generated/envoy/type/matcher/string.upb.c",
-        "src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c",
-        "src/core/ext/upb-generated/envoy/type/percent.upb.c",
-        "src/core/ext/upb-generated/envoy/type/range.upb.c",
-        "src/core/ext/upb-generated/envoy/type/semantic_version.upb.c",
-        "src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c",
-
+            "src/core/ext/upb-generated/envoy/type/http.upb.c",
+            "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c",
+            "src/core/ext/upb-generated/envoy/type/matcher/string.upb.c",
+            "src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c",
+            "src/core/ext/upb-generated/envoy/type/percent.upb.c",
+            "src/core/ext/upb-generated/envoy/type/range.upb.c",
+            "src/core/ext/upb-generated/envoy/type/semantic_version.upb.c",
+            "src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c",
         ],
         'headers': [
-         "src/core/ext/upb-generated/envoy/type/http.upb.h",
-        "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h",
-        "src/core/ext/upb-generated/envoy/type/matcher/string.upb.h",
-        "src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.h",
-        "src/core/ext/upb-generated/envoy/type/percent.upb.h",
-        "src/core/ext/upb-generated/envoy/type/range.upb.h",
-        "src/core/ext/upb-generated/envoy/type/semantic_version.upb.h",
-        "src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.h",
+            "src/core/ext/upb-generated/envoy/type/http.upb.h",
+            "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h",
+            "src/core/ext/upb-generated/envoy/type/matcher/string.upb.h",
+            "src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.h",
+            "src/core/ext/upb-generated/envoy/type/percent.upb.h",
+            "src/core/ext/upb-generated/envoy/type/range.upb.h",
+            "src/core/ext/upb-generated/envoy/type/semantic_version.upb.h",
+            "src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.h",
         ],
-        'secure': False,
+        'secure':
+            False,
         'deps': [
             'envoy_annotations_upb',
             'google_api_upb',
@@ -150,11 +147,13 @@ out['libs'] = [
             'upb',
         ],
     },
-
-      {
-        'name': 'envoy_core_upb',
-        'build': 'all',
-        'language': 'c',
+    {
+        'name':
+            'envoy_core_upb',
+        'build':
+            'all',
+        'language':
+            'c',
         'src': [
             "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c",
             "src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c",
@@ -179,7 +178,8 @@ out['libs'] = [
             "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h",
             "src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.h",
         ],
-        'secure': False,
+        'secure':
+            False,
         'deps': [
             'envoy_annotations_upb',
             'envoy_type_upb',
@@ -189,11 +189,13 @@ out['libs'] = [
             'upb',
         ],
     },
-
-      {
-        'name': 'xds_ads_upb_proto',
-        'build': 'all',
-        'language': 'c',
+    {
+        'name':
+            'xds_ads_upb_proto',
+        'build':
+            'all',
+        'language':
+            'c',
         'src': [
             "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c",
             "src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c",
@@ -262,7 +264,8 @@ out['libs'] = [
             "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
             "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
         ],
-        'secure': False,
+        'secure':
+            False,
         'deps': [
             'envoy_annotations_upb',
             'envoy_core_upb',
@@ -273,9 +276,7 @@ out['libs'] = [
             'upb',
         ],
     },
-
-
-      {
+    {
         'name': 'xds_hcm_upb_proto',
         'build': 'all',
         'language': 'c',
@@ -285,8 +286,7 @@ out['libs'] = [
             'upb',
         ],
     },
-
-      {
+    {
         'name': 'xds_lrs_upb_proto',
         'build': 'all',
         'language': 'c',
@@ -296,9 +296,7 @@ out['libs'] = [
             'upb',
         ],
     },
-
-
-      {
+    {
         'name': 'udpa_orca_upb',
         'build': 'all',
         'language': 'c',
@@ -314,24 +312,20 @@ out['libs'] = [
             'upb',
         ],
     },
-
-      {
+    {
         'name': 'grpc_health_upb_proto',
         'build': 'all',
         'language': 'c',
         'src': [
-        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c",
+            "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c",
         ],
         'headers': [
-        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h",
+            "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h",
         ],
         'secure': False,
-        'deps': [
-            'upb',
-        ],
+        'deps': ['upb',],
     },
-
-      {
+    {
         'name': 'grpc_lb_upb_proto',
         'build': 'all',
         'language': 'c',
@@ -347,30 +341,23 @@ out['libs'] = [
             'upb',
         ],
     },
-
-      {
+    {
         'name': 'alts_upb_proto',
         'build': 'all',
         'language': 'c',
         'src': [
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c",
-
+            "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c",
+            "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c",
+            "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c",
         ],
         'headers': [
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h",
+            "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h",
+            "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h",
+            "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h",
         ],
         'secure': False,
-        'deps': [
-            'upb',
-        ],
+        'deps': ['upb',],
     },
-
-
-
 ]
 
 print(yaml.dump(out))

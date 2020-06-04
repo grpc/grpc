@@ -65,6 +65,8 @@ _GRPC_DEP_NAMES = [
     'build_bazel_rules_apple',
     'build_bazel_apple_support',
     'libuv',
+    'udpa',
+    'com_google_googleapis',
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -82,6 +84,8 @@ _GRPC_BAZEL_ONLY_DEPS = [
     'io_bazel_rules_go',
     'build_bazel_rules_apple',
     'build_bazel_apple_support',
+    'udpa',
+    'com_google_googleapis',
 ]
 
 
@@ -147,8 +151,9 @@ build_rules = {
 }
 exec(bazel_file) in build_rules
 for name in _GRPC_DEP_NAMES:
-    assert name in names_and_urls.keys()
-assert len(_GRPC_DEP_NAMES) == len(names_and_urls.keys())
+    assert name in names_and_urls.keys(), name
+for name in names_and_urls.iterkeys():
+    assert name in _GRPC_DEP_NAMES, name
 
 # There are some "bazel-only" deps that are exceptions to this sanity check,
 # we don't require that there is a corresponding git module for these.

@@ -1309,9 +1309,9 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "xds_upb",
         "grpc_base",
         "grpc_client_channel",
+        "xds_upb",
     ],
 )
 
@@ -1334,10 +1334,10 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "xds_upb",
         "grpc_base",
         "grpc_client_channel",
         "grpc_secure",
+        "xds_upb",
     ],
 )
 
@@ -2454,17 +2454,17 @@ grpc_upb_proto_library(
 )
 
 grpc_cc_library(
-   name = "xds_upb",
-   external_deps = [
-       "upb_lib",
-   ],
-   language = "c++",
-   tags = ["no_windows"],
-   deps = [
-       ":xds_ads_upb_proto",
-       ":xds_hcm_upb_proto",
-       ":xds_lrs_upb_proto",
-   ],
+    name = "xds_upb",
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+    tags = ["no_windows"],
+    deps = [
+        ":xds_ads_upb_proto",
+        ":xds_hcm_upb_proto",
+        ":xds_lrs_upb_proto",
+    ],
 )
 
 grpc_upb_proto_library(
