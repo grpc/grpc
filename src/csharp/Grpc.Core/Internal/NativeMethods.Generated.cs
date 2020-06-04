@@ -43,7 +43,6 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_batch_context_recv_message_next_slice_peek_delegate grpcsharp_batch_context_recv_message_next_slice_peek;
         public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_status_delegate grpcsharp_batch_context_recv_status_on_client_status;
         public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_details_delegate grpcsharp_batch_context_recv_status_on_client_details;
-        public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_error_string_delegate grpcsharp_batch_context_recv_status_on_client_error_string;
         public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
         public readonly Delegates.grpcsharp_batch_context_recv_close_on_server_cancelled_delegate grpcsharp_batch_context_recv_close_on_server_cancelled;
         public readonly Delegates.grpcsharp_batch_context_reset_delegate grpcsharp_batch_context_reset;
@@ -152,7 +151,6 @@ namespace Grpc.Core.Internal
             this.grpcsharp_batch_context_recv_message_next_slice_peek = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_message_next_slice_peek_delegate>(library);
             this.grpcsharp_batch_context_recv_status_on_client_status = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_status_delegate>(library);
             this.grpcsharp_batch_context_recv_status_on_client_details = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_details_delegate>(library);
-            this.grpcsharp_batch_context_recv_status_on_client_error_string = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_error_string_delegate>(library);
             this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate>(library);
             this.grpcsharp_batch_context_recv_close_on_server_cancelled = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_close_on_server_cancelled_delegate>(library);
             this.grpcsharp_batch_context_reset = GetMethodDelegate<Delegates.grpcsharp_batch_context_reset_delegate>(library);
@@ -260,7 +258,6 @@ namespace Grpc.Core.Internal
             this.grpcsharp_batch_context_recv_message_next_slice_peek = DllImportsFromStaticLib.grpcsharp_batch_context_recv_message_next_slice_peek;
             this.grpcsharp_batch_context_recv_status_on_client_status = DllImportsFromStaticLib.grpcsharp_batch_context_recv_status_on_client_status;
             this.grpcsharp_batch_context_recv_status_on_client_details = DllImportsFromStaticLib.grpcsharp_batch_context_recv_status_on_client_details;
-            this.grpcsharp_batch_context_recv_status_on_client_error_string = DllImportsFromStaticLib.grpcsharp_batch_context_recv_status_on_client_error_string;
             this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = DllImportsFromStaticLib.grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
             this.grpcsharp_batch_context_recv_close_on_server_cancelled = DllImportsFromStaticLib.grpcsharp_batch_context_recv_close_on_server_cancelled;
             this.grpcsharp_batch_context_reset = DllImportsFromStaticLib.grpcsharp_batch_context_reset;
@@ -368,7 +365,6 @@ namespace Grpc.Core.Internal
             this.grpcsharp_batch_context_recv_message_next_slice_peek = DllImportsFromSharedLib.grpcsharp_batch_context_recv_message_next_slice_peek;
             this.grpcsharp_batch_context_recv_status_on_client_status = DllImportsFromSharedLib.grpcsharp_batch_context_recv_status_on_client_status;
             this.grpcsharp_batch_context_recv_status_on_client_details = DllImportsFromSharedLib.grpcsharp_batch_context_recv_status_on_client_details;
-            this.grpcsharp_batch_context_recv_status_on_client_error_string = DllImportsFromSharedLib.grpcsharp_batch_context_recv_status_on_client_error_string;
             this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = DllImportsFromSharedLib.grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
             this.grpcsharp_batch_context_recv_close_on_server_cancelled = DllImportsFromSharedLib.grpcsharp_batch_context_recv_close_on_server_cancelled;
             this.grpcsharp_batch_context_reset = DllImportsFromSharedLib.grpcsharp_batch_context_reset;
@@ -479,7 +475,6 @@ namespace Grpc.Core.Internal
             public delegate int grpcsharp_batch_context_recv_message_next_slice_peek_delegate(BatchContextSafeHandle ctx, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
             public delegate StatusCode grpcsharp_batch_context_recv_status_on_client_status_delegate(BatchContextSafeHandle ctx);
             public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_details_delegate(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
-            public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_error_string_delegate(BatchContextSafeHandle ctx);
             public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate(BatchContextSafeHandle ctx);
             public delegate int grpcsharp_batch_context_recv_close_on_server_cancelled_delegate(BatchContextSafeHandle ctx);
             public delegate void grpcsharp_batch_context_reset_delegate(BatchContextSafeHandle ctx);
@@ -609,9 +604,6 @@ namespace Grpc.Core.Internal
             
             [DllImport(ImportName)]
             public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
-            
-            [DllImport(ImportName)]
-            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_error_string(BatchContextSafeHandle ctx);
             
             [DllImport(ImportName)]
             public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx);
@@ -929,9 +921,6 @@ namespace Grpc.Core.Internal
             
             [DllImport(ImportName)]
             public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
-            
-            [DllImport(ImportName)]
-            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_error_string(BatchContextSafeHandle ctx);
             
             [DllImport(ImportName)]
             public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx);
