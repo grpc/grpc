@@ -15,6 +15,7 @@
 
 import contextlib
 import logging
+import os
 import sys
 import unittest
 
@@ -98,6 +99,8 @@ else:
             pass
 
 
+# TODO(https://github.com/grpc/grpc/issues/22257)
+@unittest.skipIf(os.name == "nt", "LocalCredentials not supported on Windows.")
 class ContextVarsPropagationTest(unittest.TestCase):
 
     def test_propagation_to_auth_plugin(self):

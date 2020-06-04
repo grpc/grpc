@@ -227,10 +227,7 @@ class TestGevent(setuptools.Command):
     )
     BANNED_WINDOWS_TESTS = (
         # TODO(https://github.com/grpc/grpc/pull/15411) enable this test
-        'unit._dns_resolver_test.DNSResolverTest.test_connect_loopback',
-        # TODO(https://github.com/grpc/grpc/issues/22257)
-        'unit._contextvars_propagation_test.ContextVarsPropagationTest',
-    )
+        'unit._dns_resolver_test.DNSResolverTest.test_connect_loopback',)
     description = 'run tests with gevent.  Assumes grpc/gevent are installed'
     user_options = []
 
