@@ -411,6 +411,8 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/service_config.h
+  - src/core/ext/filters/client_channel/service_config_call_data.h
+  - src/core/ext/filters/client_channel/service_config_parser.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
@@ -791,6 +793,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config.cc
+  - src/core/ext/filters/client_channel/service_config_parser.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_channel/xds/xds_api.cc
@@ -1331,6 +1334,8 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/service_config.h
+  - src/core/ext/filters/client_channel/service_config_call_data.h
+  - src/core/ext/filters/client_channel/service_config_parser.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
@@ -1647,6 +1652,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config.cc
+  - src/core/ext/filters/client_channel/service_config_parser.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_channel/xds/xds_api.cc
@@ -3170,6 +3176,7 @@ targets:
   uses_polling: false
 - name: concurrent_connectivity_test
   build: test
+  run: false
   language: c
   headers: []
   src:
@@ -5342,6 +5349,7 @@ targets:
 - name: cancel_ares_query_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h

@@ -48,9 +48,13 @@ DEFINE_string(
     "If not empty, load this PEM formatted private key. Requires use of "
     "--ssl_client_cert");
 DEFINE_string(
+    local_connect_type, "local_tcp",
+    "The type of local connections for which local channel credentials will "
+    "be applied. Should be local_tcp or uds.");
+DEFINE_string(
     channel_creds_type, "",
-    "The channel creds type: insecure, ssl, gdc (Google Default Credentials) "
-    "or alts.");
+    "The channel creds type: insecure, ssl, gdc (Google Default Credentials), "
+    "alts, or local.");
 DEFINE_string(
     call_creds, "",
     "Call credentials to use: none (default), or access_token=<token>. If "
@@ -138,10 +142,20 @@ CliCredentials::GetChannelCredentials() const {
   } else if (FLAGS_channel_creds_type.compare("alts") == 0) {
     return grpc::experimental::AltsCredentials(
         grpc::experimental::AltsCredentialsOptions());
+  } else if (FLAGS_channel_creds_type.compare("local") == 0) {
+    if (FLAGS_local_connect_type.compare("local_tcp") == 0) {
+      return grpc::experimental::LocalCredentials(LOCAL_TCP);
+    } else if (FLAGS_local_connect_type.compare("uds") == 0) {
+      return grpc::experimental::LocalCredentials(UDS);
+    } else {
+      fprintf(stderr,
+              "--local_connect_type=%s invalid; must be local_tcp or uds.\n",
+              FLAGS_local_connect_type.c_str());
+    }
   }
   fprintf(stderr,
-          "--channel_creds_type=%s invalid; must be insecure, ssl, gdc or "
-          "alts.\n",
+          "--channel_creds_type=%s invalid; must be insecure, ssl, gdc, "
+          "alts, or local.\n",
           FLAGS_channel_creds_type.c_str());
   return std::shared_ptr<grpc::ChannelCredentials>();
 }
@@ -203,7 +217,8 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
 }
 
 const grpc::string CliCredentials::GetCredentialUsage() const {
-  return "    --enable_ssl             ; Set whether to use ssl (deprecated)\n"
+  return "    --enable_ssl             ; Set whether to use ssl "
+         "(deprecated)\n"
          "    --use_auth               ; Set whether to create default google"
          " credentials\n"
          "                             ; (deprecated)\n"
@@ -213,7 +228,9 @@ const grpc::string CliCredentials::GetCredentialUsage() const {
          "    --ssl_target             ; Set server host for ssl validation\n"
          "    --ssl_client_cert        ; Client cert for ssl\n"
          "    --ssl_client_key         ; Client private key for ssl\n"
-         "    --channel_creds_type     ; Set to insecure, ssl, gdc, or alts\n"
+         "    --local_connect_type     ; Set to local_tcp or uds\n"
+         "    --channel_creds_type     ; Set to insecure, ssl, gdc, alts, or "
+         "local\n"
          "    --call_creds             ; Set to none, or"
          " access_token=<token>\n";
 }

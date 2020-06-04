@@ -57,7 +57,7 @@ export GRPC_XDS_BOOTSTRAP=/etc/xds-bootstrap.json
 Finally, run your client:
 
 ```
-python client.py xds-experimental:///my-backend
+python client.py xds:///my-backend
 ```
 
 Alternatively, `grpcurl` can be used to test your server. If you don't have it,

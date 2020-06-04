@@ -16,7 +16,7 @@
     <PackageReference Include="Grpc" Version="__GRPC_NUGET_VERSION__" />
     <PackageReference Include="Grpc.Auth" Version="__GRPC_NUGET_VERSION__" />
     <PackageReference Include="Grpc.Tools" Version="__GRPC_NUGET_VERSION__" />
-    <PackageReference Include="Google.Protobuf" Version="3.11.2" />
+    <PackageReference Include="Google.Protobuf" Version="3.12.2" />
   </ItemGroup>
   
   <ItemGroup>

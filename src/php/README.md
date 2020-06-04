@@ -365,4 +365,30 @@ $client = new Helloworld\GreeterClient('localhost:50051', [
 ]);
 ```
 
+### Compression 
+
+You can customize the compression behavior on the client side, by specifying the following options when constructing your PHP client.
+
+``` 
+Possible values for grpc.default_compression_algorithm:
+0 - No compression
+1 - Compress with DEFLATE algorithm
+2 - Compress with GZIP algorithm
+3 - Stream compression with GZIP algorithm
+```
+```
+Possible values for grpc.default_compression_level:
+0 - None
+1 - Low level
+2 - Medium level
+3 - High level
+```
+Here's an example on how you can put them all together:
+```
+$client = new Helloworld\GreeterClient('localhost:50051', [
+        'credentials' => Grpc\ChannelCredentials::createInsecure(),
+        'grpc.default_compression_algorithm' => 2,  
+        'grpc.default_compression_level' => 2,
+]);
+
 [Node]:https://github.com/grpc/grpc/tree/master/src/node/examples

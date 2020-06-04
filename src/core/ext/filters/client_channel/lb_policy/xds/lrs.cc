@@ -254,9 +254,11 @@ void LrsLb::UpdateLocked(UpdateArgs args) {
         config_->eds_service_name(), config_->locality_name());
     MaybeUpdatePickerLocked();
   }
+  // Remove XdsClient from channel args, so that its presence doesn't
+  // prevent us from sharing subchannels between channels.
+  grpc_channel_args* new_args = XdsClient::RemoveFromChannelArgs(*args.args);
   // Update child policy.
-  UpdateChildPolicyLocked(std::move(args.addresses), args.args);
-  args.args = nullptr;  // Ownership passed to UpdateChildPolicyLocked().
+  UpdateChildPolicyLocked(std::move(args.addresses), new_args);
 }
 
 void LrsLb::MaybeUpdatePickerLocked() {

@@ -52,6 +52,7 @@ _TEST_CASES = [
     'round_robin',
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure',
+    'traffic_splitting',
 ]
 
 
@@ -103,7 +104,7 @@ argp.add_argument('--zone', default='us-central1-a')
 argp.add_argument('--secondary_zone',
                   default='us-west1-b',
                   help='Zone to use for secondary TD locality tests')
-argp.add_argument('--qps', default=10, type=int, help='Client QPS')
+argp.add_argument('--qps', default=100, type=int, help='Client QPS')
 argp.add_argument(
     '--wait_for_backend_sec',
     default=1200,
@@ -291,7 +292,7 @@ def _verify_rpcs_to_given_backends(backends, timeout_sec, num_rpcs,
 
 def wait_until_all_rpcs_go_to_given_backends_or_fail(backends,
                                                      timeout_sec,
-                                                     num_rpcs=100):
+                                                     num_rpcs=_NUM_TEST_RPCS):
     _verify_rpcs_to_given_backends(backends,
                                    timeout_sec,
                                    num_rpcs,
@@ -300,11 +301,47 @@ def wait_until_all_rpcs_go_to_given_backends_or_fail(backends,
 
 def wait_until_all_rpcs_go_to_given_backends(backends,
                                              timeout_sec,
-                                             num_rpcs=100):
+                                             num_rpcs=_NUM_TEST_RPCS):
     _verify_rpcs_to_given_backends(backends,
                                    timeout_sec,
                                    num_rpcs,
                                    allow_failures=False)
+
+
+def compare_distributions(actual_distribution, expected_distribution,
+                          threshold):
+    """Compare if two distributions are similar.
+
+    Args:
+      actual_distribution: A list of floats, contains the actual distribution.
+      expected_distribution: A list of floats, contains the expected distribution.
+      threshold: Number within [0,100], the threshold percentage by which the
+        actual distribution can differ from the expected distribution.
+
+    Returns:
+      The similarity between the distributions as a boolean. Returns true if the
+      actual distribution lies within the threshold of the expected
+      distribution, false otherwise.
+    
+    Raises:
+      ValueError: if threshold is not with in [0,100].
+      Exception: containing detailed error messages.
+    """
+    if len(expected_distribution) != len(actual_distribution):
+        raise Exception(
+            'Error: expected and actual distributions have different size (%d vs %d)'
+            % (len(expected_distribution), len(actual_distribution)))
+    if threshold < 0 or threshold > 100:
+        raise ValueError('Value error: Threshold should be between 0 to 100')
+    threshold_fraction = threshold / 100.0
+    for expected, actual in zip(expected_distribution, actual_distribution):
+        if actual < (expected * (1 - threshold_fraction)):
+            raise Exception("actual(%f) < expected(%f-%d%%)" %
+                            (actual, expected, threshold))
+        if actual > (expected * (1 + threshold_fraction)):
+            raise Exception("actual(%f) > expected(%f+%d%%)" %
+                            (actual, expected, threshold))
+    return True
 
 
 def test_backends_restart(gcp, backend_service, instance_group):
@@ -500,6 +537,105 @@ def test_secondary_locality_gets_requests_on_primary_failure(
         patch_backend_instances(gcp, backend_service, [primary_instance_group])
 
 
+def test_traffic_splitting(gcp, original_backend_service, instance_group,
+                           alternate_backend_service, same_zone_instance_group):
+    # This test start with all traffic going to original_backend_service. Then
+    # it updates URL-map to set default action to traffic splitting between
+    # original and alternate. It waits for all backends in both services to
+    # receive traffic, then verifies that weights are expected.
+    logger.info('Running test_traffic_splitting')
+
+    # The config validation for proxyless doesn't allow setting
+    # default_route_action. To test traffic splitting, we need to set the
+    # route action to weighted clusters. Disable validate
+    # validate_for_proxyless for this test. This can be removed when
+    # validation accepts default_route_action.
+    logger.info('disabling validate_for_proxyless in target proxy')
+    set_validate_for_proxyless(gcp, False)
+
+    logger.info('waiting for original backends to become healthy')
+    wait_for_healthy_backends(gcp, original_backend_service, instance_group)
+
+    patch_backend_instances(gcp, alternate_backend_service,
+                            [same_zone_instance_group])
+    logger.info('waiting for alternate to become healthy')
+    wait_for_healthy_backends(gcp, alternate_backend_service,
+                              same_zone_instance_group)
+
+    original_backend_instances = get_instance_names(gcp, instance_group)
+    logger.info('original backends instances: %s', original_backend_instances)
+
+    alternate_backend_instances = get_instance_names(gcp,
+                                                     same_zone_instance_group)
+    logger.info('alternate backends instances: %s', alternate_backend_instances)
+
+    # Start with all traffic going to original_backend_service.
+    logger.info('waiting for traffic to all go to original backends')
+    wait_until_all_rpcs_go_to_given_backends(original_backend_instances,
+                                             _WAIT_FOR_STATS_SEC)
+
+    try:
+        # Patch urlmap, change route action to traffic splitting between
+        # original and alternate.
+        logger.info('patching url map with traffic splitting')
+        original_service_percentage, alternate_service_percentage = 20, 80
+        patch_url_map_backend_service(
+            gcp,
+            services_with_weights={
+                original_backend_service: original_service_percentage,
+                alternate_backend_service: alternate_service_percentage,
+            })
+        # Split percentage between instances: [20,80] -> [10,10,40,40].
+        expected_instance_percentage = [
+            original_service_percentage * 1.0 / len(original_backend_instances)
+        ] * len(original_backend_instances) + [
+            alternate_service_percentage * 1.0 /
+            len(alternate_backend_instances)
+        ] * len(alternate_backend_instances)
+
+        # Wait for traffic to go to both services.
+        logger.info(
+            'waiting for traffic to go to all backends (including alternate)')
+        wait_until_all_rpcs_go_to_given_backends(
+            original_backend_instances + alternate_backend_instances,
+            _WAIT_FOR_STATS_SEC)
+
+        # Verify that weights between two services are expected.
+        retry_count = 10
+        # Each attempt takes about 10 seconds, 10 retries is equivalent to 100
+        # seconds timeout.
+        for i in range(retry_count):
+            stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
+            got_instance_count = [
+                stats.rpcs_by_peer[i] for i in original_backend_instances
+            ] + [stats.rpcs_by_peer[i] for i in alternate_backend_instances]
+            total_count = sum(got_instance_count)
+            got_instance_percentage = [
+                x * 100.0 / total_count for x in got_instance_count
+            ]
+
+            try:
+                compare_distributions(got_instance_percentage,
+                                      expected_instance_percentage, 5)
+            except Exception as e:
+                logger.info('attempt %d', i)
+                logger.info('got percentage: %s', got_instance_percentage)
+                logger.info('expected percentage: %s',
+                            expected_instance_percentage)
+                logger.info(e)
+                if i == retry_count - 1:
+                    raise Exception(
+                        'RPC distribution (%s) differs from expected (%s)',
+                        got_instance_percentage, expected_instance_percentage)
+            else:
+                logger.info("success")
+                break
+    finally:
+        patch_url_map_backend_service(gcp, original_backend_service)
+        patch_backend_instances(gcp, alternate_backend_service, [])
+        set_validate_for_proxyless(gcp, True)
+
+
 def get_startup_script(path_to_server_binary, service_port):
     if path_to_server_binary:
         return "nohup %s --port=%d 1>/dev/null &" % (path_to_server_binary,
@@ -689,12 +825,27 @@ def patch_url_map_host_rule_with_port(gcp, name, backend_service, host_name):
     wait_for_global_operation(gcp, result['name'])
 
 
-def create_target_proxy(gcp, name):
+def set_validate_for_proxyless(gcp, validate_for_proxyless):
+    if not gcp.alpha_compute:
+        logger.debug(
+            'Not setting validateForProxy because alpha is not enabled')
+        return
+    # This function deletes global_forwarding_rule and target_proxy, then
+    # recreate target_proxy with validateForProxyless=False. This is necessary
+    # because patching target_grpc_proxy isn't supported.
+    delete_global_forwarding_rule(gcp)
+    delete_target_proxy(gcp)
+    create_target_proxy(gcp, gcp.target_proxy.name, validate_for_proxyless)
+    create_global_forwarding_rule(gcp, gcp.global_forwarding_rule.name,
+                                  [gcp.service_port])
+
+
+def create_target_proxy(gcp, name, validate_for_proxyless=True):
     if gcp.alpha_compute:
         config = {
             'name': name,
             'url_map': gcp.url_map.url,
-            'validate_for_proxyless': True,
+            'validate_for_proxyless': validate_for_proxyless,
         }
         logger.debug('Sending GCP request with body=%s', config)
         result = gcp.alpha_compute.targetGrpcProxies().insert(
@@ -943,13 +1094,30 @@ def resize_instance_group(gcp,
                                                    new_size, timeout_sec)
 
 
-def patch_url_map_backend_service(gcp, backend_service):
+def patch_url_map_backend_service(gcp,
+                                  backend_service=None,
+                                  services_with_weights=None):
+    '''change url_map's backend service
+
+    Only one of backend_service and service_with_weights can be not None.
+    '''
+    if backend_service and services_with_weights:
+        raise ValueError(
+            'both backend_service and service_with_weights are not None.')
+
+    default_service = backend_service.url if backend_service else None
+    default_route_action = {
+        'weightedBackendServices': [{
+            'backendService': service.url,
+            'weight': w,
+        } for service, w in services_with_weights.items()]
+    } if services_with_weights else None
+
     config = {
-        'defaultService':
-            backend_service.url,
         'pathMatchers': [{
             'name': _PATH_MATCHER_NAME,
-            'defaultService': backend_service.url,
+            'defaultService': default_service,
+            'defaultRouteAction': default_route_action,
         }]
     }
     logger.debug('Sending GCP request with body=%s', config)
@@ -1272,6 +1440,10 @@ try:
                     test_secondary_locality_gets_requests_on_primary_failure(
                         gcp, backend_service, instance_group,
                         secondary_zone_instance_group)
+                elif test_case == 'traffic_splitting':
+                    test_traffic_splitting(gcp, backend_service, instance_group,
+                                           alternate_backend_service,
+                                           same_zone_instance_group)
                 else:
                     logger.error('Unknown test case: %s', test_case)
                     sys.exit(1)
