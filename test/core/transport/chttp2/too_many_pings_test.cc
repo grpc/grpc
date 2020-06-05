@@ -122,7 +122,7 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
 }
 
 // Test that sending a lot of RPCs that are cancelled by the server doesn't
-// result in too many pings
+// result in too many pings due to the pings sent by BDP.
 TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   // create the server
@@ -133,7 +133,7 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
   GPR_ASSERT(
       grpc_server_add_insecure_http2_port(server, server_address.c_str()));
   grpc_server_start(server);
-  // create the channel
+  // create the channel (bdp pings are enabled by default)
   grpc_channel* channel = grpc_insecure_channel_create(
       server_address.c_str(), nullptr /* channel args */, nullptr);
   std::map<grpc_status_code, int> statuses_and_counts;
