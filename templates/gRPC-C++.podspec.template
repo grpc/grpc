@@ -145,7 +145,7 @@
     }
 
     s.libraries = 'c++'
-    s.compiler_flags = '-Wno-comma, -Wunreachable-code'
+    s.compiler_flags = '-Wno-comma -Wunreachable-code'
 
     s.default_subspecs = 'Interface', 'Implementation'
 
