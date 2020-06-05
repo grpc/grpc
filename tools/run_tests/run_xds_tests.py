@@ -537,7 +537,7 @@ def test_secondary_locality_gets_requests_on_primary_failure(
             (primary_instance_group,
              secondary_instance_group) = (secondary_instance_group,
                                           primary_instance_group)
-        primary_instance_names = get_instance_names(gcp, instance_group)
+        primary_instance_names = get_instance_names(gcp, primary_instance_group)
         secondary_instance_names = get_instance_names(gcp,
                                                       secondary_instance_group)
         wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
