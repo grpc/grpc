@@ -224,7 +224,7 @@ grpcsharp_batch_context_reset(grpcsharp_batch_context* ctx) {
   grpcsharp_metadata_array_destroy_metadata_only(
       &(ctx->recv_status_on_client.trailing_metadata));
   grpc_slice_unref(ctx->recv_status_on_client.status_details);
-  gpr_free(ctx->recv_status_on_client.error_string);
+  gpr_free((void*)ctx->recv_status_on_client.error_string);
   memset(ctx, 0, sizeof(grpcsharp_batch_context));
 }
 
