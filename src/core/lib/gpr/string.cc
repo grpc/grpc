@@ -50,12 +50,11 @@ char* gpr_strdup(const char* src) {
   return dst;
 }
 
-typedef struct {
+struct dump_out {
   size_t capacity;
   size_t length;
   char* data;
-} dump_out;
-
+};
 char* gpr_format_timespec(gpr_timespec tm) {
   char time_buffer[35];
   char ns_buffer[11];  // '.' + 9 digits of precision

@@ -29,10 +29,10 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-typedef struct {
+struct optional_filter {
   const grpc_channel_filter* filter;
   const char* control_channel_arg;
-} optional_filter;
+};
 
 static optional_filter compress_filter = {
     &grpc_message_compress_filter, GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION};

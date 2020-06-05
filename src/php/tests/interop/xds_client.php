@@ -98,25 +98,32 @@ class ClientThread extends Thread {
         // Autoloaded classes do not get inherited in threads.
         // Hence we need to do this.
         require_once($this->autoload_path_);
+        $TIMEOUT_US = 30 * 1e6; // 30 seconds
 
         $stub = new Grpc\Testing\TestServiceClient($this->server_address_, [
             'credentials' => Grpc\ChannelCredentials::createInsecure()
         ]);
         $request = new Grpc\Testing\SimpleRequest();
-        $target_next_start_us = hrtime(true) / 1000;
+        $target_next_start_us = hrtime(true) / 1000; # hrtime returns nanoseconds
         while (true) {
             $now_us = hrtime(true) / 1000;
             $sleep_us = $target_next_start_us - $now_us;
             if ($sleep_us < 0) {
-                echo "php xds: warning, rpc takes too long to finish. "
-                    . "If you consistently see this, the qps is too high.\n";
+                $target_next_start_us =
+                        $now_us + ($this->target_seconds_between_rpcs_ * 1e6);
+                echo sprintf(
+                    "php xds: warning, rpc takes too long to finish. "
+                    . "Deficit %.1fms."
+                    . "If you consistently see this, the qps is too high.\n",
+                    round(abs($sleep_us / 1000), 1));
             } else {
+                $target_next_start_us +=
+                        ($this->target_seconds_between_rpcs_ * 1e6);
                 usleep($sleep_us);
             }
-            $target_next_start_us
-                += ($this->target_seconds_between_rpcs_ * 1000000);
             list($response, $status)
-                = $stub->UnaryCall($request)->wait();
+                = $stub->UnaryCall($request, [],
+                                   ['timeout' => $TIMEOUT_US])->wait();
             if ($status->code == Grpc\STATUS_OK) {
                 $this->results[] = $response->getHostname();
             } else {

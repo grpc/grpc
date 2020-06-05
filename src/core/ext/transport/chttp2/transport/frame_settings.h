@@ -34,15 +34,14 @@ typedef enum {
   GRPC_CHTTP2_SPS_VAL3
 } grpc_chttp2_settings_parse_state;
 
-typedef struct {
+struct grpc_chttp2_settings_parser {
   grpc_chttp2_settings_parse_state state;
   uint32_t* target_settings;
   uint8_t is_ack;
   uint16_t id;
   uint32_t value;
   uint32_t incoming_settings[GRPC_CHTTP2_NUM_SETTINGS];
-} grpc_chttp2_settings_parser;
-
+};
 /* Create a settings frame by diffing old & new, and updating old to be new */
 grpc_slice grpc_chttp2_settings_create(uint32_t* old, const uint32_t* newval,
                                        uint32_t force_mask, size_t count);
