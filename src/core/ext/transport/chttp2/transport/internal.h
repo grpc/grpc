@@ -843,6 +843,12 @@ void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id);
     "too_many_pings" followed by immediately closing the connection. */
 void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t);
 
+/** Resets ping clock. Should be called when flushing window updates,
+ * initial/trailing metadata or data frames. For a server, it resets the number
+ * of ping strikes and the last_ping_recv_time. For a ping sender, it resets
+ * pings_before_data_required. */
+void grpc_chttp2_reset_ping_clock(grpc_chttp2_transport* t);
+
 /** add a ref to the stream and add it to the writable list;
     ref will be dropped in writing.c */
 void grpc_chttp2_mark_stream_writable(grpc_chttp2_transport* t,

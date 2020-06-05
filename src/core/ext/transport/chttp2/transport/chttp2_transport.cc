@@ -1105,7 +1105,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             : static_cast<grpc_millis>(current_keepalive_time_ms *
                                        KEEPALIVE_TIME_BACKOFF_MULTIPLIER);
   }
-
   /* lie: use transient failure from the transport to indicate goaway has been
    * received */
   connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, "got_goaway");
@@ -1794,6 +1793,15 @@ void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t) {
   }
 }
 
+void grpc_chttp2_reset_ping_clock(grpc_chttp2_transport* t) {
+  if (!t->is_client) {
+    t->ping_recv_state.last_ping_recv_time = GRPC_MILLIS_INF_PAST;
+    t->ping_recv_state.ping_strikes = 0;
+  }
+  t->ping_state.pings_before_data_required =
+      t->ping_policy.max_pings_without_data;
+}
+
 static void perform_transport_op_locked(void* stream_op,
                                         grpc_error* /*error_ignored*/) {
   grpc_transport_op* op = static_cast<grpc_transport_op*>(stream_op);
@@ -2390,6 +2398,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   grpc_slice_buffer_add(&t->qbuf, status_hdr);
   grpc_slice_buffer_add(&t->qbuf, message_pfx);
   grpc_slice_buffer_add(&t->qbuf, grpc_slice_ref_internal(slice));
+  grpc_chttp2_reset_ping_clock(t);
   grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
                                            &s->stats.outgoing);
 
