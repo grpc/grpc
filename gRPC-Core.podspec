@@ -180,7 +180,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
-    ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC, -Wunreachable-code'
+    ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wunreachable-code'
 
     ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/client_channel/backend_metric.cc',
