@@ -64,7 +64,7 @@ Pod::Spec.new do |s|
   }
 
   s.libraries = 'c++'
-  s.compiler_flags = '-Wno-comma'
+  s.compiler_flags = '-Wno-comma, -Wunreachable-code'
 
   s.default_subspecs = 'Interface', 'Implementation'
 
