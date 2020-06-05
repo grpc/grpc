@@ -56,8 +56,8 @@ namespace {
 
 void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
 
-// Perform a simple RPC and capture the value of the authority header
-// metadata sent to the server, as a string.
+// Perform a simple RPC where the server cancels the request with
+// grpc_call_cancel_with_status
 grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
                              grpc_completion_queue* cq) {
   grpc_call* c;
@@ -121,32 +121,12 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   return status;
 }
 
-// Perform a few ALTS handshakes sequentially (using the fake, in-process ALTS
-// handshake server).
-TEST(TooManyPings, TestLotsOfHeaderOnlyRpcsDoesntGiveTooManyPings) {
+// Test that sending a lot of RPCs that are cancelled by the server doesn't
+// result in too many pings
+TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   // create the server
-  grpc_server* server;
-  {
-    grpc_arg server_keepalive_args[] = {
-        {.type = GRPC_ARG_INTEGER,
-         .key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
-         .value = {.integer = 600000}},  // 10 minutes
-        {.type = GRPC_ARG_INTEGER,
-         .key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS),
-         .value = {.integer = 20000}},  // 20 seconds
-        {.type = GRPC_ARG_INTEGER,
-         .key = const_cast<char*>(
-             GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
-         .value = {.integer = 10000}},  // 10 seconds
-        {.type = GRPC_ARG_INTEGER,
-         .key = const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS),
-         .value = {.integer = 1}}};
-    grpc_channel_args server_keepalive_channel_args = {
-        .num_args = GPR_ARRAY_SIZE(server_keepalive_args),
-        .args = server_keepalive_args};
-    server = grpc_server_create(&server_keepalive_channel_args, nullptr);
-  }
+  grpc_server* server = grpc_server_create(nullptr, nullptr);
   std::string server_address =
       grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
   grpc_server_register_completion_queue(server, cq, nullptr);
