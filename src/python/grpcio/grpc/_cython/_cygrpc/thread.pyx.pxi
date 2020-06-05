@@ -43,7 +43,6 @@ def _run_with_context(target):
       A callable object with the same signature as `target` but with
         contextvars propagated.
     """
-    pass
 
 
 if _contextvars_supported():

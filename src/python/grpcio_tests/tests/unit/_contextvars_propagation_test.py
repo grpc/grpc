@@ -72,13 +72,10 @@ if contextvars_supported():
 
     class TestCallCredentials(grpc.AuthMetadataPlugin):
 
-        def __init__(self):
-            self._recorded_value = None
-            self._invoked = False
-
         def __call__(self, context, callback):
-            self._recorded_value = test_var.get()
-            self._invoked = True
+            if test_var.get() != _EXPECTED_VALUE:
+                raise AssertionError("{} != {}".format(test_var.get(),
+                                                       _EXPECTED_VALUE))
             callback((), None)
 
         def assert_called(self, test):
@@ -94,9 +91,6 @@ else:
 
         def __call__(self, context, callback):
             callback((), None)
-
-        def assert_called(self, test):
-            pass
 
 
 # TODO(https://github.com/grpc/grpc/issues/22257)
@@ -117,7 +111,6 @@ class ContextVarsPropagationTest(unittest.TestCase):
                 stub = channel.unary_unary(_UNARY_UNARY)
                 response = stub(_REQUEST, wait_for_ready=True)
                 self.assertEqual(_REQUEST, response)
-                test_call_credentials.assert_called(self)
 
 
 if __name__ == '__main__':
