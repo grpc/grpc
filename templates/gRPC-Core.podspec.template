@@ -197,7 +197,7 @@
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor
-      ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code'
+      ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
       ss.source_files = ${ruby_multiline_list(grpc_private_files, 22)}
       ss.private_header_files = ${ruby_multiline_list(grpc_private_headers, 30)}
