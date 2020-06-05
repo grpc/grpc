@@ -14800,6 +14800,7 @@ target_include_directories(too_many_pings_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
@@ -14823,6 +14824,7 @@ target_link_libraries(too_many_pings_test
   gpr
   address_sorting
   upb
+  re2
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
