@@ -291,6 +291,26 @@ class SimpleStubsTest(unittest.TestCase):
                 response = grpc.experimental.unary_unary(
                     _REQUEST, target, _UNARY_UNARY, options=_property_options)
 
+    def test_insecure_sugar(self):
+        with _server(None) as port:
+            target = f'localhost:{port}'
+            response = grpc.experimental.unary_unary(_REQUEST,
+                                                     target,
+                                                     _UNARY_UNARY,
+                                                     insecure=True)
+            self.assertEqual(_REQUEST, response)
+
+    def test_insecure_sugar_mutually_exclusive(self):
+        with _server(None) as port:
+            target = f'localhost:{port}'
+            with self.assertRaises(ValueError):
+                response = grpc.experimental.unary_unary(
+                    _REQUEST,
+                    target,
+                    _UNARY_UNARY,
+                    insecure=True,
+                    channel_credentials=grpc.local_channel_credentials())
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

@@ -627,6 +627,7 @@ bool PrivateGenerator::PrintServiceClass(
         out->Print("options=(),\n");
         out->Print("channel_credentials=None,\n");
         out->Print("call_credentials=None,\n");
+        out->Print("insecure=False,\n");
         out->Print("compression=None,\n");
         out->Print("wait_for_ready=None,\n");
         out->Print("timeout=None,\n");
