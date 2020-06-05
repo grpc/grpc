@@ -142,6 +142,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<XdsClient> GetFromChannelArgs(
       const grpc_channel_args& args);
+  static grpc_channel_args* RemoveFromChannelArgs(
+      const grpc_channel_args& args);
 
  private:
   // Contains a channel to the xds server and all the data related to the

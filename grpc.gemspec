@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.11'
+  s.add_dependency 'google-protobuf', '~> 3.12'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -198,6 +198,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/server_address.h )
   s.files += %w( src/core/ext/filters/client_channel/service_config.cc )
   s.files += %w( src/core/ext/filters/client_channel/service_config.h )
+  s.files += %w( src/core/ext/filters/client_channel/service_config_call_data.h )
+  s.files += %w( src/core/ext/filters/client_channel/service_config_parser.cc )
+  s.files += %w( src/core/ext/filters/client_channel/service_config_parser.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_interface.h )

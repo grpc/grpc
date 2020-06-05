@@ -48,7 +48,7 @@ touch "$TOOLS_DIR"/src/proto/grpc/testing/__init__.py
 
 python tools/run_tests/run_tests.py -l csharp -c opt --build_only
 
-GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
+GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_routing_lb,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
     --test_case=all \
     --project_id=grpc-testing \
@@ -56,4 +56,4 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,cds_lb,eds_lb,priority_l
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
     --gcp_suffix=$(date '+%s') \
     --verbose \
-    --client_cmd='dotnet exec src/csharp/Grpc.IntegrationTesting.XdsClient/bin/Release/netcoreapp2.1/Grpc.IntegrationTesting.XdsClient.dll -- --server=xds-experimental:///{server_uri} --stats_port={stats_port} --qps={qps}'
+    --client_cmd='dotnet exec src/csharp/Grpc.IntegrationTesting.XdsClient/bin/Release/netcoreapp2.1/Grpc.IntegrationTesting.XdsClient.dll -- --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps}'

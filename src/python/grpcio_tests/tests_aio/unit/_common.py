@@ -14,6 +14,7 @@
 
 import asyncio
 import grpc
+from typing import AsyncIterable
 from grpc.experimental import aio
 from grpc.experimental.aio._typing import MetadataType, MetadatumType
 
@@ -37,7 +38,7 @@ async def block_until_certain_state(channel: aio.Channel,
         state = channel.get_state()
 
 
-def inject_callbacks(call):
+def inject_callbacks(call: aio.Call):
     first_callback_ran = asyncio.Event()
 
     def first_callback(call):
@@ -64,3 +65,33 @@ def inject_callbacks(call):
             test_constants.SHORT_TIMEOUT)
 
     return validation()
+
+
+class CountingRequestIterator:
+
+    def __init__(self, request_iterator):
+        self.request_cnt = 0
+        self._request_iterator = request_iterator
+
+    async def _forward_requests(self):
+        async for request in self._request_iterator:
+            self.request_cnt += 1
+            yield request
+
+    def __aiter__(self):
+        return self._forward_requests()
+
+
+class CountingResponseIterator:
+
+    def __init__(self, response_iterator):
+        self.response_cnt = 0
+        self._response_iterator = response_iterator
+
+    async def _forward_responses(self):
+        async for response in self._response_iterator:
+            self.response_cnt += 1
+            yield response
+
+    def __aiter__(self):
+        return self._forward_responses()
