@@ -25,12 +25,11 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/transport/transport.h"
 
-typedef struct {
+struct grpc_chttp2_window_update_parser {
   uint8_t byte;
   uint8_t is_connection_update;
   uint32_t amount;
-} grpc_chttp2_window_update_parser;
-
+};
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_delta, grpc_transport_one_way_stats* stats);
 
