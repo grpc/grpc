@@ -1297,6 +1297,7 @@ thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 time_jump_test: $(BINDIR)/$(CONFIG)/time_jump_test
 timer_test: $(BINDIR)/$(CONFIG)/timer_test
 tls_security_connector_test: $(BINDIR)/$(CONFIG)/tls_security_connector_test
+too_many_pings_test: $(BINDIR)/$(CONFIG)/too_many_pings_test
 unknown_frame_bad_client_test: $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
 uri_fuzzer_test: $(BINDIR)/$(CONFIG)/uri_fuzzer_test
 window_overflow_bad_client_test: $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
@@ -1656,6 +1657,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/time_jump_test \
   $(BINDIR)/$(CONFIG)/timer_test \
   $(BINDIR)/$(CONFIG)/tls_security_connector_test \
+  $(BINDIR)/$(CONFIG)/too_many_pings_test \
   $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
   $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
   $(BINDIR)/$(CONFIG)/work_serializer_test \
@@ -1812,6 +1814,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/time_jump_test \
   $(BINDIR)/$(CONFIG)/timer_test \
   $(BINDIR)/$(CONFIG)/tls_security_connector_test \
+  $(BINDIR)/$(CONFIG)/too_many_pings_test \
   $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
   $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
   $(BINDIR)/$(CONFIG)/work_serializer_test \
@@ -2344,6 +2347,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/timer_test || ( echo test timer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tls_security_connector_test"
 	$(Q) $(BINDIR)/$(CONFIG)/tls_security_connector_test || ( echo test tls_security_connector_test failed ; exit 1 )
+	$(E) "[RUN]     Testing too_many_pings_test"
+	$(Q) $(BINDIR)/$(CONFIG)/too_many_pings_test || ( echo test too_many_pings_test failed ; exit 1 )
 	$(E) "[RUN]     Testing unknown_frame_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test || ( echo test unknown_frame_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing window_overflow_bad_client_test"
@@ -18528,6 +18533,52 @@ deps_tls_security_connector_test: $(TLS_SECURITY_CONNECTOR_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(TLS_SECURITY_CONNECTOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+TOO_MANY_PINGS_TEST_SRC = \
+    test/core/end2end/cq_verifier.cc \
+    test/core/transport/chttp2/too_many_pings_test.cc \
+
+TOO_MANY_PINGS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TOO_MANY_PINGS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/too_many_pings_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/too_many_pings_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/too_many_pings_test: $(PROTOBUF_DEP) $(TOO_MANY_PINGS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(TOO_MANY_PINGS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/too_many_pings_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/cq_verifier.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/chttp2/too_many_pings_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_too_many_pings_test: $(TOO_MANY_PINGS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TOO_MANY_PINGS_TEST_OBJS:.o=.dep)
 endif
 endif
 
