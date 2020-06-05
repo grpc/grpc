@@ -53,10 +53,13 @@ else:
 def _create_channel(target: str, options: Sequence[Tuple[str, str]],
                     channel_credentials: Optional[grpc.ChannelCredentials],
                     compression: Optional[grpc.Compression]) -> grpc.Channel:
-    # TODO(rbellevi): Revisit the default value for this.
     if channel_credentials is None:
-        raise NotImplementedError(
-            "channel_credentials must be supplied explicitly.")
+        _LOGGER.debug("Defaulting to SSL channel credentials.")
+        credentials = grpc.ssl_channel_credentials()
+        return grpc.secure_channel(target,
+                                   credentials=credentials,
+                                   options=options,
+                                   compression=compression)
     if channel_credentials._credentials is grpc.experimental._insecure_channel_credentials:
         _LOGGER.debug(f"Creating insecure channel with options '{options}' " +
                       f"and compression '{compression}'")
