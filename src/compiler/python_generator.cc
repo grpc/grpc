@@ -655,8 +655,8 @@ bool PrivateGenerator::PrintServiceClass(
           out->Print(serializer_dict, "$ResponseModuleAndClass$.FromString,\n");
           out->Print("options, channel_credentials,\n");
           out->Print(
-              "call_credentials, compression, wait_for_ready, timeout, "
-              "metadata)\n");
+              "insecure, call_credentials, compression, wait_for_ready, "
+              "timeout, metadata)\n");
         }
       }
     }
