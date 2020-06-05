@@ -203,18 +203,19 @@ typedef struct {
 /** Should BDP probing be performed? */
 #define GRPC_ARG_HTTP2_BDP_PROBE "grpc.http2.bdp_probe"
 /** Minimum time between sending successive ping frames without receiving any
-    data frame, Int valued, milliseconds. */
+    data/header/window_update frame, Int valued, milliseconds. */
 #define GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_time_between_pings_ms"
 /** Minimum allowed time between a server receiving successive ping frames
-   without sending any data frame. Int valued, milliseconds */
+   without sending any data/header/window_update frame. Int valued, milliseconds
+ */
 #define GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_ping_interval_without_data_ms"
 /** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
-/** How many pings can we send before needing to send a data frame or header
-    frame? (0 indicates that an infinite number of pings can be sent without
-    sending a data frame or header frame) */
+/** How many pings can we send before needing to send a
+   data/header/window_update frame? (0 indicates that an infinite number of
+   pings can be sent without sending a data frame or header frame) */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
 /** How many misbehaving pings the server can bear before sending goaway and
