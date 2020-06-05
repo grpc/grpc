@@ -556,6 +556,17 @@ class SimpleStubsPluginTest(unittest.TestCase):
             request, 'not a real context!')
         self.assertEqual(expected_response, response)
 
+    def testUnaryCallInsecureSugar(self):
+        request = request_pb2.SimpleRequest(response_size=13)
+        response = service_pb2_grpc.TestService.UnaryCall(
+            request,
+            self._target,
+            insecure=True,
+            wait_for_ready=True)
+        expected_response = self.servicer_methods.UnaryCall(
+            request, 'not a real context!')
+        self.assertEqual(expected_response, response)
+
     def testStreamingOutputCall(self):
         request = _streaming_output_request()
         expected_responses = self.servicer_methods.StreamingOutputCall(
