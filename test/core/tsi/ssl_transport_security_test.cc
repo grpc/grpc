@@ -251,7 +251,8 @@ static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
     const tsi_peer_property* prop = &peer->properties[i];
     if (strcmp(prop->name, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) ==
         0) {
-      if (memcmp(prop->value.data, name, prop->value.length) == 0) {
+      if (strlen(name) == prop->value.length &&
+          memcmp(prop->value.data, name, prop->value.length) == 0) {
         return true;
       }
     }
@@ -263,7 +264,8 @@ static bool check_uri(tsi_peer* peer, const char* name) {
   for (size_t i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
     if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
-      if (memcmp(prop->value.data, name, prop->value.length) == 0) {
+      if (strlen(name) == prop->value.length &&
+          memcmp(prop->value.data, name, prop->value.length) == 0) {
         return true;
       }
     }
