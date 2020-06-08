@@ -53,7 +53,7 @@ else:
 def _create_channel(target: str, options: Sequence[Tuple[str, str]],
                     channel_credentials: Optional[grpc.ChannelCredentials],
                     compression: Optional[grpc.Compression]) -> grpc.Channel:
-    if channel_credentials._credentials is grpc.experimental._insecure_channel_credentials:
+    if channel_credentials is grpc.experimental.insecure_channel_credentials():
         _LOGGER.debug(f"Creating insecure channel with options '{options}' " +
                       f"and compression '{compression}'")
         return grpc.insecure_channel(target,

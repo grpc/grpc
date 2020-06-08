@@ -19,19 +19,21 @@ import os
 
 _MAXIMUM_CHANNELS = 10
 
-os.environ["GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"] = "1"
+os.environ["GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"] = "2"
 os.environ["GRPC_PYTHON_MANAGED_CHANNEL_MAXIMUM"] = str(_MAXIMUM_CHANNELS)
 
 import contextlib
 import datetime
 import inspect
 import logging
+import threading
 import unittest
 import sys
 import time
 from typing import Callable, Optional
 
 from tests.unit import test_common
+from tests.unit.framework.common import get_socket
 from tests.unit import resources
 import grpc
 import grpc.experimental
@@ -310,6 +312,63 @@ class SimpleStubsTest(unittest.TestCase):
                     _UNARY_UNARY,
                     insecure=True,
                     channel_credentials=grpc.local_channel_credentials())
+
+    def test_default_wait_for_ready(self):
+        addr, port, sock = get_socket()
+        sock.close()
+        target = f'{addr}:{port}'
+        channel = grpc._simple_stubs.ChannelCache.get().get_channel(target,
+                                                                    (),
+                                                                    None,
+                                                                    True,
+                                                                    None)
+        rpc_finished_event = threading.Event()
+        rpc_failed_event = threading.Event()
+        server = None
+
+        def _on_connectivity_changed(connectivity):
+            nonlocal server
+            if connectivity is grpc.ChannelConnectivity.TRANSIENT_FAILURE:
+                self.assertFalse(rpc_finished_event.is_set())
+                self.assertFalse(rpc_failed_event.is_set())
+                server = test_common.test_server()
+                server.add_insecure_port(target)
+                server.add_generic_rpc_handlers((_GenericHandler(),))
+                server.start()
+                channel.unsubscribe(_on_connectivity_changed)
+            elif connectivity in (grpc.ChannelConnectivity.IDLE, grpc.ChannelConnectivity.CONNECTING):
+                pass
+            else:
+                raise AssertionError("Encountered unknown state.")
+
+        channel.subscribe(_on_connectivity_changed)
+
+        def _send_rpc():
+            try:
+                response = grpc.experimental.unary_unary(
+                    _REQUEST,
+                    target,
+                    _UNARY_UNARY,
+                    # wait_for_ready=True, # remove
+                    # timeout=30.0,
+                    insecure=True)
+                rpc_finished_event.set()
+            except Exception as e:
+                import sys; sys.stderr.write(e); sys.stderr.flush()
+                rpc_failed_event.set()
+
+        t = threading.Thread(target=_send_rpc)
+        t.start()
+        t.join()
+        self.assertFalse(rpc_failed_event.is_set())
+        self.assertTrue(rpc_finished_event.is_set())
+        if server is not None:
+            server.stop(None)
+
+
+    def test_wait_for_ready_default_set(self):
+        # TODO: Implement.
+        pass
 
 
 if __name__ == "__main__":
