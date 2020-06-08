@@ -52,12 +52,15 @@ _TEST_CASES = [
     'round_robin',
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure',
+    'traffic_splitting',
 ]
 
 
 def parse_test_cases(arg):
     if arg == 'all':
         return _TEST_CASES
+    if arg == '':
+        return []
     test_cases = arg.split(',')
     if all([test_case in _TEST_CASES for test_case in test_cases]):
         return test_cases
@@ -101,13 +104,20 @@ argp.add_argument('--zone', default='us-central1-a')
 argp.add_argument('--secondary_zone',
                   default='us-west1-b',
                   help='Zone to use for secondary TD locality tests')
-argp.add_argument('--qps', default=10, type=int, help='Client QPS')
+argp.add_argument('--qps', default=100, type=int, help='Client QPS')
 argp.add_argument(
     '--wait_for_backend_sec',
     default=1200,
     type=int,
     help='Time limit for waiting for created backend services to report '
     'healthy when launching or updated GCP resources')
+argp.add_argument(
+    '--use_existing_gcp_resources',
+    default=False,
+    action='store_true',
+    help=
+    'If set, find and use already created GCP resources instead of creating new'
+    ' ones.')
 argp.add_argument(
     '--keep_gcp_resources',
     default=False,
@@ -164,14 +174,6 @@ argp.add_argument(
     help='Number of VMs to create per instance group. Certain test cases (e.g., '
     'round_robin) may not give meaningful results if this is set to a value '
     'less than 2.')
-argp.add_argument(
-    '--tolerate_gcp_errors',
-    default=False,
-    action='store_true',
-    help=
-    'Continue with test even when an error occurs during setup. Intended for '
-    'manual testing, where attempts to recreate any GCP resources already '
-    'existing will result in an error')
 argp.add_argument('--verbose',
                   help='verbose log output',
                   default=False,
@@ -197,7 +199,10 @@ _WAIT_FOR_OPERATION_SEC = 300
 _INSTANCE_GROUP_SIZE = args.instance_group_size
 _NUM_TEST_RPCS = 10 * args.qps
 _WAIT_FOR_STATS_SEC = 180
+_WAIT_FOR_VALID_CONFIG_SEC = 60
 _WAIT_FOR_URL_MAP_PATCH_SEC = 300
+_CONNECTION_TIMEOUT_SEC = 60
+_GCP_API_RETRIES = 5
 _BOOTSTRAP_TEMPLATE = """
 {{
   "node": {{
@@ -219,6 +224,13 @@ _BOOTSTRAP_TEMPLATE = """
     ]
   }}]
 }}""" % (args.network.split('/')[-1], args.zone, args.xds_server)
+
+# TODO(ericgribkoff) Add change_backend_service to this list once TD no longer
+# sends an update with no localities when adding the MIG to the backend service
+# can race with the URL map patch.
+_TESTS_TO_FAIL_ON_RPC_FAILURE = [
+    'new_instance_group_receives_traffic', 'ping_pong', 'round_robin'
+]
 _TESTS_USING_SECONDARY_IG = [
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure'
@@ -247,15 +259,12 @@ def get_client_stats(num_rpcs, timeout_sec):
         request = messages_pb2.LoadBalancerStatsRequest()
         request.num_rpcs = num_rpcs
         request.timeout_sec = timeout_sec
-        rpc_timeout = timeout_sec * 2  # Allow time for connection establishment
-        try:
-            response = stub.GetClientStats(request,
-                                           wait_for_ready=True,
-                                           timeout=rpc_timeout)
-            logger.debug('Invoked GetClientStats RPC: %s', response)
-            return response
-        except grpc.RpcError as rpc_error:
-            raise Exception('GetClientStats RPC failed')
+        rpc_timeout = timeout_sec + _CONNECTION_TIMEOUT_SEC
+        response = stub.GetClientStats(request,
+                                       wait_for_ready=True,
+                                       timeout=rpc_timeout)
+        logger.debug('Invoked GetClientStats RPC: %s', response)
+        return response
 
 
 def _verify_rpcs_to_given_backends(backends, timeout_sec, num_rpcs,
@@ -283,7 +292,7 @@ def _verify_rpcs_to_given_backends(backends, timeout_sec, num_rpcs,
 
 def wait_until_all_rpcs_go_to_given_backends_or_fail(backends,
                                                      timeout_sec,
-                                                     num_rpcs=100):
+                                                     num_rpcs=_NUM_TEST_RPCS):
     _verify_rpcs_to_given_backends(backends,
                                    timeout_sec,
                                    num_rpcs,
@@ -292,11 +301,47 @@ def wait_until_all_rpcs_go_to_given_backends_or_fail(backends,
 
 def wait_until_all_rpcs_go_to_given_backends(backends,
                                              timeout_sec,
-                                             num_rpcs=100):
+                                             num_rpcs=_NUM_TEST_RPCS):
     _verify_rpcs_to_given_backends(backends,
                                    timeout_sec,
                                    num_rpcs,
                                    allow_failures=False)
+
+
+def compare_distributions(actual_distribution, expected_distribution,
+                          threshold):
+    """Compare if two distributions are similar.
+
+    Args:
+      actual_distribution: A list of floats, contains the actual distribution.
+      expected_distribution: A list of floats, contains the expected distribution.
+      threshold: Number within [0,100], the threshold percentage by which the
+        actual distribution can differ from the expected distribution.
+
+    Returns:
+      The similarity between the distributions as a boolean. Returns true if the
+      actual distribution lies within the threshold of the expected
+      distribution, false otherwise.
+    
+    Raises:
+      ValueError: if threshold is not with in [0,100].
+      Exception: containing detailed error messages.
+    """
+    if len(expected_distribution) != len(actual_distribution):
+        raise Exception(
+            'Error: expected and actual distributions have different size (%d vs %d)'
+            % (len(expected_distribution), len(actual_distribution)))
+    if threshold < 0 or threshold > 100:
+        raise ValueError('Value error: Threshold should be between 0 to 100')
+    threshold_fraction = threshold / 100.0
+    for expected, actual in zip(expected_distribution, actual_distribution):
+        if actual < (expected * (1 - threshold_fraction)):
+            raise Exception("actual(%f) < expected(%f-%d%%)" %
+                            (actual, expected, threshold))
+        if actual > (expected * (1 + threshold_fraction)):
+            raise Exception("actual(%f) > expected(%f+%d%%)" %
+                            (actual, expected, threshold))
+    return True
 
 
 def test_backends_restart(gcp, backend_service, instance_group):
@@ -344,9 +389,6 @@ def test_change_backend_service(gcp, original_backend_service, instance_group,
                                              _WAIT_FOR_STATS_SEC)
     try:
         patch_url_map_backend_service(gcp, alternate_backend_service)
-        # TODO(ericgribkoff) Verify no RPCs fail during backend switch.
-        # Currently TD may briefly send an update with no localities if adding
-        # the MIG to the backend service above races with the URL map patch.
         wait_until_all_rpcs_go_to_given_backends(alternate_backend_instances,
                                                  _WAIT_FOR_URL_MAP_PATCH_SEC)
     finally:
@@ -495,6 +537,105 @@ def test_secondary_locality_gets_requests_on_primary_failure(
         patch_backend_instances(gcp, backend_service, [primary_instance_group])
 
 
+def test_traffic_splitting(gcp, original_backend_service, instance_group,
+                           alternate_backend_service, same_zone_instance_group):
+    # This test start with all traffic going to original_backend_service. Then
+    # it updates URL-map to set default action to traffic splitting between
+    # original and alternate. It waits for all backends in both services to
+    # receive traffic, then verifies that weights are expected.
+    logger.info('Running test_traffic_splitting')
+
+    # The config validation for proxyless doesn't allow setting
+    # default_route_action. To test traffic splitting, we need to set the
+    # route action to weighted clusters. Disable validate
+    # validate_for_proxyless for this test. This can be removed when
+    # validation accepts default_route_action.
+    logger.info('disabling validate_for_proxyless in target proxy')
+    set_validate_for_proxyless(gcp, False)
+
+    logger.info('waiting for original backends to become healthy')
+    wait_for_healthy_backends(gcp, original_backend_service, instance_group)
+
+    patch_backend_instances(gcp, alternate_backend_service,
+                            [same_zone_instance_group])
+    logger.info('waiting for alternate to become healthy')
+    wait_for_healthy_backends(gcp, alternate_backend_service,
+                              same_zone_instance_group)
+
+    original_backend_instances = get_instance_names(gcp, instance_group)
+    logger.info('original backends instances: %s', original_backend_instances)
+
+    alternate_backend_instances = get_instance_names(gcp,
+                                                     same_zone_instance_group)
+    logger.info('alternate backends instances: %s', alternate_backend_instances)
+
+    # Start with all traffic going to original_backend_service.
+    logger.info('waiting for traffic to all go to original backends')
+    wait_until_all_rpcs_go_to_given_backends(original_backend_instances,
+                                             _WAIT_FOR_STATS_SEC)
+
+    try:
+        # Patch urlmap, change route action to traffic splitting between
+        # original and alternate.
+        logger.info('patching url map with traffic splitting')
+        original_service_percentage, alternate_service_percentage = 20, 80
+        patch_url_map_backend_service(
+            gcp,
+            services_with_weights={
+                original_backend_service: original_service_percentage,
+                alternate_backend_service: alternate_service_percentage,
+            })
+        # Split percentage between instances: [20,80] -> [10,10,40,40].
+        expected_instance_percentage = [
+            original_service_percentage * 1.0 / len(original_backend_instances)
+        ] * len(original_backend_instances) + [
+            alternate_service_percentage * 1.0 /
+            len(alternate_backend_instances)
+        ] * len(alternate_backend_instances)
+
+        # Wait for traffic to go to both services.
+        logger.info(
+            'waiting for traffic to go to all backends (including alternate)')
+        wait_until_all_rpcs_go_to_given_backends(
+            original_backend_instances + alternate_backend_instances,
+            _WAIT_FOR_STATS_SEC)
+
+        # Verify that weights between two services are expected.
+        retry_count = 10
+        # Each attempt takes about 10 seconds, 10 retries is equivalent to 100
+        # seconds timeout.
+        for i in range(retry_count):
+            stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
+            got_instance_count = [
+                stats.rpcs_by_peer[i] for i in original_backend_instances
+            ] + [stats.rpcs_by_peer[i] for i in alternate_backend_instances]
+            total_count = sum(got_instance_count)
+            got_instance_percentage = [
+                x * 100.0 / total_count for x in got_instance_count
+            ]
+
+            try:
+                compare_distributions(got_instance_percentage,
+                                      expected_instance_percentage, 5)
+            except Exception as e:
+                logger.info('attempt %d', i)
+                logger.info('got percentage: %s', got_instance_percentage)
+                logger.info('expected percentage: %s',
+                            expected_instance_percentage)
+                logger.info(e)
+                if i == retry_count - 1:
+                    raise Exception(
+                        'RPC distribution (%s) differs from expected (%s)',
+                        got_instance_percentage, expected_instance_percentage)
+            else:
+                logger.info("success")
+                break
+    finally:
+        patch_url_map_backend_service(gcp, original_backend_service)
+        patch_backend_instances(gcp, alternate_backend_service, [])
+        set_validate_for_proxyless(gcp, True)
+
+
 def get_startup_script(path_to_server_binary, service_port):
     if path_to_server_binary:
         return "nohup %s --port=%d 1>/dev/null &" % (path_to_server_binary,
@@ -549,8 +690,8 @@ def create_instance_template(gcp, name, network, source_image, machine_type,
     }
 
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.instanceTemplates().insert(project=gcp.project,
-                                                    body=config).execute()
+    result = gcp.compute.instanceTemplates().insert(
+        project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     gcp.instance_template = GcpResource(config['name'], result['targetLink'])
 
@@ -567,16 +708,19 @@ def add_instance_group(gcp, zone, name, size):
     }
 
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.instanceGroupManagers().insert(project=gcp.project,
-                                                        zone=zone,
-                                                        body=config).execute()
+    result = gcp.compute.instanceGroupManagers().insert(
+        project=gcp.project, zone=zone,
+        body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_zone_operation(gcp, zone, result['name'])
     result = gcp.compute.instanceGroupManagers().get(
         project=gcp.project, zone=zone,
-        instanceGroupManager=config['name']).execute()
+        instanceGroupManager=config['name']).execute(
+            num_retries=_GCP_API_RETRIES)
     instance_group = InstanceGroup(config['name'], result['instanceGroup'],
                                    zone)
     gcp.instance_groups.append(instance_group)
+    wait_for_instance_group_to_reach_expected_size(gcp, instance_group, size,
+                                                   _WAIT_FOR_OPERATION_SEC)
     return instance_group
 
 
@@ -600,8 +744,8 @@ def create_health_check(gcp, name):
         }
         compute_to_use = gcp.compute
     logger.debug('Sending GCP request with body=%s', config)
-    result = compute_to_use.healthChecks().insert(project=gcp.project,
-                                                  body=config).execute()
+    result = compute_to_use.healthChecks().insert(
+        project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     gcp.health_check = GcpResource(config['name'], result['targetLink'])
 
@@ -617,8 +761,8 @@ def create_health_check_firewall_rule(gcp, name):
         'targetTags': ['allow-health-checks'],
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.firewalls().insert(project=gcp.project,
-                                            body=config).execute()
+    result = gcp.compute.firewalls().insert(
+        project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     gcp.health_check_firewall_rule = GcpResource(config['name'],
                                                  result['targetLink'])
@@ -639,8 +783,8 @@ def add_backend_service(gcp, name):
         'protocol': protocol
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = compute_to_use.backendServices().insert(project=gcp.project,
-                                                     body=config).execute()
+    result = compute_to_use.backendServices().insert(
+        project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     backend_service = GcpResource(config['name'], result['targetLink'])
     gcp.backend_services.append(backend_service)
@@ -661,8 +805,8 @@ def create_url_map(gcp, name, backend_service, host_name):
         }]
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.urlMaps().insert(project=gcp.project,
-                                          body=config).execute()
+    result = gcp.compute.urlMaps().insert(
+        project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     gcp.url_map = GcpResource(config['name'], result['targetLink'])
 
@@ -675,30 +819,47 @@ def patch_url_map_host_rule_with_port(gcp, name, backend_service, host_name):
         }]
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.urlMaps().patch(project=gcp.project,
-                                         urlMap=name,
-                                         body=config).execute()
+    result = gcp.compute.urlMaps().patch(
+        project=gcp.project, urlMap=name,
+        body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
 
 
-def create_target_proxy(gcp, name):
+def set_validate_for_proxyless(gcp, validate_for_proxyless):
+    if not gcp.alpha_compute:
+        logger.debug(
+            'Not setting validateForProxy because alpha is not enabled')
+        return
+    # This function deletes global_forwarding_rule and target_proxy, then
+    # recreate target_proxy with validateForProxyless=False. This is necessary
+    # because patching target_grpc_proxy isn't supported.
+    delete_global_forwarding_rule(gcp)
+    delete_target_proxy(gcp)
+    create_target_proxy(gcp, gcp.target_proxy.name, validate_for_proxyless)
+    create_global_forwarding_rule(gcp, gcp.global_forwarding_rule.name,
+                                  [gcp.service_port])
+
+
+def create_target_proxy(gcp, name, validate_for_proxyless=True):
     if gcp.alpha_compute:
         config = {
             'name': name,
             'url_map': gcp.url_map.url,
-            'validate_for_proxyless': True,
+            'validate_for_proxyless': validate_for_proxyless,
         }
         logger.debug('Sending GCP request with body=%s', config)
         result = gcp.alpha_compute.targetGrpcProxies().insert(
-            project=gcp.project, body=config).execute()
+            project=gcp.project,
+            body=config).execute(num_retries=_GCP_API_RETRIES)
     else:
         config = {
             'name': name,
             'url_map': gcp.url_map.url,
         }
         logger.debug('Sending GCP request with body=%s', config)
-        result = gcp.compute.targetHttpProxies().insert(project=gcp.project,
-                                                        body=config).execute()
+        result = gcp.compute.targetHttpProxies().insert(
+            project=gcp.project,
+            body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     gcp.target_proxy = GcpResource(config['name'], result['targetLink'])
 
@@ -720,7 +881,8 @@ def create_global_forwarding_rule(gcp, name, potential_ports):
             }
             logger.debug('Sending GCP request with body=%s', config)
             result = compute_to_use.globalForwardingRules().insert(
-                project=gcp.project, body=config).execute()
+                project=gcp.project,
+                body=config).execute(num_retries=_GCP_API_RETRIES)
             wait_for_global_operation(gcp, result['name'])
             gcp.global_forwarding_rule = GcpResource(config['name'],
                                                      result['targetLink'])
@@ -732,11 +894,73 @@ def create_global_forwarding_rule(gcp, name, potential_ports):
                 '0.0.0.0:%d. Retrying with another port.' % (http_error, port))
 
 
+def get_health_check(gcp, health_check_name):
+    result = gcp.compute.healthChecks().get(
+        project=gcp.project, healthCheck=health_check_name).execute()
+    gcp.health_check = GcpResource(health_check_name, result['selfLink'])
+
+
+def get_health_check_firewall_rule(gcp, firewall_name):
+    result = gcp.compute.firewalls().get(project=gcp.project,
+                                         firewall=firewall_name).execute()
+    gcp.health_check_firewall_rule = GcpResource(firewall_name,
+                                                 result['selfLink'])
+
+
+def get_backend_service(gcp, backend_service_name):
+    result = gcp.compute.backendServices().get(
+        project=gcp.project, backendService=backend_service_name).execute()
+    backend_service = GcpResource(backend_service_name, result['selfLink'])
+    gcp.backend_services.append(backend_service)
+    return backend_service
+
+
+def get_url_map(gcp, url_map_name):
+    result = gcp.compute.urlMaps().get(project=gcp.project,
+                                       urlMap=url_map_name).execute()
+    gcp.url_map = GcpResource(url_map_name, result['selfLink'])
+
+
+def get_target_proxy(gcp, target_proxy_name):
+    if gcp.alpha_compute:
+        result = gcp.alpha_compute.targetGrpcProxies().get(
+            project=gcp.project, targetGrpcProxy=target_proxy_name).execute()
+    else:
+        result = gcp.compute.targetHttpProxies().get(
+            project=gcp.project, targetHttpProxy=target_proxy_name).execute()
+    gcp.target_proxy = GcpResource(target_proxy_name, result['selfLink'])
+
+
+def get_global_forwarding_rule(gcp, forwarding_rule_name):
+    result = gcp.compute.globalForwardingRules().get(
+        project=gcp.project, forwardingRule=forwarding_rule_name).execute()
+    gcp.global_forwarding_rule = GcpResource(forwarding_rule_name,
+                                             result['selfLink'])
+
+
+def get_instance_template(gcp, template_name):
+    result = gcp.compute.instanceTemplates().get(
+        project=gcp.project, instanceTemplate=template_name).execute()
+    gcp.instance_template = GcpResource(template_name, result['selfLink'])
+
+
+def get_instance_group(gcp, zone, instance_group_name):
+    result = gcp.compute.instanceGroups().get(
+        project=gcp.project, zone=zone,
+        instanceGroup=instance_group_name).execute()
+    gcp.service_port = result['namedPorts'][0]['port']
+    instance_group = InstanceGroup(instance_group_name, result['selfLink'],
+                                   zone)
+    gcp.instance_groups.append(instance_group)
+    return instance_group
+
+
 def delete_global_forwarding_rule(gcp):
     try:
         result = gcp.compute.globalForwardingRules().delete(
             project=gcp.project,
-            forwardingRule=gcp.global_forwarding_rule.name).execute()
+            forwardingRule=gcp.global_forwarding_rule.name).execute(
+                num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -747,11 +971,13 @@ def delete_target_proxy(gcp):
         if gcp.alpha_compute:
             result = gcp.alpha_compute.targetGrpcProxies().delete(
                 project=gcp.project,
-                targetGrpcProxy=gcp.target_proxy.name).execute()
+                targetGrpcProxy=gcp.target_proxy.name).execute(
+                    num_retries=_GCP_API_RETRIES)
         else:
             result = gcp.compute.targetHttpProxies().delete(
                 project=gcp.project,
-                targetHttpProxy=gcp.target_proxy.name).execute()
+                targetHttpProxy=gcp.target_proxy.name).execute(
+                    num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -760,7 +986,8 @@ def delete_target_proxy(gcp):
 def delete_url_map(gcp):
     try:
         result = gcp.compute.urlMaps().delete(
-            project=gcp.project, urlMap=gcp.url_map.name).execute()
+            project=gcp.project,
+            urlMap=gcp.url_map.name).execute(num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -771,7 +998,8 @@ def delete_backend_services(gcp):
         try:
             result = gcp.compute.backendServices().delete(
                 project=gcp.project,
-                backendService=backend_service.name).execute()
+                backendService=backend_service.name).execute(
+                    num_retries=_GCP_API_RETRIES)
             wait_for_global_operation(gcp, result['name'])
         except googleapiclient.errors.HttpError as http_error:
             logger.info('Delete failed: %s', http_error)
@@ -781,7 +1009,8 @@ def delete_firewall(gcp):
     try:
         result = gcp.compute.firewalls().delete(
             project=gcp.project,
-            firewall=gcp.health_check_firewall_rule.name).execute()
+            firewall=gcp.health_check_firewall_rule.name).execute(
+                num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -790,7 +1019,8 @@ def delete_firewall(gcp):
 def delete_health_check(gcp):
     try:
         result = gcp.compute.healthChecks().delete(
-            project=gcp.project, healthCheck=gcp.health_check.name).execute()
+            project=gcp.project, healthCheck=gcp.health_check.name).execute(
+                num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -802,7 +1032,8 @@ def delete_instance_groups(gcp):
             result = gcp.compute.instanceGroupManagers().delete(
                 project=gcp.project,
                 zone=instance_group.zone,
-                instanceGroupManager=instance_group.name).execute()
+                instanceGroupManager=instance_group.name).execute(
+                    num_retries=_GCP_API_RETRIES)
             wait_for_zone_operation(gcp,
                                     instance_group.zone,
                                     result['name'],
@@ -815,7 +1046,8 @@ def delete_instance_template(gcp):
     try:
         result = gcp.compute.instanceTemplates().delete(
             project=gcp.project,
-            instanceTemplate=gcp.instance_template.name).execute()
+            instanceTemplate=gcp.instance_template.name).execute(
+                num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
@@ -839,7 +1071,7 @@ def patch_backend_instances(gcp,
     logger.debug('Sending GCP request with body=%s', config)
     result = compute_to_use.backendServices().patch(
         project=gcp.project, backendService=backend_service.name,
-        body=config).execute()
+        body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp,
                               result['name'],
                               timeout_sec=_WAIT_FOR_BACKEND_SEC)
@@ -853,35 +1085,60 @@ def resize_instance_group(gcp,
         project=gcp.project,
         zone=instance_group.zone,
         instanceGroupManager=instance_group.name,
-        size=new_size).execute()
+        size=new_size).execute(num_retries=_GCP_API_RETRIES)
     wait_for_zone_operation(gcp,
                             instance_group.zone,
                             result['name'],
                             timeout_sec=360)
-    start_time = time.time()
-    while True:
-        current_size = len(get_instance_names(gcp, instance_group))
-        if current_size == new_size:
-            break
-        if time.time() - start_time > timeout_sec:
-            raise Exception('Failed to resize primary instance group')
-        time.sleep(1)
+    wait_for_instance_group_to_reach_expected_size(gcp, instance_group,
+                                                   new_size, timeout_sec)
 
 
-def patch_url_map_backend_service(gcp, backend_service):
+def patch_url_map_backend_service(gcp,
+                                  backend_service=None,
+                                  services_with_weights=None):
+    '''change url_map's backend service
+
+    Only one of backend_service and service_with_weights can be not None.
+    '''
+    if backend_service and services_with_weights:
+        raise ValueError(
+            'both backend_service and service_with_weights are not None.')
+
+    default_service = backend_service.url if backend_service else None
+    default_route_action = {
+        'weightedBackendServices': [{
+            'backendService': service.url,
+            'weight': w,
+        } for service, w in services_with_weights.items()]
+    } if services_with_weights else None
+
     config = {
-        'defaultService':
-            backend_service.url,
         'pathMatchers': [{
             'name': _PATH_MATCHER_NAME,
-            'defaultService': backend_service.url,
+            'defaultService': default_service,
+            'defaultRouteAction': default_route_action,
         }]
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.urlMaps().patch(project=gcp.project,
-                                         urlMap=gcp.url_map.name,
-                                         body=config).execute()
+    result = gcp.compute.urlMaps().patch(
+        project=gcp.project, urlMap=gcp.url_map.name,
+        body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
+
+
+def wait_for_instance_group_to_reach_expected_size(gcp, instance_group,
+                                                   expected_size, timeout_sec):
+    start_time = time.time()
+    while True:
+        current_size = len(get_instance_names(gcp, instance_group))
+        if current_size == expected_size:
+            break
+        if time.time() - start_time > timeout_sec:
+            raise Exception(
+                'Instance group had expected size %d but actual size %d' %
+                (expected_size, current_size))
+        time.sleep(2)
 
 
 def wait_for_global_operation(gcp,
@@ -890,12 +1147,13 @@ def wait_for_global_operation(gcp,
     start_time = time.time()
     while time.time() - start_time <= timeout_sec:
         result = gcp.compute.globalOperations().get(
-            project=gcp.project, operation=operation).execute()
+            project=gcp.project,
+            operation=operation).execute(num_retries=_GCP_API_RETRIES)
         if result['status'] == 'DONE':
             if 'error' in result:
                 raise Exception(result['error'])
             return
-        time.sleep(1)
+        time.sleep(2)
     raise Exception('Operation %s did not complete within %d', operation,
                     timeout_sec)
 
@@ -907,12 +1165,13 @@ def wait_for_zone_operation(gcp,
     start_time = time.time()
     while time.time() - start_time <= timeout_sec:
         result = gcp.compute.zoneOperations().get(
-            project=gcp.project, zone=zone, operation=operation).execute()
+            project=gcp.project, zone=zone,
+            operation=operation).execute(num_retries=_GCP_API_RETRIES)
         if result['status'] == 'DONE':
             if 'error' in result:
                 raise Exception(result['error'])
             return
-        time.sleep(1)
+        time.sleep(2)
     raise Exception('Operation %s did not complete within %d', operation,
                     timeout_sec)
 
@@ -927,7 +1186,7 @@ def wait_for_healthy_backends(gcp,
         result = gcp.compute.backendServices().getHealth(
             project=gcp.project,
             backendService=backend_service.name,
-            body=config).execute()
+            body=config).execute(num_retries=_GCP_API_RETRIES)
         if 'healthStatus' in result:
             healthy = True
             for instance in result['healthStatus']:
@@ -936,9 +1195,18 @@ def wait_for_healthy_backends(gcp,
                     break
             if healthy:
                 return
-        time.sleep(1)
+        time.sleep(2)
     raise Exception('Not all backends became healthy within %d seconds: %s' %
                     (timeout_sec, result))
+
+
+def wait_for_config_propagation(gcp, instance_group, client_cmd, client_env):
+    """Use client to verify config propagation from GCP->TD->client"""
+    instance_names = get_instance_names(gcp, instance_group)
+    client_process = subprocess.Popen(shlex.split(client_cmd), env=client_env)
+    wait_until_all_rpcs_go_to_given_backends(instance_names,
+                                             _WAIT_FOR_VALID_CONFIG_SEC)
+    client_process.terminate()
 
 
 def get_instance_names(gcp, instance_group):
@@ -949,7 +1217,7 @@ def get_instance_names(gcp, instance_group):
         instanceGroup=instance_group.name,
         body={
             'instanceState': 'ALL'
-        }).execute()
+        }).execute(num_retries=_GCP_API_RETRIES)
     if 'items' not in result:
         return []
     for item in result['items']:
@@ -1040,7 +1308,30 @@ try:
     same_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-same-zone' + args.gcp_suffix
     if _USE_SECONDARY_IG:
         secondary_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-secondary-zone' + args.gcp_suffix
-    try:
+    if args.use_existing_gcp_resources:
+        logger.info('Reusing existing GCP resources')
+        get_health_check(gcp, health_check_name)
+        try:
+            get_health_check_firewall_rule(gcp, firewall_name)
+        except googleapiclient.errors.HttpError as http_error:
+            # Firewall rule may be auto-deleted periodically depending on GCP
+            # project settings.
+            logger.exception('Failed to find firewall rule, recreating')
+            create_health_check_firewall_rule(gcp, firewall_name)
+        backend_service = get_backend_service(gcp, backend_service_name)
+        alternate_backend_service = get_backend_service(
+            gcp, alternate_backend_service_name)
+        get_url_map(gcp, url_map_name)
+        get_target_proxy(gcp, target_proxy_name)
+        get_global_forwarding_rule(gcp, forwarding_rule_name)
+        get_instance_template(gcp, template_name)
+        instance_group = get_instance_group(gcp, args.zone, instance_group_name)
+        same_zone_instance_group = get_instance_group(
+            gcp, args.zone, same_zone_instance_group_name)
+        if _USE_SECONDARY_IG:
+            secondary_zone_instance_group = get_instance_group(
+                gcp, args.secondary_zone, secondary_zone_instance_group_name)
+    else:
         create_health_check(gcp, health_check_name)
         create_health_check_firewall_rule(gcp, firewall_name)
         backend_service = add_backend_service(gcp, backend_service_name)
@@ -1073,166 +1364,123 @@ try:
             secondary_zone_instance_group = add_instance_group(
                 gcp, args.secondary_zone, secondary_zone_instance_group_name,
                 _INSTANCE_GROUP_SIZE)
-    except googleapiclient.errors.HttpError as http_error:
-        if args.tolerate_gcp_errors:
-            logger.warning(
-                'Failed to set up backends: %s. Attempting to continue since '
-                '--tolerate_gcp_errors=true', http_error)
-            if not gcp.instance_template:
-                result = compute.instanceTemplates().get(
-                    project=args.project_id,
-                    instanceTemplate=template_name).execute()
-                gcp.instance_template = GcpResource(template_name,
-                                                    result['selfLink'])
-            if not gcp.backend_services:
-                result = compute.backendServices().get(
-                    project=args.project_id,
-                    backendService=backend_service_name).execute()
-                backend_service = GcpResource(backend_service_name,
-                                              result['selfLink'])
-                gcp.backend_services.append(backend_service)
-                result = compute.backendServices().get(
-                    project=args.project_id,
-                    backendService=alternate_backend_service_name).execute()
-                alternate_backend_service = GcpResource(
-                    alternate_backend_service_name, result['selfLink'])
-                gcp.backend_services.append(alternate_backend_service)
-            if not gcp.instance_groups:
-                result = compute.instanceGroups().get(
-                    project=args.project_id,
-                    zone=args.zone,
-                    instanceGroup=instance_group_name).execute()
-                instance_group = InstanceGroup(instance_group_name,
-                                               result['selfLink'], args.zone)
-                gcp.instance_groups.append(instance_group)
-                result = compute.instanceGroups().get(
-                    project=args.project_id,
-                    zone=args.zone,
-                    instanceGroup=same_zone_instance_group_name).execute()
-                same_zone_instance_group = InstanceGroup(
-                    same_zone_instance_group_name, result['selfLink'],
-                    args.zone)
-                gcp.instance_groups.append(same_zone_instance_group)
-                if _USE_SECONDARY_IG:
-                    result = compute.instanceGroups().get(
-                        project=args.project_id,
-                        zone=args.secondary_zone,
-                        instanceGroup=secondary_zone_instance_group_name
-                    ).execute()
-                    secondary_zone_instance_group = InstanceGroup(
-                        secondary_zone_instance_group_name, result['selfLink'],
-                        args.secondary_zone)
-                    gcp.instance_groups.append(secondary_zone_instance_group)
-            if not gcp.health_check:
-                result = compute.healthChecks().get(
-                    project=args.project_id,
-                    healthCheck=health_check_name).execute()
-                gcp.health_check = GcpResource(health_check_name,
-                                               result['selfLink'])
-            if not gcp.url_map:
-                result = compute.urlMaps().get(project=args.project_id,
-                                               urlMap=url_map_name).execute()
-                gcp.url_map = GcpResource(url_map_name, result['selfLink'])
-            if not gcp.service_port:
-                gcp.service_port = args.service_port_range[0]
-                logger.warning('Using arbitrary service port in range: %d' %
-                               gcp.service_port)
-        else:
-            raise http_error
 
     wait_for_healthy_backends(gcp, backend_service, instance_group)
 
-    if gcp.service_port == _DEFAULT_SERVICE_PORT:
-        server_uri = service_host_name
-    else:
-        server_uri = service_host_name + ':' + str(gcp.service_port)
-    if args.bootstrap_file:
-        bootstrap_path = os.path.abspath(args.bootstrap_file)
-    else:
-        with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
-            bootstrap_file.write(
-                _BOOTSTRAP_TEMPLATE.format(
-                    node_id=socket.gethostname()).encode('utf-8'))
-            bootstrap_path = bootstrap_file.name
-    client_env = dict(os.environ, GRPC_XDS_BOOTSTRAP=bootstrap_path)
-    client_cmd = shlex.split(
-        args.client_cmd.format(server_uri=server_uri,
-                               stats_port=args.stats_port,
-                               qps=args.qps))
+    if args.test_case:
+        if gcp.service_port == _DEFAULT_SERVICE_PORT:
+            server_uri = service_host_name
+        else:
+            server_uri = service_host_name + ':' + str(gcp.service_port)
+        if args.bootstrap_file:
+            bootstrap_path = os.path.abspath(args.bootstrap_file)
+        else:
+            with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
+                bootstrap_file.write(
+                    _BOOTSTRAP_TEMPLATE.format(
+                        node_id=socket.gethostname()).encode('utf-8'))
+                bootstrap_path = bootstrap_file.name
+        client_env = dict(os.environ, GRPC_XDS_BOOTSTRAP=bootstrap_path)
 
-    test_results = {}
-    failed_tests = []
-    for test_case in args.test_case:
-        result = jobset.JobResult()
-        log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        test_log_filename = os.path.join(log_dir, _SPONGE_LOG_NAME)
-        test_log_file = open(test_log_filename, 'w+')
-        client_process = None
-        try:
-            client_process = subprocess.Popen(client_cmd,
-                                              env=client_env,
-                                              stderr=subprocess.STDOUT,
-                                              stdout=test_log_file)
-            if test_case == 'backends_restart':
-                test_backends_restart(gcp, backend_service, instance_group)
-            elif test_case == 'change_backend_service':
-                test_change_backend_service(gcp, backend_service,
-                                            instance_group,
-                                            alternate_backend_service,
-                                            same_zone_instance_group)
-            elif test_case == 'new_instance_group_receives_traffic':
-                test_new_instance_group_receives_traffic(
-                    gcp, backend_service, instance_group,
-                    same_zone_instance_group)
-            elif test_case == 'ping_pong':
-                test_ping_pong(gcp, backend_service, instance_group)
-            elif test_case == 'remove_instance_group':
-                test_remove_instance_group(gcp, backend_service, instance_group,
-                                           same_zone_instance_group)
-            elif test_case == 'round_robin':
-                test_round_robin(gcp, backend_service, instance_group)
-            elif test_case == 'secondary_locality_gets_no_requests_on_partial_primary_failure':
-                test_secondary_locality_gets_no_requests_on_partial_primary_failure(
-                    gcp, backend_service, instance_group,
-                    secondary_zone_instance_group)
-            elif test_case == 'secondary_locality_gets_requests_on_primary_failure':
-                test_secondary_locality_gets_requests_on_primary_failure(
-                    gcp, backend_service, instance_group,
-                    secondary_zone_instance_group)
+        test_results = {}
+        failed_tests = []
+        for test_case in args.test_case:
+            result = jobset.JobResult()
+            log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+            test_log_filename = os.path.join(log_dir, _SPONGE_LOG_NAME)
+            test_log_file = open(test_log_filename, 'w+')
+            client_process = None
+            if test_case in _TESTS_TO_FAIL_ON_RPC_FAILURE:
+                wait_for_config_propagation(
+                    gcp, instance_group,
+                    args.client_cmd.format(server_uri=server_uri,
+                                           stats_port=args.stats_port,
+                                           qps=args.qps,
+                                           fail_on_failed_rpc=False),
+                    client_env)
+                fail_on_failed_rpc = '--fail_on_failed_rpc=true'
             else:
-                logger.error('Unknown test case: %s', test_case)
-                sys.exit(1)
-            result.state = 'PASSED'
-            result.returncode = 0
-        except Exception as e:
-            logger.error('Test case %s failed: %s', test_case, e)
-            failed_tests.append(test_case)
-            result.state = 'FAILED'
-            result.message = str(e)
-        finally:
-            if client_process:
-                client_process.terminate()
-            test_log_file.close()
-            # Workaround for Python 3, as report_utils will invoke decode() on
-            # result.message, which has a default value of ''.
-            result.message = result.message.encode('UTF-8')
-            test_results[test_case] = [result]
-            if args.log_client_output:
-                logger.info('Client output:')
-                with open(test_log_filename, 'r') as client_output:
-                    logger.info(client_output.read())
-    if not os.path.exists(_TEST_LOG_BASE_DIR):
-        os.makedirs(_TEST_LOG_BASE_DIR)
-    report_utils.render_junit_xml_report(test_results,
-                                         os.path.join(_TEST_LOG_BASE_DIR,
-                                                      _SPONGE_XML_NAME),
-                                         suite_name='xds_tests',
-                                         multi_target=True)
-    if failed_tests:
-        logger.error('Test case(s) %s failed', failed_tests)
-        sys.exit(1)
+                fail_on_failed_rpc = '--fail_on_failed_rpc=false'
+            client_cmd = shlex.split(
+                args.client_cmd.format(server_uri=server_uri,
+                                       stats_port=args.stats_port,
+                                       qps=args.qps,
+                                       fail_on_failed_rpc=fail_on_failed_rpc))
+            try:
+                client_process = subprocess.Popen(client_cmd,
+                                                  env=client_env,
+                                                  stderr=subprocess.STDOUT,
+                                                  stdout=test_log_file)
+                if test_case == 'backends_restart':
+                    test_backends_restart(gcp, backend_service, instance_group)
+                elif test_case == 'change_backend_service':
+                    test_change_backend_service(gcp, backend_service,
+                                                instance_group,
+                                                alternate_backend_service,
+                                                same_zone_instance_group)
+                elif test_case == 'new_instance_group_receives_traffic':
+                    test_new_instance_group_receives_traffic(
+                        gcp, backend_service, instance_group,
+                        same_zone_instance_group)
+                elif test_case == 'ping_pong':
+                    test_ping_pong(gcp, backend_service, instance_group)
+                elif test_case == 'remove_instance_group':
+                    test_remove_instance_group(gcp, backend_service,
+                                               instance_group,
+                                               same_zone_instance_group)
+                elif test_case == 'round_robin':
+                    test_round_robin(gcp, backend_service, instance_group)
+                elif test_case == 'secondary_locality_gets_no_requests_on_partial_primary_failure':
+                    test_secondary_locality_gets_no_requests_on_partial_primary_failure(
+                        gcp, backend_service, instance_group,
+                        secondary_zone_instance_group)
+                elif test_case == 'secondary_locality_gets_requests_on_primary_failure':
+                    test_secondary_locality_gets_requests_on_primary_failure(
+                        gcp, backend_service, instance_group,
+                        secondary_zone_instance_group)
+                elif test_case == 'traffic_splitting':
+                    test_traffic_splitting(gcp, backend_service, instance_group,
+                                           alternate_backend_service,
+                                           same_zone_instance_group)
+                else:
+                    logger.error('Unknown test case: %s', test_case)
+                    sys.exit(1)
+                if client_process.poll() is not None:
+                    raise Exception(
+                        'Client process exited prematurely with exit code %d' %
+                        client_process.returncode)
+                result.state = 'PASSED'
+                result.returncode = 0
+            except Exception as e:
+                logger.exception('Test case %s failed', test_case)
+                failed_tests.append(test_case)
+                result.state = 'FAILED'
+                result.message = str(e)
+            finally:
+                if client_process and not client_process.returncode:
+                    client_process.terminate()
+                test_log_file.close()
+                # Workaround for Python 3, as report_utils will invoke decode() on
+                # result.message, which has a default value of ''.
+                result.message = result.message.encode('UTF-8')
+                test_results[test_case] = [result]
+                if args.log_client_output:
+                    logger.info('Client output:')
+                    with open(test_log_filename, 'r') as client_output:
+                        logger.info(client_output.read())
+        if not os.path.exists(_TEST_LOG_BASE_DIR):
+            os.makedirs(_TEST_LOG_BASE_DIR)
+        report_utils.render_junit_xml_report(test_results,
+                                             os.path.join(
+                                                 _TEST_LOG_BASE_DIR,
+                                                 _SPONGE_XML_NAME),
+                                             suite_name='xds_tests',
+                                             multi_target=True)
+        if failed_tests:
+            logger.error('Test case(s) %s failed', failed_tests)
+            sys.exit(1)
 finally:
     if not args.keep_gcp_resources:
         logger.info('Cleaning up GCP resources. This may take some time.')

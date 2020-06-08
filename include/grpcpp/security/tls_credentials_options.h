@@ -19,13 +19,13 @@
 #ifndef GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 #define GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 
-#include <memory>
-#include <vector>
-
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpcpp/support/config.h>
+
+#include <memory>
+#include <vector>
 
 typedef struct grpc_tls_credential_reload_arg grpc_tls_credential_reload_arg;
 typedef struct grpc_tls_credential_reload_config
@@ -278,6 +278,21 @@ class TlsServerAuthorizationCheckConfig {
  * more details. **/
 class TlsCredentialsOptions {
  public:
+  // Constructor for client.
+  explicit TlsCredentialsOptions(
+      grpc_tls_server_verification_option server_verification_option,
+      std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
+      std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
+      std::shared_ptr<TlsServerAuthorizationCheckConfig>
+          server_authorization_check_config);
+
+  // Constructor for server.
+  explicit TlsCredentialsOptions(
+      grpc_ssl_client_certificate_request_type cert_request_type,
+      std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
+      std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config);
+
+  // This constructor will be deprecated.
   TlsCredentialsOptions(
       grpc_ssl_client_certificate_request_type cert_request_type,
       grpc_tls_server_verification_option server_verification_option,

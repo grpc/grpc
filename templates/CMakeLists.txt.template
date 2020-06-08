@@ -243,15 +243,29 @@
   endif()
 
    # Use C99 standard
-  set(CMAKE_C_STANDARD 99)
+  if (NOT DEFINED CMAKE_C_STANDARD)
+    set(CMAKE_C_STANDARD 99)
+  endif()
 
   # Add c++11 flags
-  set(CMAKE_CXX_STANDARD 11)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  set(CMAKE_CXX_EXTENSIONS OFF)
+  if (NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 11)
+  else()
+    if (CMAKE_CXX_STANDARD LESS 11)
+      message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 11, please specify at least SET(CMAKE_CXX_STANDARD 11)")
+    endif()
+  endif()
+  if (NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  endif()
+  if (NOT DEFINED CMAKE_CXX_EXTENSIONS)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+  endif()
 
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
-  set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+  if (NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+  endif()
   list(APPEND CMAKE_MODULE_PATH "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules")
 
   if(MSVC)
@@ -265,6 +279,9 @@
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4267")
     # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
+  endif()
+  if (MINGW)
+    add_definitions(-D_WIN32_WINNT=0x600)
   endif()
   set(CMAKE_C_FLAGS "<%text>${CMAKE_C_FLAGS} ${_gRPC_C_CXX_FLAGS}</%text>")
   set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS} ${_gRPC_C_CXX_FLAGS}</%text>")
@@ -308,7 +325,7 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> rt m pthread)
   endif()
 
-  if(WIN32 AND MSVC)
+  if(WIN32)
     set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32)
   endif()
 

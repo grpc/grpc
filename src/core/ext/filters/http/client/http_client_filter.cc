@@ -17,11 +17,19 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+#include <string.h>
+
+#include <string>
+#include <vector>
+
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <stdint.h>
-#include <string.h>
+
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -31,6 +39,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
@@ -120,7 +129,8 @@ static grpc_error* client_filter_incoming_metadata(grpc_metadata_batch* b) {
                   GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "Received http2 :status header with non-200 OK status"),
                   GRPC_ERROR_STR_VALUE, grpc_slice_from_copied_string(val)),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED),
+              GRPC_ERROR_INT_GRPC_STATUS,
+              grpc_http2_status_to_grpc_status(atoi(val))),
           GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_copied_string(msg));
       gpr_free(val);
       gpr_free(msg);
@@ -518,51 +528,36 @@ static size_t max_payload_size_from_args(const grpc_channel_args* args) {
 
 static grpc_core::ManagedMemorySlice user_agent_from_args(
     const grpc_channel_args* args, const char* transport_name) {
-  gpr_strvec v;
-  size_t i;
-  int is_first = 1;
-  char* tmp;
+  std::vector<std::string> user_agent_fields;
 
-  gpr_strvec_init(&v);
-
-  for (i = 0; args && i < args->num_args; i++) {
+  for (size_t i = 0; args && i < args->num_args; i++) {
     if (0 == strcmp(args->args[i].key, GRPC_ARG_PRIMARY_USER_AGENT_STRING)) {
       if (args->args[i].type != GRPC_ARG_STRING) {
         gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
                 GRPC_ARG_PRIMARY_USER_AGENT_STRING);
       } else {
-        if (!is_first) gpr_strvec_add(&v, gpr_strdup(" "));
-        is_first = 0;
-        gpr_strvec_add(&v, gpr_strdup(args->args[i].value.string));
+        user_agent_fields.push_back(args->args[i].value.string);
       }
     }
   }
 
-  gpr_asprintf(&tmp, "%sgrpc-c/%s (%s; %s; %s)", is_first ? "" : " ",
-               grpc_version_string(), GPR_PLATFORM_STRING, transport_name,
-               grpc_g_stands_for());
-  is_first = 0;
-  gpr_strvec_add(&v, tmp);
+  user_agent_fields.push_back(
+      absl::StrFormat("grpc-c/%s (%s; %s)", grpc_version_string(),
+                      GPR_PLATFORM_STRING, transport_name));
 
-  for (i = 0; args && i < args->num_args; i++) {
+  for (size_t i = 0; args && i < args->num_args; i++) {
     if (0 == strcmp(args->args[i].key, GRPC_ARG_SECONDARY_USER_AGENT_STRING)) {
       if (args->args[i].type != GRPC_ARG_STRING) {
         gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
                 GRPC_ARG_SECONDARY_USER_AGENT_STRING);
       } else {
-        if (!is_first) gpr_strvec_add(&v, gpr_strdup(" "));
-        is_first = 0;
-        gpr_strvec_add(&v, gpr_strdup(args->args[i].value.string));
+        user_agent_fields.push_back(args->args[i].value.string);
       }
     }
   }
 
-  tmp = gpr_strvec_flatten(&v, nullptr);
-  gpr_strvec_destroy(&v);
-  grpc_core::ManagedMemorySlice result(tmp);
-  gpr_free(tmp);
-
-  return result;
+  std::string user_agent_string = absl::StrJoin(user_agent_fields, " ");
+  return grpc_core::ManagedMemorySlice(user_agent_string.c_str());
 }
 
 /* Constructor for channel_data */

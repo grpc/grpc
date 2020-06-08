@@ -788,8 +788,8 @@ static void test_valid_sts_creds_options(void) {
       grpc_core::ValidateStsCredentialsOptions(&valid_options, &sts_url);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(sts_url != nullptr);
-  grpc_core::StringView host;
-  grpc_core::StringView port;
+  absl::string_view host;
+  absl::string_view port;
   GPR_ASSERT(grpc_core::SplitHostPort(sts_url->authority, &host, &port));
   GPR_ASSERT(host == "foo.com");
   GPR_ASSERT(port == "5555");

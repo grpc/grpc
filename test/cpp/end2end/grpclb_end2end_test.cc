@@ -618,11 +618,17 @@ class GrpclbEnd2endTest : public ::testing::Test {
   }
 
   Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
-                 bool wait_for_ready = false) {
+                 bool wait_for_ready = false,
+                 const Status& expected_status = Status::OK) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
     request.set_message(kRequestMessage_);
+    if (!expected_status.ok()) {
+      auto* error = request.mutable_param()->mutable_expected_error();
+      error->set_code(expected_status.error_code());
+      error->set_error_message(expected_status.error_message());
+    }
     ClientContext context;
     context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
     if (wait_for_ready) context.set_wait_for_ready(true);
@@ -751,6 +757,22 @@ TEST_F(SingleBalancerTest, Vanilla) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
+TEST_F(SingleBalancerTest, ReturnServerStatus) {
+  SetNextResolutionAllBalancers();
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
+      0);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  // Send a request that the backend will fail, and make sure we get
+  // back the right status.
+  Status expected(StatusCode::INVALID_ARGUMENT, "He's dead, Jim!");
+  Status actual = SendRpc(/*response=*/nullptr, /*timeout_ms=*/1000,
+                          /*wait_for_ready=*/false, expected);
+  EXPECT_EQ(actual.error_code(), expected.error_code());
+  EXPECT_EQ(actual.error_message(), expected.error_message());
+}
+
 TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
   SetNextResolutionAllBalancers(
       "{\n"
@@ -866,84 +888,6 @@ TEST_F(SingleBalancerTest, SwapChildPolicy) {
   EXPECT_EQ(1U, balancers_[0]->service_.response_count());
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
-}
-
-TEST_F(SingleBalancerTest, UpdatesGoToMostRecentChildPolicy) {
-  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
-  ResetStub(kFallbackTimeoutMs);
-  int unreachable_balancer_port = grpc_pick_unused_port_or_die();
-  int unreachable_backend_port = grpc_pick_unused_port_or_die();
-  // Phase 1: Start with RR pointing to first backend.
-  gpr_log(GPR_INFO, "PHASE 1: Initial setup with RR with first backend");
-  SetNextResolution(
-      {
-          // Unreachable balancer.
-          {unreachable_balancer_port, ""},
-      },
-      {
-          // Fallback address: first backend.
-          {backends_[0]->port_, ""},
-      },
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"grpclb\":{\n"
-      "      \"childPolicy\":[\n"
-      "        { \"round_robin\":{} }\n"
-      "      ]\n"
-      "    } }\n"
-      "  ]\n"
-      "}");
-  // RPCs should go to first backend.
-  WaitForBackend(0);
-  // Phase 2: Switch to PF pointing to unreachable backend.
-  gpr_log(GPR_INFO, "PHASE 2: Update to use PF with unreachable backend");
-  SetNextResolution(
-      {
-          // Unreachable balancer.
-          {unreachable_balancer_port, ""},
-      },
-      {
-          // Fallback address: unreachable backend.
-          {unreachable_backend_port, ""},
-      },
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"grpclb\":{\n"
-      "      \"childPolicy\":[\n"
-      "        { \"pick_first\":{} }\n"
-      "      ]\n"
-      "    } }\n"
-      "  ]\n"
-      "}");
-  // RPCs should continue to go to the first backend, because the new
-  // PF child policy will never go into state READY.
-  WaitForBackend(0);
-  // Phase 3: Switch back to RR pointing to second and third backends.
-  // This ensures that we create a new policy rather than updating the
-  // pending PF policy.
-  gpr_log(GPR_INFO, "PHASE 3: Update to use RR again with two backends");
-  SetNextResolution(
-      {
-          // Unreachable balancer.
-          {unreachable_balancer_port, ""},
-      },
-      {
-          // Fallback address: second and third backends.
-          {backends_[1]->port_, ""},
-          {backends_[2]->port_, ""},
-      },
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"grpclb\":{\n"
-      "      \"childPolicy\":[\n"
-      "        { \"round_robin\":{} }\n"
-      "      ]\n"
-      "    } }\n"
-      "  ]\n"
-      "}");
-  // RPCs should go to the second and third backends.
-  WaitForBackend(1);
-  WaitForBackend(2);
 }
 
 TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {

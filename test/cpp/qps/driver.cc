@@ -52,8 +52,8 @@ using std::vector;
 namespace grpc {
 namespace testing {
 static std::string get_host(const std::string& worker) {
-  grpc_core::StringView host;
-  grpc_core::StringView port;
+  absl::string_view host;
+  absl::string_view port;
   grpc_core::SplitHostPort(worker.c_str(), &host, &port);
   return std::string(host.data(), host.size());
 }
@@ -326,6 +326,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (server_config.core_limit() != 0) {
       gpr_log(GPR_ERROR,
               "server config core limit is set but ignored by driver");
+      GPR_ASSERT(false);
     }
 
     ServerArgs args;
@@ -333,10 +334,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
     servers[i].stream = servers[i].stub->RunServer(alloc_context(&contexts));
     if (!servers[i].stream->Write(args)) {
       gpr_log(GPR_ERROR, "Could not write args to server %zu", i);
+      GPR_ASSERT(false);
     }
     ServerStatus init_status;
     if (!servers[i].stream->Read(&init_status)) {
       gpr_log(GPR_ERROR, "Server %zu did not yield initial status", i);
+      GPR_ASSERT(false);
     }
     if (qps_server_target_override.length() > 0) {
       // overriding the qps server target only works if there is 1 server
@@ -347,11 +350,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
       cli_target += std::to_string(i);
       client_config.add_server_targets(cli_target);
     } else {
-      std::string host;
-      grpc_core::UniquePtr<char> cli_target;
-      host = get_host(workers[i]);
-      grpc_core::JoinHostPort(&cli_target, host.c_str(), init_status.port());
-      client_config.add_server_targets(cli_target.get());
+      std::string host = get_host(workers[i]);
+      std::string cli_target =
+          grpc_core::JoinHostPort(host.c_str(), init_status.port());
+      client_config.add_server_targets(cli_target.c_str());
     }
   }
 
@@ -384,6 +386,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
     if (initial_client_config.core_limit() != 0) {
       gpr_log(GPR_ERROR, "client config core limit set but ignored");
+      GPR_ASSERT(false);
     }
 
     // Reduce channel count so that total channels specified is held regardless
@@ -401,6 +404,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     clients[i].stream = clients[i].stub->RunClient(alloc_context(&contexts));
     if (!clients[i].stream->Write(args)) {
       gpr_log(GPR_ERROR, "Could not write args to client %zu", i);
+      GPR_ASSERT(false);
     }
   }
 
@@ -408,6 +412,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     ClientStatus init_status;
     if (!clients[i].stream->Read(&init_status)) {
       gpr_log(GPR_ERROR, "Client %zu did not yield initial status", i);
+      GPR_ASSERT(false);
     }
   }
 
@@ -424,12 +429,14 @@ std::unique_ptr<ScenarioResult> RunScenario(
     auto client = &clients[i];
     if (!client->stream->Write(client_mark)) {
       gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
+      GPR_ASSERT(false);
     }
   }
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     if (!client->stream->Read(&client_status)) {
       gpr_log(GPR_ERROR, "Couldn't get status from client %zu", i);
+      GPR_ASSERT(false);
     }
   }
 
@@ -445,24 +452,28 @@ std::unique_ptr<ScenarioResult> RunScenario(
     auto server = &servers[i];
     if (!server->stream->Write(server_mark)) {
       gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+      GPR_ASSERT(false);
     }
   }
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     if (!client->stream->Write(client_mark)) {
       gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
+      GPR_ASSERT(false);
     }
   }
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     if (!server->stream->Read(&server_status)) {
       gpr_log(GPR_ERROR, "Couldn't get status from server %zu", i);
+      GPR_ASSERT(false);
     }
   }
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     if (!client->stream->Read(&client_status)) {
       gpr_log(GPR_ERROR, "Couldn't get status from client %zu", i);
+      GPR_ASSERT(false);
     }
   }
 
@@ -486,9 +497,11 @@ std::unique_ptr<ScenarioResult> RunScenario(
     auto client = &clients[i];
     if (!client->stream->Write(client_mark)) {
       gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
+      GPR_ASSERT(false);
     }
     if (!client->stream->WritesDone()) {
       gpr_log(GPR_ERROR, "Failed WritesDone for client %zu", i);
+      GPR_ASSERT(false);
     }
   }
   gpr_log(GPR_INFO, "Finishing servers");
@@ -496,9 +509,11 @@ std::unique_ptr<ScenarioResult> RunScenario(
     auto server = &servers[i];
     if (!server->stream->Write(server_mark)) {
       gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+      GPR_ASSERT(false);
     }
     if (!server->stream->WritesDone()) {
       gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
+      GPR_ASSERT(false);
     }
   }
 
@@ -518,6 +533,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       GPR_ASSERT(!client->stream->Read(&client_status));
     } else {
       gpr_log(GPR_ERROR, "Couldn't get final status from client %zu", i);
+      GPR_ASSERT(false);
     }
   }
   for (size_t i = 0; i < num_clients; i++) {
@@ -531,6 +547,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (!success) {
       gpr_log(GPR_ERROR, "Client %zu had an error %s", i,
               s.error_message().c_str());
+      GPR_ASSERT(false);
     }
   }
 
@@ -553,6 +570,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       GPR_ASSERT(!server->stream->Read(&server_status));
     } else {
       gpr_log(GPR_ERROR, "Couldn't get final status from server %zu", i);
+      GPR_ASSERT(false);
     }
   }
   for (size_t i = 0; i < num_servers; i++) {
@@ -566,6 +584,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (!success) {
       gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
               s.error_message().c_str());
+      GPR_ASSERT(false);
     }
   }
 

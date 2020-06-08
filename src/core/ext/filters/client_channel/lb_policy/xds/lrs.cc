@@ -27,7 +27,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
@@ -123,7 +123,8 @@ class LrsLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
-    void AddTraceEvent(TraceSeverity severity, StringView message) override;
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override;
 
    private:
     RefCountedPtr<LrsLb> lrs_policy_;
@@ -176,7 +177,7 @@ LoadBalancingPolicy::PickResult LrsLb::LoadReportingPicker::Pick(
         locality_stats_->Ref(DEBUG_LOCATION, "LocalityStats+call").release();
     result.recv_trailing_metadata_ready =
         // Note: This callback does not run in either the control plane
-        // combiner or in the data plane mutex.
+        // work serializer or in the data plane mutex.
         [locality_stats](grpc_error* error, MetadataInterface* /*metadata*/,
                          CallState* /*call_state*/) {
           const bool call_failed = error != GRPC_ERROR_NONE;
@@ -253,9 +254,11 @@ void LrsLb::UpdateLocked(UpdateArgs args) {
         config_->eds_service_name(), config_->locality_name());
     MaybeUpdatePickerLocked();
   }
+  // Remove XdsClient from channel args, so that its presence doesn't
+  // prevent us from sharing subchannels between channels.
+  grpc_channel_args* new_args = XdsClient::RemoveFromChannelArgs(*args.args);
   // Update child policy.
-  UpdateChildPolicyLocked(std::move(args.addresses), args.args);
-  args.args = nullptr;  // Ownership passed to UpdateChildPolicyLocked().
+  UpdateChildPolicyLocked(std::move(args.addresses), new_args);
 }
 
 void LrsLb::MaybeUpdatePickerLocked() {
@@ -273,7 +276,7 @@ void LrsLb::MaybeUpdatePickerLocked() {
 OrphanablePtr<LoadBalancingPolicy> LrsLb::CreateChildPolicyLocked(
     const grpc_channel_args* args) {
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
@@ -341,7 +344,8 @@ void LrsLb::Helper::RequestReresolution() {
   lrs_policy_->channel_control_helper()->RequestReresolution();
 }
 
-void LrsLb::Helper::AddTraceEvent(TraceSeverity severity, StringView message) {
+void LrsLb::Helper::AddTraceEvent(TraceSeverity severity,
+                                  absl::string_view message) {
   if (lrs_policy_->shutting_down_) return;
   lrs_policy_->channel_control_helper()->AddTraceEvent(severity, message);
 }

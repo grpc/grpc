@@ -53,10 +53,6 @@ else:
 def _create_channel(target: str, options: Sequence[Tuple[str, str]],
                     channel_credentials: Optional[grpc.ChannelCredentials],
                     compression: Optional[grpc.Compression]) -> grpc.Channel:
-    # TODO(rbellevi): Revisit the default value for this.
-    if channel_credentials is None:
-        raise NotImplementedError(
-            "channel_credentials must be supplied explicitly.")
     if channel_credentials._credentials is grpc.experimental._insecure_channel_credentials:
         _LOGGER.debug(f"Creating insecure channel with options '{options}' " +
                       f"and compression '{compression}'")
@@ -133,7 +129,18 @@ class ChannelCache:
 
     def get_channel(self, target: str, options: Sequence[Tuple[str, str]],
                     channel_credentials: Optional[grpc.ChannelCredentials],
+                    insecure: bool,
                     compression: Optional[grpc.Compression]) -> grpc.Channel:
+        if insecure and channel_credentials:
+            raise ValueError("The insecure option is mutually exclusive with " +
+                             "the channel_credentials option. Please use one " +
+                             "or the other.")
+        if insecure:
+            channel_credentials = grpc.experimental.insecure_channel_credentials(
+            )
+        elif channel_credentials is None:
+            _LOGGER.debug("Defaulting to SSL channel credentials.")
+            channel_credentials = grpc.ssl_channel_credentials()
         key = (target, options, channel_credentials, compression)
         with self._lock:
             channel_data = self._mapping.get(key, None)
@@ -167,6 +174,7 @@ def unary_unary(
         response_deserializer: Optional[Callable[[bytes], Any]] = None,
         options: Sequence[Tuple[AnyStr, AnyStr]] = (),
         channel_credentials: Optional[grpc.ChannelCredentials] = None,
+        insecure: bool = False,
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
@@ -192,15 +200,18 @@ def unary_unary(
       request: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials() or
         grpc.insecure_channel_credentials().
+      insecure: If True, specifies channel_credentials as
+        :term:`grpc.insecure_channel_credentials()`. This option is mutually
+        exclusive with the `channel_credentials` option.
       call_credentials: A call credential applied to each call individually,
         e.g. the output of grpc.metadata_call_credentials() or
         grpc.access_token_call_credentials().
@@ -219,7 +230,8 @@ def unary_unary(
       The response to the RPC.
     """
     channel = ChannelCache.get().get_channel(target, options,
-                                             channel_credentials, compression)
+                                             channel_credentials, insecure,
+                                             compression)
     multicallable = channel.unary_unary(method, request_serializer,
                                         response_deserializer)
     return multicallable(request,
@@ -238,6 +250,7 @@ def unary_stream(
         response_deserializer: Optional[Callable[[bytes], Any]] = None,
         options: Sequence[Tuple[AnyStr, AnyStr]] = (),
         channel_credentials: Optional[grpc.ChannelCredentials] = None,
+        insecure: bool = False,
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
@@ -263,14 +276,17 @@ def unary_stream(
       request: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials().
+      insecure: If True, specifies channel_credentials as
+        :term:`grpc.insecure_channel_credentials()`. This option is mutually
+        exclusive with the `channel_credentials` option.
       call_credentials: A call credential applied to each call individually,
         e.g. the output of grpc.metadata_call_credentials() or
         grpc.access_token_call_credentials().
@@ -289,7 +305,8 @@ def unary_stream(
       An iterator of responses.
     """
     channel = ChannelCache.get().get_channel(target, options,
-                                             channel_credentials, compression)
+                                             channel_credentials, insecure,
+                                             compression)
     multicallable = channel.unary_stream(method, request_serializer,
                                          response_deserializer)
     return multicallable(request,
@@ -308,6 +325,7 @@ def stream_unary(
         response_deserializer: Optional[Callable[[bytes], Any]] = None,
         options: Sequence[Tuple[AnyStr, AnyStr]] = (),
         channel_credentials: Optional[grpc.ChannelCredentials] = None,
+        insecure: bool = False,
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
@@ -333,17 +351,20 @@ def stream_unary(
       request_iterator: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials().
       call_credentials: A call credential applied to each call individually,
         e.g. the output of grpc.metadata_call_credentials() or
         grpc.access_token_call_credentials().
+      insecure: If True, specifies channel_credentials as
+        :term:`grpc.insecure_channel_credentials()`. This option is mutually
+        exclusive with the `channel_credentials` option.
       compression: An optional value indicating the compression method to be
         used over the lifetime of the channel, e.g. grpc.Compression.Gzip.
       wait_for_ready: An optional flag indicating whether the RPC should fail
@@ -359,7 +380,8 @@ def stream_unary(
       The response to the RPC.
     """
     channel = ChannelCache.get().get_channel(target, options,
-                                             channel_credentials, compression)
+                                             channel_credentials, insecure,
+                                             compression)
     multicallable = channel.stream_unary(method, request_serializer,
                                          response_deserializer)
     return multicallable(request_iterator,
@@ -378,6 +400,7 @@ def stream_stream(
         response_deserializer: Optional[Callable[[bytes], Any]] = None,
         options: Sequence[Tuple[AnyStr, AnyStr]] = (),
         channel_credentials: Optional[grpc.ChannelCredentials] = None,
+        insecure: bool = False,
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
@@ -403,17 +426,20 @@ def stream_stream(
       request_iterator: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials().
       call_credentials: A call credential applied to each call individually,
         e.g. the output of grpc.metadata_call_credentials() or
         grpc.access_token_call_credentials().
+      insecure: If True, specifies channel_credentials as
+        :term:`grpc.insecure_channel_credentials()`. This option is mutually
+        exclusive with the `channel_credentials` option.
       compression: An optional value indicating the compression method to be
         used over the lifetime of the channel, e.g. grpc.Compression.Gzip.
       wait_for_ready: An optional flag indicating whether the RPC should fail
@@ -429,7 +455,8 @@ def stream_stream(
       An iterator of responses.
     """
     channel = ChannelCache.get().get_channel(target, options,
-                                             channel_credentials, compression)
+                                             channel_credentials, insecure,
+                                             compression)
     multicallable = channel.stream_stream(method, request_serializer,
                                           response_deserializer)
     return multicallable(request_iterator,

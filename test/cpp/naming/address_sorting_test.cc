@@ -64,25 +64,25 @@ struct TestAddress {
 };
 
 grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
+  std::string host;
+  std::string port;
   grpc_resolved_address resolved_addr;
   grpc_core::SplitHostPort(test_addr.dest_addr.c_str(), &host, &port);
   if (test_addr.family == AF_INET) {
     sockaddr_in in_dest;
     memset(&in_dest, 0, sizeof(sockaddr_in));
-    in_dest.sin_port = htons(atoi(port.get()));
+    in_dest.sin_port = htons(atoi(port.c_str()));
     in_dest.sin_family = AF_INET;
-    GPR_ASSERT(inet_pton(AF_INET, host.get(), &in_dest.sin_addr) == 1);
+    GPR_ASSERT(inet_pton(AF_INET, host.c_str(), &in_dest.sin_addr) == 1);
     memcpy(&resolved_addr.addr, &in_dest, sizeof(sockaddr_in));
     resolved_addr.len = sizeof(sockaddr_in);
   } else {
     GPR_ASSERT(test_addr.family == AF_INET6);
     sockaddr_in6 in6_dest;
     memset(&in6_dest, 0, sizeof(sockaddr_in6));
-    in6_dest.sin6_port = htons(atoi(port.get()));
+    in6_dest.sin6_port = htons(atoi(port.c_str()));
     in6_dest.sin6_family = AF_INET6;
-    GPR_ASSERT(inet_pton(AF_INET6, host.get(), &in6_dest.sin6_addr) == 1);
+    GPR_ASSERT(inet_pton(AF_INET6, host.c_str(), &in6_dest.sin6_addr) == 1);
     memcpy(&resolved_addr.addr, &in6_dest, sizeof(sockaddr_in6));
     resolved_addr.len = sizeof(sockaddr_in6);
   }
@@ -108,19 +108,17 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
          !ipv6_supported_)) {
       return false;
     }
-    char* ip_addr_str;
     grpc_resolved_address dest_addr_as_resolved_addr;
     memcpy(&dest_addr_as_resolved_addr.addr, dest_addr, dest_addr->len);
     dest_addr_as_resolved_addr.len = dest_addr->len;
-    grpc_sockaddr_to_string(&ip_addr_str, &dest_addr_as_resolved_addr,
-                            false /* normalize */);
+    std::string ip_addr_str = grpc_sockaddr_to_string(
+        &dest_addr_as_resolved_addr, false /* normalize */);
     auto it = dest_addr_to_src_addr_.find(ip_addr_str);
     if (it == dest_addr_to_src_addr_.end()) {
-      gpr_log(GPR_DEBUG, "can't find |%s| in dest to src map", ip_addr_str);
-      gpr_free(ip_addr_str);
+      gpr_log(GPR_DEBUG, "can't find |%s| in dest to src map",
+              ip_addr_str.c_str());
       return false;
     }
-    gpr_free(ip_addr_str);
     grpc_resolved_address source_addr_as_resolved_addr =
         TestAddressToGrpcResolvedAddress(it->second);
     memcpy(source_addr->addr, &source_addr_as_resolved_addr.addr,
@@ -180,13 +178,10 @@ void VerifyLbAddrOutputs(const grpc_core::ServerAddressList& addresses,
                          std::vector<std::string> expected_addrs) {
   EXPECT_EQ(addresses.size(), expected_addrs.size());
   for (size_t i = 0; i < addresses.size(); ++i) {
-    char* ip_addr_str;
-    grpc_sockaddr_to_string(&ip_addr_str, &addresses[i].address(),
-                            false /* normalize */);
+    std::string ip_addr_str =
+        grpc_sockaddr_to_string(&addresses[i].address(), false /* normalize */);
     EXPECT_EQ(expected_addrs[i], ip_addr_str);
-    gpr_free(ip_addr_str);
   }
-  grpc_core::ExecCtx exec_ctx;
 }
 
 /* We need to run each test case inside of its own

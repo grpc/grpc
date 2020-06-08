@@ -23,12 +23,11 @@
 
 #include "src/core/lib/iomgr/timer.h"
 
-typedef struct {
+struct grpc_timer_heap {
   grpc_timer** timers;
   uint32_t timer_count;
   uint32_t timer_capacity;
-} grpc_timer_heap;
-
+};
 /* return true if the new timer is the first timer in the heap */
 bool grpc_timer_heap_add(grpc_timer_heap* heap, grpc_timer* timer);
 

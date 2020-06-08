@@ -66,6 +66,7 @@ some configuration as environment variables that can be set.
   - http2_stream_state - traces all http2 stream state mutations.
   - http1 - traces HTTP/1.x operations performed by gRPC
   - inproc - traces the in-process transport
+  - http_keepalive - traces gRPC keepalive pings
   - flowctl - traces http2 flow control
   - lrs_lb - traces lrs LB policy
   - op_failure - traces error information when failure is pushed onto a

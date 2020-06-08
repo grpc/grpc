@@ -138,10 +138,10 @@ inline uintptr_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
 
 /* Find a key/value pair in the table... returns the index in the table of the
    most similar entry, or 0 if the value was not found */
-typedef struct {
+struct grpc_chttp2_hptbl_find_result {
   uint32_t index;
   int has_value;
-} grpc_chttp2_hptbl_find_result;
+};
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
     const grpc_chttp2_hptbl* tbl, grpc_mdelem md);
 

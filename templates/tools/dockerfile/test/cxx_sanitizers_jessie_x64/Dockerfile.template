@@ -19,8 +19,8 @@
   RUN sed -i '/deb http:\/\/httpredir.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 
   <%include file="../../apt_get_basic.include"/>
-  <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../python_deps.include"/>
+  <%include file="../../gcp_api_libraries.include"/>
   #=================
   # C++ dependencies (purposely excluding Clang because it's part of the base image)
   RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev && apt-get clean

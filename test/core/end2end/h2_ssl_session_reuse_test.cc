@@ -48,7 +48,7 @@ void* tag(intptr_t t) { return (void*)t; }
 
 gpr_timespec five_seconds_time() { return grpc_timeout_seconds_to_deadline(5); }
 
-grpc_server* server_create(grpc_completion_queue* cq, char* server_addr) {
+grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
   grpc_slice ca_slice, cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
@@ -80,7 +80,8 @@ grpc_server* server_create(grpc_completion_queue* cq, char* server_addr) {
   return server;
 }
 
-grpc_channel* client_create(char* server_addr, grpc_ssl_session_cache* cache) {
+grpc_channel* client_create(const char* server_addr,
+                            grpc_ssl_session_cache* cache) {
   grpc_slice ca_slice, cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
@@ -126,7 +127,7 @@ grpc_channel* client_create(char* server_addr, grpc_ssl_session_cache* cache) {
 }
 
 void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
-                   char* server_addr, grpc_ssl_session_cache* cache,
+                   const char* server_addr, grpc_ssl_session_cache* cache,
                    bool expect_session_reuse) {
   grpc_channel* client = client_create(server_addr, cache);
 
@@ -249,17 +250,16 @@ void drain_cq(grpc_completion_queue* cq) {
 TEST(H2SessionReuseTest, SingleReuse) {
   int port = grpc_pick_unused_port_or_die();
 
-  grpc_core::UniquePtr<char> server_addr;
-  grpc_core::JoinHostPort(&server_addr, "localhost", port);
+  std::string server_addr = grpc_core::JoinHostPort("localhost", port);
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
 
-  grpc_server* server = server_create(cq, server_addr.get());
+  grpc_server* server = server_create(cq, server_addr.c_str());
 
-  do_round_trip(cq, server, server_addr.get(), cache, false);
-  do_round_trip(cq, server, server_addr.get(), cache, true);
-  do_round_trip(cq, server, server_addr.get(), cache, true);
+  do_round_trip(cq, server, server_addr.c_str(), cache, false);
+  do_round_trip(cq, server, server_addr.c_str(), cache, true);
+  do_round_trip(cq, server, server_addr.c_str(), cache, true);
 
   grpc_ssl_session_cache_destroy(cache);
 

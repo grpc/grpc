@@ -172,7 +172,7 @@ static void sigint_handler(int /*x*/) { _exit(0); }
 int main(int argc, char** argv) {
   grpc_event ev;
   call_state* s;
-  grpc_core::UniquePtr<char> addr_buf;
+  std::string addr_buf;
   gpr_cmdline* cl;
   grpc_completion_queue* shutdown_cq;
   int shutdown_started = 0;
@@ -199,8 +199,8 @@ int main(int argc, char** argv) {
   gpr_cmdline_destroy(cl);
 
   if (addr == nullptr) {
-    grpc_core::JoinHostPort(&addr_buf, "::", grpc_pick_unused_port_or_die());
-    addr = addr_buf.get();
+    addr_buf = grpc_core::JoinHostPort("::", grpc_pick_unused_port_or_die());
+    addr = addr_buf.c_str();
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
   grpc_server_start(server);
 
   addr = nullptr;
-  addr_buf.reset();
+  addr_buf.clear();
 
   grpc_call_details_init(&call_details);
 

@@ -22,8 +22,9 @@
 
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 
 namespace grpc_core {
 
@@ -54,7 +55,8 @@ class RegistryState {
   }
 
  private:
-  InlinedVector<std::unique_ptr<LoadBalancingPolicyFactory>, 10> factories_;
+  absl::InlinedVector<std::unique_ptr<LoadBalancingPolicyFactory>, 10>
+      factories_;
 };
 
 RegistryState* g_state = nullptr;
