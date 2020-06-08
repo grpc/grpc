@@ -67,9 +67,9 @@ class AioRpcError(grpc.RpcError):
 
     def __init__(self,
                  code: grpc.StatusCode,
+                 initial_metadata: Metadata,
+                 trailing_metadata: Metadata,
                  details: Optional[str] = None,
-                 initial_metadata: Optional[Metadata] = None,
-                 trailing_metadata: Optional[Metadata] = None,
                  debug_error_string: Optional[str] = None) -> None:
         """Constructor.
 
@@ -145,10 +145,10 @@ def _create_rpc_error(initial_metadata: Metadata,
                       status: cygrpc.AioRpcStatus) -> AioRpcError:
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
-        status.details(),
         Metadata.from_tuple(initial_metadata),
         Metadata.from_tuple(status.trailing_metadata()),
-        status.debug_error_string(),
+        details=status.details(),
+        debug_error_string=status.debug_error_string(),
     )
 
 

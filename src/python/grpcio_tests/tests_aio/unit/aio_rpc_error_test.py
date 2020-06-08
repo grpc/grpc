@@ -33,9 +33,9 @@ class TestAioRpcError(unittest.TestCase):
 
     def test_attributes(self):
         aio_rpc_error = AioRpcError(grpc.StatusCode.CANCELLED,
-                                    'details',
                                     initial_metadata=_TEST_INITIAL_METADATA,
                                     trailing_metadata=_TEST_TRAILING_METADATA,
+                                    details="details",
                                     debug_error_string=_TEST_DEBUG_ERROR_STRING)
         self.assertEqual(aio_rpc_error.code(), grpc.StatusCode.CANCELLED)
         self.assertEqual(aio_rpc_error.details(), 'details')
