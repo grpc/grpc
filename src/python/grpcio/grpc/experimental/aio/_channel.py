@@ -30,7 +30,7 @@ from ._interceptor import (
     UnaryUnaryClientInterceptor, UnaryStreamClientInterceptor,
     StreamUnaryClientInterceptor, StreamStreamClientInterceptor)
 from ._metadata import Metadata
-from ._typing import (ChannelArgumentType, DeserializingFunction, MetadataType,
+from ._typing import (ChannelArgumentType, DeserializingFunction,
                       SerializingFunction, RequestIterableType)
 from ._utils import _timeout_to_deadline
 
@@ -109,7 +109,7 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable,
                  request: Any,
                  *,
                  timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = None,
+                 metadata: Optional[Metadata] = None,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
                  compression: Optional[grpc.Compression] = None
@@ -139,7 +139,7 @@ class UnaryStreamMultiCallable(_BaseMultiCallable,
                  request: Any,
                  *,
                  timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = None,
+                 metadata: Optional[Metadata] = None,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
                  compression: Optional[grpc.Compression] = None
@@ -169,7 +169,7 @@ class StreamUnaryMultiCallable(_BaseMultiCallable,
     def __call__(self,
                  request_iterator: Optional[RequestIterableType] = None,
                  timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = None,
+                 metadata: Optional[Metadata] = None,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
                  compression: Optional[grpc.Compression] = None
@@ -199,7 +199,7 @@ class StreamStreamMultiCallable(_BaseMultiCallable,
     def __call__(self,
                  request_iterator: Optional[RequestIterableType] = None,
                  timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = None,
+                 metadata: Optional[Metadata] = None,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
                  compression: Optional[grpc.Compression] = None

@@ -16,17 +16,18 @@ import asyncio
 import grpc
 from typing import AsyncIterable
 from grpc.experimental import aio
-from grpc.experimental.aio._typing import MetadataType, MetadatumType, MetadataKey, MetadataValue
+from grpc.experimental.aio._typing import MetadatumType, MetadataKey, MetadataValue
+from grpc.experimental.aio._metadata import Metadata
 
 from tests.unit.framework.common import test_constants
 
 
-def seen_metadata(expected: MetadataType, actual: MetadataType):
+def seen_metadata(expected: Metadata, actual: Metadata):
     return not bool(set(tuple(expected)) - set(tuple(actual)))
 
 
 def seen_metadatum(expected_key: MetadataKey, expected_value: MetadataValue,
-                   actual: MetadataType) -> bool:
+                   actual: Metadata) -> bool:
     obtained = actual[expected_key]
     return obtained == expected_value
 
