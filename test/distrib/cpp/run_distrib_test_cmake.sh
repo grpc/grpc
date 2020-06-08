@@ -51,6 +51,13 @@ cmake -DCMAKE_BUILD_TYPE=Release ../..
 make -j4 install
 popd
 
+# Install libuv
+mkdir -p "third_party/libuv/cmake/build"
+pushd "third_party/libuv/cmake/build"
+cmake -DCMAKE_BUILD_TYPE=Release ../..
+make -j4 install
+popd
+
 # Just before installing gRPC, wipe out contents of all the submodules to simulate
 # a standalone build from an archive
 # shellcheck disable=SC2016
@@ -68,6 +75,7 @@ cmake \
   -DgRPC_PROTOBUF_PROVIDER=package \
   -DgRPC_SSL_PROVIDER=package \
   -DgRPC_ZLIB_PROVIDER=package \
+  -DgRPC_LIBUV_PROVIDER=package \
   ../..
 make -j4 install
 popd

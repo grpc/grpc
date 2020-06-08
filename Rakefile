@@ -94,6 +94,7 @@ task 'dlls' do
   env += 'EMBED_ZLIB=true '
   env += 'EMBED_OPENSSL=true '
   env += 'EMBED_CARES=true '
+  env += 'EMBED_LIBUV=true '
   env += 'BUILDDIR=/tmp '
   env += "V=#{verbose} "
   out = GrpcBuildConfig::CORE_WINDOWS_DLL

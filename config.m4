@@ -823,6 +823,73 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/ssl/tls13_server.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
+    third_party/libuv/src/fs-poll.c \
+    third_party/libuv/src/idna.c \
+    third_party/libuv/src/inet.c \
+    third_party/libuv/src/random.c \
+    third_party/libuv/src/strscpy.c \
+    third_party/libuv/src/threadpool.c \
+    third_party/libuv/src/timer.c \
+    third_party/libuv/src/unix/async.c \
+    third_party/libuv/src/unix/bsd-ifaddrs.c \
+    third_party/libuv/src/unix/core.c \
+    third_party/libuv/src/unix/darwin-proctitle.c \
+    third_party/libuv/src/unix/darwin.c \
+    third_party/libuv/src/unix/dl.c \
+    third_party/libuv/src/unix/fs.c \
+    third_party/libuv/src/unix/fsevents.c \
+    third_party/libuv/src/unix/getaddrinfo.c \
+    third_party/libuv/src/unix/getnameinfo.c \
+    third_party/libuv/src/unix/kqueue.c \
+    third_party/libuv/src/unix/linux-core.c \
+    third_party/libuv/src/unix/linux-inotify.c \
+    third_party/libuv/src/unix/linux-syscalls.c \
+    third_party/libuv/src/unix/loop-watcher.c \
+    third_party/libuv/src/unix/loop.c \
+    third_party/libuv/src/unix/pipe.c \
+    third_party/libuv/src/unix/poll.c \
+    third_party/libuv/src/unix/process.c \
+    third_party/libuv/src/unix/procfs-exepath.c \
+    third_party/libuv/src/unix/proctitle.c \
+    third_party/libuv/src/unix/random-devurandom.c \
+    third_party/libuv/src/unix/random-getentropy.c \
+    third_party/libuv/src/unix/random-getrandom.c \
+    third_party/libuv/src/unix/random-sysctl-linux.c \
+    third_party/libuv/src/unix/signal.c \
+    third_party/libuv/src/unix/stream.c \
+    third_party/libuv/src/unix/sysinfo-loadavg.c \
+    third_party/libuv/src/unix/tcp.c \
+    third_party/libuv/src/unix/thread.c \
+    third_party/libuv/src/unix/tty.c \
+    third_party/libuv/src/unix/udp.c \
+    third_party/libuv/src/uv-common.c \
+    third_party/libuv/src/uv-data-getter-setters.c \
+    third_party/libuv/src/version.c \
+    third_party/libuv/src/win/async.c \
+    third_party/libuv/src/win/core.c \
+    third_party/libuv/src/win/detect-wakeup.c \
+    third_party/libuv/src/win/dl.c \
+    third_party/libuv/src/win/error.c \
+    third_party/libuv/src/win/fs-event.c \
+    third_party/libuv/src/win/fs.c \
+    third_party/libuv/src/win/getaddrinfo.c \
+    third_party/libuv/src/win/getnameinfo.c \
+    third_party/libuv/src/win/handle.c \
+    third_party/libuv/src/win/loop-watcher.c \
+    third_party/libuv/src/win/pipe.c \
+    third_party/libuv/src/win/poll.c \
+    third_party/libuv/src/win/process-stdio.c \
+    third_party/libuv/src/win/process.c \
+    third_party/libuv/src/win/signal.c \
+    third_party/libuv/src/win/snprintf.c \
+    third_party/libuv/src/win/stream.c \
+    third_party/libuv/src/win/tcp.c \
+    third_party/libuv/src/win/thread.c \
+    third_party/libuv/src/win/tty.c \
+    third_party/libuv/src/win/udp.c \
+    third_party/libuv/src/win/util.c \
+    third_party/libuv/src/win/winapi.c \
+    third_party/libuv/src/win/winsock.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/encode.c \
     third_party/upb/upb/msg.c \
@@ -994,5 +1061,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/libuv/src)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/libuv/src/unix)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/libuv/src/win)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
 fi

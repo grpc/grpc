@@ -84,8 +84,8 @@ Pod::Spec.new do |s|
   src_root = '$(PODS_ROOT)/gRPC-Core'
   s.pod_target_xcconfig = {
     'GRPC_SRC_ROOT' => src_root,
-    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(GRPC_SRC_ROOT)/include"',
-    'USER_HEADER_SEARCH_PATHS' => '"$(GRPC_SRC_ROOT)"',
+    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(GRPC_SRC_ROOT)/include" "$(GRPC_SRC_ROOT)/third_party/libuv/include"',
+    'USER_HEADER_SEARCH_PATHS' => '"$(GRPC_SRC_ROOT)" "$(GRPC_SRC_ROOT)/third_party/libuv/src"',
     # If we don't set these two settings, `include/grpc/support/time.h` and
     # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
     # build.
@@ -98,6 +98,100 @@ Pod::Spec.new do |s|
   s.default_subspecs = 'Interface', 'Implementation'
   s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma'
   s.libraries = 'c++'
+
+  s.subspec 'Libuv-Interface' do |ss|
+    ss.header_dir = ''
+    ss.header_mappings_dir = 'third_party/libuv/include'
+    ss.source_files = 'third_party/libuv/include/uv.h',
+                      'third_party/libuv/include/uv/darwin.h',
+                      'third_party/libuv/include/uv/errno.h',
+                      'third_party/libuv/include/uv/threadpool.h',
+                      'third_party/libuv/include/uv/tree.h',
+                      'third_party/libuv/include/uv/unix.h',
+                      'third_party/libuv/include/uv/version.h'
+    ss.private_header_files = 'third_party/libuv/include/uv.h',
+                              'third_party/libuv/include/uv/darwin.h',
+                              'third_party/libuv/include/uv/errno.h',
+                              'third_party/libuv/include/uv/threadpool.h',
+                              'third_party/libuv/include/uv/tree.h',
+                              'third_party/libuv/include/uv/unix.h',
+                              'third_party/libuv/include/uv/version.h'
+  end
+
+  s.subspec 'Libuv-Implementation' do |ss|
+    ss.header_dir = ''
+    ss.header_mappings_dir = 'third_party/libuv/src'
+    ss.dependency "#{s.name}/Libuv-Interface", version
+    ss.libraries = 'dl'
+    ss.compiler_flags = '-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -pthread --std=gnu89 -pedantic -O2 -Wno-error'
+
+    ss.source_files = 'third_party/libuv/include/uv.h',
+                      'third_party/libuv/include/uv/darwin.h',
+                      'third_party/libuv/include/uv/errno.h',
+                      'third_party/libuv/include/uv/threadpool.h',
+                      'third_party/libuv/include/uv/tree.h',
+                      'third_party/libuv/include/uv/unix.h',
+                      'third_party/libuv/include/uv/version.h',
+                      'third_party/libuv/src/fs-poll.c',
+                      'third_party/libuv/src/heap-inl.h',
+                      'third_party/libuv/src/idna.c',
+                      'third_party/libuv/src/idna.h',
+                      'third_party/libuv/src/inet.c',
+                      'third_party/libuv/src/queue.h',
+                      'third_party/libuv/src/random.c',
+                      'third_party/libuv/src/strscpy.c',
+                      'third_party/libuv/src/strscpy.h',
+                      'third_party/libuv/src/threadpool.c',
+                      'third_party/libuv/src/timer.c',
+                      'third_party/libuv/src/unix/async.c',
+                      'third_party/libuv/src/unix/atomic-ops.h',
+                      'third_party/libuv/src/unix/bsd-ifaddrs.c',
+                      'third_party/libuv/src/unix/core.c',
+                      'third_party/libuv/src/unix/darwin-proctitle.c',
+                      'third_party/libuv/src/unix/darwin.c',
+                      'third_party/libuv/src/unix/dl.c',
+                      'third_party/libuv/src/unix/fs.c',
+                      'third_party/libuv/src/unix/fsevents.c',
+                      'third_party/libuv/src/unix/getaddrinfo.c',
+                      'third_party/libuv/src/unix/getnameinfo.c',
+                      'third_party/libuv/src/unix/internal.h',
+                      'third_party/libuv/src/unix/kqueue.c',
+                      'third_party/libuv/src/unix/loop-watcher.c',
+                      'third_party/libuv/src/unix/loop.c',
+                      'third_party/libuv/src/unix/pipe.c',
+                      'third_party/libuv/src/unix/poll.c',
+                      'third_party/libuv/src/unix/process.c',
+                      'third_party/libuv/src/unix/proctitle.c',
+                      'third_party/libuv/src/unix/random-devurandom.c',
+                      'third_party/libuv/src/unix/random-getentropy.c',
+                      'third_party/libuv/src/unix/random-getrandom.c',
+                      'third_party/libuv/src/unix/signal.c',
+                      'third_party/libuv/src/unix/spinlock.h',
+                      'third_party/libuv/src/unix/stream.c',
+                      'third_party/libuv/src/unix/tcp.c',
+                      'third_party/libuv/src/unix/thread.c',
+                      'third_party/libuv/src/unix/tty.c',
+                      'third_party/libuv/src/unix/udp.c',
+                      'third_party/libuv/src/uv-common.c',
+                      'third_party/libuv/src/uv-common.h',
+                      'third_party/libuv/src/uv-data-getter-setters.c',
+                      'third_party/libuv/src/version.c'
+    ss.private_header_files = 'third_party/libuv/include/uv.h',
+                              'third_party/libuv/include/uv/darwin.h',
+                              'third_party/libuv/include/uv/errno.h',
+                              'third_party/libuv/include/uv/threadpool.h',
+                              'third_party/libuv/include/uv/tree.h',
+                              'third_party/libuv/include/uv/unix.h',
+                              'third_party/libuv/include/uv/version.h',
+                              'third_party/libuv/src/heap-inl.h',
+                              'third_party/libuv/src/idna.h',
+                              'third_party/libuv/src/queue.h',
+                              'third_party/libuv/src/strscpy.h',
+                              'third_party/libuv/src/unix/atomic-ops.h',
+                              'third_party/libuv/src/unix/internal.h',
+                              'third_party/libuv/src/unix/spinlock.h',
+                              'third_party/libuv/src/uv-common.h'
+  end
 
   # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
   # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
@@ -180,6 +274,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
+    ss.dependency "#{s.name}/Libuv-Interface", version
+    ss.dependency "#{s.name}/Libuv-Implementation", version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC'
 
     ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',

@@ -70,6 +70,14 @@ ExternalProject_Add(zlib
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/zlib
 )
 
+# Builds libuv project from the git submodule.
+ExternalProject_Add(libuv
+  PREFIX libuv
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/libuv"
+  CMAKE_CACHE_ARGS
+        -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/libuv
+)
+
 # the location where protobuf-config.cmake will be installed varies by platform
 if (WIN32)
   set(_FINDPACKAGE_PROTOBUF_CONFIG_DIR "${CMAKE_CURRENT_BINARY_DIR}/protobuf/cmake")
@@ -96,6 +104,8 @@ ExternalProject_Add(grpc
         -DProtobuf_DIR:PATH=${_FINDPACKAGE_PROTOBUF_CONFIG_DIR}
         -DgRPC_ZLIB_PROVIDER:STRING=package
         -DZLIB_ROOT:STRING=${CMAKE_CURRENT_BINARY_DIR}/zlib
+        -DgRPC_LIBUV_PROVIDER:STRING=package
+        -DLibUV_ROOT:STRING=${CMAKE_CURRENT_BINARY_DIR}/libuv
         -DgRPC_ABSL_PROVIDER:STRING=package
         -Dabsl_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/absl/lib/cmake/absl
         -DgRPC_CARES_PROVIDER:STRING=package
@@ -103,7 +113,7 @@ ExternalProject_Add(grpc
         -DgRPC_SSL_PROVIDER:STRING=package
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc
-  DEPENDS c-ares protobuf zlib absl
+  DEPENDS c-ares protobuf zlib absl libuv
 )
 
 # Build the helloworld projects itself using a CMakeLists.txt that assumes all the dependencies
@@ -122,6 +132,7 @@ ExternalProject_Add(helloworld
         -DProtobuf_DIR:PATH=${_FINDPACKAGE_PROTOBUF_CONFIG_DIR}
         -Dc-ares_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/c-ares/lib/cmake/c-ares
         -DZLIB_ROOT:STRING=${CMAKE_CURRENT_BINARY_DIR}/zlib
+        -DLibUV_ROOT:STRING=${CMAKE_CURRENT_BINARY_DIR}/libuv
         -Dabsl_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/absl/lib/cmake/absl
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
         -DgRPC_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc/lib/cmake/grpc

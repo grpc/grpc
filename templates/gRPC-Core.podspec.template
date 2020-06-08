@@ -62,10 +62,23 @@
   # ObjectiveC doesn't use c-ares so we don't need address_sorting files at all
   address_sorting_unwanted_files = list_lib_files("address_sorting", ("public_headers", "headers", "src"))
 
+  libuv_extra_public_headers = [
+      'third_party/libuv/include/uv.h',
+      'third_party/libuv/include/uv/errno.h',
+      'third_party/libuv/include/uv/threadpool.h',
+      'third_party/libuv/include/uv/version.h',
+      'third_party/libuv/include/uv/tree.h',
+      'third_party/libuv/include/uv/unix.h',
+      'third_party/libuv/include/uv/darwin.h',
+  ]
+
   grpc_private_files = list(sorted(set(list_lib_files("grpc", ("headers", "src"))) - set(address_sorting_unwanted_files)))
   grpc_public_headers = list(sorted(set(list_lib_files("grpc", ("public_headers",))) - set(address_sorting_unwanted_files)))
   grpc_private_headers = list(sorted(set(list_lib_files("grpc", ("headers",))) - set(address_sorting_unwanted_files)))
   grpc_abseil_specs = list_abseil_specs("grpc")
+  libuv_private_files = list_lib_files("uv_darwin", ("headers", "src"))
+  libuv_public_headers = list(sorted(libuv_extra_public_headers))
+  libuv_private_headers = list_lib_files("uv_darwin", ("headers",))
 
 
   # TODO(jtattermusch): build.yaml is now generated from bazel build
@@ -158,8 +171,8 @@
     src_root = '$(PODS_ROOT)/gRPC-Core'
     s.pod_target_xcconfig = {
       'GRPC_SRC_ROOT' => src_root,
-      'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(GRPC_SRC_ROOT)/include"',
-      'USER_HEADER_SEARCH_PATHS' => '"$(GRPC_SRC_ROOT)"',
+      'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(GRPC_SRC_ROOT)/include" "$(GRPC_SRC_ROOT)/third_party/libuv/include"',
+      'USER_HEADER_SEARCH_PATHS' => '"$(GRPC_SRC_ROOT)" "$(GRPC_SRC_ROOT)/third_party/libuv/src"',
       # If we don't set these two settings, `include/grpc/support/time.h` and
       # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
       # build.
@@ -172,6 +185,24 @@
     s.default_subspecs = 'Interface', 'Implementation'
     s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma'
     s.libraries = 'c++'
+
+    s.subspec 'Libuv-Interface' do |ss|
+      ss.header_dir = ''
+      ss.header_mappings_dir = 'third_party/libuv/include'
+      ss.source_files = ${ruby_multiline_list(libuv_public_headers, 22)}
+      ss.private_header_files = ${ruby_multiline_list(libuv_public_headers, 30)}
+    end
+
+    s.subspec 'Libuv-Implementation' do |ss|
+      ss.header_dir = ''
+      ss.header_mappings_dir = 'third_party/libuv/src'
+      ss.dependency "#{s.name}/Libuv-Interface", version
+      ss.libraries = 'dl'
+      ss.compiler_flags = '-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -pthread --std=gnu89 -pedantic -O2 -Wno-error'
+
+      ss.source_files = ${ruby_multiline_list(libuv_private_files, 22)}
+      ss.private_header_files = ${ruby_multiline_list(libuv_private_headers, 30)}
+    end
 
     # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
     # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
@@ -197,6 +228,8 @@
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor
+      ss.dependency "#{s.name}/Libuv-Interface", version
+      ss.dependency "#{s.name}/Libuv-Implementation", version
       ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC'
 
       ss.source_files = ${ruby_multiline_list(grpc_private_files, 22)}

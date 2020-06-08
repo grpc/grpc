@@ -215,6 +215,17 @@ defaults:
     CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/upb
       -Isrc/core/ext/upb-generated
     LDFLAGS: -g
+  uv_darwin:
+    CPPFLAGS: -g -Ithird_party/libuv/include -Ithird_party/libuv/src -D_LARGEFILE_SOURCE
+      -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -pthread --std=gnu89 -pedantic -O2
+  uv_linux:
+    CPPFLAGS: -g -Ithird_party/libuv/include -Ithird_party/libuv/src -D_LARGEFILE_SOURCE
+      -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -pthread --std=gnu89 -pedantic -O2 -Ithird_party/libuv/src/unix
+      -Wno-tree-vrp -Wno-omit-frame-pointer -D_DARWIN_USE_64_BIT_INODE=1 -D_DARWIN_UNLIMITED_SELECT=1
+  uv_win:
+    CPPFLAGS: -g -Ithird_party/libuv/include -Ithird_party/libuv/src -D_LARGEFILE_SOURCE
+      -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -pthread --std=gnu89 -pedantic -O2 -Ithird_party/libuv/src/win
+      -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0600
   zlib:
     CFLAGS: -fvisibility=hidden
 php_config_m4:
@@ -223,6 +234,9 @@ php_config_m4:
   - address_sorting
   - boringssl
   - z
+  - uv_linux
+  - uv_darwin
+  - uv_win
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h
@@ -254,6 +268,9 @@ python_dependencies:
   - ares
   - boringssl
   - z
+  - uv_linux
+  - uv_darwin
+  - uv_win
 ruby_gem:
   deps:
   - grpc
@@ -261,3 +278,6 @@ ruby_gem:
   - ares
   - boringssl
   - z
+  - uv_linux
+  - uv_darwin
+  - uv_win

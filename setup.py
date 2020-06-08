@@ -61,6 +61,16 @@ UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext',
                                            'upb-generated'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
+LIBUV_INCLUDE = (
+    os.path.join('third_party', 'libuv', 'include'),
+    os.path.join('third_party', 'libuv', 'src'),
+)
+if 'linux' in sys.platform:
+    LIBUV_INCLUDE += (os.path.join('third_party', 'libuv', 'src', 'unix'),)
+if 'darwin' in sys.platform:
+    LIBUV_INCLUDE += (os.path.join('third_party', 'libuv', 'src', 'unix'),)
+if 'win32' in sys.platform:
+    LIBUV_INCLUDE += (os.path.join('third_party', 'libuv', 'src', 'win'),)
 README = os.path.join(PYTHON_STEM, 'README.rst')
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
@@ -114,6 +124,12 @@ BUILD_WITH_SYSTEM_ZLIB = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_ZLIB', False)
 # have the header files installed (in /usr/include/) and during
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_CARES = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_CARES',
+                                         False)
+
+# Export this variable to use the system installation of libuv. You need to
+# have the header files installed (in /usr/include/) and during
+# runtime, the shared library must be installed
+BUILD_WITH_SYSTEM_LIBUV = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_LIBUV',
                                          False)
 
 # For local development use only: This skips building gRPC Core and its
@@ -192,7 +208,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ''
     if "linux" in sys.platform or "darwin" in sys.platform:
-        EXTRA_ENV_LINK_ARGS += ' -lpthread'
+        EXTRA_ENV_LINK_ARGS += ' -ldl -lpthread'
         if check_linker_need_libatomic():
             EXTRA_ENV_LINK_ARGS += ' -latomic'
     elif "win32" in sys.platform and sys.version_info < (3, 5):
@@ -213,8 +229,62 @@ CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
 CYTHON_HELPER_C_FILES = ()
 
 CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
+if "linux" in sys.platform:
+    CORE_C_FILES = filter(lambda x: 'third_party/libuv/src/win' not in x,
+                          CORE_C_FILES)
+    # The following source files are under libuv/src/unix but only for Darwin.
+    # They need to be excluded when running on Linux, and must keep synchronous
+    # with darwin_uv_srcs in src/libuv/gen_build_yaml.py, except
+    # src/unix/proctitle.c which exists in both darwin_uv_srcs and
+    # linux_uv_srcs.
+    CORE_C_FILES = filter(
+        lambda x: 'third_party/libuv/src/unix/bsd-ifaddrs.c' not in x,
+        CORE_C_FILES)
+    CORE_C_FILES = filter(
+        lambda x: 'third_party/libuv/src/unix/darwin.c' not in x, CORE_C_FILES)
+    CORE_C_FILES = filter(
+        lambda x: 'third_party/libuv/src/unix/darwin-proctitle.c' not in x,
+        CORE_C_FILES)
+    CORE_C_FILES = filter(
+        lambda x: 'third_party/libuv/src/unix/fsevents.c' not in x,
+        CORE_C_FILES)
+    CORE_C_FILES = filter(
+        lambda x: 'third_party/libuv/src/unix/kqueue.c' not in x, CORE_C_FILES)
+    CORE_C_FILES = filter(
+        lambda x: 'third_party/libuv/src/unix/random-getentropy.c' not in x,
+        CORE_C_FILES)
+
+if "darwin" in sys.platform:
+    CORE_C_FILES = filter(lambda x: 'third_party/libuv/src/win' not in x,
+                          CORE_C_FILES)
+    # The following source files are under libuv/src/unix but only for Linux.
+    # They need to be excluded when running on Darwin, and must keep synchronous
+    # with linux_uv_srcs in src/libuv/gen_build_yaml.py, except
+    # src/unix/proctitle.c which exists in both darwin_uv_srcs and
+    # linux_uv_srcs.
+    CORE_C_FILES = filter(
+        lambda x: 'third_party/libuv/src/unix/linux-core.c' not in x,
+        CORE_C_FILES)
+    CORE_C_FILES = filter(
+        lambda x: 'third_party/libuv/src/unix/linux-inotify.c' not in x,
+        CORE_C_FILES)
+    CORE_C_FILES = filter(
+        lambda x: 'third_party/libuv/src/unix/linux-syscalls.c' not in x,
+        CORE_C_FILES)
+    CORE_C_FILES = filter(
+        lambda x: 'third_party/libuv/src/unix/procfs-exepath.c' not in x,
+        CORE_C_FILES)
+    CORE_C_FILES = filter(
+        lambda x: 'third_party/libuv/src/unix/random-sysctl-linux.c' not in x,
+        CORE_C_FILES)
+    CORE_C_FILES = filter(
+        lambda x: 'third_party/libuv/src/unix/sysinfo-loadavg.c' not in x,
+        CORE_C_FILES)
+
 if "win32" in sys.platform:
     CORE_C_FILES = filter(lambda x: 'third_party/cares' not in x, CORE_C_FILES)
+    CORE_C_FILES = filter(lambda x: 'third_party/libuv/src/unix' not in x,
+                          CORE_C_FILES)
 
 if BUILD_WITH_SYSTEM_OPENSSL:
     CORE_C_FILES = filter(lambda x: 'third_party/boringssl' not in x,
@@ -230,10 +300,15 @@ if BUILD_WITH_SYSTEM_CARES:
     CORE_C_FILES = filter(lambda x: 'third_party/cares' not in x, CORE_C_FILES)
     CARES_INCLUDE = (os.path.join('/usr', 'include'),)
 
+if BUILD_WITH_SYSTEM_LIBUV:
+    CORE_C_FILES = filter(lambda x: 'third_party/libuv' not in x, CORE_C_FILES)
+    LIBUV_INCLUDE = (os.path.join('/usr', 'include'),)
+
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
                                  SSL_INCLUDE + UPB_INCLUDE +
-                                 UPB_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE)
+                                 UPB_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE +
+                                 LIBUV_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
@@ -245,6 +320,10 @@ if "win32" in sys.platform:
         'advapi32',
         'ws2_32',
         'dbghelp',
+        'Iphlpapi',
+        'Psapi',
+        'User32',
+        'Userenv',
     )
 if BUILD_WITH_SYSTEM_OPENSSL:
     EXTENSION_LIBRARIES += (
@@ -255,6 +334,8 @@ if BUILD_WITH_SYSTEM_ZLIB:
     EXTENSION_LIBRARIES += ('z',)
 if BUILD_WITH_SYSTEM_CARES:
     EXTENSION_LIBRARIES += ('cares',)
+if BUILD_WITH_SYSTEM_LIBUV:
+    EXTENSION_LIBRARIES += ('uv',)
 
 DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600))
 if not DISABLE_LIBC_COMPATIBILITY:

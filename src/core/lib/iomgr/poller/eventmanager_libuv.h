@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <uv.h>
+
 #include <string>
 #include <vector>
 
@@ -80,6 +82,8 @@ class LibuvEventManager {
   // Mutex and condition variable used for shutdown.
   grpc_core::Mutex shutdown_mu_;
   grpc_core::CondVar shutdown_cv_;
+
+  uv_loop_t event_loop_;
 };
 
 }  // namespace experimental

@@ -274,7 +274,7 @@
   endif
 
   ifeq ($(SYSTEM),MINGW32)
-  LIBS = m pthread ws2_32 dbghelp
+  LIBS = m pthread ws2_32 dbghelp iphlpapi psapi user32 userenv
   LDFLAGS += -pthread
   endif
 
@@ -447,6 +447,7 @@
   ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
   PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.5.0 protobuf
   CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
+  LIBUV_CHECK_CMD = $(PKG_CONFIG) --exists libuv
   else # HAS_PKG_CONFIG
 
   ifeq ($(SYSTEM),MINGW32)
@@ -460,6 +461,7 @@
   ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
   PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
   CARES_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/c-ares.c -lcares $(LDFLAGS)
+  LIBUV_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/libuv.c -luv $(LDFLAGS)
 
   endif # HAS_PKG_CONFIG
 
@@ -497,12 +499,17 @@
   ifeq ($(HAS_SYSTEM_CARES),true)
   CACHE_MK += HAS_SYSTEM_CARES = true,
   endif
+  HAS_SYSTEM_LIBUV ?=  $(shell $(LIBUV_CHECK_CMD) 2> /dev/null && echo true || echo false)
+  ifeq ($(HAS_SYSTEM_LIBUV),true)
+  CACHE_MK += HAS_SYSTEM_LIBUV = true,
+  endif
   else
   # override system libraries if the config requires a custom compiled library
   HAS_SYSTEM_OPENSSL_ALPN = false
   HAS_SYSTEM_ZLIB = false
   HAS_SYSTEM_PROTOBUF = false
   HAS_SYSTEM_CARES = false
+  HAS_SYSTEM_LIBUV = false
   endif
 
   HAS_PROTOC ?= $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -563,6 +570,12 @@
   HAS_EMBEDDED_CARES = false
   else
   HAS_EMBEDDED_CARES = true
+  endif
+
+  ifeq ($(wildcard third_party/libuv/include/uv.h),)
+  HAS_EMBEDDED_LIBUV = false
+  else
+  HAS_EMBEDDED_LIBUV = true
   endif
 
   PC_REQUIRES_GRPC =
@@ -697,6 +710,47 @@
   LDLIBS_SECURE += $(shell $(PKG_CONFIG) --libs-only-l openssl)
   else
   LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
+  endif
+
+  LIBUV_PKG_CONFIG = false
+
+  ifeq ($(HAS_SYSTEM_LIBUV),false)
+  ifeq ($(HAS_EMBEDDED_LIBUV), true)
+  EMBED_LIBUV ?= true
+  else
+  DEP_MISSING += libuv
+  EMBED_LIBUV ?= broken
+  endif
+  else
+  EMBED_LIBUV ?= false
+  endif
+
+  ifeq ($(EMBED_LIBUV),true)
+  LIBUV_DEP = $(LIBDIR)/$(CONFIG)/libuv.a
+  LIBUV_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libuv.a
+  LIBUV_MERGE_OBJS = $(LIBUV_OBJS)
+  CPPFLAGS += -Ithird_party/libuv/include -Ithird_party/libuv/src
+  ifeq ($(SYSTEM), Linux)
+  CPPFLAGS += -Ithird_party/libuv/src/unix
+  else
+  ifeq ($(SYSTEM),Darwin)
+  CPPFLAGS += -Ithird_party/libuv/src/unix
+  else
+  ifeq ($(SYSTEM),MINGW32)
+  CPPFLAGS += -Ithird_party/libuv/src/win
+  endif
+  endif
+  endif
+  else
+  ifeq ($(HAS_PKG_CONFIG),true)
+  CPPFLAGS += $(shell $(PKG_CONFIG) --cflags libuv)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L libuv)
+  LIBS += $(patsubst -l%,%,$(shell $(PKG_CONFIG) --libs-only-l libuv))
+  PC_REQUIRES_GRPC += libuv
+  else
+  PC_LIBS_GRPC += -luv
+  LIBS += uv
+  endif
   endif
 
   # gpr .pc file
@@ -923,6 +977,7 @@
   	$(PROTOBUF_CHECK_CMD) || true
   	$(PROTOC_CHECK_VERSION_CMD) || true
   	$(CARES_CHECK_CMD) || true
+  	$(LIBUV_CHECK_CMD) || true
 
   third_party/protobuf/configure:
   	$(E) "[AUTOGEN] Preparing protobuf"
@@ -1010,11 +1065,12 @@
   privatelibs_c: \
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None) and not lib.boringssl:
+  % if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None) and not lib.boringssl and lib.name not in ['uv_linux', 'uv_darwin', 'uv_win']:
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
   % endif
   % endif
   % endfor
+   $(LIBDIR)/$(CONFIG)/libuv.a\
 
   pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
@@ -1505,7 +1561,22 @@
   % endfor
 
   <%def name="makelib(lib)">
+  % if lib.name == 'uv_linux':
+  ifeq ($(SYSTEM),Linux)
+  % else:
+  % if lib.name == 'uv_darwin':
+  ifeq ($(SYSTEM),Darwin)
+  % else:
+  % if lib.name == 'uv_win':
+  ifeq ($(SYSTEM),MINGW32)
+  % endif
+  % endif
+  % endif
+  % if lib.name in ['uv_linux', 'uv_darwin', 'uv_win']:
+  LIBUV_SRC = \\
+  % else:
   LIB${lib.name.upper()}_SRC = \\
+  % endif
 
   % for src in lib.src:
       ${proto_to_cc(src)} \\
@@ -1526,12 +1597,22 @@
   % endfor
   % endif
 
+  % if lib.name in ['uv_linux', 'uv_darwin', 'uv_win']:
+  LIBUV_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUV_SRC))))
+
+  % if lib.get('defaults', None):
+  %  for name, value in defaults.get(lib.defaults).iteritems():
+  $(LIBUV_OBJS): ${name} += ${value}
+  %  endfor
+  % endif
+  % else:
   LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 
   % if lib.get('defaults', None):
   %  for name, value in defaults.get(lib.defaults).iteritems():
   $(LIB${lib.name.upper()}_OBJS): ${name} += ${value}
   %  endfor
+  % endif
   % endif
 
   ## If the library requires OpenSSL, let's add some restrictions.
@@ -1562,7 +1643,7 @@
   else
   % endif
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) \
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBUV_DEP) \
   ## The else here corresponds to the if secure earlier.
   % else:
   % if lib.language == 'c++':
@@ -1579,19 +1660,28 @@
   else
 
   % endif
+  % if lib.name in ['uv_linux', 'uv_darwin', 'uv_win']:
+  $(LIBDIR)/$(CONFIG)/libuv.a: \
+  % else:
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name not in ['z', 'ares', 'address_sorting', 'upb', 'grpc_abseil']:
+  % endif
+  % if lib.name not in ['z', 'ares', 'address_sorting', 'upb', 'grpc_abseil', 'uv_linux', 'uv_darwin', 'uv_win']:
   $(ZLIB_DEP) \
   $(CARES_DEP) \
   $(ADDRESS_SORTING_DEP) \
   $(UPB_DEP) \
   $(GRPC_ABSEIL_DEP) \
+  $(LIBUV_DEP) \
   % endif
   % endif
   % if lib.language == 'c++':
    $(PROTOBUF_DEP)\
   % endif
+  % if lib.name in ['uv_linux', 'uv_darwin', 'uv_win']:
+   $(LIBUV_OBJS) \
+  % else:
    $(LIB${lib.name.upper()}_OBJS) \
+  % endif
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(LIBGRPC_ABSEIL_OBJS) \
@@ -1599,15 +1689,23 @@
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
+   $(LIBUV_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
   % endif
 
+  % if lib.name in ['uv_linux', 'uv_darwin', 'uv_win']:
+  	$(E) "[AR]      Creating $@"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libuv.a
+  	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libuv.a $(LIBUV_OBJS) \
+  % else:
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
+  % endif
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(LIBGRPC_ABSEIL_OBJS) \
@@ -1615,14 +1713,23 @@
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
+   $(LIBUV_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
   % endif
 
+  % if lib.name not in ['uv_linux', 'uv_darwin', 'uv_win']:
   ifeq ($(SYSTEM),Darwin)
   	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   endif
+  % else:
+  % if lib.name == 'uv_darwin':
+  ifeq ($(SYSTEM),Darwin)
+  	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libuv.a
+  endif
+  % endif
+  % endif
 
   <%
 
@@ -1637,9 +1744,9 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
-    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBUV_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBUV_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
@@ -1666,7 +1773,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LIBUV_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
@@ -1726,7 +1833,11 @@
   ifneq ($(NO_SECURE),true)
   % endif
   ifneq ($(NO_DEPS),true)
+  % if lib.name in ['uv_linux', 'uv_darwin', 'uv_win']:
+  -include $(LIBUV_OBJS:.o=.dep)
+  % else:
   -include $(LIB${lib.name.upper()}_OBJS:.o=.dep)
+  % endif
   endif
   % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
   endif
@@ -1736,6 +1847,10 @@
   $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
   % endif
   % endfor
+  % if lib.name in ['uv_linux', 'uv_darwin', 'uv_win']:
+  ## The endif here corresponds to the ifeq ($(SYSTEM),) at the beginning.
+  endif
+  % endif
   </%def>
 
   <%def name="maketarget(tgt)"><% has_no_sources = not tgt.src %>

@@ -62,6 +62,7 @@
       deps.append("${_gRPC_CARES_LIBRARIES}")
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
+      deps.append("${_gRPC_LIBUV_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
@@ -225,6 +226,9 @@
 
   set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
+  set(gRPC_LIBUV_PROVIDER "module" CACHE STRING "Provider of libuv library")
+  set_property(CACHE gRPC_LIBUV_PROVIDER PROPERTY STRINGS "module" "package")
+
   if(UNIX)
     if(<%text>${CMAKE_SYSTEM_NAME}</%text> MATCHES "Linux")
       set(_gRPC_PLATFORM_LINUX ON)
@@ -316,6 +320,7 @@
   include(cmake/ssl.cmake)
   include(cmake/upb.cmake)
   include(cmake/zlib.cmake)
+  include(cmake/libuv.cmake)
 
   if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m pthread)
@@ -326,7 +331,7 @@
   endif()
 
   if(WIN32)
-    set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32)
+    set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32 psapi)
   endif()
 
   # Create directory for generated .proto files
@@ -482,6 +487,19 @@
   %   endif
   % endfor
 
+  if(gRPC_BUILD_TESTS)
+  if(_gRPC_PLATFORM_LINUX)
+    add_library(uv ALIAS uv_linux)
+  elseif(_gRPC_PLATFORM_MAC)
+    add_library(uv ALIAS uv_darwin)
+  elseif(_gRPC_PLATFORM_WINDOWS)
+    add_library(uv ALIAS uv_win)
+  endif()
+
+
+  endif()
+
+
   % for tgt in targets:
   % if tgt.build in ["all", "protoc", "tool", "test", "private"] and not tgt.boringssl:
   % if tgt.build in ["test", "private"]:
@@ -563,6 +581,7 @@
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_LIBUV_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
@@ -642,6 +661,7 @@
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_LIBUV_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
@@ -699,6 +719,10 @@
   )
   install(FILES
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findc-ares.cmake
+    DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>/modules
+  )
+  install(FILES
+      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/FindLibUV.cmake
     DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>/modules
   )
 

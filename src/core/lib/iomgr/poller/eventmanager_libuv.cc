@@ -28,6 +28,8 @@ grpc::experimental::LibuvEventManager::Options::Options(int num_workers)
 
 grpc::experimental::LibuvEventManager::LibuvEventManager(const Options& options)
     : options_(options) {
+  uv_loop_init(&event_loop_);
+
   int num_workers = options_.num_workers();
   // Number of workers can't be 0 if we do not accept thread donation.
   // TODO(guantaol): replaces the hard-coded number with a flag.
@@ -47,6 +49,8 @@ grpc::experimental::LibuvEventManager::~LibuvEventManager() {
   for (auto& th : workers_) {
     th.Join();
   }
+
+  uv_loop_close(&event_loop_);
 }
 
 void grpc::experimental::LibuvEventManager::RunWorkerLoop() {
