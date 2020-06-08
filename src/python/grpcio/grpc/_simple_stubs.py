@@ -173,7 +173,8 @@ class ChannelCache:
 
 
 def _get_wait_for_ready_settings(wait_for_ready: Optional[bool],
-                                 timeout: Optional[float]) -> Tuple[bool, float]:
+                                 timeout: Optional[float]
+                                ) -> Tuple[bool, float]:
     if wait_for_ready is None:
         wait_for_ready = True
     if wait_for_ready and timeout is None:
@@ -251,7 +252,8 @@ def unary_unary(
                                              compression)
     multicallable = channel.unary_unary(method, request_serializer,
                                         response_deserializer)
-    wait_for_ready, timeout = _get_wait_for_ready_settings(wait_for_ready, timeout)
+    wait_for_ready, timeout = _get_wait_for_ready_settings(
+        wait_for_ready, timeout)
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -328,7 +330,8 @@ def unary_stream(
                                              compression)
     multicallable = channel.unary_stream(method, request_serializer,
                                          response_deserializer)
-    wait_for_ready, timeout = _get_wait_for_ready_settings(wait_for_ready, timeout)
+    wait_for_ready, timeout = _get_wait_for_ready_settings(
+        wait_for_ready, timeout)
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -405,7 +408,8 @@ def stream_unary(
                                              compression)
     multicallable = channel.stream_unary(method, request_serializer,
                                          response_deserializer)
-    wait_for_ready, timeout = _get_wait_for_ready_settings(wait_for_ready, timeout)
+    wait_for_ready, timeout = _get_wait_for_ready_settings(
+        wait_for_ready, timeout)
     return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -482,7 +486,8 @@ def stream_stream(
                                              compression)
     multicallable = channel.stream_stream(method, request_serializer,
                                           response_deserializer)
-    wait_for_ready, timeout = _get_wait_for_ready_settings(wait_for_ready, timeout)
+    wait_for_ready, timeout = _get_wait_for_ready_settings(
+        wait_for_ready, timeout)
     return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,

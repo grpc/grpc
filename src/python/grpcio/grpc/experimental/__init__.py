@@ -42,7 +42,8 @@ class UsageError(Exception):
 
 
 _insecure_channel_credentials_sentinel = object()
-_insecure_channel_credentials = grpc.ChannelCredentials(_insecure_channel_credentials_sentinel)
+_insecure_channel_credentials = grpc.ChannelCredentials(
+    _insecure_channel_credentials_sentinel)
 
 
 def insecure_channel_credentials():

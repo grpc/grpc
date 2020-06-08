@@ -317,11 +317,8 @@ class SimpleStubsTest(unittest.TestCase):
         addr, port, sock = get_socket()
         sock.close()
         target = f'{addr}:{port}'
-        channel = grpc._simple_stubs.ChannelCache.get().get_channel(target,
-                                                                    (),
-                                                                    None,
-                                                                    True,
-                                                                    None)
+        channel = grpc._simple_stubs.ChannelCache.get().get_channel(
+            target, (), None, True, None)
         rpc_finished_event = threading.Event()
         rpc_failed_event = threading.Event()
         server = None
@@ -336,7 +333,8 @@ class SimpleStubsTest(unittest.TestCase):
                 server.add_generic_rpc_handlers((_GenericHandler(),))
                 server.start()
                 channel.unsubscribe(_on_connectivity_changed)
-            elif connectivity in (grpc.ChannelConnectivity.IDLE, grpc.ChannelConnectivity.CONNECTING):
+            elif connectivity in (grpc.ChannelConnectivity.IDLE,
+                                  grpc.ChannelConnectivity.CONNECTING):
                 pass
             else:
                 raise AssertionError("Encountered unknown state.")
@@ -345,14 +343,12 @@ class SimpleStubsTest(unittest.TestCase):
 
         def _send_rpc():
             try:
-                response = grpc.experimental.unary_unary(
-                    _REQUEST,
-                    target,
-                    _UNARY_UNARY,
-                    insecure=True)
+                response = grpc.experimental.unary_unary(_REQUEST,
+                                                         target,
+                                                         _UNARY_UNARY,
+                                                         insecure=True)
                 rpc_finished_event.set()
             except Exception as e:
-                import sys; sys.stderr.write(e); sys.stderr.flush()
                 rpc_failed_event.set()
 
         t = threading.Thread(target=_send_rpc)
