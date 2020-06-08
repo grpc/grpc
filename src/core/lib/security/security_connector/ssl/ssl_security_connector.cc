@@ -299,11 +299,11 @@ class grpc_ssl_server_security_connector
    * Current certificate config will continue to be used if the callback returns
    * an error. Returns true if new credentials were successfully loaded. */
   bool try_fetch_ssl_server_credentials() {
-    grpc_core::MutexLock lock(&mu_);
     grpc_ssl_server_certificate_config* certificate_config = nullptr;
     bool status;
     if (!has_cert_config_fetcher()) return false;
 
+    grpc_core::MutexLock lock(&mu_);
     grpc_ssl_server_credentials* server_creds =
         static_cast<grpc_ssl_server_credentials*>(this->mutable_server_creds());
     grpc_ssl_certificate_config_reload_status cb_result =
