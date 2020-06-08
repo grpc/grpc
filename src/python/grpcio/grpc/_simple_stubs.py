@@ -49,6 +49,13 @@ if _MAXIMUM_CHANNELS_KEY in os.environ:
 else:
     _MAXIMUM_CHANNELS = 2**8
 
+_DEFAULT_TIMEOUT_KEY = "GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS"
+if _DEFAULT_TIMEOUT_KEY in os.environ:
+    _DEFAULT_TIMEOUT = float(os.environ[_DEFAULT_TIMEOUT_KEY])
+    _LOGGER.debug("Setting default timeout seconds to %f", _DEFAULT_TIMEOUT)
+else:
+    _DEFAULT_TIMEOUT = 60.0
+
 
 def _create_channel(target: str, options: Sequence[Tuple[str, str]],
                     channel_credentials: Optional[grpc.ChannelCredentials],
@@ -165,6 +172,15 @@ class ChannelCache:
             return len(self._mapping)
 
 
+def _get_wait_for_ready_settings(wait_for_ready: Optional[bool],
+                                 timeout: Optional[float]) -> Tuple[bool, float]:
+    if wait_for_ready is None:
+        wait_for_ready = True
+    if wait_for_ready and timeout is None:
+        timeout = _DEFAULT_TIMEOUT
+    return wait_for_ready, timeout
+
+
 @experimental_api
 def unary_unary(
         request: RequestType,
@@ -221,9 +237,10 @@ def unary_unary(
         immediately if the connection is not ready at the time the RPC is
         invoked, or if it should wait until the connection to the server
         becomes ready. When using this option, the user will likely also want
-        to set a timeout. Defaults to False.
+        to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised.
+        after which an exception will be raised. If timeout is unspecified and
+        wait_for_ready is True, defaults to one minute.
       metadata: Optional metadata to send to the server.
 
     Returns:
@@ -234,6 +251,7 @@ def unary_unary(
                                              compression)
     multicallable = channel.unary_unary(method, request_serializer,
                                         response_deserializer)
+    wait_for_ready, timeout = _get_wait_for_ready_settings(wait_for_ready, timeout)
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -296,9 +314,10 @@ def unary_stream(
         immediately if the connection is not ready at the time the RPC is
         invoked, or if it should wait until the connection to the server
         becomes ready. When using this option, the user will likely also want
-        to set a timeout. Defaults to False.
+        to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised.
+        after which an exception will be raised. If timeout is unspecified and
+        wait_for_ready is True, defaults to one minute.
       metadata: Optional metadata to send to the server.
 
     Returns:
@@ -309,6 +328,7 @@ def unary_stream(
                                              compression)
     multicallable = channel.unary_stream(method, request_serializer,
                                          response_deserializer)
+    wait_for_ready, timeout = _get_wait_for_ready_settings(wait_for_ready, timeout)
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -371,9 +391,10 @@ def stream_unary(
         immediately if the connection is not ready at the time the RPC is
         invoked, or if it should wait until the connection to the server
         becomes ready. When using this option, the user will likely also want
-        to set a timeout. Defaults to False.
+        to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised.
+        after which an exception will be raised. If timeout is unspecified and
+        wait_for_ready is True, defaults to one minute.
       metadata: Optional metadata to send to the server.
 
     Returns:
@@ -384,6 +405,7 @@ def stream_unary(
                                              compression)
     multicallable = channel.stream_unary(method, request_serializer,
                                          response_deserializer)
+    wait_for_ready, timeout = _get_wait_for_ready_settings(wait_for_ready, timeout)
     return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -446,9 +468,10 @@ def stream_stream(
         immediately if the connection is not ready at the time the RPC is
         invoked, or if it should wait until the connection to the server
         becomes ready. When using this option, the user will likely also want
-        to set a timeout. Defaults to False.
+        to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised.
+        after which an exception will be raised. If timeout is unspecified and
+        wait_for_ready is True, defaults to one minute.
       metadata: Optional metadata to send to the server.
 
     Returns:
@@ -459,6 +482,7 @@ def stream_stream(
                                              compression)
     multicallable = channel.stream_stream(method, request_serializer,
                                           response_deserializer)
+    wait_for_ready, timeout = _get_wait_for_ready_settings(wait_for_ready, timeout)
     return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,

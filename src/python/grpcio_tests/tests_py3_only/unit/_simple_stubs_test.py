@@ -349,8 +349,6 @@ class SimpleStubsTest(unittest.TestCase):
                     _REQUEST,
                     target,
                     _UNARY_UNARY,
-                    # wait_for_ready=True, # remove
-                    # timeout=30.0,
                     insecure=True)
                 rpc_finished_event.set()
             except Exception as e:
@@ -364,11 +362,6 @@ class SimpleStubsTest(unittest.TestCase):
         self.assertTrue(rpc_finished_event.is_set())
         if server is not None:
             server.stop(None)
-
-
-    def test_wait_for_ready_default_set(self):
-        # TODO: Implement.
-        pass
 
 
 if __name__ == "__main__":
