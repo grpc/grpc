@@ -1106,16 +1106,25 @@ InteropClient::PerformOneSoakTestIteration(
 void InteropClient::PerformSoakTest(
     const bool reset_channel_per_iteration, const int32_t soak_iterations,
     const int32_t max_failures,
-    const int32_t max_acceptable_per_iteration_latency_ms) {
+    const int32_t max_acceptable_per_iteration_latency_ms,
+    const int32_t overall_deadline_seconds) {
   std::vector<std::tuple<bool, int32_t, std::string>> results;
   grpc_histogram* latencies_ms_histogram = grpc_histogram_create(
       1 /* resolution */,
       500 * 1e3 /* largest bucket; 500 seconds is unlikely */);
-  for (int i = 0; i < soak_iterations; ++i) {
+  gpr_timespec overall_deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC),
+      gpr_time_from_seconds(overall_deadline_seconds, GPR_TIMESPAN));
+  int32_t iterations_ran = 0;
+  for (int i = 0;
+       i < soak_iterations &&
+       gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) < 0;
+       ++i) {
     auto result = PerformOneSoakTestIteration(
         reset_channel_per_iteration, max_acceptable_per_iteration_latency_ms);
     results.push_back(result);
     grpc_histogram_add(latencies_ms_histogram, std::get<1>(result));
+    iterations_ran++;
   }
   int total_failures = 0;
   for (size_t i = 0; i < results.size(); i++) {
@@ -1137,7 +1146,24 @@ void InteropClient::PerformSoakTest(
       grpc_histogram_percentile(latencies_ms_histogram, 90);
   double latency_ms_worst = grpc_histogram_maximum(latencies_ms_histogram);
   grpc_histogram_destroy(latencies_ms_histogram);
-  if (total_failures > max_failures) {
+  if (iterations_ran < soak_iterations) {
+    gpr_log(
+        GPR_ERROR,
+        "soak test consumed all %d seconds of time and quit early, only "
+        "having ran %d out of desired %d iterations. "
+        "total_failures: %d. "
+        "max_failures_threshold: %d. "
+        "median_soak_iteration_latency: %lf ms. "
+        "90th_soak_iteration_latency: %lf ms. "
+        "worst_soak_iteration_latency: %lf ms. "
+        "Some or all of the iterations that did run were unexpectedly slow. "
+        "See breakdown above for which iterations succeeded, failed, and "
+        "why for more info.",
+        overall_deadline_seconds, iterations_ran, soak_iterations,
+        total_failures, max_failures, latency_ms_median, latency_ms_90th,
+        latency_ms_worst);
+    GPR_ASSERT(0);
+  } else if (total_failures > max_failures) {
     gpr_log(GPR_ERROR,
             "soak test ran: %d iterations. total_failures: %d exceeds "
             "max_failures_threshold: %d. "
@@ -1165,23 +1191,27 @@ void InteropClient::PerformSoakTest(
 
 bool InteropClient::DoRpcSoakTest(
     int32_t soak_iterations, int32_t max_failures,
-    int64_t max_acceptable_per_iteration_latency_ms) {
+    int64_t max_acceptable_per_iteration_latency_ms,
+    int32_t overall_deadline_seconds) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
   PerformSoakTest(false /* reset channel per iteration */, soak_iterations,
-                  max_failures, max_acceptable_per_iteration_latency_ms);
+                  max_failures, max_acceptable_per_iteration_latency_ms,
+                  overall_deadline_seconds);
   gpr_log(GPR_DEBUG, "rpc_soak test done.");
   return true;
 }
 
 bool InteropClient::DoChannelSoakTest(
     int32_t soak_iterations, int32_t max_failures,
-    int64_t max_acceptable_per_iteration_latency_ms) {
+    int64_t max_acceptable_per_iteration_latency_ms,
+    int32_t overall_deadline_seconds) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs, tearing down the channel each time...",
           soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
   PerformSoakTest(true /* reset channel per iteration */, soak_iterations,
-                  max_failures, max_acceptable_per_iteration_latency_ms);
+                  max_failures, max_acceptable_per_iteration_latency_ms,
+                  overall_deadline_seconds);
   gpr_log(GPR_DEBUG, "channel_soak test done.");
   return true;
 }
