@@ -1032,6 +1032,7 @@ target_link_libraries(end2end_nosec_tests
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -1165,6 +1166,7 @@ target_link_libraries(end2end_tests
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -1495,7 +1497,6 @@ add_library(grpc
   src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
   src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -1772,6 +1773,7 @@ target_link_libraries(grpc
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -1851,6 +1853,7 @@ target_include_directories(grpc_csharp_ext
 target_link_libraries(grpc_csharp_ext
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -1858,6 +1861,52 @@ target_link_libraries(grpc_csharp_ext
 
 
 endif()
+
+add_library(grpc_health_upb
+  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+)
+
+set_target_properties(grpc_health_upb PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_health_upb PROPERTIES COMPILE_PDB_NAME "grpc_health_upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_health_upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(grpc_health_upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(grpc_health_upb
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS grpc_health_upb EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
 if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util
@@ -1913,6 +1962,7 @@ target_include_directories(grpc_test_util
 target_link_libraries(grpc_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -1978,6 +2028,7 @@ target_include_directories(grpc_test_util_unsecure
 target_link_libraries(grpc_test_util_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_unsecure
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -2161,7 +2212,6 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -2367,6 +2417,7 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -2468,6 +2519,7 @@ target_link_libraries(benchmark_helpers
   grpc++_unsecure
   grpc_unsecure
   grpc++_test_config
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -2561,6 +2613,7 @@ target_link_libraries(grpc++
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -2837,6 +2890,7 @@ target_link_libraries(grpc++_alts
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -2905,6 +2959,7 @@ target_link_libraries(grpc++_error_details
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -2978,6 +3033,7 @@ target_link_libraries(grpc++_reflection
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -3050,6 +3106,7 @@ target_link_libraries(grpc++_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -3171,6 +3228,7 @@ target_link_libraries(grpc++_test_util
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -3255,6 +3313,7 @@ target_link_libraries(grpc++_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_unsecure
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -3602,6 +3661,7 @@ target_link_libraries(grpcpp_channelz
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -3802,6 +3862,7 @@ target_link_libraries(algorithm_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -3831,6 +3892,7 @@ target_link_libraries(alloc_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -3860,6 +3922,7 @@ target_link_libraries(alpn_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -3890,6 +3953,7 @@ target_link_libraries(alts_counter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -3920,6 +3984,7 @@ target_link_libraries(alts_crypt_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -3950,6 +4015,7 @@ target_link_libraries(alts_crypter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -3981,6 +4047,7 @@ target_link_libraries(alts_frame_protector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4011,6 +4078,7 @@ target_link_libraries(alts_grpc_record_protocol_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4041,6 +4109,7 @@ target_link_libraries(alts_handshaker_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4071,6 +4140,7 @@ target_link_libraries(alts_iovec_record_protocol_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4100,6 +4170,7 @@ target_link_libraries(alts_security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4130,6 +4201,7 @@ target_link_libraries(alts_tsi_handshaker_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4160,6 +4232,7 @@ target_link_libraries(alts_tsi_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4190,6 +4263,7 @@ target_link_libraries(alts_zero_copy_grpc_protector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4219,6 +4293,7 @@ target_link_libraries(arena_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4248,6 +4323,7 @@ target_link_libraries(auth_context_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4277,6 +4353,7 @@ target_link_libraries(avl_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4306,6 +4383,7 @@ target_link_libraries(b64_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4336,6 +4414,7 @@ target_link_libraries(bad_server_response_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4367,6 +4446,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -4399,6 +4479,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -4429,6 +4510,7 @@ target_link_libraries(bin_decoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4458,6 +4540,7 @@ target_link_libraries(bin_encoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4487,6 +4570,7 @@ target_link_libraries(buffer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4516,6 +4600,7 @@ target_link_libraries(channel_args_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4545,6 +4630,7 @@ target_link_libraries(channel_create_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4574,6 +4660,7 @@ target_link_libraries(channel_stack_builder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4603,6 +4690,7 @@ target_link_libraries(channel_stack_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4632,6 +4720,7 @@ target_link_libraries(check_gcp_environment_linux_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4661,6 +4750,7 @@ target_link_libraries(check_gcp_environment_windows_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4691,6 +4781,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -4721,6 +4812,7 @@ target_link_libraries(cmdline_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4751,6 +4843,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -4781,6 +4874,7 @@ target_link_libraries(completion_queue_threading_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4810,6 +4904,7 @@ target_link_libraries(compression_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4839,6 +4934,7 @@ target_link_libraries(concurrent_connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4869,6 +4965,7 @@ target_link_libraries(connection_refused_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4898,6 +4995,7 @@ target_link_libraries(cpu_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4927,6 +5025,7 @@ target_link_libraries(dns_resolver_connectivity_using_ares_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4956,6 +5055,7 @@ target_link_libraries(dns_resolver_connectivity_using_native_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -4985,6 +5085,7 @@ target_link_libraries(dns_resolver_cooldown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5014,6 +5115,7 @@ target_link_libraries(dns_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5045,6 +5147,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -5076,6 +5179,7 @@ target_link_libraries(endpoint_pair_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5105,6 +5209,7 @@ target_link_libraries(env_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5135,6 +5240,7 @@ target_link_libraries(error_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5165,6 +5271,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -5195,6 +5302,7 @@ target_link_libraries(fake_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5225,6 +5333,7 @@ target_link_libraries(fake_transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5255,6 +5364,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -5286,6 +5396,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -5321,6 +5432,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -5356,6 +5468,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -5387,6 +5500,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -5421,6 +5535,7 @@ target_link_libraries(format_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5451,6 +5566,7 @@ target_link_libraries(frame_handler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5481,6 +5597,7 @@ target_link_libraries(goaway_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5510,6 +5627,7 @@ target_link_libraries(grpc_alts_credentials_options_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5539,6 +5657,7 @@ target_link_libraries(grpc_byte_buffer_reader_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5568,6 +5687,7 @@ target_link_libraries(grpc_completion_queue_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5597,6 +5717,7 @@ target_link_libraries(grpc_ipv6_loopback_available_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5628,6 +5749,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -5659,6 +5781,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -5689,6 +5812,7 @@ target_link_libraries(histogram_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5718,6 +5842,7 @@ target_link_libraries(host_port_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5747,6 +5872,7 @@ target_link_libraries(hpack_encoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5776,6 +5902,7 @@ target_link_libraries(hpack_parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5805,6 +5932,7 @@ target_link_libraries(hpack_table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5839,6 +5967,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -5874,6 +6003,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -5904,6 +6034,7 @@ target_link_libraries(init_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5934,6 +6065,7 @@ target_link_libraries(inproc_callback_test
   end2end_tests
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5964,6 +6096,7 @@ target_link_libraries(invalid_call_argument_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -5993,6 +6126,7 @@ target_link_libraries(json_token_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6022,6 +6156,7 @@ target_link_libraries(jwt_verifier_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6052,6 +6187,7 @@ target_link_libraries(lame_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6081,6 +6217,7 @@ target_link_libraries(load_file_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6110,6 +6247,7 @@ target_link_libraries(log_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6139,6 +6277,7 @@ target_link_libraries(manual_constructor_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6168,6 +6307,7 @@ target_link_libraries(message_compress_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6197,6 +6337,7 @@ target_link_libraries(metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6226,6 +6367,7 @@ target_link_libraries(minimal_stack_is_minimal_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6255,6 +6397,7 @@ target_link_libraries(mpmcqueue_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6285,6 +6428,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -6316,6 +6460,7 @@ target_link_libraries(multiple_server_queues_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6345,6 +6490,7 @@ target_link_libraries(murmur_hash_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6375,6 +6521,7 @@ target_link_libraries(no_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6404,6 +6551,7 @@ target_link_libraries(num_external_connectivity_watchers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6433,6 +6581,7 @@ target_link_libraries(parse_address_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6463,6 +6612,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -6497,6 +6647,7 @@ target_link_libraries(parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6526,6 +6677,7 @@ target_link_libraries(percent_encoding_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6555,6 +6707,7 @@ target_link_libraries(public_headers_must_be_c89
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6585,6 +6738,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -6615,6 +6769,7 @@ target_link_libraries(resolve_address_using_ares_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6645,6 +6800,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -6675,6 +6831,7 @@ target_link_libraries(resolve_address_using_native_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6704,6 +6861,7 @@ target_link_libraries(resource_quota_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6733,6 +6891,7 @@ target_link_libraries(secure_channel_create_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6763,6 +6922,7 @@ target_link_libraries(secure_endpoint_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6792,6 +6952,7 @@ target_link_libraries(security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6821,6 +6982,7 @@ target_link_libraries(sequential_connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6850,6 +7012,7 @@ target_link_libraries(server_chttp2_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6881,6 +7044,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -6911,6 +7075,7 @@ target_link_libraries(server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6940,6 +7105,7 @@ target_link_libraries(slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6969,6 +7135,7 @@ target_link_libraries(slice_string_helpers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -6998,6 +7165,7 @@ target_link_libraries(sockaddr_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7027,6 +7195,7 @@ target_link_libraries(sockaddr_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7057,6 +7226,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -7087,6 +7257,7 @@ target_link_libraries(spinlock_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7116,6 +7287,7 @@ target_link_libraries(ssl_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7147,6 +7319,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -7177,6 +7350,7 @@ target_link_libraries(status_conversion_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7206,6 +7380,7 @@ target_link_libraries(stream_compression_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7235,6 +7410,7 @@ target_link_libraries(stream_map_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7264,6 +7440,7 @@ target_link_libraries(stream_owned_slice_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7293,6 +7470,7 @@ target_link_libraries(string_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7322,6 +7500,7 @@ target_link_libraries(sync_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7352,6 +7531,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -7384,6 +7564,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -7415,6 +7596,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -7445,6 +7627,7 @@ target_link_libraries(test_core_gpr_time_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7474,6 +7657,7 @@ target_link_libraries(test_core_security_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7503,6 +7687,7 @@ target_link_libraries(test_core_slice_slice_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7532,6 +7717,7 @@ target_link_libraries(thd_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7561,6 +7747,7 @@ target_link_libraries(threadpool_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7590,6 +7777,7 @@ target_link_libraries(time_averaged_stats_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7619,6 +7807,7 @@ target_link_libraries(timeout_encoding_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7648,6 +7837,7 @@ target_link_libraries(timer_heap_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7677,6 +7867,7 @@ target_link_libraries(timer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7706,6 +7897,7 @@ target_link_libraries(tls_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7735,6 +7927,7 @@ target_link_libraries(transport_security_common_api_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7764,6 +7957,7 @@ target_link_libraries(transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7794,6 +7988,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -7824,6 +8019,7 @@ target_link_libraries(uri_parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7853,6 +8049,7 @@ target_link_libraries(useful_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7882,6 +8079,7 @@ target_link_libraries(varint_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -7923,6 +8121,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc++
     grpc++_test_config
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -7968,6 +8167,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8009,6 +8209,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util_unsecure
     grpc++_unsecure
     grpc_unsecure
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8060,6 +8261,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util
     grpc++
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8102,6 +8304,7 @@ target_link_libraries(alts_util_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -8162,6 +8365,7 @@ target_link_libraries(async_end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -8202,6 +8406,7 @@ target_link_libraries(auth_property_iterator_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -8240,6 +8445,7 @@ target_link_libraries(backoff_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -8280,6 +8486,7 @@ target_link_libraries(bad_streaming_id_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -8320,6 +8527,7 @@ target_link_libraries(badreq_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -8359,6 +8567,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8402,6 +8611,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8446,6 +8656,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8490,6 +8701,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8534,6 +8746,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8582,6 +8795,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8630,6 +8844,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8674,6 +8889,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8718,6 +8934,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8762,6 +8979,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8806,6 +9024,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8850,6 +9069,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8894,6 +9114,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8938,6 +9159,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -8982,6 +9204,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -9026,6 +9249,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -9070,6 +9294,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -9114,6 +9339,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -9158,6 +9384,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -9202,6 +9429,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -9246,6 +9474,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -9290,6 +9519,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc++_unsecure
     grpc_unsecure
     grpc++_test_config
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -9332,6 +9562,7 @@ target_link_libraries(byte_buffer_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -9370,6 +9601,7 @@ target_link_libraries(byte_stream_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -9413,6 +9645,7 @@ target_link_libraries(cancel_ares_query_test
   grpc++
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -9466,6 +9699,7 @@ target_link_libraries(cfstream_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -9505,6 +9739,7 @@ target_link_libraries(channel_arguments_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -9544,6 +9779,7 @@ target_link_libraries(channel_filter_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -9588,6 +9824,7 @@ target_link_libraries(channel_trace_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -9627,6 +9864,7 @@ target_link_libraries(channelz_registry_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -9681,6 +9919,7 @@ target_link_libraries(channelz_service_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -9725,6 +9964,7 @@ target_link_libraries(channelz_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -9787,6 +10027,7 @@ target_link_libraries(cli_call_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -9841,6 +10082,7 @@ target_link_libraries(client_callback_end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -9903,6 +10145,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util
     grpc++
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -9958,6 +10201,7 @@ target_link_libraries(client_interceptors_end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10021,6 +10265,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util
     grpc++
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -10061,6 +10306,7 @@ target_link_libraries(codegen_test_full
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10100,6 +10346,7 @@ target_link_libraries(codegen_test_minimal
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10140,6 +10387,7 @@ target_link_libraries(connection_prefix_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10178,6 +10426,7 @@ target_link_libraries(connectivity_state_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10216,6 +10465,7 @@ target_link_libraries(context_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10269,6 +10519,7 @@ target_link_libraries(delegating_channel_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10309,6 +10560,7 @@ target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10349,6 +10601,7 @@ target_link_libraries(duplicate_header_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10408,6 +10661,7 @@ target_link_libraries(end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10452,6 +10706,7 @@ target_link_libraries(error_details_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10490,6 +10745,7 @@ target_link_libraries(eventmanager_libuv_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10542,6 +10798,7 @@ target_link_libraries(exception_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10598,6 +10855,7 @@ target_link_libraries(filter_end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10651,6 +10909,7 @@ target_link_libraries(flaky_network_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10707,6 +10966,7 @@ target_link_libraries(generic_end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10746,6 +11006,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -10785,6 +11046,7 @@ target_link_libraries(global_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -10834,6 +11096,7 @@ target_link_libraries(grpc_cli
   grpc++
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11131,6 +11394,7 @@ target_link_libraries(grpc_tls_credentials_options_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11191,6 +11455,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util
     grpc++
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -11236,6 +11501,7 @@ target_link_libraries(grpclb_api_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11298,6 +11564,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util
     grpc++
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -11338,6 +11605,7 @@ target_link_libraries(h2_ssl_session_reuse_test
   end2end_tests
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11378,6 +11646,7 @@ target_link_libraries(head_of_line_blocking_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11418,6 +11687,7 @@ target_link_libraries(headers_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11480,6 +11750,7 @@ target_link_libraries(health_service_end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11533,6 +11804,7 @@ target_link_libraries(http2_client
   grpc++
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11590,6 +11862,7 @@ target_link_libraries(hybrid_end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11630,6 +11903,7 @@ target_link_libraries(initial_settings_frame_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11686,6 +11960,7 @@ target_link_libraries(interop_client
   grpc++
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11741,6 +12016,7 @@ target_link_libraries(interop_server
   grpc++
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11783,6 +12059,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc++
     grpc++_test_config
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -11822,6 +12099,7 @@ target_link_libraries(json_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11862,6 +12140,7 @@ target_link_libraries(large_metadata_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11905,6 +12184,7 @@ target_link_libraries(lb_get_cpu_stats_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11945,6 +12225,7 @@ target_link_libraries(lb_load_data_store_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -11983,6 +12264,7 @@ target_link_libraries(linux_system_roots_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12036,6 +12318,7 @@ target_link_libraries(message_allocator_end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12093,6 +12376,7 @@ target_link_libraries(mock_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12145,6 +12429,7 @@ target_link_libraries(nonblocking_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12183,6 +12468,7 @@ target_link_libraries(noop-benchmark
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12222,6 +12508,7 @@ target_link_libraries(orphanable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12262,6 +12549,7 @@ target_link_libraries(out_of_bounds_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12300,6 +12588,7 @@ target_link_libraries(pid_controller_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12353,6 +12642,7 @@ target_link_libraries(port_sharing_end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12412,6 +12702,7 @@ target_link_libraries(proto_server_reflection_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12451,6 +12742,7 @@ target_link_libraries(proto_utils_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12538,6 +12830,7 @@ target_link_libraries(qps_json_driver
   grpc++
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12617,6 +12910,7 @@ target_link_libraries(qps_worker
   grpc++
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12674,6 +12968,7 @@ target_link_libraries(raw_end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12712,6 +13007,7 @@ target_link_libraries(ref_counted_ptr_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12750,6 +13046,7 @@ target_link_libraries(ref_counted_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12788,6 +13085,7 @@ target_link_libraries(retry_throttle_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12828,6 +13126,7 @@ target_link_libraries(secure_auth_context_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12885,6 +13184,7 @@ target_link_libraries(server_builder_plugin_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -12937,6 +13237,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util_unsecure
     grpc++_unsecure
     grpc_unsecure
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -12990,6 +13291,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util_unsecure
     grpc++_unsecure
     grpc_unsecure
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -13032,6 +13334,7 @@ target_link_libraries(server_context_test_spouse_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13084,6 +13387,7 @@ target_link_libraries(server_early_return_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13138,6 +13442,7 @@ target_link_libraries(server_interceptors_end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13178,6 +13483,7 @@ target_link_libraries(server_registered_method_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13230,6 +13536,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util_unsecure
     grpc++_unsecure
     grpc_unsecure
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -13288,6 +13595,7 @@ target_link_libraries(service_config_end2end_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13326,6 +13634,7 @@ target_link_libraries(service_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13364,6 +13673,7 @@ target_link_libraries(settings_timeout_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13420,6 +13730,7 @@ target_link_libraries(shutdown_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13460,6 +13771,7 @@ target_link_libraries(simple_request_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13498,6 +13810,7 @@ target_link_libraries(slice_hash_table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13536,6 +13849,7 @@ target_link_libraries(slice_weak_hash_table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13574,6 +13888,7 @@ target_link_libraries(static_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13612,6 +13927,7 @@ target_link_libraries(stats_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13650,6 +13966,7 @@ target_link_libraries(status_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13688,6 +14005,7 @@ target_link_libraries(status_util_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13745,6 +14063,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util
     grpc++
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -13785,6 +14104,7 @@ target_link_libraries(string_ref_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13824,6 +14144,7 @@ target_link_libraries(test_cpp_client_credentials_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13864,6 +14185,7 @@ target_link_libraries(test_cpp_util_slice_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13904,6 +14226,7 @@ target_link_libraries(test_cpp_util_time_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -13945,6 +14268,7 @@ target_link_libraries(thread_manager_test
   grpc++
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14002,6 +14326,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util
     grpc++
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -14043,6 +14368,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util
     grpc++
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -14083,6 +14409,7 @@ target_link_libraries(timer_test
   grpc_test_util
   grpc++
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14121,6 +14448,7 @@ target_link_libraries(tls_security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14161,6 +14489,7 @@ target_link_libraries(unknown_frame_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14201,6 +14530,7 @@ target_link_libraries(window_overflow_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14240,6 +14570,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -14312,6 +14643,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -14351,6 +14683,7 @@ target_link_libraries(xds_bootstrap_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14429,6 +14762,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc_test_util
     grpc++
     grpc
+    grpc_health_upb
     gpr
     address_sorting
     upb
@@ -14482,6 +14816,7 @@ target_link_libraries(xds_interop_client
   grpc++
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14534,6 +14869,7 @@ target_link_libraries(xds_interop_server
   grpc++
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14574,6 +14910,7 @@ target_link_libraries(alts_credentials_fuzzer_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14614,6 +14951,7 @@ target_link_libraries(client_fuzzer_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14654,6 +14992,7 @@ target_link_libraries(hpack_parser_fuzzer_test_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14694,6 +15033,7 @@ target_link_libraries(http_request_fuzzer_test_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14734,6 +15074,7 @@ target_link_libraries(http_response_fuzzer_test_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14774,6 +15115,7 @@ target_link_libraries(json_fuzzer_test_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14814,6 +15156,7 @@ target_link_libraries(nanopb_fuzzer_response_test_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14854,6 +15197,7 @@ target_link_libraries(nanopb_fuzzer_serverlist_test_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14894,6 +15238,7 @@ target_link_libraries(percent_decode_fuzzer_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14934,6 +15279,7 @@ target_link_libraries(percent_encode_fuzzer_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -14974,6 +15320,7 @@ target_link_libraries(server_fuzzer_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -15014,6 +15361,7 @@ target_link_libraries(ssl_server_fuzzer_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
@@ -15054,6 +15402,7 @@ target_link_libraries(uri_fuzzer_test_one_entry
   grpc_test_util
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb

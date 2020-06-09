@@ -170,6 +170,7 @@
       'dependencies': [
         'grpc_test_util',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -271,6 +272,7 @@
       'dependencies': [
         'grpc_test_util',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -424,6 +426,7 @@
       'target_name': 'grpc',
       'type': 'static_library',
       'dependencies': [
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -608,7 +611,6 @@
         'src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c',
         'src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c',
         'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c',
-        'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
         'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c',
         'src/core/ext/upb-generated/udpa/annotations/migrate.upb.c',
         'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c',
@@ -855,6 +857,7 @@
       'type': 'static_library',
       'dependencies': [
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -864,10 +867,20 @@
       ],
     },
     {
+      'target_name': 'grpc_health_upb',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
+      ],
+    },
+    {
       'target_name': 'grpc_test_util',
       'type': 'static_library',
       'dependencies': [
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -900,6 +913,7 @@
       'type': 'static_library',
       'dependencies': [
         'grpc_unsecure',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -931,6 +945,7 @@
       'target_name': 'grpc_unsecure',
       'type': 'static_library',
       'dependencies': [
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1110,7 +1125,6 @@
         'src/core/ext/upb-generated/google/protobuf/timestamp.upb.c',
         'src/core/ext/upb-generated/google/protobuf/wrappers.upb.c',
         'src/core/ext/upb-generated/google/rpc/status.upb.c',
-        'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
         'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c',
         'src/core/ext/upb-generated/udpa/annotations/migrate.upb.c',
         'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c',
@@ -1290,6 +1304,7 @@
         'grpc++_unsecure',
         'grpc_unsecure',
         'grpc++_test_config',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1307,6 +1322,7 @@
       'type': 'static_library',
       'dependencies': [
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1366,6 +1382,7 @@
       'dependencies': [
         'grpc++',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1381,6 +1398,7 @@
       'dependencies': [
         'grpc++',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1396,6 +1414,7 @@
       'dependencies': [
         'grpc++',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1412,6 +1431,7 @@
       'dependencies': [
         'grpc++',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1437,6 +1457,7 @@
         'grpc_test_util',
         'grpc++',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1458,6 +1479,7 @@
       'type': 'static_library',
       'dependencies': [
         'grpc_unsecure',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1525,6 +1547,7 @@
       'dependencies': [
         'grpc++',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',

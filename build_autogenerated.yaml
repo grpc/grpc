@@ -117,6 +117,7 @@ libs:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -226,6 +227,7 @@ libs:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -524,7 +526,6 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
-  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
@@ -914,7 +915,6 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -1155,6 +1155,7 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -1174,10 +1175,21 @@ libs:
   - src/csharp/ext/grpc_csharp_ext.c
   deps:
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
   dll: only
+- name: grpc_health_upb
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
+  src:
+  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  deps: []
+  secure: false
 - name: grpc_test_util
   build: private
   language: c
@@ -1224,6 +1236,7 @@ libs:
   - test/core/util/trickle_endpoint.cc
   deps:
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -1273,6 +1286,7 @@ libs:
   - test/core/util/trickle_endpoint.cc
   deps:
   - grpc_unsecure
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -1444,7 +1458,6 @@ libs:
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
-  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
@@ -1768,7 +1781,6 @@ libs:
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
-  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -1939,6 +1951,7 @@ libs:
   - src/core/lib/uri/uri_parser.cc
   - src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
   deps:
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -1967,6 +1980,7 @@ libs:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2250,6 +2264,7 @@ libs:
   - src/cpp/util/time_cc.cc
   deps:
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2268,6 +2283,7 @@ libs:
   deps:
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2286,6 +2302,7 @@ libs:
   deps:
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2305,6 +2322,7 @@ libs:
   deps:
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2324,6 +2342,7 @@ libs:
   deps:
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2362,6 +2381,7 @@ libs:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2632,6 +2652,7 @@ libs:
   - src/cpp/util/time_cc.cc
   deps:
   - grpc_unsecure
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2693,6 +2714,7 @@ libs:
   deps:
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2706,6 +2728,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2719,6 +2742,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2732,6 +2756,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2746,6 +2771,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2760,6 +2786,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2774,6 +2801,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2790,6 +2818,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2804,6 +2833,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2818,6 +2848,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2832,6 +2863,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2844,6 +2876,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2858,6 +2891,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2872,6 +2906,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2886,6 +2921,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2898,6 +2934,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2911,6 +2948,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2924,6 +2962,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2937,6 +2976,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2952,6 +2992,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2966,6 +3007,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -2984,6 +3026,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3000,6 +3043,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3013,6 +3057,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3026,6 +3071,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3038,6 +3084,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3051,6 +3098,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3063,6 +3111,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3075,6 +3124,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3088,6 +3138,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3100,6 +3151,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3112,6 +3164,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3128,6 +3181,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3141,6 +3195,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3158,6 +3213,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3170,6 +3226,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3184,6 +3241,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3198,6 +3256,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3210,6 +3269,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3223,6 +3283,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3237,6 +3298,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3251,6 +3313,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3263,6 +3326,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3277,6 +3341,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3295,6 +3360,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3307,6 +3373,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3322,6 +3389,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3335,6 +3403,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3351,6 +3420,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3365,6 +3435,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3377,6 +3448,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3393,6 +3465,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3414,6 +3487,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3435,6 +3509,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3451,6 +3526,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3473,6 +3549,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3487,6 +3564,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3501,6 +3579,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3513,6 +3592,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3525,6 +3605,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3538,6 +3619,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3550,6 +3632,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3564,6 +3647,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3580,6 +3664,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3596,6 +3681,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3609,6 +3695,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3622,6 +3709,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3635,6 +3723,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3648,6 +3737,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3666,6 +3756,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3687,6 +3778,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3703,6 +3795,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3717,6 +3810,7 @@ targets:
   - end2end_tests
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3732,6 +3826,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3744,6 +3839,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3757,6 +3853,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3772,6 +3869,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3784,6 +3882,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3797,6 +3896,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3810,6 +3910,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3823,6 +3924,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3836,6 +3938,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3848,6 +3951,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3861,6 +3965,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3874,6 +3979,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3893,6 +3999,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3905,6 +4012,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3920,6 +4028,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3932,6 +4041,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3944,6 +4054,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3956,6 +4067,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3978,6 +4090,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -3991,6 +4104,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4004,6 +4118,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4016,6 +4131,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4034,6 +4150,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4048,6 +4165,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4066,6 +4184,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4080,6 +4199,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4092,6 +4212,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4106,6 +4227,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4118,6 +4240,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4131,6 +4254,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4143,6 +4267,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4157,6 +4282,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4173,6 +4299,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4185,6 +4312,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4198,6 +4326,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4211,6 +4340,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4223,6 +4353,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4235,6 +4366,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4251,6 +4383,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4264,6 +4397,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4278,6 +4412,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4294,6 +4429,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4307,6 +4443,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4320,6 +4457,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4332,6 +4470,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4345,6 +4484,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4358,6 +4498,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4371,6 +4512,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4389,6 +4531,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4404,6 +4547,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4420,6 +4564,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4433,6 +4578,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4445,6 +4591,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4458,6 +4605,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4471,6 +4619,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4484,6 +4633,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4497,6 +4647,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4510,6 +4661,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4523,6 +4675,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4536,6 +4689,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4549,6 +4703,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4561,6 +4716,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4573,6 +4729,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4589,6 +4746,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4601,6 +4759,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4614,6 +4773,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4631,6 +4791,7 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4656,6 +4817,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4674,6 +4836,7 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4698,6 +4861,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4716,6 +4880,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4735,6 +4900,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4755,6 +4921,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4770,6 +4937,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4784,6 +4952,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4802,6 +4971,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4819,6 +4989,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4832,6 +5003,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4852,6 +5024,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4873,6 +5046,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4895,6 +5069,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4917,6 +5092,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4948,6 +5124,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4978,6 +5155,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -4999,6 +5177,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5021,6 +5200,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5043,6 +5223,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5064,6 +5245,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5085,6 +5267,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5106,6 +5289,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5128,6 +5312,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5151,6 +5336,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5173,6 +5359,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5195,6 +5382,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5218,6 +5406,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5239,6 +5428,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5261,6 +5451,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5283,6 +5474,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5306,6 +5498,7 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5328,6 +5521,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5342,6 +5536,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5364,6 +5559,7 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5385,6 +5581,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5399,6 +5596,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5414,6 +5612,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5432,6 +5631,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5446,6 +5646,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5468,6 +5669,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5485,6 +5687,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5517,6 +5720,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5539,6 +5743,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5562,6 +5767,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5580,6 +5786,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5606,6 +5813,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5631,6 +5839,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5649,6 +5858,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5664,6 +5874,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5682,6 +5893,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5695,6 +5907,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5708,6 +5921,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5729,6 +5943,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5744,6 +5959,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5761,6 +5977,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5786,6 +6003,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5802,6 +6020,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5815,6 +6034,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5834,6 +6054,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5853,6 +6074,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5874,6 +6096,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5893,6 +6116,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5906,6 +6130,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5924,6 +6149,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -5953,6 +6179,7 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6029,6 +6256,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6061,6 +6289,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6081,6 +6310,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6104,6 +6334,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6122,6 +6353,7 @@ targets:
   - end2end_tests
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6139,6 +6371,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6156,6 +6389,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6180,6 +6414,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6194,6 +6429,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6217,6 +6453,7 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6231,6 +6468,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6248,6 +6486,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6272,6 +6511,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6289,6 +6529,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6314,6 +6555,7 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6336,6 +6578,7 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6351,6 +6594,7 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6369,6 +6613,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6385,6 +6630,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6403,6 +6649,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6422,6 +6669,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6439,6 +6687,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6452,6 +6701,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6472,6 +6722,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6492,6 +6743,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6506,6 +6758,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6523,6 +6776,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6544,6 +6798,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6556,6 +6811,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6572,6 +6828,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6589,6 +6846,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6603,6 +6861,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6620,6 +6879,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6636,6 +6896,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6656,6 +6917,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6680,6 +6942,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6694,6 +6957,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6746,6 +7010,7 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6788,6 +7053,7 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6809,6 +7075,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6822,6 +7089,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6835,6 +7103,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6848,6 +7117,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6864,6 +7134,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6885,6 +7156,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6902,6 +7174,7 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6923,6 +7196,7 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6943,6 +7217,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6961,6 +7236,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -6975,6 +7251,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7001,6 +7278,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7018,6 +7296,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7035,6 +7314,7 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7060,6 +7340,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7073,6 +7354,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7087,6 +7369,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7106,6 +7389,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7123,6 +7407,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7136,6 +7421,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7150,6 +7436,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7165,6 +7452,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7181,6 +7469,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7194,6 +7483,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7208,6 +7498,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7222,6 +7513,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7242,6 +7534,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7260,6 +7553,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7275,6 +7569,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7290,6 +7585,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7306,6 +7602,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7323,6 +7620,7 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7342,6 +7640,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7361,6 +7660,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7379,6 +7679,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7392,6 +7693,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7409,6 +7711,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7423,6 +7726,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7443,6 +7747,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7456,6 +7761,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7514,6 +7820,7 @@ targets:
   deps:
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7531,6 +7838,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7558,6 +7866,7 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7580,6 +7889,7 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb
@@ -7598,6 +7908,7 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - grpc_health_upb
   - gpr
   - address_sorting
   - upb

@@ -526,8 +526,6 @@ config("grpc_config") {
         "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h",
         "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c",
         "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h",
-        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c",
-        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h",
         "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c",
         "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h",
         "src/core/ext/upb-generated/udpa/annotations/migrate.upb.c",
@@ -983,6 +981,7 @@ config("grpc_config") {
     deps = [
         "//third_party/boringssl",
         "//third_party/zlib",
+        ":grpc_health_upb",
         ":gpr",
         ":address_sorting",
         ":upb",
@@ -1280,6 +1279,7 @@ config("grpc_config") {
     deps = [
         "//third_party/protobuf:protobuf_lite",
         ":grpc",
+        ":grpc_health_upb",
         ":gpr",
         ":address_sorting",
         ":upb",
