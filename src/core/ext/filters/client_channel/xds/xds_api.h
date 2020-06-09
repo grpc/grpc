@@ -46,55 +46,60 @@ class XdsApi {
   static const char* kEdsTypeUrl;
 
   struct RdsUpdate {
+    // TODO(donnadionne): When we can use absl::variant<>, consider using that
+    // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
     struct RdsRoute {
-      // TODO(donnadionne): When we can use absl::variant<>, consider using that
-      // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
-      enum class PathMatcherType {
-        PATH,
-        PREFIX,
-        REGEX,
-      };
-
-      struct PathMatcher {
-        std::string path;
-        std::string prefix;
-        std::string regex;
-      };
-
-      enum class HeaderMatcherType {
-        EXACT,
-        REGEX,
-        RANGE,
-        PRESENT,
-        PREFIX,
-        SUFFIX,
-      };
-
-      struct HeaderMatcherContent {
-        struct Int64Range {
-          int64_t start;
-          int64_t end;
+      // Matchers for this route.
+      struct Matchers {
+        struct PathMatcher {
+          enum class PathMatcherType {
+            PATH,
+            PREFIX,
+            REGEX,
+          };
+          PathMatcherType path_type;
+          std::string path_matcher;
+          bool operator==(const PathMatcher& other) const {
+            return (path_type == other.path_type &&
+                    path_matcher == other.path_matcher);
+          }
         };
-        std::string name;
-        std::string exact_match;
-        std::string regex_match;
-        Int64Range range_match;
-        bool present_match;
-        std::string prefix_match;
-        std::string suffix_match;
-        bool invert_match;
+        struct HeaderMatcher {
+          enum class HeaderMatcherType {
+            EXACT,
+            REGEX,
+            RANGE,
+            PRESENT,
+            PREFIX,
+            SUFFIX,
+          };
+          std::string name;
+          HeaderMatcherType header_type;
+          int64_t range_start;
+          int64_t range_end;
+          std::string header_matcher;
+          bool present_match;
+          bool invert_match;
+          bool operator==(const HeaderMatcher& other) const {
+            return (name == other.name && header_type == other.header_type &&
+                    range_start == other.range_start &&
+                    range_end == other.range_end &&
+                    header_matcher == other.header_matcher &&
+                    present_match == other.present_match &&
+                    invert_match == other.invert_match);
+          }
+        };
+        PathMatcher path_matcher;
+        std::vector<HeaderMatcher> header_matchers;
+        absl::optional<uint32_t> fraction_per_million;
+        bool operator==(const Matchers& other) const {
+          return (path_matcher == other.path_matcher &&
+                  header_matchers == other.header_matchers &&
+                  fraction_per_million == other.fraction_per_million);
+        }
       };
-
-      struct HeaderMatcher {
-        HeaderMatcherType type;
-        HeaderMatcherContent content;
-      };
-
-      PathMatcherType path_matcher_type;
-      PathMatcher path_matcher;
-      std::vector<HeaderMatcher> headers;
-      uint32_t runtime_fraction_numerator_out_of_1M;
-
+      Matchers matchers;
+      // Action for this route.
       std::string cluster_name;
       struct ClusterWeight {
         std::string name;
@@ -109,7 +114,8 @@ class XdsApi {
       bool operator==(const RdsRoute& other) const {
         // TODO @donnadionne: implement this properly with all the fields
         // finalized.
-        return (cluster_name == other.cluster_name &&
+        return (matchers == other.matchers &&
+                cluster_name == other.cluster_name &&
                 weighted_clusters == other.weighted_clusters);
       }
     };

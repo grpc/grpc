@@ -53,8 +53,8 @@
 #include "envoy/config/listener/v2/api_listener.upb.h"
 #include "envoy/service/load_stats/v2/lrs.upb.h"
 #include "envoy/type/matcher/regex.upb.h"
-#include "envoy/type/range.upb.h"
 #include "envoy/type/percent.upb.h"
+#include "envoy/type/range.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
@@ -932,9 +932,10 @@ grpc_error* RouteMatchParse(const envoy_api_v2_route_RouteMatch* match,
             "Prefix does not start with a /");
       }
       if (prefix.size > 1) {
-        rds_route->path_matcher_type =
-            XdsApi::RdsUpdate::RdsRoute::PathMatcherType::PREFIX;
-        rds_route->path_matcher.prefix = UpbStringToStdString(prefix);
+        rds_route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::
+            RdsRoute::Matchers::PathMatcher::PathMatcherType::PREFIX;
+        rds_route->matchers.path_matcher.path_matcher =
+            UpbStringToStdString(prefix);
         std::vector<absl::string_view> prefix_elements = absl::StrSplit(
             absl::string_view(prefix.data, prefix.size).substr(1),
             absl::MaxSplits('/', 1));
@@ -960,9 +961,9 @@ grpc_error* RouteMatchParse(const envoy_api_v2_route_RouteMatch* match,
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Path does not start with a /");
     }
-    rds_route->path_matcher_type =
-        XdsApi::RdsUpdate::RdsRoute::PathMatcherType::PATH;
-    rds_route->path_matcher.path = UpbStringToStdString(path);
+    rds_route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
+        Matchers::PathMatcher::PathMatcherType::PATH;
+    rds_route->matchers.path_matcher.path_matcher = UpbStringToStdString(path);
     std::vector<absl::string_view> path_elements =
         absl::StrSplit(absl::string_view(path.data, path.size).substr(1), '/');
     if (path_elements.size() != 2) {
@@ -976,13 +977,13 @@ grpc_error* RouteMatchParse(const envoy_api_v2_route_RouteMatch* match,
           "Path contains empty method name");
     }
   } else if (envoy_api_v2_route_RouteMatch_has_safe_regex(match)) {
-    rds_route->path_matcher_type =
-        XdsApi::RdsUpdate::RdsRoute::PathMatcherType::REGEX;
+    rds_route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
+        Matchers::PathMatcher::PathMatcherType::REGEX;
     const envoy_type_matcher_RegexMatcher* regex_matcher =
         envoy_api_v2_route_RouteMatch_safe_regex(match);
     GPR_ASSERT(regex_matcher != nullptr);
-    rds_route->path_matcher.regex = 
-        UpbStringToStdString(envoy_type_matcher_RegexMatcher_regex(regex_matcher));
+    rds_route->matchers.path_matcher.path_matcher = UpbStringToStdString(
+        envoy_type_matcher_RegexMatcher_regex(regex_matcher));
   } else {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid route path specifier specified.");
@@ -997,51 +998,51 @@ grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
       envoy_api_v2_route_RouteMatch_headers(match, &size);
   for (size_t i = 0; i < size; ++i) {
     const envoy_api_v2_route_HeaderMatcher* header = headers[i];
-    XdsApi::RdsUpdate::RdsRoute::HeaderMatcher header_matcher;
-    header_matcher.content.name =
+    XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher header_matcher;
+    header_matcher.name =
         UpbStringToStdString(envoy_api_v2_route_HeaderMatcher_name(header));
     if (envoy_api_v2_route_HeaderMatcher_has_exact_match(header)) {
-      header_matcher.type =
-          XdsApi::RdsUpdate::RdsRoute::HeaderMatcherType::EXACT;
-      header_matcher.content.exact_match = UpbStringToStdString(
+      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+          HeaderMatcher::HeaderMatcherType::EXACT;
+      header_matcher.header_matcher = UpbStringToStdString(
           envoy_api_v2_route_HeaderMatcher_exact_match(header));
     } else if (envoy_api_v2_route_HeaderMatcher_has_safe_regex_match(header)) {
-      header_matcher.type =
-          XdsApi::RdsUpdate::RdsRoute::HeaderMatcherType::REGEX;
+      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+          HeaderMatcher::HeaderMatcherType::REGEX;
       const envoy_type_matcher_RegexMatcher* regex_matcher =
           envoy_api_v2_route_HeaderMatcher_safe_regex_match(header);
       GPR_ASSERT(regex_matcher != nullptr);
-      header_matcher.content.regex_match =
-          UpbStringToStdString(envoy_type_matcher_RegexMatcher_regex(regex_matcher));
+      header_matcher.header_matcher = UpbStringToStdString(
+          envoy_type_matcher_RegexMatcher_regex(regex_matcher));
     } else if (envoy_api_v2_route_HeaderMatcher_has_range_match(header)) {
-      header_matcher.type =
-          XdsApi::RdsUpdate::RdsRoute::HeaderMatcherType::RANGE;
+      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+          HeaderMatcher::HeaderMatcherType::RANGE;
       const envoy_type_Int64Range* range_matcher =
           envoy_api_v2_route_HeaderMatcher_range_match(header);
-      header_matcher.content.range_match.start = envoy_type_Int64Range_start(range_matcher);
-      header_matcher.content.range_match.end = envoy_type_Int64Range_end(range_matcher);
+      header_matcher.range_start = envoy_type_Int64Range_start(range_matcher);
+      header_matcher.range_end = envoy_type_Int64Range_end(range_matcher);
     } else if (envoy_api_v2_route_HeaderMatcher_has_present_match(header)) {
-      header_matcher.type =
-          XdsApi::RdsUpdate::RdsRoute::HeaderMatcherType::PRESENT;
-      header_matcher.content.present_match =
+      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+          HeaderMatcher::HeaderMatcherType::PRESENT;
+      header_matcher.present_match =
           envoy_api_v2_route_HeaderMatcher_present_match(header);
     } else if (envoy_api_v2_route_HeaderMatcher_has_prefix_match(header)) {
-      header_matcher.type =
-          XdsApi::RdsUpdate::RdsRoute::HeaderMatcherType::PREFIX;
-      header_matcher.content.prefix_match = UpbStringToStdString(
+      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+          HeaderMatcher::HeaderMatcherType::PREFIX;
+      header_matcher.header_matcher = UpbStringToStdString(
           envoy_api_v2_route_HeaderMatcher_prefix_match(header));
     } else if (envoy_api_v2_route_HeaderMatcher_has_suffix_match(header)) {
-      header_matcher.type =
-          XdsApi::RdsUpdate::RdsRoute::HeaderMatcherType::SUFFIX;
-      header_matcher.content.suffix_match = UpbStringToStdString(
+      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+          HeaderMatcher::HeaderMatcherType::SUFFIX;
+      header_matcher.header_matcher = UpbStringToStdString(
           envoy_api_v2_route_HeaderMatcher_suffix_match(header));
     } else {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Invalid route header matcher specified.");
     }
-    header_matcher.content.invert_match =
+    header_matcher.invert_match =
         envoy_api_v2_route_HeaderMatcher_invert_match(header);
-    rds_route->headers.emplace_back(std::move(header_matcher));
+    rds_route->matchers.header_matchers.emplace_back(std::move(header_matcher));
   }
   return GRPC_ERROR_NONE;
 }
@@ -1057,7 +1058,7 @@ grpc_error* RouteRuntimeFractionParse(
     // envoy_api_v2_core_RuntimeFractionalPercent without depending on the
     // structure calculate a numerator out of 1M based on the configured
     // numerator and denominator type.
-    rds_route->runtime_fraction_numerator_out_of_1M = 500000;
+    rds_route->matchers.fraction_per_million = 500000;
   }
   return GRPC_ERROR_NONE;
 }
@@ -1203,8 +1204,8 @@ grpc_error* RouteConfigParse(
     const envoy_api_v2_route_RouteMatch* match =
         envoy_api_v2_route_Route_match(route);
     XdsApi::RdsUpdate::RdsRoute rds_route;
-    rds_route.path_matcher_type =
-        XdsApi::RdsUpdate::RdsRoute::PathMatcherType::PREFIX;
+    rds_route.matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
+        Matchers::PathMatcher::PathMatcherType::PREFIX;
     // if xds routing is not enabled, we must be working on the default route;
     // in this case, we must have an empty or single slash prefix.
     if (!envoy_api_v2_route_RouteMatch_has_prefix(match)) {
