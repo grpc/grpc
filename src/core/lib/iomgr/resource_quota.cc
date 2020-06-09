@@ -334,7 +334,9 @@ static bool rq_alloc(grpc_resource_quota* resource_quota) {
       resource_user->free_pool += aborted_allocations;
       grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &resource_user->on_allocated);
       gpr_mu_unlock(&resource_user->mu);
-      ru_unref_by(resource_user, static_cast<gpr_atm>(aborted_allocations));
+      if (aborted_allocations > 0) {
+        ru_unref_by(resource_user, static_cast<gpr_atm>(aborted_allocations));
+      }
       continue;
     }
     if (resource_user->free_pool < 0 &&
