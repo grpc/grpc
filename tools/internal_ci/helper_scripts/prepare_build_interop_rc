@@ -29,6 +29,7 @@ git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java
 git clone --recursive https://github.com/grpc/grpc-node ./../grpc-node
 git clone --recursive https://github.com/grpc/grpc-dart ./../grpc-dart
 git clone --recursive https://github.com/grpc/grpc-dotnet ./../grpc-dotnet
+git clone --recursive https://github.com/grpc/grpc-kotlin ./../grpc-kotlin
 
 # Grab the service account key to run interop tests against prod backends.
 mkdir ~/service_account
