@@ -13,6 +13,21 @@ libs:
   - third_party/address_sorting/address_sorting_windows.c
   deps: []
   secure: false
+- name: alts_upb
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  deps:
+  - upb
+  secure: false
 - name: end2end_nosec_tests
   build: private
   language: c
@@ -117,8 +132,12 @@ libs:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   secure: false
@@ -227,8 +246,12 @@ libs:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   secure: true
@@ -667,10 +690,6 @@ libs:
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
   src:
-  - src/proto/grpc/gcp/altscontext.proto
-  - src/proto/grpc/gcp/handshaker.proto
-  - src/proto/grpc/gcp/transport_security_common.proto
-  - src/proto/grpc/lb/v1/load_balancer.proto
   - src/core/ext/filters/census/grpc_context.cc
   - src/core/ext/filters/client_channel/backend_metric.cc
   - src/core/ext/filters/client_channel/backup_poller.cc
@@ -1015,8 +1034,12 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   - absl/types:optional
@@ -1035,8 +1058,12 @@ libs:
   - src/csharp/ext/grpc_csharp_ext.c
   deps:
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   dll: only
@@ -1048,6 +1075,17 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   src:
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  deps:
+  - upb
+  secure: false
+- name: grpc_lb_upb
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
+  src:
+  - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   deps:
   - upb
   secure: false
@@ -1097,8 +1135,12 @@ libs:
   - test/core/util/trickle_endpoint.cc
   deps:
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: grpc_test_util_unsecure
@@ -1147,6 +1189,9 @@ libs:
   - test/core/util/trickle_endpoint.cc
   deps:
   - grpc_unsecure
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -1402,7 +1447,6 @@ libs:
   - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
   src:
-  - src/proto/grpc/lb/v1/load_balancer.proto
   - src/core/ext/filters/census/grpc_context.cc
   - src/core/ext/filters/client_channel/backend_metric.cc
   - src/core/ext/filters/client_channel/backup_poller.cc
@@ -1675,6 +1719,9 @@ libs:
   - src/core/lib/uri/uri_parser.cc
   - src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
   deps:
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -1685,6 +1732,24 @@ libs:
   baselib: true
   dll: true
   generate_plugin_registry: true
+  secure: false
+- name: udpa_orca_upb
+  build: all
+  language: c
+  public_headers: []
+  headers: []
+  src: []
+  deps:
+  - upb
+  secure: false
+- name: xds_upb
+  build: all
+  language: c
+  public_headers: []
+  headers: []
+  src: []
+  deps:
+  - upb
   secure: false
 - name: benchmark_helpers
   build: test
@@ -1704,6 +1769,9 @@ libs:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -1988,8 +2056,12 @@ libs:
   - src/cpp/util/time_cc.cc
   deps:
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   baselib: true
@@ -2007,8 +2079,12 @@ libs:
   deps:
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   baselib: true
@@ -2026,8 +2102,12 @@ libs:
   deps:
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: grpc++_reflection
@@ -2046,8 +2126,12 @@ libs:
   deps:
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: grpc++_test
@@ -2066,8 +2150,12 @@ libs:
   deps:
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: grpc++_test_config
@@ -2105,8 +2193,12 @@ libs:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: grpc++_unsecure
@@ -2376,6 +2468,9 @@ libs:
   - src/cpp/util/time_cc.cc
   deps:
   - grpc_unsecure
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -2438,8 +2533,12 @@ libs:
   deps:
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 targets:
@@ -2452,8 +2551,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -2466,8 +2569,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -2480,8 +2587,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: alts_counter_test
@@ -2495,8 +2606,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: alts_crypt_test
@@ -2510,8 +2625,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: alts_crypter_test
@@ -2525,8 +2644,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: alts_frame_protector_test
@@ -2542,8 +2665,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: alts_grpc_record_protocol_test
@@ -2557,8 +2684,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: alts_handshaker_client_test
@@ -2572,8 +2703,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: alts_iovec_record_protocol_test
@@ -2587,8 +2722,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: alts_security_connector_test
@@ -2600,8 +2739,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: alts_tsi_handshaker_test
@@ -2615,8 +2758,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: alts_tsi_utils_test
@@ -2630,8 +2777,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: alts_zero_copy_grpc_protector_test
@@ -2645,8 +2796,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: arena_test
@@ -2658,8 +2813,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -2672,8 +2831,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -2686,8 +2849,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -2700,8 +2867,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -2716,8 +2887,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: bad_ssl_alpn_test
@@ -2731,8 +2906,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -2750,8 +2929,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -2767,8 +2950,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -2781,8 +2968,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -2795,8 +2986,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: channel_args_test
@@ -2808,8 +3003,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -2822,8 +3021,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: channel_stack_builder_test
@@ -2835,8 +3038,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: channel_stack_test
@@ -2848,8 +3055,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -2862,8 +3073,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: check_gcp_environment_windows_test
@@ -2875,8 +3090,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: client_ssl_test
@@ -2888,8 +3107,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -2905,8 +3128,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -2919,8 +3146,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -2937,8 +3168,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: compression_test
@@ -2950,8 +3185,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -2965,8 +3204,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: connection_refused_test
@@ -2980,8 +3223,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: cpu_test
@@ -2993,8 +3240,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3007,8 +3258,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   args:
@@ -3022,8 +3277,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   args:
@@ -3037,8 +3296,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: dns_resolver_test
@@ -3050,8 +3313,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: dualstack_socket_test
@@ -3065,8 +3332,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3084,8 +3355,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: env_test
@@ -3097,8 +3372,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3113,8 +3392,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3127,8 +3410,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3144,8 +3431,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: fake_transport_security_test
@@ -3159,8 +3450,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: fd_conservation_posix_test
@@ -3172,8 +3467,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3189,8 +3488,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3211,8 +3514,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3233,8 +3540,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3250,8 +3561,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3273,8 +3588,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: frame_handler_test
@@ -3288,8 +3607,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: goaway_server_test
@@ -3303,8 +3626,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: grpc_alts_credentials_options_test
@@ -3316,8 +3643,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: grpc_byte_buffer_reader_test
@@ -3329,8 +3660,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3343,8 +3678,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: grpc_ipv6_loopback_available_test
@@ -3356,8 +3695,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: handshake_server_with_readahead_handshaker_test
@@ -3371,8 +3714,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3388,8 +3735,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3405,8 +3756,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3419,8 +3774,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3433,8 +3792,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3447,8 +3810,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3461,8 +3828,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3480,8 +3851,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3502,8 +3877,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3519,8 +3898,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3534,8 +3917,12 @@ targets:
   - end2end_tests
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3550,8 +3937,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: json_token_test
@@ -3563,8 +3954,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3577,8 +3972,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3593,8 +3992,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: load_file_test
@@ -3606,8 +4009,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3620,8 +4027,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3634,8 +4045,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3648,8 +4063,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3662,8 +4081,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: minimal_stack_is_minimal_test
@@ -3675,8 +4098,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3689,8 +4116,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3703,8 +4134,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3723,8 +4158,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: murmur_hash_test
@@ -3736,8 +4175,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3752,8 +4195,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: num_external_connectivity_watchers_test
@@ -3765,8 +4212,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: parse_address_test
@@ -3778,8 +4229,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: parse_address_with_named_scope_id_test
@@ -3791,8 +4246,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -3814,8 +4273,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3828,8 +4291,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -3842,8 +4309,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: resolve_address_using_ares_resolver_posix_test
@@ -3855,8 +4326,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   args:
@@ -3874,8 +4349,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   args:
@@ -3889,8 +4368,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   args:
@@ -3908,8 +4391,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   args:
@@ -3923,8 +4410,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: secure_channel_create_test
@@ -3936,8 +4427,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: secure_endpoint_test
@@ -3951,8 +4446,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: security_connector_test
@@ -3964,8 +4463,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: sequential_connectivity_test
@@ -3978,8 +4481,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: server_chttp2_test
@@ -3991,8 +4498,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: server_ssl_test
@@ -4006,8 +4517,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -4023,8 +4538,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: slice_buffer_test
@@ -4036,8 +4555,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4050,8 +4573,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4064,8 +4591,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: sockaddr_utils_test
@@ -4077,8 +4608,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: socket_utils_test
@@ -4090,8 +4625,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -4107,8 +4646,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4121,8 +4664,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: ssl_transport_security_test
@@ -4136,8 +4683,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -4153,8 +4704,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4167,8 +4722,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4181,8 +4740,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: stream_owned_slice_test
@@ -4194,8 +4757,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4208,8 +4775,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4222,8 +4793,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4236,8 +4811,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -4255,8 +4834,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -4271,8 +4854,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -4288,8 +4875,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4302,8 +4893,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: test_core_slice_slice_test
@@ -4315,8 +4910,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4329,8 +4928,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4343,8 +4946,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4357,8 +4964,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4371,8 +4982,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4385,8 +5000,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4399,8 +5018,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4413,8 +5036,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4427,8 +5054,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: transport_security_test
@@ -4440,8 +5071,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: udp_server_test
@@ -4453,8 +5088,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -4470,8 +5109,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: useful_test
@@ -4483,8 +5126,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4497,8 +5144,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4515,8 +5166,12 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -4541,6 +5196,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -4560,6 +5218,9 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -4585,8 +5246,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -4604,8 +5269,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -4624,8 +5293,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: async_end2end_test
@@ -4645,8 +5318,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: auth_property_iterator_test
@@ -4661,8 +5338,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4676,8 +5357,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -4695,8 +5380,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: badreq_bad_client_test
@@ -4713,8 +5402,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: bdp_estimator_test
@@ -4727,8 +5420,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -4748,6 +5445,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -4770,6 +5470,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -4793,6 +5496,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -4816,6 +5522,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -4848,6 +5557,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -4879,6 +5591,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -4901,6 +5616,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -4924,6 +5642,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -4947,6 +5668,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -4969,6 +5693,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -4991,6 +5718,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -5013,6 +5743,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -5036,6 +5769,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -5060,6 +5796,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -5083,6 +5822,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -5106,6 +5848,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -5130,6 +5875,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -5152,6 +5900,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -5175,6 +5926,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -5198,6 +5952,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -5222,6 +5979,9 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -5245,8 +6005,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -5260,8 +6024,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -5283,8 +6051,12 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: cfstream_test
@@ -5305,8 +6077,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: channel_arguments_test
@@ -5320,8 +6096,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -5336,8 +6116,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -5355,8 +6139,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: channelz_registry_test
@@ -5370,8 +6158,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -5393,8 +6185,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: channelz_test
@@ -5411,8 +6207,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: cli_call_test
@@ -5444,8 +6244,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: client_callback_end2end_test
@@ -5467,8 +6271,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: client_channel_stress_test
@@ -5491,8 +6299,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -5510,8 +6322,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -5537,8 +6353,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: client_lb_end2end_test
@@ -5563,8 +6383,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -5582,8 +6406,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -5598,8 +6426,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -5617,8 +6449,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: connectivity_state_test
@@ -5631,8 +6467,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: context_list_test
@@ -5645,8 +6485,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -5667,8 +6511,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: destroy_grpclb_channel_with_active_connect_stress_test
@@ -5683,8 +6531,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: duplicate_header_bad_client_test
@@ -5701,8 +6553,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: end2end_test
@@ -5727,8 +6583,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: error_details_test
@@ -5744,8 +6604,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: eventmanager_libuv_test
@@ -5758,8 +6622,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -5778,8 +6646,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: filter_end2end_test
@@ -5798,8 +6670,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: flaky_network_test
@@ -5820,8 +6696,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: generic_end2end_test
@@ -5840,8 +6720,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: global_config_env_test
@@ -5854,8 +6738,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -5873,8 +6761,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -5903,8 +6795,12 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: grpc_cpp_plugin
@@ -5980,8 +6876,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: grpc_tool_test
@@ -6013,8 +6913,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -6034,8 +6938,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: grpclb_end2end_test
@@ -6058,8 +6966,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -6077,8 +6989,12 @@ targets:
   - end2end_tests
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: head_of_line_blocking_bad_client_test
@@ -6095,8 +7011,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: headers_bad_client_test
@@ -6113,8 +7033,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: health_service_end2end_test
@@ -6138,8 +7062,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: hpack_parser_fuzzer_test
@@ -6153,8 +7081,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -6177,8 +7109,12 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: http_request_fuzzer_test
@@ -6192,8 +7128,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -6210,8 +7150,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -6235,8 +7179,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: initial_settings_frame_bad_client_test
@@ -6253,8 +7201,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: interop_client
@@ -6279,8 +7231,12 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: interop_server
@@ -6302,8 +7258,12 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: interop_test
@@ -6318,8 +7278,12 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -6337,8 +7301,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -6354,8 +7322,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -6373,8 +7345,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: lb_get_cpu_stats_test
@@ -6393,8 +7369,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: lb_load_data_store_test
@@ -6411,8 +7391,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: linux_system_roots_test
@@ -6425,8 +7409,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: message_allocator_end2end_test
@@ -6446,8 +7434,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: mock_test
@@ -6467,8 +7459,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: nanopb_fuzzer_response_test
@@ -6482,8 +7478,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -6500,8 +7500,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -6522,8 +7526,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: noop-benchmark
@@ -6535,8 +7543,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   - benchmark
@@ -6552,8 +7564,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: out_of_bounds_bad_client_test
@@ -6570,8 +7586,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: percent_decode_fuzzer
@@ -6585,8 +7605,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -6603,8 +7627,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -6620,8 +7648,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: port_sharing_end2end_test
@@ -6641,8 +7673,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: proto_server_reflection_test
@@ -6666,8 +7702,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: proto_utils_test
@@ -6681,8 +7721,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -6734,8 +7778,12 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: qps_worker
@@ -6777,8 +7825,12 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: raw_end2end_test
@@ -6799,8 +7851,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: ref_counted_ptr_test
@@ -6813,8 +7869,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: ref_counted_test
@@ -6827,8 +7887,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: retry_throttle_test
@@ -6841,8 +7905,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -6858,8 +7926,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: server_builder_plugin_test
@@ -6880,8 +7952,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: server_builder_test
@@ -6898,6 +7974,9 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -6920,6 +7999,9 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -6941,8 +8023,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: server_early_return_test
@@ -6960,8 +8046,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: server_fuzzer
@@ -6975,8 +8065,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -7002,8 +8096,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: server_registered_method_bad_client_test
@@ -7020,8 +8118,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: server_request_call_test
@@ -7038,6 +8140,9 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
   - address_sorting
@@ -7064,8 +8169,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: service_config_test
@@ -7078,8 +8187,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: settings_timeout_test
@@ -7093,8 +8206,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: shutdown_test
@@ -7113,8 +8230,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: simple_request_bad_client_test
@@ -7131,8 +8252,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: slice_hash_table_test
@@ -7145,8 +8270,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -7160,8 +8289,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -7176,8 +8309,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -7193,8 +8330,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: stats_test
@@ -7207,8 +8348,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -7222,8 +8367,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -7237,8 +8386,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -7258,8 +8411,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -7277,8 +8434,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -7293,8 +8454,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: test_cpp_util_slice_test
@@ -7309,8 +8474,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -7326,8 +8495,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   uses_polling: false
@@ -7344,8 +8517,12 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: thread_stress_test
@@ -7364,8 +8541,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -7384,8 +8565,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -7403,8 +8588,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: tls_security_connector_test
@@ -7417,8 +8606,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: unknown_frame_bad_client_test
@@ -7435,8 +8628,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: uri_fuzzer_test
@@ -7450,8 +8647,12 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   corpus_dirs:
@@ -7471,8 +8672,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: work_serializer_test
@@ -7485,8 +8690,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -7544,8 +8753,12 @@ targets:
   deps:
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -7562,8 +8775,12 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: xds_end2end_test
@@ -7590,8 +8807,12 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
   platforms:
@@ -7613,8 +8834,12 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 - name: xds_interop_server
@@ -7632,8 +8857,12 @@ targets:
   - grpc++
   - grpc++_test_config
   - grpc
+  - xds_upb
+  - udpa_orca_upb
+  - grpc_lb_upb
   - grpc_health_upb
   - gpr
+  - alts_upb
   - address_sorting
   - upb
 tests: []

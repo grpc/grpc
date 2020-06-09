@@ -147,7 +147,24 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
+    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
+    src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/http.upb.c \
+    src/core/ext/upb-generated/google/protobuf/any.upb.c \
+    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
+    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
+    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
+    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
+    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
+    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
+    src/core/ext/upb-generated/google/rpc/status.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
+    src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
+    src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
@@ -432,10 +449,6 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/server.c \
     src/php/ext/grpc/server_credentials.c \
     src/php/ext/grpc/timeval.c \
-    src/proto/grpc/gcp/altscontext.proto \
-    src/proto/grpc/gcp/handshaker.proto \
-    src/proto/grpc/gcp/transport_security_common.proto \
-    src/proto/grpc/lb/v1/load_balancer.proto \
     third_party/abseil-cpp/absl/base/dynamic_annotations.cc \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
@@ -801,7 +814,15 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/inproc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/gogoproto)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/api)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/protobuf)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/rpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/gcp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/health/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/lb/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/udpa/data/orca/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/avl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/backoff)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
@@ -848,8 +869,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/zero_copy_frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/proto/grpc/gcp)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/proto/grpc/lb/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/numeric)
