@@ -70,6 +70,7 @@ _WHITELIST_DICT = {
     '^doc/': [],
     '^examples/': [],
     '^include/grpc\+\+/': [_CPP_TEST_SUITE],
+    '^include/grpcpp/': [_CPP_TEST_SUITE],
     '^summerofcode/': [],
     '^src/cpp/': [_CPP_TEST_SUITE],
     '^src/csharp/': [_CSHARP_TEST_SUITE],
@@ -78,6 +79,9 @@ _WHITELIST_DICT = {
     '^src/python/': [_PYTHON_TEST_SUITE],
     '^src/ruby/': [_RUBY_TEST_SUITE],
     '^templates/': [],
+    '^test/core/end2end/': [
+        _CORE_TEST_SUITE, _CPP_TEST_SUITE, _OBJC_TEST_SUITE
+    ],
     '^test/core/': [_CORE_TEST_SUITE, _CPP_TEST_SUITE],
     '^test/cpp/': [_CPP_TEST_SUITE],
     '^test/distrib/cpp/': [_CPP_TEST_SUITE],
