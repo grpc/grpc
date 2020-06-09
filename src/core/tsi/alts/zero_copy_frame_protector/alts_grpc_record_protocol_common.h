@@ -31,7 +31,7 @@
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 
 /* V-table for alts_grpc_record_protocol implementations.  */
-typedef struct {
+struct alts_grpc_record_protocol_vtable {
   tsi_result (*protect)(alts_grpc_record_protocol* self,
                         grpc_slice_buffer* unprotected_slices,
                         grpc_slice_buffer* protected_slices);
@@ -39,8 +39,7 @@ typedef struct {
                           grpc_slice_buffer* protected_slices,
                           grpc_slice_buffer* unprotected_slices);
   void (*destruct)(alts_grpc_record_protocol* self);
-} alts_grpc_record_protocol_vtable;
-
+};
 /* Main struct for alts_grpc_record_protocol implementation, shared by both
  * integrity-only record protocol and privacy-integrity record protocol.
  * Integrity-only record protocol has additional data elements.

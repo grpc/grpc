@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM google/dart:2.3
-
-# Upgrade Dart to version 2.
-RUN apt-get update && apt-get upgrade -y dart
+FROM google/dart:2.7
 
 # Define the default command.
 CMD ["bash"]

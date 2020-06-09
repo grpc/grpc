@@ -329,6 +329,7 @@ char* grpc_channel_get_target(grpc_channel* channel) {
 
 void grpc_channel_get_info(grpc_channel* channel,
                            const grpc_channel_info* channel_info) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_channel_element* elem =
       grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
@@ -336,6 +337,7 @@ void grpc_channel_get_info(grpc_channel* channel,
 }
 
 void grpc_channel_reset_connect_backoff(grpc_channel* channel) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_channel_reset_connect_backoff(channel=%p)", 1,
                  (channel));
@@ -386,6 +388,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
                                     grpc_slice method, const grpc_slice* host,
                                     gpr_timespec deadline, void* reserved) {
   GPR_ASSERT(!reserved);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_call* call = grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, cq, nullptr,
@@ -449,6 +452,7 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
       "grpc_channel_register_call(channel=%p, method=%s, host=%s, reserved=%p)",
       4, (channel, method, host, reserved));
   GPR_ASSERT(!reserved);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   grpc_core::MutexLock lock(&channel->registration_table->mu);
@@ -481,6 +485,7 @@ grpc_call* grpc_channel_create_registered_call(
        registered_call_handle, deadline.tv_sec, deadline.tv_nsec,
        (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_call* call = grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, completion_queue, nullptr,
@@ -532,6 +537,7 @@ void grpc_channel_destroy_internal(grpc_channel* channel) {
 }
 
 void grpc_channel_destroy(grpc_channel* channel) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_channel_destroy_internal(channel);
 }

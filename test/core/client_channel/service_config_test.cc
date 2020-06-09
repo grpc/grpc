@@ -25,6 +25,7 @@
 #include <grpc/grpc.h>
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/gpr/string.h"
 #include "test/core/util/port.h"
@@ -33,7 +34,7 @@
 namespace grpc_core {
 namespace testing {
 
-class TestParsedConfig1 : public ServiceConfig::ParsedConfig {
+class TestParsedConfig1 : public ServiceConfigParser::ParsedConfig {
  public:
   TestParsedConfig1(int value) : value_(value) {}
 
@@ -43,9 +44,9 @@ class TestParsedConfig1 : public ServiceConfig::ParsedConfig {
   int value_;
 };
 
-class TestParser1 : public ServiceConfig::Parser {
+class TestParser1 : public ServiceConfigParser::Parser {
  public:
-  std::unique_ptr<ServiceConfig::ParsedConfig> ParseGlobalParams(
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
       const Json& json, grpc_error** error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     auto it = json.object_value().find("global_param");
@@ -75,9 +76,9 @@ class TestParser1 : public ServiceConfig::Parser {
   }
 };
 
-class TestParser2 : public ServiceConfig::Parser {
+class TestParser2 : public ServiceConfigParser::Parser {
  public:
-  std::unique_ptr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
       const Json& json, grpc_error** error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     auto it = json.object_value().find("method_param");
@@ -108,16 +109,16 @@ class TestParser2 : public ServiceConfig::Parser {
 };
 
 // This parser always adds errors
-class ErrorParser : public ServiceConfig::Parser {
+class ErrorParser : public ServiceConfigParser::Parser {
  public:
-  std::unique_ptr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
       const Json& /*json*/, grpc_error** error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(MethodError());
     return nullptr;
   }
 
-  std::unique_ptr<ServiceConfig::ParsedConfig> ParseGlobalParams(
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
       const Json& /*json*/, grpc_error** error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(GlobalError());
@@ -139,12 +140,14 @@ void VerifyRegexMatch(grpc_error* error, const std::regex& regex) {
 class ServiceConfigTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfig::Shutdown();
-    ServiceConfig::Init();
-    EXPECT_EQ(ServiceConfig::RegisterParser(absl::make_unique<TestParser1>()),
-              0);
-    EXPECT_EQ(ServiceConfig::RegisterParser(absl::make_unique<TestParser2>()),
-              1);
+    ServiceConfigParser::Shutdown();
+    ServiceConfigParser::Init();
+    EXPECT_EQ(
+        ServiceConfigParser::RegisterParser(absl::make_unique<TestParser1>()),
+        0);
+    EXPECT_EQ(
+        ServiceConfigParser::RegisterParser(absl::make_unique<TestParser2>()),
+        1);
   }
 };
 
@@ -375,12 +378,14 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
 class ErroredParsersScopingTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfig::Shutdown();
-    ServiceConfig::Init();
-    EXPECT_EQ(ServiceConfig::RegisterParser(absl::make_unique<ErrorParser>()),
-              0);
-    EXPECT_EQ(ServiceConfig::RegisterParser(absl::make_unique<ErrorParser>()),
-              1);
+    ServiceConfigParser::Shutdown();
+    ServiceConfigParser::Init();
+    EXPECT_EQ(
+        ServiceConfigParser::RegisterParser(absl::make_unique<ErrorParser>()),
+        0);
+    EXPECT_EQ(
+        ServiceConfigParser::RegisterParser(absl::make_unique<ErrorParser>()),
+        1);
   }
 };
 
@@ -411,10 +416,10 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
 class ClientChannelParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfig::Shutdown();
-    ServiceConfig::Init();
+    ServiceConfigParser::Shutdown();
+    ServiceConfigParser::Init();
     EXPECT_EQ(
-        ServiceConfig::RegisterParser(
+        ServiceConfigParser::RegisterParser(
             absl::make_unique<internal::ClientChannelServiceConfigParser>()),
         0);
   }
@@ -464,7 +469,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"does_not_exist\":{} },\n"
-      "    { \"xds_experimental\":{ \"balancerName\": \"fake:///lb\" } }\n"
+      "    { \"eds_experimental\":{ \"clusterName\": \"foo\" } }\n"
       "  ]\n"
       "}";
   grpc_error* error = GRPC_ERROR_NONE;
@@ -474,7 +479,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
       static_cast<grpc_core::internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "xds_experimental");
+  EXPECT_STREQ(lb_config->name(), "eds_experimental");
 }
 
 TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
@@ -544,14 +549,14 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingPolicy) {
 }
 
 TEST_F(ClientChannelParserTest, LoadBalancingPolicyXdsNotAllowed) {
-  const char* test_json = "{\"loadBalancingPolicy\":\"xds_experimental\"}";
+  const char* test_json = "{\"loadBalancingPolicy\":\"eds_experimental\"}";
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   std::regex regex(
       "Service config parsing error.*referenced_errors.*"
       "Global Params.*referenced_errors.*"
       "Client channel global parser.*referenced_errors.*"
-      "field:loadBalancingPolicy error:xds_experimental requires "
+      "field:loadBalancingPolicy error:eds_experimental requires "
       "a config. Please use loadBalancingConfig instead.");
   VerifyRegexMatch(error, regex);
 }
@@ -938,11 +943,11 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
 class MessageSizeParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfig::Shutdown();
-    ServiceConfig::Init();
-    EXPECT_EQ(
-        ServiceConfig::RegisterParser(absl::make_unique<MessageSizeParser>()),
-        0);
+    ServiceConfigParser::Shutdown();
+    ServiceConfigParser::Init();
+    EXPECT_EQ(ServiceConfigParser::RegisterParser(
+                  absl::make_unique<MessageSizeParser>()),
+              0);
   }
 };
 

@@ -414,8 +414,8 @@ class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
       metadata: Optional :term:`metadata` to be transmitted to
         the service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
-      wait_for_ready: This is an EXPERIMENTAL argument. An optional flag t
-        enable wait for ready mechanism.
+      wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable :term:`wait_for_ready` mechanism.
       compression: An element of grpc.compression, e.g.
         grpc.compression.Gzip. This is an EXPERIMENTAL option.
     """
@@ -690,7 +690,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -723,7 +723,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -756,7 +756,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -792,7 +792,7 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -828,7 +828,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -862,7 +862,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -895,7 +895,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -931,7 +931,7 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable wait for ready mechanism
+            flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
@@ -994,9 +994,9 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
         Args:
           method: The name of the RPC method.
-          request_serializer: Optional behaviour for serializing the request
+          request_serializer: Optional :term:`serializer` for serializing the request
             message. Request goes unserialized in case None is passed.
-          response_deserializer: Optional behaviour for deserializing the
+          response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
 
@@ -1014,9 +1014,9 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
         Args:
           method: The name of the RPC method.
-          request_serializer: Optional behaviour for serializing the request
+          request_serializer: Optional :term:`serializer` for serializing the request
             message. Request goes unserialized in case None is passed.
-          response_deserializer: Optional behaviour for deserializing the
+          response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None is
             passed.
 
@@ -1034,9 +1034,9 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
         Args:
           method: The name of the RPC method.
-          request_serializer: Optional behaviour for serializing the request
+          request_serializer: Optional :term:`serializer` for serializing the request
             message. Request goes unserialized in case None is passed.
-          response_deserializer: Optional behaviour for deserializing the
+          response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None is
             passed.
 
@@ -1054,9 +1054,9 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
         Args:
           method: The name of the RPC method.
-          request_serializer: Optional behaviour for serializing the request
+          request_serializer: Optional :term:`serializer` for serializing the request
             message. Request goes unserialized in case None is passed.
-          response_deserializer: Optional behaviour for deserializing the
+          response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
 
@@ -1271,11 +1271,11 @@ class RpcMethodHandler(six.with_metaclass(abc.ABCMeta)):
         or any arbitrary number of request messages.
       response_streaming: Whether the RPC supports exactly one response message
         or any arbitrary number of response messages.
-      request_deserializer: A callable behavior that accepts a byte string and
+      request_deserializer: A callable :term:`deserializer` that accepts a byte string and
         returns an object suitable to be passed to this object's business
         logic, or None to indicate that this object's business logic should be
         passed the raw request bytes.
-      response_serializer: A callable behavior that accepts an object produced
+      response_serializer: A callable :term:`serializer` that accepts an object produced
         by this object's business logic and returns a byte string, or None to
         indicate that the byte strings produced by this object's business logic
         should be transmitted on the wire as they are.
@@ -1496,8 +1496,8 @@ def unary_unary_rpc_method_handler(behavior,
     Args:
       behavior: The implementation of an RPC that accepts one request
         and returns one response.
-      request_deserializer: An optional behavior for request deserialization.
-      response_serializer: An optional behavior for response serialization.
+      request_deserializer: An optional :term:`deserializer` for request deserialization.
+      response_serializer: An optional :term:`serializer` for response serialization.
 
     Returns:
       An RpcMethodHandler object that is typically used by grpc.Server.
@@ -1516,8 +1516,8 @@ def unary_stream_rpc_method_handler(behavior,
     Args:
       behavior: The implementation of an RPC that accepts one request
         and returns an iterator of response values.
-      request_deserializer: An optional behavior for request deserialization.
-      response_serializer: An optional behavior for response serialization.
+      request_deserializer: An optional :term:`deserializer` for request deserialization.
+      response_serializer: An optional :term:`serializer` for response serialization.
 
     Returns:
       An RpcMethodHandler object that is typically used by grpc.Server.
@@ -1536,8 +1536,8 @@ def stream_unary_rpc_method_handler(behavior,
     Args:
       behavior: The implementation of an RPC that accepts an iterator of
         request values and returns a single response value.
-      request_deserializer: An optional behavior for request deserialization.
-      response_serializer: An optional behavior for response serialization.
+      request_deserializer: An optional :term:`deserializer` for request deserialization.
+      response_serializer: An optional :term:`serializer` for response serialization.
 
     Returns:
       An RpcMethodHandler object that is typically used by grpc.Server.
@@ -1556,8 +1556,8 @@ def stream_stream_rpc_method_handler(behavior,
     Args:
       behavior: The implementation of an RPC that accepts an iterator of
         request values and returns an iterator of response values.
-      request_deserializer: An optional behavior for request deserialization.
-      response_serializer: An optional behavior for response serialization.
+      request_deserializer: An optional :term:`deserializer` for request deserialization.
+      response_serializer: An optional :term:`serializer` for response serialization.
 
     Returns:
       An RpcMethodHandler object that is typically used by grpc.Server.
@@ -1833,6 +1833,41 @@ def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
         _cygrpc.server_credentials_local(local_connect_type.value))
 
 
+def alts_channel_credentials(service_accounts=None):
+    """Creates a ChannelCredentials for use with an ALTS-enabled Channel.
+
+    This is an EXPERIMENTAL API.
+    ALTS credentials API can only be used in GCP environment as it relies on
+    handshaker service being available. For more info about ALTS see
+    https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security
+
+    Args:
+      service_accounts: A list of server identities accepted by the client.
+        If target service accounts are provided and none of them matches the
+        peer identity of the server, handshake will fail. The arg can be empty
+        if the client does not have any information about trusted server
+        identity.
+    Returns:
+      A ChannelCredentials for use with an ALTS-enabled Channel
+    """
+    return ChannelCredentials(
+        _cygrpc.channel_credentials_alts(service_accounts or []))
+
+
+def alts_server_credentials():
+    """Creates a ServerCredentials for use with an ALTS-enabled connection.
+
+    This is an EXPERIMENTAL API.
+    ALTS credentials API can only be used in GCP environment as it relies on
+    handshaker service being available. For more info about ALTS see
+    https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security
+
+    Returns:
+      A ServerCredentials for use with an ALTS-enabled Server
+    """
+    return ServerCredentials(_cygrpc.server_credentials_alts())
+
+
 def channel_ready_future(channel):
     """Creates a Future that tracks when a Channel is ready.
 
@@ -1857,7 +1892,7 @@ def insecure_channel(target, options=None, compression=None):
 
     Args:
       target: The server address
-      options: An optional list of key-value pairs (channel args
+      options: An optional list of key-value pairs (:term:`channel_arguments`
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
         used over the lifetime of the channel. This is an EXPERIMENTAL option.
@@ -1878,7 +1913,7 @@ def secure_channel(target, credentials, options=None, compression=None):
     Args:
       target: The server address.
       credentials: A ChannelCredentials instance.
-      options: An optional list of key-value pairs (channel args
+      options: An optional list of key-value pairs (:term:`channel_arguments`
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
         used over the lifetime of the channel. This is an EXPERIMENTAL option.
@@ -1942,7 +1977,7 @@ def server(thread_pool,
         and optionally manipulate the incoming RPCs before handing them over to
         handlers. The interceptors are given control in the order they are
         specified. This is an EXPERIMENTAL API.
-      options: An optional list of key-value pairs (channel args in gRPC runtime)
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC runtime)
         to configure the channel.
       maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
         will service before returning RESOURCE_EXHAUSTED status, or None to
@@ -2036,6 +2071,8 @@ __all__ = (
     'composite_channel_credentials',
     'local_channel_credentials',
     'local_server_credentials',
+    'alts_channel_credentials',
+    'alts_server_credentials',
     'ssl_server_credentials',
     'ssl_server_certificate_configuration',
     'dynamic_ssl_server_credentials',

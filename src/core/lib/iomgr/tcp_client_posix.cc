@@ -49,7 +49,7 @@
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
-typedef struct {
+struct async_connect {
   gpr_mu mu;
   grpc_fd* fd;
   grpc_timer alarm;
@@ -61,8 +61,7 @@ typedef struct {
   grpc_endpoint** ep;
   grpc_closure* closure;
   grpc_channel_args* channel_args;
-} async_connect;
-
+};
 static grpc_error* prepare_socket(const grpc_resolved_address* addr, int fd,
                                   const grpc_channel_args* channel_args) {
   grpc_error* err = GRPC_ERROR_NONE;
@@ -302,9 +301,13 @@ void grpc_tcp_client_create_from_prepared_fd(
     return;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
+    grpc_error* error = GRPC_OS_ERROR(errno, "connect");
+    char* addr_str = grpc_sockaddr_to_uri(addr);
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
+                               grpc_slice_from_copied_string(addr_str));
+    gpr_free(addr_str);
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
-                            GRPC_OS_ERROR(errno, "connect"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return;
   }
 

@@ -29,14 +29,13 @@
    Lookups are performed with binary search.
    Adds are restricted to strictly higher keys than previously seen (this is
    guaranteed by http2). */
-typedef struct {
+struct grpc_chttp2_stream_map {
   uint32_t* keys;
   void** values;
   size_t count;
   size_t free;
   size_t capacity;
-} grpc_chttp2_stream_map;
-
+};
 void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map* map,
                                  size_t initial_capacity);
 void grpc_chttp2_stream_map_destroy(grpc_chttp2_stream_map* map);

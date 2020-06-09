@@ -45,17 +45,23 @@ namespace {
  * credentials if present in the 'http_proxy' env var, otherwise leaves it
  * unchanged. It is caller's responsibility to gpr_free user_cred.
  */
-char* GetHttpProxyServer(char** user_cred) {
+char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
   GPR_ASSERT(user_cred != nullptr);
   grpc_uri* uri = nullptr;
   char* proxy_name = nullptr;
   char** authority_strs = nullptr;
   size_t authority_nstrs;
-  /* Prefer using 'grpc_proxy'. Fallback on 'http_proxy' if it is not set.
-   * Also prefer using 'https_proxy' with fallback on 'http_proxy'. The
-   * fallback behavior can be removed if there's a demand for it.
+  /* We check the following places to determine the HTTP proxy to use, stopping
+   * at the first one that is set:
+   * 1. GRPC_ARG_HTTP_PROXY channel arg
+   * 2. grpc_proxy environment variable
+   * 3. https_proxy environment variable
+   * 4. http_proxy environment variable
+   * If none of the above are set, then no HTTP proxy will be used.
    */
-  char* uri_str = gpr_getenv("grpc_proxy");
+  char* uri_str =
+      gpr_strdup(grpc_channel_args_find_string(args, GRPC_ARG_HTTP_PROXY));
+  if (uri_str == nullptr) uri_str = gpr_getenv("grpc_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("https_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("http_proxy");
   if (uri_str == nullptr) return nullptr;
@@ -103,7 +109,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
       return false;
     }
     char* user_cred = nullptr;
-    *name_to_resolve = GetHttpProxyServer(&user_cred);
+    *name_to_resolve = GetHttpProxyServer(args, &user_cred);
     if (*name_to_resolve == nullptr) return false;
     char* no_proxy_str = nullptr;
     grpc_uri* uri = grpc_uri_parse(server_uri, false /* suppress_errors */);
@@ -125,8 +131,8 @@ class HttpProxyMapper : public ProxyMapperInterface {
     if (no_proxy_str != nullptr) {
       static const char* NO_PROXY_SEPARATOR = ",";
       bool use_proxy = true;
-      grpc_core::UniquePtr<char> server_host;
-      grpc_core::UniquePtr<char> server_port;
+      std::string server_host;
+      std::string server_port;
       if (!grpc_core::SplitHostPort(
               uri->path[0] == '/' ? uri->path + 1 : uri->path, &server_host,
               &server_port)) {
@@ -136,7 +142,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
                 server_uri);
         gpr_free(no_proxy_str);
       } else {
-        size_t uri_len = strlen(server_host.get());
+        size_t uri_len = server_host.size();
         char** no_proxy_hosts;
         size_t num_no_proxy_hosts;
         gpr_string_split(no_proxy_str, NO_PROXY_SEPARATOR, &no_proxy_hosts,
@@ -146,7 +152,8 @@ class HttpProxyMapper : public ProxyMapperInterface {
           size_t no_proxy_len = strlen(no_proxy_entry);
           if (no_proxy_len <= uri_len &&
               gpr_stricmp(no_proxy_entry,
-                          &(server_host.get()[uri_len - no_proxy_len])) == 0) {
+                          &(server_host.c_str()[uri_len - no_proxy_len])) ==
+                  0) {
             gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
                     server_uri);
             use_proxy = false;

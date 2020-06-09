@@ -48,6 +48,12 @@ cdef class _ServicerContext:
     cdef object _response_serializer  # Callable[[Any], bytes]
 
 
+cdef class _SyncServicerContext:
+    cdef _ServicerContext _context
+    cdef list _callbacks
+    cdef object _loop  # asyncio.AbstractEventLoop
+
+
 cdef class _MessageReceiver:
     cdef _ServicerContext _servicer_context
     cdef object _agen
@@ -71,5 +77,7 @@ cdef class AioServer:
     cdef object _shutdown_completed  # asyncio.Future
     cdef CallbackWrapper _shutdown_callback_wrapper
     cdef object _crash_exception  # Exception
-    cdef set _ongoing_rpc_tasks
     cdef tuple _interceptors
+    cdef object _thread_pool  # concurrent.futures.ThreadPoolExecutor
+
+    cdef thread_pool(self)

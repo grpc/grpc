@@ -172,13 +172,23 @@ If you want to build DLLs, run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
 
 ### Dependency management
 
-gRPC's CMake build system provides two modes for handling dependencies.
-* module - build dependencies alongside gRPC.
-* package - use external copies of dependencies that are already available
-on your system.
+gRPC's CMake build system has two options for handling dependencies.
+CMake can build the dependencies for you, or it can search for libraries
+that are already installed on your system and use them to build gRPC.
 
 This behavior is controlled by the `gRPC_<depname>_PROVIDER` CMake variables,
-ie `gRPC_CARES_PROVIDER`.
+e.g. `gRPC_CARES_PROVIDER`. The options that these variables take are as follows:
+
+* module - build dependencies alongside gRPC. The source code is obtained from
+gRPC's git submodules.
+* package - use external copies of dependencies that are already available
+on your system. These could come from your system package manager, or perhaps
+you pre-installed them using CMake with the `CMAKE_INSTALL_PREFIX` option.
+
+For example, if you set `gRPC_CARES_PROVIDER=module`, then CMake will build
+c-ares before building gRPC. On the other hand, if you set
+`gRPC_CARES_PROVIDER=package`, then CMake will search for a copy of c-ares
+that's already installed on your system and use it to build gRPC.
 
 ### Install after build
 
@@ -193,8 +203,8 @@ If you are running CMake v3.13 or newer you can build gRPC's dependencies
 in "module" mode and install them alongside gRPC in a single step.
 [Example](test/distrib/cpp/run_distrib_test_cmake_module_install.sh)
 
-If you are using an older version of gRPC, you will need to select "package"
-mode (rather than "module" mode) for the dependencies.
+If you are building gRPC < 1.27 or if you are using CMake < 3.13 you will need
+to select "package" mode (rather than "module" mode) for the dependencies.
 This means you will need to have external copies of these libraries available
 on your system. This [example](test/distrib/cpp/run_distrib_test_cmake.sh) shows
 how to install dependencies with cmake before proceeding to installing gRPC itself. 

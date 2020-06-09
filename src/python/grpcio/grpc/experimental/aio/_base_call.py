@@ -117,6 +117,19 @@ class Call(RpcContext, metaclass=ABCMeta):
           The details string of the RPC.
         """
 
+    @abstractmethod
+    async def wait_for_connection(self) -> None:
+        """Waits until connected to peer and raises aio.AioRpcError if failed.
+
+        This is an EXPERIMENTAL method.
+
+        This method ensures the RPC has been successfully connected. Otherwise,
+        an AioRpcError will be raised to explain the reason of the connection
+        failure.
+
+        This method is recommended for building retry mechanisms.
+        """
+
 
 class UnaryUnaryCall(Generic[RequestType, ResponseType],
                      Call,

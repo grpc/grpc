@@ -29,12 +29,11 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
-typedef struct {
+struct grpc_ssl_config {
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
   char* pem_root_certs;
   verify_peer_options verify_options;
-} grpc_ssl_config;
-
+};
 /* Creates an SSL channel_security_connector.
    - request_metadata_creds is the credentials object which metadata
      will be sent with each request. This parameter can be NULL.
@@ -57,14 +56,13 @@ grpc_ssl_channel_security_connector_create(
     tsi_ssl_session_cache* ssl_session_cache);
 
 /* Config for ssl servers. */
-typedef struct {
+struct grpc_ssl_server_config {
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs = nullptr;
   size_t num_key_cert_pairs = 0;
   char* pem_root_certs = nullptr;
   grpc_ssl_client_certificate_request_type client_certificate_request =
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
-} grpc_ssl_server_config;
-
+};
 /* Creates an SSL server_security_connector.
    - config is the SSL config to be used for the SSL channel establishment.
    - sc is a pointer on the connector to be created.

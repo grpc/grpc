@@ -22,10 +22,13 @@ extern "C" {
 
 struct envoy_type_matcher_RegexMatcher;
 struct envoy_type_matcher_RegexMatcher_GoogleRE2;
+struct envoy_type_matcher_RegexMatchAndSubstitute;
 typedef struct envoy_type_matcher_RegexMatcher envoy_type_matcher_RegexMatcher;
 typedef struct envoy_type_matcher_RegexMatcher_GoogleRE2 envoy_type_matcher_RegexMatcher_GoogleRE2;
+typedef struct envoy_type_matcher_RegexMatchAndSubstitute envoy_type_matcher_RegexMatchAndSubstitute;
 extern const upb_msglayout envoy_type_matcher_RegexMatcher_msginit;
 extern const upb_msglayout envoy_type_matcher_RegexMatcher_GoogleRE2_msginit;
+extern const upb_msglayout envoy_type_matcher_RegexMatchAndSubstitute_msginit;
 struct google_protobuf_UInt32Value;
 extern const upb_msglayout google_protobuf_UInt32Value_msginit;
 
@@ -97,6 +100,39 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_type_matcher_RegexMatcher_G
     envoy_type_matcher_RegexMatcher_GoogleRE2_set_max_program_size(msg, sub);
   }
   return sub;
+}
+
+/* envoy.type.matcher.RegexMatchAndSubstitute */
+
+UPB_INLINE envoy_type_matcher_RegexMatchAndSubstitute *envoy_type_matcher_RegexMatchAndSubstitute_new(upb_arena *arena) {
+  return (envoy_type_matcher_RegexMatchAndSubstitute *)upb_msg_new(&envoy_type_matcher_RegexMatchAndSubstitute_msginit, arena);
+}
+UPB_INLINE envoy_type_matcher_RegexMatchAndSubstitute *envoy_type_matcher_RegexMatchAndSubstitute_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_type_matcher_RegexMatchAndSubstitute *ret = envoy_type_matcher_RegexMatchAndSubstitute_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_type_matcher_RegexMatchAndSubstitute_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE char *envoy_type_matcher_RegexMatchAndSubstitute_serialize(const envoy_type_matcher_RegexMatchAndSubstitute *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_type_matcher_RegexMatchAndSubstitute_msginit, arena, len);
+}
+
+UPB_INLINE const envoy_type_matcher_RegexMatcher* envoy_type_matcher_RegexMatchAndSubstitute_pattern(const envoy_type_matcher_RegexMatchAndSubstitute *msg) { return UPB_FIELD_AT(msg, const envoy_type_matcher_RegexMatcher*, UPB_SIZE(8, 16)); }
+UPB_INLINE upb_strview envoy_type_matcher_RegexMatchAndSubstitute_substitution(const envoy_type_matcher_RegexMatchAndSubstitute *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+
+UPB_INLINE void envoy_type_matcher_RegexMatchAndSubstitute_set_pattern(envoy_type_matcher_RegexMatchAndSubstitute *msg, envoy_type_matcher_RegexMatcher* value) {
+  UPB_FIELD_AT(msg, envoy_type_matcher_RegexMatcher*, UPB_SIZE(8, 16)) = value;
+}
+UPB_INLINE struct envoy_type_matcher_RegexMatcher* envoy_type_matcher_RegexMatchAndSubstitute_mutable_pattern(envoy_type_matcher_RegexMatchAndSubstitute *msg, upb_arena *arena) {
+  struct envoy_type_matcher_RegexMatcher* sub = (struct envoy_type_matcher_RegexMatcher*)envoy_type_matcher_RegexMatchAndSubstitute_pattern(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_type_matcher_RegexMatcher*)upb_msg_new(&envoy_type_matcher_RegexMatcher_msginit, arena);
+    if (!sub) return NULL;
+    envoy_type_matcher_RegexMatchAndSubstitute_set_pattern(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_type_matcher_RegexMatchAndSubstitute_set_substitution(envoy_type_matcher_RegexMatchAndSubstitute *msg, upb_strview value) {
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
 }
 
 #ifdef __cplusplus

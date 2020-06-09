@@ -4,8 +4,10 @@
 
 namespace Grpc\Testing;
 
+use UnexpectedValueException;
+
 /**
- * Protobuf enum <code>Grpc\Testing\RpcType</code>
+ * Protobuf type <code>grpc.testing.RpcType</code>
  */
 class RpcType
 {
@@ -29,5 +31,33 @@ class RpcType
      * Generated from protobuf enum <code>STREAMING_BOTH_WAYS = 4;</code>
      */
     const STREAMING_BOTH_WAYS = 4;
+
+    private static $valueToName = [
+        self::UNARY => 'UNARY',
+        self::STREAMING => 'STREAMING',
+        self::STREAMING_FROM_CLIENT => 'STREAMING_FROM_CLIENT',
+        self::STREAMING_FROM_SERVER => 'STREAMING_FROM_SERVER',
+        self::STREAMING_BOTH_WAYS => 'STREAMING_BOTH_WAYS',
+    ];
+
+    public static function name($value)
+    {
+        if (!isset(self::$valueToName[$value])) {
+            throw new UnexpectedValueException(sprintf(
+                    'Enum %s has no name defined for value %s', __CLASS__, $value));
+        }
+        return self::$valueToName[$value];
+    }
+
+
+    public static function value($name)
+    {
+        $const = __CLASS__ . '::' . strtoupper($name);
+        if (!defined($const)) {
+            throw new UnexpectedValueException(sprintf(
+                    'Enum %s has no value defined for name %s', __CLASS__, $name));
+        }
+        return constant($const);
+    }
 }
 
