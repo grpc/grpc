@@ -52,6 +52,8 @@
 #include "envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h"
 #include "envoy/config/listener/v2/api_listener.upb.h"
 #include "envoy/service/load_stats/v2/lrs.upb.h"
+#include "envoy/type/matcher/regex.upb.h"
+#include "envoy/type/range.upb.h"
 #include "envoy/type/percent.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
@@ -976,12 +978,11 @@ grpc_error* RouteMatchParse(const envoy_api_v2_route_RouteMatch* match,
   } else if (envoy_api_v2_route_RouteMatch_has_safe_regex(match)) {
     rds_route->path_matcher_type =
         XdsApi::RdsUpdate::RdsRoute::PathMatcherType::REGEX;
-    rds_route->path_matcher.regex = "TODO TBD";
-    const struct envoy_type_matcher_RegexMatcher* regex_matcher =
+    const envoy_type_matcher_RegexMatcher* regex_matcher =
         envoy_api_v2_route_RouteMatch_safe_regex(match);
     GPR_ASSERT(regex_matcher != nullptr);
-    // TODO@donnadionne how do I extract regex from struct
-    // envoy_type_matcher_RegexMatcher without depending on the structure
+    rds_route->path_matcher.regex = 
+        UpbStringToStdString(envoy_type_matcher_RegexMatcher_regex(regex_matcher));
   } else {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid route path specifier specified.");
@@ -1007,20 +1008,18 @@ grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
     } else if (envoy_api_v2_route_HeaderMatcher_has_safe_regex_match(header)) {
       header_matcher.type =
           XdsApi::RdsUpdate::RdsRoute::HeaderMatcherType::REGEX;
-      header_matcher.content.regex_match = "TODO TBD";
-      const struct envoy_type_matcher_RegexMatcher* regex_matcher =
+      const envoy_type_matcher_RegexMatcher* regex_matcher =
           envoy_api_v2_route_HeaderMatcher_safe_regex_match(header);
       GPR_ASSERT(regex_matcher != nullptr);
-      // TODO@donnadionne how do I extract regex from struct
-      // envoy_type_matcher_RegexMatcher without depending on the structure
+      header_matcher.content.regex_match =
+          UpbStringToStdString(envoy_type_matcher_RegexMatcher_regex(regex_matcher));
     } else if (envoy_api_v2_route_HeaderMatcher_has_range_match(header)) {
       header_matcher.type =
           XdsApi::RdsUpdate::RdsRoute::HeaderMatcherType::RANGE;
-      const struct envoy_type_Int64Range* range_matcher =
+      const envoy_type_Int64Range* range_matcher =
           envoy_api_v2_route_HeaderMatcher_range_match(header);
-      GPR_ASSERT(range_matcher != nullptr);
-      // TODO@donnadionne how do I extract range from struct
-      // envoy_type_Int64Range without depending on the structure
+      header_matcher.content.range_match.start = envoy_type_Int64Range_start(range_matcher);
+      header_matcher.content.range_match.end = envoy_type_Int64Range_end(range_matcher);
     } else if (envoy_api_v2_route_HeaderMatcher_has_present_match(header)) {
       header_matcher.type =
           XdsApi::RdsUpdate::RdsRoute::HeaderMatcherType::PRESENT;
@@ -1050,7 +1049,7 @@ grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
 grpc_error* RouteRuntimeFractionParse(
     const envoy_api_v2_route_RouteMatch* match,
     XdsApi::RdsUpdate::RdsRoute* rds_route) {
-  const struct envoy_api_v2_core_RuntimeFractionalPercent* runtime_fraction =
+  const envoy_api_v2_core_RuntimeFractionalPercent* runtime_fraction =
       envoy_api_v2_route_RouteMatch_runtime_fraction(match);
   if (runtime_fraction != nullptr) {
     gpr_log(GPR_INFO, "TODO@donnadionne Runtime Fraction");
