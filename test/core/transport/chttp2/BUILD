@@ -144,6 +144,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    "too_many_pings_test",
+    srcs = ["too_many_pings_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "varint_test",
     srcs = ["varint_test.cc"],
     language = "C++",

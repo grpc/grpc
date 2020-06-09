@@ -32,6 +32,7 @@ import time
 from typing import Callable, Optional
 
 from tests.unit import test_common
+from tests.unit import resources
 import grpc
 import grpc.experimental
 
@@ -49,6 +50,13 @@ _UNARY_UNARY = "/test/UnaryUnary"
 _UNARY_STREAM = "/test/UnaryStream"
 _STREAM_UNARY = "/test/StreamUnary"
 _STREAM_STREAM = "/test/StreamStream"
+
+
+@contextlib.contextmanager
+def _env(key: str, value: str):
+    os.environ[key] = value
+    yield
+    del os.environ[key]
 
 
 def _unary_unary_handler(request, context):
@@ -262,6 +270,46 @@ class SimpleStubsTest(unittest.TestCase):
                     _STREAM_STREAM,
                     channel_credentials=grpc.local_channel_credentials()):
                 self.assertEqual(_REQUEST, response)
+
+    def test_default_ssl(self):
+        _private_key = resources.private_key()
+        _certificate_chain = resources.certificate_chain()
+        _server_certs = ((_private_key, _certificate_chain),)
+        _server_host_override = 'foo.test.google.fr'
+        _test_root_certificates = resources.test_root_certificates()
+        _property_options = ((
+            'grpc.ssl_target_name_override',
+            _server_host_override,
+        ),)
+        cert_dir = os.path.join(os.path.dirname(resources.__file__),
+                                "credentials")
+        cert_file = os.path.join(cert_dir, "ca.pem")
+        with _env("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", cert_file):
+            server_creds = grpc.ssl_server_credentials(_server_certs)
+            with _server(server_creds) as port:
+                target = f'localhost:{port}'
+                response = grpc.experimental.unary_unary(
+                    _REQUEST, target, _UNARY_UNARY, options=_property_options)
+
+    def test_insecure_sugar(self):
+        with _server(None) as port:
+            target = f'localhost:{port}'
+            response = grpc.experimental.unary_unary(_REQUEST,
+                                                     target,
+                                                     _UNARY_UNARY,
+                                                     insecure=True)
+            self.assertEqual(_REQUEST, response)
+
+    def test_insecure_sugar_mutually_exclusive(self):
+        with _server(None) as port:
+            target = f'localhost:{port}'
+            with self.assertRaises(ValueError):
+                response = grpc.experimental.unary_unary(
+                    _REQUEST,
+                    target,
+                    _UNARY_UNARY,
+                    insecure=True,
+                    channel_credentials=grpc.local_channel_credentials())
 
 
 if __name__ == "__main__":

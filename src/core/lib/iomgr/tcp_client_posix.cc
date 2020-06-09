@@ -49,7 +49,7 @@
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
-typedef struct {
+struct async_connect {
   gpr_mu mu;
   grpc_fd* fd;
   grpc_timer alarm;
@@ -61,8 +61,7 @@ typedef struct {
   grpc_endpoint** ep;
   grpc_closure* closure;
   grpc_channel_args* channel_args;
-} async_connect;
-
+};
 static grpc_error* prepare_socket(const grpc_resolved_address* addr, int fd,
                                   const grpc_channel_args* channel_args) {
   grpc_error* err = GRPC_ERROR_NONE;

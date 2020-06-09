@@ -75,11 +75,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "gradius"
+g_stands_for = "galore"
 
 core_version = "10.0.0"
 
-version = "1.30.0-dev"
+version = "1.31.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
