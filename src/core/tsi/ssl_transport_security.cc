@@ -1410,6 +1410,28 @@ static void ssl_handshaker_destroy(tsi_handshaker* self) {
   gpr_free(impl);
 }
 
+static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
+                                      unsigned char** bytes_remaining,
+                                      size_t* bytes_remaining_size) {
+  if (impl == nullptr || bytes_remaining == nullptr ||
+      bytes_remaining_size == nullptr) {
+    return TSI_INVALID_ARGUMENT;
+  }
+  tsi_result result = TSI_OK;
+  size_t counter = 0;
+  size_t bytes_in_ssl_buffer = BIO_pending(SSL_get_rbio(impl->ssl));
+  if (bytes_in_ssl_buffer == 0) return TSI_OK;
+  *bytes_remaining = static_cast<uint8_t*>(gpr_malloc(bytes_in_ssl_buffer));
+  int read_success = 1;
+  while (read_success > 0 && counter < bytes_in_ssl_buffer) {
+    read_success =
+        BIO_read(SSL_get_rbio(impl->ssl), *bytes_remaining + counter, 1);
+    if (read_success == 1) counter += 1;
+  }
+  *bytes_remaining_size = counter;
+  return result;
+}
+
 static tsi_result ssl_handshaker_next(
     tsi_handshaker* self, const unsigned char* received_bytes,
     size_t received_bytes_size, const unsigned char** bytes_to_send,
@@ -1450,9 +1472,10 @@ static tsi_result ssl_handshaker_next(
   if (ssl_handshaker_get_result(impl) == TSI_HANDSHAKE_IN_PROGRESS) {
     *handshaker_result = nullptr;
   } else {
-    size_t unused_bytes_size = received_bytes_size - bytes_consumed;
-    const unsigned char* unused_bytes =
-        unused_bytes_size == 0 ? nullptr : received_bytes + bytes_consumed;
+    unsigned char* unused_bytes = nullptr;
+    size_t unused_bytes_size = 0;
+    status = ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size);
+    if (status != TSI_OK) return status;
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result);
     if (status == TSI_OK) {
@@ -1805,8 +1828,11 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     return TSI_INVALID_ARGUMENT;
   }
 
-#if defined(OPENSSL_NO_TLS1_2_METHOD) || OPENSSL_API_COMPAT >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  // TODO(mattstev): Allow user to set min/max TLS version.
+  // https://github.com/grpc/grpc/issues/22403
   ssl_context = SSL_CTX_new(TLS_method());
+  SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
@@ -1969,8 +1995,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
   for (i = 0; i < options->num_key_cert_pairs; i++) {
     do {
-#if defined(OPENSSL_NO_TLS1_2_METHOD) || OPENSSL_API_COMPAT >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+      // TODO(mattstev): Allow user to set min/max TLS version.
+      // https://github.com/grpc/grpc/issues/22403
       impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
+      SSL_CTX_set_min_proto_version(impl->ssl_contexts[i], TLS1_2_VERSION);
 #else
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif

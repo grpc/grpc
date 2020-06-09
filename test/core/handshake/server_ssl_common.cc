@@ -203,8 +203,9 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   // Set the cipher list to match the one expressed in
   // src/core/tsi/ssl_transport_security.c.
   const char* cipher_list =
-      "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
-      "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
+      "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_"
+      "SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-"
+      "AES256-SHA384:ECDHE-RSA-AES256-GCM-SHA384";
   if (!SSL_CTX_set_cipher_list(ctx, cipher_list)) {
     ERR_print_errors_fp(stderr);
     gpr_log(GPR_ERROR, "Couldn't set server cipher list.");

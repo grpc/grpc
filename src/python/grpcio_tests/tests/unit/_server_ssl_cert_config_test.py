@@ -161,8 +161,15 @@ class _ServerSSLCertReloadTest(
         else:
             with self.assertRaises(grpc.RpcError) as exception_context:
                 client_stub.UnUn(request)
-            self.assertEqual(exception_context.exception.code(),
-                             grpc.StatusCode.UNAVAILABLE)
+            # If TLS 1.2 is used, then the client receives an alert message
+            # before the handshake is complete, so the status is UNAVAILABLE. If
+            # TLS 1.3 is used, then the client receives the alert message after
+            # the handshake is complete, so the TSI handshaker returns the
+            # TSI_PROTOCOL_FAILURE result. This result does not have a
+            # corresponding status code, so this yields an UNKNOWN status.
+            self.assertTrue(
+                exception_context.exception.code() in [
+                    grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.UNKNOWN])
 
     def _do_one_shot_client_rpc(self,
                                 expect_success,

@@ -317,10 +317,14 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
   GPR_ASSERT(ssl_fixture->key_cert_lib != nullptr);
   ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib;
   tsi_peer peer;
-  bool expect_success =
+  bool expect_server_success =
       !(key_cert_lib->use_bad_server_cert ||
         (key_cert_lib->use_bad_client_cert && ssl_fixture->force_client_auth));
-  if (expect_success) {
+  // In TLS 1.3, the client-side handshake succeeds even if the client sends a
+  // bad certificate. In such a case, the server would fail the TLS handshake
+  // and send an alert to the client as the first application data message.
+  bool expect_client_success = !key_cert_lib->use_bad_server_cert;
+  if (expect_client_success) {
     GPR_ASSERT(tsi_handshaker_result_extract_peer(
                    ssl_fixture->base.client_result, &peer) == TSI_OK);
     check_session_reusage(ssl_fixture, &peer);
@@ -338,7 +342,7 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
   } else {
     GPR_ASSERT(ssl_fixture->base.client_result == nullptr);
   }
-  if (expect_success) {
+  if (expect_server_success) {
     GPR_ASSERT(tsi_handshaker_result_extract_peer(
                    ssl_fixture->base.server_result, &peer) == TSI_OK);
     check_session_reusage(ssl_fixture, &peer);
