@@ -280,6 +280,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/avl/avl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/avl/avl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/backoff/backoff.cc" role="src" />
@@ -810,6 +812,10 @@
     <file baseinstalldir="/" name="src/php/ext/grpc/timeval.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/timeval.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/version.h" role="src" />
+    <file baseinstalldir="/" name="src/proto/grpc/gcp/altscontext.proto" role="src" />
+    <file baseinstalldir="/" name="src/proto/grpc/gcp/handshaker.proto" role="src" />
+    <file baseinstalldir="/" name="src/proto/grpc/gcp/transport_security_common.proto" role="src" />
+    <file baseinstalldir="/" name="src/proto/grpc/lb/v1/load_balancer.proto" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/algorithm/algorithm.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/attributes.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/call_once.h" role="src" />

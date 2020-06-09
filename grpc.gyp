@@ -170,6 +170,7 @@
       'dependencies': [
         'grpc_test_util',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -271,6 +272,7 @@
       'dependencies': [
         'grpc_test_util',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -424,6 +426,7 @@
       'target_name': 'grpc',
       'type': 'static_library',
       'dependencies': [
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -432,6 +435,10 @@
         'absl/container:inlined_vector',
       ],
       'sources': [
+        'src/proto/grpc/gcp/altscontext.proto',
+        'src/proto/grpc/gcp/handshaker.proto',
+        'src/proto/grpc/gcp/transport_security_common.proto',
+        'src/proto/grpc/lb/v1/load_balancer.proto',
         'src/core/ext/filters/census/grpc_context.cc',
         'src/core/ext/filters/client_channel/backend_metric.cc',
         'src/core/ext/filters/client_channel/backup_poller.cc',
@@ -782,6 +789,7 @@
       'type': 'static_library',
       'dependencies': [
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -791,10 +799,21 @@
       ],
     },
     {
+      'target_name': 'grpc_health_upb',
+      'type': 'static_library',
+      'dependencies': [
+        'upb',
+      ],
+      'sources': [
+        'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
+      ],
+    },
+    {
       'target_name': 'grpc_test_util',
       'type': 'static_library',
       'dependencies': [
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -827,6 +846,7 @@
       'type': 'static_library',
       'dependencies': [
         'grpc_unsecure',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -858,6 +878,7 @@
       'target_name': 'grpc_unsecure',
       'type': 'static_library',
       'dependencies': [
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -866,6 +887,7 @@
         'absl/container:inlined_vector',
       ],
       'sources': [
+        'src/proto/grpc/lb/v1/load_balancer.proto',
         'src/core/ext/filters/census/grpc_context.cc',
         'src/core/ext/filters/client_channel/backend_metric.cc',
         'src/core/ext/filters/client_channel/backup_poller.cc',
@@ -1147,6 +1169,7 @@
         'grpc++_unsecure',
         'grpc_unsecure',
         'grpc++_test_config',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1164,6 +1187,7 @@
       'type': 'static_library',
       'dependencies': [
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1223,6 +1247,7 @@
       'dependencies': [
         'grpc++',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1238,6 +1263,7 @@
       'dependencies': [
         'grpc++',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1253,6 +1279,7 @@
       'dependencies': [
         'grpc++',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1269,6 +1296,7 @@
       'dependencies': [
         'grpc++',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1294,6 +1322,7 @@
         'grpc_test_util',
         'grpc++',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1315,6 +1344,7 @@
       'type': 'static_library',
       'dependencies': [
         'grpc_unsecure',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',
@@ -1382,6 +1412,7 @@
       'dependencies': [
         'grpc++',
         'grpc',
+        'grpc_health_upb',
         'gpr',
         'address_sorting',
         'upb',

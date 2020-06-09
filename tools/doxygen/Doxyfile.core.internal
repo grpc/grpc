@@ -1585,7 +1585,11 @@ src/core/tsi/transport_security.cc \
 src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_grpc.cc \
 src/core/tsi/transport_security_grpc.h \
-src/core/tsi/transport_security_interface.h
+src/core/tsi/transport_security_interface.h \
+src/proto/grpc/gcp/altscontext.proto \
+src/proto/grpc/gcp/handshaker.proto \
+src/proto/grpc/gcp/transport_security_common.proto \
+src/proto/grpc/lb/v1/load_balancer.proto
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

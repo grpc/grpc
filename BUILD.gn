@@ -833,10 +833,15 @@ config("grpc_config") {
         "src/core/tsi/transport_security_grpc.cc",
         "src/core/tsi/transport_security_grpc.h",
         "src/core/tsi/transport_security_interface.h",
+        "src/proto/grpc/gcp/altscontext.proto",
+        "src/proto/grpc/gcp/handshaker.proto",
+        "src/proto/grpc/gcp/transport_security_common.proto",
+        "src/proto/grpc/lb/v1/load_balancer.proto",
     ]
     deps = [
         "//third_party/boringssl",
         "//third_party/zlib",
+        ":grpc_health_upb",
         ":gpr",
         ":address_sorting",
         ":upb",
@@ -1134,6 +1139,7 @@ config("grpc_config") {
     deps = [
         "//third_party/protobuf:protobuf_lite",
         ":grpc",
+        ":grpc_health_upb",
         ":gpr",
         ":address_sorting",
         ":upb",
