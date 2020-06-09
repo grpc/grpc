@@ -355,6 +355,9 @@ INSTALL_REQUIRES = (
     "futures>=2.2.0; python_version<'3.2'",
     "enum34>=1.0.4; python_version<'3.4'",
 )
+EXTRAS_REQUIRES = {
+    "protobuf": "protobuf>=3.5.0.post1",
+}
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'Sphinx~=1.8.1',
@@ -417,6 +420,7 @@ setuptools.setup(
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
     install_requires=INSTALL_REQUIRES,
+    extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     cmdclass=COMMAND_CLASS,
 )
