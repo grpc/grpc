@@ -356,7 +356,7 @@ INSTALL_REQUIRES = (
     "enum34>=1.0.4; python_version<'3.4'",
 )
 EXTRAS_REQUIRES = {
-    "protobuf": "protobuf>=3.5.0.post1",
+    'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
 }
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
