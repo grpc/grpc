@@ -22,6 +22,7 @@ cp -r /var/local/jenkins/grpc-kotlin /tmp/grpc-kotlin
 cp -r /var/local/jenkins/service_account $HOME || true
 
 pushd /tmp/grpc-kotlin
+./gradlew --no-daemon build -PskipAndroid=true -x test
 ./gradlew --no-daemon :interop_testing:installDist -PskipCodegen=true -PskipAndroid=true
 
 mkdir -p /var/local/git/grpc-kotlin/
