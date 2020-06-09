@@ -337,7 +337,7 @@ class SimpleStubsTest(unittest.TestCase):
                                   grpc.ChannelConnectivity.CONNECTING):
                 pass
             else:
-                raise AssertionError("Encountered unknown state.")
+                self.fail("Encountered unknown state.")
 
         channel.subscribe(_on_connectivity_changed)
 
