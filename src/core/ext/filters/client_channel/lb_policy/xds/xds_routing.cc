@@ -30,6 +30,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -51,51 +52,7 @@ constexpr char kXdsRouting[] = "xds_routing_experimental";
 class XdsRoutingLbConfig : public LoadBalancingPolicy::Config {
  public:
   struct Route {
-    enum class PathMatcherType {
-      PREFIX,
-      PATH,
-      REGEX,
-    };
-
-    struct PathMatcher {
-      std::string prefix;
-      std::string path;
-      std::string regex;
-    };
-
-    enum class HeaderMatcherType {
-      EXACT,
-      REGEX,
-      RANGE,
-      PRESENT,
-      PREFIX,
-      SUFFIX,
-    };
-
-    struct HeaderMatcherContent {
-      struct Int64Range {
-        int64_t start;
-        int64_t end;
-      };
-      std::string name;
-      std::string exact_match;
-      std::string regex_match;
-      Int64Range range_match;
-      bool present_match;
-      std::string prefix_match;
-      std::string suffix_match;
-      bool invert_match;
-    };
-
-    struct HeaderMatcher {
-      HeaderMatcherType type;
-      HeaderMatcherContent content;
-    };
-
-    PathMatcherType path_matcher_type;
-    PathMatcher path_matcher;
-    std::vector<HeaderMatcher> headers;
-    uint32_t runtime_fraction_numerator_out_of_1M;
+    XdsApi::RdsUpdate::RdsRoute::Matchers matchers;
     std::string action;
   };
   using RouteTable = std::vector<Route>;
@@ -149,10 +106,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
   class RoutePicker : public SubchannelPicker {
    public:
     struct Route {
-      XdsRoutingLbConfig::Route::PathMatcher path_matcher;
-      XdsRoutingLbConfig::Route::PathMatcherType path_matcher_type;
-      std::vector<XdsRoutingLbConfig::Route::HeaderMatcher> headers;
-      uint32_t runtime_fraction_numerator_out_of_1M;
+      XdsApi::RdsUpdate::RdsRoute::Matchers matchers;
       RefCountedPtr<ChildPickerWrapper> picker;
     };
 
@@ -269,14 +223,17 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
     }
   }
   for (const Route& route : route_table_) {
-    if ((route.path_matcher_type ==
-             XdsRoutingLbConfig::Route::PathMatcherType::PREFIX &&
-         path.find(route.path_matcher.prefix) != std::string::npos) ||
-        (route.path_matcher_type ==
-             XdsRoutingLbConfig::Route::PathMatcherType::PATH &&
-         path == route.path_matcher.path) ||
-        (route.path_matcher.prefix.empty() &&
-         route.path_matcher.path.empty())) {
+    if ((route.matchers.path_matcher.path_type ==
+             XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::
+                 PathMatcherType::PREFIX &&
+         path.find(route.matchers.path_matcher.path_matcher) !=
+             std::string::npos) ||
+        (route.matchers.path_matcher.path_type ==
+             XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::
+                 PathMatcherType::PATH &&
+         path == route.matchers.path_matcher.path_matcher) ||
+        (route.matchers.path_matcher.path_matcher.empty() &&
+         route.matchers.path_matcher.path_matcher.empty())) {
       return route.picker->Pick(args);
     }
   }
@@ -403,11 +360,13 @@ void XdsRoutingLb::UpdateStateLocked() {
       RoutePicker::RouteTable route_table;
       for (const auto& config_route : config_->route_table()) {
         RoutePicker::Route route;
-        route.path_matcher_type = config_route.path_matcher_type;
-        route.path_matcher = config_route.path_matcher;
-        route.headers = config_route.headers;
-        route.runtime_fraction_numerator_out_of_1M =
-            config_route.runtime_fraction_numerator_out_of_1M;
+        route.matchers.path_matcher.path_type =
+            config_route.matchers.path_matcher.path_type;
+        route.matchers.path_matcher.path_matcher =
+            config_route.matchers.path_matcher.path_matcher;
+        route.matchers.header_matchers = config_route.matchers.header_matchers;
+        route.matchers.fraction_per_million =
+            config_route.matchers.fraction_per_million;
         route.picker = actions_[config_route.action]->picker_wrapper();
         if (route.picker == nullptr) {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
@@ -732,8 +691,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no valid routes configured");
       error_list.push_back(error);
     }
-    if (!route_table.back().path_matcher.prefix.empty() ||
-        !route_table.back().path_matcher.path.empty()) {
+    if (!route_table.back().matchers.path_matcher.path_matcher.empty()) {
       grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "default route must not contain prefix or path");
       error_list.push_back(error);
@@ -797,9 +755,9 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:prefix error: should be string"));
       } else {
-        route->path_matcher_type =
-            XdsRoutingLbConfig::Route::PathMatcherType::PREFIX;
-        route->path_matcher.prefix = it->second.string_value();
+        route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
+            Matchers::PathMatcher::PathMatcherType::PREFIX;
+        route->matchers.path_matcher.path_matcher = it->second.string_value();
       }
     }
     // Parse Path Matcher: path.
@@ -809,9 +767,9 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:path error: should be string"));
       } else {
-        route->path_matcher_type =
-            XdsRoutingLbConfig::Route::PathMatcherType::PATH;
-        route->path_matcher.path = it->second.string_value();
+        route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
+            Matchers::PathMatcher::PathMatcherType::PATH;
+        route->matchers.path_matcher.path_matcher = it->second.string_value();
       }
     }
     // Parse Path Matcher: regex.
@@ -821,9 +779,9 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:regex error: should be string"));
       } else {
-        route->path_matcher_type =
-            XdsRoutingLbConfig::Route::PathMatcherType::REGEX;
-        route->path_matcher.path = it->second.string_value();
+        route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
+            Matchers::PathMatcher::PathMatcherType::REGEX;
+        route->matchers.path_matcher.path_matcher = it->second.string_value();
       }
     }
     // Parse Header Matcher: headers.
@@ -840,7 +798,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
             error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "value should be of type object"));
           } else {
-            XdsRoutingLbConfig::Route::HeaderMatcher header_matcher;
+            XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher header_matcher;
             auto header_it = header_json.object_value().find("name");
             if (header_it == header_json.object_value().end()) {
               error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -850,15 +808,15 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                 error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "field:name error: should be string"));
               } else {
-                header_matcher.content.name = header_it->second.string_value();
+                header_matcher.name = header_it->second.string_value();
               }
             }
             header_it = header_json.object_value().find("invert_match");
             if (header_it != header_json.object_value().end()) {
               if (header_it->second.type() == Json::Type::JSON_TRUE) {
-                header_matcher.content.invert_match = true;
+                header_matcher.invert_match = true;
               } else if (header_it->second.type() == Json::Type::JSON_FALSE) {
-                header_matcher.content.invert_match = false;
+                header_matcher.invert_match = false;
               } else {
                 error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "field:present_match error: should be boolean"));
@@ -870,11 +828,12 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                 error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "field:exact_match error: should be string"));
               } else {
-                header_matcher.type =
-                    XdsRoutingLbConfig::Route::HeaderMatcherType::EXACT;
-                header_matcher.content.exact_match =
+                header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
+                    Matchers::HeaderMatcher::HeaderMatcherType::EXACT;
+                header_matcher.header_matcher =
                     header_it->second.string_value();
-                route->headers.emplace_back(std::move(header_matcher));
+                route->matchers.header_matchers.emplace_back(
+                    std::move(header_matcher));
               }
             }
             header_it = header_json.object_value().find("regex_match");
@@ -883,11 +842,12 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                 error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "field:regex_match error: should be string"));
               } else {
-                header_matcher.type =
-                    XdsRoutingLbConfig::Route::HeaderMatcherType::REGEX;
-                header_matcher.content.regex_match =
+                header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
+                    Matchers::HeaderMatcher::HeaderMatcherType::REGEX;
+                header_matcher.header_matcher =
                     header_it->second.string_value();
-                route->headers.emplace_back(std::move(header_matcher));
+                route->matchers.header_matchers.emplace_back(
+                    std::move(header_matcher));
               }
             }
             header_it = header_json.object_value().find("range_match");
@@ -896,14 +856,16 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
             }
             header_it = header_json.object_value().find("present_match");
             if (header_it != header_json.object_value().end()) {
-              header_matcher.type =
-                  XdsRoutingLbConfig::Route::HeaderMatcherType::PRESENT;
+              header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
+                  Matchers::HeaderMatcher::HeaderMatcherType::PRESENT;
               if (header_it->second.type() == Json::Type::JSON_TRUE) {
-                header_matcher.content.present_match = true;
-                route->headers.emplace_back(std::move(header_matcher));
+                header_matcher.present_match = true;
+                route->matchers.header_matchers.emplace_back(
+                    std::move(header_matcher));
               } else if (header_it->second.type() == Json::Type::JSON_FALSE) {
-                header_matcher.content.present_match = false;
-                route->headers.emplace_back(std::move(header_matcher));
+                header_matcher.present_match = false;
+                route->matchers.header_matchers.emplace_back(
+                    std::move(header_matcher));
               } else {
                 error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "field:present_match error: should be boolean"));
@@ -915,11 +877,12 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                 error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "field:prefix_match error: should be string"));
               } else {
-                header_matcher.type =
-                    XdsRoutingLbConfig::Route::HeaderMatcherType::PREFIX;
-                header_matcher.content.prefix_match =
+                header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
+                    Matchers::HeaderMatcher::HeaderMatcherType::PREFIX;
+                header_matcher.header_matcher =
                     header_it->second.string_value();
-                route->headers.emplace_back(std::move(header_matcher));
+                route->matchers.header_matchers.emplace_back(
+                    std::move(header_matcher));
               }
             }
             header_it = header_json.object_value().find("suffix_match");
@@ -928,11 +891,12 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                 error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "field:suffix_match error: should be string"));
               } else {
-                header_matcher.type =
-                    XdsRoutingLbConfig::Route::HeaderMatcherType::SUFFIX;
-                header_matcher.content.suffix_match =
+                header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
+                    Matchers::HeaderMatcher::HeaderMatcherType::SUFFIX;
+                header_matcher.header_matcher =
                     header_it->second.string_value();
-                route->headers.emplace_back(std::move(header_matcher));
+                route->matchers.header_matchers.emplace_back(
+                    std::move(header_matcher));
               }
             }
           }
@@ -946,7 +910,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:fraction_numerator error:must be of type number"));
       } else {
-        route->runtime_fraction_numerator_out_of_1M =
+        route->matchers.fraction_per_million =
             gpr_parse_nonnegative_int(it->second.string_value().c_str());
       }
     }

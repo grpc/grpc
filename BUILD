@@ -1442,6 +1442,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_xds_client_secure",
     ],
 )
 
