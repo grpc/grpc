@@ -14492,6 +14492,7 @@ target_link_libraries(too_many_pings_test
   grpc++
   grpc++_test_config
   grpc
+  grpc_health_upb
   gpr
   address_sorting
   upb
