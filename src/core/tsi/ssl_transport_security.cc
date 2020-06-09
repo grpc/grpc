@@ -113,6 +113,7 @@ struct tsi_ssl_server_handshaker_factory {
 typedef struct {
   tsi_handshaker base;
   SSL* ssl;
+  BIO* ssl_io;
   BIO* network_io;
   tsi_result result;
   unsigned char* outgoing_bytes_buffer;
@@ -1173,6 +1174,17 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   *unprotected_bytes_size = available;
   impl->buffer_offset = 0;
+  if (protected_output_frames_size != nullptr) {
+    std::cout << "*******************************" << std::endl;
+    std::string side = impl->is_client ? "From client side." : "From server side";
+    std::cout << side << std::endl;
+    std::cout << "From |ssl_protector_protect|:" << std::endl;
+    std::string unprotected_bytestring = "";
+    for (size_t i = 0; i < *protected_output_frames_size; i++) {
+      std::cout << std::hex << static_cast<int>(protected_output_frames[i]) << " ";
+    }
+    std::cout << " " << std::endl;
+  }
   return TSI_OK;
 }
 
@@ -1214,6 +1226,17 @@ static tsi_result ssl_protector_protect_flush(
   pending = static_cast<int>(BIO_pending(impl->network_io));
   GPR_ASSERT(pending >= 0);
   *still_pending_size = static_cast<size_t>(pending);
+  if (protected_output_frames_size != nullptr) {
+    std::cout << "*******************************" << std::endl;
+    std::string side = impl->is_client ? "From client side." : "From server side";
+    std::cout << side << std::endl;
+    std::cout << "From |ssl_protector_protect_flush|:" << std::endl;
+    std::string unprotected_bytestring = "";
+    for (size_t i = 0; i < *protected_output_frames_size; i++) {
+      std::cout << std::hex << static_cast<int>(protected_output_frames[i]) << " ";
+    }
+    std::cout << " " << std::endl;
+  }
   gpr_log(GPR_INFO, "Exiting here with TSI OK");
   return TSI_OK;
 }
@@ -1229,6 +1252,18 @@ static tsi_result ssl_protector_unprotect(
   size_t output_bytes_offset = 0;
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
+
+  if (protected_frames_bytes_size != nullptr) {
+    std::cout << "*******************************" << std::endl;
+    std::string side = impl->is_client ? "From client side." : "From server side";
+    std::cout << side << std::endl;
+    std::cout << "From |ssl_protector_unprotect|:" << std::endl;
+    std::string unprotected_bytestring = "";
+    for (size_t i = 0; i < *protected_frames_bytes_size; i++) {
+      std::cout << std::hex << static_cast<int>(protected_frames_bytes[i]) << " ";
+    }
+    std::cout << " " << std::endl;
+  }
 
   /* First, try to read remaining data from ssl. */
   result = do_ssl_read(impl->ssl, unprotected_bytes, unprotected_bytes_size);
@@ -1385,12 +1420,16 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
 /* --- tsi_handshaker_result methods implementation. ---*/
 static tsi_result ssl_handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
-  gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_extract_peer|.");
   tsi_result result = TSI_OK;
   const unsigned char* alpn_selected = nullptr;
   unsigned int alpn_selected_len;
   const tsi_ssl_handshaker_result* impl =
       reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
+  if (impl->is_client) {
+    gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_extract_peer| on client-side.");
+  } else {
+    gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_extract_peer| on server-side.");
+  }
   X509* peer_cert = SSL_get_peer_certificate(impl->ssl);
   if (peer_cert != nullptr) {
     result = peer_from_x509(peer_cert, 1, peer);
@@ -1454,12 +1493,16 @@ static tsi_result ssl_handshaker_result_extract_peer(
 static tsi_result ssl_handshaker_result_create_frame_protector(
     const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
     tsi_frame_protector** protector) {
-  gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_create_frame_protector|.");
   size_t actual_max_output_protected_frame_size =
       TSI_SSL_MAX_PROTECTED_FRAME_SIZE_UPPER_BOUND;
   tsi_ssl_handshaker_result* impl =
       reinterpret_cast<tsi_ssl_handshaker_result*>(
           const_cast<tsi_handshaker_result*>(self));
+  if (impl->is_client) {
+    gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_create_frame_protector| on client-side.");
+  } else {
+    gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_create_frame_protector| on server-side.");
+  }
   tsi_ssl_frame_protector* protector_impl =
       static_cast<tsi_ssl_frame_protector*>(
           gpr_zalloc(sizeof(*protector_impl)));
@@ -1504,15 +1547,24 @@ static tsi_result ssl_handshaker_result_get_unused_bytes(
     size_t* bytes_size) {
   const tsi_ssl_handshaker_result* impl =
       reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
+  if (impl->is_client) {
+    gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_get_unused_bytes| on client-side.");
+  } else {
+    gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_get_unused_bytes| on server-side.");
+  }
   *bytes_size = impl->unused_bytes_size;
   *bytes = impl->unused_bytes;
   return TSI_OK;
 }
 
 static void ssl_handshaker_result_destroy(tsi_handshaker_result* self) {
-  gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_destroy|.");
   tsi_ssl_handshaker_result* impl =
       reinterpret_cast<tsi_ssl_handshaker_result*>(self);
+  if (impl->is_client) {
+    gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_destroy| on client-side.");
+  } else {
+    gpr_log(GPR_INFO, "Entered |ssl_handshaker_result_destroy| on server-side.");
+  }
   SSL_free(impl->ssl);
   BIO_free(impl->network_io);
   gpr_free(impl->unused_bytes);
@@ -1592,6 +1644,16 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
   if (bytes == nullptr || bytes_size == nullptr || *bytes_size > INT_MAX) {
     return TSI_INVALID_ARGUMENT;
   }
+  if (bytes_size != nullptr) {
+    std::cout << "*******************************" << std::endl;
+    std::string side = impl->is_client ? "From client side." : "From server side";
+    std::cout << side << std::endl;
+    std::cout << "From |ssl_handshaker_process_bytes_from_peer|:" << std::endl;
+    for (size_t i = 0; i < *bytes_size; i++) {
+      std::cout << std::hex << static_cast<int>(bytes[i]) << " ";
+    }
+    std::cout << " " << std::endl;
+  }
   GPR_ASSERT(*bytes_size <= INT_MAX);
   bytes_written_into_ssl_size =
       BIO_write(impl->network_io, bytes, static_cast<int>(*bytes_size));
@@ -1629,6 +1691,28 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
       }
     }
   }
+}
+
+// |bytes_remaining| should be set to the number of bytes just sent into
+// |SSL_do_handshake|
+static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl, unsigned char** bytes_remaining, size_t* bytes_remaining_size) {
+  if (impl == nullptr || bytes_remaining == nullptr || bytes_remaining_size == nullptr) {
+    return TSI_INVALID_ARGUMENT;
+  }
+  tsi_result result = TSI_OK;
+  size_t counter = 0;
+  size_t bytes_in_ssl_buffer = BIO_pending(SSL_get_rbio(impl->ssl));
+  gpr_log(GPR_INFO, "bytes_in_ssl_buffer is %zu", bytes_in_ssl_buffer);
+  if (bytes_in_ssl_buffer == 0) return TSI_OK;
+  *bytes_remaining = static_cast<uint8_t*>(gpr_malloc(bytes_in_ssl_buffer));
+  int read_success = 1;
+  while (read_success > 0 && counter < bytes_in_ssl_buffer) {
+    read_success = BIO_read(SSL_get_rbio(impl->ssl), *bytes_remaining + counter, 1);
+    gpr_log(GPR_INFO, "read success is %d", read_success);
+    if (read_success == 1) counter += 1;
+  }
+  *bytes_remaining_size = counter;
+  return result;
 }
 
 static void ssl_handshaker_destroy(tsi_handshaker* self) {
@@ -1680,9 +1764,25 @@ static tsi_result ssl_handshaker_next(
   if (ssl_handshaker_get_result(impl) == TSI_HANDSHAKE_IN_PROGRESS) {
     *handshaker_result = nullptr;
   } else {
-    size_t unused_bytes_size = received_bytes_size - bytes_consumed;
-    const unsigned char* unused_bytes =
-        unused_bytes_size == 0 ? nullptr : received_bytes + bytes_consumed;
+    if (impl->is_client) {
+      gpr_log(GPR_INFO, "Have handshaker result on the client-side");
+      gpr_log(GPR_INFO, "Received bytes size is %zu", received_bytes_size);
+    } else {
+      gpr_log(GPR_INFO, "Have handshaker result on the server-side");
+      gpr_log(GPR_INFO, "Received bytes size is %zu", received_bytes_size);
+    }
+    unsigned char* unused_bytes = nullptr;
+    size_t unused_bytes_size = 0;
+    status = ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size);
+    //if (!impl->is_client) {
+      //tsi_result status = ssl_bytes_remaining(impl, &unused_bytes_size);
+      //if (status != TSI_OK) return status;
+    gpr_log(GPR_INFO, "Unused bytes size is %zu", unused_bytes_size);
+    //size_t unused_bytes_size = received_bytes_size - bytes_consumed;
+    //}
+    //const unsigned char* unused_bytes =
+    //    unused_bytes_size == 0 ? nullptr : received_bytes + bytes_consumed;
+    if (status != TSI_OK) return status;
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result);
     tsi_ssl_handshaker_result* ssl_hs_result = reinterpret_cast<tsi_ssl_handshaker_result*>(*handshaker_result);

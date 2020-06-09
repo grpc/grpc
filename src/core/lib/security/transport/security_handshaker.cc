@@ -237,19 +237,22 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
   // Get unused bytes.
   const unsigned char* unused_bytes = nullptr;
   size_t unused_bytes_size = 0;
-  result = tsi_handshaker_result_get_unused_bytes(
-      handshaker_result_, &unused_bytes, &unused_bytes_size);
+  GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(
+      handshaker_result_, &unused_bytes, &unused_bytes_size) == TSI_OK);
   // Create secure endpoint.
   if (unused_bytes_size > 0) {
+    gpr_log(GPR_INFO, "In security handshaker, unused bytes are greater than zero.");
     grpc_slice slice =
         grpc_slice_from_copied_buffer((char*)unused_bytes, unused_bytes_size);
     args_->endpoint = grpc_secure_endpoint_create(
         protector, zero_copy_protector, args_->endpoint, &slice, 1);
     grpc_slice_unref_internal(slice);
   } else {
+    gpr_log(GPR_INFO, "In security handshaker, unused bytes are zero.");
     args_->endpoint = grpc_secure_endpoint_create(
         protector, zero_copy_protector, args_->endpoint, nullptr, 0);
   }
+  gpr_log(GPR_INFO, "In security handshaker, about to destroy handshaker result.");
   tsi_handshaker_result_destroy(handshaker_result_);
   handshaker_result_ = nullptr;
   // Add auth context to channel args.
