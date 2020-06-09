@@ -603,6 +603,26 @@ _BUILD_EXTRA_METADATA = {
         'build': 'all',
         'secure': False
     },
+    'xds_upb': {
+        'language': 'c',
+        'build': 'all',
+        'secure': False
+    },
+    'udpa_orca_upb': {
+        'language': 'c',
+        'build': 'all',
+        'secure': False
+    },
+    'grpc_lb_upb': {
+        'language': 'c',
+        'build': 'all',
+        'secure': False
+    },
+    'alts_upb': {
+        'language': 'c',
+        'build': 'all',
+        'secure': False
+    },
     'gpr': {
         'language': 'c',
         'build': 'all',
