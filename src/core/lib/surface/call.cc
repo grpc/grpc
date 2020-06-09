@@ -670,12 +670,11 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
   return GRPC_CALL_OK;
 }
 
-typedef struct {
+struct cancel_state {
   grpc_call* call;
   grpc_closure start_batch;
   grpc_closure finish_batch;
-} cancel_state;
-
+};
 // The on_complete callback used when sending a cancel_stream batch down
 // the filter stack.  Yields the call combiner when the batch is done.
 static void done_termination(void* arg, grpc_error* /*error*/) {

@@ -38,7 +38,7 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-typedef struct {
+struct internal_request {
   grpc_slice request_text;
   grpc_http_parser parser;
   grpc_resolved_addresses* addresses;
@@ -60,8 +60,7 @@ typedef struct {
   grpc_closure connected;
   grpc_error* overall_error;
   grpc_resource_quota* resource_quota;
-} internal_request;
-
+};
 static grpc_httpcli_get_override g_get_override = nullptr;
 static grpc_httpcli_post_override g_post_override = nullptr;
 

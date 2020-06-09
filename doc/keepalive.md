@@ -16,11 +16,11 @@ The above two channel arguments should be sufficient for most users, but the fol
 * **GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS**
   * This channel argument if set to 1 (0 : false; 1 : true), allows keepalive pings to be sent even if there are no calls in flight. 
 * **GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA**
-  * This channel argument controls the maximum number of pings that can be sent when there is no other data (data frame or header frame) to be sent. GRPC Core will not continue sending pings if we run over the limit. Setting it to 0 allows sending pings without sending data.
+  * This channel argument controls the maximum number of pings that can be sent when there is no data/header frame to be sent. GRPC Core will not continue sending pings if we run over the limit. Setting it to 0 allows sending pings without such a restriction.
 * **GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS**
-  * If there are no data frames being received on the transport, this channel argument controls the minimum time (in milliseconds) gRPC Core will wait between successive pings.
+  * If there are no data/header frames being received on the transport, this channel argument controls the minimum time (in milliseconds) gRPC Core will wait between successive pings.
 * **GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS**
-  * If there are no data frames being sent on the transport, this channel argument on the server side controls the minimum time (in milliseconds) that gRPC Core would expect between receiving successive pings. If the time between successive pings is less that than this time, then the ping will be considered a bad ping from the peer. Such a ping counts as a ‘ping strike’.
+  * If there are no data/header frames being sent on the transport, this channel argument on the server side controls the minimum time (in milliseconds) that gRPC Core would expect between receiving successive pings. If the time between successive pings is less that than this time, then the ping will be considered a bad ping from the peer. Such a ping counts as a ‘ping strike’.
 On the client side, this does not have any effect.
 * **GRPC_ARG_HTTP2_MAX_PING_STRIKES**
   * This arg controls the maximum number of bad pings that the server will tolerate before sending an HTTP2 GOAWAY frame and closing the transport. Setting it to 0 allows the server to accept any number of bad pings.
