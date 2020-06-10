@@ -56,11 +56,6 @@ if _DEFAULT_TIMEOUT_KEY in os.environ:
 else:
     _DEFAULT_TIMEOUT = 60.0
 
-class _DefaultTimeoutSentinelType(object):
-    pass
-
-_DEFAULT_TIMEOUT_SENTINEL = _DefaultTimeoutSentinelType()
-
 
 def _create_channel(target: str, options: Sequence[Tuple[str, str]],
                     channel_credentials: Optional[grpc.ChannelCredentials],
@@ -177,17 +172,6 @@ class ChannelCache:
             return len(self._mapping)
 
 
-def _get_wait_for_ready_settings(wait_for_ready: Optional[bool],
-                                 timeout: Union[Optional[float], _DefaultTimeoutSentinelType]
-                                 ) -> Tuple[bool, Optional[float]]:
-    if wait_for_ready is None:
-        wait_for_ready = True
-    # TODO: You don't actually need this sentinel...
-    if timeout is _DEFAULT_TIMEOUT_SENTINEL:
-        timeout = _DEFAULT_TIMEOUT
-    return wait_for_ready, timeout
-
-
 @experimental_api
 def unary_unary(
         request: RequestType,
@@ -201,7 +185,7 @@ def unary_unary(
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = _DEFAULT_TIMEOUT_SENTINEL,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> ResponseType:
     """Invokes a unary-unary RPC without an explicitly specified channel.
@@ -261,8 +245,7 @@ def unary_unary(
                                              compression)
     multicallable = channel.unary_unary(method, request_serializer,
                                         response_deserializer)
-    wait_for_ready, timeout = _get_wait_for_ready_settings(
-        wait_for_ready, timeout)
+    wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -283,7 +266,7 @@ def unary_stream(
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = _DEFAULT_TIMEOUT_SENTINEL,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> Iterator[ResponseType]:
     """Invokes a unary-stream RPC without an explicitly specified channel.
@@ -342,8 +325,7 @@ def unary_stream(
                                              compression)
     multicallable = channel.unary_stream(method, request_serializer,
                                          response_deserializer)
-    wait_for_ready, timeout = _get_wait_for_ready_settings(
-        wait_for_ready, timeout)
+    wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -364,7 +346,7 @@ def stream_unary(
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = _DEFAULT_TIMEOUT_SENTINEL,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> ResponseType:
     """Invokes a stream-unary RPC without an explicitly specified channel.
@@ -423,8 +405,7 @@ def stream_unary(
                                              compression)
     multicallable = channel.stream_unary(method, request_serializer,
                                          response_deserializer)
-    wait_for_ready, timeout = _get_wait_for_ready_settings(
-        wait_for_ready, timeout)
+    wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -445,7 +426,7 @@ def stream_stream(
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = _DEFAULT_TIMEOUT_SENTINEL,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> Iterator[ResponseType]:
     """Invokes a stream-stream RPC without an explicitly specified channel.
@@ -504,8 +485,7 @@ def stream_stream(
                                              compression)
     multicallable = channel.stream_stream(method, request_serializer,
                                           response_deserializer)
-    wait_for_ready, timeout = _get_wait_for_ready_settings(
-        wait_for_ready, timeout)
+    wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
