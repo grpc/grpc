@@ -2011,23 +2011,21 @@ std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
       cluster_name, cluster_name);
 }
 
-std::string CreateServiceConfigRoute(
-    const std::string& action_name,
-    const uint32_t runtime_fraction_numerator_out_of_1M,
-    const XdsApi::RdsUpdate::RdsRoute& route) {
+std::string CreateServiceConfigRoute(const std::string& action_name,
+                                     const XdsApi::RdsUpdate::RdsRoute& route) {
   std::vector<std::string> headers;
   for (const auto& header : route.matchers.header_matchers) {
     std::string header_matcher;
     switch (header.header_type) {
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::EXACT:
-        header_matcher = absl::StrFormat("             \"%s\": \"%s\",\n",
-                                         "exact_match", header.header_matcher);
+        header_matcher = absl::StrFormat("             \"exact_match\": \"%s\"",
+                                         header.header_matcher);
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::REGEX:
-        header_matcher = absl::StrFormat("             \"%s\": \"%s\",\n",
-                                         "regex_match", header.header_matcher);
+        header_matcher = absl::StrFormat("             \"regex_match\": \"%s\"",
+                                         header.header_matcher);
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::RANGE:
@@ -2035,41 +2033,43 @@ std::string CreateServiceConfigRoute(
             "             \"%s\":{\n"
             "              \"range_start\":%d,\n"
             "              \"range_end\":%d\n"
-            "             },\n",
+            "             }",
             "range_match", header.range_start, header.range_end);
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::PRESENT:
         header_matcher =
-            absl::StrFormat("             \"%s\": %s,\n", "present_match",
+            absl::StrFormat("             \"present_match\": %s",
                             header.present_match ? "true" : "false");
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::PREFIX:
-        header_matcher = absl::StrFormat("             \"%s\": \"%s\",\n",
-                                         "prefix_match", header.header_matcher);
+        header_matcher = absl::StrFormat(
+            "             \"prefix_match\": \"%s\"", header.header_matcher);
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::SUFFIX:
-        header_matcher = absl::StrFormat("             \"%s\": \"%s\",\n",
-                                         "suffix_match", header.header_matcher);
+        header_matcher = absl::StrFormat(
+            "             \"suffix_match\": \"%s\"", header.header_matcher);
         break;
       default:
         break;
     }
-    if (!header_matcher.empty()) {
-      std::vector<std::string> header_parts;
+    std::vector<std::string> header_parts;
+    header_parts.push_back(
+        absl::StrFormat("           { \n"
+                        "             \"name\": \"%s\",\n",
+                        header.name));
+    header_parts.push_back(header_matcher);
+    if (header.invert_match) {
       header_parts.push_back(
-          absl::StrFormat("           { \n"
-                          "             \"name\": \"%s\",\n",
-                          header.name));
-      header_parts.push_back(header_matcher);
-      header_parts.push_back(absl::StrFormat(
-          "             \"%s\": %s\n"
-          "           }",
-          "invert_match", header.invert_match ? "true" : "false"));
-      headers.push_back(absl::StrJoin(header_parts, ""));
+          absl::StrFormat(",\n"
+                          "             \"invert_match\": true"));
     }
+    header_parts.push_back(
+        absl::StrFormat("\n"
+                        "           }"));
+    headers.push_back(absl::StrJoin(header_parts, ""));
   }
   std::vector<std::string> headers_service_config;
   if (!headers.empty()) {
@@ -2077,6 +2077,10 @@ std::string CreateServiceConfigRoute(
     headers_service_config.push_back(absl::StrJoin(headers, ","));
     headers_service_config.push_back("           ],\n");
   }
+  const uint32_t fraction_numerator =
+      route.matchers.fraction_per_million.has_value()
+          ? route.matchers.fraction_per_million.value()
+          : 0;
   switch (route.matchers.path_matcher.path_type) {
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         PREFIX:
@@ -2088,8 +2092,8 @@ std::string CreateServiceConfigRoute(
           "           \"action\": \"%s\"\n"
           "      }",
           route.matchers.path_matcher.path_matcher,
-          absl::StrJoin(headers_service_config, ""),
-          runtime_fraction_numerator_out_of_1M, action_name);
+          absl::StrJoin(headers_service_config, ""), fraction_numerator,
+          action_name);
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         PATH:
       return absl::StrFormat(
@@ -2100,8 +2104,8 @@ std::string CreateServiceConfigRoute(
           "           \"action\": \"%s\"\n"
           "      }",
           route.matchers.path_matcher.path_matcher,
-          absl::StrJoin(headers_service_config, ""),
-          runtime_fraction_numerator_out_of_1M, action_name);
+          absl::StrJoin(headers_service_config, ""), fraction_numerator,
+          action_name);
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         REGEX:
       return absl::StrFormat(
@@ -2112,8 +2116,8 @@ std::string CreateServiceConfigRoute(
           "           \"action\": \"%s\"\n"
           "      }",
           route.matchers.path_matcher.path_matcher,
-          absl::StrJoin(headers_service_config, ""),
-          runtime_fraction_numerator_out_of_1M, action_name);
+          absl::StrJoin(headers_service_config, ""), fraction_numerator,
+          action_name);
     default:
       return absl::StrFormat(
           "      { \n"
@@ -2122,8 +2126,8 @@ std::string CreateServiceConfigRoute(
           "           \"fraction_numerator\":%d,\n"
           "           \"action\": \"%s\"\n"
           "      }",
-          "", absl::StrJoin(headers_service_config, ""),
-          runtime_fraction_numerator_out_of_1M, action_name);
+          "", absl::StrJoin(headers_service_config, ""), fraction_numerator,
+          action_name);
   }
 }
 
@@ -2306,9 +2310,6 @@ grpc_error* XdsClient::CreateServiceConfig(
         absl::StrFormat("%s:%s",
                         route.weighted_clusters.empty() ? "cds" : "weighted",
                         action_name),
-        route.matchers.fraction_per_million.has_value()
-            ? route.matchers.fraction_per_million.value()
-            : 0,
         route));
   }
   std::vector<std::string> config_parts;

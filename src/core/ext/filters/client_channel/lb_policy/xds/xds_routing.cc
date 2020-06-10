@@ -691,11 +691,6 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no valid routes configured");
       error_list.push_back(error);
     }
-    if (!route_table.back().matchers.path_matcher.path_matcher.empty()) {
-      grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "default route must not contain prefix or path");
-      error_list.push_back(error);
-    }
     if (!actions_to_be_used.empty()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "some actions were not referenced by any route"));
@@ -748,41 +743,54 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           "value should be of type object"));
       return error_list;
     }
-    // Parse Path Matcher: prefix.
+    // Parse and ensure one and only one path matcher is set: prefix, path, or
+    // regex.
+    size_t path_matcher_count = 0;
     auto it = json.object_value().find("prefix");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:prefix error: should be string"));
       } else {
+        ++path_matcher_count;
         route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
             Matchers::PathMatcher::PathMatcherType::PREFIX;
         route->matchers.path_matcher.path_matcher = it->second.string_value();
       }
     }
-    // Parse Path Matcher: path.
     it = json.object_value().find("path");
     if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
+      if (path_matcher_count > 0) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:path error: other path matcher already specified"));
+      } else if (it->second.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:path error: should be string"));
       } else {
+        ++path_matcher_count;
         route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
             Matchers::PathMatcher::PathMatcherType::PATH;
         route->matchers.path_matcher.path_matcher = it->second.string_value();
       }
     }
-    // Parse Path Matcher: regex.
     it = json.object_value().find("regex");
     if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
+      if (path_matcher_count > 0) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:regex error: other path matcher already specified"));
+      } else if (it->second.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:regex error: should be string"));
       } else {
+        ++path_matcher_count;
         route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
             Matchers::PathMatcher::PathMatcherType::REGEX;
         route->matchers.path_matcher.path_matcher = it->second.string_value();
       }
+    }
+    if (path_matcher_count != 1) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "one path matcher: prefix, path, or regex is required"));
     }
     // Parse Header Matcher: headers.
     it = json.object_value().find("headers");

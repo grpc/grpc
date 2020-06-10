@@ -48,6 +48,11 @@ message Int64Range {
   int64 end = 2;
 }
 
+message BoolValue {
+  // The bool value.
+  bool value = 1;
+}
+
 message HeaderMatcher {
   string name = 1;
   oneof header_match_specifier {
@@ -73,6 +78,7 @@ message RouteMatch {
     string path = 2;
     RegexMatcher safe_regex = 10;
   }
+  BoolValue case_sensitive = 4;
   RuntimeFractionalPercent runtime_fraction = 9;
   repeated HeaderMatcher headers = 6;
 }
