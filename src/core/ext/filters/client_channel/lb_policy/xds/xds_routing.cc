@@ -852,7 +852,44 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
             }
             header_it = header_json.object_value().find("range_match");
             if (header_it != header_json.object_value().end()) {
-              gpr_log(GPR_INFO, "Found header matcher type range, todo later");
+              if (header_it->second.type() != Json::Type::OBJECT) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:range_match error: should be object"));
+              } else {
+                auto range_it =
+                    header_it->second.object_value().find("range_start");
+                if (range_it != header_it->second.object_value().end()) {
+                  if (range_it->second.type() != Json::Type::NUMBER) {
+                    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                        "field:range_start error: should be of number"));
+                  } else {
+                    header_matcher.range_start = gpr_parse_nonnegative_int(
+                        range_it->second.string_value().c_str());
+                  }
+                } else {
+                  error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "field:range_start missing"));
+                }
+                range_it = header_it->second.object_value().find("range_end");
+                if (range_it != header_it->second.object_value().end()) {
+                  if (range_it->second.type() != Json::Type::NUMBER) {
+                    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                        "field:range_end error: should be of number"));
+                  } else {
+                    header_matcher.range_end = gpr_parse_nonnegative_int(
+                        range_it->second.string_value().c_str());
+                  }
+                } else {
+                  error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "field:range_end missing"));
+                }
+                if (header_matcher.range_end > header_matcher.range_start) {
+                  header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
+                      Matchers::HeaderMatcher::HeaderMatcherType::RANGE;
+                  route->matchers.header_matchers.emplace_back(
+                      std::move(header_matcher));
+                }
+              }
             }
             header_it = header_json.object_value().find("present_match");
             if (header_it != header_json.object_value().end()) {
