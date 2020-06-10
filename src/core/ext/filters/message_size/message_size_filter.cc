@@ -148,6 +148,8 @@ struct call_data {
         this->limits.max_recv_size = limits->limits().max_recv_size;
       }
     }
+    args.context[GRPC_MAX_RECEIVE_MESSAGE_LENGTH].value_int =
+        this->limits.max_recv_size;
   }
 
   ~call_data() { GRPC_ERROR_UNREF(error); }

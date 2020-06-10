@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "absl/strings/str_format.h"
 #include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
@@ -59,6 +60,8 @@ class CallData {
     GRPC_CLOSURE_INIT(&on_recv_trailing_metadata_ready_,
                       OnRecvTrailingMetadataReady, this,
                       grpc_schedule_on_exec_ctx);
+    max_recv_message_length_ =
+        args.context[GRPC_MAX_RECEIVE_MESSAGE_LENGTH].value_int;
   }
 
   ~CallData() { grpc_slice_buffer_destroy_internal(&recv_slices_); }
@@ -91,6 +94,7 @@ class CallData {
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
   // Fields for handling recv_message_ready callback
   bool seen_recv_message_ready_ = false;
+  int max_recv_message_length_;
   grpc_message_compression_algorithm algorithm_ = GRPC_MESSAGE_COMPRESS_NONE;
   grpc_closure on_recv_message_ready_;
   grpc_closure* original_recv_message_ready_ = nullptr;
@@ -169,6 +173,19 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error* error) {
           ((*calld->recv_message_)->flags() & GRPC_WRITE_INTERNAL_COMPRESS) ==
               0) {
         return calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_NONE);
+      }
+      if (calld->max_recv_message_length_ >= 0 &&
+          (*calld->recv_message_)->length() >
+              static_cast<uint32_t>(calld->max_recv_message_length_)) {
+        std::string message_string = absl::StrFormat(
+            "Received message larger than max (%u vs %d)",
+            (*calld->recv_message_)->length(), calld->max_recv_message_length_);
+        GPR_DEBUG_ASSERT(calld->error_ == GRPC_ERROR_NONE);
+        calld->error_ = grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string.c_str()),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+        return calld->ContinueRecvMessageReadyCallback(
+            GRPC_ERROR_REF(calld->error_));
       }
       grpc_slice_buffer_destroy_internal(&calld->recv_slices_);
       grpc_slice_buffer_init(&calld->recv_slices_);

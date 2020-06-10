@@ -38,11 +38,18 @@ typedef enum {
   /// Holds a pointer to ServiceConfigCallData associated with this call.
   GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
 
+  /// Holds an int value which stores the maximum message size that can be
+  /// received.
+  GRPC_MAX_RECEIVE_MESSAGE_LENGTH,
+
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 
 struct grpc_call_context_element {
-  void* value = nullptr;
+  union {
+    void* value = nullptr;
+    int value_int;
+  };
   void (*destroy)(void*) = nullptr;
 };
 
