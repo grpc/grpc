@@ -49,11 +49,18 @@ if _MAXIMUM_CHANNELS_KEY in os.environ:
 else:
     _MAXIMUM_CHANNELS = 2**8
 
+_DEFAULT_TIMEOUT_KEY = "GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS"
+if _DEFAULT_TIMEOUT_KEY in os.environ:
+    _DEFAULT_TIMEOUT = float(os.environ[_DEFAULT_TIMEOUT_KEY])
+    _LOGGER.debug("Setting default timeout seconds to %f", _DEFAULT_TIMEOUT)
+else:
+    _DEFAULT_TIMEOUT = 60.0
+
 
 def _create_channel(target: str, options: Sequence[Tuple[str, str]],
                     channel_credentials: Optional[grpc.ChannelCredentials],
                     compression: Optional[grpc.Compression]) -> grpc.Channel:
-    if channel_credentials._credentials is grpc.experimental._insecure_channel_credentials:
+    if channel_credentials is grpc.experimental.insecure_channel_credentials():
         _LOGGER.debug(f"Creating insecure channel with options '{options}' " +
                       f"and compression '{compression}'")
         return grpc.insecure_channel(target,
@@ -178,7 +185,7 @@ def unary_unary(
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> ResponseType:
     """Invokes a unary-unary RPC without an explicitly specified channel.
@@ -221,9 +228,13 @@ def unary_unary(
         immediately if the connection is not ready at the time the RPC is
         invoked, or if it should wait until the connection to the server
         becomes ready. When using this option, the user will likely also want
-        to set a timeout. Defaults to False.
+        to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised.
+        after which an exception will be raised. If timeout is unspecified,
+        defaults to a timeout controlled by the
+        GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS environment variable. If that is
+        unset, defaults to 60 seconds. Supply a value of None to indicate that
+        no timeout should be enforced.
       metadata: Optional metadata to send to the server.
 
     Returns:
@@ -234,6 +245,7 @@ def unary_unary(
                                              compression)
     multicallable = channel.unary_unary(method, request_serializer,
                                         response_deserializer)
+    wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -254,7 +266,7 @@ def unary_stream(
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> Iterator[ResponseType]:
     """Invokes a unary-stream RPC without an explicitly specified channel.
@@ -296,9 +308,13 @@ def unary_stream(
         immediately if the connection is not ready at the time the RPC is
         invoked, or if it should wait until the connection to the server
         becomes ready. When using this option, the user will likely also want
-        to set a timeout. Defaults to False.
+        to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised.
+        after which an exception will be raised. If timeout is unspecified,
+        defaults to a timeout controlled by the
+        GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS environment variable. If that is
+        unset, defaults to 60 seconds. Supply a value of None to indicate that
+        no timeout should be enforced.
       metadata: Optional metadata to send to the server.
 
     Returns:
@@ -309,6 +325,7 @@ def unary_stream(
                                              compression)
     multicallable = channel.unary_stream(method, request_serializer,
                                          response_deserializer)
+    wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -329,7 +346,7 @@ def stream_unary(
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> ResponseType:
     """Invokes a stream-unary RPC without an explicitly specified channel.
@@ -371,9 +388,13 @@ def stream_unary(
         immediately if the connection is not ready at the time the RPC is
         invoked, or if it should wait until the connection to the server
         becomes ready. When using this option, the user will likely also want
-        to set a timeout. Defaults to False.
+        to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised.
+        after which an exception will be raised. If timeout is unspecified,
+        defaults to a timeout controlled by the
+        GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS environment variable. If that is
+        unset, defaults to 60 seconds. Supply a value of None to indicate that
+        no timeout should be enforced.
       metadata: Optional metadata to send to the server.
 
     Returns:
@@ -384,6 +405,7 @@ def stream_unary(
                                              compression)
     multicallable = channel.stream_unary(method, request_serializer,
                                          response_deserializer)
+    wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -404,7 +426,7 @@ def stream_stream(
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> Iterator[ResponseType]:
     """Invokes a stream-stream RPC without an explicitly specified channel.
@@ -446,9 +468,13 @@ def stream_stream(
         immediately if the connection is not ready at the time the RPC is
         invoked, or if it should wait until the connection to the server
         becomes ready. When using this option, the user will likely also want
-        to set a timeout. Defaults to False.
+        to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised.
+        after which an exception will be raised. If timeout is unspecified,
+        defaults to a timeout controlled by the
+        GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS environment variable. If that is
+        unset, defaults to 60 seconds. Supply a value of None to indicate that
+        no timeout should be enforced.
       metadata: Optional metadata to send to the server.
 
     Returns:
@@ -459,6 +485,7 @@ def stream_stream(
                                              compression)
     multicallable = channel.stream_stream(method, request_serializer,
                                           response_deserializer)
+    wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
