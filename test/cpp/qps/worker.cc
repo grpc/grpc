@@ -34,6 +34,9 @@ DEFINE_int32(driver_port, 0, "Port for communication with driver");
 DEFINE_int32(server_port, 0, "Port for operation as a server");
 DEFINE_string(credential_type, grpc::testing::kInsecureCredentialsType,
               "Credential type for communication with driver");
+DEFINE_string(
+    driver_port_result_path, "",
+    "Path for the file to have a driver port. (Useful when driver_port is 0)");
 
 static bool got_sigint = false;
 
@@ -45,7 +48,8 @@ namespace testing {
 std::vector<grpc::testing::Server*>* g_inproc_servers = nullptr;
 
 static void RunServer() {
-  QpsWorker worker(FLAGS_driver_port, FLAGS_server_port, FLAGS_credential_type);
+  QpsWorker worker(FLAGS_driver_port, FLAGS_server_port, FLAGS_credential_type,
+                   FLAGS_driver_port_result_path);
 
   while (!got_sigint && !worker.Done()) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),

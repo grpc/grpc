@@ -18,6 +18,8 @@
 
 #include "test/cpp/qps/qps_worker.h"
 
+#include <fstream>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -275,16 +277,20 @@ class WorkerServiceImpl final : public WorkerService::Service {
 };
 
 QpsWorker::QpsWorker(int driver_port, int server_port,
-                     const grpc::string& credential_type) {
+                     const grpc::string& credential_type,
+                     const grpc::string& driver_port_result_path) {
   impl_.reset(new WorkerServiceImpl(server_port, this));
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
+  builder->AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
+  int selected_port = 0;
   if (driver_port >= 0) {
     std::string server_address = grpc_core::JoinHostPort("::", driver_port);
     builder->AddListeningPort(
         server_address.c_str(),
-        GetCredentialsProvider()->GetServerCredentials(credential_type));
+        GetCredentialsProvider()->GetServerCredentials(credential_type),
+        &selected_port);
   }
   builder->RegisterService(impl_.get());
 
@@ -295,8 +301,16 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
             driver_port, server_port);
   } else {
     gpr_log(GPR_INFO,
-            "QpsWorker: BuildAndStart(driver_port=%d, server_port=%d) done",
-            driver_port, server_port);
+            "QpsWorker: BuildAndStart(driver_port=%d, server_port=%d, "
+            "selected_port=%d) done",
+            driver_port, server_port, selected_port);
+  }
+
+  if (!driver_port_result_path.empty()) {
+    std::ofstream driver_port_file(driver_port_result_path,
+                                   std::ios::out | std::ios::trunc);
+    driver_port_file << selected_port << std::endl;
+    driver_port_file.close();
   }
 }
 

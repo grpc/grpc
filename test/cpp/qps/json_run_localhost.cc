@@ -19,6 +19,8 @@
 #include <signal.h>
 #include <string.h>
 
+#include <fstream>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -28,9 +30,13 @@
 #include <sys/wait.h>
 #endif
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/tmpfile.h"
 #include "test/core/util/port.h"
 #include "test/cpp/util/subprocess.h"
 
@@ -78,25 +84,76 @@ static void LogStatus(int status, const char* label) {
   }
 }
 
+static std::string CreateTmpFileForPort(const char* prefix) {
+  char* tmp_filename;
+  fclose(gpr_tmpfile(prefix, &tmp_filename));
+  std::string result = tmp_filename;
+  gpr_free(tmp_filename);
+  return result;
+}
+
+static std::vector<int> WaitsForPortsResolved(std::vector<std::string> paths,
+                                              int timeout_seconds) {
+  std::vector<int> resolved_ports(paths.size());
+  gpr_timespec deadline =
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                   gpr_time_from_seconds(timeout_seconds, GPR_TIMESPAN));
+  while (true) {
+    bool need_to_wait = false;
+    for (int i = 0, i_end = int(resolved_ports.size()); i < i_end; i++) {
+      if (resolved_ports[i] == 0) {
+        int port = 0;
+        std::ifstream port_file(paths[i]);
+        port_file >> port;
+        if (port != 0) {
+          resolved_ports[i] = port;
+          port_file.close();
+          remove(paths[i].c_str());
+        }
+      }
+      if (resolved_ports[i] == 0) {
+        need_to_wait = true;
+      }
+    }
+    if (!need_to_wait) {
+      return resolved_ports;
+    }
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_millis(100, GPR_TIMESPAN)));
+    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) > 0) {
+      return {};
+    }
+  }
+}
+
 int main(int argc, char** argv) {
   register_sighandler();
 
   std::string my_bin = argv[0];
   std::string bin_dir = my_bin.substr(0, my_bin.rfind('/'));
 
-  std::ostringstream env;
-  bool first = true;
-
+  std::vector<std::string> port_result_paths;
   for (int i = 0; i < kNumWorkers; i++) {
-    const auto port = grpc_pick_unused_port_or_die();
-    std::vector<std::string> args = {bin_dir + "/qps_worker", "-driver_port",
-                                     as_string(port)};
+    std::string port_result_path = CreateTmpFileForPort("qps_worker_port");
+    std::vector<std::string> args = {bin_dir + "/qps_worker", "--driver_port",
+                                     "0", "--driver_port_result_path",
+                                     port_result_path};
     g_workers[i] = new SubProcess(args);
-    if (!first) env << ",";
-    env << "localhost:" << port;
-    first = false;
+    port_result_paths.push_back(port_result_path);
   }
 
+  std::vector<int> resolved_ports =
+      WaitsForPortsResolved(port_result_paths, 10);
+  if (resolved_ports.size() < port_result_paths.size()) {
+    gpr_log(GPR_ERROR, "Timeout in resolving ports from workers");
+    return 1;
+  }
+
+  std::ostringstream env;
+  for (int i = 0, i_end = int(resolved_ports.size()); i < i_end; i++) {
+    if (i != 0) env << ",";
+    env << "localhost:" << resolved_ports[i];
+  }
   gpr_setenv("QPS_WORKERS", env.str().c_str());
   std::vector<std::string> args = {bin_dir + "/qps_json_driver"};
   for (int i = 1; i < argc; i++) {
