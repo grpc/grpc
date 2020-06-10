@@ -61,6 +61,10 @@ message HeaderMatcher {
   bool invert_match = 8;
 }
 
+message RuntimeFractionalPercent {
+  FractionalPercent default_value = 1;
+}
+
 message RouteMatch {
   oneof path_specifier {
     // If specified, the route is a prefix rule meaning that the prefix must
@@ -69,7 +73,7 @@ message RouteMatch {
     string path = 2;
     RegexMatcher safe_regex = 10;
   }
-  FractionalPercent runtime_fraction = 9;
+  RuntimeFractionalPercent runtime_fraction = 9;
   repeated HeaderMatcher headers = 6;
 }
 

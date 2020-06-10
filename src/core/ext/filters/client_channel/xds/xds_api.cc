@@ -1053,12 +1053,30 @@ grpc_error* RouteRuntimeFractionParse(
   const envoy_api_v2_core_RuntimeFractionalPercent* runtime_fraction =
       envoy_api_v2_route_RouteMatch_runtime_fraction(match);
   if (runtime_fraction != nullptr) {
-    gpr_log(GPR_INFO, "TODO@donnadionne Runtime Fraction");
-    // TODO@donnadionne how do I extract numbers from  from struct
-    // envoy_api_v2_core_RuntimeFractionalPercent without depending on the
-    // structure calculate a numerator out of 1M based on the configured
-    // numerator and denominator type.
-    rds_route->matchers.fraction_per_million = 500000;
+    const envoy_type_FractionalPercent* fraction =
+        envoy_api_v2_core_RuntimeFractionalPercent_default_value(
+            runtime_fraction);
+    if (fraction != nullptr) {
+      uint32_t numerator = envoy_type_FractionalPercent_numerator(fraction);
+      const auto denominator =
+          static_cast<envoy_type_FractionalPercent_DenominatorType>(
+              envoy_type_FractionalPercent_denominator(fraction));
+      // Normalize to million.
+      switch (denominator) {
+        case envoy_type_FractionalPercent_HUNDRED:
+          numerator *= 10000;
+          break;
+        case envoy_type_FractionalPercent_TEN_THOUSAND:
+          numerator *= 100;
+          break;
+        case envoy_type_FractionalPercent_MILLION:
+          break;
+        default:
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Unknown denominator type");
+      }
+      rds_route->matchers.fraction_per_million = numerator;
+    }
   }
   return GRPC_ERROR_NONE;
 }

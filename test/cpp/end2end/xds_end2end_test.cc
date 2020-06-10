@@ -3373,7 +3373,10 @@ TEST_P(LdsRdsTest, RouteMatchHeaderMatcher) {
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  route1->mutable_match()->mutable_runtime_fraction()->set_numerator(50);
+  route1->mutable_match()
+      ->mutable_runtime_fraction()
+      ->mutable_default_value()
+      ->set_numerator(50);
   auto* header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("header1");
   header_matcher1->set_exact_match("POST");
@@ -3395,7 +3398,10 @@ TEST_P(LdsRdsTest, RouteMatchHeaderMatcher) {
   header_matcher6->set_suffix_match(".pdf");
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
-  default_route->mutable_match()->mutable_runtime_fraction()->set_numerator(50);
+  default_route->mutable_match()
+      ->mutable_runtime_fraction()
+      ->mutable_default_value()
+      ->set_numerator(50);
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
