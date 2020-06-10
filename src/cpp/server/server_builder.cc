@@ -193,7 +193,7 @@ ServerBuilder& ServerBuilder::SetDefaultCompressionAlgorithm(
 }
 
 ServerBuilder& ServerBuilder::SetResourceQuota(
-    const grpc_impl::ResourceQuota& resource_quota) {
+    const grpc::ResourceQuota& resource_quota) {
   if (resource_quota_ != nullptr) {
     grpc_resource_quota_unref(resource_quota_);
   }
