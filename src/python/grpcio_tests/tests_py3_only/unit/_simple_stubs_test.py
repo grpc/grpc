@@ -88,8 +88,10 @@ def _stream_stream_handler(request_iterator, context):
 
 def _black_hole_handler(request, context):
     event = threading.Event()
+
     def _on_done():
         event.set()
+
     context.add_callback(_on_done)
     while not event.is_set():
         time.sleep(0.1)
@@ -383,7 +385,8 @@ class SimpleStubsTest(unittest.TestCase):
                                                          _BLACK_HOLE,
                                                          insecure=True,
                                                          **invocation_args)
-            self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED, cm.exception.code())
+            self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED,
+                             cm.exception.code())
 
     def test_default_timeout(self):
         not_present = object()
