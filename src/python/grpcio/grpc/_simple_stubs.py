@@ -56,6 +56,11 @@ if _DEFAULT_TIMEOUT_KEY in os.environ:
 else:
     _DEFAULT_TIMEOUT = 60.0
 
+class _DefaultTimeoutSentinelType(object):
+    pass
+
+_DEFAULT_TIMEOUT_SENTINEL = _DefaultTimeoutSentinelType()
+
 
 def _create_channel(target: str, options: Sequence[Tuple[str, str]],
                     channel_credentials: Optional[grpc.ChannelCredentials],
@@ -173,11 +178,12 @@ class ChannelCache:
 
 
 def _get_wait_for_ready_settings(wait_for_ready: Optional[bool],
-                                 timeout: Optional[float]
-                                ) -> Tuple[bool, float]:
+                                 timeout: Union[Optional[float], _DefaultTimeoutSentinelType]
+                                 ) -> Tuple[bool, Optional[float]]:
     if wait_for_ready is None:
         wait_for_ready = True
-    if wait_for_ready and timeout is None:
+    # TODO: You don't actually need this sentinel...
+    if timeout is _DEFAULT_TIMEOUT_SENTINEL:
         timeout = _DEFAULT_TIMEOUT
     return wait_for_ready, timeout
 
@@ -195,7 +201,7 @@ def unary_unary(
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT_SENTINEL,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> ResponseType:
     """Invokes a unary-unary RPC without an explicitly specified channel.
@@ -240,8 +246,11 @@ def unary_unary(
         becomes ready. When using this option, the user will likely also want
         to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised. If timeout is unspecified and
-        wait_for_ready is True, defaults to one minute.
+        after which an exception will be raised. If timeout is unspecified,
+        defaults to a timeout controlled by the
+        GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS environment variable. If that is
+        unset, defaults to 60 seconds. Supply a value of None to indicate that
+        no timeout should be enforced.
       metadata: Optional metadata to send to the server.
 
     Returns:
@@ -274,7 +283,7 @@ def unary_stream(
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT_SENTINEL,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> Iterator[ResponseType]:
     """Invokes a unary-stream RPC without an explicitly specified channel.
@@ -318,8 +327,11 @@ def unary_stream(
         becomes ready. When using this option, the user will likely also want
         to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised. If timeout is unspecified and
-        wait_for_ready is True, defaults to one minute.
+        after which an exception will be raised. If timeout is unspecified,
+        defaults to a timeout controlled by the
+        GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS environment variable. If that is
+        unset, defaults to 60 seconds. Supply a value of None to indicate that
+        no timeout should be enforced.
       metadata: Optional metadata to send to the server.
 
     Returns:
@@ -352,7 +364,7 @@ def stream_unary(
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT_SENTINEL,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> ResponseType:
     """Invokes a stream-unary RPC without an explicitly specified channel.
@@ -396,8 +408,11 @@ def stream_unary(
         becomes ready. When using this option, the user will likely also want
         to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised. If timeout is unspecified and
-        wait_for_ready is True, defaults to one minute.
+        after which an exception will be raised. If timeout is unspecified,
+        defaults to a timeout controlled by the
+        GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS environment variable. If that is
+        unset, defaults to 60 seconds. Supply a value of None to indicate that
+        no timeout should be enforced.
       metadata: Optional metadata to send to the server.
 
     Returns:
@@ -430,7 +445,7 @@ def stream_stream(
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT_SENTINEL,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> Iterator[ResponseType]:
     """Invokes a stream-stream RPC without an explicitly specified channel.
@@ -474,8 +489,11 @@ def stream_stream(
         becomes ready. When using this option, the user will likely also want
         to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised. If timeout is unspecified and
-        wait_for_ready is True, defaults to one minute.
+        after which an exception will be raised. If timeout is unspecified,
+        defaults to a timeout controlled by the
+        GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS environment variable. If that is
+        unset, defaults to 60 seconds. Supply a value of None to indicate that
+        no timeout should be enforced.
       metadata: Optional metadata to send to the server.
 
     Returns:
