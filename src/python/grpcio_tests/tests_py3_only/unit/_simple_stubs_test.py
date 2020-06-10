@@ -188,7 +188,8 @@ class SimpleStubsTest(unittest.TestCase):
                 target,
                 _UNARY_UNARY,
                 channel_credentials=grpc.experimental.
-                insecure_channel_credentials())
+                insecure_channel_credentials(),
+                timeout=None)
             self.assertEqual(_REQUEST, response)
 
     def test_unary_unary_secure(self):
@@ -198,7 +199,8 @@ class SimpleStubsTest(unittest.TestCase):
                 _REQUEST,
                 target,
                 _UNARY_UNARY,
-                channel_credentials=grpc.local_channel_credentials())
+                channel_credentials=grpc.local_channel_credentials(),
+                timeout=None)
             self.assertEqual(_REQUEST, response)
 
     def test_channels_cached(self):
@@ -363,6 +365,7 @@ class SimpleStubsTest(unittest.TestCase):
                 response = grpc.experimental.unary_unary(_REQUEST,
                                                          target,
                                                          _UNARY_UNARY,
+                                                         timeout=None,
                                                          insecure=True)
                 rpc_finished_event.set()
             except Exception as e:
