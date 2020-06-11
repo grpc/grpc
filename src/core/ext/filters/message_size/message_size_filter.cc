@@ -389,6 +389,9 @@ static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder,
                                           void* /*arg*/) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
+  if (grpc_channel_args_want_minimal_stack(channel_args)) {
+    return true;
+  }
   bool enable = false;
   grpc_core::MessageSizeParsedConfig::message_size_limits lim =
       get_message_size_limits(channel_args);

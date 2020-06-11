@@ -412,6 +412,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
     }
   }
   call->send_deadline = send_deadline;
+  call->context[GRPC_MAX_RECEIVE_MESSAGE_LENGTH].value_int = -1;
   /* initial refcount dropped by grpc_call_unref */
   grpc_call_element_args call_args = {CALL_STACK_FROM_CALL(call),
                                       args->server_transport_data,

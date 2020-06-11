@@ -178,7 +178,7 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error* error) {
           (*calld->recv_message_)->length() >
               static_cast<uint32_t>(calld->max_recv_message_length_)) {
         std::string message_string = absl::StrFormat(
-            "Received message larger than max (%u vs %d)",
+            "Received message larger than max (%u vs. %d)",
             (*calld->recv_message_)->length(), calld->max_recv_message_length_);
         GPR_DEBUG_ASSERT(calld->error_ == GRPC_ERROR_NONE);
         calld->error_ = grpc_error_set_int(
