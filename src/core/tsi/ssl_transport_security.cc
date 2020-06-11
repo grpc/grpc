@@ -1410,6 +1410,8 @@ static void ssl_handshaker_destroy(tsi_handshaker* self) {
   gpr_free(impl);
 }
 
+// Removes the bytes remaining in |impl->SSL|'s read BIO and writes them to
+// |bytes_remaining|.
 static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
                                       unsigned char** bytes_remaining,
                                       size_t* bytes_remaining_size) {
@@ -1417,19 +1419,25 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
       bytes_remaining_size == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
-  tsi_result result = TSI_OK;
-  size_t counter = 0;
-  size_t bytes_in_ssl_buffer = BIO_pending(SSL_get_rbio(impl->ssl));
-  if (bytes_in_ssl_buffer == 0) return TSI_OK;
-  *bytes_remaining = static_cast<uint8_t*>(gpr_malloc(bytes_in_ssl_buffer));
-  int read_success = 1;
-  while (read_success > 0 && counter < bytes_in_ssl_buffer) {
-    read_success =
-        BIO_read(SSL_get_rbio(impl->ssl), *bytes_remaining + counter, 1);
-    if (read_success == 1) counter += 1;
+  // Atempt to read all of the bytes in SSL's read BIO. These bytes should
+  // contain (encrypted) application data that was appended to a ClientFinished
+  // or ServerFinished record.
+  size_t bytes_in_ssl = BIO_pending(SSL_get_rbio(impl->ssl));
+  if (bytes_in_ssl == 0) return TSI_OK;
+  *bytes_remaining = static_cast<uint8_t*>(gpr_malloc(bytes_in_ssl));
+  int bytes_read =
+      BIO_read(SSL_get_rbio(impl->ssl), *bytes_remaining, bytes_in_ssl);
+  // If an unexpected number of bytes were read, return an error status and free
+  // all of the bytes that were read.
+  if (bytes_read != bytes_in_ssl) {
+    gpr_log(GPR_INFO,
+            "Failed to read the expected number of bytes from SSL object.");
+    gpr_free(*bytes_remaining);
+    *bytes_remaining = nullptr;
+    return TSI_INTERNAL_ERROR;
   }
-  *bytes_remaining_size = counter;
-  return result;
+  *bytes_remaining_size = bytes_read;
+  return TSI_OK;
 }
 
 static tsi_result ssl_handshaker_next(
@@ -1472,6 +1480,10 @@ static tsi_result ssl_handshaker_next(
   if (ssl_handshaker_get_result(impl) == TSI_HANDSHAKE_IN_PROGRESS) {
     *handshaker_result = nullptr;
   } else {
+    // In TLS 1.3, the ClientFinished or ServerFinished record may have
+    // (encrypted) application data appended to the end of the record. In TLS
+    // 1.2, this is explicitly disallowed by the RFC; application data will
+    // never be appended to a handshake record.
     unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = 0;
     status = ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size);
