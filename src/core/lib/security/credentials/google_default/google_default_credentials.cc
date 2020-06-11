@@ -68,13 +68,12 @@ static grpc_core::internal::grpc_gce_tenancy_checker g_gce_tenancy_checker =
 
 static void init_default_credentials(void) { gpr_mu_init(&g_state_mu); }
 
-typedef struct {
+struct metadata_server_detector {
   grpc_polling_entity pollent;
   int is_done;
   int success;
   grpc_http_response response;
-} metadata_server_detector;
-
+};
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_google_default_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
@@ -224,17 +223,13 @@ static grpc_error* create_default_creds_from_path(
   grpc_slice creds_data = grpc_empty_slice();
   grpc_error* error = GRPC_ERROR_NONE;
   Json json;
-  grpc_core::StringView str;
   if (creds_path == nullptr) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("creds_path unset");
     goto end;
   }
   error = grpc_load_file(creds_path, 0, &creds_data);
   if (error != GRPC_ERROR_NONE) goto end;
-  str = grpc_core::StringView(
-      reinterpret_cast<char*>(GRPC_SLICE_START_PTR(creds_data)),
-      GRPC_SLICE_LENGTH(creds_data));
-  json = Json::Parse(str, &error);
+  json = Json::Parse(grpc_core::StringViewFromSlice(creds_data), &error);
   if (error != GRPC_ERROR_NONE) goto end;
   if (json.type() != Json::Type::OBJECT) {
     error = grpc_error_set_str(

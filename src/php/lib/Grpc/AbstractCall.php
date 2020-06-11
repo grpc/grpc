@@ -114,14 +114,7 @@ abstract class AbstractCall
     protected function _serializeMessage($data)
     {
         // Proto3 implementation
-        if (method_exists($data, 'encode')) {
-            return $data->encode();
-        } elseif (method_exists($data, 'serializeToString')) {
-            return $data->serializeToString();
-        }
-
-        // Protobuf-PHP implementation
-        return $data->serialize();
+        return $data->serializeToString();
     }
 
     /**
@@ -136,22 +129,10 @@ abstract class AbstractCall
         if ($value === null) {
             return;
         }
-
-        // Proto3 implementation
-        if (is_array($this->deserialize)) {
-            list($className, $deserializeFunc) = $this->deserialize;
-            $obj = new $className();
-            if (method_exists($obj, $deserializeFunc)) {
-                $obj->$deserializeFunc($value);
-            } else {
-                $obj->mergeFromString($value);
-            }
-
-            return $obj;
-        }
-
-        // Protobuf-PHP implementation
-        return call_user_func($this->deserialize, $value);
+        list($className, $deserializeFunc) = $this->deserialize;
+        $obj = new $className();
+        $obj->mergeFromString($value);
+        return $obj;
     }
 
     /**

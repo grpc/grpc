@@ -47,8 +47,6 @@ class HealthServicerTest(AioTestBase):
 
     async def setUp(self):
         self._servicer = health.aio.HealthServicer()
-        await self._servicer.set(health.OVERALL_HEALTH,
-                                 health_pb2.HealthCheckResponse.SERVING)
         await self._servicer.set(_SERVING_SERVICE,
                                  health_pb2.HealthCheckResponse.SERVING)
         await self._servicer.set(_UNKNOWN_SERVICE,
@@ -110,7 +108,10 @@ class HealthServicerTest(AioTestBase):
                          (await queue.get()).status)
 
         call.cancel()
-        await task
+
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+
         self.assertTrue(queue.empty())
 
     async def test_watch_new_service(self):
@@ -133,7 +134,10 @@ class HealthServicerTest(AioTestBase):
                          (await queue.get()).status)
 
         call.cancel()
-        await task
+
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+
         self.assertTrue(queue.empty())
 
     async def test_watch_service_isolation(self):
@@ -153,7 +157,10 @@ class HealthServicerTest(AioTestBase):
             await asyncio.wait_for(queue.get(), test_constants.SHORT_TIMEOUT)
 
         call.cancel()
-        await task
+
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+
         self.assertTrue(queue.empty())
 
     async def test_two_watchers(self):
@@ -179,8 +186,13 @@ class HealthServicerTest(AioTestBase):
 
         call1.cancel()
         call2.cancel()
-        await task1
-        await task2
+
+        with self.assertRaises(asyncio.CancelledError):
+            await task1
+
+        with self.assertRaises(asyncio.CancelledError):
+            await task2
+
         self.assertTrue(queue1.empty())
         self.assertTrue(queue2.empty())
 
@@ -196,7 +208,9 @@ class HealthServicerTest(AioTestBase):
         call.cancel()
         await self._servicer.set(_WATCH_SERVICE,
                                  health_pb2.HealthCheckResponse.SERVING)
-        await task
+
+        with self.assertRaises(asyncio.CancelledError):
+            await task
 
         # Wait for the serving coroutine to process client cancellation.
         timeout = time.monotonic() + test_constants.TIME_ALLOWANCE
@@ -228,7 +242,10 @@ class HealthServicerTest(AioTestBase):
                          resp.status)
 
         call.cancel()
-        await task
+
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+
         self.assertTrue(queue.empty())
 
     async def test_no_duplicate_status(self):
@@ -253,7 +270,10 @@ class HealthServicerTest(AioTestBase):
             last_status = status
 
         call.cancel()
-        await task
+
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+
         self.assertTrue(queue.empty())
 
 

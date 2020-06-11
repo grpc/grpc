@@ -38,10 +38,11 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
+DEFINE_bool(fail_on_failed_rpc, false, "Fail client if any RPCs fail.");
 DEFINE_int32(num_channels, 1, "Number of channels.");
 DEFINE_bool(print_response, false, "Write RPC response to stdout.");
 DEFINE_int32(qps, 1, "Qps per channel.");
-DEFINE_int32(rpc_timeout_sec, 10, "Per RPC timeout seconds.");
+DEFINE_int32(rpc_timeout_sec, 30, "Per RPC timeout seconds.");
 DEFINE_string(server, "localhost:50051", "Address of server.");
 DEFINE_int32(stats_port, 50052,
              "Port to expose peer distribution stats service.");
@@ -124,8 +125,6 @@ class TestClient {
 
   void AsyncUnaryCall() {
     SimpleResponse response;
-    ClientContext context;
-
     int saved_request_id;
     {
       std::lock_guard<std::mutex> lk(mu);
@@ -134,9 +133,8 @@ class TestClient {
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
         std::chrono::seconds(FLAGS_rpc_timeout_sec);
-    context.set_deadline(deadline);
-
     AsyncClientCall* call = new AsyncClientCall;
+    call->context.set_deadline(deadline);
     call->saved_request_id = saved_request_id;
     call->response_reader = stub_->PrepareAsyncUnaryCall(
         &call->context, SimpleRequest::default_instance(), &cq_);
@@ -158,14 +156,19 @@ class TestClient {
         }
       }
 
-      if (FLAGS_print_response) {
-        if (call->status.ok()) {
+      if (!call->status.ok()) {
+        if (FLAGS_print_response || FLAGS_fail_on_failed_rpc) {
+          std::cout << "RPC failed: " << call->status.error_code() << ": "
+                    << call->status.error_message() << std::endl;
+        }
+        if (FLAGS_fail_on_failed_rpc) {
+          abort();
+        }
+      } else {
+        if (FLAGS_print_response) {
           std::cout << "Greeting: Hello world, this is "
                     << call->response.hostname() << ", from "
                     << call->context.peer() << std::endl;
-        } else {
-          std::cout << "RPC failed: " << call->status.error_code() << ": "
-                    << call->status.error_message() << std::endl;
         }
       }
 

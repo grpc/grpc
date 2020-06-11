@@ -49,13 +49,18 @@ if _MAXIMUM_CHANNELS_KEY in os.environ:
 else:
     _MAXIMUM_CHANNELS = 2**8
 
+_DEFAULT_TIMEOUT_KEY = "GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS"
+if _DEFAULT_TIMEOUT_KEY in os.environ:
+    _DEFAULT_TIMEOUT = float(os.environ[_DEFAULT_TIMEOUT_KEY])
+    _LOGGER.debug("Setting default timeout seconds to %f", _DEFAULT_TIMEOUT)
+else:
+    _DEFAULT_TIMEOUT = 60.0
+
 
 def _create_channel(target: str, options: Sequence[Tuple[str, str]],
                     channel_credentials: Optional[grpc.ChannelCredentials],
                     compression: Optional[grpc.Compression]) -> grpc.Channel:
-    channel_credentials = channel_credentials or grpc.local_channel_credentials(
-    )
-    if channel_credentials._credentials is grpc.experimental._insecure_channel_credentials:
+    if channel_credentials is grpc.experimental.insecure_channel_credentials():
         _LOGGER.debug(f"Creating insecure channel with options '{options}' " +
                       f"and compression '{compression}'")
         return grpc.insecure_channel(target,
@@ -131,7 +136,18 @@ class ChannelCache:
 
     def get_channel(self, target: str, options: Sequence[Tuple[str, str]],
                     channel_credentials: Optional[grpc.ChannelCredentials],
+                    insecure: bool,
                     compression: Optional[grpc.Compression]) -> grpc.Channel:
+        if insecure and channel_credentials:
+            raise ValueError("The insecure option is mutually exclusive with " +
+                             "the channel_credentials option. Please use one " +
+                             "or the other.")
+        if insecure:
+            channel_credentials = grpc.experimental.insecure_channel_credentials(
+            )
+        elif channel_credentials is None:
+            _LOGGER.debug("Defaulting to SSL channel credentials.")
+            channel_credentials = grpc.ssl_channel_credentials()
         key = (target, options, channel_credentials, compression)
         with self._lock:
             channel_data = self._mapping.get(key, None)
@@ -156,32 +172,20 @@ class ChannelCache:
             return len(self._mapping)
 
 
-# TODO(rbellevi): Consider a credential type that has the
-#   following functionality matrix:
-#
-#   +----------+-------+--------+
-#   |          | local | remote |
-#   |----------+-------+--------+
-#   | secure   | o     | o      |
-#   | insecure | o     | x      |
-#   +----------+-------+--------+
-#
-#  Make this the default option.
-
-
 @experimental_api
 def unary_unary(
         request: RequestType,
         target: str,
         method: str,
         request_serializer: Optional[Callable[[Any], bytes]] = None,
-        request_deserializer: Optional[Callable[[bytes], Any]] = None,
+        response_deserializer: Optional[Callable[[bytes], Any]] = None,
         options: Sequence[Tuple[AnyStr, AnyStr]] = (),
         channel_credentials: Optional[grpc.ChannelCredentials] = None,
+        insecure: bool = False,
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> ResponseType:
     """Invokes a unary-unary RPC without an explicitly specified channel.
@@ -203,15 +207,18 @@ def unary_unary(
       request: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials() or
         grpc.insecure_channel_credentials().
+      insecure: If True, specifies channel_credentials as
+        :term:`grpc.insecure_channel_credentials()`. This option is mutually
+        exclusive with the `channel_credentials` option.
       call_credentials: A call credential applied to each call individually,
         e.g. the output of grpc.metadata_call_credentials() or
         grpc.access_token_call_credentials().
@@ -221,18 +228,24 @@ def unary_unary(
         immediately if the connection is not ready at the time the RPC is
         invoked, or if it should wait until the connection to the server
         becomes ready. When using this option, the user will likely also want
-        to set a timeout. Defaults to False.
+        to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised.
+        after which an exception will be raised. If timeout is unspecified,
+        defaults to a timeout controlled by the
+        GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS environment variable. If that is
+        unset, defaults to 60 seconds. Supply a value of None to indicate that
+        no timeout should be enforced.
       metadata: Optional metadata to send to the server.
 
     Returns:
       The response to the RPC.
     """
     channel = ChannelCache.get().get_channel(target, options,
-                                             channel_credentials, compression)
+                                             channel_credentials, insecure,
+                                             compression)
     multicallable = channel.unary_unary(method, request_serializer,
-                                        request_deserializer)
+                                        response_deserializer)
+    wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -246,13 +259,14 @@ def unary_stream(
         target: str,
         method: str,
         request_serializer: Optional[Callable[[Any], bytes]] = None,
-        request_deserializer: Optional[Callable[[bytes], Any]] = None,
+        response_deserializer: Optional[Callable[[bytes], Any]] = None,
         options: Sequence[Tuple[AnyStr, AnyStr]] = (),
         channel_credentials: Optional[grpc.ChannelCredentials] = None,
+        insecure: bool = False,
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> Iterator[ResponseType]:
     """Invokes a unary-stream RPC without an explicitly specified channel.
@@ -274,14 +288,17 @@ def unary_stream(
       request: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials().
+      insecure: If True, specifies channel_credentials as
+        :term:`grpc.insecure_channel_credentials()`. This option is mutually
+        exclusive with the `channel_credentials` option.
       call_credentials: A call credential applied to each call individually,
         e.g. the output of grpc.metadata_call_credentials() or
         grpc.access_token_call_credentials().
@@ -291,18 +308,24 @@ def unary_stream(
         immediately if the connection is not ready at the time the RPC is
         invoked, or if it should wait until the connection to the server
         becomes ready. When using this option, the user will likely also want
-        to set a timeout. Defaults to False.
+        to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised.
+        after which an exception will be raised. If timeout is unspecified,
+        defaults to a timeout controlled by the
+        GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS environment variable. If that is
+        unset, defaults to 60 seconds. Supply a value of None to indicate that
+        no timeout should be enforced.
       metadata: Optional metadata to send to the server.
 
     Returns:
       An iterator of responses.
     """
     channel = ChannelCache.get().get_channel(target, options,
-                                             channel_credentials, compression)
+                                             channel_credentials, insecure,
+                                             compression)
     multicallable = channel.unary_stream(method, request_serializer,
-                                         request_deserializer)
+                                         response_deserializer)
+    wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(request,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -316,13 +339,14 @@ def stream_unary(
         target: str,
         method: str,
         request_serializer: Optional[Callable[[Any], bytes]] = None,
-        request_deserializer: Optional[Callable[[bytes], Any]] = None,
+        response_deserializer: Optional[Callable[[bytes], Any]] = None,
         options: Sequence[Tuple[AnyStr, AnyStr]] = (),
         channel_credentials: Optional[grpc.ChannelCredentials] = None,
+        insecure: bool = False,
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> ResponseType:
     """Invokes a stream-unary RPC without an explicitly specified channel.
@@ -344,35 +368,44 @@ def stream_unary(
       request_iterator: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials().
       call_credentials: A call credential applied to each call individually,
         e.g. the output of grpc.metadata_call_credentials() or
         grpc.access_token_call_credentials().
+      insecure: If True, specifies channel_credentials as
+        :term:`grpc.insecure_channel_credentials()`. This option is mutually
+        exclusive with the `channel_credentials` option.
       compression: An optional value indicating the compression method to be
         used over the lifetime of the channel, e.g. grpc.Compression.Gzip.
       wait_for_ready: An optional flag indicating whether the RPC should fail
         immediately if the connection is not ready at the time the RPC is
         invoked, or if it should wait until the connection to the server
         becomes ready. When using this option, the user will likely also want
-        to set a timeout. Defaults to False.
+        to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised.
+        after which an exception will be raised. If timeout is unspecified,
+        defaults to a timeout controlled by the
+        GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS environment variable. If that is
+        unset, defaults to 60 seconds. Supply a value of None to indicate that
+        no timeout should be enforced.
       metadata: Optional metadata to send to the server.
 
     Returns:
       The response to the RPC.
     """
     channel = ChannelCache.get().get_channel(target, options,
-                                             channel_credentials, compression)
+                                             channel_credentials, insecure,
+                                             compression)
     multicallable = channel.stream_unary(method, request_serializer,
-                                         request_deserializer)
+                                         response_deserializer)
+    wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,
@@ -386,13 +419,14 @@ def stream_stream(
         target: str,
         method: str,
         request_serializer: Optional[Callable[[Any], bytes]] = None,
-        request_deserializer: Optional[Callable[[bytes], Any]] = None,
+        response_deserializer: Optional[Callable[[bytes], Any]] = None,
         options: Sequence[Tuple[AnyStr, AnyStr]] = (),
         channel_credentials: Optional[grpc.ChannelCredentials] = None,
+        insecure: bool = False,
         call_credentials: Optional[grpc.CallCredentials] = None,
         compression: Optional[grpc.Compression] = None,
         wait_for_ready: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
 ) -> Iterator[ResponseType]:
     """Invokes a stream-stream RPC without an explicitly specified channel.
@@ -414,35 +448,44 @@ def stream_stream(
       request_iterator: An iterator that yields request values for the RPC.
       target: The server address.
       method: The name of the RPC method.
-      request_serializer: Optional behaviour for serializing the request
+      request_serializer: Optional :term:`serializer` for serializing the request
         message. Request goes unserialized in case None is passed.
-      response_deserializer: Optional behaviour for deserializing the response
+      response_deserializer: Optional :term:`deserializer` for deserializing the response
         message. Response goes undeserialized in case None is passed.
-      options: An optional list of key-value pairs (channel args in gRPC Core
+      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC Core
         runtime) to configure the channel.
       channel_credentials: A credential applied to the whole channel, e.g. the
         return value of grpc.ssl_channel_credentials().
       call_credentials: A call credential applied to each call individually,
         e.g. the output of grpc.metadata_call_credentials() or
         grpc.access_token_call_credentials().
+      insecure: If True, specifies channel_credentials as
+        :term:`grpc.insecure_channel_credentials()`. This option is mutually
+        exclusive with the `channel_credentials` option.
       compression: An optional value indicating the compression method to be
         used over the lifetime of the channel, e.g. grpc.Compression.Gzip.
       wait_for_ready: An optional flag indicating whether the RPC should fail
         immediately if the connection is not ready at the time the RPC is
         invoked, or if it should wait until the connection to the server
         becomes ready. When using this option, the user will likely also want
-        to set a timeout. Defaults to False.
+        to set a timeout. Defaults to True.
       timeout: An optional duration of time in seconds to allow for the RPC,
-        after which an exception will be raised.
+        after which an exception will be raised. If timeout is unspecified,
+        defaults to a timeout controlled by the
+        GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS environment variable. If that is
+        unset, defaults to 60 seconds. Supply a value of None to indicate that
+        no timeout should be enforced.
       metadata: Optional metadata to send to the server.
 
     Returns:
       An iterator of responses.
     """
     channel = ChannelCache.get().get_channel(target, options,
-                                             channel_credentials, compression)
+                                             channel_credentials, insecure,
+                                             compression)
     multicallable = channel.stream_stream(method, request_serializer,
-                                          request_deserializer)
+                                          response_deserializer)
+    wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(request_iterator,
                          metadata=metadata,
                          wait_for_ready=wait_for_ready,

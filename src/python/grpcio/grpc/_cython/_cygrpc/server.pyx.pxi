@@ -148,8 +148,9 @@ cdef class Server:
         # much but repeatedly release the GIL and wait
         while not self.is_shutdown:
           time.sleep(0)
-      grpc_server_destroy(self.c_server)
-      self.c_server = NULL
+      with nogil:
+        grpc_server_destroy(self.c_server)
+        self.c_server = NULL
 
   def __dealloc__(self):
     if self.c_server == NULL:

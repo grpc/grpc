@@ -25,23 +25,6 @@
 #include "opencensus/stats/internal/set_aggregation_window.h"
 #include "opencensus/stats/stats.h"
 
-namespace grpc_impl {
-
-void RegisterOpenCensusViewsForExport() {
-  grpc::ClientSentMessagesPerRpcCumulative().RegisterForExport();
-  grpc::ClientSentBytesPerRpcCumulative().RegisterForExport();
-  grpc::ClientReceivedMessagesPerRpcCumulative().RegisterForExport();
-  grpc::ClientReceivedBytesPerRpcCumulative().RegisterForExport();
-  grpc::ClientRoundtripLatencyCumulative().RegisterForExport();
-  grpc::ClientServerLatencyCumulative().RegisterForExport();
-
-  grpc::ServerSentMessagesPerRpcCumulative().RegisterForExport();
-  grpc::ServerSentBytesPerRpcCumulative().RegisterForExport();
-  grpc::ServerReceivedMessagesPerRpcCumulative().RegisterForExport();
-  grpc::ServerReceivedBytesPerRpcCumulative().RegisterForExport();
-  grpc::ServerServerLatencyCumulative().RegisterForExport();
-}
-}  // namespace grpc_impl
 namespace grpc {
 
 using ::opencensus::stats::Aggregation;

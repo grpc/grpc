@@ -4,8 +4,10 @@
 
 namespace Grpc\Testing;
 
+use UnexpectedValueException;
+
 /**
- * Protobuf enum <code>Grpc\Testing\ClientType</code>
+ * Protobuf type <code>grpc.testing.ClientType</code>
  */
 class ClientType
 {
@@ -26,5 +28,36 @@ class ClientType
      * Generated from protobuf enum <code>OTHER_CLIENT = 2;</code>
      */
     const OTHER_CLIENT = 2;
+    /**
+     * Generated from protobuf enum <code>CALLBACK_CLIENT = 3;</code>
+     */
+    const CALLBACK_CLIENT = 3;
+
+    private static $valueToName = [
+        self::SYNC_CLIENT => 'SYNC_CLIENT',
+        self::ASYNC_CLIENT => 'ASYNC_CLIENT',
+        self::OTHER_CLIENT => 'OTHER_CLIENT',
+        self::CALLBACK_CLIENT => 'CALLBACK_CLIENT',
+    ];
+
+    public static function name($value)
+    {
+        if (!isset(self::$valueToName[$value])) {
+            throw new UnexpectedValueException(sprintf(
+                    'Enum %s has no name defined for value %s', __CLASS__, $value));
+        }
+        return self::$valueToName[$value];
+    }
+
+
+    public static function value($name)
+    {
+        $const = __CLASS__ . '::' . strtoupper($name);
+        if (!defined($const)) {
+            throw new UnexpectedValueException(sprintf(
+                    'Enum %s has no value defined for name %s', __CLASS__, $name));
+        }
+        return constant($const);
+    }
 }
 

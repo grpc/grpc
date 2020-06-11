@@ -32,12 +32,10 @@
 namespace grpc {
 
 void RegisterOpenCensusPlugin() {
-  RegisterChannelFilter<grpc::CensusChannelData,
-                              grpc::CensusClientCallData>(
+  RegisterChannelFilter<CensusChannelData, CensusClientCallData>(
       "opencensus_client", GRPC_CLIENT_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
-  RegisterChannelFilter<grpc::CensusChannelData,
-                              grpc::CensusServerCallData>(
+  RegisterChannelFilter<CensusChannelData, CensusServerCallData>(
       "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
 
@@ -62,8 +60,6 @@ void RegisterOpenCensusPlugin() {
   return reinterpret_cast<const grpc::CensusContext*>(context->census_context())
       ->Span();
 }
-
-
 
 // These measure definitions should be kept in sync across opencensus
 // implementations--see

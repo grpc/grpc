@@ -157,8 +157,8 @@ namespace Grpc.Tools
                 {
                     fileStem = Path.Combine(outdir, relative, filename);
                 }
-                outputs[2] = fileStem + "_grpc.pb.cc";
-                outputs[3] = fileStem + "_grpc.pb.h";
+                outputs[2] = fileStem + ".grpc.pb.cc";
+                outputs[3] = fileStem + ".grpc.pb.h";
             }
             return outputs;
         }

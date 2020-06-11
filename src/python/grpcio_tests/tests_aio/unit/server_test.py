@@ -38,6 +38,8 @@ _STREAM_STREAM_READER_WRITER = '/test/StreamStreamReaderWriter'
 _STREAM_STREAM_EVILLY_MIXED = '/test/StreamStreamEvillyMixed'
 _UNIMPLEMENTED_METHOD = '/test/UnimplementedMethod'
 _ERROR_IN_STREAM_STREAM = '/test/ErrorInStreamStream'
+_ERROR_WITHOUT_RAISE_IN_UNARY_UNARY = '/test/ErrorWithoutRaiseInUnaryUnary'
+_ERROR_WITHOUT_RAISE_IN_STREAM_STREAM = '/test/ErrorWithoutRaiseInStreamStream'
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
@@ -86,6 +88,12 @@ class _GenericHandler(grpc.GenericRpcHandler):
             _ERROR_IN_STREAM_STREAM:
                 grpc.stream_stream_rpc_method_handler(
                     self._error_in_stream_stream),
+            _ERROR_WITHOUT_RAISE_IN_UNARY_UNARY:
+                grpc.unary_unary_rpc_method_handler(
+                    self._error_without_raise_in_unary_unary),
+            _ERROR_WITHOUT_RAISE_IN_STREAM_STREAM:
+                grpc.stream_stream_rpc_method_handler(
+                    self._error_without_raise_in_stream_stream),
         }
 
     @staticmethod
@@ -167,6 +175,16 @@ class _GenericHandler(grpc.GenericRpcHandler):
             assert _REQUEST == request
             raise RuntimeError('A testing RuntimeError!')
         yield _RESPONSE
+
+    async def _error_without_raise_in_unary_unary(self, request, context):
+        assert _REQUEST == request
+        context.set_code(grpc.StatusCode.INTERNAL)
+
+    async def _error_without_raise_in_stream_stream(self, request_iterator,
+                                                    context):
+        async for request in request_iterator:
+            assert _REQUEST == request
+        context.set_code(grpc.StatusCode.INTERNAL)
 
     def service(self, handler_details):
         self._called.set_result(None)
@@ -348,11 +366,10 @@ class TestServer(AioTestBase):
 
         await self._server.stop(test_constants.SHORT_TIMEOUT)
 
-        with self.assertRaises(grpc.RpcError) as exception_context:
+        with self.assertRaises(aio.AioRpcError) as exception_context:
             await call
         self.assertEqual(grpc.StatusCode.UNAVAILABLE,
                          exception_context.exception.code())
-        self.assertIn('GOAWAY', exception_context.exception.details())
 
     async def test_concurrent_graceful_shutdown(self):
         call = self._channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST)
@@ -384,21 +401,18 @@ class TestServer(AioTestBase):
             self._server.stop(test_constants.LONG_TIMEOUT),
         )
 
-        with self.assertRaises(grpc.RpcError) as exception_context:
+        with self.assertRaises(aio.AioRpcError) as exception_context:
             await call
         self.assertEqual(grpc.StatusCode.UNAVAILABLE,
                          exception_context.exception.code())
-        self.assertIn('GOAWAY', exception_context.exception.details())
 
-    @unittest.skip('https://github.com/grpc/grpc/issues/20818')
     async def test_shutdown_before_call(self):
-        server_target, server, _ = _start_test_server()
-        await server.stop(None)
+        await self._server.stop(None)
 
         # Ensures the server is cleaned up at this point.
         # Some proper exception should be raised.
-        async with aio.insecure_channel('localhost:%d' % port) as channel:
-            await channel.unary_unary(_SIMPLE_UNARY_UNARY)(_REQUEST)
+        with self.assertRaises(aio.AioRpcError):
+            await self._channel.unary_unary(_SIMPLE_UNARY_UNARY)(_REQUEST)
 
     async def test_unimplemented(self):
         call = self._channel.unary_unary(_UNIMPLEMENTED_METHOD)
@@ -429,6 +443,26 @@ class TestServer(AioTestBase):
 
         # Don't segfault here
         self.assertEqual(grpc.StatusCode.UNKNOWN, await call.code())
+
+    async def test_error_without_raise_in_unary_unary(self):
+        call = self._channel.unary_unary(_ERROR_WITHOUT_RAISE_IN_UNARY_UNARY)(
+            _REQUEST)
+
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call
+
+        rpc_error = exception_context.exception
+        self.assertEqual(grpc.StatusCode.INTERNAL, rpc_error.code())
+
+    async def test_error_without_raise_in_stream_stream(self):
+        call = self._channel.stream_stream(
+            _ERROR_WITHOUT_RAISE_IN_STREAM_STREAM)()
+
+        for _ in range(_NUM_STREAM_REQUESTS):
+            await call.write(_REQUEST)
+        await call.done_writing()
+
+        self.assertEqual(grpc.StatusCode.INTERNAL, await call.code())
 
 
 if __name__ == '__main__':

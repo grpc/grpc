@@ -90,6 +90,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "bm_arena",
+    size = "large",
     srcs = ["bm_arena.cc"],
     tags = [
         "no_mac",
@@ -205,7 +206,6 @@ grpc_cc_test(
     srcs = [
         "bm_fullstack_streaming_pump.cc",
     ],
-    flaky = True,  # TODO(b/150422385)
     tags = [
         "no_mac",  # to emulate "excluded_poll_engines: poll"
         "no_windows",
@@ -249,7 +249,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_metadata",
     srcs = ["bm_metadata.cc"],
-    flaky = True,  # TODO(b/149998903)
     tags = [
         "no_mac",
         "no_windows",

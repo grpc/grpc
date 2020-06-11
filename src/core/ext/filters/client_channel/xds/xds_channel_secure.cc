@@ -22,6 +22,8 @@
 
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -39,8 +41,8 @@
 namespace grpc_core {
 
 grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args) {
-  InlinedVector<const char*, 1> args_to_remove;
-  InlinedVector<grpc_arg, 2> args_to_add;
+  absl::InlinedVector<const char*, 1> args_to_remove;
+  absl::InlinedVector<grpc_arg, 2> args_to_add;
   // Substitute the channel credentials with a version without call
   // credentials: the load balancer is not necessarily trusted to handle
   // bearer token credentials.

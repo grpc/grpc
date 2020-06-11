@@ -162,27 +162,17 @@ void destroy_grpc_channels() {
   PHP_GRPC_HASH_FOREACH_END()
 }
 
-void restart_channels() {
-  zval *data;
-  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
-    php_grpc_zend_resource *rsrc  =
-                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
-    if (rsrc == NULL) {
-      break;
-    }
-    channel_persistent_le_t* le = rsrc->ptr;
-
-    wrapped_grpc_channel wrapped_channel;
-    wrapped_channel.wrapper = le->channel;
-    grpc_channel_wrapper *channel = wrapped_channel.wrapper;
-    create_new_channel(&wrapped_channel, channel->target, channel->args,
-                       channel->creds);
-    gpr_mu_unlock(&channel->mu);
-  PHP_GRPC_HASH_FOREACH_END()
-}
-
 void prefork() {
   acquire_persistent_locks();
+}
+
+// Clean all channels in the persistent list
+// Called at post fork
+void php_grpc_clean_persistent_list(TSRMLS_D) {
+    zend_hash_clean(&grpc_persistent_list);
+    zend_hash_destroy(&grpc_persistent_list);
+    zend_hash_clean(&grpc_target_upper_bound_map);
+    zend_hash_destroy(&grpc_target_upper_bound_map);
 }
 
 void postfork_child() {
@@ -190,6 +180,11 @@ void postfork_child() {
 
   // loop through persistent list and destroy all underlying grpc_channel objs
   destroy_grpc_channels();
+
+  release_persistent_locks();
+  
+  // clean all channels in the persistent list
+  php_grpc_clean_persistent_list(TSRMLS_C);
 
   // clear completion queue
   grpc_php_shutdown_completion_queue(TSRMLS_C);
@@ -205,10 +200,6 @@ void postfork_child() {
   // restart grpc_core
   grpc_init();
   grpc_php_init_completion_queue(TSRMLS_C);
-
-  // re-create grpc_channel and point wrapped to it
-  // unlock wrapped grpc channel mutex
-  restart_channels();
 }
 
 void postfork_parent() {

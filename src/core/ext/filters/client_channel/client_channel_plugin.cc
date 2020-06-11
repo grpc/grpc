@@ -35,6 +35,7 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
+#include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
 
 static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
@@ -43,7 +44,7 @@ static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
 }
 
 void grpc_client_channel_init(void) {
-  grpc_core::ServiceConfig::Init();
+  grpc_core::ServiceConfigParser::Init();
   grpc_core::internal::ClientChannelServiceConfigParser::Register();
   grpc_core::LoadBalancingPolicyRegistry::Builder::InitRegistry();
   grpc_core::ResolverRegistry::Builder::InitRegistry();
@@ -65,5 +66,5 @@ void grpc_client_channel_shutdown(void) {
   grpc_core::internal::ServerRetryThrottleMap::Shutdown();
   grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
   grpc_core::LoadBalancingPolicyRegistry::Builder::ShutdownRegistry();
-  grpc_core::ServiceConfig::Shutdown();
+  grpc_core::ServiceConfigParser::Shutdown();
 }

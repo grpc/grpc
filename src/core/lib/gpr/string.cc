@@ -50,12 +50,11 @@ char* gpr_strdup(const char* src) {
   return dst;
 }
 
-typedef struct {
+struct dump_out {
   size_t capacity;
   size_t length;
   char* data;
-} dump_out;
-
+};
 char* gpr_format_timespec(gpr_timespec tm) {
   char time_buffer[35];
   char ns_buffer[11];  // '.' + 9 digits of precision
@@ -264,29 +263,6 @@ char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
     *final_length = out_length;
   }
   return out;
-}
-
-void gpr_strvec_init(gpr_strvec* sv) { memset(sv, 0, sizeof(*sv)); }
-
-void gpr_strvec_destroy(gpr_strvec* sv) {
-  size_t i;
-  for (i = 0; i < sv->count; i++) {
-    gpr_free(sv->strs[i]);
-  }
-  gpr_free(sv->strs);
-}
-
-void gpr_strvec_add(gpr_strvec* sv, char* str) {
-  if (sv->count == sv->capacity) {
-    sv->capacity = GPR_MAX(sv->capacity + 8, sv->capacity * 2);
-    sv->strs = static_cast<char**>(
-        gpr_realloc(sv->strs, sizeof(char*) * sv->capacity));
-  }
-  sv->strs[sv->count++] = str;
-}
-
-char* gpr_strvec_flatten(gpr_strvec* sv, size_t* final_length) {
-  return gpr_strjoin((const char**)sv->strs, sv->count, final_length);
 }
 
 int gpr_strincmp(const char* a, const char* b, size_t n) {

@@ -49,6 +49,7 @@ some configuration as environment variables that can be set.
   - cares_resolver - traces operations of the c-ares based DNS resolver
   - cares_address_sorting - traces operations of the c-ares based DNS
     resolver's resolved address sorter
+  - cds_lb - traces cds LB policy
   - channel - traces operations on the C core channel stack
   - client_channel_call - traces client channel call batch activity
   - client_channel_routing - traces client channel call routing, including
@@ -56,6 +57,7 @@ some configuration as environment variables that can be set.
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - cronet - traces state in the cronet transport engine
+  - eds_lb - traces eds LB policy
   - executor - traces grpc's internal thread pool ('the executor')
   - glb - traces the grpclb load balancer
   - handshaker - traces handshaking state
@@ -64,24 +66,31 @@ some configuration as environment variables that can be set.
   - http2_stream_state - traces all http2 stream state mutations.
   - http1 - traces HTTP/1.x operations performed by gRPC
   - inproc - traces the in-process transport
+  - http_keepalive - traces gRPC keepalive pings
   - flowctl - traces http2 flow control
+  - lrs_lb - traces lrs LB policy
   - op_failure - traces error information when failure is pushed onto a
     completion queue
   - pick_first - traces the pick first load balancing policy
   - plugin_credentials - traces plugin credentials
   - pollable_refcount - traces reference counting of 'pollable' objects (only 
     in DEBUG)
+  - priority_lb - traces priority LB policy
   - resource_quota - trace resource quota objects internals
   - round_robin - traces the round_robin load balancing policy
   - queue_pluck
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
   - subchannel - traces the connectivity state of subchannel
+  - subchannel_pool - traces subchannel pool
   - timer - timers (alarms) in the grpc internals
   - timer_check - more detailed trace of timer logic in grpc internals
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
   - tsi - traces tsi transport security
+  - weighted_target_lb - traces weighted_target LB policy
+  - xds_client - traces xds client
+  - xds_resolver - traces xds resolver
 
   The following tracers will only run in binaries built in DEBUG mode. This is
   accomplished by invoking `CONFIG=dbg make <target>`

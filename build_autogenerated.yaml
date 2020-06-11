@@ -49,6 +49,7 @@ libs:
   - test/core/end2end/tests/cancel_in_a_vacuum.cc
   - test/core/end2end/tests/cancel_with_status.cc
   - test/core/end2end/tests/channelz.cc
+  - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
@@ -157,6 +158,7 @@ libs:
   - test/core/end2end/tests/cancel_in_a_vacuum.cc
   - test/core/end2end/tests/cancel_with_status.cc
   - test/core/end2end/tests/channelz.cc
+  - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
@@ -300,7 +302,6 @@ libs:
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
-  - src/core/lib/gprpp/string_view.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
@@ -382,9 +383,11 @@ libs:
   - src/core/ext/filters/client_channel/http_connect_handshaker.h
   - src/core/ext/filters/client_channel/http_proxy.h
   - src/core/ext/filters/client_channel/lb_policy.h
+  - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -408,6 +411,8 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/service_config.h
+  - src/core/ext/filters/client_channel/service_config_call_data.h
+  - src/core/ext/filters/client_channel/service_config_parser.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
@@ -421,6 +426,7 @@ libs:
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
   - src/core/ext/filters/http/message_compress/message_compress_filter.h
+  - src/core/ext/filters/http/message_compress/message_decompress_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/max_age/max_age_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
@@ -455,18 +461,24 @@ libs:
   - src/core/ext/upb-generated/envoy/annotations/deprecation.upb.h
   - src/core/ext/upb-generated/envoy/annotations/resource.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cds.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/eds.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.h
@@ -487,6 +499,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.h
   - src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h
   - src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.h
+  - src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.h
   - src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h
   - src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h
   - src/core/ext/upb-generated/envoy/type/http.upb.h
@@ -515,6 +528,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
+  - src/core/ext/upb-generated/udpa/annotations/status.upb.h
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
   - src/core/lib/avl/avl.h
@@ -543,8 +557,6 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/inlined_vector.h
-  - src/core/lib/gprpp/optional.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -564,6 +576,7 @@ libs:
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/error_cfstream.h
   - src/core/lib/iomgr/error_internal.h
+  - src/core/lib/iomgr/ev_apple.h
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_epollex_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
@@ -716,7 +729,6 @@ libs:
   - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
   - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
   - src/core/tsi/fake_transport_security.h
-  - src/core/tsi/grpc_shadow_boringssl.h
   - src/core/tsi/local_transport_security.h
   - src/core/tsi/ssl/session_cache/ssl_session.h
   - src/core/tsi/ssl/session_cache/ssl_session_cache.h
@@ -739,16 +751,22 @@ libs:
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy.cc
+  - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
+  - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
+  - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/parse_address.cc
@@ -775,6 +793,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config.cc
+  - src/core/ext/filters/client_channel/service_config_parser.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_channel/xds/xds_api.cc
@@ -788,6 +807,7 @@ libs:
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
   - src/core/ext/filters/http/message_compress/message_compress_filter.cc
+  - src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/max_age/max_age_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
@@ -831,18 +851,24 @@ libs:
   - src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
   - src/core/ext/upb-generated/envoy/annotations/resource.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c
@@ -863,6 +889,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c
   - src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c
   - src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c
+  - src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c
   - src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
   - src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
   - src/core/ext/upb-generated/envoy/type/http.upb.c
@@ -891,6 +918,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
+  - src/core/ext/upb-generated/udpa/annotations/status.upb.c
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
   - src/core/lib/avl/avl.cc
@@ -931,6 +959,7 @@ libs:
   - src/core/lib/iomgr/endpoint_pair_windows.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/error_cfstream.cc
+  - src/core/lib/iomgr/ev_apple.cc
   - src/core/lib/iomgr/ev_epoll1_linux.cc
   - src/core/lib/iomgr/ev_epollex_linux.cc
   - src/core/lib/iomgr/ev_poll_posix.cc
@@ -1130,6 +1159,7 @@ libs:
   - address_sorting
   - upb
   - absl/types:optional
+  - absl/strings:strings
   - absl/container:inlined_vector
   baselib: true
   dll: true
@@ -1276,9 +1306,11 @@ libs:
   - src/core/ext/filters/client_channel/http_connect_handshaker.h
   - src/core/ext/filters/client_channel/http_proxy.h
   - src/core/ext/filters/client_channel/lb_policy.h
+  - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -1302,6 +1334,8 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/service_config.h
+  - src/core/ext/filters/client_channel/service_config_call_data.h
+  - src/core/ext/filters/client_channel/service_config_parser.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
@@ -1315,6 +1349,7 @@ libs:
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
   - src/core/ext/filters/http/message_compress/message_compress_filter.h
+  - src/core/ext/filters/http/message_compress/message_decompress_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/max_age/max_age_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
@@ -1349,18 +1384,24 @@ libs:
   - src/core/ext/upb-generated/envoy/annotations/deprecation.upb.h
   - src/core/ext/upb-generated/envoy/annotations/resource.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cds.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/eds.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.h
@@ -1381,6 +1422,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.h
   - src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h
   - src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.h
+  - src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.h
   - src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h
   - src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h
   - src/core/ext/upb-generated/envoy/type/http.upb.h
@@ -1406,6 +1448,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
+  - src/core/ext/upb-generated/udpa/annotations/status.upb.h
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
   - src/core/lib/avl/avl.h
@@ -1434,8 +1477,6 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/inlined_vector.h
-  - src/core/lib/gprpp/optional.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -1455,6 +1496,7 @@ libs:
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/error_cfstream.h
   - src/core/lib/iomgr/error_internal.h
+  - src/core/lib/iomgr/ev_apple.h
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_epollex_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
@@ -1568,16 +1610,22 @@ libs:
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy.cc
+  - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
+  - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
+  - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/parse_address.cc
@@ -1604,6 +1652,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config.cc
+  - src/core/ext/filters/client_channel/service_config_parser.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_channel/xds/xds_api.cc
@@ -1617,6 +1666,7 @@ libs:
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
   - src/core/ext/filters/http/message_compress/message_compress_filter.cc
+  - src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/max_age/max_age_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
@@ -1658,18 +1708,24 @@ libs:
   - src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
   - src/core/ext/upb-generated/envoy/annotations/resource.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c
@@ -1690,6 +1746,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c
   - src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c
   - src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c
+  - src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c
   - src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
   - src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
   - src/core/ext/upb-generated/envoy/type/http.upb.c
@@ -1715,6 +1772,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
+  - src/core/ext/upb-generated/udpa/annotations/status.upb.c
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
   - src/core/lib/avl/avl.cc
@@ -1754,6 +1812,7 @@ libs:
   - src/core/lib/iomgr/endpoint_pair_windows.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/error_cfstream.cc
+  - src/core/lib/iomgr/ev_apple.cc
   - src/core/lib/iomgr/ev_epoll1_linux.cc
   - src/core/lib/iomgr/ev_epollex_linux.cc
   - src/core/lib/iomgr/ev_poll_posix.cc
@@ -1884,6 +1943,7 @@ libs:
   - address_sorting
   - upb
   - absl/types:optional
+  - absl/strings:strings
   - absl/container:inlined_vector
   baselib: true
   dll: true
@@ -3043,7 +3103,7 @@ targets:
   - gpr
   - address_sorting
   - upb
-- name: client_ssl
+- name: client_ssl_test
   build: test
   language: c
   headers: []
@@ -3090,6 +3150,7 @@ targets:
   - mac
 - name: completion_queue_threading_test
   build: test
+  run: false
   language: c
   headers: []
   src:
@@ -3115,6 +3176,7 @@ targets:
   uses_polling: false
 - name: concurrent_connectivity_test
   build: test
+  run: false
   language: c
   headers: []
   src:
@@ -3133,25 +3195,6 @@ targets:
   src:
   - test/core/end2end/connection_refused_test.cc
   - test/core/end2end/cq_verifier.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
-- name: control_plane_credentials_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/security/control_plane_credentials_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3357,28 +3400,7 @@ targets:
   - linux
   - posix
   - mac
-- name: fling
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/fling/fling_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: fling_stream
+- name: fling_stream_test
   build: test
   language: c
   headers:
@@ -3389,6 +3411,27 @@ targets:
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
   - test/core/fling/fling_stream_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: fling_test
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/fling/fling_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3510,7 +3553,7 @@ targets:
   - gpr
   - address_sorting
   - upb
-- name: handshake_server_with_readahead_handshaker
+- name: handshake_server_with_readahead_handshaker_test
   build: test
   language: c
   headers:
@@ -3528,7 +3571,7 @@ targets:
   - linux
   - posix
   - mac
-- name: handshake_verify_peer_options
+- name: handshake_verify_peer_options_test
   build: test
   language: c
   headers: []
@@ -3883,13 +3926,8 @@ targets:
 - name: num_external_connectivity_watchers_test
   build: test
   language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
+  headers: []
   src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
   - test/core/surface/num_external_connectivity_watchers_test.cc
   deps:
   - grpc_test_util
@@ -4085,14 +4123,10 @@ targets:
   - upb
 - name: sequential_connectivity_test
   build: test
+  run: false
   language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
+  headers: []
   src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
   - test/core/surface/sequential_connectivity_test.cc
   deps:
   - grpc_test_util
@@ -4112,7 +4146,7 @@ targets:
   - gpr
   - address_sorting
   - upb
-- name: server_ssl
+- name: server_ssl_test
   build: test
   language: c
   headers:
@@ -5315,6 +5349,7 @@ targets:
 - name: cancel_ares_query_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -5510,6 +5545,7 @@ targets:
 - name: client_channel_stress_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
@@ -5576,6 +5612,7 @@ targets:
 - name: client_lb_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/util/test_lb_policies.h
@@ -5730,6 +5767,7 @@ targets:
 - name: end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/interceptors_util.h
@@ -5985,13 +6023,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
+  headers: []
   src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
   - test/core/security/grpc_tls_credentials_options_test.cc
   deps:
   - grpc_test_util
@@ -6054,6 +6087,7 @@ targets:
 - name: grpclb_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
@@ -6528,19 +6562,6 @@ targets:
   - benchmark
   benchmark: true
   defaults: benchmark
-- name: optional_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gprpp/optional_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
 - name: orphanable_test
   gtest: true
   build: test
@@ -7058,6 +7079,7 @@ targets:
 - name: settings_timeout_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -7135,13 +7157,8 @@ targets:
 - name: ssl_server_fuzzer
   build: fuzzer
   language: c++
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
+  headers: []
   src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
   - test/core/security/ssl_server_fuzzer.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
@@ -7247,19 +7264,6 @@ targets:
   - address_sorting
   - upb
   uses_polling: false
-- name: string_view_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gprpp/string_view_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
 - name: test_cpp_client_credentials_test
   gtest: true
   build: test
@@ -7382,16 +7386,29 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
+  headers: []
   src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
   - test/core/security/tls_security_connector_test.cc
   deps:
   - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: too_many_pings_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/transport/chttp2/too_many_pings_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc++_test_config
   - grpc
   - gpr
   - address_sorting
@@ -7538,6 +7555,7 @@ targets:
 - name: xds_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
@@ -7565,4 +7583,40 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_interop_client
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_client.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc++_test_config
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: xds_interop_server
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/xds_interop_server.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc++_test_config
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 tests: []

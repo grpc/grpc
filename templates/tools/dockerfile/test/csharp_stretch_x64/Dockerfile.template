@@ -17,8 +17,8 @@
   FROM debian:stretch
   
   <%include file="../../apt_get_basic.include"/>
-  <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../python_deps.include"/>
+  <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../csharp_deps.include"/>
   <%include file="../../csharp_dotnetcli_deps.include"/>
   <%include file="../../run_tests_addons.include"/>

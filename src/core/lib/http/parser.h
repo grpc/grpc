@@ -79,7 +79,7 @@ typedef struct grpc_http_response {
   char* body = nullptr;
 } grpc_http_response;
 
-typedef struct {
+struct grpc_http_parser {
   grpc_http_parser_state state;
   grpc_http_type type;
 
@@ -94,8 +94,7 @@ typedef struct {
   uint8_t cur_line[GRPC_HTTP_PARSER_MAX_HEADER_LENGTH];
   size_t cur_line_length;
   size_t cur_line_end_length;
-} grpc_http_parser;
-
+};
 void grpc_http_parser_init(grpc_http_parser* parser, grpc_http_type type,
                            void* request_or_response);
 void grpc_http_parser_destroy(grpc_http_parser* parser);
