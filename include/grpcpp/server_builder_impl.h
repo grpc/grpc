@@ -228,7 +228,7 @@ class ServerBuilder {
       grpc_compression_algorithm algorithm);
 
   /// Set the attached buffer pool for this server
-  ServerBuilder& SetResourceQuota(const ResourceQuota& resource_quota);
+  ServerBuilder& SetResourceQuota(const grpc::ResourceQuota& resource_quota);
 
   ServerBuilder& SetOption(std::unique_ptr<grpc::ServerBuilderOption> option);
 

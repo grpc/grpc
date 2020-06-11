@@ -16,15 +16,15 @@
  *
  */
 
-#ifndef GRPCPP_RESOURCE_QUOTA_IMPL_H
-#define GRPCPP_RESOURCE_QUOTA_IMPL_H
+#ifndef GRPCPP_RESOURCE_QUOTA_H
+#define GRPCPP_RESOURCE_QUOTA_H
 
 struct grpc_resource_quota;
 
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 
-namespace grpc_impl {
+namespace grpc {
 
 /// ResourceQuota represents a bound on memory and thread usage by the gRPC
 /// library. A ResourceQuota can be attached to a server (via \a ServerBuilder),
@@ -63,6 +63,6 @@ class ResourceQuota final : private ::grpc::GrpcLibraryCodegen {
   grpc_resource_quota* const impl_;
 };
 
-}  // namespace grpc_impl
+}  // namespace grpc
 
-#endif  // GRPCPP_RESOURCE_QUOTA_IMPL_H
+#endif  // GRPCPP_RESOURCE_QUOTA_H
