@@ -106,20 +106,24 @@ class XdsRoutingLb : public LoadBalancingPolicy {
   class RoutePicker : public SubchannelPicker {
    public:
     struct Route {
-      XdsApi::RdsUpdate::RdsRoute::Matchers matchers;
+      const XdsApi::RdsUpdate::RdsRoute::Matchers* matchers;
       RefCountedPtr<ChildPickerWrapper> picker;
     };
 
     // Maintains an ordered xds route table as provided by RDS response.
     using RouteTable = std::vector<Route>;
 
-    explicit RoutePicker(RouteTable route_table)
-        : route_table_(std::move(route_table)) {}
+    explicit RoutePicker(RouteTable route_table,
+                         RefCountedPtr<XdsRoutingLbConfig> config)
+        : route_table_(std::move(route_table)), config_(config) {}
 
     PickResult Pick(PickArgs args) override;
 
    private:
     RouteTable route_table_;
+    // Take a reference to config so that we can use
+    // XdsApi::RdsUpdate::RdsRoute::Matchers from it.
+    RefCountedPtr<XdsRoutingLbConfig> config_;
   };
 
   // Each XdsRoutingChild holds a ref to its parent XdsRoutingLb.
@@ -223,17 +227,17 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
     }
   }
   for (const Route& route : route_table_) {
-    if ((route.matchers.path_matcher.path_type ==
+    if ((route.matchers->path_matcher.path_type ==
              XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::
                  PathMatcherType::PREFIX &&
-         path.find(route.matchers.path_matcher.path_matcher) !=
+         path.find(route.matchers->path_matcher.path_matcher) !=
              std::string::npos) ||
-        (route.matchers.path_matcher.path_type ==
+        (route.matchers->path_matcher.path_type ==
              XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::
                  PathMatcherType::PATH &&
-         path == route.matchers.path_matcher.path_matcher) ||
-        (route.matchers.path_matcher.path_matcher.empty() &&
-         route.matchers.path_matcher.path_matcher.empty())) {
+         path == route.matchers->path_matcher.path_matcher) ||
+        (route.matchers->path_matcher.path_matcher.empty() &&
+         route.matchers->path_matcher.path_matcher.empty())) {
       return route.picker->Pick(args);
     }
   }
@@ -360,13 +364,7 @@ void XdsRoutingLb::UpdateStateLocked() {
       RoutePicker::RouteTable route_table;
       for (const auto& config_route : config_->route_table()) {
         RoutePicker::Route route;
-        route.matchers.path_matcher.path_type =
-            config_route.matchers.path_matcher.path_type;
-        route.matchers.path_matcher.path_matcher =
-            config_route.matchers.path_matcher.path_matcher;
-        route.matchers.header_matchers = config_route.matchers.header_matchers;
-        route.matchers.fraction_per_million =
-            config_route.matchers.fraction_per_million;
+        route.matchers = &(config_route.matchers);
         route.picker = actions_[config_route.action]->picker_wrapper();
         if (route.picker == nullptr) {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
@@ -381,7 +379,7 @@ void XdsRoutingLb::UpdateStateLocked() {
         }
         route_table.push_back(std::move(route));
       }
-      picker = absl::make_unique<RoutePicker>(std::move(route_table));
+      picker = absl::make_unique<RoutePicker>(std::move(route_table), config_);
       break;
     }
     case GRPC_CHANNEL_CONNECTING:
