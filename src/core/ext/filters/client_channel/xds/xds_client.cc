@@ -2077,58 +2077,37 @@ std::string CreateServiceConfigRoute(const std::string& action_name,
     headers_service_config.push_back(absl::StrJoin(headers, ","));
     headers_service_config.push_back("           ],\n");
   }
-  const uint32_t fraction_numerator =
-      route.matchers.fraction_per_million.has_value()
-          ? route.matchers.fraction_per_million.value()
-          : 0;
+  std::string path_match_str;
   switch (route.matchers.path_matcher.path_type) {
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         PREFIX:
-      return absl::StrFormat(
-          "      { \n"
-          "           \"prefix\": \"%s\",\n"
-          "           %s"
-          "           \"fraction_numerator\":%d,\n"
-          "           \"action\": \"%s\"\n"
-          "      }",
-          route.matchers.path_matcher.path_matcher,
-          absl::StrJoin(headers_service_config, ""), fraction_numerator,
-          action_name);
+      path_match_str = absl::StrFormat(
+          "\"prefix\": \"%s\",\n", route.matchers.path_matcher.path_matcher);
+      break;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         PATH:
-      return absl::StrFormat(
-          "      { \n"
-          "           \"path\": \"%s\",\n"
-          "           %s"
-          "           \"fraction_numerator\":%d,\n"
-          "           \"action\": \"%s\"\n"
-          "      }",
-          route.matchers.path_matcher.path_matcher,
-          absl::StrJoin(headers_service_config, ""), fraction_numerator,
-          action_name);
+      path_match_str = absl::StrFormat(
+          "\"path\": \"%s\",\n", route.matchers.path_matcher.path_matcher);
+      break;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         REGEX:
-      return absl::StrFormat(
-          "      { \n"
-          "           \"regex\": \"%s\",\n"
-          "           %s"
-          "           \"fraction_numerator\":%d,\n"
-          "           \"action\": \"%s\"\n"
-          "      }",
-          route.matchers.path_matcher.path_matcher,
-          absl::StrJoin(headers_service_config, ""), fraction_numerator,
-          action_name);
-    default:
-      return absl::StrFormat(
-          "      { \n"
-          "           \"prefix\": \"%s\",\n"
-          "           %s"
-          "           \"fraction_numerator\":%d,\n"
-          "           \"action\": \"%s\"\n"
-          "      }",
-          "", absl::StrJoin(headers_service_config, ""), fraction_numerator,
-          action_name);
+      path_match_str = absl::StrFormat(
+          "\"regex\": \"%s\",\n", route.matchers.path_matcher.path_matcher);
+      break;
   }
+  return absl::StrFormat(
+      "      { \n"
+      "           %s"
+      "           %s"
+      "           %s"
+      "           \"action\": \"%s\"\n"
+      "      }",
+      path_match_str, absl::StrJoin(headers_service_config, ""),
+      route.matchers.fraction_per_million.has_value()
+          ? absl::StrFormat("\"fraction_numerator\":%d,\n",
+                            route.matchers.fraction_per_million.value())
+          : "",
+      action_name);
 }
 
 // Create the service config for one weighted cluster.

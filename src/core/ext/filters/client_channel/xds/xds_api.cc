@@ -925,16 +925,16 @@ grpc_error* RoutePathMatchParse(const envoy_api_v2_route_RouteMatch* match,
   if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
     upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
     // Empty prefix "" is accepted.
+    rds_route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
+        Matchers::PathMatcher::PathMatcherType::PREFIX;
+    rds_route->matchers.path_matcher.path_matcher =
+        UpbStringToStdString(prefix);
     if (prefix.size > 0) {
       // Prefix "/" is accepted.
       if (prefix.data[0] != '/') {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Prefix does not start with a /");  // TODO: ignore
       }
-      rds_route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
-          Matchers::PathMatcher::PathMatcherType::PREFIX;
-      rds_route->matchers.path_matcher.path_matcher =
-          UpbStringToStdString(prefix);
       std::vector<absl::string_view> prefix_elements =
           absl::StrSplit(absl::string_view(prefix.data, prefix.size).substr(1),
                          absl::MaxSplits('/', 2));
@@ -1257,8 +1257,8 @@ grpc_error* RouteConfigParse(
           "case_sensitive if set must be set to true.");
     }
     size_t size;
-    const envoy_api_v2_route_QueryParameterMatcher* const* query_parameters =
-        envoy_api_v2_route_RouteMatch_query_parameters(match, &size);
+    static_cast<void>(
+        envoy_api_v2_route_RouteMatch_query_parameters(match, &size));
     if (size > 0) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "query parameters are never used.");  // TODO: ignore

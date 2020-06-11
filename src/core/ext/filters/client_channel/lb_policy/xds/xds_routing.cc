@@ -950,7 +950,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     }
     // Parse Fraction numerator.
     it = json.object_value().find("fraction_numerator");
-    if (it == json.object_value().end()) {
+    if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::NUMBER) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:fraction_numerator error:must be of type number"));
