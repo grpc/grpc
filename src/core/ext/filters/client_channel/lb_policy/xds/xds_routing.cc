@@ -214,32 +214,66 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 //
 // XdsRoutingLb::RoutePicker
 //
-
-XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
-  absl::string_view path;
+absl::string_view GetMetadataValue(const std::string& key,
+                                   LoadBalancingPolicy::PickArgs args) {
   // TODO(roth): Using const auto& here trigger a warning in a macos or windows
   // build:
   //*(args.initial_metadata) is returning values not references.
   for (const auto p : *(args.initial_metadata)) {
-    if (p.first == ":path") {
-      path = p.second;
-      break;
+    gpr_log(GPR_INFO, "donna see metadata %s and %s",
+            std::string(p.first).c_str(), std::string(p.second).c_str());
+    if (p.first == key) {
+      return p.second;
     }
   }
+  return "";
+}
+
+bool PathMatch(
+    const absl::string_view& path,
+    const XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher& path_matcher) {
+  if (path_matcher.path_matcher.empty()) return true;
+  switch (path_matcher.path_type) {
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        PREFIX:
+      if (path.find(path_matcher.path_matcher) != std::string::npos) {
+        return true;
+      } else {
+        return false;
+      }
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        PATH:
+      if (path == path_matcher.path_matcher) {
+        return true;
+      } else {
+        return false;
+      }
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        REGEX:
+      return false;
+    default:
+      return false;
+  }
+}
+
+bool HeadersMatch(
+    LoadBalancingPolicy::PickArgs args,
+    const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
+        header_matchers) {
+  return true;
+}
+
+XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
   for (const Route& route : route_table_) {
-    if ((route.matchers->path_matcher.path_type ==
-             XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::
-                 PathMatcherType::PREFIX &&
-         path.find(route.matchers->path_matcher.path_matcher) !=
-             std::string::npos) ||
-        (route.matchers->path_matcher.path_type ==
-             XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::
-                 PathMatcherType::PATH &&
-         path == route.matchers->path_matcher.path_matcher) ||
-        (route.matchers->path_matcher.path_matcher.empty() &&
-         route.matchers->path_matcher.path_matcher.empty())) {
-      return route.picker->Pick(args);
-    }
+    // Path matching.
+    absl::string_view path = GetMetadataValue(":path", args);
+    GPR_DEBUG_ASSERT(path != "");
+    if (!PathMatch(path, route.matchers->path_matcher)) continue;
+    // Header Matching.
+    if (!HeadersMatch(args, route.matchers->header_matchers)) continue;
+    // TODO: fraction check
+    // Found a match
+    return route.picker->Pick(args);
   }
   PickResult result;
   result.type = PickResult::PICK_FAILED;
