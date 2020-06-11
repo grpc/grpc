@@ -174,6 +174,14 @@ class ServerContextBase {
   /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
+  /// Return whether this RPC failed before the server could provide its status
+  /// back to the client. This could be because of explicit API cancellation
+  /// from the client-side or server-side, because of deadline exceeded, network
+  /// connection reset, HTTP/2 parameter configuration (e.g., max message size,
+  /// max connection age), etc. It does NOT include failure due to a non-OK
+  /// status return from the server application's request handler, including
+  /// Status::CANCELLED.
+  ///
   /// IsCancelled is always safe to call when using sync or callback API.
   /// When using async API, it is only safe to call IsCancelled after
   /// the AsyncNotifyWhenDone tag has been delivered. Thread-safe.
@@ -181,16 +189,18 @@ class ServerContextBase {
 
   /// Cancel the Call from the server. This is a best-effort API and
   /// depending on when it is called, the RPC may still appear successful to
-  /// the client.
-  /// For example, if TryCancel() is called on a separate thread, it might race
-  /// with the server handler which might return success to the client before
-  /// TryCancel() was even started by the thread.
+  /// the client. For example, if TryCancel() is called on a separate thread, it
+  /// might race with the server handler which might return success to the
+  /// client before TryCancel() was even started by the thread.
   ///
   /// It is the caller's responsibility to prevent such races and ensure that if
   /// TryCancel() is called, the serverhandler must return Status::CANCELLED.
   /// The only exception is that if the serverhandler is already returning an
   /// error status code, it is ok to not return Status::CANCELLED even if
   /// TryCancel() was called.
+  ///
+  /// For reasons such as the above, it is generally preferred to explicitly
+  /// finish an RPC by returning Status::CANCELLED rather than using TryCancel.
   ///
   /// Note that TryCancel() does not change any of the tags that are pending
   /// on the completion queue. All pending tags will still be delivered
