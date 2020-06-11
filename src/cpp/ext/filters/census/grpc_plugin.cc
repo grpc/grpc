@@ -32,29 +32,29 @@
 namespace grpc {
 
 void RegisterOpenCensusPlugin() {
-  grpc::RegisterChannelFilter<grpc::CensusChannelData,
+  RegisterChannelFilter<grpc::CensusChannelData,
                               grpc::CensusClientCallData>(
       "opencensus_client", GRPC_CLIENT_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
-  grpc::RegisterChannelFilter<grpc::CensusChannelData,
+  RegisterChannelFilter<grpc::CensusChannelData,
                               grpc::CensusServerCallData>(
       "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
 
   // Access measures to ensure they are initialized. Otherwise, creating a view
   // before the first RPC would cause an error.
-  grpc::RpcClientSentBytesPerRpc();
-  grpc::RpcClientReceivedBytesPerRpc();
-  grpc::RpcClientRoundtripLatency();
-  grpc::RpcClientServerLatency();
-  grpc::RpcClientSentMessagesPerRpc();
-  grpc::RpcClientReceivedMessagesPerRpc();
+  RpcClientSentBytesPerRpc();
+  RpcClientReceivedBytesPerRpc();
+  RpcClientRoundtripLatency();
+  RpcClientServerLatency();
+  RpcClientSentMessagesPerRpc();
+  RpcClientReceivedMessagesPerRpc();
 
-  grpc::RpcServerSentBytesPerRpc();
-  grpc::RpcServerReceivedBytesPerRpc();
-  grpc::RpcServerServerLatency();
-  grpc::RpcServerSentMessagesPerRpc();
-  grpc::RpcServerReceivedMessagesPerRpc();
+  RpcServerSentBytesPerRpc();
+  RpcServerReceivedBytesPerRpc();
+  RpcServerServerLatency();
+  RpcServerSentMessagesPerRpc();
+  RpcServerReceivedMessagesPerRpc();
 }
 
 ::opencensus::trace::Span GetSpanFromServerContext(

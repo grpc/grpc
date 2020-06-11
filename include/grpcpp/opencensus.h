@@ -16,12 +16,12 @@
  *
  */
 
-#ifndef GRPCPP_OPENCENSUS_IMPL_H
-#define GRPCPP_OPENCENSUS_IMPL_H
+#ifndef GRPCPP_OPENCENSUS_H
+#define GRPCPP_OPENCENSUS_H
 
 #include "opencensus/trace/span.h"
 
-namespace grpc_impl {
+namespace grpc {
 class ServerContext;
 // These symbols in this file will not be included in the binary unless
 // grpc_opencensus_plugin build target was added as a dependency. At the moment
@@ -42,6 +42,6 @@ void RegisterOpenCensusViewsForExport();
 // Returns the tracing Span for the current RPC.
 ::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context);
 
-}  // namespace grpc_impl
+}  // namespace grpc
 
-#endif  // GRPCPP_OPENCENSUS_IMPL_H
+#endif  // GRPCPP_OPENCENSUS_H
