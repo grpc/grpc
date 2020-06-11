@@ -158,11 +158,13 @@ class SynchronousServer final : public grpc::testing::Server {
     std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
 
     auto port_num = port();
+    int selected_port = 0;
     // Negative port number means inproc server, so no listen port needed
     if (port_num >= 0) {
       std::string server_address = grpc_core::JoinHostPort("::", port_num);
       builder->AddListeningPort(server_address.c_str(),
-                                Server::CreateServerCredentials(config));
+                                Server::CreateServerCredentials(config),
+                                &selected_port);
     }
 
     ApplyConfigToBuilder(config, builder.get());
@@ -170,6 +172,9 @@ class SynchronousServer final : public grpc::testing::Server {
     builder->RegisterService(&service_);
 
     impl_ = builder->BuildAndStart();
+
+    // Update the port when the port is given by system
+    SetPort(selected_port);
   }
 
   std::shared_ptr<Channel> InProcessChannel(

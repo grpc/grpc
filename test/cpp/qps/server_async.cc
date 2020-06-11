@@ -78,11 +78,13 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
 
     auto port_num = port();
+    int selected_port = 0;
     // Negative port number means inproc server, so no listen port needed
     if (port_num >= 0) {
       std::string server_address = grpc_core::JoinHostPort("::", port_num);
       builder->AddListeningPort(server_address.c_str(),
-                                Server::CreateServerCredentials(config));
+                                Server::CreateServerCredentials(config),
+                                &selected_port);
     }
 
     register_service(builder.get(), &async_service_);
@@ -105,6 +107,11 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     ApplyConfigToBuilder(config, builder.get());
 
     server_ = builder->BuildAndStart();
+
+    // Update the port when the port is given by system
+    if (port_num == 0) {
+      SetPort(selected_port);
+    }
 
     auto process_rpc_bound =
         std::bind(process_rpc, config.payload_config(), std::placeholders::_1,

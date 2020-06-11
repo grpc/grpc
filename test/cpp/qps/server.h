@@ -43,11 +43,7 @@ class Server {
   explicit Server(const ServerConfig& config)
       : timer_(new UsageTimer), last_reset_poll_count_(0) {
     cores_ = gpr_cpu_num_cores();
-    if (config.port()) {  // positive for a fixed port, negative for inproc
-      port_ = config.port();
-    } else {  // zero for dynamic port
-      port_ = grpc_pick_unused_port_or_die();
-    }
+    port_ = config.port();
   }
   virtual ~Server() {}
 
@@ -119,6 +115,8 @@ class Server {
       const ChannelArguments& args) = 0;
 
  protected:
+  void SetPort(int port) { port_ = port; }
+
   static void ApplyConfigToBuilder(const ServerConfig& config,
                                    ServerBuilder* builder) {
     if (config.resource_quota_size() > 0) {
