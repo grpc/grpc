@@ -26,10 +26,11 @@
 
 namespace grpc_impl {
 
-class ServerBuilder;
 class ServerInitializer;
 }  // namespace grpc_impl
 namespace grpc {
+
+class ServerBuilder;
 
 /// This interface is meant for internal usage only. Implementations of this
 /// interface should add themselves to a \a ServerBuilder instance through the
@@ -42,7 +43,7 @@ class ServerBuilderPlugin {
   /// UpdateServerBuilder will be called at an early stage in
   /// ServerBuilder::BuildAndStart(), right after the ServerBuilderOptions have
   /// done their updates.
-  virtual void UpdateServerBuilder(grpc_impl::ServerBuilder* /*builder*/) {}
+  virtual void UpdateServerBuilder(ServerBuilder* /*builder*/) {}
 
   /// InitServer will be called in ServerBuilder::BuildAndStart(), after the
   /// Server instance is created.

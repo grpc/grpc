@@ -32,15 +32,15 @@
 #include "src/cpp/server/external_connection_acceptor_impl.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
-namespace grpc_impl {
+namespace grpc {
 
-static std::vector<std::unique_ptr<grpc::ServerBuilderPlugin> (*)()>*
+static std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>*
     g_plugin_factory_list;
 static gpr_once once_init_plugin_list = GPR_ONCE_INIT;
 
 static void do_plugin_list_init(void) {
   g_plugin_factory_list =
-      new std::vector<std::unique_ptr<grpc::ServerBuilderPlugin> (*)()>();
+      new std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>();
 }
 
 ServerBuilder::ServerBuilder()
@@ -78,19 +78,19 @@ std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
   return std::unique_ptr<ServerCompletionQueue>(cq);
 }
 
-ServerBuilder& ServerBuilder::RegisterService(grpc::Service* service) {
+ServerBuilder& ServerBuilder::RegisterService(Service* service) {
   services_.emplace_back(new NamedService(service));
   return *this;
 }
 
 ServerBuilder& ServerBuilder::RegisterService(const grpc::string& addr,
-                                              grpc::Service* service) {
+                                              Service* service) {
   services_.emplace_back(new NamedService(addr, service));
   return *this;
 }
 
 ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
-    grpc::AsyncGenericService* service) {
+    AsyncGenericService* service) {
   if (generic_service_ || callback_generic_service_) {
     gpr_log(GPR_ERROR,
             "Adding multiple generic services is unsupported for now. "
@@ -104,7 +104,7 @@ ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
 
 #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
 ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
-    grpc::CallbackGenericService* service) {
+    CallbackGenericService* service) {
   if (generic_service_ || callback_generic_service_) {
     gpr_log(GPR_ERROR,
             "Adding multiple generic services is unsupported for now. "
@@ -117,7 +117,7 @@ ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
 }
 #else
 ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
-    grpc::experimental::CallbackGenericService* service) {
+    experimental::CallbackGenericService* service) {
   if (builder_->generic_service_ || builder_->callback_generic_service_) {
     gpr_log(GPR_ERROR,
             "Adding multiple generic services is unsupported for now. "
@@ -144,7 +144,7 @@ ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
 }
 
 ServerBuilder& ServerBuilder::SetOption(
-    std::unique_ptr<grpc::ServerBuilderOption> option) {
+    std::unique_ptr<ServerBuilderOption> option) {
   options_.push_back(std::move(option));
   return *this;
 }
@@ -193,7 +193,7 @@ ServerBuilder& ServerBuilder::SetDefaultCompressionAlgorithm(
 }
 
 ServerBuilder& ServerBuilder::SetResourceQuota(
-    const grpc_impl::ResourceQuota& resource_quota) {
+    const ResourceQuota& resource_quota) {
   if (resource_quota_ != nullptr) {
     grpc_resource_quota_unref(resource_quota_);
   }
@@ -204,7 +204,7 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
 
 ServerBuilder& ServerBuilder::AddListeningPort(
     const grpc::string& addr_uri,
-    std::shared_ptr<grpc::ServerCredentials> creds, int* selected_port) {
+    std::shared_ptr<ServerCredentials> creds, int* selected_port) {
   const grpc::string uri_scheme = "dns:";
   grpc::string addr = addr_uri;
   if (addr_uri.compare(0, uri_scheme.size(), uri_scheme) == 0) {
@@ -218,7 +218,7 @@ ServerBuilder& ServerBuilder::AddListeningPort(
 }
 
 std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
-  grpc::ChannelArguments args;
+  ChannelArguments args;
 
   for (const auto& option : options_) {
     option->UpdateArguments(&args);
@@ -431,7 +431,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
 }
 
 void ServerBuilder::InternalAddPluginFactory(
-    std::unique_ptr<grpc::ServerBuilderPlugin> (*CreatePlugin)()) {
+    std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)()) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   (*g_plugin_factory_list).push_back(CreatePlugin);
 }
@@ -446,4 +446,4 @@ ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
   }
 }
 
-}  // namespace grpc_impl
+}  // namespace grpc
