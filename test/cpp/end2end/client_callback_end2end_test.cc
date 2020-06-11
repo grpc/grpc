@@ -385,6 +385,41 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpc) {
   SendRpcs(1, false);
 }
 
+TEST_P(ClientCallbackEnd2endTest, SimpleRpcExpectedError) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext cli_ctx;
+  ErrorStatus error_status;
+
+  request.set_message("Hello failure");
+  error_status.set_code(1);  // CANCELLED
+  error_status.set_error_message("cancel error message");
+  *request.mutable_param()->mutable_expected_error() = error_status;
+
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done = false;
+
+  stub_->experimental_async()->Echo(
+      &cli_ctx, &request, &response,
+      [&response, &done, &mu, &cv, &error_status](Status s) {
+        EXPECT_EQ("", response.message());
+        EXPECT_EQ(error_status.code(), s.error_code());
+        EXPECT_EQ(error_status.error_message(), s.error_message());
+        std::lock_guard<std::mutex> l(mu);
+        done = true;
+        cv.notify_one();
+      });
+
+  std::unique_lock<std::mutex> l(mu);
+  while (!done) {
+    cv.wait(l);
+  }
+}
+
 TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNested) {
   MAYBE_SKIP_TEST;
   ResetStub();

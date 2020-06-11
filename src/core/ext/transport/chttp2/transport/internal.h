@@ -527,6 +527,13 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* send_initial_metadata = nullptr;
   grpc_closure* send_initial_metadata_finished = nullptr;
   grpc_metadata_batch* send_trailing_metadata = nullptr;
+  // TODO(yashykt): Find a better name for the below field and others in this
+  //                struct to betteer distinguish inputs, return values, and
+  //                internal state.
+  // sent_trailing_metadata_op allows the transport to fill in to the upper
+  // layer whether this stream was able to send its trailing metadata (used for
+  // detecting cancellation on the server-side)..
+  bool* sent_trailing_metadata_op = nullptr;
   grpc_closure* send_trailing_metadata_finished = nullptr;
 
   grpc_core::OrphanablePtr<grpc_core::ByteStream> fetching_send_message;
