@@ -527,6 +527,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* send_initial_metadata = nullptr;
   grpc_closure* send_initial_metadata_finished = nullptr;
   grpc_metadata_batch* send_trailing_metadata = nullptr;
+  bool* sent_trailing_metadata_op = nullptr;
   grpc_closure* send_trailing_metadata_finished = nullptr;
 
   grpc_core::OrphanablePtr<grpc_core::ByteStream> fetching_send_message;
