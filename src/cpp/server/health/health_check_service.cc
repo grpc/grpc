@@ -16,9 +16,9 @@
  *
  */
 
-#include <grpcpp/health_check_service_interface_impl.h>
+#include <grpcpp/health_check_service_interface.h>
 
-namespace grpc_impl {
+namespace grpc {
 namespace {
 bool g_grpc_default_health_check_service_enabled = false;
 }  // namespace
@@ -31,4 +31,4 @@ void EnableDefaultHealthCheckService(bool enable) {
   g_grpc_default_health_check_service_enabled = enable;
 }
 
-}  // namespace grpc_impl
+}  // namespace grpc
