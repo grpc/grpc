@@ -78,10 +78,10 @@ class InteropClient {
   // languages
   bool DoChannelSoakTest(int32_t soak_iterations, int32_t max_failures,
                          int64_t max_acceptable_per_iteration_latency_ms,
-                         int32_t overall_deadline_seconds);
+                         int32_t overall_timeout_seconds);
   bool DoRpcSoakTest(int32_t soak_iterations, int32_t max_failures,
                      int64_t max_acceptable_per_iteration_latency_ms,
-                     int32_t overall_deadline_seconds);
+                     int32_t overall_timeout_seconds);
   bool DoLongLivedChannelTest(int32_t soak_iterations,
                               int32_t iteration_interval);
 
@@ -140,7 +140,7 @@ class InteropClient {
                        const int32_t soak_iterations,
                        const int32_t max_failures,
                        const int32_t max_acceptable_per_iteration_latency_ms,
-                       const int32_t overall_deadline_seconds);
+                       const int32_t overall_timeout_seconds);
 
   ServiceStub serviceStub_;
   /// If true, abort() is not called for transient failures

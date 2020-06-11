@@ -1107,14 +1107,14 @@ void InteropClient::PerformSoakTest(
     const bool reset_channel_per_iteration, const int32_t soak_iterations,
     const int32_t max_failures,
     const int32_t max_acceptable_per_iteration_latency_ms,
-    const int32_t overall_deadline_seconds) {
+    const int32_t overall_timeout_seconds) {
   std::vector<std::tuple<bool, int32_t, std::string>> results;
   grpc_histogram* latencies_ms_histogram = grpc_histogram_create(
       1 /* resolution */,
       500 * 1e3 /* largest bucket; 500 seconds is unlikely */);
   gpr_timespec overall_deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
-      gpr_time_from_seconds(overall_deadline_seconds, GPR_TIMESPAN));
+      gpr_time_from_seconds(overall_timeout_seconds, GPR_TIMESPAN));
   int32_t iterations_ran = 0;
   for (int i = 0;
        i < soak_iterations &&
@@ -1159,7 +1159,7 @@ void InteropClient::PerformSoakTest(
         "Some or all of the iterations that did run were unexpectedly slow. "
         "See breakdown above for which iterations succeeded, failed, and "
         "why for more info.",
-        overall_deadline_seconds, iterations_ran, soak_iterations,
+        overall_timeout_seconds, iterations_ran, soak_iterations,
         total_failures, max_failures, latency_ms_median, latency_ms_90th,
         latency_ms_worst);
     GPR_ASSERT(0);
@@ -1192,12 +1192,12 @@ void InteropClient::PerformSoakTest(
 bool InteropClient::DoRpcSoakTest(
     int32_t soak_iterations, int32_t max_failures,
     int64_t max_acceptable_per_iteration_latency_ms,
-    int32_t overall_deadline_seconds) {
+    int32_t overall_timeout_seconds) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
   PerformSoakTest(false /* reset channel per iteration */, soak_iterations,
                   max_failures, max_acceptable_per_iteration_latency_ms,
-                  overall_deadline_seconds);
+                  overall_timeout_seconds);
   gpr_log(GPR_DEBUG, "rpc_soak test done.");
   return true;
 }
@@ -1205,13 +1205,13 @@ bool InteropClient::DoRpcSoakTest(
 bool InteropClient::DoChannelSoakTest(
     int32_t soak_iterations, int32_t max_failures,
     int64_t max_acceptable_per_iteration_latency_ms,
-    int32_t overall_deadline_seconds) {
+    int32_t overall_timeout_seconds) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs, tearing down the channel each time...",
           soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
   PerformSoakTest(true /* reset channel per iteration */, soak_iterations,
                   max_failures, max_acceptable_per_iteration_latency_ms,
-                  overall_deadline_seconds);
+                  overall_timeout_seconds);
   gpr_log(GPR_DEBUG, "channel_soak test done.");
   return true;
 }
