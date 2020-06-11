@@ -88,6 +88,21 @@ ViewDescriptor HourDescriptor() {
 
 }  // namespace
 
+void RegisterOpenCensusViewsForExport() {
+  ClientSentMessagesPerRpcCumulative().RegisterForExport();
+  ClientSentBytesPerRpcCumulative().RegisterForExport();
+  ClientReceivedMessagesPerRpcCumulative().RegisterForExport();
+  ClientReceivedBytesPerRpcCumulative().RegisterForExport();
+  ClientRoundtripLatencyCumulative().RegisterForExport();
+  ClientServerLatencyCumulative().RegisterForExport();
+
+  ServerSentMessagesPerRpcCumulative().RegisterForExport();
+  ServerSentBytesPerRpcCumulative().RegisterForExport();
+  ServerReceivedMessagesPerRpcCumulative().RegisterForExport();
+  ServerReceivedBytesPerRpcCumulative().RegisterForExport();
+  ServerServerLatencyCumulative().RegisterForExport();
+}
+
 // client cumulative
 const ViewDescriptor& ClientSentBytesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
