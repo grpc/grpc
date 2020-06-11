@@ -23,8 +23,7 @@ from typing import AsyncIterable, Awaitable, Generic, Optional, Union
 
 import grpc
 
-from ._typing import (DoneCallbackType, EOFType, RequestType,
-                      ResponseType)
+from ._typing import (DoneCallbackType, EOFType, RequestType, ResponseType)
 from ._metadata import Metadata
 
 __all__ = 'RpcContext', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'

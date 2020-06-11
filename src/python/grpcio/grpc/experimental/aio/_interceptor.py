@@ -27,8 +27,8 @@ from ._call import _RPC_ALREADY_FINISHED_DETAILS, _RPC_HALF_CLOSED_DETAILS
 from ._call import _API_STYLE_ERROR
 from ._utils import _timeout_to_deadline
 from ._typing import (RequestType, SerializingFunction, DeserializingFunction,
-                      ResponseType, DoneCallbackType,
-                      RequestIterableType, ResponseIterableType)
+                      ResponseType, DoneCallbackType, RequestIterableType,
+                      ResponseIterableType)
 from ._metadata import Metadata
 
 _LOCAL_CANCELLATION_DETAILS = 'Locally cancelled by application!'
