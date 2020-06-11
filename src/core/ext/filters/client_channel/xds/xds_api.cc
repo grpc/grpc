@@ -23,6 +23,7 @@
 #include <cstdlib>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 
@@ -142,6 +143,97 @@ bool XdsRoutingEnabled() {
 }
 
 }  // namespace
+
+std::string XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::ToString()
+    const {
+  std::string path_type_string;
+  switch (path_type) {
+    case PathMatcherType::PATH:
+      path_type_string = "PATH";
+      break;
+    case PathMatcherType::PREFIX:
+      path_type_string = "PREFIX";
+      break;
+    case PathMatcherType::REGEX:
+      path_type_string = "REGEX";
+      break;
+    default:
+      break;
+  }
+  return absl::StrFormat("Path Matcher:%s, of type %s", path_matcher,
+                         path_type_string);
+}
+
+std::string XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::ToString()
+    const {
+  std::string header_type_string;
+  std::string invert = invert_match ? " inverted match" : "";
+  switch (header_type) {
+    case HeaderMatcherType::EXACT:
+      header_type_string = "EXACT";
+      return absl::StrFormat("Header Match %s:%s, of type %s%s", name,
+                             header_matcher, header_type_string, invert);
+    case HeaderMatcherType::REGEX:
+      header_type_string = "REGEX";
+      return absl::StrFormat("Header Match %s:%s of type %s%s", name,
+                             header_matcher, header_type_string, invert);
+    case HeaderMatcherType::RANGE:
+      header_type_string = "RANGE";
+      return absl::StrFormat("Header Match %s: from %d to %d of type %s%s",
+                             name, range_start, range_end, header_type_string,
+                             invert);
+    case HeaderMatcherType::PRESENT:
+      header_type_string = "PRESENT";
+      return absl::StrFormat("Header Match %s:%s of type %s%s", name,
+                             present_match ? "true" : "false",
+                             header_type_string, invert);
+    case HeaderMatcherType::PREFIX:
+      header_type_string = "PREFIX";
+      return absl::StrFormat("Header Match %s:%s of type %s%s", name,
+                             header_matcher, header_type_string, invert);
+    case HeaderMatcherType::SUFFIX:
+      header_type_string = "SUFFIX";
+      return absl::StrFormat("Header Match %s:%s of type %s%s", name,
+                             header_matcher, header_type_string, invert);
+    default:
+      return "";
+  }
+}
+
+std::string XdsApi::RdsUpdate::RdsRoute::Matchers::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(path_matcher.ToString());
+  for (const auto& header_it : header_matchers) {
+    contents.push_back(header_it.ToString());
+  }
+  if (fraction_per_million.has_value()) {
+    contents.push_back(absl::StrFormat("Fraction Per Million %d",
+                                       fraction_per_million.value()));
+  }
+  return absl::StrJoin(contents, "\n");
+}
+
+std::string XdsApi::RdsUpdate::RdsRoute::ClusterWeight::ToString() const {
+  return absl::StrFormat("ClusterWeight %s of weight %d", name, weight);
+}
+
+std::string XdsApi::RdsUpdate::RdsRoute::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(matchers.ToString());
+  contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
+  for (const auto& weighted_it : weighted_clusters) {
+    contents.push_back(weighted_it.ToString());
+  }
+  return absl::StrJoin(contents, "\n");
+}
+
+std::string XdsApi::RdsUpdate::ToString() const {
+  std::vector<std::string> contents;
+  for (const auto& route_it : routes) {
+    contents.push_back(route_it.ToString());
+  }
+  return absl::StrJoin(contents, ",\n");
+}
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
                const XdsBootstrap::Node* node)

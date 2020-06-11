@@ -63,6 +63,7 @@ class XdsApi {
             return (path_type == other.path_type &&
                     path_matcher == other.path_matcher);
           }
+          std::string ToString() const;
         };
         struct HeaderMatcher {
           enum class HeaderMatcherType {
@@ -88,6 +89,7 @@ class XdsApi {
                     present_match == other.present_match &&
                     invert_match == other.invert_match);
           }
+          std::string ToString() const;
         };
         PathMatcher path_matcher;
         std::vector<HeaderMatcher> header_matchers;
@@ -97,6 +99,7 @@ class XdsApi {
                   header_matchers == other.header_matchers &&
                   fraction_per_million == other.fraction_per_million);
         }
+        std::string ToString() const;
       };
       Matchers matchers;
       // Action for this route.
@@ -108,6 +111,7 @@ class XdsApi {
         bool operator==(const ClusterWeight& other) const {
           return (name == other.name && weight == other.weight);
         }
+        std::string ToString() const;
       };
       std::vector<ClusterWeight> weighted_clusters;
 
@@ -118,6 +122,7 @@ class XdsApi {
                 cluster_name == other.cluster_name &&
                 weighted_clusters == other.weighted_clusters);
       }
+      std::string ToString() const;
     };
 
     std::vector<RdsRoute> routes;
@@ -125,6 +130,7 @@ class XdsApi {
     bool operator==(const RdsUpdate& other) const {
       return routes == other.routes;
     }
+    std::string ToString() const;
   };
 
   // TODO(roth): When we can use absl::variant<>, consider using that

@@ -894,9 +894,13 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
                  ? lds_update->route_config_name.c_str()
                  : "<inlined>"));
     if (lds_update->rds_update.has_value()) {
-      gpr_log(GPR_INFO, "  RouteConfiguration contains %" PRIuPTR " routes",
+      gpr_log(GPR_INFO, "RouteConfiguration contains %" PRIuPTR " routes",
               lds_update->rds_update.value().routes.size());
-      // TODO @donnadionne: add printing of route details.
+      for (size_t i = 0; i < lds_update->rds_update.value().routes.size();
+           ++i) {
+        gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
+                lds_update->rds_update.value().routes[i].ToString().c_str());
+      }
     }
   }
   auto& lds_state = state_map_[XdsApi::kLdsTypeUrl];
@@ -953,7 +957,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
             "[xds_client %p] RDS update received;  RouteConfiguration contains "
             "%" PRIuPTR " routes",
             this, rds_update.value().routes.size());
-    // TODO @donnadionne: add printing of route details.
+    for (size_t i = 0; i < rds_update.value().routes.size(); ++i) {
+      gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
+              rds_update.value().routes[i].ToString().c_str());
+    }
   }
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   auto& state =
