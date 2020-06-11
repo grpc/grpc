@@ -1429,14 +1429,14 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
       BIO_read(SSL_get_rbio(impl->ssl), *bytes_remaining, bytes_in_ssl);
   // If an unexpected number of bytes were read, return an error status and free
   // all of the bytes that were read.
-  if (bytes_read != bytes_in_ssl) {
+  if (bytes_read < 0 || static_cast<size_t>(bytes_read) != bytes_in_ssl) {
     gpr_log(GPR_INFO,
             "Failed to read the expected number of bytes from SSL object.");
     gpr_free(*bytes_remaining);
     *bytes_remaining = nullptr;
     return TSI_INTERNAL_ERROR;
   }
-  *bytes_remaining_size = bytes_read;
+  *bytes_remaining_size = static_cast<size_t>(bytes_read);
   return TSI_OK;
 }
 
@@ -1488,6 +1488,11 @@ static tsi_result ssl_handshaker_next(
     size_t unused_bytes_size = 0;
     status = ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size);
     if (status != TSI_OK) return status;
+    if (unused_bytes_size > received_bytes_size) {
+      gpr_log(GPR_INFO, "More unused bytes than received bytes.");
+      gpr_free(unused_bytes);
+      return TSI_INTERNAL_ERROR;
+    }
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result);
     if (status == TSI_OK) {
