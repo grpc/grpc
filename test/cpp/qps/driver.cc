@@ -492,6 +492,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
   Histogram merged_latencies;
   std::unordered_map<int, int64_t> merged_statuses;
 
+  // For the case where clients leads the test, it's going to finish
+  // clients first and wait until it's completely done for generaous termination.
+  bool client_finish_first = (client_config.rpc_type() != STREAMING_FROM_SERVER);
+
   gpr_log(GPR_INFO, "Finishing clients");
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
@@ -504,16 +508,19 @@ std::unique_ptr<ScenarioResult> RunScenario(
       GPR_ASSERT(false);
     }
   }
-  gpr_log(GPR_INFO, "Finishing servers");
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    if (!server->stream->Write(server_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
-      GPR_ASSERT(false);
-    }
-    if (!server->stream->WritesDone()) {
-      gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
-      GPR_ASSERT(false);
+
+  if (!client_finish_first) {
+    gpr_log(GPR_INFO, "Finishing servers");
+    for (size_t i = 0; i < num_servers; i++) {
+      auto server = &servers[i];
+      if (!server->stream->Write(server_mark)) {
+        gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+        GPR_ASSERT(false);
+      }
+      if (!server->stream->WritesDone()) {
+        gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
+        GPR_ASSERT(false);
+      }
     }
   }
 
@@ -557,6 +564,21 @@ std::unique_ptr<ScenarioResult> RunScenario(
     RequestResultCount* rrc = result->add_request_results();
     rrc->set_status_code(it->first);
     rrc->set_count(it->second);
+  }
+
+  if (client_finish_first) {
+    gpr_log(GPR_INFO, "Finishing servers");
+    for (size_t i = 0; i < num_servers; i++) {
+      auto server = &servers[i];
+      if (!server->stream->Write(server_mark)) {
+        gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+        GPR_ASSERT(false);
+      }
+      if (!server->stream->WritesDone()) {
+        gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
+        GPR_ASSERT(false);
+      }
+    }
   }
 
   for (size_t i = 0; i < num_servers; i++) {
