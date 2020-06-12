@@ -250,7 +250,7 @@ bool PathMatch(
       }
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         REGEX:
-      return false;
+      return true;  // TODO
     default:
       return false;
   }
@@ -260,6 +260,56 @@ bool HeadersMatch(
     LoadBalancingPolicy::PickArgs args,
     const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
         header_matchers) {
+  for (const auto& header_it : header_matchers) {
+    absl::string_view value = GetMetadataValue(header_it.name, args);
+    if (value == "") {
+      if (header_it.header_type ==
+          XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+              HeaderMatcherType::PRESENT) {
+        if (!header_it.present_match ||
+            (header_it.present_match && header_it.invert_match)) {
+          continue;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+    bool invert = header_it.invert_match;
+    switch (header_it.header_type) {
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::EXACT:
+        if (value == header_it.header_matcher) {
+          continue;
+        } else {
+          return false;
+        }
+        break;
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::REGEX:
+        continue;  // TODO
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::RANGE:
+        continue;  // TODO
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::PREFIX:
+        if (value.find(header_it.header_matcher) != std::string::npos) {
+          continue;
+        } else {
+          return false;
+        }
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::SUFFIX:
+        if (value.find(header_it.header_matcher) != std::string::npos) {
+          continue;
+        } else {
+          return false;
+        }
+      default:
+        return false;
+    }
+  }
   return true;
 }
 
