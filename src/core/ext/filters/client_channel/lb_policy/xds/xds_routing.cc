@@ -20,6 +20,9 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/random/random.h"
+#include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -236,7 +239,7 @@ bool PathMatch(
   switch (path_matcher.path_type) {
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         PREFIX:
-      if (path.find(path_matcher.path_matcher) != std::string::npos) {
+      if (absl::StartsWith(path, path_matcher.path_matcher)) {
         return true;
       } else {
         return false;
@@ -276,14 +279,19 @@ bool HeadersMatch(
         return false;
       }
     }
-    bool invert = header_it.invert_match;
     switch (header_it.header_type) {
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::EXACT:
         if (value == header_it.header_matcher) {
-          continue;
+          if (!header_it.invert_match)
+            continue;
+          else
+            return false;
         } else {
-          return false;
+          if (!header_it.invert_match)
+            return false;
+          else
+            continue;
         }
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
@@ -291,26 +299,64 @@ bool HeadersMatch(
         continue;  // TODO
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::RANGE:
-        continue;  // TODO
+        int64_t int_value;
+        if (!absl::SimpleAtoi(value, &int_value)) {
+          return false;
+        }
+        if (int_value >= header_it.range_start &&
+            int_value <= header_it.range_end) {
+          if (!header_it.invert_match)
+            continue;
+          else
+            return false;
+        } else {
+          if (!header_it.invert_match)
+            return false;
+          else
+            continue;
+        }
+        break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::PREFIX:
-        if (value.find(header_it.header_matcher) != std::string::npos) {
-          continue;
+        if (absl::StartsWith(value, header_it.header_matcher)) {
+          if (!header_it.invert_match)
+            continue;
+          else
+            return false;
         } else {
-          return false;
+          if (!header_it.invert_match)
+            return false;
+          else
+            continue;
         }
+        break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::SUFFIX:
-        if (value.find(header_it.header_matcher) != std::string::npos) {
-          continue;
+        if (absl::EndsWith(value, header_it.header_matcher)) {
+          if (!header_it.invert_match)
+            continue;
+          else
+            return false;
         } else {
-          return false;
+          if (!header_it.invert_match)
+            return false;
+          else
+            continue;
         }
+        break;
       default:
         return false;
     }
   }
   return true;
+}
+
+bool UnderFraction(const uint32_t fraction_per_million) {
+  absl::BitGen random;
+  uint32_t random_number =
+      absl::uniform_int_distribution<int>(0, 1000000)(random);
+  if (random_number < fraction_per_million) return true;
+  return false;
 }
 
 XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
@@ -321,7 +367,10 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
     if (!PathMatch(path, route.matchers->path_matcher)) continue;
     // Header Matching.
     if (!HeadersMatch(args, route.matchers->header_matchers)) continue;
-    // TODO: fraction check
+    // Match fraction check
+    if (route.matchers->fraction_per_million.has_value() &&
+        !UnderFraction(route.matchers->fraction_per_million.value()))
+      continue;
     // Found a match
     return route.picker->Pick(args);
   }
