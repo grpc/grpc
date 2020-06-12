@@ -72,6 +72,18 @@ copy /Y Grpc.Core\bin\Release\net45\System.Memory.dll unitypackage\unitypackage_
 @rem TODO(jtattermusch): also include XMLdoc
 copy /Y Grpc.HealthCheck\bin\Release\net45\Google.Protobuf.dll unitypackage\unitypackage_skeleton\Plugins\Google.Protobuf\lib\net45\Google.Protobuf.dll || goto :error
 
+@rem System.Memory 4.0.1.0 -> 4.0.1.1 #21908, #22251
+@rem WARN: this remove sign from Google.Protobuf.DLL
+cd unitypackage\unitypackage_skeleton\Plugins\Google.Protobuf\lib\net45
+@rem .netfx 4.6.1 tools tested
+"ildasm" /UNICODE /all /text Google.Protobuf.dll /out=Google.Protobuf.il
+powershell -Command "(gc Google.Protobuf.il) -replace '.ver 4:0:1:0', '.ver 4:0:1:1' | Out-File -encoding UNICODE Google.Protobuf-mod.il"
+@rem need admin permission or Could not create output file, error code=0x80070005
+"ilasm.exe" /DLL "%CD%\Google.Protobuf-mod.il" "/output:Google.Protobuf.dll" "/resource=Google.Protobuf.res"
+del /q Google.Protobuf*.il
+del /q Google.Protobuf.res
+cd ..\..\..\..\..\..
+
 @rem create a zipfile that will act as a Unity package
 cd unitypackage\unitypackage_skeleton
 zip -r ..\..\grpc_unity_package.zip Plugins
