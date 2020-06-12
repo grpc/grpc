@@ -185,6 +185,10 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         EXPECT_TRUE(initial_metadata_sent_);
       }
       EXPECT_EQ(ctx_->IsCancelled(), on_cancel_invoked_);
+      // Validate that finishing with a non-OK status doesn't cause cancellation
+      if (req_->has_param() && req_->param().has_expected_error()) {
+        EXPECT_FALSE(on_cancel_invoked_);
+      }
       async_cancel_check_.join();
       if (rpc_wait_thread_.joinable()) {
         rpc_wait_thread_.join();

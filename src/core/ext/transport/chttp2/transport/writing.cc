@@ -606,6 +606,10 @@ class StreamWriteContext {
 
   void SentLastFrame() {
     s_->send_trailing_metadata = nullptr;
+    if (s_->sent_trailing_metadata_op) {
+      *s_->sent_trailing_metadata_op = true;
+      s_->sent_trailing_metadata_op = nullptr;
+    }
     s_->sent_trailing_metadata = true;
     s_->eos_sent = true;
 
