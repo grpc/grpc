@@ -167,8 +167,8 @@ class _ServerSSLCertReloadTest(
             # the handshake is complete, so the TSI handshaker returns the
             # TSI_PROTOCOL_FAILURE result. This result does not have a
             # corresponding status code, so this yields an UNKNOWN status.
-            self.assertTrue(exception_context.exception.code() in
-                            [grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.UNKNOWN])
+            self.assertTrue(exception_context.exception.code(
+            ) in [grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.UNKNOWN])
 
     def _do_one_shot_client_rpc(self,
                                 expect_success,

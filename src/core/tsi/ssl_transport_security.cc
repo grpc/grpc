@@ -1299,7 +1299,7 @@ static const tsi_handshaker_result_vtable handshaker_result_vtable = {
 };
 
 static tsi_result ssl_handshaker_result_create(
-    tsi_ssl_handshaker* handshaker, const unsigned char* unused_bytes,
+    tsi_ssl_handshaker* handshaker, unsigned char* unused_bytes,
     size_t unused_bytes_size, tsi_handshaker_result** handshaker_result) {
   if (handshaker == nullptr || handshaker_result == nullptr ||
       (unused_bytes_size > 0 && unused_bytes == nullptr)) {
@@ -1313,11 +1313,8 @@ static tsi_result ssl_handshaker_result_create(
   handshaker->ssl = nullptr;
   result->network_io = handshaker->network_io;
   handshaker->network_io = nullptr;
-  if (unused_bytes_size > 0) {
-    result->unused_bytes =
-        static_cast<unsigned char*>(gpr_malloc(unused_bytes_size));
-    memcpy(result->unused_bytes, unused_bytes, unused_bytes_size);
-  }
+  /* Transfer ownership of |unused_bytes| to the handshaker result. */
+  result->unused_bytes = unused_bytes;
   result->unused_bytes_size = unused_bytes_size;
   *handshaker_result = &result->base;
   return TSI_OK;
@@ -1425,8 +1422,8 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
   size_t bytes_in_ssl = BIO_pending(SSL_get_rbio(impl->ssl));
   if (bytes_in_ssl == 0) return TSI_OK;
   *bytes_remaining = static_cast<uint8_t*>(gpr_malloc(bytes_in_ssl));
-  int bytes_read =
-      BIO_read(SSL_get_rbio(impl->ssl), *bytes_remaining, bytes_in_ssl);
+  int bytes_read = BIO_read(SSL_get_rbio(impl->ssl), *bytes_remaining,
+                            static_cast<int>(bytes_in_ssl));
   // If an unexpected number of bytes were read, return an error status and free
   // all of the bytes that were read.
   if (bytes_read < 0 || static_cast<size_t>(bytes_read) != bytes_in_ssl) {
