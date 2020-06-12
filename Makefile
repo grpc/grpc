@@ -2846,12 +2846,12 @@ $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc: protoc_dep_error
 else
 
-$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc: src/proto/grpc/testing/xds/lds_rds_for_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc
+$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc: src/proto/grpc/testing/xds/lds_rds_for_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc: src/proto/grpc/testing/xds/lds_rds_for_test.proto $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc
+$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc: src/proto/grpc/testing/xds/lds_rds_for_test.proto $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -4328,6 +4328,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/xds/xds_api.cc \
     src/core/ext/filters/client_channel/xds/xds_bootstrap.cc \
     src/core/ext/filters/client_channel/xds/xds_channel.cc \
+    src/core/ext/filters/client_channel/xds/xds_channel_secure.cc \
     src/core/ext/filters/client_channel/xds/xds_client.cc \
     src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
@@ -4438,6 +4439,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
     src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
     src/core/ext/upb-generated/google/rpc/status.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
@@ -4469,6 +4473,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/debug/trace.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
+    src/core/lib/http/httpcli_security_connector.cc \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
@@ -4567,6 +4572,48 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_writer.cc \
+    src/core/lib/security/context/security_context.cc \
+    src/core/lib/security/credentials/alts/alts_credentials.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc \
+    src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
+    src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
+    src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
+    src/core/lib/security/credentials/composite/composite_credentials.cc \
+    src/core/lib/security/credentials/credentials.cc \
+    src/core/lib/security/credentials/credentials_metadata.cc \
+    src/core/lib/security/credentials/fake/fake_credentials.cc \
+    src/core/lib/security/credentials/google_default/credentials_generic.cc \
+    src/core/lib/security/credentials/google_default/google_default_credentials.cc \
+    src/core/lib/security/credentials/iam/iam_credentials.cc \
+    src/core/lib/security/credentials/jwt/json_token.cc \
+    src/core/lib/security/credentials/jwt/jwt_credentials.cc \
+    src/core/lib/security/credentials/jwt/jwt_verifier.cc \
+    src/core/lib/security/credentials/local/local_credentials.cc \
+    src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
+    src/core/lib/security/credentials/plugin/plugin_credentials.cc \
+    src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
+    src/core/lib/security/credentials/tls/tls_credentials.cc \
+    src/core/lib/security/security_connector/alts/alts_security_connector.cc \
+    src/core/lib/security/security_connector/fake/fake_security_connector.cc \
+    src/core/lib/security/security_connector/load_system_roots_fallback.cc \
+    src/core/lib/security/security_connector/load_system_roots_linux.cc \
+    src/core/lib/security/security_connector/local/local_security_connector.cc \
+    src/core/lib/security/security_connector/security_connector.cc \
+    src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
+    src/core/lib/security/security_connector/ssl_utils.cc \
+    src/core/lib/security/security_connector/ssl_utils_config.cc \
+    src/core/lib/security/security_connector/tls/tls_security_connector.cc \
+    src/core/lib/security/transport/client_auth_filter.cc \
+    src/core/lib/security/transport/secure_endpoint.cc \
+    src/core/lib/security/transport/security_handshaker.cc \
+    src/core/lib/security/transport/server_auth_filter.cc \
+    src/core/lib/security/transport/target_authority_table.cc \
+    src/core/lib/security/transport/tsi_error.cc \
+    src/core/lib/security/util/json_util.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -4587,6 +4634,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/completion_queue_factory.cc \
     src/core/lib/surface/event_string.cc \
     src/core/lib/surface/init.cc \
+    src/core/lib/surface/init_secure.cc \
     src/core/lib/surface/init_unsecure.cc \
     src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.cc \
@@ -4608,6 +4656,33 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/uri/uri_parser.cc \
     src/core/plugin_registry/grpc_unsecure_plugin_registry.cc \
+    src/core/tsi/alts/crypt/aes_gcm.cc \
+    src/core/tsi/alts/crypt/gsec.cc \
+    src/core/tsi/alts/frame_protector/alts_counter.cc \
+    src/core/tsi/alts/frame_protector/alts_crypter.cc \
+    src/core/tsi/alts/frame_protector/alts_frame_protector.cc \
+    src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc \
+    src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc \
+    src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc \
+    src/core/tsi/alts/frame_protector/frame_handler.cc \
+    src/core/tsi/alts/handshaker/alts_handshaker_client.cc \
+    src/core/tsi/alts/handshaker/alts_shared_resource.cc \
+    src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc \
+    src/core/tsi/alts/handshaker/alts_tsi_utils.cc \
+    src/core/tsi/alts/handshaker/transport_security_common_api.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc \
+    src/core/tsi/fake_transport_security.cc \
+    src/core/tsi/local_transport_security.cc \
+    src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
+    src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
+    src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
+    src/core/tsi/ssl_transport_security.cc \
+    src/core/tsi/transport_security.cc \
+    src/core/tsi/transport_security_grpc.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
@@ -4617,6 +4692,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
+    include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
@@ -6413,6 +6489,16 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
     third_party/abseil-cpp/absl/base/log_severity.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
+    third_party/abseil-cpp/absl/random/discrete_distribution.cc \
+    third_party/abseil-cpp/absl/random/gaussian_distribution.cc \
+    third_party/abseil-cpp/absl/random/internal/pool_urbg.cc \
+    third_party/abseil-cpp/absl/random/internal/randen.cc \
+    third_party/abseil-cpp/absl/random/internal/randen_detect.cc \
+    third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc \
+    third_party/abseil-cpp/absl/random/internal/randen_slow.cc \
+    third_party/abseil-cpp/absl/random/internal/seed_material.cc \
+    third_party/abseil-cpp/absl/random/seed_gen_exception.cc \
+    third_party/abseil-cpp/absl/random/seed_sequences.cc \
     third_party/abseil-cpp/absl/strings/ascii.cc \
     third_party/abseil-cpp/absl/strings/charconv.cc \
     third_party/abseil-cpp/absl/strings/escaping.cc \
@@ -20012,84 +20098,9 @@ ifneq ($(OPENSSL_DEP),)
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/xds/xds_channel_secure.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc: $(OPENSSL_DEP)
-src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c: $(OPENSSL_DEP)
-src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/composite/composite_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/credentials_metadata.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/fake/fake_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/google_default/credentials_generic.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/google_default/google_default_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/iam/iam_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/jwt/json_token.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/jwt/jwt_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/jwt/jwt_verifier.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/local/local_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/oauth2/oauth2_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/tls/tls_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/alts/alts_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/fake/fake_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/load_system_roots_fallback.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/load_system_roots_linux.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/local/local_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/ssl/ssl_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/ssl_utils.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/ssl_utils_config.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/tls/tls_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/client_auth_filter.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/secure_endpoint.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/security_handshaker.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/server_auth_filter.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/target_authority_table.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/tsi_error.cc: $(OPENSSL_DEP)
-src/core/lib/security/util/json_util.cc: $(OPENSSL_DEP)
-src/core/lib/surface/init_secure.cc: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_plugin_registry.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/crypt/aes_gcm.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/crypt/gsec.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/frame_protector/alts_counter.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/frame_protector/alts_crypter.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/frame_protector/alts_frame_protector.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/frame_protector/frame_handler.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/handshaker/alts_handshaker_client.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/handshaker/alts_shared_resource.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/handshaker/alts_tsi_utils.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/handshaker/transport_security_common_api.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc: $(OPENSSL_DEP)
-src/core/tsi/fake_transport_security.cc: $(OPENSSL_DEP)
-src/core/tsi/local_transport_security.cc: $(OPENSSL_DEP)
-src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc: $(OPENSSL_DEP)
-src/core/tsi/ssl/session_cache/ssl_session_cache.cc: $(OPENSSL_DEP)
-src/core/tsi/ssl/session_cache/ssl_session_openssl.cc: $(OPENSSL_DEP)
-src/core/tsi/ssl_transport_security.cc: $(OPENSSL_DEP)
-src/core/tsi/transport_security.cc: $(OPENSSL_DEP)
-src/core/tsi/transport_security_grpc.cc: $(OPENSSL_DEP)
 src/cpp/client/channel_test_peer.cc: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
 src/cpp/common/alts_context.cc: $(OPENSSL_DEP)

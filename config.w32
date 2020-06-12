@@ -484,6 +484,16 @@ if (PHP_GRPC != "no") {
     "third_party\\abseil-cpp\\absl\\base\\internal\\unscaledcycleclock.cc " +
     "third_party\\abseil-cpp\\absl\\base\\log_severity.cc " +
     "third_party\\abseil-cpp\\absl\\numeric\\int128.cc " +
+    "third_party\\abseil-cpp\\absl\\random\\discrete_distribution.cc " +
+    "third_party\\abseil-cpp\\absl\\random\\gaussian_distribution.cc " +
+    "third_party\\abseil-cpp\\absl\\random\\internal\\pool_urbg.cc " +
+    "third_party\\abseil-cpp\\absl\\random\\internal\\randen.cc " +
+    "third_party\\abseil-cpp\\absl\\random\\internal\\randen_detect.cc " +
+    "third_party\\abseil-cpp\\absl\\random\\internal\\randen_hwaes.cc " +
+    "third_party\\abseil-cpp\\absl\\random\\internal\\randen_slow.cc " +
+    "third_party\\abseil-cpp\\absl\\random\\internal\\seed_material.cc " +
+    "third_party\\abseil-cpp\\absl\\random\\seed_gen_exception.cc " +
+    "third_party\\abseil-cpp\\absl\\random\\seed_sequences.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\ascii.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\charconv.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\escaping.cc " +
@@ -982,6 +992,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\base");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\base\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\numeric");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\random");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\random\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal\\str_format");

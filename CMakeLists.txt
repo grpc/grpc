@@ -118,6 +118,30 @@ set(gRPC_ABSL_USED_TARGETS
   absl_log_severity
   absl_memory
   absl_optional
+  absl_random_distributions
+  absl_random_internal_distribution_caller
+  absl_random_internal_distributions
+  absl_random_internal_fast_uniform_bits
+  absl_random_internal_fastmath
+  absl_random_internal_generate_real
+  absl_random_internal_iostream_state_saver
+  absl_random_internal_nonsecure_base
+  absl_random_internal_pcg_engine
+  absl_random_internal_platform
+  absl_random_internal_pool_urbg
+  absl_random_internal_randen
+  absl_random_internal_randen_engine
+  absl_random_internal_randen_hwaes
+  absl_random_internal_randen_hwaes_impl
+  absl_random_internal_randen_slow
+  absl_random_internal_salted_seed_seq
+  absl_random_internal_seed_material
+  absl_random_internal_traits
+  absl_random_internal_uniform_helper
+  absl_random_internal_wide_multiply
+  absl_random_random
+  absl_random_seed_gen_exception
+  absl_random_seed_sequences
   absl_raw_logging_internal
   absl_span
   absl_spinlock_wait
@@ -1778,6 +1802,7 @@ target_link_libraries(grpc
   upb
   absl::optional
   absl::strings
+  absl::random_random
   absl::inlined_vector
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -2052,6 +2077,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/xds/xds_api.cc
   src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
   src/core/ext/filters/client_channel/xds/xds_channel.cc
+  src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
   src/core/ext/filters/client_channel/xds/xds_client.cc
   src/core/ext/filters/client_channel/xds/xds_client_stats.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -2162,6 +2188,9 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
@@ -2193,6 +2222,7 @@ add_library(grpc_unsecure
   src/core/lib/debug/trace.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
+  src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
@@ -2291,6 +2321,48 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_writer.cc
+  src/core/lib/security/context/security_context.cc
+  src/core/lib/security/credentials/alts/alts_credentials.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/lib/security/credentials/composite/composite_credentials.cc
+  src/core/lib/security/credentials/credentials.cc
+  src/core/lib/security/credentials/credentials_metadata.cc
+  src/core/lib/security/credentials/fake/fake_credentials.cc
+  src/core/lib/security/credentials/google_default/credentials_generic.cc
+  src/core/lib/security/credentials/google_default/google_default_credentials.cc
+  src/core/lib/security/credentials/iam/iam_credentials.cc
+  src/core/lib/security/credentials/jwt/json_token.cc
+  src/core/lib/security/credentials/jwt/jwt_credentials.cc
+  src/core/lib/security/credentials/jwt/jwt_verifier.cc
+  src/core/lib/security/credentials/local/local_credentials.cc
+  src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
+  src/core/lib/security/credentials/plugin/plugin_credentials.cc
+  src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  src/core/lib/security/credentials/tls/tls_credentials.cc
+  src/core/lib/security/security_connector/alts/alts_security_connector.cc
+  src/core/lib/security/security_connector/fake/fake_security_connector.cc
+  src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  src/core/lib/security/security_connector/load_system_roots_linux.cc
+  src/core/lib/security/security_connector/local/local_security_connector.cc
+  src/core/lib/security/security_connector/security_connector.cc
+  src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
+  src/core/lib/security/security_connector/ssl_utils.cc
+  src/core/lib/security/security_connector/ssl_utils_config.cc
+  src/core/lib/security/security_connector/tls/tls_security_connector.cc
+  src/core/lib/security/transport/client_auth_filter.cc
+  src/core/lib/security/transport/secure_endpoint.cc
+  src/core/lib/security/transport/security_handshaker.cc
+  src/core/lib/security/transport/server_auth_filter.cc
+  src/core/lib/security/transport/target_authority_table.cc
+  src/core/lib/security/transport/tsi_error.cc
+  src/core/lib/security/util/json_util.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -2311,6 +2383,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc
   src/core/lib/surface/init.cc
+  src/core/lib/surface/init_secure.cc
   src/core/lib/surface/init_unsecure.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.cc
@@ -2332,6 +2405,33 @@ add_library(grpc_unsecure
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
   src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
+  src/core/tsi/alts/crypt/aes_gcm.cc
+  src/core/tsi/alts/crypt/gsec.cc
+  src/core/tsi/alts/frame_protector/alts_counter.cc
+  src/core/tsi/alts/frame_protector/alts_crypter.cc
+  src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  src/core/tsi/alts/frame_protector/frame_handler.cc
+  src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  src/core/tsi/alts/handshaker/alts_shared_resource.cc
+  src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  src/core/tsi/fake_transport_security.cc
+  src/core/tsi/local_transport_security.cc
+  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  src/core/tsi/ssl_transport_security.cc
+  src/core/tsi/transport_security.cc
+  src/core/tsi/transport_security_grpc.cc
 )
 
 set_target_properties(grpc_unsecure PROPERTIES
@@ -2373,6 +2473,7 @@ target_link_libraries(grpc_unsecure
   upb
   absl::optional
   absl::strings
+  absl::random_random
   absl::inlined_vector
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -2387,6 +2488,7 @@ foreach(_hdr
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
+  include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
@@ -15173,7 +15275,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc -laddress_sorting -lupb -lcares -lz -labsl_random_seed_sequences -labsl_random_distributions -labsl_random_internal_pool_urbg -labsl_random_seed_gen_exception -labsl_random_internal_seed_material -labsl_random_internal_randen -labsl_random_internal_randen_slow -labsl_random_internal_randen_hwaes -labsl_random_internal_randen_hwaes_impl -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc.pc")
 
@@ -15183,7 +15285,7 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr"
-  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc_unsecure -labsl_random_seed_sequences -labsl_random_distributions -labsl_random_internal_pool_urbg -labsl_random_seed_gen_exception -labsl_random_internal_seed_material -labsl_random_internal_randen -labsl_random_internal_randen_slow -labsl_random_internal_randen_hwaes -labsl_random_internal_randen_hwaes_impl -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc_unsecure.pc")
 
@@ -15193,7 +15295,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${PACKAGE_VERSION}"
   "grpc"
-  "-lgrpc++ -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++ -labsl_random_seed_sequences -labsl_random_distributions -labsl_random_internal_pool_urbg -labsl_random_seed_gen_exception -labsl_random_internal_seed_material -labsl_random_internal_randen -labsl_random_internal_randen_slow -labsl_random_internal_randen_hwaes -labsl_random_internal_randen_hwaes_impl -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++.pc")
 
@@ -15203,6 +15305,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${PACKAGE_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++_unsecure -labsl_random_seed_sequences -labsl_random_distributions -labsl_random_internal_pool_urbg -labsl_random_seed_gen_exception -labsl_random_internal_seed_material -labsl_random_internal_randen -labsl_random_internal_randen_slow -labsl_random_internal_randen_hwaes -labsl_random_internal_randen_hwaes_impl -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++_unsecure.pc")
