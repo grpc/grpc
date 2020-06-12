@@ -229,6 +229,7 @@ CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
 CYTHON_HELPER_C_FILES = ()
 
 CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
+excluded_core_c_files = []
 if "linux" in sys.platform:
     CORE_C_FILES = filter(lambda x: 'third_party/libuv/src/win' not in x,
                           CORE_C_FILES)
@@ -237,22 +238,14 @@ if "linux" in sys.platform:
     # with darwin_uv_srcs in src/libuv/gen_build_yaml.py, except
     # src/unix/proctitle.c which exists in both darwin_uv_srcs and
     # linux_uv_srcs.
-    CORE_C_FILES = filter(
-        lambda x: 'third_party/libuv/src/unix/bsd-ifaddrs.c' not in x,
-        CORE_C_FILES)
-    CORE_C_FILES = filter(
-        lambda x: 'third_party/libuv/src/unix/darwin.c' not in x, CORE_C_FILES)
-    CORE_C_FILES = filter(
-        lambda x: 'third_party/libuv/src/unix/darwin-proctitle.c' not in x,
-        CORE_C_FILES)
-    CORE_C_FILES = filter(
-        lambda x: 'third_party/libuv/src/unix/fsevents.c' not in x,
-        CORE_C_FILES)
-    CORE_C_FILES = filter(
-        lambda x: 'third_party/libuv/src/unix/kqueue.c' not in x, CORE_C_FILES)
-    CORE_C_FILES = filter(
-        lambda x: 'third_party/libuv/src/unix/random-getentropy.c' not in x,
-        CORE_C_FILES)
+    excluded_core_c_files.append('third_party/libuv/src/unix/bsd-ifaddrs.c')
+    excluded_core_c_files.append('third_party/libuv/src/unix/darwin.c')
+    excluded_core_c_files.append('third_party/libuv/src/unix/darwin-proctitle.c')
+    excluded_core_c_files.append('third_party/libuv/src/unix/fsevents.c')
+    excluded_core_c_files.append('third_party/libuv/src/unix/kqueue.c')
+    excluded_core_c_files.append('third_party/libuv/src/unix/random-getentropy.c')
+    CORE_C_FILES = filter(lambda x: x not in excluded_core_c_files,
+                          CORE_C_FILES)
 
 if "darwin" in sys.platform:
     CORE_C_FILES = filter(lambda x: 'third_party/libuv/src/win' not in x,
@@ -262,24 +255,14 @@ if "darwin" in sys.platform:
     # with linux_uv_srcs in src/libuv/gen_build_yaml.py, except
     # src/unix/proctitle.c which exists in both darwin_uv_srcs and
     # linux_uv_srcs.
-    CORE_C_FILES = filter(
-        lambda x: 'third_party/libuv/src/unix/linux-core.c' not in x,
-        CORE_C_FILES)
-    CORE_C_FILES = filter(
-        lambda x: 'third_party/libuv/src/unix/linux-inotify.c' not in x,
-        CORE_C_FILES)
-    CORE_C_FILES = filter(
-        lambda x: 'third_party/libuv/src/unix/linux-syscalls.c' not in x,
-        CORE_C_FILES)
-    CORE_C_FILES = filter(
-        lambda x: 'third_party/libuv/src/unix/procfs-exepath.c' not in x,
-        CORE_C_FILES)
-    CORE_C_FILES = filter(
-        lambda x: 'third_party/libuv/src/unix/random-sysctl-linux.c' not in x,
-        CORE_C_FILES)
-    CORE_C_FILES = filter(
-        lambda x: 'third_party/libuv/src/unix/sysinfo-loadavg.c' not in x,
-        CORE_C_FILES)
+    excluded_core_c_files.append('third_party/libuv/src/unix/linux-core.c')
+    excluded_core_c_files.append('third_party/libuv/src/unix/linux-inotify.c')
+    excluded_core_c_files.append('third_party/libuv/src/unix/linux-syscalls.c')
+    excluded_core_c_files.append('third_party/libuv/src/unix/procfs-exepath.c')
+    excluded_core_c_files.append('third_party/libuv/src/unix/random-sysctl-linux.c')
+    excluded_core_c_files.append('third_party/libuv/src/unix/sysinfo-loadavg.c')
+    CORE_C_FILES = filter(lambda x: x not in excluded_core_c_files,
+                          CORE_C_FILES)
 
 if "win32" in sys.platform:
     CORE_C_FILES = filter(lambda x: 'third_party/cares' not in x, CORE_C_FILES)
