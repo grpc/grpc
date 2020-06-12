@@ -320,9 +320,9 @@ static bool rq_alloc(grpc_resource_quota* resource_quota) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO,
               "RQ: check allocation for user %p shutdown=%" PRIdPTR
-              " free_pool=%" PRId64,
+              " free_pool=%" PRId64 " outstanding_allocations=%" PRId64,
               resource_user, gpr_atm_no_barrier_load(&resource_user->shutdown),
-              resource_user->free_pool);
+              resource_user->free_pool, resource_user->outstanding_allocations);
     }
     if (gpr_atm_no_barrier_load(&resource_user->shutdown)) {
       resource_user->allocating = false;
