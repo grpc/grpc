@@ -1058,6 +1058,13 @@ grpc_error* RouteConfigParse(
     const envoy_api_v2_route_Route* route = routes[size - 1];
     const envoy_api_v2_route_RouteMatch* match =
         envoy_api_v2_route_Route_match(route);
+    const google_protobuf_BoolValue* case_sensitive =
+        envoy_api_v2_route_RouteMatch_case_sensitive(match);
+    if (case_sensitive != nullptr &&
+        !google_protobuf_BoolValue_value(case_sensitive)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "case_sensitive if set must be set to true.");
+    }
     XdsApi::RdsUpdate::RdsRoute rds_route;
     // if xds routing is not enabled, we must be working on the default route;
     // in this case, we must have an empty or single slash prefix.
