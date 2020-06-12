@@ -14,5 +14,5 @@ chardet==3.0.4
 certifi==2017.4.17
 idna==2.7
 googleapis-common-protos==1.5.5
-# rsa 4.0 is the last version support Python 2
-rsa==4.0
+# rsa 4.3 is the last version support Python 2
+rsa==4.3

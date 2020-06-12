@@ -222,6 +222,9 @@ pip_install_dir "$ROOT/src/python/grpcio_status"
 # Install testing
 pip_install_dir "$ROOT/src/python/grpcio_testing"
 
+# rsa 4.3 is the latest version support Python 2
+pip_install ras==4.3
+
 # Build/install tests
 pip_install coverage==4.4 oauth2client==4.1.0 \
             google-auth==1.17.1 requests==2.14.2 \
