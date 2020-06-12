@@ -2004,6 +2004,31 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
   WaitForAllBackends();
 }
 
+TEST_P(XdsResolverOnlyTest, DefaultRouteCaseInsensitive) {
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_match()
+      ->set_prefix("");
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_match()
+      ->mutable_case_sensitive()
+      ->set_value(false);
+  balancers_[0]->ads_service()->SetLdsResource(
+      AdsServiceImpl::BuildListener(route_config));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+}
+
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
  public:
   XdsResolverLoadReportingOnlyTest() : XdsEnd2endTest(4, 1, 3) {}
