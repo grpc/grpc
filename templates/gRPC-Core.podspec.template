@@ -76,7 +76,7 @@
   grpc_public_headers = list(sorted(set(list_lib_files("grpc", ("public_headers",))) - set(address_sorting_unwanted_files)))
   grpc_private_headers = list(sorted(set(list_lib_files("grpc", ("headers",))) - set(address_sorting_unwanted_files)))
   grpc_abseil_specs = list_abseil_specs("grpc")
-  libuv_private_files = list_lib_files("uv_darwin", ("src"))
+  libuv_private_files = list_lib_files("uv_darwin", ("src",))
   libuv_public_headers = list(sorted(libuv_extra_public_headers))
   libuv_private_headers = list_lib_files("uv_darwin", ("headers",))
 
