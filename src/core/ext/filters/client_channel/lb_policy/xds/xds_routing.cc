@@ -223,8 +223,6 @@ absl::string_view GetMetadataValue(const std::string& key,
   // build:
   //*(args.initial_metadata) is returning values not references.
   for (const auto p : *(args.initial_metadata)) {
-    gpr_log(GPR_INFO, "donna see metadata %s and %s",
-            std::string(p.first).c_str(), std::string(p.second).c_str());
     if (p.first == key) {
       return p.second;
     }
@@ -253,7 +251,7 @@ bool PathMatch(
       }
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         REGEX:
-      return true;  // TODO
+      return true;  // TODO(donnadionne) after re2 integration
     default:
       return false;
   }
@@ -269,13 +267,14 @@ bool HeadersMatch(
       if (header_it.header_type ==
           XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
               HeaderMatcherType::PRESENT) {
-        if (!header_it.present_match ||
-            (header_it.present_match && header_it.invert_match)) {
+        if (!header_it.present_match ^ header_it.invert_match) {
           continue;
         } else {
           return false;
         }
       } else {
+        // For all other header matcher types, we need the header value to
+        // exist to consider matches.
         return false;
       }
     }
@@ -290,7 +289,7 @@ bool HeadersMatch(
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::REGEX:
-        continue;  // TODO
+        continue;  // TODO(donnadionne) after re2 integration
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::RANGE:
         int64_t int_value;

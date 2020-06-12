@@ -1081,7 +1081,8 @@ grpc_error* RoutePathMatchParse(const envoy_api_v2_route_RouteMatch* match,
         Matchers::PathMatcher::PathMatcherType::REGEX;
     const envoy_type_matcher_RegexMatcher* regex_matcher =
         envoy_api_v2_route_RouteMatch_safe_regex(match);
-    GPR_ASSERT(regex_matcher != nullptr);  // TODO: compile with re2
+    GPR_ASSERT(regex_matcher !=
+               nullptr);  // TODO(donnadionne): compile with re2
     rds_route->matchers.path_matcher.path_matcher = UpbStringToStdString(
         envoy_type_matcher_RegexMatcher_regex(regex_matcher));
   } else {
@@ -1112,7 +1113,8 @@ grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
           HeaderMatcher::HeaderMatcherType::REGEX;
       const envoy_type_matcher_RegexMatcher* regex_matcher =
           envoy_api_v2_route_HeaderMatcher_safe_regex_match(header);
-      GPR_ASSERT(regex_matcher != nullptr);  // TODO: compile with re2
+      GPR_ASSERT(regex_matcher !=
+                 nullptr);  // TODO(donnadionne): compile with re2
       header_matcher.header_matcher = UpbStringToStdString(
           envoy_type_matcher_RegexMatcher_regex(regex_matcher));
     } else if (envoy_api_v2_route_HeaderMatcher_has_range_match(header)) {
@@ -1347,13 +1349,12 @@ grpc_error* RouteConfigParse(
     bool ignore_route = false;
     grpc_error* error = RouteActionParse(route, &rds_route, &ignore_route);
     if (error != GRPC_ERROR_NONE) return error;
-    if (!ignore_route) {
-      rds_update->routes.emplace_back(std::move(rds_route));
-      return GRPC_ERROR_NONE;
-    } else {
+    if (ignore_route) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Default route action is ignored.");
     }
+    rds_update->routes.emplace_back(std::move(rds_route));
+    return GRPC_ERROR_NONE;
   }
   // Loop over the whole list of routes
   for (size_t i = 0; i < size; ++i) {

@@ -2315,7 +2315,6 @@ grpc_error* XdsClient::CreateServiceConfig(
       "  ]\n"
       "}");
   std::string json = absl::StrJoin(config_parts, "");
-  gpr_log(GPR_INFO, "donna service config json %s", json.c_str());
   grpc_error* error = GRPC_ERROR_NONE;
   *service_config = ServiceConfig::Create(json.c_str(), &error);
   return error;
