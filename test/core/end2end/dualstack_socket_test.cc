@@ -232,7 +232,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
     GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
     GPR_ASSERT(0 ==
                grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
-    GPR_ASSERT(was_cancelled == 1);
+    GPR_ASSERT(was_cancelled == 0);
 
     grpc_call_unref(s);
   } else {

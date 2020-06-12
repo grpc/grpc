@@ -194,7 +194,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   GPR_ASSERT(GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST == call_details.flags);
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

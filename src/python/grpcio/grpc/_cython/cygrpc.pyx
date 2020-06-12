@@ -59,6 +59,8 @@ include "_cygrpc/iomgr.pyx.pxi"
 
 include "_cygrpc/grpc_gevent.pyx.pxi"
 
+include "_cygrpc/thread.pyx.pxi"
+
 IF UNAME_SYSNAME == "Windows":
     include "_cygrpc/fork_windows.pyx.pxi"
 ELSE:
