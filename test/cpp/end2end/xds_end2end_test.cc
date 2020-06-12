@@ -2390,6 +2390,29 @@ TEST_P(LdsRdsTest, RouteMatchHasUnsupportedSpecifier) {
             "No prefix field found in Default RouteMatch.");
 }
 
+// Tests that LDS client should send a NACK if route match has a case_sensitive
+// set to false.
+TEST_P(LdsRdsTest, RouteMatchHasCaseSensitiveFalse) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  route1->mutable_match()->mutable_case_sensitive()->set_value(false);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "case_sensitive if set must be set to true.");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
+}
+
 // Tests that LDS client should send a NACK if route match has a prefix
 // string with no "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNonEmptyNoSlash) {
