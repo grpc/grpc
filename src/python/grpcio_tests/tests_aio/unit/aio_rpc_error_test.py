@@ -18,11 +18,14 @@ import unittest
 
 import grpc
 
+from grpc.experimental import aio
 from grpc.experimental.aio._call import AioRpcError
 from tests_aio.unit._test_base import AioTestBase
 
-_TEST_INITIAL_METADATA = ('initial metadata',)
-_TEST_TRAILING_METADATA = ('trailing metadata',)
+_TEST_INITIAL_METADATA = aio.Metadata(
+    ('initial metadata key', 'initial metadata value'))
+_TEST_TRAILING_METADATA = aio.Metadata(
+    ('trailing metadata key', 'trailing metadata value'))
 _TEST_DEBUG_ERROR_STRING = '{This is a debug string}'
 
 
@@ -30,9 +33,9 @@ class TestAioRpcError(unittest.TestCase):
 
     def test_attributes(self):
         aio_rpc_error = AioRpcError(grpc.StatusCode.CANCELLED,
-                                    'details',
                                     initial_metadata=_TEST_INITIAL_METADATA,
                                     trailing_metadata=_TEST_TRAILING_METADATA,
+                                    details="details",
                                     debug_error_string=_TEST_DEBUG_ERROR_STRING)
         self.assertEqual(aio_rpc_error.code(), grpc.StatusCode.CANCELLED)
         self.assertEqual(aio_rpc_error.details(), 'details')

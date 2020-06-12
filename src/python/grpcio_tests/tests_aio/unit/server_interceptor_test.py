@@ -198,7 +198,7 @@ class TestServerInterceptor(AioTestBase):
                 request_serializer=messages_pb2.SimpleRequest.SerializeToString,
                 response_deserializer=messages_pb2.SimpleResponse.FromString)
 
-            metadata = (('key', 'value'),)
+            metadata = aio.Metadata(('key', 'value'),)
             call = multicallable(messages_pb2.SimpleRequest(),
                                  metadata=metadata)
             await call
@@ -208,7 +208,7 @@ class TestServerInterceptor(AioTestBase):
             ], record)
 
             record.clear()
-            metadata = (('key', 'value'), ('secret', '42'))
+            metadata = aio.Metadata(('key', 'value'), ('secret', '42'))
             call = multicallable(messages_pb2.SimpleRequest(),
                                  metadata=metadata)
             await call

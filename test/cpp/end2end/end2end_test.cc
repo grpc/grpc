@@ -86,6 +86,8 @@ bool CheckIsLocalhost(const grpc::string& addr) {
          addr.substr(0, kIpv6.size()) == kIpv6;
 }
 
+const int kClientChannelBackupPollIntervalMs = 200;
+
 const char kTestCredsPluginErrorMsg[] = "Could not find plugin metadata.";
 
 const char kFakeToken[] = "fake_token";
@@ -916,12 +918,13 @@ TEST_P(End2endTest, ReconnectChannel) {
   SendRpc(stub_.get(), 1, false);
   RestartServer(std::shared_ptr<AuthMetadataProcessor>());
   // It needs more than GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS time to
-  // reconnect the channel.
-  gpr_sleep_until(gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME),
-      gpr_time_from_millis(
-          300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
-          GPR_TIMESPAN)));
+  // reconnect the channel. Make it a factor of 5x
+  gpr_sleep_until(
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_millis(kClientChannelBackupPollIntervalMs * 5 *
+                                            poller_slowdown_factor *
+                                            grpc_test_slowdown_factor(),
+                                        GPR_TIMESPAN)));
   SendRpc(stub_.get(), 1, false);
 }
 
@@ -2273,7 +2276,8 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
 
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 200);
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms,
+                        kClientChannelBackupPollIntervalMs);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   gpr_setenv("grpc_cfstream", "0");

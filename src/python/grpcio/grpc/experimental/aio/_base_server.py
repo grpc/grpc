@@ -18,7 +18,8 @@ from typing import Generic, Optional, Sequence
 
 import grpc
 
-from ._typing import MetadataType, RequestType, ResponseType
+from ._typing import RequestType, ResponseType
+from ._metadata import Metadata
 
 
 class Server(abc.ABC):
@@ -157,8 +158,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    async def send_initial_metadata(self,
-                                    initial_metadata: MetadataType) -> None:
+    async def send_initial_metadata(self, initial_metadata: Metadata) -> None:
         """Sends the initial metadata value to the client.
 
         This method need not be called by implementations if they have no
@@ -170,7 +170,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     async def abort(self, code: grpc.StatusCode, details: str,
-                    trailing_metadata: MetadataType) -> None:
+                    trailing_metadata: Metadata) -> None:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The code and details passed as arguments will supercede any existing
@@ -190,8 +190,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    async def set_trailing_metadata(self,
-                                    trailing_metadata: MetadataType) -> None:
+    async def set_trailing_metadata(self, trailing_metadata: Metadata) -> None:
         """Sends the trailing metadata for the RPC.
 
         This method need not be called by implementations if they have no
@@ -202,7 +201,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    def invocation_metadata(self) -> Optional[MetadataType]:
+    def invocation_metadata(self) -> Optional[Metadata]:
         """Accesses the metadata from the sent by the client.
 
         Returns:

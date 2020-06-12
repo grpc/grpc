@@ -98,8 +98,8 @@ class TestStreamStreamClientInterceptor(AioTestBase):
 
                 self.assertEqual(response_cnt, _NUM_STREAM_RESPONSES)
                 self.assertEqual(await call.code(), grpc.StatusCode.OK)
-                self.assertEqual(await call.initial_metadata(), ())
-                self.assertEqual(await call.trailing_metadata(), ())
+                self.assertEqual(await call.initial_metadata(), aio.Metadata())
+                self.assertEqual(await call.trailing_metadata(), aio.Metadata())
                 self.assertEqual(await call.details(), '')
                 self.assertEqual(await call.debug_error_string(), '')
                 self.assertEqual(call.cancel(), False)
@@ -140,8 +140,8 @@ class TestStreamStreamClientInterceptor(AioTestBase):
                 await call.done_writing()
 
                 self.assertEqual(await call.code(), grpc.StatusCode.OK)
-                self.assertEqual(await call.initial_metadata(), ())
-                self.assertEqual(await call.trailing_metadata(), ())
+                self.assertEqual(await call.initial_metadata(), aio.Metadata())
+                self.assertEqual(await call.trailing_metadata(), aio.Metadata())
                 self.assertEqual(await call.details(), '')
                 self.assertEqual(await call.debug_error_string(), '')
                 self.assertEqual(call.cancel(), False)
@@ -183,8 +183,8 @@ class TestStreamStreamClientInterceptor(AioTestBase):
                 await call.done_writing()
 
                 self.assertEqual(await call.code(), grpc.StatusCode.OK)
-                self.assertEqual(await call.initial_metadata(), ())
-                self.assertEqual(await call.trailing_metadata(), ())
+                self.assertEqual(await call.initial_metadata(), aio.Metadata())
+                self.assertEqual(await call.trailing_metadata(), aio.Metadata())
                 self.assertEqual(await call.details(), '')
                 self.assertEqual(await call.debug_error_string(), '')
                 self.assertEqual(call.cancel(), False)

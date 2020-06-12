@@ -255,7 +255,8 @@ class TestCompatibility(AioTestBase):
         self._adhoc_handlers.set_adhoc_handler(metadata_unary_unary)
         call = self._async_channel.unary_unary(_ADHOC_METHOD)(_REQUEST)
         self.assertTrue(
-            _common.seen_metadata(metadata, await call.initial_metadata()))
+            _common.seen_metadata(aio.Metadata(*metadata), await
+                                  call.initial_metadata()))
 
     async def test_sync_unary_unary_abort(self):
 
