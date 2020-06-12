@@ -71,7 +71,7 @@ def _extract_rules_from_bazel_xml(xml_tree):
             rule_name = rule_dict['name']
             if rule_clazz in [
                     'cc_library', 'cc_binary', 'cc_test', 'cc_proto_library',
-                    'proto_library'
+                    'proto_library', 'upb_proto_library', 'upb_proto_reflection_library',
             ]:
                 if rule_name in result:
                     raise Exception('Rule %s already present' % rule_name)
@@ -277,10 +277,6 @@ def _expand_intermediate_deps(target_dict, public_dep_names, bazel_rules):
             # do not expand if a public dependency that depends on this has already been expanded
             pass
 
-        elif (bazel_dep.endswith('_upb_proto') or
-              bazel_dep.endswith('_upb_proto_reflection')):
-            pass
-
         else:
             if bazel_dep in bazel_rules:
                 # this is an intermediate library, expand it
@@ -356,6 +352,25 @@ def _generate_build_metadata(build_extra_metadata, bazel_rules):
             reversed(_sort_by_build_order(lib_dict['deps'], result, 'deps')))
 
     return result
+
+
+def _expand_upb_proto_sources(target_dict):
+    # TODO(jtattermusch): Some targets specify ".proto" files as their dependencies.
+    # CMake/make normally handle generation of the sources automatically,
+    # but they use google protobuf for that (i.e. not UPB).
+    # For UPB proto libraries, the .upb.c and .upb.h files have already been
+    # generated, so we just replace the ".proto" sources by their
+    # generated upb counterpart. 
+    for target_name, target in target_dict.iteritems():
+        if target_name.endswith('_upb') or target_name.endswith('_upb_reflection'):
+            srcs = target['src']
+            hdrs = target['headers']
+            for idx in range(0, len(srcs)):
+                src = srcs[idx]
+                if src.endswith('.proto'):
+                    src_extension_stripped = src[:-len('.proto')]
+                    srcs[idx] = 'src/core/ext/upb-generated/' + src_extension_stripped + '.upb.c'
+                    hdrs.append('src/core/ext/upb-generated/' + src_extension_stripped + '.upb.h')
 
 
 def _convert_to_build_yaml_like(lib_dict):
@@ -582,6 +597,31 @@ _BUILD_EXTRA_METADATA = {
         'build': 'all',
         'secure': False,
         '_RENAME': 'address_sorting'
+    },
+    'grpc_health_upb': {
+        'language': 'c',
+        'build': 'all',
+        'secure': False
+    },
+    'xds_upb': {
+        'language': 'c',
+        'build': 'all',
+        'secure': False
+    },
+    'udpa_orca_upb': {
+        'language': 'c',
+        'build': 'all',
+        'secure': False
+    },
+    'grpc_lb_upb': {
+        'language': 'c',
+        'build': 'all',
+        'secure': False
+    },
+    'alts_upb': {
+        'language': 'c',
+        'build': 'all',
+        'secure': False
     },
     'gpr': {
         'language': 'c',
@@ -953,6 +993,9 @@ all_metadata.update(_BUILD_EXTRA_METADATA)
 all_metadata.update(test_metadata)
 
 all_targets_dict = _generate_build_metadata(all_metadata, bazel_rules)
+
+_expand_upb_proto_sources(all_targets_dict)
+
 build_yaml_like = _convert_to_build_yaml_like(all_targets_dict)
 
 # if a test uses source files from src/ directly, it's a little bit suspicious

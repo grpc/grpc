@@ -837,7 +837,12 @@ config("grpc_config") {
     deps = [
         "//third_party/boringssl",
         "//third_party/zlib",
+        ":xds_upb",
+        ":udpa_orca_upb",
+        ":grpc_lb_upb",
+        ":grpc_health_upb",
         ":gpr",
+        ":alts_upb",
         ":address_sorting",
         ":upb",
         ":absl/types:optional",
@@ -1134,7 +1139,12 @@ config("grpc_config") {
     deps = [
         "//third_party/protobuf:protobuf_lite",
         ":grpc",
+        ":xds_upb",
+        ":udpa_orca_upb",
+        ":grpc_lb_upb",
+        ":grpc_health_upb",
         ":gpr",
+        ":alts_upb",
         ":address_sorting",
         ":upb",
     ]
