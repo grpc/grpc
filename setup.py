@@ -240,10 +240,12 @@ if "linux" in sys.platform:
     # linux_uv_srcs.
     excluded_core_c_files.append('third_party/libuv/src/unix/bsd-ifaddrs.c')
     excluded_core_c_files.append('third_party/libuv/src/unix/darwin.c')
-    excluded_core_c_files.append('third_party/libuv/src/unix/darwin-proctitle.c')
+    excluded_core_c_files.append(
+        'third_party/libuv/src/unix/darwin-proctitle.c')
     excluded_core_c_files.append('third_party/libuv/src/unix/fsevents.c')
     excluded_core_c_files.append('third_party/libuv/src/unix/kqueue.c')
-    excluded_core_c_files.append('third_party/libuv/src/unix/random-getentropy.c')
+    excluded_core_c_files.append(
+        'third_party/libuv/src/unix/random-getentropy.c')
     CORE_C_FILES = filter(lambda x: x not in excluded_core_c_files,
                           CORE_C_FILES)
 
@@ -259,7 +261,8 @@ if "darwin" in sys.platform:
     excluded_core_c_files.append('third_party/libuv/src/unix/linux-inotify.c')
     excluded_core_c_files.append('third_party/libuv/src/unix/linux-syscalls.c')
     excluded_core_c_files.append('third_party/libuv/src/unix/procfs-exepath.c')
-    excluded_core_c_files.append('third_party/libuv/src/unix/random-sysctl-linux.c')
+    excluded_core_c_files.append(
+        'third_party/libuv/src/unix/random-sysctl-linux.c')
     excluded_core_c_files.append('third_party/libuv/src/unix/sysinfo-loadavg.c')
     CORE_C_FILES = filter(lambda x: x not in excluded_core_c_files,
                           CORE_C_FILES)
