@@ -118,7 +118,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 
     explicit RoutePicker(RouteTable route_table,
                          RefCountedPtr<XdsRoutingLbConfig> config)
-        : route_table_(std::move(route_table)), config_(config) {}
+        : route_table_(std::move(route_table)), config_(std::move(config)) {}
 
     PickResult Pick(PickArgs args) override;
 
@@ -282,16 +282,10 @@ bool HeadersMatch(
     switch (header_it.header_type) {
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::EXACT:
-        if (value == header_it.header_matcher) {
-          if (!header_it.invert_match)
-            continue;
-          else
-            return false;
+        if (value == header_it.header_matcher ^ header_it.invert_match) {
+          continue;
         } else {
-          if (!header_it.invert_match)
-            return false;
-          else
-            continue;
+          return false;
         }
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
@@ -303,45 +297,30 @@ bool HeadersMatch(
         if (!absl::SimpleAtoi(value, &int_value)) {
           return false;
         }
-        if (int_value >= header_it.range_start &&
-            int_value <= header_it.range_end) {
-          if (!header_it.invert_match)
-            continue;
-          else
-            return false;
+        if ((int_value >= header_it.range_start &&
+             int_value <= header_it.range_end) ^
+            header_it.invert_match) {
+          continue;
         } else {
-          if (!header_it.invert_match)
-            return false;
-          else
-            continue;
+          return false;
         }
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::PREFIX:
-        if (absl::StartsWith(value, header_it.header_matcher)) {
-          if (!header_it.invert_match)
-            continue;
-          else
-            return false;
+        if (absl::StartsWith(value, header_it.header_matcher) ^
+            header_it.invert_match) {
+          continue;
         } else {
-          if (!header_it.invert_match)
-            return false;
-          else
-            continue;
+          return false;
         }
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::SUFFIX:
-        if (absl::EndsWith(value, header_it.header_matcher)) {
-          if (!header_it.invert_match)
-            continue;
-          else
-            return false;
+        if (absl::EndsWith(value, header_it.header_matcher) ^
+            header_it.invert_match) {
+          continue;
         } else {
-          if (!header_it.invert_match)
-            return false;
-          else
-            continue;
+          return false;
         }
         break;
       default:
@@ -974,6 +953,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                 route->matchers.header_matchers.emplace_back(
                     std::move(header_matcher));
               }
+              continue;
             }
             header_it = header_json.object_value().find("regex_match");
             if (header_it != header_json.object_value().end()) {
@@ -988,6 +968,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                 route->matchers.header_matchers.emplace_back(
                     std::move(header_matcher));
               }
+              continue;
             }
             header_it = header_json.object_value().find("range_match");
             if (header_it != header_json.object_value().end()) {
@@ -1029,6 +1010,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                       std::move(header_matcher));
                 }
               }
+              continue;
             }
             header_it = header_json.object_value().find("present_match");
             if (header_it != header_json.object_value().end()) {
@@ -1046,6 +1028,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                 error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "field:present_match error: should be boolean"));
               }
+              continue;
             }
             header_it = header_json.object_value().find("prefix_match");
             if (header_it != header_json.object_value().end()) {
@@ -1060,6 +1043,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                 route->matchers.header_matchers.emplace_back(
                     std::move(header_matcher));
               }
+              continue;
             }
             header_it = header_json.object_value().find("suffix_match");
             if (header_it != header_json.object_value().end()) {
@@ -1074,6 +1058,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                 route->matchers.header_matchers.emplace_back(
                     std::move(header_matcher));
               }
+              continue;
             }
           }
         }
