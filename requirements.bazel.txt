@@ -14,3 +14,4 @@ chardet==3.0.4
 certifi==2017.4.17
 idna==2.7
 googleapis-common-protos==1.5.5
+rsa>=3.1.4,!=4.1,!=4.1.1,!=4.2,<5
