@@ -76,10 +76,10 @@ copy /Y Grpc.HealthCheck\bin\Release\net45\Google.Protobuf.dll unitypackage\unit
 @rem WARN: this remove sign from Google.Protobuf.DLL
 cd unitypackage\unitypackage_skeleton\Plugins\Google.Protobuf\lib\net45
 @rem .netfx 4.6.1 tools tested
-"ildasm" /UNICODE /all /text Google.Protobuf.dll /out=Google.Protobuf.il
+"ildasm.exe" /UNICODE /all /text Google.Protobuf.dll /out=Google.Protobuf.il
 powershell -Command "(gc Google.Protobuf.il) -replace '.ver 4:0:1:0', '.ver 4:0:1:1' | Out-File -encoding UNICODE Google.Protobuf-mod.il"
 @rem need admin permission or Could not create output file, error code=0x80070005
-"ilasm.exe" /DLL "%CD%\Google.Protobuf-mod.il" "/output:Google.Protobuf.dll" "/resource=Google.Protobuf.res"
+"ilasm.exe" /DLL "%CD%\Google.Protobuf-mod.il" "/output:Google.Protobuf.dll" "/resource=Google.Protobuf.res"  "/key=..\..\..\..\..\..\keys\Grpc.snk"
 del /q Google.Protobuf*.il
 del /q Google.Protobuf.res
 cd ..\..\..\..\..\..
