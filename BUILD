@@ -1296,11 +1296,12 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/xds/xds_api.h",
         "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
         "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
-        ],
+    ],
     language = "c++",
     deps = [
         "grpc_base",
-        ],)
+    ],
+)
 
 grpc_cc_library(
     name = "grpc_xds_client",
@@ -1449,10 +1450,10 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc",
     ],
-    language = "c++",
     external_deps = [
         "absl/random",
     ],
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
