@@ -51,6 +51,10 @@ def parse_interop_client_args():
                         default=False,
                         type=resources.parse_bool,
                         help='replace platform root CAs with ca.pem')
+    parser.add_argument('--custom_credentials_type',
+                        choices=["google_default_credentials"],
+                        default=None,
+                        help='use google default credentials')
     parser.add_argument('--server_host_override',
                         type=str,
                         help='the server host to which to claim to connect')
@@ -90,7 +94,16 @@ def get_secure_channel_parameters(args):
     call_credentials = _create_call_credentials(args)
 
     channel_opts = None
-    if args.use_tls:
+    if args.custom_credentials_type is not None:
+        if args.custom_credentials_type == "google_default_credentials":
+            channel_credentials = grpc.google_default_channel_credentials()
+            if call_credentials is not None:
+                channel_credentials = grpc.composite_channel_credentials(
+                    channel_credentials, call_credentials)
+        else:
+            raise ValueError("Unknown credentials type '{}'".format(
+                args.custom_credentials_type))
+    elif args.use_tls:
         if args.use_test_ca:
             root_certificates = resources.test_root_certificates()
         else:
@@ -115,7 +128,7 @@ def get_secure_channel_parameters(args):
 def _create_channel(args):
     target = '{}:{}'.format(args.server_host, args.server_port)
 
-    if args.use_tls or args.use_alts:
+    if args.use_tls or args.use_alts or args.custom_credentials_type is not None:
         channel_credentials, options = get_secure_channel_parameters(args)
         return grpc.secure_channel(target, channel_credentials, options)
     else:

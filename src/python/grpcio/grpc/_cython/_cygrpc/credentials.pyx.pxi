@@ -380,3 +380,16 @@ def server_credentials_alts():
   # Options can be destroyed as deep copy was performed.
   grpc_alts_credentials_options_destroy(c_options)
   return credentials
+
+cdef class GoogleDefaultChannelCredentials(ChannelCredentials):
+  cdef grpc_channel_credentials* _c_creds
+
+  def __cinit__(self):
+    self._c_creds = NULL
+
+  cdef grpc_channel_credentials *c(self) except *:
+    self._c_creds = grpc_google_default_credentials_create()
+    return self._c_creds
+
+def channel_credentials_google_default():
+  return GoogleDefaultChannelCredentials()

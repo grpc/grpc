@@ -1868,6 +1868,13 @@ def alts_server_credentials():
     return ServerCredentials(_cygrpc.server_credentials_alts())
 
 
+def google_default_channel_credentials():
+    """
+    TODO: Document.
+    """
+    return ChannelCredentials(_cygrpc.channel_credentials_google_default())
+
+
 def channel_ready_future(channel):
     """Creates a Future that tracks when a Channel is ready.
 

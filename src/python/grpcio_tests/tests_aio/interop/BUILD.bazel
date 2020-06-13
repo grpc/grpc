@@ -62,6 +62,7 @@ py_binary(
     ],
 )
 
+# TODO: Pull out library to fix aio interop client.
 py_binary(
     name = "client",
     srcs = ["client.py"],
