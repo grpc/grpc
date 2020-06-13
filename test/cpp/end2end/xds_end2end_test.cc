@@ -2004,6 +2004,26 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
   WaitForAllBackends();
 }
 
+TEST_P(XdsResolverOnlyTest, DefaultRouteCaseInsensitive) {
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_match()
+      ->mutable_case_sensitive()
+      ->set_value(false);
+  balancers_[0]->ads_service()->SetLdsResource(
+      AdsServiceImpl::BuildListener(route_config));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  CheckRpcSendOk(5, RpcOptions().set_wait_for_ready(true));
+}
+
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
  public:
   XdsResolverLoadReportingOnlyTest() : XdsEnd2endTest(4, 1, 3) {}
@@ -2390,7 +2410,7 @@ TEST_P(LdsRdsTest, RouteMatchHasUnsupportedSpecifier) {
             "No prefix field found in Default RouteMatch.");
 }
 
-// Tests that LDS client should send a NACK if route match has case_sensitive
+// Tests that LDS client should send a NACK if route match has a case_sensitive
 // set to false.
 TEST_P(LdsRdsTest, RouteMatchHasCaseSensitiveFalse) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
