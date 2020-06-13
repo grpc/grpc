@@ -34,9 +34,12 @@ DEFINE_int32(driver_port, 0, "Port for communication with driver");
 DEFINE_int32(server_port, 0, "Port for operation as a server");
 DEFINE_string(credential_type, grpc::testing::kInsecureCredentialsType,
               "Credential type for communication with driver");
-DEFINE_string(
-    driver_port_result_path, "",
-    "Path for the file to have a driver port. (Useful when driver_port is 0)");
+DEFINE_string(driver_port_result_path, "",
+              "Path for the file to have a driver port once it starts to "
+              "listen with the port. It is for external runners to know "
+              "the real port when driver_port is specified 0 meaning that "
+              "the port will be determined later."
+              "This path must be accessible from the worker.");
 
 static bool got_sigint = false;
 
