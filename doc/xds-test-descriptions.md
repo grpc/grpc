@@ -90,7 +90,7 @@ This test verifies that every backend receives traffic.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 1.  --fail_on_failed_rpc=true
 
 Load balancer configuration:
@@ -109,7 +109,7 @@ robin policy.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 1.  --fail_on_failed_rpc=true
 
 Load balancer configuration:
@@ -129,7 +129,7 @@ of backends that is stopped and then resumed.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 
 Load balancer configuration:
 
@@ -161,7 +161,7 @@ all backends in the primary locality fail.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 
 Load balancer configuration:
 
@@ -197,7 +197,7 @@ changes to this test case.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 
 Load balancer configuration:
 
@@ -224,7 +224,7 @@ same zone receive traffic.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 1.  --fail_on_failed_rpc=true
 
 Load balancer configuration:
@@ -249,7 +249,7 @@ after removal of another instance group in the same zone.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 
 Load balancer configuration:
 
@@ -273,7 +273,7 @@ to the new backends.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 1.  --fail_on_failed_rpc=true
 
 Load balancer configuration:
