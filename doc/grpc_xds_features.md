@@ -27,7 +27,7 @@ graceful failover themselves.
 The EDS policy will not support per-endpoint stats; it will report only
 per-locality stats.
 
-An [`lb_endpoint`](https://github.com/envoyproxy/envoy/blob/master/api/envoy/api/v2/endpoint/endpoint_components.proto)
+An [`lb_endpoint`](https://github.com/envoyproxy/envoy/blob/12a4bc430eaf440ceb0d11286cfbd4c16b79cdd1/api/envoy/api/v2/endpoint/endpoint_components.proto#L72)
 is ignored if the `health_status` is not HEALTHY or UNKNOWN.
 The optional `load_balancing_weight` is always ignored.
 
@@ -36,5 +36,5 @@ to authenticate with the xDS server.
 
 Features | gRFCs  | [C++, Python,<br> Ruby, PHP, C#](https://github.com/grpc/grpc/releases) | [Java](https://github.com/grpc/grpc-java/releases) | [Go](https://github.com/grpc/grpc-go/releases)
 ---------|--------|--------------|------|------
-**xDS Infrastructure:**<br>LDS->RDS->CDS->EDS flow,<br>ADS stream,<br>Client-side Load reporting via [LRS](https://github.com/envoyproxy/data-plane-api/blob/master/envoy/service/load_stats/v2/lrs.proto), | [A27](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md) | v1.30.0  | v1.30.0 | v1.30.0 |
-**Load Balancing:**<br>Virtual host matching,<br>Only default path ("" or "/") matching,<br>Priority-based weighted round-robin locality picking,<br>Round-robin endpoint picking within locality,<br>Cluster route action| [A27](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md) | v1.30.0  | v1.30.0 | v1.30.0 |
+**xDS Infrastructure in gRPC client channel:**<br>LDS->RDS->CDS->EDS flow,<br>ADS stream, | [A27](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md) | v1.30.0  | v1.30.0 | v1.30.0 |
+**Load Balancing:**<br>Virtual host matching,<br>Only default path ("" or "/") matching,<br>Priority-based weighted round-robin locality picking,<br>Round-robin endpoint picking within locality,<br>Cluster route action,<br>Client-side Load reporting via [LRS](https://github.com/envoyproxy/data-plane-api/blob/master/envoy/service/load_stats/v2/lrs.proto)| [A27](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md) | v1.30.0  | v1.30.0 | v1.30.0 |
