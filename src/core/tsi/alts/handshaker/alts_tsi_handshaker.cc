@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -249,9 +250,12 @@ static const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_create_frame_protector,
     handshaker_result_get_unused_bytes, handshaker_result_destroy};
 
+
+// LINE OF INTEREST
 tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                              bool is_client,
                                              tsi_handshaker_result** self) {
+
   if (self == nullptr || resp == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to create_handshaker_result()");
     return TSI_INVALID_ARGUMENT;
@@ -299,6 +303,18 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Invalid local identity");
     return TSI_FAILED_PRECONDITION;
   }
+
+
+  const grpc_gcp_Identity* cpeer_identity =
+      grpc_gcp_HandshakerResult_peer_identity(hresult);
+  if (cpeer_identity == nullptr) {
+    gpr_log(GPR_ERROR, "Invalid peer identity");
+    return TSI_FAILED_PRECONDITION;
+  }
+
+
+
+
   upb_strview local_service_account =
       grpc_gcp_Identity_service_account(local_identity);
   // We don't check if local service account is empty here
@@ -332,6 +348,38 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                                  local_service_account);
   grpc_gcp_AltsContext_set_peer_rpc_versions(
       context, const_cast<grpc_gcp_RpcProtocolVersions*>(peer_rpc_version));
+
+
+  grpc_gcp_HandshakerResult* ncresult = grpc_gcp_HandshakerResp_mutable_result(resp, context_arena.ptr());
+  grpc_gcp_Identity* peer_identity = grpc_gcp_HandshakerResult_mutable_peer_identity(ncresult, context_arena.ptr());
+  if(peer_identity == nullptr ) { //|| *peer_attributes_counter == nullptr) {
+    gpr_log(GPR_ERROR, "Null Peer Identity.");
+    return TSI_FAILED_PRECONDITION;
+  }
+
+  size_t sample = 2048; // removing this line removes errors messages e0612
+  size_t* lenz = &sample;
+  grpc_gcp_Identity_AttributesEntry** peer_attributes = grpc_gcp_Identity_mutable_attributes(peer_identity, lenz); // need size_t *len)
+  // where do these labeled functions come from --> upb genreated files
+  // grpc_gcp_Identity_AttributesEntry** peer_attributes_counter = peer_attributes;
+  if(peer_attributes == nullptr ) { //|| *peer_attributes_counter == nullptr) {
+    gpr_log(GPR_ERROR, "Null Peer Attributes.");
+    GPR_ASSERT(0);
+    return TSI_FAILED_PRECONDITION; //This is triggering
+  }
+  // // while(*peer_attributes_counter != nullptr) {//map<string, string>::iterator it = peer_attributes.begin(); it != peer_attributes.end(); it++ ) {
+  // //   grpc_gcp_AltsContext_PeerAttributesEntry* peer_entry = grpc_gcp_AltsContext_add_peer_attributes(context, context_arena.ptr());
+  // //   upb_strview key = grpc_gcp_Identity_AttributesEntry_key(*peer_attributes_counter); USE CONST_CAST
+  // //   upb_strview value = grpc_gcp_Identity_AttributesEntry_value(*peer_attributes_counter);
+  // //   grpc_gcp_AltsContext_PeerAttributesEntry_set_key(peer_entry, key);
+  // //   grpc_gcp_AltsContext_PeerAttributesEntry_set_value(peer_entry, value);
+  //   *peer_attributes_counter++;
+
+  // }
+
+
+
+
   size_t serialized_ctx_length;
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
       context, context_arena.ptr(), &serialized_ctx_length);
