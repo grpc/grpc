@@ -291,3 +291,31 @@ Test driver asserts:
 
 1.  All RPCs are directed to the new backend service.
 
+### traffic_splitting
+
+This test verifies that the traffic will be distributed between backend
+services with the correct weights when route action is set to weighted
+backend services.
+
+Client parameters:
+
+1.  --num_channels=1
+1.  --qps=100
+
+Load balancer configuration:
+
+1.  One MIG with one backend
+
+Assert:
+
+1. Once all backends receive at least one RPC, the following 1000 RPCs are
+all sent to MIG_a.
+
+The test driver adds a new MIG with 1 backend, and changes the route action
+to weighted backend services with {a: 20, b: 80}.
+
+Assert:
+
+1. Once all backends receive at least one RPC, the following 1000 RPCs are
+distributed across the 2 backends as a: 20, b: 80.
+
