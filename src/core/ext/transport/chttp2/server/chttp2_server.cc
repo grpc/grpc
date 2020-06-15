@@ -47,7 +47,7 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-typedef struct {
+struct server_state {
   grpc_server* server;
   grpc_tcp_server* tcp_server;
   grpc_channel_args* args;
@@ -58,9 +58,9 @@ typedef struct {
   grpc_core::HandshakeManager* pending_handshake_mgrs;
   grpc_core::RefCountedPtr<grpc_core::channelz::ListenSocketNode>
       channelz_listen_socket;
-} server_state;
+};
 
-typedef struct {
+struct server_connection_state {
   gpr_refcount refs;
   server_state* svr_state;
   grpc_pollset* accepting_pollset;
@@ -73,7 +73,7 @@ typedef struct {
   grpc_closure on_timeout;
   grpc_closure on_receive_settings;
   grpc_pollset_set* interested_parties;
-} server_connection_state;
+};
 
 static void server_connection_state_unref(
     server_connection_state* connection_state) {

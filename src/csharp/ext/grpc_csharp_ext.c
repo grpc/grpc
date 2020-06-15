@@ -69,6 +69,7 @@ typedef struct grpcsharp_batch_context {
     grpc_metadata_array trailing_metadata;
     grpc_status_code status;
     grpc_slice status_details;
+    const char* error_string;
   } recv_status_on_client;
   int recv_close_on_server_cancelled;
 
@@ -223,6 +224,7 @@ grpcsharp_batch_context_reset(grpcsharp_batch_context* ctx) {
   grpcsharp_metadata_array_destroy_metadata_only(
       &(ctx->recv_status_on_client.trailing_metadata));
   grpc_slice_unref(ctx->recv_status_on_client.status_details);
+  gpr_free((void*)ctx->recv_status_on_client.error_string);
   memset(ctx, 0, sizeof(grpcsharp_batch_context));
 }
 
@@ -326,6 +328,12 @@ grpcsharp_batch_context_recv_status_on_client_details(
   *details_length =
       GRPC_SLICE_LENGTH(ctx->recv_status_on_client.status_details);
   return (char*)GRPC_SLICE_START_PTR(ctx->recv_status_on_client.status_details);
+}
+
+GPR_EXPORT const char* GPR_CALLTYPE
+grpcsharp_batch_context_recv_status_on_client_error_string(
+    const grpcsharp_batch_context* ctx) {
+  return ctx->recv_status_on_client.error_string;
 }
 
 GPR_EXPORT const grpc_metadata_array* GPR_CALLTYPE
@@ -631,6 +639,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
       &(ctx->recv_status_on_client.status);
   ops[5].data.recv_status_on_client.status_details =
       &(ctx->recv_status_on_client.status_details);
+  ops[5].data.recv_status_on_client.error_string =
+      &(ctx->recv_status_on_client.error_string);
   ops[5].flags = 0;
   ops[5].reserved = NULL;
 
@@ -652,6 +662,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_test_call_start_unary_echo(
                                      // received from server.
   ctx->recv_status_on_client.status = GRPC_STATUS_OK;
   ctx->recv_status_on_client.status_details = grpc_empty_slice();
+  ctx->recv_status_on_client.error_string = NULL;
   // echo initial metadata as if received from server (as trailing metadata)
   grpcsharp_metadata_array_move(&(ctx->recv_status_on_client.trailing_metadata),
                                 initial_metadata);
@@ -691,6 +702,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_client_streaming(
       &(ctx->recv_status_on_client.status);
   ops[3].data.recv_status_on_client.status_details =
       &(ctx->recv_status_on_client.status_details);
+  ops[3].data.recv_status_on_client.error_string =
+      &(ctx->recv_status_on_client.error_string);
   ops[3].flags = 0;
   ops[3].reserved = NULL;
 
@@ -732,6 +745,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
       &(ctx->recv_status_on_client.status);
   ops[3].data.recv_status_on_client.status_details =
       &(ctx->recv_status_on_client.status_details);
+  ops[3].data.recv_status_on_client.error_string =
+      &(ctx->recv_status_on_client.error_string);
   ops[3].flags = 0;
   ops[3].reserved = NULL;
 
@@ -761,6 +776,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_duplex_streaming(
       &(ctx->recv_status_on_client.status);
   ops[1].data.recv_status_on_client.status_details =
       &(ctx->recv_status_on_client.status_details);
+  ops[1].data.recv_status_on_client.error_string =
+      &(ctx->recv_status_on_client.error_string);
   ops[1].flags = 0;
   ops[1].reserved = NULL;
 

@@ -143,7 +143,7 @@ cdef class _ServicerContext:
                             self._loop)
         self._rpc_state.metadata_sent = True
 
-    async def send_initial_metadata(self, tuple metadata):
+    async def send_initial_metadata(self, object metadata):
         self._rpc_state.raise_for_termination()
 
         if self._rpc_state.metadata_sent:
@@ -151,7 +151,7 @@ cdef class _ServicerContext:
         else:
             await _send_initial_metadata(
                 self._rpc_state,
-                _augment_metadata(metadata, self._rpc_state.compression_algorithm),
+                _augment_metadata(tuple(metadata), self._rpc_state.compression_algorithm),
                 _EMPTY_FLAG,
                 self._loop
             )
@@ -192,8 +192,8 @@ cdef class _ServicerContext:
     async def abort_with_status(self, object status):
         await self.abort(status.code, status.details, status.trailing_metadata)
 
-    def set_trailing_metadata(self, tuple metadata):
-        self._rpc_state.trailing_metadata = metadata
+    def set_trailing_metadata(self, object metadata):
+        self._rpc_state.trailing_metadata = tuple(metadata)
 
     def invocation_metadata(self):
         return self._rpc_state.invocation_metadata()
@@ -233,13 +233,13 @@ cdef class _SyncServicerContext:
         # Abort should raise an AbortError
         future.exception()
 
-    def send_initial_metadata(self, tuple metadata):
+    def send_initial_metadata(self, object metadata):
         future = asyncio.run_coroutine_threadsafe(
             self._context.send_initial_metadata(metadata),
             self._loop)
         future.result()
 
-    def set_trailing_metadata(self, tuple metadata):
+    def set_trailing_metadata(self, object metadata):
         self._context.set_trailing_metadata(metadata)
 
     def invocation_metadata(self):
@@ -303,7 +303,7 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
                                               object response_serializer,
                                               object loop):
     """Finishes server method handler with a single response.
-    
+
     This function executes the application handler, and handles response
     sending, as well as errors. It is shared between unary-unary and
     stream-unary handlers.
@@ -378,7 +378,7 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
     """
     cdef object async_response_generator
     cdef object response_message
-    
+
     if inspect.iscoroutinefunction(stream_handler):
         # Case 1: Coroutine async handler - using reader-writer API
         # The handler uses reader / writer API, returns None.

@@ -627,6 +627,7 @@ bool PrivateGenerator::PrintServiceClass(
         out->Print("options=(),\n");
         out->Print("channel_credentials=None,\n");
         out->Print("call_credentials=None,\n");
+        out->Print("insecure=False,\n");
         out->Print("compression=None,\n");
         out->Print("wait_for_ready=None,\n");
         out->Print("timeout=None,\n");
@@ -654,8 +655,8 @@ bool PrivateGenerator::PrintServiceClass(
           out->Print(serializer_dict, "$ResponseModuleAndClass$.FromString,\n");
           out->Print("options, channel_credentials,\n");
           out->Print(
-              "call_credentials, compression, wait_for_ready, timeout, "
-              "metadata)\n");
+              "insecure, call_credentials, compression, wait_for_ready, "
+              "timeout, metadata)\n");
         }
       }
     }

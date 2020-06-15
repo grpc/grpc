@@ -90,7 +90,7 @@ This test verifies that every backend receives traffic.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 1.  --fail_on_failed_rpc=true
 
 Load balancer configuration:
@@ -109,7 +109,7 @@ robin policy.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 1.  --fail_on_failed_rpc=true
 
 Load balancer configuration:
@@ -129,7 +129,7 @@ of backends that is stopped and then resumed.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 
 Load balancer configuration:
 
@@ -161,7 +161,7 @@ all backends in the primary locality fail.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 
 Load balancer configuration:
 
@@ -197,7 +197,7 @@ changes to this test case.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 
 Load balancer configuration:
 
@@ -224,7 +224,7 @@ same zone receive traffic.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 1.  --fail_on_failed_rpc=true
 
 Load balancer configuration:
@@ -249,7 +249,7 @@ after removal of another instance group in the same zone.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 
 Load balancer configuration:
 
@@ -273,7 +273,7 @@ to the new backends.
 Client parameters:
 
 1.  --num_channels=1
-1.  --qps=10
+1.  --qps=100
 1.  --fail_on_failed_rpc=true
 
 Load balancer configuration:
@@ -290,4 +290,32 @@ and changes the TD URL map to point to this new backend service.
 Test driver asserts:
 
 1.  All RPCs are directed to the new backend service.
+
+### traffic_splitting
+
+This test verifies that the traffic will be distributed between backend
+services with the correct weights when route action is set to weighted
+backend services.
+
+Client parameters:
+
+1.  --num_channels=1
+1.  --qps=100
+
+Load balancer configuration:
+
+1.  One MIG with one backend
+
+Assert:
+
+1. Once all backends receive at least one RPC, the following 1000 RPCs are
+all sent to MIG_a.
+
+The test driver adds a new MIG with 1 backend, and changes the route action
+to weighted backend services with {a: 20, b: 80}.
+
+Assert:
+
+1. Once all backends receive at least one RPC, the following 1000 RPCs are
+distributed across the 2 backends as a: 20, b: 80.
 

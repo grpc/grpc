@@ -233,13 +233,12 @@ grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete) {
   return &op->op;
 }
 
-typedef struct {
+struct made_transport_stream_op {
   grpc_closure outer_on_complete;
   grpc_closure* inner_on_complete;
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload payload;
-} made_transport_stream_op;
-
+};
 static void destroy_made_transport_stream_op(void* arg, grpc_error* error) {
   made_transport_stream_op* op = static_cast<made_transport_stream_op*>(arg);
   grpc_closure* c = op->inner_on_complete;

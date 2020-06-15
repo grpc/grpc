@@ -74,12 +74,14 @@ proto_files=( \
   "envoy/config/listener/v2/api_listener.proto" \
   "envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto" \
   "envoy/config/filter/accesslog/v2/accesslog.proto" \
+  "envoy/config/rbac/v2/rbac.proto" \
   "envoy/config/trace/v2/http_tracer.proto" \
   "envoy/service/discovery/v2/ads.proto" \
   "envoy/service/load_stats/v2/lrs.proto" \
   "envoy/type/http.proto" \
   "envoy/type/matcher/regex.proto" \
   "envoy/api/v2/listener/udp_listener_config.proto" \
+  "envoy/type/matcher/path.proto" \
   "envoy/type/matcher/string.proto" \
   "envoy/type/metadata/v2/metadata.proto" \
   "envoy/type/percent.proto" \
@@ -88,6 +90,7 @@ proto_files=( \
   "envoy/type/tracing/v2/custom_tag.proto" \
   "gogoproto/gogo.proto" \
   "google/api/annotations.proto" \
+  "google/api/expr/v1alpha1/syntax.proto" \
   "google/api/http.proto" \
   "google/protobuf/any.proto" \
   "google/protobuf/descriptor.proto" \
