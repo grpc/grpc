@@ -69,7 +69,7 @@ Rule 'boringssl' indicated that a canonical reproducible form can be obtained by
     - Update `bazel/grpc_deps.bzl` with the SHA value shown in the above debug msg. Commit again `git commit -m "Updated sha256"`
 
 - Run `tools/distrib/generate_boringssl_prefix_header.sh`
-    - Commit again `commit -m "generate boringsll prefix headers"`
+    - Commit again `commit -m "generate boringssl prefix headers"`
 
 - Increment the boringssl podspec version number in 
   `templates/src/objective-c/BoringSSL-GRPC.podspec.template` and `templates/gRPC-Core.podspec.template`.
