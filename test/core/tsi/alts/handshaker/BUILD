@@ -40,6 +40,19 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+grpc_cc_test(
+    name = "alts_tsi_handshaker_peer_attributes_test",
+    srcs = ["alts_tsi_handshaker_peer_attributes_test.cc"],
+    language = "C++",
+    deps = [
+        ":alts_handshaker_service_api_test_lib",
+        "//:gpr",
+        "//:gpr_base",
+        "//:grpc",
+        "//:tsi",
+        "//test/core/util:grpc_test_util",
+    ],
+)
 
 grpc_cc_test(
     name = "alts_tsi_handshaker_test",
