@@ -196,8 +196,8 @@ static const upb_msglayout *const google_api_expr_v1alpha1_SourceInfo_submsgs[1]
 static const upb_msglayout_field google_api_expr_v1alpha1_SourceInfo__fields[4] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
   {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
-  {3, UPB_SIZE(16, 32), 0, 0, 5, 3},
-  {4, UPB_SIZE(20, 40), 0, 0, 11, 3},
+  {3, UPB_SIZE(16, 32), 0, 0, 5, _UPB_LABEL_PACKED},
+  {4, UPB_SIZE(20, 40), 0, 0, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout google_api_expr_v1alpha1_SourceInfo_msginit = {
@@ -208,13 +208,13 @@ const upb_msglayout google_api_expr_v1alpha1_SourceInfo_msginit = {
 
 static const upb_msglayout_field google_api_expr_v1alpha1_SourceInfo_PositionsEntry__fields[2] = {
   {1, UPB_SIZE(0, 0), 0, 0, 3, 1},
-  {2, UPB_SIZE(8, 8), 0, 0, 5, 1},
+  {2, UPB_SIZE(8, 16), 0, 0, 5, 1},
 };
 
 const upb_msglayout google_api_expr_v1alpha1_SourceInfo_PositionsEntry_msginit = {
   NULL,
   &google_api_expr_v1alpha1_SourceInfo_PositionsEntry__fields[0],
-  UPB_SIZE(16, 16), 2, false,
+  UPB_SIZE(16, 32), 2, false,
 };
 
 static const upb_msglayout_field google_api_expr_v1alpha1_SourcePosition__fields[4] = {

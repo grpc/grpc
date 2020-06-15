@@ -26,7 +26,7 @@ static const upb_msglayout *const envoy_config_rbac_v2_RBAC_submsgs[1] = {
 
 static const upb_msglayout_field envoy_config_rbac_v2_RBAC__fields[2] = {
   {1, UPB_SIZE(0, 0), 0, 0, 14, 1},
-  {2, UPB_SIZE(8, 8), 0, 0, 11, 3},
+  {2, UPB_SIZE(8, 8), 0, 0, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout envoy_config_rbac_v2_RBAC_msginit = {
