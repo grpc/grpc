@@ -135,6 +135,7 @@
       <!-- Out-of-project files will have respective ProtoRoot='%(RelativeDir)'. -->
       <Protobuf_Rooted Include="@(_Protobuf_NoRootElsewhere)">
         <ProtoRoot>%(RelativeDir)</ProtoRoot>
+		<ProtoRoot Condition=" '$(Protobuf_ProtoRoot)' != '' ">$(Protobuf_ProtoRoot)</ProtoRoot>
       </Protobuf_Rooted>
     </ItemGroup>
   </Target>

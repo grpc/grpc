@@ -79,15 +79,14 @@ namespace Grpc.Tools
             var patched = new List<ITaskItem>();
             foreach (var proto in Protobuf)
             {
-                // This operates on a local copy and has no effect on the MSBuild instance!
-                generator.PatchOutputDirectory(proto);
-                patched.Add(proto);
+                var patchedProto = generator.PatchOutputDirectory(proto);
+                patched.Add(patchedProto);
 
-                var outputs = generator.GetPossibleOutputs(proto);
+                var outputs = generator.GetPossibleOutputs(patchedProto);
                 foreach (string output in outputs)
                 {
                     var ti = new TaskItem(output);
-                    ti.SetMetadata(Metadata.Source, proto.ItemSpec);
+                    ti.SetMetadata(Metadata.Source, patchedProto.ItemSpec);
                     possible.Add(ti);
                 }
             }

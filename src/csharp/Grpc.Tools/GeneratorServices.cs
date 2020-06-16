@@ -57,9 +57,10 @@ namespace Grpc.Tools
         // Update OutputDir and GrpcOutputDir for the item and all subsequent
         // targets using this item. This should only be done if the real
         // output directories for protoc should be modified.
-        public virtual void PatchOutputDirectory(ITaskItem protoItem)
+        public virtual ITaskItem PatchOutputDirectory(ITaskItem protoItem)
         {
             // Nothing to do
+            return protoItem;
         }
 
         public abstract string[] GetPossibleOutputs(ITaskItem protoItem);
@@ -116,23 +117,25 @@ namespace Grpc.Tools
     {
         public CSharpGeneratorServices(TaskLoggingHelper log) : base(log) { }
 
-        public override void PatchOutputDirectory(ITaskItem protoItem)
+        public override ITaskItem PatchOutputDirectory(ITaskItem protoItem)
         {
-            string root = protoItem.GetMetadata(Metadata.ProtoRoot);
-            string proto = protoItem.ItemSpec;
+            var outputItem = new TaskItem(protoItem);
+            string root = outputItem.GetMetadata(Metadata.ProtoRoot);
+            string proto = outputItem.ItemSpec;
             string relative = GetRelativeDir(root, proto, Log);
 
-            string outdir = protoItem.GetMetadata(Metadata.OutputDir);
+            string outdir = outputItem.GetMetadata(Metadata.OutputDir);
             string pathStem = Path.Combine(outdir, relative);
-            protoItem.SetMetadata(Metadata.OutputDir, pathStem);
+            outputItem.SetMetadata(Metadata.OutputDir, pathStem);
 
             // Override outdir if GrpcOutputDir present, default to proto output.
-            string grpcdir = protoItem.GetMetadata(Metadata.GrpcOutputDir);
+            string grpcdir = outputItem.GetMetadata(Metadata.GrpcOutputDir);
             if (grpcdir != "")
             {
                 pathStem = Path.Combine(grpcdir, relative);
             }
-            protoItem.SetMetadata(Metadata.GrpcOutputDir, pathStem);
+            outputItem.SetMetadata(Metadata.GrpcOutputDir, pathStem);
+            return outputItem;
         }
 
         public override string[] GetPossibleOutputs(ITaskItem protoItem)
