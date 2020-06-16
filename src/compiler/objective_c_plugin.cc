@@ -52,15 +52,16 @@ inline ::grpc::string ImportProtoHeaders(
 
   ::grpc::string base_name = header;
   grpc_generator::StripPrefix(&base_name, "google/protobuf/");
+  ::grpc::string file_name = "GPB" + base_name;
   // create the import code snippet
   ::grpc::string framework_header =
-      ::grpc::string(ProtobufLibraryFrameworkName) + "/" + base_name;
+      ::grpc::string(ProtobufLibraryFrameworkName) + "/" + file_name;
 
   static const ::grpc::string kFrameworkImportsCondition =
       "GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS";
   return PreprocIfElse(kFrameworkImportsCondition,
                        indent + SystemImport(framework_header),
-                       indent + LocalImport(header));
+                       indent + LocalImport(file_name));
 }
 
 }  // namespace
