@@ -104,4 +104,4 @@ $ bazel run :HelloWorld --ios_simulator_version='<runtime>' --ios_sumlator_devic
 
 ## Tutorial
 
-You can find a more detailed tutorial in [gRPC Basics: Objective-C](https://grpc.io/docs/languages/objective/basics-c.html).
+You can find a more detailed tutorial in [gRPC Basics: Objective-C](https://grpc.io/docs/languages/objective-c/basics).
