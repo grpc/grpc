@@ -139,39 +139,6 @@ namespace Grpc.Tools
         }
 
         /// <summary>
-        /// Construct the directory hash from a relative file name
-        /// </summary>
-        /// <param name="proto">Relative path to the proto item, e. g. "foo/file.proto"</param>
-        /// <returns>
-        /// Directory hash based on the file name, e. g. "deadbeef12345678"
-        /// </returns>
-        /// <remarks>
-        /// Since a project may contain proto files with the same filename but in different
-        /// directories, a unique directory for the generated files is constructed based on the
-        /// proto file names directory. The directory path can be arbitrary, for example,
-        /// it can be outside of the project, or an absolute path including a drive letter,
-        /// or a UNC network path. A name constructed from such a path by, for example,
-        /// replacing disallowed name characters with an underscore, may well be over
-        /// filesystem's allowed path length, since it will be located under the project
-        /// and solution directories, which are also some level deep from the root.
-        /// Instead of creating long and unwieldy names for these proto sources, we cache
-        /// the full path of the name without the filename, as in e. g. "foo/file.proto"
-        /// will yield the name "deadbeef12345678", where that is a presumed hash value
-        /// of the string "foo". This allows the path to be short, unique (up to a hash
-        /// collision), and still allowing the user to guess their provenance.
-        /// </remarks>
-        private static string GetDirectoryHash(string proto)
-        {
-            string dirname = Path.GetDirectoryName(proto);
-            if (Platform.IsFsCaseInsensitive)
-            {
-                dirname = dirname.ToLowerInvariant();
-            }
-
-            return HashString64Hex(dirname);
-        }
-
-        /// <summary>
         /// Construct relative dependency file name from directory hash and file name
         /// </summary>
         /// <param name="protoDepDir">Relative path to the dependency cache, e. g. "out"</param>
@@ -205,6 +172,39 @@ namespace Grpc.Tools
         {
             string dirhash = GetDirectoryHash(proto);
             return Path.Combine(outputDir, dirhash);
+        }
+
+        /// <summary>
+        /// Construct the directory hash from a relative file name
+        /// </summary>
+        /// <param name="proto">Relative path to the proto item, e. g. "foo/file.proto"</param>
+        /// <returns>
+        /// Directory hash based on the file name, e. g. "deadbeef12345678"
+        /// </returns>
+        /// <remarks>
+        /// Since a project may contain proto files with the same filename but in different
+        /// directories, a unique directory for the generated files is constructed based on the
+        /// proto file names directory. The directory path can be arbitrary, for example,
+        /// it can be outside of the project, or an absolute path including a drive letter,
+        /// or a UNC network path. A name constructed from such a path by, for example,
+        /// replacing disallowed name characters with an underscore, may well be over
+        /// filesystem's allowed path length, since it will be located under the project
+        /// and solution directories, which are also some level deep from the root.
+        /// Instead of creating long and unwieldy names for these proto sources, we cache
+        /// the full path of the name without the filename, as in e. g. "foo/file.proto"
+        /// will yield the name "deadbeef12345678", where that is a presumed hash value
+        /// of the string "foo". This allows the path to be short, unique (up to a hash
+        /// collision), and still allowing the user to guess their provenance.
+        /// </remarks>
+        private static string GetDirectoryHash(string proto)
+        {
+            string dirname = Path.GetDirectoryName(proto);
+            if (Platform.IsFsCaseInsensitive)
+            {
+                dirname = dirname.ToLowerInvariant();
+            }
+
+            return HashString64Hex(dirname);
         }
 
         // Get a 64-bit hash for a directory string. We treat it as if it were
@@ -300,52 +300,6 @@ namespace Grpc.Tools
                 }
                 return new string[0];
             }
-        }
-
-        // Calculate part of proto path relative to root. Protoc is very picky
-        // about them matching exactly, so can be we. Expect root be exact prefix
-        // to proto, minus some slash normalization.
-        internal static string GetRelativeDir(string root, string proto, TaskLoggingHelper log)
-        {
-            string protoDir = Path.GetDirectoryName(proto);
-            string rootDir = EndWithSlash(Path.GetDirectoryName(EndWithSlash(root)));
-            if (rootDir == s_dotSlash)
-            {
-                // Special case, otherwise we can return "./" instead of "" below!
-                return protoDir;
-            }
-            if (Platform.IsFsCaseInsensitive)
-            {
-                protoDir = protoDir.ToLowerInvariant();
-                rootDir = rootDir.ToLowerInvariant();
-            }
-            protoDir = EndWithSlash(protoDir);
-            if (!protoDir.StartsWith(rootDir))
-            {
-                log.LogWarning("Protobuf item '{0}' has the ProtoRoot metadata '{1}' " +
-                               "which is not prefix to its path. Cannot compute relative path.",
-                    proto, root);
-                return "";
-            }
-            return protoDir.Substring(rootDir.Length);
-        }
-
-        // './' or '.\', normalized per system.
-        internal static string s_dotSlash = "." + Path.DirectorySeparatorChar;
-
-        internal static string EndWithSlash(string str)
-        {
-            if (str == "")
-            {
-                return s_dotSlash;
-            }
-
-            if (str[str.Length - 1] != '\\' && str[str.Length - 1] != '/')
-            {
-                return str + Path.DirectorySeparatorChar;
-            }
-
-            return str;
         }
     };
 }
