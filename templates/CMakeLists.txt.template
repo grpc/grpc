@@ -460,7 +460,7 @@
     for lib in libs:
       if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
       if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 'z']: continue  # we build these using CMake instead
+      if lib.name in ['ares', 'benchmark', 're2', 'z']: continue  # we build these using CMake instead
       if is_absl_lib(lib.name): continue  # we build these using CMake instead
       cmake_libs.append(lib)
   %>
