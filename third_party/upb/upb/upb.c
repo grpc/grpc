@@ -37,7 +37,8 @@ const char *upb_status_errmsg(const upb_status *status) { return status->msg; }
 void upb_status_seterrmsg(upb_status *status, const char *msg) {
   if (!status) return;
   status->ok = false;
-  strncpy(status->msg, msg, sizeof(status->msg));
+  strncpy(status->msg, msg, sizeof(status->msg) - 1);
+  status->msg[sizeof(status->msg) - 1] = '\0';
   nullz(status);
 }
 
