@@ -1,7 +1,7 @@
 # Overview of performance test suite, with steps for manual runs:
 
 For design of the tests, see
-https://grpc.io/docs/guides/benchmarking.html.
+https://grpc.io/docs/guides/benchmarking.
 
 ## Pre-reqs for running these manually:
 In general the benchmark workers and driver build scripts expect
