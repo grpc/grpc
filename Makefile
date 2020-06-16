@@ -4717,6 +4717,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/helpers.o: $(GENDIR)/src/proto/grpc
 
 LIBGRPC++_SRC = \
     src/cpp/client/channel_cc.cc \
+    src/cpp/client/client_callback.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/client_interceptor.cc \
     src/cpp/client/create_channel.cc \
@@ -5423,6 +5424,7 @@ endif
 
 LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/channel_cc.cc \
+    src/cpp/client/client_callback.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/client_interceptor.cc \
     src/cpp/client/create_channel.cc \

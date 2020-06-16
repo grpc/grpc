@@ -1478,6 +1478,12 @@ TEST_P(ClientCallbackEnd2endTest,
         done_cv_.wait(l);
       }
     }
+    // RemoveHold under the same lock used for OnDone to make sure that we don't
+    // call OnDone directly or indirectly from the RemoveHold function.
+    void RemoveHoldUnderLock() {
+      std::unique_lock<std::mutex> l(mu_);
+      RemoveHold();
+    }
     const Status& status() {
       std::unique_lock<std::mutex> l(mu_);
       return status_;
@@ -1522,7 +1528,7 @@ TEST_P(ClientCallbackEnd2endTest,
       ++reads_complete;
     }
   }
-  client.RemoveHold();
+  client.RemoveHoldUnderLock();
   client.Await();
 
   EXPECT_EQ(kServerDefaultResponseStreamsToSend, reads_complete);
