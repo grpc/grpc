@@ -24,6 +24,7 @@
 namespace grpc {
 
 typedef ::grpc_impl::Alarm Alarm;
+
 }
 
 #endif  // GRPCPP_ALARM_H
