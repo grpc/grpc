@@ -53,4 +53,4 @@ This requires `php` >= 5.5, `pecl`, `composer`
 You can find a more detailed tutorial in [gRPC Basics: PHP][]
 
 [Node]:https://github.com/grpc/grpc/tree/master/examples/node
-[gRPC Basics: PHP]:https://grpc.io/docs/tutorials/basic/php.html
+[gRPC Basics: PHP]:https://grpc.io/docs/languages/php/basics

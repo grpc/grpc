@@ -40,7 +40,7 @@ download all of the NuGet dependencies of gRPC.
 
 Using these IDEs, a workaround is as follows:
 * Obtain a nuget executable for your platform and update it with
- `nuget update -self`. 
+ `nuget update -self`.
 * Navigate to this directory and run `nuget restore`.
 * Now that packages have been restored into their proper package folder, build the solution from your IDE.
 
@@ -71,4 +71,4 @@ Tutorial
 You can find a more detailed tutorial in [gRPC Basics: C#][]
 
 [helloworld.proto]:../../protos/helloworld.proto
-[gRPC Basics: C#]:https://grpc.io/docs/tutorials/basic/csharp.html
+[gRPC Basics: C#]:https://grpc.io/docs/languages/csharp/basics
