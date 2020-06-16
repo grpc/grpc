@@ -44,6 +44,14 @@ namespace Grpc.Tools.Tests
                // Construct the location of MsBuild assemblies from the location of mscorlib assembly.
                var msbuildToolPath = Path.Combine(mscorlibDir, "..", "msbuild", "Current", "bin");
 
+               if (!Directory.Exists(msbuildToolPath))
+               {
+                   // with older versions of mono for Mac (e.g. mono 5.16.0 which is currently
+                   // installed on the kokoro mac workers) the "Current" symlink doesn't exist
+                   // so also try specifying the msbuild version explicitly
+                   msbuildToolPath = Path.Combine(mscorlibDir, "..", "msbuild", "15.0", "bin");
+               }
+
                // To make sure we've constructed the right path, make sure the assemblies we're interested
                // in are there.
                foreach(var assemblyName in new [] {"Microsoft.Build.Framework.dll", "Microsoft.Build.Utilities.v4.0.dll", "Microsoft.Build.Utilities.Core.dll"})
