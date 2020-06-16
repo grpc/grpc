@@ -319,7 +319,7 @@ class ClientContext {
   ///
   /// It is legal to call this only before initial metadata is sent.
   ///
-  /// \see  https://grpc.io/docs/guides/auth.html
+  /// \see  https://grpc.io/docs/guides/auth
   void set_credentials(
       const std::shared_ptr<grpc_impl::CallCredentials>& creds);
 
