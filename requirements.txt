@@ -5,5 +5,3 @@ enum34>=1.0.4
 protobuf>=3.5.0.post1
 six>=1.10
 wheel>=0.29
-# rsa 4.3 is the last version support Python 2
-rsa==4.3
