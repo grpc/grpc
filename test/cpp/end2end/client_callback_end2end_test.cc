@@ -16,12 +16,6 @@
  *
  */
 
-#include <algorithm>
-#include <functional>
-#include <mutex>
-#include <sstream>
-#include <thread>
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -31,6 +25,14 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
+#include <gtest/gtest.h>
+
+#include <algorithm>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <sstream>
+#include <thread>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -42,8 +44,6 @@
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
-
-#include <gtest/gtest.h>
 
 // MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
 // should be skipped based on a decision made at SetUp time. In particular, any
@@ -1114,7 +1114,8 @@ class BidiClient
  public:
   BidiClient(grpc::testing::EchoTestService::Stub* stub,
              ServerTryCancelRequestPhase server_try_cancel,
-             int num_msgs_to_send, ClientCancelInfo client_cancel = {})
+             int num_msgs_to_send, bool cork_metadata, bool first_write_async,
+             ClientCancelInfo client_cancel = {})
       : server_try_cancel_(server_try_cancel),
         msgs_to_send_{num_msgs_to_send},
         client_cancel_{client_cancel} {
@@ -1124,8 +1125,9 @@ class BidiClient
                            grpc::to_string(server_try_cancel));
     }
     request_.set_message("Hello fren ");
+    context_.set_initial_metadata_corked(cork_metadata);
     stub->experimental_async()->BidiStream(&context_, this);
-    MaybeWrite();
+    MaybeAsyncWrite(first_write_async);
     StartRead(&response_);
     StartCall();
   }
@@ -1146,6 +1148,10 @@ class BidiClient
     }
   }
   void OnWriteDone(bool ok) override {
+    if (async_write_thread_.joinable()) {
+      async_write_thread_.join();
+      RemoveHold();
+    }
     if (server_try_cancel_ == DO_NOT_CANCEL) {
       EXPECT_TRUE(ok);
     } else if (!ok) {
@@ -1210,6 +1216,26 @@ class BidiClient
   }
 
  private:
+  void MaybeAsyncWrite(bool first_write_async) {
+    if (first_write_async) {
+      // Make sure that we have a write to issue.
+      // TODO(vjpai): Make this work with 0 writes case as well.
+      assert(msgs_to_send_ >= 1);
+
+      AddHold();
+      async_write_thread_ = std::thread([this] {
+        std::unique_lock<std::mutex> lock(async_write_thread_mu_);
+        async_write_thread_cv_.wait(
+            lock, [this] { return async_write_thread_start_; });
+        MaybeWrite();
+      });
+      std::lock_guard<std::mutex> lock(async_write_thread_mu_);
+      async_write_thread_start_ = true;
+      async_write_thread_cv_.notify_one();
+      return;
+    }
+    MaybeWrite();
+  }
   void MaybeWrite() {
     if (client_cancel_.cancel &&
         writes_complete_ == client_cancel_.ops_before_cancel) {
@@ -1231,13 +1257,57 @@ class BidiClient
   std::mutex mu_;
   std::condition_variable cv_;
   bool done_ = false;
+  std::thread async_write_thread_;
+  bool async_write_thread_start_ = false;
+  std::mutex async_write_thread_mu_;
+  std::condition_variable async_write_thread_cv_;
 };
 
 TEST_P(ClientCallbackEnd2endTest, BidiStream) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  BidiClient test{stub_.get(), DO_NOT_CANCEL,
-                  kServerDefaultResponseStreamsToSend};
+  BidiClient test(stub_.get(), DO_NOT_CANCEL,
+                  kServerDefaultResponseStreamsToSend,
+                  /*cork_metadata=*/false, /*first_write_async=*/false);
+  test.Await();
+  // Make sure that the server interceptors were not notified of a cancel
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+  }
+}
+
+TEST_P(ClientCallbackEnd2endTest, BidiStreamFirstWriteAsync) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  BidiClient test(stub_.get(), DO_NOT_CANCEL,
+                  kServerDefaultResponseStreamsToSend,
+                  /*cork_metadata=*/false, /*first_write_async=*/true);
+  test.Await();
+  // Make sure that the server interceptors were not notified of a cancel
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+  }
+}
+
+TEST_P(ClientCallbackEnd2endTest, BidiStreamCorked) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  BidiClient test(stub_.get(), DO_NOT_CANCEL,
+                  kServerDefaultResponseStreamsToSend,
+                  /*cork_metadata=*/true, /*first_write_async=*/false);
+  test.Await();
+  // Make sure that the server interceptors were not notified of a cancel
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+  }
+}
+
+TEST_P(ClientCallbackEnd2endTest, BidiStreamCorkedFirstWriteAsync) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  BidiClient test(stub_.get(), DO_NOT_CANCEL,
+                  kServerDefaultResponseStreamsToSend,
+                  /*cork_metadata=*/true, /*first_write_async=*/true);
   test.Await();
   // Make sure that the server interceptors were not notified of a cancel
   if (GetParam().use_interceptors) {
@@ -1248,8 +1318,10 @@ TEST_P(ClientCallbackEnd2endTest, BidiStream) {
 TEST_P(ClientCallbackEnd2endTest, ClientCancelsBidiStream) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  BidiClient test{stub_.get(), DO_NOT_CANCEL,
-                  kServerDefaultResponseStreamsToSend, ClientCancelInfo{2}};
+  BidiClient test(stub_.get(), DO_NOT_CANCEL,
+                  kServerDefaultResponseStreamsToSend,
+                  /*cork_metadata=*/false, /*first_write_async=*/false,
+                  ClientCancelInfo(2));
   test.Await();
   // Make sure that the server interceptors were notified of a cancel
   if (GetParam().use_interceptors) {
@@ -1261,7 +1333,8 @@ TEST_P(ClientCallbackEnd2endTest, ClientCancelsBidiStream) {
 TEST_P(ClientCallbackEnd2endTest, BidiStreamServerCancelBefore) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  BidiClient test{stub_.get(), CANCEL_BEFORE_PROCESSING, 2};
+  BidiClient test(stub_.get(), CANCEL_BEFORE_PROCESSING, /*num_msgs_to_send=*/2,
+                  /*cork_metadata=*/false, /*first_write_async=*/false);
   test.Await();
   // Make sure that the server interceptors were notified
   if (GetParam().use_interceptors) {
@@ -1274,7 +1347,9 @@ TEST_P(ClientCallbackEnd2endTest, BidiStreamServerCancelBefore) {
 TEST_P(ClientCallbackEnd2endTest, BidiStreamServerCancelDuring) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  BidiClient test{stub_.get(), CANCEL_DURING_PROCESSING, 10};
+  BidiClient test(stub_.get(), CANCEL_DURING_PROCESSING,
+                  /*num_msgs_to_send=*/10, /*cork_metadata=*/false,
+                  /*first_write_async=*/false);
   test.Await();
   // Make sure that the server interceptors were notified
   if (GetParam().use_interceptors) {
@@ -1287,7 +1362,8 @@ TEST_P(ClientCallbackEnd2endTest, BidiStreamServerCancelDuring) {
 TEST_P(ClientCallbackEnd2endTest, BidiStreamServerCancelAfter) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  BidiClient test{stub_.get(), CANCEL_AFTER_PROCESSING, 5};
+  BidiClient test(stub_.get(), CANCEL_AFTER_PROCESSING, /*num_msgs_to_send=*/5,
+                  /*cork_metadata=*/false, /*first_write_async=*/false);
   test.Await();
   // Make sure that the server interceptors were notified
   if (GetParam().use_interceptors) {
