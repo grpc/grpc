@@ -9,5 +9,5 @@ README files.
 
 [gRPC Basics]: https://grpc.io/docs/tutorials/basic/cpp
 [Hello World]: helloworld
-[Quick Start]: https://grpc.io/docs/quickstart/cpp
+[Quick Start]: https://grpc.io/docs/languages/cpp/quickstart
 [Route Guide]: route_guide
