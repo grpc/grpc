@@ -535,6 +535,7 @@
   )
 
   set_target_properties(${lib.name} PROPERTIES
+    FOLDER grpc
   % if lib.language == 'c++':
     VERSION <%text>${gRPC_CPP_VERSION}</%text>
     SOVERSION <%text>${gRPC_CPP_SOVERSION}</%text>
@@ -635,6 +636,10 @@
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   % endif
+  )
+
+  set_target_properties(${tgt.name} PROPERTIES
+    FOLDER grpc
   )
 
   target_include_directories(${tgt.name}
