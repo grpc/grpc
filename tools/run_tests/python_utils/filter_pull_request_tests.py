@@ -70,6 +70,7 @@ _WHITELIST_DICT = {
     '^doc/': [],
     '^examples/': [],
     '^include/grpc\+\+/': [_CPP_TEST_SUITE],
+    '^include/grpcpp/': [_CPP_TEST_SUITE],
     '^summerofcode/': [],
     '^src/cpp/': [_CPP_TEST_SUITE],
     '^src/csharp/': [_CSHARP_TEST_SUITE],
