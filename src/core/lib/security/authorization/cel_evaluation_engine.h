@@ -31,7 +31,7 @@ class CelEvaluationEngine {
   // TODO(mywang@google.com): add an Evaluate member function
 
  private:
-  std::unique_ptr<google_api_expr_v1alpha1_Expr> policy_;
+  map<string, std::unique_ptr<google_api_expr_v1alpha1_Expr>> policies_;
 };
 
 #endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_EVALUATION_ENGINE_H */

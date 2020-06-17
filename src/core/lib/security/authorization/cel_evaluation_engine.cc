@@ -20,8 +20,9 @@
 
 CelEvaluationEngine::CelEvaluationEngine(
     const envoy_config_rbac_v2_RBAC& rbac_policy) {
-  const google_api_expr_v1alpha1_Expr* condition;
-  condition = envoy_config_rbac_v2_Policy_condition(&rbac_policy);
-  this->policy_ = std::make_unique<google_api_expr_v1alpha1_Expr>(*condition);
+  for (const auto& policy : rbac_policy.policies()) {
+    policies_.emplace(policy.first, 
+      std::make_unique<google_api_expr_v1alpha1_Expr>(policy.second.condition());
+  }
 }
  
