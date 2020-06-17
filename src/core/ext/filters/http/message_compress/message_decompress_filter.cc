@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
+
 #include <assert.h>
 #include <string.h>
 
@@ -28,7 +30,7 @@
 #include <grpc/support/string_util.h>
 
 #include "absl/strings/str_format.h"
-#include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
+#include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/compression_args.h"
@@ -40,12 +42,16 @@
 
 namespace {
 
-class ChannelData {};
+struct ChannelData {
+  int max_recv_size;
+};
 
 class CallData {
  public:
-  explicit CallData(const grpc_call_element_args& args)
-      : call_combiner_(args.call_combiner) {
+  explicit CallData(const grpc_call_element_args& args,
+                    const ChannelData* chand)
+      : call_combiner_(args.call_combiner),
+        max_recv_message_length_(chand->max_recv_size) {
     // Initialize state for recv_initial_metadata_ready callback
     GRPC_CLOSURE_INIT(&on_recv_initial_metadata_ready_,
                       OnRecvInitialMetadataReady, this,
@@ -60,8 +66,13 @@ class CallData {
     GRPC_CLOSURE_INIT(&on_recv_trailing_metadata_ready_,
                       OnRecvTrailingMetadataReady, this,
                       grpc_schedule_on_exec_ctx);
-    max_recv_message_length_ =
-        args.context[GRPC_MAX_RECEIVE_MESSAGE_LENGTH].value_int;
+    const grpc_core::MessageSizeParsedConfig* limits =
+        grpc_core::get_message_size_config_from_call_context(args.context);
+    if (limits != nullptr && limits->limits().max_recv_size >= 0 &&
+        (limits->limits().max_recv_size < max_recv_message_length_ ||
+         max_recv_message_length_ < 0)) {
+      max_recv_message_length_ = limits->limits().max_recv_size;
+    }
   }
 
   ~CallData() { grpc_slice_buffer_destroy_internal(&recv_slices_); }
@@ -339,25 +350,32 @@ void DecompressStartTransportStreamOpBatch(
   calld->DecompressStartTransportStreamOpBatch(elem, batch);
 }
 
-static grpc_error* DecompressInitCallElem(grpc_call_element* elem,
-                                          const grpc_call_element_args* args) {
-  new (elem->call_data) CallData(*args);
+grpc_error* DecompressInitCallElem(grpc_call_element* elem,
+                                   const grpc_call_element_args* args) {
+  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  new (elem->call_data) CallData(*args, chand);
   return GRPC_ERROR_NONE;
 }
 
-static void DecompressDestroyCallElem(
-    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
-    grpc_closure* /*ignored*/) {
+void DecompressDestroyCallElem(grpc_call_element* elem,
+                               const grpc_call_final_info* /*final_info*/,
+                               grpc_closure* /*ignored*/) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   calld->~CallData();
 }
 
-static grpc_error* DecompressInitChannelElem(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
+grpc_error* DecompressInitChannelElem(grpc_channel_element* elem,
+                                      grpc_channel_element_args* args) {
+  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  new (chand) ChannelData();
+  chand->max_recv_size = grpc_core::get_max_recv_size(args->channel_args);
   return GRPC_ERROR_NONE;
 }
 
-void DecompressDestroyChannelElem(grpc_channel_element* /*elem*/) {}
+void DecompressDestroyChannelElem(grpc_channel_element* elem) {
+  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  chand->~ChannelData();
+}
 
 }  // namespace
 
@@ -368,7 +386,7 @@ const grpc_channel_filter grpc_message_decompress_filter = {
     DecompressInitCallElem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     DecompressDestroyCallElem,
-    0,  // sizeof(ChannelData)
+    sizeof(ChannelData),
     DecompressInitChannelElem,
     DecompressDestroyChannelElem,
     grpc_channel_next_get_info,
