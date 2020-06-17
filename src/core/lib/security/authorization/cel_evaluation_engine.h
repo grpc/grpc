@@ -25,6 +25,12 @@
 
 #include "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h"
 
+/* Evaluates Envoy attributes and returns an authorization decision based on the 
+ * CEL condition field from an RBAC policy.
+ * Example:
+ * CelEvaluationEngine* cel_engine = new CelEvaluationEngine(rbac_policy);
+ * cel_engine->Evaluate(evaluate_args); // returns AuthorizationDecision
+ */
 class CelEvaluationEngine {
  public:
   explicit CelEvaluationEngine(const envoy_config_rbac_v2_RBAC& rbac_policy);
