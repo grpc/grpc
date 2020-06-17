@@ -67,6 +67,11 @@ py_library(
 )
 
 py_library(
+    name = "aio",
+    srcs = glob(["aio/**/*.py"]),
+)
+
+py_library(
     name = "grpcio",
     srcs = ["__init__.py"],
     data = [
@@ -74,6 +79,7 @@ py_library(
     ],
     imports = ["../"],
     deps = [
+        ":aio",
         ":utilities",
         ":auth",
         ":plugin_wrapping",
