@@ -24,8 +24,8 @@ import subprocess
 # Find the root of the git tree
 #
 
-git_root = (subprocess.check_output(['git', 'rev-parse', '--show-toplevel'])
-            .decode('utf-8').strip())
+git_root = (subprocess.check_output(['git', 'rev-parse', '--show-toplevel'
+                                    ]).decode('utf-8').strip())
 
 #
 # Parse command line arguments
@@ -34,12 +34,11 @@ git_root = (subprocess.check_output(['git', 'rev-parse', '--show-toplevel'])
 default_out = os.path.join(git_root, '.github', 'CODEOWNERS')
 
 argp = argparse.ArgumentParser('Generate .github/CODEOWNERS file')
-argp.add_argument(
-    '--out',
-    '-o',
-    type=str,
-    default=default_out,
-    help='Output file (default %s)' % default_out)
+argp.add_argument('--out',
+                  '-o',
+                  type=str,
+                  default=default_out,
+                  help='Output file (default %s)' % default_out)
 args = argp.parse_args()
 
 #
@@ -84,15 +83,13 @@ def parse_owners(filename):
             directive = Directive(who=line, globs=[])
         if directive:
             directives.append(directive)
-    return Owners(
-        parent=parent,
-        directives=directives,
-        dir=os.path.relpath(os.path.dirname(filename), git_root))
+    return Owners(parent=parent,
+                  directives=directives,
+                  dir=os.path.relpath(os.path.dirname(filename), git_root))
 
 
-owners_data = sorted(
-    [parse_owners(filename) for filename in owners_files],
-    key=operator.attrgetter('dir'))
+owners_data = sorted([parse_owners(filename) for filename in owners_files],
+                     key=operator.attrgetter('dir'))
 
 #
 # Modify owners so that parented OWNERS files point to the actual
@@ -139,9 +136,9 @@ def git_glob(glob):
     global gg_cache
     if glob in gg_cache: return gg_cache[glob]
     r = set(
-        subprocess.check_output(
-            ['git', 'ls-files', os.path.join(git_root, glob)]).decode('utf-8')
-        .strip().splitlines())
+        subprocess.check_output([
+            'git', 'ls-files', os.path.join(git_root, glob)
+        ]).decode('utf-8').strip().splitlines())
     gg_cache[glob] = r
     return r
 
@@ -156,10 +153,9 @@ def expand_directives(root, directives):
             if directive.who not in globs[glob]:
                 globs[glob].append(directive.who)
     # expand owners for intersecting globs
-    sorted_globs = sorted(
-        globs.keys(),
-        key=lambda g: len(git_glob(full_dir(root, g))),
-        reverse=True)
+    sorted_globs = sorted(globs.keys(),
+                          key=lambda g: len(git_glob(full_dir(root, g))),
+                          reverse=True)
     out_globs = collections.OrderedDict()
     for glob_add in sorted_globs:
         who_add = globs[glob_add]
@@ -233,7 +229,7 @@ with open(args.out, 'w') as out:
                     # affected differently by this rule and CODEOWNERS is order dependent
                     break
             if not skip:
-                out.write('/%s %s\n' % (full_dir(head.dir, glob),
-                                        ' '.join(owners)))
+                out.write('/%s %s\n' %
+                          (full_dir(head.dir, glob), ' '.join(owners)))
                 written_globs.append((glob, owners, head.dir))
         done.add(head.dir)

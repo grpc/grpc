@@ -60,7 +60,7 @@ extern const char *kCFStreamVarName;
 }
 @end
 
-@interface DefaultInterceptorFactory : NSObject<GRPCInterceptorFactory>
+@interface DefaultInterceptorFactory : NSObject <GRPCInterceptorFactory>
 
 - (GRPCInterceptor *)createInterceptorWithManager:(GRPCInterceptorManager *)interceptorManager;
 
@@ -70,8 +70,8 @@ extern const char *kCFStreamVarName;
 
 - (GRPCInterceptor *)createInterceptorWithManager:(GRPCInterceptorManager *)interceptorManager {
   dispatch_queue_t queue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
-  return
-      [[GRPCInterceptor alloc] initWithInterceptorManager:interceptorManager dispatchQueue:queue];
+  return [[GRPCInterceptor alloc] initWithInterceptorManager:interceptorManager
+                                               dispatchQueue:queue];
 }
 
 @end
@@ -158,7 +158,6 @@ extern const char *kCFStreamVarName;
                                             closeCallback:^(NSDictionary *trailingMetadata,
                                                             NSError *error) {
                                               [expectation fulfill];
-
                                             }]
                             callOptions:options];
   [call start];
@@ -285,7 +284,6 @@ extern const char *kCFStreamVarName;
                                                            [expectation fulfill];
                                                          }
                                                        }
-
                                                      }]
                    callOptions:options];
       dispatch_time_t timeout =

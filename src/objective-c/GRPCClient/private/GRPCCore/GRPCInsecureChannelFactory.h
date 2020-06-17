@@ -21,7 +21,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface GRPCInsecureChannelFactory : NSObject<GRPCChannelFactory>
+@interface GRPCInsecureChannelFactory : NSObject <GRPCChannelFactory>
 
 + (nullable instancetype)sharedInstance;
 

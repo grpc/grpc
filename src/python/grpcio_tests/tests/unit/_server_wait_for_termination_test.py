@@ -39,11 +39,11 @@ class ServerWaitForTerminationTest(unittest.TestCase):
         termination_event = threading.Event()
         server = grpc.server(futures.ThreadPoolExecutor())
 
-        wait_thread = threading.Thread(
-            target=_block_on_waiting, args=(
-                server,
-                termination_event,
-            ))
+        wait_thread = threading.Thread(target=_block_on_waiting,
+                                       args=(
+                                           server,
+                                           termination_event,
+                                       ))
         wait_thread.daemon = True
         wait_thread.start()
         time.sleep(_WAIT_FOR_BLOCKING.total_seconds())
@@ -56,11 +56,11 @@ class ServerWaitForTerminationTest(unittest.TestCase):
         termination_event = threading.Event()
         server = grpc.server(futures.ThreadPoolExecutor())
 
-        wait_thread = threading.Thread(
-            target=_block_on_waiting, args=(
-                server,
-                termination_event,
-            ))
+        wait_thread = threading.Thread(target=_block_on_waiting,
+                                       args=(
+                                           server,
+                                           termination_event,
+                                       ))
         wait_thread.daemon = True
         wait_thread.start()
         time.sleep(_WAIT_FOR_BLOCKING.total_seconds())
@@ -74,13 +74,12 @@ class ServerWaitForTerminationTest(unittest.TestCase):
         termination_event = threading.Event()
         server = grpc.server(futures.ThreadPoolExecutor())
 
-        wait_thread = threading.Thread(
-            target=_block_on_waiting,
-            args=(
-                server,
-                termination_event,
-                test_constants.SHORT_TIMEOUT / 2,
-            ))
+        wait_thread = threading.Thread(target=_block_on_waiting,
+                                       args=(
+                                           server,
+                                           termination_event,
+                                           test_constants.SHORT_TIMEOUT / 2,
+                                       ))
         wait_thread.daemon = True
         wait_thread.start()
 

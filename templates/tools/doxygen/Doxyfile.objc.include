@@ -784,13 +784,13 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = ${
-    ' \\\n'.join(sorted(
+    ' \\\n'.join(sorted(set(
         itertools.chain(
             glob.glob('src/objective-c/GRPCClient/*.h') if not internal else glob_recursive('src/objective-c/GRPCClient', '*.h'),
             glob.glob('src/objective-c/ProtoRPC/*.h'),
             glob.glob('src/objective-c/RxLibrary/*.h') if not internal else glob_recursive('src/objective-c/RxLibrary', '*.h'),
             glob.glob('doc/*.md'),
-            srcdoc)))
+            srcdoc))))
 }
 
 # This tag can be used to specify the character encoding of the source files

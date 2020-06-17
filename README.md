@@ -28,6 +28,7 @@ For instructions on how to use the language-specific gRPC runtime for a project,
  * [Dart](https://github.com/grpc/grpc-dart): pub package `grpc`
  * [Go](https://github.com/grpc/grpc-go): `go get google.golang.org/grpc`
  * [Java](https://github.com/grpc/grpc-java): Use JARs from Maven Central Repository
+ * [Kotlin](https://github.com/grpc/grpc-kotlin): Use JARs from Maven Central Repository
  * [Node](https://github.com/grpc/grpc-node): `npm install grpc`
  * [Objective-C](src/objective-c): Add `gRPC-ProtoRPC` dependency to podspec
  * [PHP](src/php): `pecl install grpc`
@@ -53,7 +54,7 @@ Sometimes things go wrong. Please check out the [Troubleshooting guide](TROUBLES
 
 # Performance 
 
-See the [Performance dashboard](http://performance-dot-grpc-testing.appspot.com/explore?dashboard=5636470266134528) for performance numbers of the latest released version.
+See the [Performance dashboard](https://performance-dot-grpc-testing.appspot.com/explore?dashboard=5652536396611584) for performance numbers of master branch daily builds.
 
 # Concepts
 
@@ -77,8 +78,9 @@ Libraries in different languages may be in various states of development. We are
 
 | Language                | Source repo                                          |
 |-------------------------|------------------------------------------------------|
-| Java                    | [grpc-java](https://github.com/grpc/grpc-java)        |
-| Go                      | [grpc-go](https://github.com/grpc/grpc-go)            |
+| Java                    | [grpc-java](https://github.com/grpc/grpc-java)       |
+| Kotlin                  | [grpc-kotlin](https://github.com/grpc/grpc-kotlin)   |
+| Go                      | [grpc-go](https://github.com/grpc/grpc-go)           |
 | NodeJS                  | [grpc-node](https://github.com/grpc/grpc-node)       |
 | WebJS                   | [grpc-web](https://github.com/grpc/grpc-web)         |
 | Dart                    | [grpc-dart](https://github.com/grpc/grpc-dart)       |

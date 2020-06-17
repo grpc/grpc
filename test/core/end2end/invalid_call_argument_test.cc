@@ -77,13 +77,13 @@ static void prepare_test(int is_client) {
   } else {
     g_state.server = grpc_server_create(nullptr, nullptr);
     grpc_server_register_completion_queue(g_state.server, g_state.cq, nullptr);
-    grpc_core::UniquePtr<char> server_hostport;
-    grpc_core::JoinHostPort(&server_hostport, "0.0.0.0", port);
-    grpc_server_add_insecure_http2_port(g_state.server, server_hostport.get());
+    std::string server_hostport = grpc_core::JoinHostPort("0.0.0.0", port);
+    grpc_server_add_insecure_http2_port(g_state.server,
+                                        server_hostport.c_str());
     grpc_server_start(g_state.server);
-    grpc_core::JoinHostPort(&server_hostport, "localhost", port);
+    server_hostport = grpc_core::JoinHostPort("localhost", port);
     g_state.chan =
-        grpc_insecure_channel_create(server_hostport.get(), nullptr, nullptr);
+        grpc_insecure_channel_create(server_hostport.c_str(), nullptr, nullptr);
     grpc_slice host = grpc_slice_from_static_string("bar");
     g_state.call = grpc_channel_create_call(
         g_state.chan, nullptr, GRPC_PROPAGATE_DEFAULTS, g_state.cq,

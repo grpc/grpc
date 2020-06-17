@@ -307,9 +307,9 @@ static void fork_fd_list_add_wakeup_fd(grpc_cached_wakeup_fd* fd) {
   }
 }
 
-  /*******************************************************************************
-   * fd_posix.c
-   */
+/*******************************************************************************
+ * fd_posix.c
+ */
 
 #ifndef NDEBUG
 #define REF_BY(fd, n, reason) ref_by(fd, n, reason, __FILE__, __LINE__)

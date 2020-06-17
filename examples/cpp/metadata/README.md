@@ -10,9 +10,10 @@ https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md, with the
 exception of binary headers, which don't have to be base64 encoded.
 
 ### Get the tutorial source code
- The example code for this and our other examples lives in the `examples` directory. Clone this repository to your local machine by running the following command:
+ The example code for this and our other examples lives in the `examples` directory. Clone this repository 
+ at the [latest stable release tag](https://github.com/grpc/grpc/releases) to your local machine by running the following command:
  ```sh
-$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
+$ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
 ```
  Change your current directory to examples/cpp/metadata
  ```sh

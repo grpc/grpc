@@ -59,6 +59,9 @@ struct PrivateGenerator {
                  const grpc_generator::Service* service,
                  grpc_generator::Printer* out);
 
+  bool PrintServiceClass(const grpc::string& package_qualified_service_name,
+                         const grpc_generator::Service* service,
+                         grpc_generator::Printer* out);
   bool PrintBetaServicer(const grpc_generator::Service* service,
                          grpc_generator::Printer* out);
   bool PrintBetaServerFactory(

@@ -20,7 +20,10 @@
   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   # See the License for the specific language governing permissions and
   # limitations under the License.
-
+  <%
+  def is_absl_lib(target_name):
+      return target_name.startswith("absl/");
+  %>
   {
     'variables': {
      # The openssl and zlib dependencies must be passed in as variables
@@ -136,7 +139,7 @@
     },
     'targets': [
       % for lib in libs:
-      %  if getattr(lib, 'platforms', None) is None and lib.name != 'ares':
+      %  if getattr(lib, 'platforms', None) is None and lib.name != 'ares' and not is_absl_lib(lib.name):
       {
         'target_name': '${lib.name}',
         'type': 'static_library',

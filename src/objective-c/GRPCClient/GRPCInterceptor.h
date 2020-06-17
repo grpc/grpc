@@ -97,6 +97,10 @@
                                                    receiveNextMessages
    \endverbatim
  *
+ * An interceptor must forward responses to its previous interceptor in the order of initial
+ * metadata, message(s), and trailing metadata. Forwarding responses out of this order (e.g.
+ * forwarding a message before initial metadata) is not allowed.
+ *
  * Events of requests and responses are dispatched to interceptor objects using the interceptor's
  * dispatch queue. The dispatch queue should be serial queue to make sure the events are processed
  * in order. Interceptor implementations must derive from GRPCInterceptor class. The class makes
@@ -123,7 +127,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * The GRPCInterceptorInterface defines the request events that can occur to an interceptor.
  */
-@protocol GRPCInterceptorInterface<NSObject, GRPCDispatchable>
+@protocol GRPCInterceptorInterface <NSObject, GRPCDispatchable>
 
 /**
  * To start the call. This method will only be called once for each instance.
@@ -180,11 +184,11 @@ NS_ASSUME_NONNULL_BEGIN
  * When an interceptor is shutting down, it must invoke -shutDown method of its corresponding
  * manager so that references to other interceptors can be released and proper clean-up is made.
  */
-@interface GRPCInterceptorManager : NSObject<GRPCInterceptorInterface, GRPCResponseHandler>
+@interface GRPCInterceptorManager : NSObject <GRPCInterceptorInterface, GRPCResponseHandler>
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 - (nullable instancetype)initWithFactories:(nullable NSArray<id<GRPCInterceptorFactory>> *)factories
                        previousInterceptor:(nullable id<GRPCResponseHandler>)previousInterceptor
@@ -242,10 +246,10 @@ NS_ASSUME_NONNULL_BEGIN
  * with [super initWithInterceptorManager:dispatchQueue:] for the default implementation to function
  * properly.
  */
-@interface GRPCInterceptor : NSObject<GRPCInterceptorInterface, GRPCResponseHandler>
+@interface GRPCInterceptor : NSObject <GRPCInterceptorInterface, GRPCResponseHandler>
 
 - (instancetype)init NS_UNAVAILABLE;
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 /**
  * Initialize the interceptor with the next interceptor in the chain, and provide the dispatch queue

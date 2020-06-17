@@ -117,6 +117,15 @@ class CondVar {
     }
   }
 
+  // Returns true iff we timed-out
+  template <typename Predicate>
+  bool WaitUntil(Mutex* mu, Predicate pred, const gpr_timespec& deadline) {
+    while (!pred()) {
+      if (Wait(mu, deadline)) return true;
+    }
+    return false;
+  }
+
  private:
   gpr_cv cv_;
 };

@@ -21,7 +21,7 @@
 #include <grpc/slice_buffer.h>
 #include "src/core/lib/security/security_connector/load_system_roots_linux.h"
 
-#ifdef GPR_LINUX
+#if defined(GPR_LINUX) || defined(GPR_ANDROID)
 
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 
@@ -34,6 +34,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -41,7 +43,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/iomgr/load_file.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir, "",
@@ -100,7 +101,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     char path[MAXPATHLEN];
     off_t size;
   };
-  InlinedVector<FileData, 2> roots_filenames;
+  absl::InlinedVector<FileData, 2> roots_filenames;
   size_t total_bundle_size = 0;
   struct dirent* directory_entry;
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
@@ -167,4 +168,4 @@ grpc_slice LoadSystemRootCerts() {
 
 }  // namespace grpc_core
 
-#endif /* GPR_LINUX */
+#endif /* GPR_LINUX || GPR_ANDROID */

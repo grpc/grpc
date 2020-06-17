@@ -159,9 +159,10 @@ def _abort(state, call, code, details):
         if state.initial_metadata_allowed:
             operations = (
                 _get_initial_metadata_operation(state, None),
-                cygrpc.SendStatusFromServerOperation(
-                    state.trailing_metadata, effective_code, effective_details,
-                    _EMPTY_FLAGS),
+                cygrpc.SendStatusFromServerOperation(state.trailing_metadata,
+                                                     effective_code,
+                                                     effective_details,
+                                                     _EMPTY_FLAGS),
             )
             token = _SEND_INITIAL_METADATA_AND_SEND_STATUS_FROM_SERVER_TOKEN
         else:
@@ -277,8 +278,7 @@ class _Context(grpc.ServicerContext):
 
     def auth_context(self):
         return {
-            _common.decode(key): value
-            for key, value in six.iteritems(
+            _common.decode(key): value for key, value in six.iteritems(
                 cygrpc.auth_context(self._rpc_event.call))
         }
 
@@ -524,8 +524,9 @@ def _status(rpc_event, state, serialized_response):
             code = _completion_code(state)
             details = _details(state)
             operations = [
-                cygrpc.SendStatusFromServerOperation(
-                    state.trailing_metadata, code, details, _EMPTY_FLAGS),
+                cygrpc.SendStatusFromServerOperation(state.trailing_metadata,
+                                                     code, details,
+                                                     _EMPTY_FLAGS),
             ]
             if state.initial_metadata_allowed:
                 operations.append(_get_initial_metadata_operation(state, None))
@@ -567,8 +568,9 @@ def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
         if response is None:
             _status(rpc_event, state, None)
         else:
-            serialized_response = _serialize_response(
-                rpc_event, state, response, response_serializer)
+            serialized_response = _serialize_response(rpc_event, state,
+                                                      response,
+                                                      response_serializer)
             if serialized_response is not None:
                 _send_response(rpc_event, state, serialized_response)
 
@@ -577,13 +579,12 @@ def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
         if argument is not None:
             if hasattr(behavior, 'experimental_non_blocking'
                       ) and behavior.experimental_non_blocking:
-                _call_behavior(
-                    rpc_event,
-                    state,
-                    behavior,
-                    argument,
-                    request_deserializer,
-                    send_response_callback=send_response)
+                _call_behavior(rpc_event,
+                               state,
+                               behavior,
+                               argument,
+                               request_deserializer,
+                               send_response_callback=send_response)
             else:
                 response_iterator, proceed = _call_behavior(
                     rpc_event, state, behavior, argument, request_deserializer)
@@ -598,8 +599,9 @@ def _is_rpc_state_active(state):
     return state.client is not _CANCELLED and not state.statused
 
 
-def _send_message_callback_to_blocking_iterator_adapter(
-        rpc_event, state, send_response_callback, response_iterator):
+def _send_message_callback_to_blocking_iterator_adapter(rpc_event, state,
+                                                        send_response_callback,
+                                                        response_iterator):
     while True:
         response, proceed = _take_response_from_response_iterator(
             rpc_event, state, response_iterator)
@@ -646,10 +648,11 @@ def _handle_stream_unary(rpc_event, state, method_handler, default_thread_pool):
                                         method_handler.request_deserializer)
     thread_pool = _select_thread_pool_for_behavior(method_handler.stream_unary,
                                                    default_thread_pool)
-    return thread_pool.submit(
-        _unary_response_in_pool, rpc_event, state, method_handler.stream_unary,
-        lambda: request_iterator, method_handler.request_deserializer,
-        method_handler.response_serializer)
+    return thread_pool.submit(_unary_response_in_pool, rpc_event, state,
+                              method_handler.stream_unary,
+                              lambda: request_iterator,
+                              method_handler.request_deserializer,
+                              method_handler.response_serializer)
 
 
 def _handle_stream_stream(rpc_event, state, method_handler,
@@ -658,10 +661,11 @@ def _handle_stream_stream(rpc_event, state, method_handler,
                                         method_handler.request_deserializer)
     thread_pool = _select_thread_pool_for_behavior(method_handler.stream_stream,
                                                    default_thread_pool)
-    return thread_pool.submit(
-        _stream_response_in_pool, rpc_event, state,
-        method_handler.stream_stream, lambda: request_iterator,
-        method_handler.request_deserializer, method_handler.response_serializer)
+    return thread_pool.submit(_stream_response_in_pool, rpc_event, state,
+                              method_handler.stream_stream,
+                              lambda: request_iterator,
+                              method_handler.request_deserializer,
+                              method_handler.response_serializer)
 
 
 def _find_method_handler(rpc_event, generic_handlers, interceptor_pipeline):
@@ -692,8 +696,10 @@ def _reject_rpc(rpc_event, status, details):
         cygrpc.SendStatusFromServerOperation(None, status, details,
                                              _EMPTY_FLAGS),
     )
-    rpc_event.call.start_server_batch(operations,
-                                      lambda ignored_event: (rpc_state, (),))
+    rpc_event.call.start_server_batch(operations, lambda ignored_event: (
+        rpc_state,
+        (),
+    ))
     return rpc_state
 
 
@@ -830,9 +836,10 @@ def _process_event_and_continue(state, event):
             concurrency_exceeded = (
                 state.maximum_concurrent_rpcs is not None and
                 state.active_rpc_count >= state.maximum_concurrent_rpcs)
-            rpc_state, rpc_future = _handle_call(
-                event, state.generic_handlers, state.interceptor_pipeline,
-                state.thread_pool, concurrency_exceeded)
+            rpc_state, rpc_future = _handle_call(event, state.generic_handlers,
+                                                 state.interceptor_pipeline,
+                                                 state.thread_pool,
+                                                 concurrency_exceeded)
             if rpc_state is not None:
                 state.rpc_states.add(rpc_state)
             if rpc_future is not None:
@@ -964,10 +971,9 @@ class _Server(grpc.Server):
         # NOTE(https://bugs.python.org/issue35935)
         # Remove this workaround once threading.Event.wait() is working with
         # CTRL+C across platforms.
-        return _common.wait(
-            self._state.termination_event.wait,
-            self._state.termination_event.is_set,
-            timeout=timeout)
+        return _common.wait(self._state.termination_event.wait,
+                            self._state.termination_event.is_set,
+                            timeout=timeout)
 
     def stop(self, grace):
         return _stop(self._state, grace)

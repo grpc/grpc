@@ -16,7 +16,10 @@ py_grpc_library(
 
 py_library(
     name = "grpc_health",
-    srcs = ["health.py"],
+    srcs = [
+        "_async.py",
+        "health.py",
+    ],
     imports = ["../../"],
     deps = [
         ":health_py_pb2",

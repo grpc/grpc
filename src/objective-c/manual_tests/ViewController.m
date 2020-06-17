@@ -26,7 +26,7 @@
 NSString *const kRemoteHost = @"grpc-test.sandbox.googleapis.com";
 const int32_t kMessageSize = 100;
 
-@interface ViewController : UIViewController<GRPCProtoResponseHandler>
+@interface ViewController : UIViewController <GRPCProtoResponseHandler>
 @property(strong, nonatomic) UILabel *callStatusLabel;
 @property(strong, nonatomic) UILabel *callCountLabel;
 @end
@@ -64,8 +64,9 @@ const int32_t kMessageSize = 100;
   request.responseSize = kMessageSize;
   request.payload.body = [NSMutableData dataWithLength:kMessageSize];
 
-  GRPCUnaryProtoCall *call =
-      [_service unaryCallWithMessage:request responseHandler:self callOptions:nil];
+  GRPCUnaryProtoCall *call = [_service unaryCallWithMessage:request
+                                            responseHandler:self
+                                                callOptions:nil];
 
   [call start];
 }

@@ -100,11 +100,12 @@ dispatch_once_t initCronet;
 
   // Local stack with SSL
   NSBundle *bundle = [NSBundle bundleForClass:[self class]];
-  NSString *certsPath =
-      [bundle pathForResource:@"TestCertificates.bundle/test-certificates" ofType:@"pem"];
+  NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
+                                         ofType:@"pem"];
   NSError *error = nil;
-  NSString *certs =
-      [NSString stringWithContentsOfFile:certsPath encoding:NSUTF8StringEncoding error:&error];
+  NSString *certs = [NSString stringWithContentsOfFile:certsPath
+                                              encoding:NSUTF8StringEncoding
+                                                 error:&error];
   XCTAssertNil(error);
 
   options = [[GRPCMutableCallOptions alloc] init];

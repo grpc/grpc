@@ -12,12 +12,6 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@rem Move python installation from _32bit to _32bits where they are expected by python artifact builder
-@rem TODO(jtattermusch): get rid of this hack
-rename C:\Python27_32bit Python27_32bits
-rename C:\Python35_32bit Python35_32bits
-rename C:\Python36_32bit Python36_32bits
-
 @rem enter repo root
 cd /d %~dp0\..\..\..
 

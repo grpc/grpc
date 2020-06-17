@@ -22,6 +22,8 @@
 
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -39,8 +41,8 @@
 namespace grpc_core {
 
 grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args) {
-  InlinedVector<const char*, 1> args_to_remove;
-  InlinedVector<grpc_arg, 2> args_to_add;
+  absl::InlinedVector<const char*, 1> args_to_remove;
+  absl::InlinedVector<grpc_arg, 2> args_to_add;
   // Substitute the channel credentials with a version without call
   // credentials: the load balancer is not necessarily trusted to handle
   // bearer token credentials.
@@ -64,34 +66,39 @@ grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args) {
 }
 
 grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
-                               const grpc_channel_args& args) {
+                               const grpc_channel_args& args,
+                               grpc_error** error) {
   grpc_channel_credentials* creds = nullptr;
   RefCountedPtr<grpc_channel_credentials> creds_to_unref;
-  if (!bootstrap.channel_creds().empty()) {
-    for (size_t i = 0; i < bootstrap.channel_creds().size(); ++i) {
-      if (strcmp(bootstrap.channel_creds()[i].type, "google_default") == 0) {
+  if (!bootstrap.server().channel_creds.empty()) {
+    for (size_t i = 0; i < bootstrap.server().channel_creds.size(); ++i) {
+      if (bootstrap.server().channel_creds[i].type == "google_default") {
         creds = grpc_google_default_credentials_create();
         break;
-      } else if (strcmp(bootstrap.channel_creds()[i].type, "fake") == 0) {
+      } else if (bootstrap.server().channel_creds[i].type == "fake") {
         creds = grpc_fake_transport_security_credentials_create();
         break;
       }
     }
-    if (creds == nullptr) return nullptr;
+    if (creds == nullptr) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "no supported credential types found");
+      return nullptr;
+    }
     creds_to_unref.reset(creds);
   } else {
     creds = grpc_channel_credentials_find_in_args(&args);
     if (creds == nullptr) {
       // Built with security but parent channel is insecure.
-      return grpc_insecure_channel_create(bootstrap.server_uri(), &args,
-                                          nullptr);
+      return grpc_insecure_channel_create(bootstrap.server().server_uri.c_str(),
+                                          &args, nullptr);
     }
   }
   const char* arg_to_remove = GRPC_ARG_CHANNEL_CREDENTIALS;
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_remove(&args, &arg_to_remove, 1);
   grpc_channel* channel = grpc_secure_channel_create(
-      creds, bootstrap.server_uri(), new_args, nullptr);
+      creds, bootstrap.server().server_uri.c_str(), new_args, nullptr);
   grpc_channel_args_destroy(new_args);
   return channel;
 }

@@ -40,9 +40,11 @@ cd src/php
 
 DONE=0
 for ((i = 0; i < 5; i++)); do
-  php -d extension=ext/grpc/modules/grpc.so /usr/local/bin/composer install && DONE=1
-  [[ "$DONE" == 1 ]] && break
+  php -d extension=ext/grpc/modules/grpc.so /usr/local/bin/composer install && DONE=1 && break
 done
-[[ "$DONE" != 1 ]] && echo "Failed to do composer install" && exit 1
 
-./bin/generate_proto_php.sh
+if [ "$DONE" != "1" ]
+then
+  echo "Failed to do composer install"
+  exit 1
+fi

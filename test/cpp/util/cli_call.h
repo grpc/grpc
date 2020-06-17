@@ -50,7 +50,7 @@ class CliCall final {
   ~CliCall();
 
   // Perform an unary generic RPC.
-  static Status Call(std::shared_ptr<grpc::Channel> channel,
+  static Status Call(const std::shared_ptr<grpc::Channel>& channel,
                      const grpc::string& method, const grpc::string& request,
                      grpc::string* response,
                      const OutgoingMetadataContainer& metadata,

@@ -47,13 +47,15 @@ NSString *host = @"grpc-test.sandbox.googleapis.com";
   GRPCProtoMethod *method = [[GRPCProtoMethod alloc] initWithPackage:@"grpc.testing"
                                                              service:@"TestService"
                                                               method:@"UnaryCall"];
-  GRXWriter *loggingRequestWriter = [[GRXWriter
-      writerWithValue:[NSData dataWithBytes:bytes length:sizeof(bytes)]] map:^id(id value) {
-    NSLog(@"Sending request.");
-    return value;
-  }];
-  GRPCCall *call =
-      [[GRPCCall alloc] initWithHost:host path:method.HTTPPath requestsWriter:loggingRequestWriter];
+  GRXWriter *loggingRequestWriter =
+      [[GRXWriter writerWithValue:[NSData dataWithBytes:bytes
+                                                 length:sizeof(bytes)]] map:^id(id value) {
+        NSLog(@"Sending request.");
+        return value;
+      }];
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:host
+                                             path:method.HTTPPath
+                                   requestsWriter:loggingRequestWriter];
 
   [call startWithWriteable:[GRXWriteable
                                writeableWithEventHandler:^(BOOL done, id value, NSError *error) {
@@ -78,8 +80,9 @@ NSString *host = @"grpc-test.sandbox.googleapis.com";
 
   [requestsBuffer writeValue:[NSData dataWithBytes:bytes length:sizeof(bytes)]];
 
-  GRPCCall *call =
-      [[GRPCCall alloc] initWithHost:host path:method.HTTPPath requestsWriter:requestsBuffer];
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:host
+                                             path:method.HTTPPath
+                                   requestsWriter:requestsBuffer];
 
   [call startWithWriteable:[GRXWriteable
                                writeableWithEventHandler:^(BOOL done, id value, NSError *error) {

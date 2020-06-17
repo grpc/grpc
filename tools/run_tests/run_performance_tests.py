@@ -58,8 +58,10 @@ class QpsWorkerJob:
         self.perf_file_base_name = perf_file_base_name
 
     def start(self):
-        self._job = jobset.Job(
-            self._spec, newline_on_success=True, travis=True, add_env={})
+        self._job = jobset.Job(self._spec,
+                               newline_on_success=True,
+                               travis=True,
+                               add_env={})
 
     def is_running(self):
         """Polls a job and returns True if given job is still running."""
@@ -122,9 +124,7 @@ def create_scenario_jobspec(scenario_json,
         cmd += 'BQ_RESULT_TABLE="%s" ' % bq_result_table
     cmd += 'tools/run_tests/performance/run_qps_driver.sh '
     cmd += '--scenarios_json=%s ' % pipes.quote(
-        json.dumps({
-            'scenarios': [scenario_json]
-        }))
+        json.dumps({'scenarios': [scenario_json]}))
     cmd += '--scenario_result_file=scenario_result.json '
     if server_cpu_load != 0:
         cmd += '--search_param=offered_load --initial_search_value=1000 --targeted_cpu_load=%d --stride=500 --error_tolerance=0.01' % server_cpu_load
@@ -133,12 +133,11 @@ def create_scenario_jobspec(scenario_json,
         cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (
             user_at_host, pipes.quote(cmd))
 
-    return jobset.JobSpec(
-        cmdline=[cmd],
-        shortname='%s' % scenario_json['name'],
-        timeout_seconds=_SCENARIO_TIMEOUT,
-        shell=True,
-        verbose_success=True)
+    return jobset.JobSpec(cmdline=[cmd],
+                          shortname='%s' % scenario_json['name'],
+                          timeout_seconds=_SCENARIO_TIMEOUT,
+                          shell=True,
+                          verbose_success=True)
 
 
 def create_quit_jobspec(workers, remote_host=None):
@@ -151,12 +150,11 @@ def create_quit_jobspec(workers, remote_host=None):
         cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (
             user_at_host, pipes.quote(cmd))
 
-    return jobset.JobSpec(
-        cmdline=[cmd],
-        shortname='shutdown_workers',
-        timeout_seconds=_QUIT_WORKER_TIMEOUT,
-        shell=True,
-        verbose_success=True)
+    return jobset.JobSpec(cmdline=[cmd],
+                          shortname='shutdown_workers',
+                          timeout_seconds=_QUIT_WORKER_TIMEOUT,
+                          shell=True,
+                          verbose_success=True)
 
 
 def create_netperf_jobspec(server_host='localhost',
@@ -183,12 +181,11 @@ def create_netperf_jobspec(server_host='localhost',
         cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (
             user_at_host, pipes.quote(cmd))
 
-    return jobset.JobSpec(
-        cmdline=[cmd],
-        shortname='netperf',
-        timeout_seconds=_NETPERF_TIMEOUT,
-        shell=True,
-        verbose_success=True)
+    return jobset.JobSpec(cmdline=[cmd],
+                          shortname='netperf',
+                          timeout_seconds=_NETPERF_TIMEOUT,
+                          shell=True,
+                          verbose_success=True)
 
 
 def archive_repo(languages):
@@ -201,20 +198,22 @@ def archive_repo(languages):
     if 'node' in languages or 'node_purejs' in languages:
         cmdline.append('../grpc-node')
 
-    archive_job = jobset.JobSpec(
-        cmdline=cmdline, shortname='archive_repo', timeout_seconds=3 * 60)
+    archive_job = jobset.JobSpec(cmdline=cmdline,
+                                 shortname='archive_repo',
+                                 timeout_seconds=3 * 60)
 
     jobset.message('START', 'Archiving local repository.', do_newline=True)
-    num_failures, _ = jobset.run(
-        [archive_job], newline_on_success=True, maxjobs=1)
+    num_failures, _ = jobset.run([archive_job],
+                                 newline_on_success=True,
+                                 maxjobs=1)
     if num_failures == 0:
-        jobset.message(
-            'SUCCESS',
-            'Archive with local repository created successfully.',
-            do_newline=True)
+        jobset.message('SUCCESS',
+                       'Archive with local repository created successfully.',
+                       do_newline=True)
     else:
-        jobset.message(
-            'FAILED', 'Failed to archive local repository.', do_newline=True)
+        jobset.message('FAILED',
+                       'Failed to archive local repository.',
+                       do_newline=True)
         sys.exit(1)
 
 
@@ -238,14 +237,17 @@ def prepare_remote_hosts(hosts, prepare_local=False):
                 shortname='local_prepare',
                 timeout_seconds=prepare_timeout))
     jobset.message('START', 'Preparing hosts.', do_newline=True)
-    num_failures, _ = jobset.run(
-        prepare_jobs, newline_on_success=True, maxjobs=10)
+    num_failures, _ = jobset.run(prepare_jobs,
+                                 newline_on_success=True,
+                                 maxjobs=10)
     if num_failures == 0:
-        jobset.message(
-            'SUCCESS', 'Prepare step completed successfully.', do_newline=True)
+        jobset.message('SUCCESS',
+                       'Prepare step completed successfully.',
+                       do_newline=True)
     else:
-        jobset.message(
-            'FAILED', 'Failed to prepare remote hosts.', do_newline=True)
+        jobset.message('FAILED',
+                       'Failed to prepare remote hosts.',
+                       do_newline=True)
         sys.exit(1)
 
 
@@ -264,8 +266,10 @@ def build_on_remote_hosts(hosts,
                 cmdline=['tools/run_tests/performance/remote_host_build.sh'] +
                 languages,
                 shortname='remote_host_build.%s' % host,
-                environ={'USER_AT_HOST': user_at_host,
-                         'CONFIG': 'opt'},
+                environ={
+                    'USER_AT_HOST': user_at_host,
+                    'CONFIG': 'opt'
+                },
                 timeout_seconds=build_timeout))
     if build_local:
         # start port server locally
@@ -283,8 +287,9 @@ def build_on_remote_hosts(hosts,
                 environ={'CONFIG': 'opt'},
                 timeout_seconds=local_build_timeout))
     jobset.message('START', 'Building.', do_newline=True)
-    num_failures, _ = jobset.run(
-        build_jobs, newline_on_success=True, maxjobs=10)
+    num_failures, _ = jobset.run(build_jobs,
+                                 newline_on_success=True,
+                                 maxjobs=10)
     if num_failures == 0:
         jobset.message('SUCCESS', 'Built successfully.', do_newline=True)
     else:
@@ -305,12 +310,12 @@ def create_qpsworkers(languages, worker_hosts, perf_cmd=None):
         workers = [(worker_host, 10000) for worker_host in worker_hosts]
 
     return [
-        create_qpsworker_job(
-            language,
-            shortname='qps_worker_%s_%s' % (language, worker_idx),
-            port=worker[1] + language.worker_port_offset(),
-            remote_host=worker[0],
-            perf_cmd=perf_cmd)
+        create_qpsworker_job(language,
+                             shortname='qps_worker_%s_%s' %
+                             (language, worker_idx),
+                             port=worker[1] + language.worker_port_offset(),
+                             remote_host=worker[0],
+                             perf_cmd=perf_cmd)
         for language in languages
         for worker_idx, worker in enumerate(workers)
     ]
@@ -328,12 +333,11 @@ def perf_report_processor_job(worker_host, perf_base_name, output_filename,
         cmd = "OUTPUT_FILENAME=%s OUTPUT_DIR=%s PERF_BASE_NAME=%s tools/run_tests/performance/process_local_perf_flamegraphs.sh" % (
             output_filename, flame_graph_reports, perf_base_name)
 
-    return jobset.JobSpec(
-        cmdline=cmd,
-        timeout_seconds=3 * 60,
-        shell=True,
-        verbose_success=True,
-        shortname='process perf report')
+    return jobset.JobSpec(cmdline=cmd,
+                          timeout_seconds=3 * 60,
+                          shell=True,
+                          verbose_success=True,
+                          shortname='process perf report')
 
 
 Scenario = collections.namedtuple('Scenario', 'jobspec workers name')
@@ -367,10 +371,10 @@ def create_scenarios(languages,
             netperf_client = netperf_hosts[1]
         scenarios.append(
             Scenario(
-                create_netperf_jobspec(
-                    server_host=netperf_server,
-                    client_host=netperf_client,
-                    bq_result_table=bq_result_table), _NO_WORKERS, 'netperf'))
+                create_netperf_jobspec(server_host=netperf_server,
+                                       client_host=netperf_client,
+                                       bq_result_table=bq_result_table),
+                _NO_WORKERS, 'netperf'))
 
     for language in languages:
         for scenario_json in language.scenarios():
@@ -473,74 +477,71 @@ def run_collect_perf_profile_jobs(hosts_and_base_names, scenario_name,
             perf_report_processor_job(host, perf_base_name, output_filename,
                                       flame_graph_reports))
 
-    jobset.message(
-        'START', 'Collecting perf reports from qps workers', do_newline=True)
-    failures, _ = jobset.run(
-        perf_report_jobs, newline_on_success=True, maxjobs=1)
-    jobset.message(
-        'SUCCESS', 'Collecting perf reports from qps workers', do_newline=True)
+    jobset.message('START',
+                   'Collecting perf reports from qps workers',
+                   do_newline=True)
+    failures, _ = jobset.run(perf_report_jobs,
+                             newline_on_success=True,
+                             maxjobs=1)
+    jobset.message('SUCCESS',
+                   'Collecting perf reports from qps workers',
+                   do_newline=True)
     return failures
 
 
 def main():
     argp = argparse.ArgumentParser(description='Run performance tests.')
-    argp.add_argument(
-        '-l',
-        '--language',
-        choices=['all'] + sorted(scenario_config.LANGUAGES.keys()),
-        nargs='+',
-        required=True,
-        help='Languages to benchmark.')
+    argp.add_argument('-l',
+                      '--language',
+                      choices=['all'] +
+                      sorted(scenario_config.LANGUAGES.keys()),
+                      nargs='+',
+                      required=True,
+                      help='Languages to benchmark.')
     argp.add_argument(
         '--remote_driver_host',
         default=None,
         help=
         'Run QPS driver on given host. By default, QPS driver is run locally.')
-    argp.add_argument(
-        '--remote_worker_host',
-        nargs='+',
-        default=[],
-        help='Worker hosts where to start QPS workers.')
+    argp.add_argument('--remote_worker_host',
+                      nargs='+',
+                      default=[],
+                      help='Worker hosts where to start QPS workers.')
     argp.add_argument(
         '--dry_run',
         default=False,
         action='store_const',
         const=True,
         help='Just list scenarios to be run, but don\'t run them.')
-    argp.add_argument(
-        '-r',
-        '--regex',
-        default='.*',
-        type=str,
-        help='Regex to select scenarios to run.')
-    argp.add_argument(
-        '--bq_result_table',
-        default=None,
-        type=str,
-        help='Bigquery "dataset.table" to upload results to.')
-    argp.add_argument(
-        '--category',
-        choices=['smoketest', 'all', 'scalable', 'sweep'],
-        default='all',
-        help='Select a category of tests to run.')
-    argp.add_argument(
-        '--netperf',
-        default=False,
-        action='store_const',
-        const=True,
-        help='Run netperf benchmark as one of the scenarios.')
+    argp.add_argument('-r',
+                      '--regex',
+                      default='.*',
+                      type=str,
+                      help='Regex to select scenarios to run.')
+    argp.add_argument('--bq_result_table',
+                      default=None,
+                      type=str,
+                      help='Bigquery "dataset.table" to upload results to.')
+    argp.add_argument('--category',
+                      choices=['smoketest', 'all', 'scalable', 'sweep'],
+                      default='all',
+                      help='Select a category of tests to run.')
+    argp.add_argument('--netperf',
+                      default=False,
+                      action='store_const',
+                      const=True,
+                      help='Run netperf benchmark as one of the scenarios.')
     argp.add_argument(
         '--server_cpu_load',
         default=0,
         type=int,
         help='Select a targeted server cpu load to run. 0 means ignore this flag'
     )
-    argp.add_argument(
-        '-x',
-        '--xml_report',
-        default='report.xml',
-        type=str,
-        help='Name of XML report file to generate.')
+    argp.add_argument('-x',
+                      '--xml_report',
+                      default='report.xml',
+                      type=str,
+                      help='Name of XML report file to generate.')
     argp.add_argument(
         '--perf_args',
         help=('Example usage: "--perf_args=record -F 99 -g". '
@@ -591,8 +592,7 @@ def main():
         _REMOTE_HOST_USERNAME = args.remote_host_username
 
     languages = set(
-        scenario_config.LANGUAGES[l]
-        for l in itertools.chain.from_iterable(
+        scenario_config.LANGUAGES[l] for l in itertools.chain.from_iterable(
             six.iterkeys(scenario_config.LANGUAGES) if x == 'all' else [x]
             for x in args.language))
 
@@ -615,10 +615,9 @@ def main():
     if not args.remote_driver_host:
         build_local = True
     if not args.dry_run:
-        build_on_remote_hosts(
-            remote_hosts,
-            languages=[str(l) for l in languages],
-            build_local=build_local)
+        build_on_remote_hosts(remote_hosts,
+                              languages=[str(l) for l in languages],
+                              build_local=build_local)
 
     perf_cmd = None
     if args.perf_args:
@@ -627,24 +626,24 @@ def main():
         perf_cmd = ['/usr/bin/perf']
         perf_cmd.extend(re.split('\s+', args.perf_args))
 
-    qpsworker_jobs = create_qpsworkers(
-        languages, args.remote_worker_host, perf_cmd=perf_cmd)
+    qpsworker_jobs = create_qpsworkers(languages,
+                                       args.remote_worker_host,
+                                       perf_cmd=perf_cmd)
 
     # get list of worker addresses for each language.
     workers_by_lang = dict([(str(language), []) for language in languages])
     for job in qpsworker_jobs:
         workers_by_lang[str(job.language)].append(job)
 
-    scenarios = create_scenarios(
-        languages,
-        workers_by_lang=workers_by_lang,
-        remote_host=args.remote_driver_host,
-        regex=args.regex,
-        category=args.category,
-        bq_result_table=args.bq_result_table,
-        netperf=args.netperf,
-        netperf_hosts=args.remote_worker_host,
-        server_cpu_load=args.server_cpu_load)
+    scenarios = create_scenarios(languages,
+                                 workers_by_lang=workers_by_lang,
+                                 remote_host=args.remote_driver_host,
+                                 regex=args.regex,
+                                 category=args.category,
+                                 bq_result_table=args.bq_result_table,
+                                 netperf=args.netperf,
+                                 netperf_hosts=args.remote_worker_host,
+                                 server_cpu_load=args.server_cpu_load)
 
     if not scenarios:
         raise Exception('No scenarios to run')
@@ -674,9 +673,8 @@ def main():
                     jobs, newline_on_success=True, maxjobs=1)
                 total_scenario_failures += scenario_failures
                 merged_resultset = dict(
-                    itertools.chain(
-                        six.iteritems(merged_resultset),
-                        six.iteritems(resultset)))
+                    itertools.chain(six.iteritems(merged_resultset),
+                                    six.iteritems(resultset)))
             finally:
                 # Consider qps workers that need to be killed as failures
                 qps_workers_killed += finish_qps_workers(
@@ -702,11 +700,10 @@ def main():
         report_utils.render_perf_profiling_results(
             '%s/index.html' % args.flame_graph_reports, profile_output_files)
 
-    report_utils.render_junit_xml_report(
-        merged_resultset,
-        args.xml_report,
-        suite_name='benchmarks',
-        multi_target=True)
+    report_utils.render_junit_xml_report(merged_resultset,
+                                         args.xml_report,
+                                         suite_name='benchmarks',
+                                         multi_target=True)
 
     if total_scenario_failures > 0 or qps_workers_killed > 0:
         print('%s scenarios failed and %s qps worker jobs killed' %

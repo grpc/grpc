@@ -20,6 +20,7 @@ import grpc
 
 protos, services = grpc.protos_and_services("demo.proto")
 
+__all__ = 'DemoServer'
 SERVER_ADDRESS = 'localhost:23333'
 SERVER_ID = 1
 

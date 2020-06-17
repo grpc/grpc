@@ -38,18 +38,16 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
   if ([key hasSuffix:@"-bin"]) {
     if (![value isKindOfClass:[NSData class]]) {
       [NSException raise:NSInvalidArgumentException
-                  format:
-                      @"Expected NSData value for header %@ ending in \"-bin\", "
-                      @"instead got %@",
-                      key, value];
+                  format:@"Expected NSData value for header %@ ending in \"-bin\", "
+                         @"instead got %@",
+                         key, value];
     }
   } else {
     if (![value isKindOfClass:[NSString class]]) {
       [NSException raise:NSInvalidArgumentException
-                  format:
-                      @"Expected NSString value for header %@ not ending in \"-bin\", "
-                      @"instead got %@",
-                      key, value];
+                  format:@"Expected NSString value for header %@ not ending in \"-bin\", "
+                         @"instead got %@",
+                         key, value];
     }
     CheckIsNonNilASCII(@"Text header value", (NSString *)value);
   }

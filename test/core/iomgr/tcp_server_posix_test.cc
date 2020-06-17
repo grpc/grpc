@@ -19,7 +19,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP_SERVER
 
 #include "src/core/lib/iomgr/tcp_server.h"
 
@@ -31,6 +31,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include <string>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -133,15 +135,10 @@ static void server_weak_ref_set(server_weak_ref* weak_ref,
 }
 
 static void test_addr_init_str(test_addr* addr) {
-  char* str = nullptr;
-  if (grpc_sockaddr_to_string(&str, &addr->addr, 0) != -1) {
-    size_t str_len;
-    memcpy(addr->str, str, (str_len = strnlen(str, sizeof(addr->str) - 1)));
-    addr->str[str_len] = '\0';
-    gpr_free(str);
-  } else {
-    addr->str[0] = '\0';
-  }
+  std::string str = grpc_sockaddr_to_string(&addr->addr, false);
+  size_t str_len = std::min(str.size(), sizeof(addr->str) - 1);
+  memcpy(addr->str, str.c_str(), str_len);
+  addr->str[str_len] = '\0';
 }
 
 static void on_connect(void* /*arg*/, grpc_endpoint* tcp,
@@ -506,8 +503,8 @@ int main(int argc, char** argv) {
   return EXIT_SUCCESS;
 }
 
-#else /* GRPC_POSIX_SOCKET */
+#else /* GRPC_POSIX_SOCKET_SERVER */
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET_SERVER */

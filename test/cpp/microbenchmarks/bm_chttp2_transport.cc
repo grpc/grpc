@@ -154,29 +154,27 @@ class Fixture {
   grpc_transport* t_;
 };
 
-class Closure : public grpc_closure {
+class TestClosure : public grpc_closure {
  public:
-  virtual ~Closure() {}
+  virtual ~TestClosure() {}
 };
 
 template <class F>
-std::unique_ptr<Closure> MakeClosure(
-    F f, grpc_closure_scheduler* sched = grpc_schedule_on_exec_ctx) {
-  struct C : public Closure {
-    C(const F& f, grpc_closure_scheduler* sched) : f_(f) {
-      GRPC_CLOSURE_INIT(this, Execute, this, sched);
+std::unique_ptr<TestClosure> MakeTestClosure(F f) {
+  struct C : public TestClosure {
+    explicit C(const F& f) : f_(f) {
+      GRPC_CLOSURE_INIT(this, Execute, this, nullptr);
     }
     F f_;
     static void Execute(void* arg, grpc_error* error) {
       static_cast<C*>(arg)->f_(error);
     }
   };
-  return std::unique_ptr<Closure>(new C(f, sched));
+  return std::unique_ptr<TestClosure>(new C(f));
 }
 
 template <class F>
-grpc_closure* MakeOnceClosure(
-    F f, grpc_closure_scheduler* sched = grpc_schedule_on_exec_ctx) {
+grpc_closure* MakeOnceClosure(F f) {
   struct C : public grpc_closure {
     C(const F& f) : f_(f) {}
     F f_;
@@ -186,7 +184,7 @@ grpc_closure* MakeOnceClosure(
     }
   };
   auto* c = new C{f};
-  return GRPC_CLOSURE_INIT(c, C::Execute, c, sched);
+  return GRPC_CLOSURE_INIT(c, C::Execute, c, nullptr);
 }
 
 class Stream {
@@ -269,15 +267,16 @@ static void BM_StreamCreateDestroy(benchmark::State& state) {
   op.cancel_stream = true;
   op.payload = &op_payload;
   op_payload.cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
-  std::unique_ptr<Closure> next = MakeClosure([&, s](grpc_error* /*error*/) {
-    if (!state.KeepRunning()) {
-      delete s;
-      return;
-    }
-    s->Init(state);
-    s->Op(&op);
-    s->DestroyThen(next.get());
-  });
+  std::unique_ptr<TestClosure> next =
+      MakeTestClosure([&, s](grpc_error* /*error*/) {
+        if (!state.KeepRunning()) {
+          delete s;
+          return;
+        }
+        s->Init(state);
+        s->Op(&op);
+        s->DestroyThen(next.get());
+      });
   grpc_core::Closure::Run(DEBUG_LOCATION, next.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
   track_counters.Finish(state);
@@ -314,8 +313,8 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   auto* s = new Stream(&f);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload(nullptr);
-  std::unique_ptr<Closure> start;
-  std::unique_ptr<Closure> done;
+  std::unique_ptr<TestClosure> start;
+  std::unique_ptr<TestClosure> done;
 
   auto reset_op = [&]() {
     op = {};
@@ -335,7 +334,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   f.FlushExecCtx();
   gpr_event bm_done;
   gpr_event_init(&bm_done);
-  start = MakeClosure([&, s](grpc_error* /*error*/) {
+  start = MakeTestClosure([&, s](grpc_error* /*error*/) {
     if (!state.KeepRunning()) {
       delete s;
       gpr_event_set(&bm_done, (void*)1);
@@ -348,7 +347,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
     op.payload->send_initial_metadata.send_initial_metadata = &b;
     s->Op(&op);
   });
-  done = MakeClosure([&](grpc_error* /*error*/) {
+  done = MakeTestClosure([&](grpc_error* /*error*/) {
     reset_op();
     op.cancel_stream = true;
     op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
@@ -376,7 +375,7 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
     op = {};
     op.payload = &op_payload;
   };
-  std::unique_ptr<Closure> c = MakeClosure([&](grpc_error* /*error*/) {
+  std::unique_ptr<TestClosure> c = MakeTestClosure([&](grpc_error* /*error*/) {
     if (!state.KeepRunning()) return;
     reset_op();
     op.on_complete = c.get();
@@ -389,8 +388,8 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
   op_payload.cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
   gpr_event* stream_cancel_done = new gpr_event;
   gpr_event_init(stream_cancel_done);
-  std::unique_ptr<Closure> stream_cancel_closure =
-      MakeClosure([&](grpc_error* error) {
+  std::unique_ptr<TestClosure> stream_cancel_closure =
+      MakeTestClosure([&](grpc_error* error) {
         GPR_ASSERT(error == GRPC_ERROR_NONE);
         gpr_event_set(stream_cancel_done, (void*)(1));
       });
@@ -438,7 +437,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   gpr_event* bm_done = new gpr_event;
   gpr_event_init(bm_done);
 
-  std::unique_ptr<Closure> c = MakeClosure([&](grpc_error* /*error*/) {
+  std::unique_ptr<TestClosure> c = MakeTestClosure([&](grpc_error* /*error*/) {
     if (!state.KeepRunning()) {
       gpr_event_set(bm_done, (void*)(1));
       return;
@@ -473,8 +472,8 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
   gpr_event* stream_cancel_done = new gpr_event;
   gpr_event_init(stream_cancel_done);
-  std::unique_ptr<Closure> stream_cancel_closure =
-      MakeClosure([&](grpc_error* error) {
+  std::unique_ptr<TestClosure> stream_cancel_closure =
+      MakeTestClosure([&](grpc_error* error) {
         GPR_ASSERT(error == GRPC_ERROR_NONE);
         gpr_event_set(stream_cancel_done, (void*)(1));
       });
@@ -577,17 +576,17 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
   }
 
-  std::unique_ptr<Closure> do_nothing =
-      MakeClosure([](grpc_error* /*error*/) {});
+  std::unique_ptr<TestClosure> do_nothing =
+      MakeTestClosure([](grpc_error* /*error*/) {});
 
   uint32_t received;
 
-  std::unique_ptr<Closure> drain_start;
-  std::unique_ptr<Closure> drain;
-  std::unique_ptr<Closure> drain_continue;
+  std::unique_ptr<TestClosure> drain_start;
+  std::unique_ptr<TestClosure> drain;
+  std::unique_ptr<TestClosure> drain_continue;
   grpc_slice recv_slice;
 
-  std::unique_ptr<Closure> c = MakeClosure([&](grpc_error* /*error*/) {
+  std::unique_ptr<TestClosure> c = MakeTestClosure([&](grpc_error* /*error*/) {
     if (!state.KeepRunning()) return;
     // force outgoing window to be yuge
     s->chttp2_stream()->flow_control->TestOnlyForceHugeWindow();
@@ -602,7 +601,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
     f.PushInput(grpc_slice_ref(incoming_data));
   });
 
-  drain_start = MakeClosure([&](grpc_error* /*error*/) {
+  drain_start = MakeTestClosure([&](grpc_error* /*error*/) {
     if (recv_stream == nullptr) {
       GPR_ASSERT(!state.KeepRunning());
       return;
@@ -610,7 +609,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
     grpc_core::Closure::Run(DEBUG_LOCATION, drain.get(), GRPC_ERROR_NONE);
   });
 
-  drain = MakeClosure([&](grpc_error* /*error*/) {
+  drain = MakeTestClosure([&](grpc_error* /*error*/) {
     do {
       if (received == recv_stream->length()) {
         recv_stream.reset();
@@ -624,7 +623,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
               grpc_slice_unref_internal(recv_slice), true));
   });
 
-  drain_continue = MakeClosure([&](grpc_error* /*error*/) {
+  drain_continue = MakeTestClosure([&](grpc_error* /*error*/) {
     recv_stream->Pull(&recv_slice);
     received += GRPC_SLICE_LENGTH(recv_slice);
     grpc_slice_unref_internal(recv_slice);
@@ -659,8 +658,8 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
   gpr_event* stream_cancel_done = new gpr_event;
   gpr_event_init(stream_cancel_done);
-  std::unique_ptr<Closure> stream_cancel_closure =
-      MakeClosure([&](grpc_error* error) {
+  std::unique_ptr<TestClosure> stream_cancel_closure =
+      MakeTestClosure([&](grpc_error* error) {
         GPR_ASSERT(error == GRPC_ERROR_NONE);
         gpr_event_set(stream_cancel_done, (void*)(1));
       });

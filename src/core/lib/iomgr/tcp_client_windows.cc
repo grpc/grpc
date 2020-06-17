@@ -40,7 +40,7 @@
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/iomgr/timer.h"
 
-typedef struct {
+struct async_connect {
   grpc_closure* on_done;
   gpr_mu mu;
   grpc_winsocket* socket;
@@ -51,8 +51,7 @@ typedef struct {
   grpc_closure on_connect;
   grpc_endpoint** endpoint;
   grpc_channel_args* channel_args;
-} async_connect;
-
+};
 static void async_connect_unlock_and_cleanup(async_connect* ac,
                                              grpc_winsocket* socket) {
   int done = (--ac->refs == 0);

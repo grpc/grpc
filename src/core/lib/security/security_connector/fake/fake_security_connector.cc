@@ -103,20 +103,20 @@ class grpc_fake_channel_security_connector final
         tsi_create_fake_handshaker(/*is_client=*/true), this, args));
   }
 
-  bool check_call_host(grpc_core::StringView host,
+  bool check_call_host(absl::string_view host,
                        grpc_auth_context* /*auth_context*/,
                        grpc_closure* /*on_call_host_checked*/,
                        grpc_error** /*error*/) override {
-    grpc_core::StringView authority_hostname;
-    grpc_core::StringView authority_ignored_port;
-    grpc_core::StringView target_hostname;
-    grpc_core::StringView target_ignored_port;
+    absl::string_view authority_hostname;
+    absl::string_view authority_ignored_port;
+    absl::string_view target_hostname;
+    absl::string_view target_ignored_port;
     grpc_core::SplitHostPort(host, &authority_hostname,
                              &authority_ignored_port);
     grpc_core::SplitHostPort(target_, &target_hostname, &target_ignored_port);
     if (target_name_override_ != nullptr) {
-      grpc_core::StringView fake_security_target_name_override_hostname;
-      grpc_core::StringView fake_security_target_name_override_ignored_port;
+      absl::string_view fake_security_target_name_override_hostname;
+      absl::string_view fake_security_target_name_override_ignored_port;
       grpc_core::SplitHostPort(
           target_name_override_, &fake_security_target_name_override_hostname,
           &fake_security_target_name_override_ignored_port);
@@ -219,9 +219,9 @@ static void fake_check_peer(
   const char* prop_name;
   grpc_error* error = GRPC_ERROR_NONE;
   *auth_context = nullptr;
-  if (peer.property_count != 1) {
+  if (peer.property_count != 2) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Fake peers should only have 1 property.");
+        "Fake peers should only have 2 properties.");
     goto end;
   }
   prop_name = peer.properties[0].name;
@@ -240,10 +240,30 @@ static void fake_check_peer(
         "Invalid value for cert type property.");
     goto end;
   }
+  prop_name = peer.properties[1].name;
+  if (prop_name == nullptr ||
+      strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY) != 0) {
+    char* msg;
+    gpr_asprintf(&msg, "Unexpected property in fake peer: %s.",
+                 prop_name == nullptr ? "<EMPTY>" : prop_name);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    gpr_free(msg);
+    goto end;
+  }
+  if (strncmp(peer.properties[1].value.data, TSI_FAKE_SECURITY_LEVEL,
+              peer.properties[1].value.length) != 0) {
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid value for security level property.");
+    goto end;
+  }
+
   *auth_context = grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
       auth_context->get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
+  grpc_auth_context_add_cstring_property(
+      auth_context->get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+      TSI_FAKE_SECURITY_LEVEL);
 end:
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   tsi_peer_destruct(&peer);

@@ -22,15 +22,6 @@
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/cpp/interop/interop_client.h"
 
-extern "C" JNIEXPORT void JNICALL
-Java_io_grpc_interop_cpp_InteropActivity_configureSslRoots(JNIEnv* env,
-                                                           jobject obj_this,
-                                                           jstring path_raw) {
-  const char* path = env->GetStringUTFChars(path_raw, (jboolean*)0);
-
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, path);
-}
-
 std::shared_ptr<grpc::testing::InteropClient> GetClient(const char* host,
                                                         int port,
                                                         bool use_tls) {

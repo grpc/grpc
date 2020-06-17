@@ -41,6 +41,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <string>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -49,6 +51,20 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+
+/* set a socket to use zerocopy */
+grpc_error* grpc_set_socket_zerocopy(int fd) {
+#ifdef GRPC_LINUX_ERRQUEUE
+  const int enable = 1;
+  auto err = setsockopt(fd, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
+  if (err != 0) {
+    return GRPC_OS_ERROR(errno, "setsockopt(SO_ZEROCOPY)");
+  }
+  return GRPC_ERROR_NONE;
+#else
+  return GRPC_OS_ERROR(ENOSYS, "setsockopt(SO_ZEROCOPY)");
+#endif
+}
 
 /* set a socket to non blocking mode */
 grpc_error* grpc_set_socket_nonblocking(int fd, int non_blocking) {
@@ -196,7 +212,6 @@ static gpr_once g_probe_so_reuesport_once = GPR_ONCE_INIT;
 static int g_support_so_reuseport = false;
 
 void probe_so_reuseport_once(void) {
-#ifndef GPR_MANYLINUX1
   int s = socket(AF_INET, SOCK_STREAM, 0);
   if (s < 0) {
     /* This might be an ipv6-only environment in which case 'socket(AF_INET,..)'
@@ -208,7 +223,6 @@ void probe_so_reuseport_once(void) {
         "check for SO_REUSEPORT", grpc_set_socket_reuse_port(s, 1));
     close(s);
   }
-#endif
 }
 
 bool grpc_is_socket_reuse_port_supported() {
@@ -382,31 +396,12 @@ int grpc_ipv6_loopback_available(void) {
   return g_ipv6_loopback_available;
 }
 
-/* This should be 0 in production, but it may be enabled for testing or
-   debugging purposes, to simulate an environment where IPv6 sockets can't
-   also speak IPv4. */
-int grpc_forbid_dualstack_sockets_for_testing = 0;
-
-static int set_socket_dualstack(int fd) {
-  if (!grpc_forbid_dualstack_sockets_for_testing) {
-    const int off = 0;
-    return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
-  } else {
-    /* Force an IPv6-only socket, for testing purposes. */
-    const int on = 1;
-    setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on));
-    return 0;
-  }
-}
-
 static grpc_error* error_for_fd(int fd, const grpc_resolved_address* addr) {
   if (fd >= 0) return GRPC_ERROR_NONE;
-  char* addr_str;
-  grpc_sockaddr_to_string(&addr_str, addr, 0);
-  grpc_error* err = grpc_error_set_str(GRPC_OS_ERROR(errno, "socket"),
-                                       GRPC_ERROR_STR_TARGET_ADDRESS,
-                                       grpc_slice_from_copied_string(addr_str));
-  gpr_free(addr_str);
+  std::string addr_str = grpc_sockaddr_to_string(addr, false);
+  grpc_error* err = grpc_error_set_str(
+      GRPC_OS_ERROR(errno, "socket"), GRPC_ERROR_STR_TARGET_ADDRESS,
+      grpc_slice_from_copied_string(addr_str.c_str()));
   return err;
 }
 
@@ -438,7 +433,7 @@ grpc_error* grpc_create_dualstack_socket_using_factory(
       errno = EAFNOSUPPORT;
     }
     /* Check if we've got a valid dualstack socket. */
-    if (*newfd >= 0 && set_socket_dualstack(*newfd)) {
+    if (*newfd >= 0 && grpc_set_socket_dualstack(*newfd)) {
       *dsmode = GRPC_DSMODE_DUALSTACK;
       return GRPC_ERROR_NONE;
     }

@@ -185,19 +185,23 @@ done:
 
 static grpc_error* pollset_kick(grpc_pollset* p,
                                 grpc_pollset_worker* specific_worker) {
+  bool should_kick_global = false;
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
+      should_kick_global = true;
       for (specific_worker =
                p->root_worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].next;
            specific_worker != &p->root_worker;
            specific_worker =
                specific_worker->links[GRPC_POLLSET_WORKER_LINK_POLLSET].next) {
         specific_worker->kicked = 1;
+        should_kick_global = false;
         gpr_cv_signal(&specific_worker->cv);
       }
       p->kicked_without_pollers = 1;
       if (p->is_iocp_worker) {
         grpc_iocp_kick();
+        should_kick_global = false;
       }
     } else {
       if (p->is_iocp_worker && g_active_poller == specific_worker) {
@@ -216,6 +220,15 @@ static grpc_error* pollset_kick(grpc_pollset* p,
       grpc_iocp_kick();
     } else {
       p->kicked_without_pollers = 1;
+      should_kick_global = true;
+    }
+  }
+  if (should_kick_global && g_active_poller == NULL) {
+    grpc_pollset_worker* next_global_worker = pop_front_worker(
+        &g_global_root_worker, GRPC_POLLSET_WORKER_LINK_GLOBAL);
+    if (next_global_worker != NULL) {
+      next_global_worker->kicked = 1;
+      gpr_cv_signal(&next_global_worker->cv);
     }
   }
   return GRPC_ERROR_NONE;

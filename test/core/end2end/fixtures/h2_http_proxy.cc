@@ -39,7 +39,7 @@
 
 struct fullstack_fixture_data {
   ~fullstack_fixture_data() { grpc_end2end_http_proxy_destroy(proxy); }
-  grpc_core::UniquePtr<char> server_addr;
+  std::string server_addr;
   grpc_end2end_http_proxy* proxy = nullptr;
 };
 
@@ -49,7 +49,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   memset(&f, 0, sizeof(f));
   fullstack_fixture_data* ffd = new fullstack_fixture_data();
   const int server_port = grpc_pick_unused_port_or_die();
-  grpc_core::JoinHostPort(&ffd->server_addr, "localhost", server_port);
+  ffd->server_addr = grpc_core::JoinHostPort("localhost", server_port);
 
   /* Passing client_args to proxy_create for the case of checking for proxy auth
    */
@@ -81,8 +81,8 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   }
   gpr_setenv("http_proxy", proxy_uri);
   gpr_free(proxy_uri);
-  f->client = grpc_insecure_channel_create(ffd->server_addr.get(), client_args,
-                                           nullptr);
+  f->client = grpc_insecure_channel_create(ffd->server_addr.c_str(),
+                                           client_args, nullptr);
   GPR_ASSERT(f->client);
 }
 
@@ -96,7 +96,7 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   GPR_ASSERT(
-      grpc_server_add_insecure_http2_port(f->server, ffd->server_addr.get()));
+      grpc_server_add_insecure_http2_port(f->server, ffd->server_addr.c_str()));
   grpc_server_start(f->server);
 }
 

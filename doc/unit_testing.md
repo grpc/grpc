@@ -144,7 +144,7 @@ Unary RPC:
 MockEchoTestServiceStub stub;
 EchoResponse resp;
 resp.set_message("hello world");
-Expect_CALL(stub, Echo(_,_,_)).Times(Atleast(1)).WillOnce(DoAll(SetArgPointee<2>(resp), Return(Status::OK)));
+EXPECT_CALL(stub, Echo(_,_,_)).Times(AtLeast(1)).WillOnce(DoAll(SetArgPointee<2>(resp), Return(Status::OK)));
 FakeClient client(stub);
 client.DoEcho();
 ```

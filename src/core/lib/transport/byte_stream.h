@@ -26,10 +26,15 @@
 #include "src/core/lib/iomgr/closure.h"
 
 /** Internal bit flag for grpc_begin_message's \a flags signaling the use of
- * compression for the message */
+ * compression for the message. (Does not apply for stream compression.) */
 #define GRPC_WRITE_INTERNAL_COMPRESS (0x80000000u)
+/** Internal bit flag for determining whether the message was compressed and had
+ * to be decompressed by the message_decompress filter. (Does not apply for
+ * stream compression.) */
+#define GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED (0x40000000u)
 /** Mask of all valid internal flags. */
-#define GRPC_WRITE_INTERNAL_USED_MASK (GRPC_WRITE_INTERNAL_COMPRESS)
+#define GRPC_WRITE_INTERNAL_USED_MASK \
+  (GRPC_WRITE_INTERNAL_COMPRESS | GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
 
 namespace grpc_core {
 
@@ -40,7 +45,8 @@ class ByteStream : public Orphanable {
   // Returns true if the bytes are available immediately (in which case
   // on_complete will not be called), or false if the bytes will be available
   // asynchronously (in which case on_complete will be called when they
-  // are available).
+  // are available). Should not be called if there is no data left on the
+  // stream.
   //
   // max_size_hint can be set as a hint as to the maximum number
   // of bytes that would be acceptable to read.

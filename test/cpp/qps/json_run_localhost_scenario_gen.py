@@ -17,6 +17,7 @@
 import gen_build_yaml as gen
 import json
 
+
 def generate_args():
     all_scenario_set = gen.generate_yaml()
     all_scenario_set = all_scenario_set['tests']
@@ -34,6 +35,8 @@ def generate_args():
     serialized_scenarios_str = str(all_scenarios).encode('ascii', 'ignore')
     with open('json_run_localhost_scenarios.bzl', 'wb') as f:
         f.write('"""Scenarios run on localhost."""\n\n')
-        f.write('JSON_RUN_LOCALHOST_SCENARIOS = ' + serialized_scenarios_str + '\n')
+        f.write('JSON_RUN_LOCALHOST_SCENARIOS = ' + serialized_scenarios_str +
+                '\n')
+
 
 generate_args()

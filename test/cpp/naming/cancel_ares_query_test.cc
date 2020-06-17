@@ -36,9 +36,9 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/port.h"
@@ -81,7 +81,7 @@ struct ArgsStruct {
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-  grpc_core::Combiner* lock;
+  std::shared_ptr<grpc_core::WorkSerializer> lock;
   grpc_channel_args* channel_args;
 };
 
@@ -90,7 +90,7 @@ void ArgsInit(ArgsStruct* args) {
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
-  args->lock = grpc_combiner_create();
+  args->lock = std::make_shared<grpc_core::WorkSerializer>();
   gpr_atm_rel_store(&args->done_atm, 0);
   args->channel_args = nullptr;
 }
@@ -109,7 +109,6 @@ void ArgsFinish(ArgsStruct* args) {
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
-  GRPC_COMBINER_UNREF(args->lock, nullptr);
 }
 
 void PollPollsetUntilRequestDone(ArgsStruct* args) {
@@ -314,7 +313,7 @@ void TestCancelDuringActiveQuery(
   gpr_free(client_target);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
-  gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(10);
+  gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(100);
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);

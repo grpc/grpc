@@ -42,14 +42,13 @@
    | size |     data    |
    where the size field value is the size of the size field plus the size of
    the data encoded in little endian on 4 bytes.  */
-typedef struct {
+struct tsi_fake_frame {
   unsigned char* data;
   size_t size;
   size_t allocated_size;
   size_t offset;
   int needs_draining;
-} tsi_fake_frame;
-
+};
 typedef enum {
   TSI_FAKE_CLIENT_INIT = 0,
   TSI_FAKE_SERVER_INIT = 1,
@@ -58,7 +57,7 @@ typedef enum {
   TSI_FAKE_HANDSHAKE_MESSAGE_MAX = 4
 } tsi_fake_handshake_message;
 
-typedef struct {
+struct tsi_fake_handshaker {
   tsi_handshaker base;
   int is_client;
   tsi_fake_handshake_message next_message_to_send;
@@ -68,23 +67,20 @@ typedef struct {
   unsigned char* outgoing_bytes_buffer;
   size_t outgoing_bytes_buffer_size;
   tsi_result result;
-} tsi_fake_handshaker;
-
-typedef struct {
+};
+struct tsi_fake_frame_protector {
   tsi_frame_protector base;
   tsi_fake_frame protect_frame;
   tsi_fake_frame unprotect_frame;
   size_t max_frame_size;
-} tsi_fake_frame_protector;
-
-typedef struct {
+};
+struct tsi_fake_zero_copy_grpc_protector {
   tsi_zero_copy_grpc_protector base;
   grpc_slice_buffer header_sb;
   grpc_slice_buffer protected_sb;
   size_t max_frame_size;
   size_t parsed_frame_size;
-} tsi_fake_zero_copy_grpc_protector;
-
+};
 /* --- Utils. ---*/
 
 static const char* tsi_fake_handshake_message_strings[] = {
@@ -488,20 +484,23 @@ static const tsi_zero_copy_grpc_protector_vtable
 
 /* --- tsi_handshaker_result methods implementation. ---*/
 
-typedef struct {
+struct fake_handshaker_result {
   tsi_handshaker_result base;
   unsigned char* unused_bytes;
   size_t unused_bytes_size;
-} fake_handshaker_result;
-
+};
 static tsi_result fake_handshaker_result_extract_peer(
-    const tsi_handshaker_result* /*self*/, tsi_peer* peer) {
-  /* Construct a tsi_peer with 1 property: certificate type. */
-  tsi_result result = tsi_construct_peer(1, peer);
+    const tsi_handshaker_result* self, tsi_peer* peer) {
+  /* Construct a tsi_peer with 1 property: certificate type, security_level. */
+  tsi_result result = tsi_construct_peer(2, peer);
   if (result != TSI_OK) return result;
   result = tsi_construct_string_peer_property_from_cstring(
       TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_FAKE_CERTIFICATE_TYPE,
       &peer->properties[0]);
+  if (result != TSI_OK) tsi_peer_destruct(peer);
+  result = tsi_construct_string_peer_property_from_cstring(
+      TSI_SECURITY_LEVEL_PEER_PROPERTY,
+      tsi_security_level_to_string(TSI_SECURITY_NONE), &peer->properties[1]);
   if (result != TSI_OK) tsi_peer_destruct(peer);
   return result;
 }

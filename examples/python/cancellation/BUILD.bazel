@@ -15,6 +15,7 @@
 # limitations under the License.
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 package(default_testonly = 1)
@@ -43,8 +44,8 @@ py_binary(
     deps = [
         ":hash_name_py_pb2",
         ":hash_name_py_pb2_grpc",
-        "//external:six",
         "//src/python/grpcio/grpc:grpcio",
+        "@six",
     ],
 )
 

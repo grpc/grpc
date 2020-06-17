@@ -15,13 +15,20 @@
 
 import collections
 import threading
-
+import sys
 import grpc
 
 from grpc_health.v1 import health_pb2 as _health_pb2
 from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 
+if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
+    # Exposes AsyncHealthServicer as public API.
+    from . import _async as aio  # pylint: disable=unused-import
+
+# The service name of the health checking servicer.
 SERVICE_NAME = _health_pb2.DESCRIPTOR.services_by_name['Health'].full_name
+# The entry of overall health for the entire server.
+OVERALL_HEALTH = ''
 
 
 class _Watcher():
@@ -78,7 +85,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                  experimental_non_blocking=True,
                  experimental_thread_pool=None):
         self._lock = threading.RLock()
-        self._server_status = {}
+        self._server_status = {"": _health_pb2.HealthCheckResponse.SERVING}
         self._send_response_callbacks = {}
         self.Watch.__func__.experimental_non_blocking = experimental_non_blocking
         self.Watch.__func__.experimental_thread_pool = experimental_thread_pool
@@ -131,7 +138,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         """Sets the status of a service.
 
         Args:
-          service: string, the name of the service. NOTE, '' must be set.
+          service: string, the name of the service.
           status: HealthCheckResponse.status enum value indicating the status of
             the service
         """

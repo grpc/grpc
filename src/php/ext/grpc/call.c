@@ -294,8 +294,13 @@ PHP_METHOD(Call, startBatch) {
   grpc_byte_buffer *message;
   int cancelled;
   grpc_call_error error;
+
+  #if PHP_MAJOR_VERSION < 7
   char *message_str;
   size_t message_len;
+  #else
+  zend_string* zmessage = NULL;
+  #endif // PHP_MAJOR_VERSION < 7
 
   grpc_metadata_array_init(&metadata);
   grpc_metadata_array_init(&trailing_metadata);
@@ -483,12 +488,28 @@ PHP_METHOD(Call, startBatch) {
       PHP_GRPC_DELREF(array);
       break;
     case GRPC_OP_RECV_MESSAGE:
+#if PHP_MAJOR_VERSION < 7
       byte_buffer_to_string(message, &message_str, &message_len);
+#else
+      zmessage = byte_buffer_to_zend_string(message);
+#endif // PHP_MAJOR_VERSION < 7
+
+#if PHP_MAJOR_VERSION < 7
       if (message_str == NULL) {
+#else
+      if (zmessage == NULL) {
+#endif // PHP_MAJOR_VERSION < 7
         add_property_null(result, "message");
       } else {
+#if PHP_MAJOR_VERSION < 7
         php_grpc_add_property_stringl(result, "message", message_str,
                                       message_len, false);
+#else
+        zval zmessage_val;
+        ZVAL_NEW_STR(&zmessage_val, zmessage);
+        add_property_zval(result, "message", &zmessage_val);
+        zval_ptr_dtor(&zmessage_val);
+#endif // PHP_MAJOR_VERSION < 7
       }
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
@@ -537,7 +558,9 @@ cleanup:
     }
     if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
       grpc_byte_buffer_destroy(message);
+      #if PHP_MAJOR_VERSION < 7
       PHP_GRPC_FREE_STD_ZVAL(message_str);
+      #endif // PHP_MAJOR_VERSION < 7
     }
   }
   RETURN_DESTROY_ZVAL(result);

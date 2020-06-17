@@ -55,12 +55,17 @@ _COMPRESSORS = {
 }
 
 argp = argparse.ArgumentParser('Generate header frames')
-argp.add_argument(
-    '--set_end_stream', default=False, action='store_const', const=True)
-argp.add_argument(
-    '--no_framing', default=False, action='store_const', const=True)
-argp.add_argument(
-    '--compression', choices=sorted(_COMPRESSORS.keys()), default='never')
+argp.add_argument('--set_end_stream',
+                  default=False,
+                  action='store_const',
+                  const=True)
+argp.add_argument('--no_framing',
+                  default=False,
+                  action='store_const',
+                  const=True)
+argp.add_argument('--compression',
+                  choices=sorted(_COMPRESSORS.keys()),
+                  default='never')
 argp.add_argument('--hex', default=False, action='store_const', const=True)
 args = argp.parse_args()
 

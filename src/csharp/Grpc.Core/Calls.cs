@@ -16,6 +16,7 @@
 
 #endregion
 
+using System;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
 
@@ -59,7 +60,10 @@ namespace Grpc.Core
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             var asyncResult = asyncCall.UnaryCallAsync(req);
-            return new AsyncUnaryCall<TResponse>(asyncResult, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncUnaryCall<TResponse>(asyncResult,
+                Callbacks<TRequest, TResponse>.GetHeaders, Callbacks<TRequest, TResponse>.GetStatus,
+                Callbacks<TRequest, TResponse>.GetTrailers, Callbacks<TRequest, TResponse>.Cancel,
+                asyncCall);
         }
 
         /// <summary>
@@ -78,7 +82,10 @@ namespace Grpc.Core
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             asyncCall.StartServerStreamingCall(req);
             var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
-            return new AsyncServerStreamingCall<TResponse>(responseStream, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncServerStreamingCall<TResponse>(responseStream,
+                Callbacks<TRequest, TResponse>.GetHeaders, Callbacks<TRequest, TResponse>.GetStatus,
+                Callbacks<TRequest, TResponse>.GetTrailers, Callbacks<TRequest, TResponse>.Cancel,
+                asyncCall);
         }
 
         /// <summary>
@@ -96,7 +103,10 @@ namespace Grpc.Core
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             var resultTask = asyncCall.ClientStreamingCallAsync();
             var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
-            return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask,
+                Callbacks<TRequest, TResponse>.GetHeaders, Callbacks<TRequest, TResponse>.GetStatus,
+                Callbacks<TRequest, TResponse>.GetTrailers, Callbacks<TRequest, TResponse>.Cancel,
+                asyncCall);
         }
 
         /// <summary>
@@ -116,7 +126,18 @@ namespace Grpc.Core
             asyncCall.StartDuplexStreamingCall();
             var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
-            return new AsyncDuplexStreamingCall<TRequest, TResponse>(requestStream, responseStream, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncDuplexStreamingCall<TRequest, TResponse>(requestStream, responseStream,
+                Callbacks<TRequest, TResponse>.GetHeaders, Callbacks<TRequest, TResponse>.GetStatus,
+                Callbacks<TRequest, TResponse>.GetTrailers, Callbacks<TRequest, TResponse>.Cancel,
+                asyncCall);
+        }
+
+        private static class Callbacks<TRequest, TResponse>
+        {
+            internal static readonly Func<object, Task<Metadata>> GetHeaders = state => ((AsyncCall<TRequest, TResponse>)state).ResponseHeadersAsync;
+            internal static readonly Func<object, Status> GetStatus = state => ((AsyncCall<TRequest, TResponse>)state).GetStatus();
+            internal static readonly Func<object, Metadata> GetTrailers = state => ((AsyncCall<TRequest, TResponse>)state).GetTrailers();
+            internal static readonly Action<object> Cancel = state => ((AsyncCall<TRequest, TResponse>)state).Cancel();
         }
     }
 }

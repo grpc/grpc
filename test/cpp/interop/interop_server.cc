@@ -31,7 +31,6 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -118,7 +117,7 @@ bool CheckExpectedCompression(const ServerContext& context,
               "Expected compression but got uncompressed request from client.");
       return false;
     }
-    if (!(inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS)) {
+    if (!(inspector.WasCompressed())) {
       gpr_log(GPR_ERROR,
               "Failure: Requested compression in a compressable request, but "
               "compression bit in message flags not set.");
@@ -126,7 +125,7 @@ bool CheckExpectedCompression(const ServerContext& context,
     }
   } else {
     // Didn't expect compression -> make sure the request is uncompressed
-    if (inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS) {
+    if (inspector.WasCompressed()) {
       gpr_log(GPR_ERROR,
               "Failure: Didn't requested compression, but compression bit in "
               "message flags set.");

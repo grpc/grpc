@@ -9,6 +9,7 @@ native_method_signatures = [
     'int grpcsharp_batch_context_recv_message_next_slice_peek(BatchContextSafeHandle ctx, out UIntPtr sliceLen, out IntPtr sliceDataPtr)',
     'StatusCode grpcsharp_batch_context_recv_status_on_client_status(BatchContextSafeHandle ctx)',
     'IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx, out UIntPtr detailsLength)',
+    'IntPtr grpcsharp_batch_context_recv_status_on_client_error_string(BatchContextSafeHandle ctx)',
     'IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx)',
     'int grpcsharp_batch_context_recv_close_on_server_cancelled(BatchContextSafeHandle ctx)',
     'void grpcsharp_batch_context_reset(BatchContextSafeHandle ctx)',

@@ -69,7 +69,7 @@ class grpc_alts_channel_security_connector final
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name)
-      : grpc_channel_security_connector(/*url_scheme=*/nullptr,
+      : grpc_channel_security_connector(GRPC_ALTS_URL_SCHEME,
                                         std::move(channel_creds),
                                         std::move(request_metadata_creds)),
         target_name_(gpr_strdup(target_name)) {}
@@ -82,10 +82,17 @@ class grpc_alts_channel_security_connector final
     tsi_handshaker* handshaker = nullptr;
     const grpc_alts_credentials* creds =
         static_cast<const grpc_alts_credentials*>(channel_creds());
-    GPR_ASSERT(alts_tsi_handshaker_create(creds->options(), target_name_,
-                                          creds->handshaker_service_url(), true,
-                                          interested_parties,
-                                          &handshaker) == TSI_OK);
+    size_t user_specified_max_frame_size = 0;
+    const grpc_arg* arg =
+        grpc_channel_args_find(args, GRPC_ARG_TSI_MAX_FRAME_SIZE);
+    if (arg != nullptr && arg->type == GRPC_ARG_INTEGER) {
+      user_specified_max_frame_size = grpc_channel_arg_get_integer(
+          arg, {0, 0, std::numeric_limits<int>::max()});
+    }
+    GPR_ASSERT(alts_tsi_handshaker_create(
+                   creds->options(), target_name_,
+                   creds->handshaker_service_url(), true, interested_parties,
+                   &handshaker, user_specified_max_frame_size) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -104,7 +111,7 @@ class grpc_alts_channel_security_connector final
     return strcmp(target_name_, other->target_name_);
   }
 
-  bool check_call_host(grpc_core::StringView host,
+  bool check_call_host(absl::string_view host,
                        grpc_auth_context* /*auth_context*/,
                        grpc_closure* /*on_call_host_checked*/,
                        grpc_error** error) override {
@@ -129,7 +136,7 @@ class grpc_alts_server_security_connector final
  public:
   grpc_alts_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
-      : grpc_server_security_connector(/*url_scheme=*/nullptr,
+      : grpc_server_security_connector(GRPC_ALTS_URL_SCHEME,
                                        std::move(server_creds)) {}
 
   ~grpc_alts_server_security_connector() override = default;
@@ -140,9 +147,17 @@ class grpc_alts_server_security_connector final
     tsi_handshaker* handshaker = nullptr;
     const grpc_alts_server_credentials* creds =
         static_cast<const grpc_alts_server_credentials*>(server_creds());
+    size_t user_specified_max_frame_size = 0;
+    const grpc_arg* arg =
+        grpc_channel_args_find(args, GRPC_ARG_TSI_MAX_FRAME_SIZE);
+    if (arg != nullptr && arg->type == GRPC_ARG_INTEGER) {
+      user_specified_max_frame_size = grpc_channel_arg_get_integer(
+          arg, {0, 0, std::numeric_limits<int>::max()});
+    }
     GPR_ASSERT(alts_tsi_handshaker_create(
                    creds->options(), nullptr, creds->handshaker_service_url(),
-                   false, interested_parties, &handshaker) == TSI_OK);
+                   false, interested_parties, &handshaker,
+                   user_specified_max_frame_size) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -176,6 +191,13 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
       strncmp(cert_type_prop->value.data, TSI_ALTS_CERTIFICATE_TYPE,
               cert_type_prop->value.length) != 0) {
     gpr_log(GPR_ERROR, "Invalid or missing certificate type property.");
+    return nullptr;
+  }
+  /* Check if security level exists. */
+  const tsi_peer_property* security_level_prop =
+      tsi_peer_get_property_by_name(peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
+  if (security_level_prop == nullptr) {
+    gpr_log(GPR_ERROR, "Missing security level property.");
     return nullptr;
   }
   /* Validate RPC protocol versions. */
@@ -231,6 +253,12 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
       grpc_auth_context_add_property(ctx.get(), TSI_ALTS_CONTEXT,
                                      tsi_prop->value.data,
                                      tsi_prop->value.length);
+    }
+    /* Add security level to auth context. */
+    if (strcmp(tsi_prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+          tsi_prop->value.data, tsi_prop->value.length);
     }
   }
   if (!grpc_auth_context_peer_is_authenticated(ctx.get())) {

@@ -86,6 +86,7 @@ xcodebuild \
     HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
+    | ./verbose_time.sh \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -

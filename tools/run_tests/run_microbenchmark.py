@@ -24,9 +24,8 @@ import python_utils.jobset as jobset
 import python_utils.start_port_server as start_port_server
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', 'profiling', 'microbenchmarks',
-        'bm_diff'))
+    os.path.join(os.path.dirname(sys.argv[0]), '..', 'profiling',
+                 'microbenchmarks', 'bm_diff'))
 import bm_constants
 
 flamegraph_dir = os.path.join(os.path.expanduser('~'), 'FlameGraph')
@@ -66,8 +65,8 @@ def heading(name):
 
 def link(txt, tgt):
     global index_html
-    index_html += "<p><a href=\"%s\">%s</a></p>\n" % (
-        cgi.escape(tgt, quote=True), cgi.escape(txt))
+    index_html += "<p><a href=\"%s\">%s</a></p>\n" % (cgi.escape(
+        tgt, quote=True), cgi.escape(txt))
 
 
 def text(txt):
@@ -90,25 +89,24 @@ def collect_latency(bm_name, args):
         ['bins/basicprof/%s' % bm_name, '--benchmark_list_tests']).splitlines():
         link(line, '%s.txt' % fnize(line))
         benchmarks.append(
-            jobset.JobSpec(
-                [
-                    'bins/basicprof/%s' % bm_name,
-                    '--benchmark_filter=^%s$' % line,
-                    '--benchmark_min_time=0.05'
-                ],
-                environ={'GRPC_LATENCY_TRACE': '%s.trace' % fnize(line)},
-                shortname='profile-%s' % fnize(line)))
+            jobset.JobSpec([
+                'bins/basicprof/%s' % bm_name,
+                '--benchmark_filter=^%s$' % line, '--benchmark_min_time=0.05'
+            ],
+                           environ={
+                               'GRPC_LATENCY_TRACE': '%s.trace' % fnize(line)
+                           },
+                           shortname='profile-%s' % fnize(line)))
         profile_analysis.append(
-            jobset.JobSpec(
-                [
-                    sys.executable,
-                    'tools/profiling/latency_profile/profile_analyzer.py',
-                    '--source',
-                    '%s.trace' % fnize(line), '--fmt', 'simple', '--out',
-                    'reports/%s.txt' % fnize(line)
-                ],
-                timeout_seconds=20 * 60,
-                shortname='analyze-%s' % fnize(line)))
+            jobset.JobSpec([
+                sys.executable,
+                'tools/profiling/latency_profile/profile_analyzer.py',
+                '--source',
+                '%s.trace' % fnize(line), '--fmt', 'simple', '--out',
+                'reports/%s.txt' % fnize(line)
+            ],
+                           timeout_seconds=20 * 60,
+                           shortname='analyze-%s' % fnize(line)))
         cleanup.append(jobset.JobSpec(['rm', '%s.trace' % fnize(line)]))
         # periodically flush out the list of jobs: profile_analysis jobs at least
         # consume upwards of five gigabytes of ram in some cases, and so analysing
@@ -117,9 +115,9 @@ def collect_latency(bm_name, args):
         if len(benchmarks) >= min(16, multiprocessing.cpu_count()):
             # run up to half the cpu count: each benchmark can use up to two cores
             # (one for the microbenchmark, one for the data flush)
-            jobset.run(
-                benchmarks, maxjobs=max(1,
-                                        multiprocessing.cpu_count() / 2))
+            jobset.run(benchmarks,
+                       maxjobs=max(1,
+                                   multiprocessing.cpu_count() / 2))
             jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
             jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
             benchmarks = []
@@ -146,14 +144,13 @@ def collect_perf(bm_name, args):
         ['bins/mutrace/%s' % bm_name, '--benchmark_list_tests']).splitlines():
         link(line, '%s.svg' % fnize(line))
         benchmarks.append(
-            jobset.JobSpec(
-                [
-                    'perf', 'record', '-o',
-                    '%s-perf.data' % fnize(line), '-g', '-F', '997',
-                    'bins/mutrace/%s' % bm_name,
-                    '--benchmark_filter=^%s$' % line, '--benchmark_min_time=10'
-                ],
-                shortname='perf-%s' % fnize(line)))
+            jobset.JobSpec([
+                'perf', 'record', '-o',
+                '%s-perf.data' % fnize(line), '-g', '-F', '997',
+                'bins/mutrace/%s' % bm_name,
+                '--benchmark_filter=^%s$' % line, '--benchmark_min_time=10'
+            ],
+                           shortname='perf-%s' % fnize(line)))
         profile_analysis.append(
             jobset.JobSpec(
                 [
@@ -227,27 +224,24 @@ collectors = {
 }
 
 argp = argparse.ArgumentParser(description='Collect data from microbenchmarks')
-argp.add_argument(
-    '-c',
-    '--collect',
-    choices=sorted(collectors.keys()),
-    nargs='*',
-    default=sorted(collectors.keys()),
-    help='Which collectors should be run against each benchmark')
-argp.add_argument(
-    '-b',
-    '--benchmarks',
-    choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-    default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-    nargs='+',
-    type=str,
-    help='Which microbenchmarks should be run')
-argp.add_argument(
-    '--bigquery_upload',
-    default=False,
-    action='store_const',
-    const=True,
-    help='Upload results from summary collection to bigquery')
+argp.add_argument('-c',
+                  '--collect',
+                  choices=sorted(collectors.keys()),
+                  nargs='*',
+                  default=sorted(collectors.keys()),
+                  help='Which collectors should be run against each benchmark')
+argp.add_argument('-b',
+                  '--benchmarks',
+                  choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                  default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                  nargs='+',
+                  type=str,
+                  help='Which microbenchmarks should be run')
+argp.add_argument('--bigquery_upload',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Upload results from summary collection to bigquery')
 argp.add_argument(
     '--summary_time',
     default=None,

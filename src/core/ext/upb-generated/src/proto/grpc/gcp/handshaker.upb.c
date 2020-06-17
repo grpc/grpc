@@ -58,22 +58,23 @@ static const upb_msglayout *const grpc_gcp_StartClientHandshakeReq_submsgs[5] = 
   &grpc_gcp_RpcProtocolVersions_msginit,
 };
 
-static const upb_msglayout_field grpc_gcp_StartClientHandshakeReq__fields[9] = {
+static const upb_msglayout_field grpc_gcp_StartClientHandshakeReq__fields[10] = {
   {1, UPB_SIZE(0, 0), 0, 0, 14, 1},
-  {2, UPB_SIZE(32, 56), 0, 0, 9, 3},
-  {3, UPB_SIZE(36, 64), 0, 0, 9, 3},
-  {4, UPB_SIZE(40, 72), 0, 1, 11, 3},
-  {5, UPB_SIZE(16, 24), 0, 1, 11, 1},
-  {6, UPB_SIZE(20, 32), 0, 0, 11, 1},
-  {7, UPB_SIZE(24, 40), 0, 0, 11, 1},
-  {8, UPB_SIZE(8, 8), 0, 0, 9, 1},
-  {9, UPB_SIZE(28, 48), 0, 2, 11, 1},
+  {2, UPB_SIZE(36, 64), 0, 0, 9, 3},
+  {3, UPB_SIZE(40, 72), 0, 0, 9, 3},
+  {4, UPB_SIZE(44, 80), 0, 1, 11, 3},
+  {5, UPB_SIZE(20, 32), 0, 1, 11, 1},
+  {6, UPB_SIZE(24, 40), 0, 0, 11, 1},
+  {7, UPB_SIZE(28, 48), 0, 0, 11, 1},
+  {8, UPB_SIZE(12, 16), 0, 0, 9, 1},
+  {9, UPB_SIZE(32, 56), 0, 2, 11, 1},
+  {10, UPB_SIZE(8, 8), 0, 0, 13, 1},
 };
 
 const upb_msglayout grpc_gcp_StartClientHandshakeReq_msginit = {
   &grpc_gcp_StartClientHandshakeReq_submsgs[0],
   &grpc_gcp_StartClientHandshakeReq__fields[0],
-  UPB_SIZE(48, 80), 9, false,
+  UPB_SIZE(48, 96), 10, false,
 };
 
 static const upb_msglayout *const grpc_gcp_ServerHandshakeParameters_submsgs[1] = {
@@ -97,19 +98,20 @@ static const upb_msglayout *const grpc_gcp_StartServerHandshakeReq_submsgs[4] = 
   &grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_msginit,
 };
 
-static const upb_msglayout_field grpc_gcp_StartServerHandshakeReq__fields[6] = {
-  {1, UPB_SIZE(20, 40), 0, 0, 9, 3},
-  {2, UPB_SIZE(24, 48), 0, 2, 11, 3},
-  {3, UPB_SIZE(0, 0), 0, 0, 12, 1},
-  {4, UPB_SIZE(8, 16), 0, 0, 11, 1},
-  {5, UPB_SIZE(12, 24), 0, 0, 11, 1},
-  {6, UPB_SIZE(16, 32), 0, 1, 11, 1},
+static const upb_msglayout_field grpc_gcp_StartServerHandshakeReq__fields[7] = {
+  {1, UPB_SIZE(24, 48), 0, 0, 9, 3},
+  {2, UPB_SIZE(28, 56), 0, 2, 11, 3},
+  {3, UPB_SIZE(4, 8), 0, 0, 12, 1},
+  {4, UPB_SIZE(12, 24), 0, 0, 11, 1},
+  {5, UPB_SIZE(16, 32), 0, 0, 11, 1},
+  {6, UPB_SIZE(20, 40), 0, 1, 11, 1},
+  {7, UPB_SIZE(0, 0), 0, 0, 13, 1},
 };
 
 const upb_msglayout grpc_gcp_StartServerHandshakeReq_msginit = {
   &grpc_gcp_StartServerHandshakeReq_submsgs[0],
   &grpc_gcp_StartServerHandshakeReq__fields[0],
-  UPB_SIZE(32, 64), 6, false,
+  UPB_SIZE(32, 64), 7, false,
 };
 
 static const upb_msglayout *const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_submsgs[1] = {
@@ -160,20 +162,21 @@ static const upb_msglayout *const grpc_gcp_HandshakerResult_submsgs[3] = {
   &grpc_gcp_RpcProtocolVersions_msginit,
 };
 
-static const upb_msglayout_field grpc_gcp_HandshakerResult__fields[7] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {2, UPB_SIZE(12, 24), 0, 0, 9, 1},
-  {3, UPB_SIZE(20, 40), 0, 0, 12, 1},
-  {4, UPB_SIZE(28, 56), 0, 0, 11, 1},
-  {5, UPB_SIZE(32, 64), 0, 0, 11, 1},
-  {6, UPB_SIZE(0, 0), 0, 0, 8, 1},
-  {7, UPB_SIZE(36, 72), 0, 1, 11, 1},
+static const upb_msglayout_field grpc_gcp_HandshakerResult__fields[8] = {
+  {1, UPB_SIZE(8, 8), 0, 0, 9, 1},
+  {2, UPB_SIZE(16, 24), 0, 0, 9, 1},
+  {3, UPB_SIZE(24, 40), 0, 0, 12, 1},
+  {4, UPB_SIZE(32, 56), 0, 0, 11, 1},
+  {5, UPB_SIZE(36, 64), 0, 0, 11, 1},
+  {6, UPB_SIZE(4, 4), 0, 0, 8, 1},
+  {7, UPB_SIZE(40, 72), 0, 1, 11, 1},
+  {8, UPB_SIZE(0, 0), 0, 0, 13, 1},
 };
 
 const upb_msglayout grpc_gcp_HandshakerResult_msginit = {
   &grpc_gcp_HandshakerResult_submsgs[0],
   &grpc_gcp_HandshakerResult__fields[0],
-  UPB_SIZE(40, 80), 7, false,
+  UPB_SIZE(48, 80), 8, false,
 };
 
 static const upb_msglayout_field grpc_gcp_HandshakerStatus__fields[2] = {

@@ -193,8 +193,8 @@ class CancelManyCallsTest(unittest.TestCase):
                 client_due.add(tag)
                 client_calls.append(client_call)
 
-        client_events_future = test_utilities.SimpleFuture(
-            lambda: tuple(channel.next_call_event() for _ in range(_SUCCESSFUL_CALLS)))
+        client_events_future = test_utilities.SimpleFuture(lambda: tuple(
+            channel.next_call_event() for _ in range(_SUCCESSFUL_CALLS)))
 
         with state.condition:
             while True:

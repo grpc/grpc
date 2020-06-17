@@ -85,7 +85,7 @@ void LoadReporterAsyncServiceImpl::FetchAndSample(bool ok) {
 
 void LoadReporterAsyncServiceImpl::Work(void* arg) {
   LoadReporterAsyncServiceImpl* service =
-      reinterpret_cast<LoadReporterAsyncServiceImpl*>(arg);
+      static_cast<LoadReporterAsyncServiceImpl*>(arg);
   service->FetchAndSample(true /* ok */);
   // TODO(juanlishen): This is a workaround to wait for the cq to be ready. Need
   // to figure out why cq is not ready after service starts.

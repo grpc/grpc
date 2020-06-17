@@ -72,7 +72,7 @@ unsigned gpr_cpu_current_cpu(void) {
     return 0;
   }
   if (static_cast<unsigned>(cpu) >= gpr_cpu_num_cores()) {
-    gpr_log(GPR_ERROR, "Cannot handle hot-plugged CPUs");
+    gpr_log(GPR_DEBUG, "Cannot handle hot-plugged CPUs");
     return 0;
   }
   return static_cast<unsigned>(cpu);

@@ -45,12 +45,11 @@ def _patch_results_table(dataset_id, table_id):
 
 argp = argparse.ArgumentParser(
     description='Patch schema of scenario results table.')
-argp.add_argument(
-    '--bq_result_table',
-    required=True,
-    default=None,
-    type=str,
-    help='Bigquery "dataset.table" to patch.')
+argp.add_argument('--bq_result_table',
+                  required=True,
+                  default=None,
+                  type=str,
+                  help='Bigquery "dataset.table" to patch.')
 
 args = argp.parse_args()
 

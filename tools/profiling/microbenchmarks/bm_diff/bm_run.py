@@ -26,27 +26,24 @@ import sys
 import os
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', '..', '..', 'run_tests',
-        'python_utils'))
+    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', '..', 'run_tests',
+                 'python_utils'))
 import jobset
 
 
 def _args():
     argp = argparse.ArgumentParser(description='Runs microbenchmarks')
-    argp.add_argument(
-        '-b',
-        '--benchmarks',
-        nargs='+',
-        choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-        default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-        help='Benchmarks to run')
-    argp.add_argument(
-        '-j',
-        '--jobs',
-        type=int,
-        default=multiprocessing.cpu_count(),
-        help='Number of CPUs to use')
+    argp.add_argument('-b',
+                      '--benchmarks',
+                      nargs='+',
+                      choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      help='Benchmarks to run')
+    argp.add_argument('-j',
+                      '--jobs',
+                      type=int,
+                      default=multiprocessing.cpu_count(),
+                      help='Number of CPUs to use')
     argp.add_argument(
         '-n',
         '--name',
@@ -54,12 +51,11 @@ def _args():
         help=
         'Unique name of the build to run. Needs to match the handle passed to bm_build.py'
     )
-    argp.add_argument(
-        '-r',
-        '--regex',
-        type=str,
-        default="",
-        help='Regex to filter benchmarks run')
+    argp.add_argument('-r',
+                      '--regex',
+                      type=str,
+                      default="",
+                      help='Regex to filter benchmarks run')
     argp.add_argument(
         '-l',
         '--loops',
@@ -90,18 +86,17 @@ def _collect_bm_data(bm, cfg, name, regex, idx, loops):
         cmd = [
             'bm_diff_%s/%s/%s' % (name, cfg, bm),
             '--benchmark_filter=^%s$' % line,
-            '--benchmark_out=%s.%s.%s.%s.%d.json' % (bm, stripped_line, cfg,
-                                                     name, idx),
+            '--benchmark_out=%s.%s.%s.%s.%d.json' %
+            (bm, stripped_line, cfg, name, idx),
             '--benchmark_out_format=json',
         ]
         jobs_list.append(
-            jobset.JobSpec(
-                cmd,
-                shortname='%s %s %s %s %d/%d' % (bm, line, cfg, name, idx + 1,
-                                                 loops),
-                verbose_success=True,
-                cpu_cost=2,
-                timeout_seconds=60 * 60))  # one hour
+            jobset.JobSpec(cmd,
+                           shortname='%s %s %s %s %d/%d' %
+                           (bm, line, cfg, name, idx + 1, loops),
+                           verbose_success=True,
+                           cpu_cost=2,
+                           timeout_seconds=60 * 60))  # one hour
     return jobs_list
 
 

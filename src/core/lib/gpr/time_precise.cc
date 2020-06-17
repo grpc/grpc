@@ -31,7 +31,7 @@
 
 #include "src/core/lib/gpr/time_precise.h"
 
-#if GPR_CYCLE_COUNTER_RDTSC_32 or GPR_CYCLE_COUNTER_RDTSC_64
+#if GPR_CYCLE_COUNTER_RDTSC_32 || GPR_CYCLE_COUNTER_RDTSC_64
 #if GPR_LINUX
 static bool read_freq_from_kernel(double* freq) {
   // Google production kernel export the frequency for us in kHz.

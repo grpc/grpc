@@ -148,12 +148,10 @@ def get_new_failures(dates):
     rows = page.get('rows')
     if rows:
         return {
-            row['f'][0]['v']: Row(
-                poll_strategy=row['f'][1]['v'],
-                job_name=row['f'][2]['v'],
-                build_id=row['f'][3]['v'],
-                timestamp=row['f'][4]['v'])
-            for row in rows
+            row['f'][0]['v']: Row(poll_strategy=row['f'][1]['v'],
+                                  job_name=row['f'][2]['v'],
+                                  build_id=row['f'][3]['v'],
+                                  timestamp=row['f'][4]['v']) for row in rows
         }
     else:
         return {}
@@ -197,17 +195,15 @@ def build_args_parser():
         type=int,
         default=1,
         help='How many days to consider for the detection of new flakes.')
-    parser.add_argument(
-        '--count_only',
-        dest='count_only',
-        action='store_true',
-        help='Display only number of new flakes.')
+    parser.add_argument('--count_only',
+                        dest='count_only',
+                        action='store_true',
+                        help='Display only number of new flakes.')
     parser.set_defaults(count_only=False)
-    parser.add_argument(
-        '--create_issues',
-        dest='create_issues',
-        action='store_true',
-        help='Create issues for all new flakes.')
+    parser.add_argument('--create_issues',
+                        dest='create_issues',
+                        action='store_true',
+                        help='Create issues for all new flakes.')
     parser.set_defaults(create_issues=False)
     parser.add_argument(
         '--always_create_issues',
@@ -221,12 +217,11 @@ def build_args_parser():
         type=str,
         default='',
         help='GitHub token to use its API with a higher rate limit')
-    parser.add_argument(
-        '--format',
-        type=str,
-        choices=['human', 'csv'],
-        default='human',
-        help='Output format: are you a human or a machine?')
+    parser.add_argument('--format',
+                        type=str,
+                        choices=['human', 'csv'],
+                        default='human',
+                        help='Output format: are you a human or a machine?')
     parser.add_argument(
         '--loglevel',
         type=str,
@@ -237,9 +232,9 @@ def build_args_parser():
 
 
 def process_date_args(args):
-    calibration_begin = (
-        datetime.date.today() - datetime.timedelta(days=args.calibration_days) -
-        datetime.timedelta(days=args.reporting_days))
+    calibration_begin = (datetime.date.today() -
+                         datetime.timedelta(days=args.calibration_days) -
+                         datetime.timedelta(days=args.reporting_days))
     calibration_end = calibration_begin + datetime.timedelta(
         days=args.calibration_days)
     reporting_begin = calibration_end
@@ -282,8 +277,8 @@ def main():
         if args.count_only:
             print(len(new_flakes), dates_info_string)
         elif new_flakes:
-            found_msg = 'Found {} new flakes {}'.format(
-                len(new_flakes), dates_info_string)
+            found_msg = 'Found {} new flakes {}'.format(len(new_flakes),
+                                                        dates_info_string)
             print(found_msg)
             print('*' * len(found_msg))
             print_table(new_flakes, 'human')

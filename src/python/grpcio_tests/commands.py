@@ -95,13 +95,44 @@ class TestLite(setuptools.Command):
         import tests
         loader = tests.Loader()
         loader.loadTestsFromNames(['tests'])
-        runner = tests.Runner()
+        runner = tests.Runner(dedicated_threads=True)
         result = runner.run(loader.suite)
         if not result.wasSuccessful():
             sys.exit('Test failure')
 
     def _add_eggs_to_path(self):
         """Fetch install and test requirements"""
+        self.distribution.fetch_build_eggs(self.distribution.install_requires)
+        self.distribution.fetch_build_eggs(self.distribution.tests_require)
+
+
+class TestPy3Only(setuptools.Command):
+    """Command to run tests for Python 3+ features.
+
+    This does not include asyncio tests, which are housed in a separate
+    directory.
+    """
+
+    description = 'run tests for py3+ features'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        self._add_eggs_to_path()
+        import tests
+        loader = tests.Loader()
+        loader.loadTestsFromNames(['tests_py3_only'])
+        runner = tests.Runner()
+        result = runner.run(loader.suite)
+        if not result.wasSuccessful():
+            sys.exit('Test failure')
+
+    def _add_eggs_to_path(self):
         self.distribution.fetch_build_eggs(self.distribution.install_requires)
         self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
@@ -160,6 +191,7 @@ class TestGevent(setuptools.Command):
         'unit._server_ssl_cert_config_test',
         # TODO(https://github.com/grpc/grpc/issues/14901) enable this test
         'protoc_plugin._python_plugin_test.PythonPluginTest',
+        'protoc_plugin._python_plugin_test.SimpleStubsPluginTest',
         # Beta API is unsupported for gevent
         'protoc_plugin.beta_python_plugin_test',
         'unit.beta._beta_features_test',
@@ -188,6 +220,9 @@ class TestGevent(setuptools.Command):
         'unit._cython._channel_test.ChannelTest.test_negative_deadline_connectivity',
         # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
         'unit._local_credentials_test.LocalCredentialsTest',
+        # TODO(https://github.com/grpc/grpc/issues/22020) LocalCredentials
+        # aren't supported with custom io managers.
+        'unit._contextvars_propagation_test',
         'testing._time_test.StrictRealTimeTest',
     )
     BANNED_WINDOWS_TESTS = (
@@ -231,14 +266,18 @@ class TestGevent(setuptools.Command):
 class RunInterop(test.test):
 
     description = 'run interop test client/server'
-    user_options = [('args=', 'a', 'pass-thru arguments for the client/server'),
-                    ('client', 'c', 'flag indicating to run the client'),
-                    ('server', 's', 'flag indicating to run the server')]
+    user_options = [
+        ('args=', None, 'pass-thru arguments for the client/server'),
+        ('client', None, 'flag indicating to run the client'),
+        ('server', None, 'flag indicating to run the server'),
+        ('use-asyncio', None, 'flag indicating to run the asyncio stack')
+    ]
 
     def initialize_options(self):
         self.args = ''
         self.client = False
         self.server = False
+        self.use_asyncio = False
 
     def finalize_options(self):
         if self.client and self.server:
@@ -259,9 +298,15 @@ class RunInterop(test.test):
     def run_server(self):
         # We import here to ensure that our setuptools parent has had a chance to
         # edit the Python system path.
-        from tests.interop import server
-        sys.argv[1:] = self.args.split()
-        server.serve()
+        if self.use_asyncio:
+            import asyncio
+            from tests_aio.interop import server
+            sys.argv[1:] = self.args.split()
+            asyncio.get_event_loop().run_until_complete(server.serve())
+        else:
+            from tests.interop import server
+            sys.argv[1:] = self.args.split()
+            server.serve()
 
     def run_client(self):
         # We import here to ensure that our setuptools parent has had a chance to

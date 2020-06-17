@@ -46,7 +46,7 @@ constexpr uint64_t kGrpcStaticMetadataInitCanary = 0xCAFEF00DC0FFEE11L;
 uint64_t StaticMetadataInitCanary();
 #endif
 extern const StaticMetadataSlice* g_static_metadata_slice_table;
-}
+}  // namespace grpc_core
 inline const grpc_core::StaticMetadataSlice* grpc_static_slice_table() {
   GPR_DEBUG_ASSERT(grpc_core::StaticMetadataInitCanary() ==
                    grpc_core::kGrpcStaticMetadataInitCanary);

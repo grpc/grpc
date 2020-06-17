@@ -12,6 +12,7 @@
 #include "envoy/api/v2/core/base.upb.h"
 #include "envoy/api/v2/endpoint/load_report.upb.h"
 #include "google/protobuf/duration.upb.h"
+#include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
@@ -36,16 +37,17 @@ static const upb_msglayout *const envoy_service_load_stats_v2_LoadStatsResponse_
   &google_protobuf_Duration_msginit,
 };
 
-static const upb_msglayout_field envoy_service_load_stats_v2_LoadStatsResponse__fields[3] = {
+static const upb_msglayout_field envoy_service_load_stats_v2_LoadStatsResponse__fields[4] = {
   {1, UPB_SIZE(8, 16), 0, 0, 9, 3},
   {2, UPB_SIZE(4, 8), 0, 0, 11, 1},
   {3, UPB_SIZE(0, 0), 0, 0, 8, 1},
+  {4, UPB_SIZE(1, 1), 0, 0, 8, 1},
 };
 
 const upb_msglayout envoy_service_load_stats_v2_LoadStatsResponse_msginit = {
   &envoy_service_load_stats_v2_LoadStatsResponse_submsgs[0],
   &envoy_service_load_stats_v2_LoadStatsResponse__fields[0],
-  UPB_SIZE(12, 24), 3, false,
+  UPB_SIZE(12, 24), 4, false,
 };
 
 #include "upb/port_undef.inc"

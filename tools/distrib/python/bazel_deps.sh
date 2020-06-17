@@ -16,17 +16,6 @@
 
 cd $(dirname $0)/../../../
 
-# First check if bazel is installed on the machine. If it is, then we don't need
-# to invoke the docker bazel.
-if [ -x "$(command -v bazel)" ]
-then
-  cd third_party/protobuf
-  bazel query 'deps('$1')'
-else
-  docker build -t bazel_local_img tools/dockerfile/test/sanity
-  docker run -v "$(realpath .):/src/grpc/:ro" \
-    -w /src/grpc/third_party/protobuf         \
-    --rm=true                                 \
-    bazel_local_img                           \
-    bazel query 'deps('$1')'
-fi
+cd third_party/protobuf
+# use tools/bazel wrapper to make sure we use the right version of bazel
+../../tools/bazel query 'deps('$1')'

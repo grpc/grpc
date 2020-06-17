@@ -25,6 +25,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 #define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
 
@@ -63,9 +64,10 @@ extern void (*grpc_resolve_address_ares)(const char* name,
 extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms,
-    grpc_core::Combiner* combiner);
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
 /* Cancel the pending grpc_ares_request \a request */
 extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);
@@ -89,7 +91,7 @@ bool grpc_ares_query_ipv6();
 
 /* Sorts destinations in lb_addrs according to RFC 6724. */
 void grpc_cares_wrapper_address_sorting_sort(
-    grpc_core::ServerAddressList* addresses);
+    const grpc_ares_request* request, grpc_core::ServerAddressList* addresses);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H \
         */

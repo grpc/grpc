@@ -29,7 +29,10 @@ extern "C" {
 #define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
 #define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
 #define GRPC_X509_PEM_CERT_PROPERTY_NAME "x509_pem_cert"
+#define GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME "x509_pem_cert_chain"
 #define GRPC_SSL_SESSION_REUSED_PROPERTY "ssl_session_reused"
+#define GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME "security_level"
+#define GRPC_PEER_SPIFFE_ID_PROPERTY_NAME "peer_spiffe_id"
 
 /** Environment variable that points to the default SSL roots file. This file
    must be a PEM encoded file with all the roots such as the one that can be
@@ -104,6 +107,31 @@ typedef enum {
      be established. */
   GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
 } grpc_ssl_client_certificate_request_type;
+
+/* Security levels of grpc transport security. It represents an inherent
+ * property of a backend connection and is determined by a channel credential
+ * used to create the connection. */
+typedef enum {
+  GRPC_SECURITY_MIN,
+  GRPC_SECURITY_NONE = GRPC_SECURITY_MIN,
+  GRPC_INTEGRITY_ONLY,
+  GRPC_PRIVACY_AND_INTEGRITY,
+  GRPC_SECURITY_MAX = GRPC_PRIVACY_AND_INTEGRITY,
+} grpc_security_level;
+
+typedef enum {
+  /** Default option: performs server certificate verification and hostname
+     verification. */
+  GRPC_TLS_SERVER_VERIFICATION,
+  /** Performs server certificate verification, but skips hostname verification
+     Client is responsible for verifying server's identity via
+     server authorization check callback. */
+  GRPC_TLS_SKIP_HOSTNAME_VERIFICATION,
+  /** Skips both server certificate and hostname verification.
+     Client is responsible for verifying server's identity and
+     server's certificate via server authorization check callback. */
+  GRPC_TLS_SKIP_ALL_SERVER_VERIFICATION
+} grpc_tls_server_verification_option;
 
 /**
  * Type of local connections for which local channel/server credentials will be

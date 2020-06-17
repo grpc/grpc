@@ -22,24 +22,32 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+# Submodule name is passed as the RUN_TESTS_FLAGS variable
+SUBMODULE_NAME="${RUN_TESTS_FLAGS}"
+
+# Name of branch to checkout is passed as BAZEL_FLAGS variable
+# If unset, "master" is used by default.
+SUBMODULE_BRANCH_NAME="${BAZEL_FLAGS:-master}"
+
 # Update submodule to be tested at HEAD
-(cd third_party/$RUN_TESTS_FLAGS && git fetch --all && git checkout origin/master)
+(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout "origin/${SUBMODULE_BRANCH_NAME}")
+
+echo "This suite tests whether gRPC HEAD builds with HEAD of submodule '${SUBMODULE_NAME}'"
+echo "If a test breaks, either"
+echo "1) some change in the grpc repository has caused the failure"
+echo "2) some change that was just merged in the submodule head has caused the failure."
+
+echo ""
+echo "submodule '${SUBMODULE_NAME}' is at commit: $(cd third_party/${SUBMODULE_NAME}; git rev-parse --verify HEAD)"
+
 tools/buildgen/generate_projects.sh
 
-if [ "$RUN_TESTS_FLAGS" == "protobuf" ]
+if [ "${SUBMODULE_NAME}" == "protobuf" ]
 then
-  # Upgrade bazel.
-  # make_grpcio_tools.py requires bazel >=0.13.1 to run (Kokoro workers only have bazel 0.9)
-  curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/0.13.1/bazel-0.13.1-installer-linux-x86_64.sh
-  chmod +x ./bazel-0.13.1-installer-linux-x86_64.sh
-  ./bazel-0.13.1-installer-linux-x86_64.sh --user
-  rm -f ./bazel-0.13.1-installer-linux-x86_64.sh
-  export PATH="$PATH:$HOME/bin"
-
   tools/distrib/python/make_grpcio_tools.py
 fi
 
 # commit so that changes are passed to Docker
-git -c user.name='foo' -c user.email='foo@google.com' commit -a -m 'Update submodule'
+git -c user.name='foo' -c user.email='foo@google.com' commit -a -m 'Update submodule' --allow-empty
 
 tools/run_tests/run_tests_matrix.py -f linux --inner_jobs 4 -j 4 --internal_ci --build_only

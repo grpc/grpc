@@ -21,7 +21,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface GRPCSecureChannelFactory : NSObject<GRPCChannelFactory>
+@interface GRPCSecureChannelFactory : NSObject <GRPCChannelFactory>
 
 /**
  * Creates a secure channel factory which uses provided root certificates and client authentication

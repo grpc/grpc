@@ -20,7 +20,6 @@
 #define GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H
 
 #include <atomic>
-#include <mutex>
 #include <set>
 
 #include <grpc/support/log.h>

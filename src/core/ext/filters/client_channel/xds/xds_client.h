@@ -21,6 +21,9 @@
 
 #include <set>
 
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
@@ -30,8 +33,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/string_view.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
@@ -48,6 +50,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
         RefCountedPtr<ServiceConfig> service_config) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
+
+    virtual void OnResourceDoesNotExist() = 0;
   };
 
   // Cluster data watcher interface.  Implemented by callers.
@@ -55,9 +59,11 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
    public:
     virtual ~ClusterWatcherInterface() = default;
 
-    virtual void OnClusterChanged(CdsUpdate cluster_data) = 0;
+    virtual void OnClusterChanged(XdsApi::CdsUpdate cluster_data) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
+
+    virtual void OnResourceDoesNotExist() = 0;
   };
 
   // Endpoint data watcher interface.  Implemented by callers.
@@ -65,15 +71,17 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
    public:
     virtual ~EndpointWatcherInterface() = default;
 
-    virtual void OnEndpointChanged(EdsUpdate update) = 0;
+    virtual void OnEndpointChanged(XdsApi::EdsUpdate update) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
+
+    virtual void OnResourceDoesNotExist() = 0;
   };
 
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
-  XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
-            StringView server_name,
+  XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
+            grpc_pollset_set* interested_parties, absl::string_view server_name,
             std::unique_ptr<ServiceConfigWatcherInterface> watcher,
             const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
@@ -85,26 +93,47 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // keep a raw pointer to the watcher, which may be used only for
   // cancellation.  (Because the caller does not own the watcher, the
   // pointer must not be used for any other purpose.)
-  void WatchClusterData(StringView cluster,
+  // If the caller is going to start a new watch after cancelling the
+  // old one, it should set delay_unsubscription to true.
+  void WatchClusterData(absl::string_view cluster_name,
                         std::unique_ptr<ClusterWatcherInterface> watcher);
-  void CancelClusterDataWatch(StringView cluster,
-                              ClusterWatcherInterface* watcher);
+  void CancelClusterDataWatch(absl::string_view cluster_name,
+                              ClusterWatcherInterface* watcher,
+                              bool delay_unsubscription = false);
 
   // Start and cancel endpoint data watch for a cluster.
   // The XdsClient takes ownership of the watcher, but the caller may
   // keep a raw pointer to the watcher, which may be used only for
   // cancellation.  (Because the caller does not own the watcher, the
   // pointer must not be used for any other purpose.)
-  void WatchEndpointData(StringView cluster,
+  // If the caller is going to start a new watch after cancelling the
+  // old one, it should set delay_unsubscription to true.
+  void WatchEndpointData(absl::string_view eds_service_name,
                          std::unique_ptr<EndpointWatcherInterface> watcher);
-  void CancelEndpointDataWatch(StringView cluster,
-                               EndpointWatcherInterface* watcher);
+  void CancelEndpointDataWatch(absl::string_view eds_service_name,
+                               EndpointWatcherInterface* watcher,
+                               bool delay_unsubscription = false);
 
-  // Adds and removes client stats for cluster.
-  void AddClientStats(StringView lrs_server, StringView cluster,
-                      XdsClientStats* client_stats);
-  void RemoveClientStats(StringView lrs_server, StringView cluster,
-                         XdsClientStats* client_stats);
+  // Adds and removes drop stats for cluster_name and eds_service_name.
+  RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(
+      absl::string_view lrs_server, absl::string_view cluster_name,
+      absl::string_view eds_service_name);
+  void RemoveClusterDropStats(absl::string_view /*lrs_server*/,
+                              absl::string_view cluster_name,
+                              absl::string_view eds_service_name,
+                              XdsClusterDropStats* cluster_drop_stats);
+
+  // Adds and removes locality stats for cluster_name and eds_service_name
+  // for the specified locality.
+  RefCountedPtr<XdsClusterLocalityStats> AddClusterLocalityStats(
+      absl::string_view lrs_server, absl::string_view cluster_name,
+      absl::string_view eds_service_name,
+      RefCountedPtr<XdsLocalityName> locality);
+  void RemoveClusterLocalityStats(
+      absl::string_view /*lrs_server*/, absl::string_view cluster_name,
+      absl::string_view eds_service_name,
+      const RefCountedPtr<XdsLocalityName>& locality,
+      XdsClusterLocalityStats* cluster_locality_stats);
 
   // Resets connection backoff state.
   void ResetBackoff();
@@ -112,6 +141,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Helpers for encoding the XdsClient object in channel args.
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<XdsClient> GetFromChannelArgs(
+      const grpc_channel_args& args);
+  static grpc_channel_args* RemoveFromChannelArgs(
       const grpc_channel_args& args);
 
  private:
@@ -133,8 +164,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     class AdsCallState;
     class LrsCallState;
 
-    ChannelState(RefCountedPtr<XdsClient> xds_client,
-                 const grpc_channel_args& args);
+    ChannelState(RefCountedPtr<XdsClient> xds_client, grpc_channel* channel);
     ~ChannelState();
 
     void Orphan() override;
@@ -144,9 +174,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     AdsCallState* ads_calld() const;
     LrsCallState* lrs_calld() const;
 
-    void MaybeStartAdsCall();
-    void StopAdsCall();
-
     void MaybeStartLrsCall();
     void StopLrsCall();
 
@@ -154,6 +181,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
     void StartConnectivityWatchLocked();
     void CancelConnectivityWatchLocked();
+
+    void Subscribe(const std::string& type_url, const std::string& name);
+    void Unsubscribe(const std::string& type_url, const std::string& name,
+                     bool delay_unsubscription);
 
    private:
     class StateWatcher;
@@ -173,21 +204,52 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   struct ClusterState {
     std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
-        cluster_watchers;
+        watchers;
+    // The latest data seen from CDS.
+    absl::optional<XdsApi::CdsUpdate> update;
+  };
+
+  struct EndpointState {
     std::map<EndpointWatcherInterface*,
              std::unique_ptr<EndpointWatcherInterface>>
-        endpoint_watchers;
-    std::set<XdsClientStats*> client_stats;
+        watchers;
     // The latest data seen from EDS.
-    EdsUpdate eds_update;
+    absl::optional<XdsApi::EdsUpdate> update;
+  };
+
+  struct LoadReportState {
+    struct LocalityState {
+      std::set<XdsClusterLocalityStats*> locality_stats;
+      std::vector<XdsClusterLocalityStats::Snapshot> deleted_locality_stats;
+    };
+
+    std::set<XdsClusterDropStats*> drop_stats;
+    XdsClusterDropStats::DroppedRequestsMap deleted_drop_stats;
+    std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
+             XdsLocalityName::Less>
+        locality_stats;
+    grpc_millis last_report_time = ExecCtx::Get()->Now();
   };
 
   // Sends an error notification to all watchers.
   void NotifyOnError(grpc_error* error);
 
-  // TODO(juanlishen): Once we implement LDS support, this can be a
-  // normal method instead of a closure callback.
-  static void NotifyOnServiceConfig(void* arg, grpc_error* error);
+  // Returns the weighted_clusters action name to use from
+  // weighted_cluster_index_map_ for a WeightedClusters route action.
+  std::string WeightedClustersActionName(
+      const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
+          weighted_clusters);
+
+  // Updates weighted_cluster_index_map_ that will
+  // determine the names of the WeightedCluster actions for the current update.
+  void UpdateWeightedClusterIndexMap(const XdsApi::RdsUpdate& rds_update);
+
+  // Create the service config generated by the RdsUpdate.
+  grpc_error* CreateServiceConfig(const XdsApi::RdsUpdate& rds_update,
+                                  RefCountedPtr<ServiceConfig>* service_config);
+
+  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot(
+      bool send_all_clusters, const std::set<std::string>& clusters);
 
   // Channel arg vtable functions.
   static void* ChannelArgCopy(void* p);
@@ -196,27 +258,48 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   static const grpc_arg_pointer_vtable kXdsClientVtable;
 
-  grpc_core::UniquePtr<char> build_version_;
+  const grpc_millis request_timeout_;
 
-  Combiner* combiner_;
+  std::shared_ptr<WorkSerializer> work_serializer_;
   grpc_pollset_set* interested_parties_;
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
+  XdsApi api_;
 
-  grpc_core::UniquePtr<char> server_name_;
+  const std::string server_name_;
+
   std::unique_ptr<ServiceConfigWatcherInterface> service_config_watcher_;
-  // TODO(juanlishen): Once we implement LDS support, this will no
-  // longer be needed.
-  grpc_closure service_config_notify_;
 
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
 
-  // TODO(juanlishen): As part of adding CDS support, replace
-  // cluster_state_ with a map keyed by cluster name, so that we can
-  // support multiple clusters for both CDS and EDS.
-  ClusterState cluster_state_;
-  // Map<StringView /*cluster*/, ClusterState, StringLess> clusters_;
+  absl::optional<XdsApi::LdsUpdate> lds_result_;
+  absl::optional<XdsApi::RdsUpdate> rds_result_;
+
+  // One entry for each watched CDS resource.
+  std::map<std::string /*cluster_name*/, ClusterState> cluster_map_;
+  // One entry for each watched EDS resource.
+  std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_;
+  std::map<
+      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
+      LoadReportState>
+      load_report_map_;
+
+  // 2-level map to store WeightedCluster action names.
+  // Top level map is keyed by cluster names without weight like a_b_c; bottom
+  // level map is keyed by cluster names + weights like a10_b50_c40.
+  struct ClusterNamesInfo {
+    uint64_t next_index = 0;
+    std::map<std::string /*cluster names + weights*/,
+             uint64_t /*policy index number*/>
+        cluster_weights_map;
+  };
+  using WeightedClusterIndexMap =
+      std::map<std::string /*cluster names*/, ClusterNamesInfo>;
+
+  // Cache of action names for WeightedCluster targets in the current
+  // service config.
+  WeightedClusterIndexMap weighted_cluster_index_map_;
 
   bool shutting_down_ = false;
 };

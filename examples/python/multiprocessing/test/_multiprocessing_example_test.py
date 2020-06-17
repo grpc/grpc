@@ -54,11 +54,11 @@ class MultiprocessingExampleTest(unittest.TestCase):
         server_process = subprocess.Popen((_SERVER_PATH,), stdout=server_stdout)
         server_address = _get_server_address(server_stdout)
         client_stdout = tempfile.TemporaryFile(mode='r')
-        client_process = subprocess.Popen(
-            (
-                _CLIENT_PATH,
-                server_address,
-            ), stdout=client_stdout)
+        client_process = subprocess.Popen((
+            _CLIENT_PATH,
+            server_address,
+        ),
+                                          stdout=client_stdout)
         client_process.wait()
         server_process.terminate()
         client_stdout.seek(0)

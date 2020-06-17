@@ -75,13 +75,21 @@ class FirstServiceServicer(services_pb2_grpc.FirstServiceServicer):
             return _application_common.STREAM_UNARY_RESPONSE
 
     def StreStre(self, request_iterator, context):
+        valid_requests = (_application_common.STREAM_STREAM_REQUEST,
+                          _application_common.STREAM_STREAM_MUTATING_REQUEST)
         for request in request_iterator:
-            if request != _application_common.STREAM_STREAM_REQUEST:
+            if request not in valid_requests:
                 context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
                 context.set_details('Something is wrong with your request!')
                 return
             elif not context.is_active():
                 return
-            else:
+            elif request == _application_common.STREAM_STREAM_REQUEST:
                 yield _application_common.STREAM_STREAM_RESPONSE
                 yield _application_common.STREAM_STREAM_RESPONSE
+            elif request == _application_common.STREAM_STREAM_MUTATING_REQUEST:
+                response = services_pb2.Bottom()
+                for i in range(
+                        _application_common.STREAM_STREAM_MUTATING_COUNT):
+                    response.first_bottom_field = i
+                    yield response

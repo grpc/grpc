@@ -26,6 +26,7 @@
 
 #include <utility>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
@@ -101,6 +102,20 @@ ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
   return *this;
 }
 
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
+    grpc::CallbackGenericService* service) {
+  if (generic_service_ || callback_generic_service_) {
+    gpr_log(GPR_ERROR,
+            "Adding multiple generic services is unsupported for now. "
+            "Dropping the service %p",
+            (void*)service);
+  } else {
+    callback_generic_service_ = service;
+  }
+  return *this;
+}
+#else
 ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
     grpc::experimental::CallbackGenericService* service) {
   if (builder_->generic_service_ || builder_->callback_generic_service_) {
@@ -113,6 +128,7 @@ ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
   }
   return *builder_;
 }
+#endif
 
 std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
 ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
@@ -203,20 +219,24 @@ ServerBuilder& ServerBuilder::AddListeningPort(
 
 std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   grpc::ChannelArguments args;
+
   for (const auto& option : options_) {
     option->UpdateArguments(&args);
     option->UpdatePlugins(&plugins_);
   }
-
-  for (const auto& plugin : plugins_) {
-    plugin->UpdateServerBuilder(this);
-    plugin->UpdateChannelArguments(&args);
-  }
-
   if (max_receive_message_size_ >= -1) {
+    grpc_channel_args c_args = args.c_channel_args();
+    const grpc_arg* arg =
+        grpc_channel_args_find(&c_args, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
+    // Some option has set max_receive_message_length and it is also set
+    // directly on the ServerBuilder.
+    if (arg != nullptr) {
+      gpr_log(
+          GPR_ERROR,
+          "gRPC ServerBuilder receives multiple max_receive_message_length");
+    }
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
-
   // The default message size is -1 (max), so no need to explicitly set it for
   // -1.
   if (max_send_message_size_ >= 0) {
@@ -237,6 +257,11 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   if (resource_quota_ != nullptr) {
     args.SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA, resource_quota_,
                               grpc_resource_quota_arg_vtable());
+  }
+
+  for (const auto& plugin : plugins_) {
+    plugin->UpdateServerBuilder(this);
+    plugin->UpdateChannelArguments(&args);
   }
 
   // == Determine if the server has any syncrhonous methods ==
@@ -317,10 +342,10 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   }
 
   std::unique_ptr<grpc::Server> server(new grpc::Server(
-      max_receive_message_size_, &args, sync_server_cqs,
-      sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
-      sync_server_settings_.cq_timeout_msec, std::move(acceptors_),
-      resource_quota_, std::move(interceptor_creators_)));
+      &args, sync_server_cqs, sync_server_settings_.min_pollers,
+      sync_server_settings_.max_pollers, sync_server_settings_.cq_timeout_msec,
+      std::move(acceptors_), resource_quota_,
+      std::move(interceptor_creators_)));
 
   grpc_impl::ServerInitializer* initializer = server->initializer();
 
@@ -329,9 +354,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   //     server
   //  2. cqs_: Completion queues added via AddCompletionQueue() call
 
-  for (const auto& value : *sync_server_cqs) {
-    grpc_server_register_completion_queue(server->server_, value->cq(),
-                                          nullptr);
+  for (const auto& cq : *sync_server_cqs) {
+    grpc_server_register_completion_queue(server->server_, cq->cq(), nullptr);
     has_frequently_polled_cqs = true;
   }
 
@@ -344,10 +368,12 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   // AddCompletionQueue() API. Some of them may not be frequently polled (i.e by
   // calling Next() or AsyncNext()) and hence are not safe to be used for
   // listening to incoming channels. Such completion queues must be registered
-  // as non-listening queues
-  for (const auto& value : cqs_) {
-    grpc_server_register_completion_queue(server->server_, value->cq(),
-                                          nullptr);
+  // as non-listening queues. In debug mode, these should have their server list
+  // tracked since these are provided the user and must be Shutdown by the user
+  // after the server is shutdown.
+  for (const auto& cq : cqs_) {
+    grpc_server_register_completion_queue(server->server_, cq->cq(), nullptr);
+    cq->RegisterServer(server.get());
   }
 
   if (!has_frequently_polled_cqs) {

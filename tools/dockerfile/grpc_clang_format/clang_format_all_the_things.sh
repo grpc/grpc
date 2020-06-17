@@ -22,7 +22,7 @@ DIRS="src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include 
 GLOB="*.h *.c *.cc *.m *.mm"
 
 # clang format command
-CLANG_FORMAT=${CLANG_FORMAT:-clang-format-5.0}
+CLANG_FORMAT=${CLANG_FORMAT:-clang-format}
 
 files=
 for dir in $DIRS

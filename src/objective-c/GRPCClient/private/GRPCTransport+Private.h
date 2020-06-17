@@ -47,7 +47,7 @@ NS_ASSUME_NONNULL_BEGIN
  * When a transport instance is shutting down, it must call -shutDown method of its associated
  * transport manager for proper clean-up.
  */
-@interface GRPCTransportManager : NSObject<GRPCInterceptorInterface>
+@interface GRPCTransportManager : NSObject <GRPCInterceptorInterface>
 
 - (instancetype)initWithTransportID:(GRPCTransportID)transportID
                 previousInterceptor:(id<GRPCResponseHandler>)previousInterceptor;

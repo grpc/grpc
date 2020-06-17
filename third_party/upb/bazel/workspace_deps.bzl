@@ -4,11 +4,11 @@ load("//bazel:repository_defs.bzl", "bazel_version_repository")
 
 def upb_deps():
     bazel_version_repository(
-        name = "bazel_version",
+        name = "upb_bazel_version",
     )
 
     git_repository(
-        name = "absl",
+        name = "com_google_absl",
         commit = "070f6e47b33a2909d039e620c873204f78809492",
         remote = "https://github.com/abseil/abseil-cpp.git",
         shallow_since = "1541627663 -0500",
@@ -29,7 +29,7 @@ def upb_deps():
     http_archive(
         name = "zlib",
         build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
-        sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+        sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
         strip_prefix = "zlib-1.2.11",
-        urls = ["https://zlib.net/zlib-1.2.11.tar.gz"],
+        url = "https://github.com/madler/zlib/archive/v1.2.11.tar.gz",
     )

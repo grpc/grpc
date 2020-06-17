@@ -225,8 +225,8 @@ GRPCAPI void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
                                void* tag, void* reserved);
 
 /** Pre-register a method/host pair on a channel.
-    method and host are not owned and must remain alive while the server is
-    running. */
+    method and host are not owned and must remain alive while the channel is
+    alive. */
 GRPCAPI void* grpc_channel_register_call(grpc_channel* channel,
                                          const char* method, const char* host,
                                          void* reserved);

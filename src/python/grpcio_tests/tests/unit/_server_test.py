@@ -29,12 +29,11 @@ class ServerTest(unittest.TestCase):
 
     def test_not_a_generic_rpc_handler_at_construction(self):
         with self.assertRaises(AttributeError) as exception_context:
-            grpc.server(
-                futures.ThreadPoolExecutor(max_workers=5),
-                handlers=[
-                    _ActualGenericRpcHandler(),
-                    object(),
-                ])
+            grpc.server(futures.ThreadPoolExecutor(max_workers=5),
+                        handlers=[
+                            _ActualGenericRpcHandler(),
+                            object(),
+                        ])
         self.assertIn('grpc.GenericRpcHandler',
                       str(exception_context.exception))
 

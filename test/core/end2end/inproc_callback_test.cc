@@ -41,6 +41,7 @@ class CQDeletingCallback : public grpc_experimental_completion_queue_functor {
  public:
   explicit CQDeletingCallback(F f) : func_(f) {
     functor_run = &CQDeletingCallback::Run;
+    inlineable = false;
   }
   ~CQDeletingCallback() {}
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
@@ -62,6 +63,7 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
   ShutdownCallback() : done_(false) {
     functor_run = &ShutdownCallback::StaticRun;
+    inlineable = false;
     gpr_mu_init(&mu_);
     gpr_cv_init(&cv_);
   }
@@ -420,7 +422,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(nullptr != strstr(error_string, "grpc_status"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == call_details.flags);
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   gpr_free(static_cast<void*>(const_cast<char*>(error_string)));

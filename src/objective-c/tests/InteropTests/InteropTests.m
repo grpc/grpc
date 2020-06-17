@@ -39,6 +39,7 @@
 
 #define TEST_TIMEOUT 32
 
+static const int kTestRetries = 3;
 extern const char *kCFStreamVarName;
 
 // Convenience constructors for the generated proto messages:
@@ -77,7 +78,7 @@ BOOL isRemoteInteropTest(NSString *host) {
   return [host isEqualToString:@"grpc-test.sandbox.googleapis.com"];
 }
 
-@interface DefaultInterceptorFactory : NSObject<GRPCInterceptorFactory>
+@interface DefaultInterceptorFactory : NSObject <GRPCInterceptorFactory>
 
 - (GRPCInterceptor *)createInterceptorWithManager:(GRPCInterceptorManager *)interceptorManager;
 
@@ -87,28 +88,29 @@ BOOL isRemoteInteropTest(NSString *host) {
 
 - (GRPCInterceptor *)createInterceptorWithManager:(GRPCInterceptorManager *)interceptorManager {
   dispatch_queue_t queue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
-  return
-      [[GRPCInterceptor alloc] initWithInterceptorManager:interceptorManager dispatchQueue:queue];
+  return [[GRPCInterceptor alloc] initWithInterceptorManager:interceptorManager
+                                               dispatchQueue:queue];
 }
 
 @end
 
-@interface HookInterceptorFactory : NSObject<GRPCInterceptorFactory>
+@interface HookInterceptorFactory : NSObject <GRPCInterceptorFactory>
 
 - (instancetype)
-  initWithDispatchQueue:(dispatch_queue_t)dispatchQueue
-              startHook:(void (^)(GRPCRequestOptions *requestOptions, GRPCCallOptions *callOptions,
-                                  GRPCInterceptorManager *manager))startHook
-          writeDataHook:(void (^)(id data, GRPCInterceptorManager *manager))writeDataHook
-             finishHook:(void (^)(GRPCInterceptorManager *manager))finishHook
-receiveNextMessagesHook:(void (^)(NSUInteger numberOfMessages,
-                                  GRPCInterceptorManager *manager))receiveNextMessagesHook
-     responseHeaderHook:(void (^)(NSDictionary *initialMetadata,
-                                  GRPCInterceptorManager *manager))responseHeaderHook
-       responseDataHook:(void (^)(id data, GRPCInterceptorManager *manager))responseDataHook
-      responseCloseHook:(void (^)(NSDictionary *trailingMetadata, NSError *error,
-                                  GRPCInterceptorManager *manager))responseCloseHook
-       didWriteDataHook:(void (^)(GRPCInterceptorManager *manager))didWriteDataHook;
+      initWithDispatchQueue:(dispatch_queue_t)dispatchQueue
+                  startHook:(void (^)(GRPCRequestOptions *requestOptions,
+                                      GRPCCallOptions *callOptions,
+                                      GRPCInterceptorManager *manager))startHook
+              writeDataHook:(void (^)(id data, GRPCInterceptorManager *manager))writeDataHook
+                 finishHook:(void (^)(GRPCInterceptorManager *manager))finishHook
+    receiveNextMessagesHook:(void (^)(NSUInteger numberOfMessages,
+                                      GRPCInterceptorManager *manager))receiveNextMessagesHook
+         responseHeaderHook:(void (^)(NSDictionary *initialMetadata,
+                                      GRPCInterceptorManager *manager))responseHeaderHook
+           responseDataHook:(void (^)(id data, GRPCInterceptorManager *manager))responseDataHook
+          responseCloseHook:(void (^)(NSDictionary *trailingMetadata, NSError *error,
+                                      GRPCInterceptorManager *manager))responseCloseHook
+           didWriteDataHook:(void (^)(GRPCInterceptorManager *manager))didWriteDataHook;
 
 - (GRPCInterceptor *)createInterceptorWithManager:(GRPCInterceptorManager *)interceptorManager;
 
@@ -117,21 +119,21 @@ receiveNextMessagesHook:(void (^)(NSUInteger numberOfMessages,
 @interface HookInterceptor : GRPCInterceptor
 
 - (instancetype)
-initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
-             dispatchQueue:(dispatch_queue_t)dispatchQueue
-                 startHook:(void (^)(GRPCRequestOptions *requestOptions,
-                                     GRPCCallOptions *callOptions,
-                                     GRPCInterceptorManager *manager))startHook
-             writeDataHook:(void (^)(id data, GRPCInterceptorManager *manager))writeDataHook
-                finishHook:(void (^)(GRPCInterceptorManager *manager))finishHook
-   receiveNextMessagesHook:(void (^)(NSUInteger numberOfMessages,
-                                     GRPCInterceptorManager *manager))receiveNextMessagesHook
-        responseHeaderHook:(void (^)(NSDictionary *initialMetadata,
-                                     GRPCInterceptorManager *manager))responseHeaderHook
-          responseDataHook:(void (^)(id data, GRPCInterceptorManager *manager))responseDataHook
-         responseCloseHook:(void (^)(NSDictionary *trailingMetadata, NSError *error,
-                                     GRPCInterceptorManager *manager))responseCloseHook
-          didWriteDataHook:(void (^)(GRPCInterceptorManager *manager))didWriteDataHook;
+    initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
+                 dispatchQueue:(dispatch_queue_t)dispatchQueue
+                     startHook:(void (^)(GRPCRequestOptions *requestOptions,
+                                         GRPCCallOptions *callOptions,
+                                         GRPCInterceptorManager *manager))startHook
+                 writeDataHook:(void (^)(id data, GRPCInterceptorManager *manager))writeDataHook
+                    finishHook:(void (^)(GRPCInterceptorManager *manager))finishHook
+       receiveNextMessagesHook:(void (^)(NSUInteger numberOfMessages,
+                                         GRPCInterceptorManager *manager))receiveNextMessagesHook
+            responseHeaderHook:(void (^)(NSDictionary *initialMetadata,
+                                         GRPCInterceptorManager *manager))responseHeaderHook
+              responseDataHook:(void (^)(id data, GRPCInterceptorManager *manager))responseDataHook
+             responseCloseHook:(void (^)(NSDictionary *trailingMetadata, NSError *error,
+                                         GRPCInterceptorManager *manager))responseCloseHook
+              didWriteDataHook:(void (^)(GRPCInterceptorManager *manager))didWriteDataHook;
 
 @end
 
@@ -151,19 +153,20 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
 }
 
 - (instancetype)
-  initWithDispatchQueue:(dispatch_queue_t)dispatchQueue
-              startHook:(void (^)(GRPCRequestOptions *requestOptions, GRPCCallOptions *callOptions,
-                                  GRPCInterceptorManager *manager))startHook
-          writeDataHook:(void (^)(id data, GRPCInterceptorManager *manager))writeDataHook
-             finishHook:(void (^)(GRPCInterceptorManager *manager))finishHook
-receiveNextMessagesHook:(void (^)(NSUInteger numberOfMessages,
-                                  GRPCInterceptorManager *manager))receiveNextMessagesHook
-     responseHeaderHook:(void (^)(NSDictionary *initialMetadata,
-                                  GRPCInterceptorManager *manager))responseHeaderHook
-       responseDataHook:(void (^)(id data, GRPCInterceptorManager *manager))responseDataHook
-      responseCloseHook:(void (^)(NSDictionary *trailingMetadata, NSError *error,
-                                  GRPCInterceptorManager *manager))responseCloseHook
-       didWriteDataHook:(void (^)(GRPCInterceptorManager *manager))didWriteDataHook {
+      initWithDispatchQueue:(dispatch_queue_t)dispatchQueue
+                  startHook:(void (^)(GRPCRequestOptions *requestOptions,
+                                      GRPCCallOptions *callOptions,
+                                      GRPCInterceptorManager *manager))startHook
+              writeDataHook:(void (^)(id data, GRPCInterceptorManager *manager))writeDataHook
+                 finishHook:(void (^)(GRPCInterceptorManager *manager))finishHook
+    receiveNextMessagesHook:(void (^)(NSUInteger numberOfMessages,
+                                      GRPCInterceptorManager *manager))receiveNextMessagesHook
+         responseHeaderHook:(void (^)(NSDictionary *initialMetadata,
+                                      GRPCInterceptorManager *manager))responseHeaderHook
+           responseDataHook:(void (^)(id data, GRPCInterceptorManager *manager))responseDataHook
+          responseCloseHook:(void (^)(NSDictionary *trailingMetadata, NSError *error,
+                                      GRPCInterceptorManager *manager))responseCloseHook
+           didWriteDataHook:(void (^)(GRPCInterceptorManager *manager))didWriteDataHook {
   if ((self = [super init])) {
     _dispatchQueue = dispatchQueue;
     _startHook = startHook;
@@ -213,21 +216,21 @@ receiveNextMessagesHook:(void (^)(NSUInteger numberOfMessages,
 }
 
 - (instancetype)
-initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
-             dispatchQueue:(dispatch_queue_t)dispatchQueue
-                 startHook:(void (^)(GRPCRequestOptions *requestOptions,
-                                     GRPCCallOptions *callOptions,
-                                     GRPCInterceptorManager *manager))startHook
-             writeDataHook:(void (^)(id data, GRPCInterceptorManager *manager))writeDataHook
-                finishHook:(void (^)(GRPCInterceptorManager *manager))finishHook
-   receiveNextMessagesHook:(void (^)(NSUInteger numberOfMessages,
-                                     GRPCInterceptorManager *manager))receiveNextMessagesHook
-        responseHeaderHook:(void (^)(NSDictionary *initialMetadata,
-                                     GRPCInterceptorManager *manager))responseHeaderHook
-          responseDataHook:(void (^)(id data, GRPCInterceptorManager *manager))responseDataHook
-         responseCloseHook:(void (^)(NSDictionary *trailingMetadata, NSError *error,
-                                     GRPCInterceptorManager *manager))responseCloseHook
-          didWriteDataHook:(void (^)(GRPCInterceptorManager *manager))didWriteDataHook {
+    initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
+                 dispatchQueue:(dispatch_queue_t)dispatchQueue
+                     startHook:(void (^)(GRPCRequestOptions *requestOptions,
+                                         GRPCCallOptions *callOptions,
+                                         GRPCInterceptorManager *manager))startHook
+                 writeDataHook:(void (^)(id data, GRPCInterceptorManager *manager))writeDataHook
+                    finishHook:(void (^)(GRPCInterceptorManager *manager))finishHook
+       receiveNextMessagesHook:(void (^)(NSUInteger numberOfMessages,
+                                         GRPCInterceptorManager *manager))receiveNextMessagesHook
+            responseHeaderHook:(void (^)(NSDictionary *initialMetadata,
+                                         GRPCInterceptorManager *manager))responseHeaderHook
+              responseDataHook:(void (^)(id data, GRPCInterceptorManager *manager))responseDataHook
+             responseCloseHook:(void (^)(NSDictionary *trailingMetadata, NSError *error,
+                                         GRPCInterceptorManager *manager))responseCloseHook
+              didWriteDataHook:(void (^)(GRPCInterceptorManager *manager))didWriteDataHook {
   if ((self = [super initWithInterceptorManager:interceptorManager dispatchQueue:dispatchQueue])) {
     _startHook = startHook;
     _writeDataHook = writeDataHook;
@@ -379,6 +382,36 @@ static dispatch_once_t initGlobalInterceptorFactory;
 @implementation InteropTests {
   RMTTestService *_service;
 }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+- (void)retriableTest:(SEL)selector retries:(int)retries timeout:(NSTimeInterval)timeout {
+  for (int i = 0; i < retries; i++) {
+    NSDate *waitUntil = [[NSDate date] dateByAddingTimeInterval:timeout];
+    NSCondition *cv = [[NSCondition alloc] init];
+    __block BOOL done = NO;
+    [cv lock];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0), ^{
+      [self performSelector:selector];
+      [cv lock];
+      done = YES;
+      [cv signal];
+      [cv unlock];
+    });
+    while (!done && [waitUntil timeIntervalSinceNow] > 0) {
+      [cv waitUntilDate:waitUntil];
+    }
+    if (done) {
+      [cv unlock];
+      break;
+    } else {
+      [cv unlock];
+      [self tearDown];
+      [self setUp];
+    }
+  }
+}
+#pragma clang diagnostic pop
 
 + (XCTestSuite *)defaultTestSuite {
   if (self == [InteropTests class]) {
@@ -618,8 +651,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
         responseDispatchQueue:nil];
 
   [[_service unaryCallWithMessage:request responseHandler:handler callOptions:options] start];
-  [[_service unaryCallWithMessage:request responseHandler:handlerMainQueue callOptions:options]
-      start];
+  [[_service unaryCallWithMessage:request responseHandler:handlerMainQueue
+                      callOptions:options] start];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
@@ -719,14 +752,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-- (void)testConcurrentRPCsWithErrors {
-  NSMutableArray *completeExpectations = [NSMutableArray array];
-  int num_rpcs = 10;
-  for (int i = 0; i < num_rpcs; ++i) {
-    [completeExpectations
-        addObject:[self expectationWithDescription:
-                            [NSString stringWithFormat:@"Received trailer for RPC %d", i]]];
-
+- (void)concurrentRPCsWithErrors {
+  const int kNumRpcs = 10;
+  __block int completedCallCount = 0;
+  NSCondition *cv = [[NSCondition alloc] init];
+  NSDate *waitUntil = [[NSDate date] dateByAddingTimeInterval:TEST_TIMEOUT];
+  [cv lock];
+  for (int i = 0; i < kNumRpcs; ++i) {
     RMTSimpleRequest *request = [RMTSimpleRequest message];
     request.responseType = RMTPayloadType_Compressable;
     request.responseSize = 314159;
@@ -737,20 +769,33 @@ static dispatch_once_t initGlobalInterceptorFactory;
       request.responseStatus.code = GRPC_STATUS_CANCELLED;
     }
 
-    [_service unaryCallWithRequest:request
-                           handler:^(RMTSimpleResponse *response, NSError *error) {
-                             if (error == nil) {
-                               RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
-                               expectedResponse.payload.type = RMTPayloadType_Compressable;
-                               expectedResponse.payload.body =
-                                   [NSMutableData dataWithLength:314159];
-                               XCTAssertEqualObjects(response, expectedResponse);
-                             }
-                             [completeExpectations[i] fulfill];
-                           }];
+    GRPCProtoCall *call = [_service
+        RPCToUnaryCallWithRequest:request
+                          handler:^(RMTSimpleResponse *response, NSError *error) {
+                            if (error == nil) {
+                              RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
+                              expectedResponse.payload.type = RMTPayloadType_Compressable;
+                              expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
+                              XCTAssertEqualObjects(response, expectedResponse);
+                            }
+                            // DEBUG
+                            [cv lock];
+                            if (++completedCallCount == kNumRpcs) {
+                              [cv signal];
+                            }
+                            [cv unlock];
+                          }];
+    [call setResponseDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)];
+    [call start];
   }
+  while (completedCallCount<kNumRpcs && [waitUntil timeIntervalSinceNow]> 0) {
+    [cv waitUntilDate:waitUntil];
+  }
+  [cv unlock];
+}
 
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+- (void)testConcurrentRPCsWithErrors {
+  [self retriableTest:@selector(concurrentRPCsWithErrors) retries:kTestRetries timeout:10];
 }
 
 - (void)testPacketCoalescing {
@@ -1167,8 +1212,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
   __block BOOL receivedResponse = NO;
 
-  id request =
-      [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782 requestedResponseSize:@31415];
+  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782
+                                               requestedResponseSize:@31415];
 
   [requestsBuffer writeValue:request];
 
@@ -1209,8 +1254,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
   options.PEMRootCertificates = self.class.PEMRootCertificates;
   options.hostNameOverride = [[self class] hostNameOverride];
 
-  id request =
-      [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782 requestedResponseSize:@31415];
+  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782
+                                               requestedResponseSize:@31415];
 
   __block GRPCStreamingProtoCall *call = [_service
       fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
@@ -1244,8 +1289,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
   options.PEMRootCertificates = self.class.PEMRootCertificates;
   options.hostNameOverride = [[self class] hostNameOverride];
 
-  id request =
-      [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782 requestedResponseSize:@31415];
+  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782
+                                               requestedResponseSize:@31415];
 
   __block GRPCStreamingProtoCall *call = [_service
       fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
@@ -1684,15 +1729,16 @@ static dispatch_once_t initGlobalInterceptorFactory;
   __block NSUInteger responseDataCount = 0;
   __block NSUInteger responseCloseCount = 0;
   __block NSUInteger didWriteDataCount = 0;
-  [globalInterceptorFactory setStartHook:^(GRPCRequestOptions *requestOptions,
-                                           GRPCCallOptions *callOptions,
-                                           GRPCInterceptorManager *manager) {
-    startCount++;
-    XCTAssertEqualObjects(requestOptions.host, [[self class] host]);
-    XCTAssertEqualObjects(requestOptions.path, @"/grpc.testing.TestService/FullDuplexCall");
-    XCTAssertEqual(requestOptions.safety, GRPCCallSafetyDefault);
-    [manager startNextInterceptorWithRequest:[requestOptions copy] callOptions:[callOptions copy]];
-  }
+  [globalInterceptorFactory
+      setStartHook:^(GRPCRequestOptions *requestOptions, GRPCCallOptions *callOptions,
+                     GRPCInterceptorManager *manager) {
+        startCount++;
+        XCTAssertEqualObjects(requestOptions.host, [[self class] host]);
+        XCTAssertEqualObjects(requestOptions.path, @"/grpc.testing.TestService/FullDuplexCall");
+        XCTAssertEqual(requestOptions.safety, GRPCCallSafetyDefault);
+        [manager startNextInterceptorWithRequest:[requestOptions copy]
+                                     callOptions:[callOptions copy]];
+      }
       writeDataHook:^(id data, GRPCInterceptorManager *manager) {
         writeDataCount++;
         [manager writeNextInterceptorWithData:data];
@@ -1869,15 +1915,16 @@ static dispatch_once_t initGlobalInterceptorFactory;
   __block NSUInteger globalResponseCloseCount = 0;
   __block NSUInteger globalDidWriteDataCount = 0;
 
-  [globalInterceptorFactory setStartHook:^(GRPCRequestOptions *requestOptions,
-                                           GRPCCallOptions *callOptions,
-                                           GRPCInterceptorManager *manager) {
-    globalStartCount++;
-    XCTAssertEqualObjects(requestOptions.host, [[self class] host]);
-    XCTAssertEqualObjects(requestOptions.path, @"/grpc.testing.TestService/FullDuplexCall");
-    XCTAssertEqual(requestOptions.safety, GRPCCallSafetyDefault);
-    [manager startNextInterceptorWithRequest:[requestOptions copy] callOptions:[callOptions copy]];
-  }
+  [globalInterceptorFactory
+      setStartHook:^(GRPCRequestOptions *requestOptions, GRPCCallOptions *callOptions,
+                     GRPCInterceptorManager *manager) {
+        globalStartCount++;
+        XCTAssertEqualObjects(requestOptions.host, [[self class] host]);
+        XCTAssertEqualObjects(requestOptions.path, @"/grpc.testing.TestService/FullDuplexCall");
+        XCTAssertEqual(requestOptions.safety, GRPCCallSafetyDefault);
+        [manager startNextInterceptorWithRequest:[requestOptions copy]
+                                     callOptions:[callOptions copy]];
+      }
       writeDataHook:^(id data, GRPCInterceptorManager *manager) {
         globalWriteDataCount++;
         [manager writeNextInterceptorWithData:data];

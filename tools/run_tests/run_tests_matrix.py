@@ -30,12 +30,8 @@ os.chdir(_ROOT)
 
 _DEFAULT_RUNTESTS_TIMEOUT = 1 * 60 * 60
 
-# Set the timeout high to allow enough time for sanitizers and pre-building
-# clang docker.
+# C/C++ tests can take long time
 _CPP_RUNTESTS_TIMEOUT = 4 * 60 * 60
-
-# C++ TSAN takes longer than other sanitizers
-_CPP_TSAN_RUNTESTS_TIMEOUT = 8 * 60 * 60
 
 # Set timeout high for ObjC for Cocoapods to install pods
 _OBJC_RUNTESTS_TIMEOUT = 90 * 60
@@ -79,18 +75,16 @@ def _docker_jobspec(name,
     if not timeout_seconds:
         timeout_seconds = _DEFAULT_RUNTESTS_TIMEOUT
     shortname = 'run_tests_%s' % name
-    test_job = jobset.JobSpec(
-        cmdline=[
-            'python', 'tools/run_tests/run_tests.py', '--use_docker', '-t',
-            '-j',
-            str(inner_jobs), '-x',
-            'run_tests/%s' % _report_filename(name), '--report_suite_name',
-            '%s' % _safe_report_name(name)
-        ] + runtests_args,
-        environ=runtests_envs,
-        shortname=shortname,
-        timeout_seconds=timeout_seconds,
-        logfilename=_matrix_job_logfilename(shortname))
+    test_job = jobset.JobSpec(cmdline=[
+        'python', 'tools/run_tests/run_tests.py', '--use_docker', '-t', '-j',
+        str(inner_jobs), '-x',
+        'run_tests/%s' % _report_filename(name), '--report_suite_name',
+        '%s' % _safe_report_name(name)
+    ] + runtests_args,
+                              environ=runtests_envs,
+                              shortname=shortname,
+                              timeout_seconds=timeout_seconds,
+                              logfilename=_matrix_job_logfilename(shortname))
     return test_job
 
 
@@ -108,18 +102,17 @@ def _workspace_jobspec(name,
     shortname = 'run_tests_%s' % name
     env = {'WORKSPACE_NAME': workspace_name}
     env.update(runtests_envs)
-    test_job = jobset.JobSpec(
-        cmdline=[
-            'bash', 'tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
-            '-t', '-j',
-            str(inner_jobs), '-x',
-            '../run_tests/%s' % _report_filename(name), '--report_suite_name',
-            '%s' % _safe_report_name(name)
-        ] + runtests_args,
-        environ=env,
-        shortname=shortname,
-        timeout_seconds=timeout_seconds,
-        logfilename=_matrix_job_logfilename(shortname))
+    test_job = jobset.JobSpec(cmdline=[
+        'bash', 'tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
+        '-t', '-j',
+        str(inner_jobs), '-x',
+        '../run_tests/%s' % _report_filename(name), '--report_suite_name',
+        '%s' % _safe_report_name(name)
+    ] + runtests_args,
+                              environ=env,
+                              shortname=shortname,
+                              timeout_seconds=timeout_seconds,
+                              logfilename=_matrix_job_logfilename(shortname))
     return test_job
 
 
@@ -157,12 +150,11 @@ def _generate_jobs(languages,
 
                     runtests_args += extra_args
                     if platform == 'linux':
-                        job = _docker_jobspec(
-                            name=name,
-                            runtests_args=runtests_args,
-                            runtests_envs=extra_envs,
-                            inner_jobs=inner_jobs,
-                            timeout_seconds=timeout_seconds)
+                        job = _docker_jobspec(name=name,
+                                              runtests_args=runtests_args,
+                                              runtests_envs=extra_envs,
+                                              inner_jobs=inner_jobs,
+                                              timeout_seconds=timeout_seconds)
                     else:
                         job = _workspace_jobspec(
                             name=name,
@@ -180,22 +172,22 @@ def _generate_jobs(languages,
 def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs = []
     # sanity tests
-    test_jobs += _generate_jobs(
-        languages=['sanity'],
-        configs=['dbg'],
-        platforms=['linux'],
-        labels=['basictests'],
-        extra_args=extra_args + ['--report_multi_target'],
-        inner_jobs=inner_jobs)
+    test_jobs += _generate_jobs(languages=['sanity'],
+                                configs=['dbg'],
+                                platforms=['linux'],
+                                labels=['basictests'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
 
     # supported on linux only
-    test_jobs += _generate_jobs(
-        languages=['php7'],
-        configs=['dbg', 'opt'],
-        platforms=['linux'],
-        labels=['basictests', 'multilang'],
-        extra_args=extra_args + ['--report_multi_target'],
-        inner_jobs=inner_jobs)
+    test_jobs += _generate_jobs(languages=['php7'],
+                                configs=['dbg', 'opt'],
+                                platforms=['linux'],
+                                labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
 
     # supported on all platforms.
     test_jobs += _generate_jobs(
@@ -209,32 +201,32 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # C# tests on .NET desktop/mono
-    test_jobs += _generate_jobs(
-        languages=['csharp'],
-        configs=['dbg', 'opt'],
-        platforms=['linux', 'macos', 'windows'],
-        labels=['basictests', 'multilang'],
-        extra_args=extra_args + ['--report_multi_target'],
-        inner_jobs=inner_jobs)
+    test_jobs += _generate_jobs(languages=['csharp'],
+                                configs=['dbg', 'opt'],
+                                platforms=['linux', 'macos', 'windows'],
+                                labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
     # C# tests on .NET core
-    test_jobs += _generate_jobs(
-        languages=['csharp'],
-        configs=['dbg', 'opt'],
-        platforms=['linux', 'macos', 'windows'],
-        arch='default',
-        compiler='coreclr',
-        labels=['basictests', 'multilang'],
-        extra_args=extra_args + ['--report_multi_target'],
-        inner_jobs=inner_jobs)
+    test_jobs += _generate_jobs(languages=['csharp'],
+                                configs=['dbg', 'opt'],
+                                platforms=['linux', 'macos', 'windows'],
+                                arch='default',
+                                compiler='coreclr',
+                                labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
 
-    test_jobs += _generate_jobs(
-        languages=['python'],
-        configs=['opt'],
-        platforms=['linux', 'macos', 'windows'],
-        iomgr_platforms=['native', 'gevent', 'asyncio'],
-        labels=['basictests', 'multilang'],
-        extra_args=extra_args + ['--report_multi_target'],
-        inner_jobs=inner_jobs)
+    test_jobs += _generate_jobs(languages=['python'],
+                                configs=['opt'],
+                                platforms=['linux', 'macos', 'windows'],
+                                iomgr_platforms=['native', 'gevent', 'asyncio'],
+                                labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
 
     # supported on linux and mac.
     test_jobs += _generate_jobs(
@@ -247,55 +239,23 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    test_jobs += _generate_jobs(
-        languages=['grpc-node', 'ruby', 'php'],
-        configs=['dbg', 'opt'],
-        platforms=['linux', 'macos'],
-        labels=['basictests', 'multilang'],
-        extra_args=extra_args + ['--report_multi_target'],
-        inner_jobs=inner_jobs)
+    test_jobs += _generate_jobs(languages=['grpc-node', 'ruby', 'php'],
+                                configs=['dbg', 'opt'],
+                                platforms=['linux', 'macos'],
+                                labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
 
     # supported on mac only.
-    test_jobs += _generate_jobs(
-        languages=['objc'],
-        configs=['opt'],
-        platforms=['macos'],
-        labels=['basictests', 'multilang'],
-        extra_args=extra_args + ['--report_multi_target'],
-        inner_jobs=inner_jobs,
-        timeout_seconds=_OBJC_RUNTESTS_TIMEOUT)
-
-    # sanitizers
-    test_jobs += _generate_jobs(
-        languages=['c'],
-        configs=['msan', 'asan', 'tsan', 'ubsan'],
-        platforms=['linux'],
-        arch='x64',
-        compiler='clang7.0',
-        labels=['sanitizers', 'corelang'],
-        extra_args=extra_args,
-        inner_jobs=inner_jobs,
-        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
-    test_jobs += _generate_jobs(
-        languages=['c++'],
-        configs=['asan'],
-        platforms=['linux'],
-        arch='x64',
-        compiler='clang7.0',
-        labels=['sanitizers', 'corelang'],
-        extra_args=extra_args,
-        inner_jobs=inner_jobs,
-        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
-    test_jobs += _generate_jobs(
-        languages=['c++'],
-        configs=['tsan'],
-        platforms=['linux'],
-        arch='x64',
-        compiler='clang7.0',
-        labels=['sanitizers', 'corelang'],
-        extra_args=extra_args,
-        inner_jobs=inner_jobs,
-        timeout_seconds=_CPP_TSAN_RUNTESTS_TIMEOUT)
+    test_jobs += _generate_jobs(languages=['objc'],
+                                configs=['opt'],
+                                platforms=['macos'],
+                                labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs,
+                                timeout_seconds=_OBJC_RUNTESTS_TIMEOUT)
 
     return test_jobs
 
@@ -304,87 +264,80 @@ def _create_portability_test_jobs(extra_args=[],
                                   inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs = []
     # portability C x86
-    test_jobs += _generate_jobs(
-        languages=['c'],
-        configs=['dbg'],
-        platforms=['linux'],
-        arch='x86',
-        compiler='default',
-        labels=['portability', 'corelang'],
-        extra_args=extra_args,
-        inner_jobs=inner_jobs)
+    test_jobs += _generate_jobs(languages=['c'],
+                                configs=['dbg'],
+                                platforms=['linux'],
+                                arch='x86',
+                                compiler='default',
+                                labels=['portability', 'corelang'],
+                                extra_args=extra_args,
+                                inner_jobs=inner_jobs)
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.8', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl', 'clang3.5',
+            'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl', 'clang3.5',
             'clang3.6', 'clang3.7', 'clang7.0'
     ]:
-        test_jobs += _generate_jobs(
-            languages=['c', 'c++'],
-            configs=['dbg'],
-            platforms=['linux'],
-            arch='x64',
-            compiler=compiler,
-            labels=['portability', 'corelang'],
-            extra_args=extra_args,
-            inner_jobs=inner_jobs,
-            timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
+        test_jobs += _generate_jobs(languages=['c', 'c++'],
+                                    configs=['dbg'],
+                                    platforms=['linux'],
+                                    arch='x64',
+                                    compiler=compiler,
+                                    labels=['portability', 'corelang'],
+                                    extra_args=extra_args,
+                                    inner_jobs=inner_jobs,
+                                    timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # portability C on Windows 64-bit (x86 is the default)
-    test_jobs += _generate_jobs(
-        languages=['c'],
-        configs=['dbg'],
-        platforms=['windows'],
-        arch='x64',
-        compiler='default',
-        labels=['portability', 'corelang'],
-        extra_args=extra_args,
-        inner_jobs=inner_jobs)
+    test_jobs += _generate_jobs(languages=['c'],
+                                configs=['dbg'],
+                                platforms=['windows'],
+                                arch='x64',
+                                compiler='default',
+                                labels=['portability', 'corelang'],
+                                extra_args=extra_args,
+                                inner_jobs=inner_jobs)
 
     # portability C++ on Windows
     # TODO(jtattermusch): some of the tests are failing, so we force --build_only
-    test_jobs += _generate_jobs(
-        languages=['c++'],
-        configs=['dbg'],
-        platforms=['windows'],
-        arch='default',
-        compiler='default',
-        labels=['portability', 'corelang'],
-        extra_args=extra_args + ['--build_only'],
-        inner_jobs=inner_jobs,
-        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
+    test_jobs += _generate_jobs(languages=['c++'],
+                                configs=['dbg'],
+                                platforms=['windows'],
+                                arch='default',
+                                compiler='default',
+                                labels=['portability', 'corelang'],
+                                extra_args=extra_args + ['--build_only'],
+                                inner_jobs=inner_jobs,
+                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # portability C and C++ on Windows using VS2017 (build only)
     # TODO(jtattermusch): some of the tests are failing, so we force --build_only
-    test_jobs += _generate_jobs(
-        languages=['c', 'c++'],
-        configs=['dbg'],
-        platforms=['windows'],
-        arch='x64',
-        compiler='cmake_vs2017',
-        labels=['portability', 'corelang'],
-        extra_args=extra_args + ['--build_only'],
-        inner_jobs=inner_jobs,
-        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
+    test_jobs += _generate_jobs(languages=['c', 'c++'],
+                                configs=['dbg'],
+                                platforms=['windows'],
+                                arch='x64',
+                                compiler='cmake_vs2017',
+                                labels=['portability', 'corelang'],
+                                extra_args=extra_args + ['--build_only'],
+                                inner_jobs=inner_jobs,
+                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # C and C++ with the c-ares DNS resolver on Linux
-    test_jobs += _generate_jobs(
-        languages=['c', 'c++'],
-        configs=['dbg'],
-        platforms=['linux'],
-        labels=['portability', 'corelang'],
-        extra_args=extra_args,
-        extra_envs={'GRPC_DNS_RESOLVER': 'ares'},
-        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
+    test_jobs += _generate_jobs(languages=['c', 'c++'],
+                                configs=['dbg'],
+                                platforms=['linux'],
+                                labels=['portability', 'corelang'],
+                                extra_args=extra_args,
+                                extra_envs={'GRPC_DNS_RESOLVER': 'ares'},
+                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # C and C++ with no-exceptions on Linux
-    test_jobs += _generate_jobs(
-        languages=['c', 'c++'],
-        configs=['noexcept'],
-        platforms=['linux'],
-        labels=['portability', 'corelang'],
-        extra_args=extra_args,
-        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
+    test_jobs += _generate_jobs(languages=['c', 'c++'],
+                                configs=['noexcept'],
+                                platforms=['linux'],
+                                labels=['portability', 'corelang'],
+                                extra_args=extra_args,
+                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # TODO(zyc): Turn on this test after adding c-ares support on windows.
     # C with the c-ares DNS resolver on Windows
@@ -397,39 +350,37 @@ def _create_portability_test_jobs(extra_args=[],
     # C and C++ build with cmake on Linux
     # TODO(jtattermusch): some of the tests are failing, so we force --build_only
     # to make sure it's buildable at least.
-    test_jobs += _generate_jobs(
-        languages=['c', 'c++'],
-        configs=['dbg'],
-        platforms=['linux'],
-        arch='default',
-        compiler='cmake',
-        labels=['portability', 'corelang'],
-        extra_args=extra_args + ['--build_only'],
-        inner_jobs=inner_jobs)
+    test_jobs += _generate_jobs(languages=['c', 'c++'],
+                                configs=['dbg'],
+                                platforms=['linux'],
+                                arch='default',
+                                compiler='cmake',
+                                labels=['portability', 'corelang'],
+                                extra_args=extra_args + ['--build_only'],
+                                inner_jobs=inner_jobs)
 
-    test_jobs += _generate_jobs(
-        languages=['python'],
-        configs=['dbg'],
-        platforms=['linux'],
-        arch='default',
-        compiler='python_alpine',
-        labels=['portability', 'multilang'],
-        extra_args=extra_args + ['--report_multi_target'],
-        inner_jobs=inner_jobs)
+    test_jobs += _generate_jobs(languages=['python'],
+                                configs=['dbg'],
+                                platforms=['linux'],
+                                arch='default',
+                                compiler='python_alpine',
+                                labels=['portability', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
 
     # TODO(jtattermusch): a large portion of the libuv tests is failing,
     # which can end up killing the kokoro job due to gigabytes of error logs
     # generated. Remove the --build_only flag
     # once https://github.com/grpc/grpc/issues/17556 is fixed.
-    test_jobs += _generate_jobs(
-        languages=['c'],
-        configs=['dbg'],
-        platforms=['linux'],
-        iomgr_platforms=['uv'],
-        labels=['portability', 'corelang'],
-        extra_args=extra_args + ['--build_only'],
-        inner_jobs=inner_jobs,
-        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
+    test_jobs += _generate_jobs(languages=['c'],
+                                configs=['dbg'],
+                                platforms=['linux'],
+                                iomgr_platforms=['uv'],
+                                labels=['portability', 'corelang'],
+                                extra_args=extra_args + ['--build_only'],
+                                inner_jobs=inner_jobs,
+                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     return test_jobs
 
@@ -457,43 +408,38 @@ def _runs_per_test_type(arg_str):
 if __name__ == "__main__":
     argp = argparse.ArgumentParser(
         description='Run a matrix of run_tests.py tests.')
-    argp.add_argument(
-        '-j',
-        '--jobs',
-        default=multiprocessing.cpu_count() / _DEFAULT_INNER_JOBS,
-        type=int,
-        help='Number of concurrent run_tests.py instances.')
-    argp.add_argument(
-        '-f',
-        '--filter',
-        choices=_allowed_labels(),
-        nargs='+',
-        default=[],
-        help='Filter targets to run by label with AND semantics.')
-    argp.add_argument(
-        '--exclude',
-        choices=_allowed_labels(),
-        nargs='+',
-        default=[],
-        help='Exclude targets with any of given labels.')
-    argp.add_argument(
-        '--build_only',
-        default=False,
-        action='store_const',
-        const=True,
-        help='Pass --build_only flag to run_tests.py instances.')
+    argp.add_argument('-j',
+                      '--jobs',
+                      default=multiprocessing.cpu_count() / _DEFAULT_INNER_JOBS,
+                      type=int,
+                      help='Number of concurrent run_tests.py instances.')
+    argp.add_argument('-f',
+                      '--filter',
+                      choices=_allowed_labels(),
+                      nargs='+',
+                      default=[],
+                      help='Filter targets to run by label with AND semantics.')
+    argp.add_argument('--exclude',
+                      choices=_allowed_labels(),
+                      nargs='+',
+                      default=[],
+                      help='Exclude targets with any of given labels.')
+    argp.add_argument('--build_only',
+                      default=False,
+                      action='store_const',
+                      const=True,
+                      help='Pass --build_only flag to run_tests.py instances.')
     argp.add_argument(
         '--force_default_poller',
         default=False,
         action='store_const',
         const=True,
         help='Pass --force_default_poller to run_tests.py instances.')
-    argp.add_argument(
-        '--dry_run',
-        default=False,
-        action='store_const',
-        const=True,
-        help='Only print what would be run.')
+    argp.add_argument('--dry_run',
+                      default=False,
+                      action='store_const',
+                      const=True,
+                      help='Only print what would be run.')
     argp.add_argument(
         '--filter_pr_tests',
         default=False,
@@ -505,11 +451,10 @@ if __name__ == "__main__":
         default='origin/master',
         type=str,
         help='Branch that pull request is requesting to merge into')
-    argp.add_argument(
-        '--inner_jobs',
-        default=_DEFAULT_INNER_JOBS,
-        type=int,
-        help='Number of jobs in each run_tests.py instance')
+    argp.add_argument('--inner_jobs',
+                      default=_DEFAULT_INNER_JOBS,
+                      type=int,
+                      help='Number of jobs in each run_tests.py instance')
     argp.add_argument(
         '-n',
         '--runs_per_test',
@@ -517,12 +462,11 @@ if __name__ == "__main__":
         type=_runs_per_test_type,
         help='How many times to run each tests. >1 runs implies ' +
         'omitting passing test from the output & reports.')
-    argp.add_argument(
-        '--max_time',
-        default=-1,
-        type=int,
-        help='Maximum amount of time to run tests for' +
-        '(other tests will be skipped)')
+    argp.add_argument('--max_time',
+                      default=-1,
+                      type=int,
+                      help='Maximum amount of time to run tests for' +
+                      '(other tests will be skipped)')
     argp.add_argument(
         '--internal_ci',
         default=False,
@@ -531,18 +475,16 @@ if __name__ == "__main__":
         help=
         '(Deprecated, has no effect) Put reports into subdirectories to improve presentation of '
         'results by Kokoro.')
-    argp.add_argument(
-        '--bq_result_table',
-        default='',
-        type=str,
-        nargs='?',
-        help='Upload test results to a specified BQ table.')
-    argp.add_argument(
-        '--extra_args',
-        default='',
-        type=str,
-        nargs=argparse.REMAINDER,
-        help='Extra test args passed to each sub-script.')
+    argp.add_argument('--bq_result_table',
+                      default='',
+                      type=str,
+                      nargs='?',
+                      help='Upload test results to a specified BQ table.')
+    argp.add_argument('--extra_args',
+                      default='',
+                      type=str,
+                      nargs=argparse.REMAINDER,
+                      help='Extra test args passed to each sub-script.')
     args = argp.parse_args()
 
     extra_args = []
@@ -575,8 +517,9 @@ if __name__ == "__main__":
                 jobs.append(job)
 
     if not jobs:
-        jobset.message(
-            'FAILED', 'No test suites match given criteria.', do_newline=True)
+        jobset.message('FAILED',
+                       'No test suites match given criteria.',
+                       do_newline=True)
         sys.exit(1)
 
     print('IMPORTANT: The changes you are testing need to be locally committed')
@@ -609,27 +552,26 @@ if __name__ == "__main__":
         sys.exit(1)
 
     jobset.message('START', 'Running test matrix.', do_newline=True)
-    num_failures, resultset = jobset.run(
-        jobs, newline_on_success=True, travis=True, maxjobs=args.jobs)
+    num_failures, resultset = jobset.run(jobs,
+                                         newline_on_success=True,
+                                         travis=True,
+                                         maxjobs=args.jobs)
     # Merge skipped tests into results to show skipped tests on report.xml
     if skipped_jobs:
         ignored_num_skipped_failures, skipped_results = jobset.run(
             skipped_jobs, skip_jobs=True)
         resultset.update(skipped_results)
-    report_utils.render_junit_xml_report(
-        resultset,
-        _report_filename(_MATRIX_REPORT_NAME),
-        suite_name=_MATRIX_REPORT_NAME,
-        multi_target=True)
+    report_utils.render_junit_xml_report(resultset,
+                                         _report_filename(_MATRIX_REPORT_NAME),
+                                         suite_name=_MATRIX_REPORT_NAME,
+                                         multi_target=True)
 
     if num_failures == 0:
-        jobset.message(
-            'SUCCESS',
-            'All run_tests.py instances finished successfully.',
-            do_newline=True)
+        jobset.message('SUCCESS',
+                       'All run_tests.py instances finished successfully.',
+                       do_newline=True)
     else:
-        jobset.message(
-            'FAILED',
-            'Some run_tests.py instances have failed.',
-            do_newline=True)
+        jobset.message('FAILED',
+                       'Some run_tests.py instances have failed.',
+                       do_newline=True)
         sys.exit(1)

@@ -51,9 +51,8 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
               "Failed to create channel args during subchannel creation.");
       return nullptr;
     }
-    grpc_connector* connector = grpc_chttp2_connector_create();
-    Subchannel* s = Subchannel::Create(connector, new_args);
-    grpc_connector_unref(connector);
+    Subchannel* s =
+        Subchannel::Create(MakeOrphanable<Chttp2Connector>(), new_args);
     grpc_channel_args_destroy(new_args);
     return s;
   }

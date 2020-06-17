@@ -19,7 +19,7 @@ grpc_package(name = "test/core/handshake")
 licenses(["notice"])  # Apache v2
 
 grpc_cc_test(
-    name = "client_ssl",
+    name = "client_ssl_test",
     srcs = ["client_ssl.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
@@ -48,7 +48,7 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
-    name = "server_ssl",
+    name = "server_ssl_test",
     srcs = ["server_ssl.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
@@ -66,7 +66,7 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "handshake_server_with_readahead_handshaker",
+    name = "handshake_server_with_readahead_handshaker_test",
     srcs = ["readahead_handshaker_server_ssl.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
@@ -84,7 +84,7 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "handshake_verify_peer_options",
+    name = "handshake_verify_peer_options_test",
     srcs = ["verify_peer_options.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",

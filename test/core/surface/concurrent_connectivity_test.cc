@@ -40,7 +40,14 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
+/* TODO(yashykt): When our macos testing infrastructure becomes good enough, we
+ * wouldn't need to reduce the number of threads on MacOS */
+#ifdef __APPLE__
+#define NUM_THREADS 10
+#else
 #define NUM_THREADS 100
+#endif /* __APPLE */
+
 #define NUM_OUTER_LOOPS 10
 #define NUM_INNER_LOOPS 10
 #define DELAY_MILLIS 10

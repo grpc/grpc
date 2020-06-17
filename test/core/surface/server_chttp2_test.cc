@@ -47,15 +47,15 @@ void test_add_same_port_twice() {
   grpc_channel_args args = {1, &a};
 
   int port = grpc_pick_unused_port_or_die();
-  grpc_core::UniquePtr<char> addr;
   grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server* server = grpc_server_create(&args, nullptr);
   grpc_server_credentials* fake_creds =
       grpc_fake_transport_security_server_credentials_create();
-  grpc_core::JoinHostPort(&addr, "localhost", port);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr.get(), fake_creds));
+  std::string addr = grpc_core::JoinHostPort("localhost", port);
   GPR_ASSERT(
-      grpc_server_add_secure_http2_port(server, addr.get(), fake_creds) == 0);
+      grpc_server_add_secure_http2_port(server, addr.c_str(), fake_creds));
+  GPR_ASSERT(
+      grpc_server_add_secure_http2_port(server, addr.c_str(), fake_creds) == 0);
 
   grpc_server_credentials_release(fake_creds);
   grpc_server_shutdown_and_notify(server, cq, nullptr);

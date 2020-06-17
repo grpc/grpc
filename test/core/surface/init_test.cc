@@ -75,6 +75,13 @@ static void test_repeatedly() {
   grpc_maybe_wait_for_async_shutdown();
 }
 
+static void test_repeatedly_blocking() {
+  for (int i = 0; i < 1000; i++) {
+    grpc_init();
+    grpc_shutdown_blocking();
+  }
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   test(1);
@@ -86,5 +93,6 @@ int main(int argc, char** argv) {
   test_mixed();
   test_plugin();
   test_repeatedly();
+  test_repeatedly_blocking();
   return 0;
 }

@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Threading.Tasks;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -48,5 +49,34 @@ namespace Grpc.Core
         /// </summary>
         /// <returns>A new <see cref="CallInvoker"/>.</returns>
         public abstract CallInvoker CreateCallInvoker();
+
+        /// <summary>
+        /// Shuts down the channel cleanly. It is strongly recommended to shutdown
+        /// the channel once you stopped using it.
+        /// </summary>
+        /// <remarks>
+        /// Guidance for implementors:
+        /// This method doesn't wait for all calls on this channel to finish (nor does
+        /// it have to explicitly cancel all outstanding calls). It is user's responsibility to make sure
+        /// all the calls on this channel have finished (successfully or with an error)
+        /// before shutting down the channel to ensure channel shutdown won't impact
+        /// the outcome of those remote calls.
+        /// </remarks>
+        public Task ShutdownAsync()
+        {
+            return ShutdownAsyncCore();
+        }
+
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        #pragma warning disable 1998
+        protected virtual async Task ShutdownAsyncCore()
+        {
+            // default implementation is no-op for backwards compatibility, but all implementations
+            // are expected to override this method.
+
+            // warning 1998 is disabled to avoid needing TaskUtils.CompletedTask, which is
+            // only available in Grpc.Core
+        }
+        #pragma warning restore 1998
     }
 }

@@ -35,10 +35,10 @@ static dispatch_once_t onceToken;
   [globalInterceptorLock lock];
   if (globalInterceptorFactory != nil) {
     [globalInterceptorLock unlock];
-    [NSException raise:NSInternalInconsistencyException
-                format:
-                    @"Global interceptor is already registered. Only one global interceptor can be "
-                    @"registered in a process."];
+    [NSException
+         raise:NSInternalInconsistencyException
+        format:@"Global interceptor is already registered. Only one global interceptor can be "
+               @"registered in a process."];
     return;
   }
 

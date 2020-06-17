@@ -29,6 +29,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -83,15 +85,15 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
                                         grpc_tcp_listener** listener) {
   grpc_tcp_listener* sp = nullptr;
   int port = -1;
-  char* addr_str;
+  std::string addr_str;
   char* name;
 
   grpc_error* err =
       grpc_tcp_server_prepare_socket(s, fd, addr, s->so_reuseport, &port);
   if (err == GRPC_ERROR_NONE) {
     GPR_ASSERT(port > 0);
-    grpc_sockaddr_to_string(&addr_str, addr, 1);
-    gpr_asprintf(&name, "tcp-server-listener:%s", addr_str);
+    addr_str = grpc_sockaddr_to_string(addr, true);
+    gpr_asprintf(&name, "tcp-server-listener:%s", addr_str.c_str());
     gpr_mu_lock(&s->mu);
     s->nports++;
     GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
@@ -114,7 +116,6 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
     sp->sibling = nullptr;
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
-    gpr_free(addr_str);
     gpr_free(name);
   }
 
@@ -157,6 +158,14 @@ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
     if (err != GRPC_ERROR_NONE) goto error;
   }
 
+#ifdef GRPC_LINUX_ERRQUEUE
+  err = grpc_set_socket_zerocopy(fd);
+  if (err != GRPC_ERROR_NONE) {
+    /* it's not fatal, so just log it. */
+    gpr_log(GPR_DEBUG, "Node does not support SO_ZEROCOPY, continuing.");
+    GRPC_ERROR_UNREF(err);
+  }
+#endif
   err = grpc_set_socket_nonblocking(fd, 1);
   if (err != GRPC_ERROR_NONE) goto error;
   err = grpc_set_socket_cloexec(fd, 1);

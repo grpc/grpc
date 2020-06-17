@@ -2,10 +2,14 @@
 
 ## Versioning Overview
 
-All gRPC implementations use a three-part version number (`vX.Y.Z`) and strictly follow [semantic versioning](https://semver.org/), which defines the semantics of major, minor and patch components of the version number. In addition to that, gRPC versions evolve according to these rules:
+All gRPC implementations use a three-part version number (`vX.Y.Z`) and follow [semantic versioning](https://semver.org/), which defines the semantics of major, minor and patch components of the version number. In addition to that, gRPC versions evolve according to these rules:
 - **Major version bumps** only happen on rare occasions. In order to qualify for a major version bump, certain criteria described later in this document need to be met. Most importantly, a major version increase must not break wire compatibility with other gRPC implementations so that existing gRPC libraries remain fully interoperable. 
 - **Minor version bumps** happen approx. every 6 weeks as part of the normal release cycle as defined by the gRPC release process. A new release branch named vMAJOR.MINOR.PATCH) is cut every 6 weeks based on the [release schedule](https://github.com/grpc/grpc/blob/master/doc/grpc_release_schedule.md).
 - **Patch version bump** corresponds to bugfixes done on release branch.
+
+There are a few situations where we don't adhere to the Semantic Versioning 2.0.0 strictly:
+- A **minor** version will not necessarily add new functionality. This follows from the fact that we cut minor releases on a regular schedule, so we can't guarantee there will always be new features in each of the supported languages.
+- Backward compatibility can be broken by a **minor** release if the API affected by the change was marked as EXPERIMENTAL upon its introduction.
 
 There are also a few extra rules regarding adding new gRPC implementations (e.g. adding support for a new language)
 - New implementations start at v0.x.y version and until they reach 1.0, they are considered not ready for production workloads. Breaking API changes are allowed in the 0.x releases as the library is not considered stable yet.

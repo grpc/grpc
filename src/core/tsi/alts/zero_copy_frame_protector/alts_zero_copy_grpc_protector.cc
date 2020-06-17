@@ -234,11 +234,11 @@ static void alts_zero_copy_grpc_protector_destroy(
 }
 
 static tsi_result alts_zero_copy_grpc_protector_max_frame_size(
-    tsi_zero_copy_grpc_protector* self, size_t& max_frame_size) {
-  if (self == nullptr) return TSI_INVALID_ARGUMENT;
+    tsi_zero_copy_grpc_protector* self, size_t* max_frame_size) {
+  if (self == nullptr || max_frame_size == nullptr) return TSI_INVALID_ARGUMENT;
   alts_zero_copy_grpc_protector* protector =
       reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
-  max_frame_size = protector->max_protected_frame_size;
+  *max_frame_size = protector->max_protected_frame_size;
   return TSI_OK;
 }
 

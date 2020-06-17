@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-
-_LOGGER = logging.getLogger(__name__)
 
 # This function will ascii encode unicode string inputs if necessary.
 # In Python3, unicode strings are the default str type.
@@ -38,7 +35,7 @@ cdef bytes _encode(object string_or_none):
   elif isinstance(string_or_none, (bytes,)):
     return <bytes>string_or_none
   elif isinstance(string_or_none, (unicode,)):
-    return string_or_none.encode('ascii')
+    return string_or_none.encode('utf8')
   else:
     raise TypeError('Expected str, not {}'.format(type(string_or_none)))
 

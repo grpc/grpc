@@ -49,13 +49,12 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
-# Google Cloud platform API libraries
-RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client oauth2client
-
 # Install Python 2.7
 RUN apt-get update && apt-get install -y python2.7 python-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
+
+# Google Cloud platform API libraries
+RUN pip install --upgrade google-api-python-client oauth2client
 
 # Add Debian 'buster' repository, we will need it for installing newer versions of python
 RUN echo 'deb http://ftp.de.debian.org/debian buster main' >> /etc/apt/sources.list
@@ -84,6 +83,29 @@ RUN cd /tmp && \
 RUN python3.6 -m ensurepip && \
     python3.6 -m pip install coverage
 
+#=================
+# Compile CPython 3.8.0b4 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.8.0/Python-3.8.0b4.tgz && \
+    tar xzvf Python-3.8.0b4.tgz && \
+    cd Python-3.8.0b4 && \
+    ./configure && \
+    make install
+
+RUN cd /tmp && \
+    echo "b8f4f897df967014ddb42033b90c3058 Python-3.8.0b4.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.8 -m ensurepip && \
+    python3.8 -m pip install coverage
+
+
+RUN apt-get update && apt-get install -y python3.5 python3.5-dev
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3.5
 
 RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7

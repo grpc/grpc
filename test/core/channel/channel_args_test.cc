@@ -206,7 +206,8 @@ int main(int argc, char** argv) {
   test_channel_create_with_args();
   test_server_create_with_args();
   // This has to be the last test.
-  test_channel_create_with_global_mutator();
+  // TODO(markdroth): re-enable this test once client_idle is re-enabled
+  // test_channel_create_with_global_mutator();
   grpc_shutdown();
   return 0;
 }

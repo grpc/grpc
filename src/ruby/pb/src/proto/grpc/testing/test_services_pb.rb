@@ -98,5 +98,21 @@ module Grpc
 
       Stub = Service.rpc_stub_class
     end
+    module LoadBalancerStatsService
+      # A service used to obtain stats for verifying LB behavior.
+      class Service
+
+        include GRPC::GenericService
+
+        self.marshal_class_method = :encode
+        self.unmarshal_class_method = :decode
+        self.service_name = 'grpc.testing.LoadBalancerStatsService'
+
+        # Gets the backend distribution for RPCs sent by a test client.
+        rpc :GetClientStats, LoadBalancerStatsRequest, LoadBalancerStatsResponse
+      end
+
+      Stub = Service.rpc_stub_class
+    end
   end
 end

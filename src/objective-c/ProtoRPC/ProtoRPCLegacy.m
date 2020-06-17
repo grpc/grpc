@@ -70,16 +70,18 @@
     __weak ProtoRPC *weakSelf = self;
 
     // A writeable that parses the proto messages received.
-    _responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
-      // TODO(jcanizales): This is done in the main thread, and needs to happen in another thread.
-      NSError *error = nil;
-      id parsed = [responseClass parseFromData:value error:&error];
-      if (parsed) {
-        [responsesWriteable writeValue:parsed];
-      } else {
-        [weakSelf finishWithError:ErrorForBadProto(value, responseClass, error)];
-      }
-    }
+    _responseWriteable = [[GRXWriteable alloc]
+        initWithValueHandler:^(NSData *value) {
+          // TODO(jcanizales): This is done in the main thread, and needs to happen in another
+          // thread.
+          NSError *error = nil;
+          id parsed = [responseClass parseFromData:value error:&error];
+          if (parsed) {
+            [responsesWriteable writeValue:parsed];
+          } else {
+            [weakSelf finishWithError:ErrorForBadProto(value, responseClass, error)];
+          }
+        }
         completionHandler:^(NSError *errorOrNil) {
           [responsesWriteable writesFinishedWithError:errorOrNil];
         }];

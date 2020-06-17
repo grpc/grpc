@@ -53,6 +53,7 @@ grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
       gpr_malloc(contents_size + (add_null_terminator ? 1 : 0)));
   bytes_read = fread(contents, 1, contents_size, file);
   if (bytes_read < contents_size) {
+    gpr_free(contents);
     error = GRPC_OS_ERROR(errno, "fread");
     GPR_ASSERT(ferror(file));
     goto end;

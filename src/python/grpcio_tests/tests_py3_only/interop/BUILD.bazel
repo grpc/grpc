@@ -1,0 +1,12 @@
+py_binary(
+    name = "xds_interop_client",
+    srcs = ["xds_interop_client.py"],
+    python_version = "PY3",
+    deps = [
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+)

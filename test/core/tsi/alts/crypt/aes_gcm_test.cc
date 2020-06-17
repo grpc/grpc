@@ -18,6 +18,7 @@
 
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
+#include "test/core/util/test_config.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -2093,7 +2094,8 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_20);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   gsec_test_do_generic_crypter_tests();
   gsec_test_do_vector_tests_nist();

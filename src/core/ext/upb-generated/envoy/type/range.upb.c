@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include "upb/msg.h"
 #include "envoy/type/range.upb.h"
+#include "udpa/annotations/status.upb.h"
 
 #include "upb/port_def.inc"
 
@@ -21,6 +22,17 @@ const upb_msglayout envoy_type_Int64Range_msginit = {
   NULL,
   &envoy_type_Int64Range__fields[0],
   UPB_SIZE(16, 16), 2, false,
+};
+
+static const upb_msglayout_field envoy_type_Int32Range__fields[2] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 5, 1},
+  {2, UPB_SIZE(4, 4), 0, 0, 5, 1},
+};
+
+const upb_msglayout envoy_type_Int32Range_msginit = {
+  NULL,
+  &envoy_type_Int32Range__fields[0],
+  UPB_SIZE(8, 8), 2, false,
 };
 
 static const upb_msglayout_field envoy_type_DoubleRange__fields[2] = {

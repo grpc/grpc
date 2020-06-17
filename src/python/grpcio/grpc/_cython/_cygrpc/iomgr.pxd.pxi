@@ -13,6 +13,9 @@
 # limitations under the License.
 # distutils: language=c++
 
+from libcpp cimport bool as bool_t
+from libcpp.string cimport string as cppstring
+
 cdef extern from "grpc/impl/codegen/slice.h":
   struct grpc_slice_buffer:
     int count
@@ -46,14 +49,16 @@ cdef extern from "src/core/lib/iomgr/resolve_address_custom.h":
     pass
 
   struct grpc_custom_resolver_vtable:
-    grpc_error* (*resolve)(char* host, char* port, grpc_resolved_addresses** res);
-    void (*resolve_async)(grpc_custom_resolver* resolver, char* host, char* port);
+    grpc_error* (*resolve)(const char* host, const char* port, grpc_resolved_addresses** res);
+    void (*resolve_async)(grpc_custom_resolver* resolver, const char* host, const char* port);
 
   void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                     grpc_resolved_addresses* result,
                                     grpc_error* error);
 
 cdef extern from "src/core/lib/iomgr/tcp_custom.h":
+  cdef int GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT
+
   struct grpc_custom_socket:
     void* impl
     # We don't care about the rest of the fields
@@ -116,8 +121,8 @@ cdef extern from "src/core/lib/iomgr/iomgr_custom.h":
 
 cdef extern from "src/core/lib/iomgr/sockaddr_utils.h":
   int grpc_sockaddr_get_port(const grpc_resolved_address *addr);
-  int grpc_sockaddr_to_string(char **out, const grpc_resolved_address *addr,
-                              int normalize);
+  cppstring grpc_sockaddr_to_string(const grpc_resolved_address *addr,
+                                    bool_t normalize);
   void grpc_string_to_sockaddr(grpc_resolved_address *out, char* addr, int port);
   int grpc_sockaddr_set_port(const grpc_resolved_address *resolved_addr,
                              int port)

@@ -52,7 +52,7 @@
 #import "../ConfigureCronet.h"
 
 struct fullstack_secure_fixture_data {
-  grpc_core::UniquePtr<char> localaddr;
+  std::string localaddr;
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
@@ -62,7 +62,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   fullstack_secure_fixture_data *ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
 
-  grpc_core::JoinHostPort(&ffd->localaddr, "127.0.0.1", port);
+  ffd->localaddr = grpc_core::JoinHostPort("127.0.0.1", port);
 
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(NULL);
@@ -83,7 +83,7 @@ static void cronet_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
                                                 stream_engine *cronetEngine) {
   fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
   f->client =
-      grpc_cronet_secure_channel_create(cronetEngine, ffd->localaddr.get(), client_args, NULL);
+      grpc_cronet_secure_channel_create(cronetEngine, ffd->localaddr.c_str(), client_args, NULL);
   GPR_ASSERT(f->client != NULL);
 }
 
@@ -96,7 +96,7 @@ static void chttp2_init_server_secure_fullstack(grpc_end2end_test_fixture *f,
   }
   f->server = grpc_server_create(server_args, NULL);
   grpc_server_register_completion_queue(f->server, f->cq, NULL);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr.get(), server_creds));
+  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr.c_str(), server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
 }

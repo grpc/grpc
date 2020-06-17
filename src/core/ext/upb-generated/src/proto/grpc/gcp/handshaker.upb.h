@@ -186,53 +186,54 @@ UPB_INLINE char *grpc_gcp_StartClientHandshakeReq_serialize(const grpc_gcp_Start
 }
 
 UPB_INLINE int32_t grpc_gcp_StartClientHandshakeReq_handshake_security_protocol(const grpc_gcp_StartClientHandshakeReq *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
-UPB_INLINE upb_strview const* grpc_gcp_StartClientHandshakeReq_application_protocols(const grpc_gcp_StartClientHandshakeReq *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(32, 56), len); }
-UPB_INLINE upb_strview const* grpc_gcp_StartClientHandshakeReq_record_protocols(const grpc_gcp_StartClientHandshakeReq *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(36, 64), len); }
-UPB_INLINE const grpc_gcp_Identity* const* grpc_gcp_StartClientHandshakeReq_target_identities(const grpc_gcp_StartClientHandshakeReq *msg, size_t *len) { return (const grpc_gcp_Identity* const*)_upb_array_accessor(msg, UPB_SIZE(40, 72), len); }
-UPB_INLINE const grpc_gcp_Identity* grpc_gcp_StartClientHandshakeReq_local_identity(const grpc_gcp_StartClientHandshakeReq *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Identity*, UPB_SIZE(16, 24)); }
-UPB_INLINE const grpc_gcp_Endpoint* grpc_gcp_StartClientHandshakeReq_local_endpoint(const grpc_gcp_StartClientHandshakeReq *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Endpoint*, UPB_SIZE(20, 32)); }
-UPB_INLINE const grpc_gcp_Endpoint* grpc_gcp_StartClientHandshakeReq_remote_endpoint(const grpc_gcp_StartClientHandshakeReq *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Endpoint*, UPB_SIZE(24, 40)); }
-UPB_INLINE upb_strview grpc_gcp_StartClientHandshakeReq_target_name(const grpc_gcp_StartClientHandshakeReq *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 8)); }
-UPB_INLINE const struct grpc_gcp_RpcProtocolVersions* grpc_gcp_StartClientHandshakeReq_rpc_versions(const grpc_gcp_StartClientHandshakeReq *msg) { return UPB_FIELD_AT(msg, const struct grpc_gcp_RpcProtocolVersions*, UPB_SIZE(28, 48)); }
+UPB_INLINE upb_strview const* grpc_gcp_StartClientHandshakeReq_application_protocols(const grpc_gcp_StartClientHandshakeReq *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(36, 64), len); }
+UPB_INLINE upb_strview const* grpc_gcp_StartClientHandshakeReq_record_protocols(const grpc_gcp_StartClientHandshakeReq *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(40, 72), len); }
+UPB_INLINE const grpc_gcp_Identity* const* grpc_gcp_StartClientHandshakeReq_target_identities(const grpc_gcp_StartClientHandshakeReq *msg, size_t *len) { return (const grpc_gcp_Identity* const*)_upb_array_accessor(msg, UPB_SIZE(44, 80), len); }
+UPB_INLINE const grpc_gcp_Identity* grpc_gcp_StartClientHandshakeReq_local_identity(const grpc_gcp_StartClientHandshakeReq *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Identity*, UPB_SIZE(20, 32)); }
+UPB_INLINE const grpc_gcp_Endpoint* grpc_gcp_StartClientHandshakeReq_local_endpoint(const grpc_gcp_StartClientHandshakeReq *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Endpoint*, UPB_SIZE(24, 40)); }
+UPB_INLINE const grpc_gcp_Endpoint* grpc_gcp_StartClientHandshakeReq_remote_endpoint(const grpc_gcp_StartClientHandshakeReq *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Endpoint*, UPB_SIZE(28, 48)); }
+UPB_INLINE upb_strview grpc_gcp_StartClientHandshakeReq_target_name(const grpc_gcp_StartClientHandshakeReq *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 16)); }
+UPB_INLINE const struct grpc_gcp_RpcProtocolVersions* grpc_gcp_StartClientHandshakeReq_rpc_versions(const grpc_gcp_StartClientHandshakeReq *msg) { return UPB_FIELD_AT(msg, const struct grpc_gcp_RpcProtocolVersions*, UPB_SIZE(32, 56)); }
+UPB_INLINE uint32_t grpc_gcp_StartClientHandshakeReq_max_frame_size(const grpc_gcp_StartClientHandshakeReq *msg) { return UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(8, 8)); }
 
 UPB_INLINE void grpc_gcp_StartClientHandshakeReq_set_handshake_security_protocol(grpc_gcp_StartClientHandshakeReq *msg, int32_t value) {
   UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
 }
 UPB_INLINE upb_strview* grpc_gcp_StartClientHandshakeReq_mutable_application_protocols(grpc_gcp_StartClientHandshakeReq *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 56), len);
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(36, 64), len);
 }
 UPB_INLINE upb_strview* grpc_gcp_StartClientHandshakeReq_resize_application_protocols(grpc_gcp_StartClientHandshakeReq *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(32, 56), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(36, 64), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool grpc_gcp_StartClientHandshakeReq_add_application_protocols(grpc_gcp_StartClientHandshakeReq *msg, upb_strview val, upb_arena *arena) {
   return _upb_array_append_accessor(
-      msg, UPB_SIZE(32, 56), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+      msg, UPB_SIZE(36, 64), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
 }
 UPB_INLINE upb_strview* grpc_gcp_StartClientHandshakeReq_mutable_record_protocols(grpc_gcp_StartClientHandshakeReq *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(36, 64), len);
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(40, 72), len);
 }
 UPB_INLINE upb_strview* grpc_gcp_StartClientHandshakeReq_resize_record_protocols(grpc_gcp_StartClientHandshakeReq *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(36, 64), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(40, 72), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool grpc_gcp_StartClientHandshakeReq_add_record_protocols(grpc_gcp_StartClientHandshakeReq *msg, upb_strview val, upb_arena *arena) {
   return _upb_array_append_accessor(
-      msg, UPB_SIZE(36, 64), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+      msg, UPB_SIZE(40, 72), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
 }
 UPB_INLINE grpc_gcp_Identity** grpc_gcp_StartClientHandshakeReq_mutable_target_identities(grpc_gcp_StartClientHandshakeReq *msg, size_t *len) {
-  return (grpc_gcp_Identity**)_upb_array_mutable_accessor(msg, UPB_SIZE(40, 72), len);
+  return (grpc_gcp_Identity**)_upb_array_mutable_accessor(msg, UPB_SIZE(44, 80), len);
 }
 UPB_INLINE grpc_gcp_Identity** grpc_gcp_StartClientHandshakeReq_resize_target_identities(grpc_gcp_StartClientHandshakeReq *msg, size_t len, upb_arena *arena) {
-  return (grpc_gcp_Identity**)_upb_array_resize_accessor(msg, UPB_SIZE(40, 72), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (grpc_gcp_Identity**)_upb_array_resize_accessor(msg, UPB_SIZE(44, 80), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct grpc_gcp_Identity* grpc_gcp_StartClientHandshakeReq_add_target_identities(grpc_gcp_StartClientHandshakeReq *msg, upb_arena *arena) {
   struct grpc_gcp_Identity* sub = (struct grpc_gcp_Identity*)upb_msg_new(&grpc_gcp_Identity_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(40, 72), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(44, 80), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
 UPB_INLINE void grpc_gcp_StartClientHandshakeReq_set_local_identity(grpc_gcp_StartClientHandshakeReq *msg, grpc_gcp_Identity* value) {
-  UPB_FIELD_AT(msg, grpc_gcp_Identity*, UPB_SIZE(16, 24)) = value;
+  UPB_FIELD_AT(msg, grpc_gcp_Identity*, UPB_SIZE(20, 32)) = value;
 }
 UPB_INLINE struct grpc_gcp_Identity* grpc_gcp_StartClientHandshakeReq_mutable_local_identity(grpc_gcp_StartClientHandshakeReq *msg, upb_arena *arena) {
   struct grpc_gcp_Identity* sub = (struct grpc_gcp_Identity*)grpc_gcp_StartClientHandshakeReq_local_identity(msg);
@@ -244,7 +245,7 @@ UPB_INLINE struct grpc_gcp_Identity* grpc_gcp_StartClientHandshakeReq_mutable_lo
   return sub;
 }
 UPB_INLINE void grpc_gcp_StartClientHandshakeReq_set_local_endpoint(grpc_gcp_StartClientHandshakeReq *msg, grpc_gcp_Endpoint* value) {
-  UPB_FIELD_AT(msg, grpc_gcp_Endpoint*, UPB_SIZE(20, 32)) = value;
+  UPB_FIELD_AT(msg, grpc_gcp_Endpoint*, UPB_SIZE(24, 40)) = value;
 }
 UPB_INLINE struct grpc_gcp_Endpoint* grpc_gcp_StartClientHandshakeReq_mutable_local_endpoint(grpc_gcp_StartClientHandshakeReq *msg, upb_arena *arena) {
   struct grpc_gcp_Endpoint* sub = (struct grpc_gcp_Endpoint*)grpc_gcp_StartClientHandshakeReq_local_endpoint(msg);
@@ -256,7 +257,7 @@ UPB_INLINE struct grpc_gcp_Endpoint* grpc_gcp_StartClientHandshakeReq_mutable_lo
   return sub;
 }
 UPB_INLINE void grpc_gcp_StartClientHandshakeReq_set_remote_endpoint(grpc_gcp_StartClientHandshakeReq *msg, grpc_gcp_Endpoint* value) {
-  UPB_FIELD_AT(msg, grpc_gcp_Endpoint*, UPB_SIZE(24, 40)) = value;
+  UPB_FIELD_AT(msg, grpc_gcp_Endpoint*, UPB_SIZE(28, 48)) = value;
 }
 UPB_INLINE struct grpc_gcp_Endpoint* grpc_gcp_StartClientHandshakeReq_mutable_remote_endpoint(grpc_gcp_StartClientHandshakeReq *msg, upb_arena *arena) {
   struct grpc_gcp_Endpoint* sub = (struct grpc_gcp_Endpoint*)grpc_gcp_StartClientHandshakeReq_remote_endpoint(msg);
@@ -268,10 +269,10 @@ UPB_INLINE struct grpc_gcp_Endpoint* grpc_gcp_StartClientHandshakeReq_mutable_re
   return sub;
 }
 UPB_INLINE void grpc_gcp_StartClientHandshakeReq_set_target_name(grpc_gcp_StartClientHandshakeReq *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 8)) = value;
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 16)) = value;
 }
 UPB_INLINE void grpc_gcp_StartClientHandshakeReq_set_rpc_versions(grpc_gcp_StartClientHandshakeReq *msg, struct grpc_gcp_RpcProtocolVersions* value) {
-  UPB_FIELD_AT(msg, struct grpc_gcp_RpcProtocolVersions*, UPB_SIZE(28, 48)) = value;
+  UPB_FIELD_AT(msg, struct grpc_gcp_RpcProtocolVersions*, UPB_SIZE(32, 56)) = value;
 }
 UPB_INLINE struct grpc_gcp_RpcProtocolVersions* grpc_gcp_StartClientHandshakeReq_mutable_rpc_versions(grpc_gcp_StartClientHandshakeReq *msg, upb_arena *arena) {
   struct grpc_gcp_RpcProtocolVersions* sub = (struct grpc_gcp_RpcProtocolVersions*)grpc_gcp_StartClientHandshakeReq_rpc_versions(msg);
@@ -281,6 +282,9 @@ UPB_INLINE struct grpc_gcp_RpcProtocolVersions* grpc_gcp_StartClientHandshakeReq
     grpc_gcp_StartClientHandshakeReq_set_rpc_versions(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void grpc_gcp_StartClientHandshakeReq_set_max_frame_size(grpc_gcp_StartClientHandshakeReq *msg, uint32_t value) {
+  UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(8, 8)) = value;
 }
 
 /* grpc.gcp.ServerHandshakeParameters */
@@ -338,41 +342,42 @@ UPB_INLINE char *grpc_gcp_StartServerHandshakeReq_serialize(const grpc_gcp_Start
   return upb_encode(msg, &grpc_gcp_StartServerHandshakeReq_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview const* grpc_gcp_StartServerHandshakeReq_application_protocols(const grpc_gcp_StartServerHandshakeReq *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(20, 40), len); }
-UPB_INLINE const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* const* grpc_gcp_StartServerHandshakeReq_handshake_parameters(const grpc_gcp_StartServerHandshakeReq *msg, size_t *len) { return (const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* const*)_upb_array_accessor(msg, UPB_SIZE(24, 48), len); }
-UPB_INLINE upb_strview grpc_gcp_StartServerHandshakeReq_in_bytes(const grpc_gcp_StartServerHandshakeReq *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
-UPB_INLINE const grpc_gcp_Endpoint* grpc_gcp_StartServerHandshakeReq_local_endpoint(const grpc_gcp_StartServerHandshakeReq *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Endpoint*, UPB_SIZE(8, 16)); }
-UPB_INLINE const grpc_gcp_Endpoint* grpc_gcp_StartServerHandshakeReq_remote_endpoint(const grpc_gcp_StartServerHandshakeReq *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Endpoint*, UPB_SIZE(12, 24)); }
-UPB_INLINE const struct grpc_gcp_RpcProtocolVersions* grpc_gcp_StartServerHandshakeReq_rpc_versions(const grpc_gcp_StartServerHandshakeReq *msg) { return UPB_FIELD_AT(msg, const struct grpc_gcp_RpcProtocolVersions*, UPB_SIZE(16, 32)); }
+UPB_INLINE upb_strview const* grpc_gcp_StartServerHandshakeReq_application_protocols(const grpc_gcp_StartServerHandshakeReq *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(24, 48), len); }
+UPB_INLINE const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* const* grpc_gcp_StartServerHandshakeReq_handshake_parameters(const grpc_gcp_StartServerHandshakeReq *msg, size_t *len) { return (const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* const*)_upb_array_accessor(msg, UPB_SIZE(28, 56), len); }
+UPB_INLINE upb_strview grpc_gcp_StartServerHandshakeReq_in_bytes(const grpc_gcp_StartServerHandshakeReq *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)); }
+UPB_INLINE const grpc_gcp_Endpoint* grpc_gcp_StartServerHandshakeReq_local_endpoint(const grpc_gcp_StartServerHandshakeReq *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Endpoint*, UPB_SIZE(12, 24)); }
+UPB_INLINE const grpc_gcp_Endpoint* grpc_gcp_StartServerHandshakeReq_remote_endpoint(const grpc_gcp_StartServerHandshakeReq *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Endpoint*, UPB_SIZE(16, 32)); }
+UPB_INLINE const struct grpc_gcp_RpcProtocolVersions* grpc_gcp_StartServerHandshakeReq_rpc_versions(const grpc_gcp_StartServerHandshakeReq *msg) { return UPB_FIELD_AT(msg, const struct grpc_gcp_RpcProtocolVersions*, UPB_SIZE(20, 40)); }
+UPB_INLINE uint32_t grpc_gcp_StartServerHandshakeReq_max_frame_size(const grpc_gcp_StartServerHandshakeReq *msg) { return UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)); }
 
 UPB_INLINE upb_strview* grpc_gcp_StartServerHandshakeReq_mutable_application_protocols(grpc_gcp_StartServerHandshakeReq *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(20, 40), len);
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 48), len);
 }
 UPB_INLINE upb_strview* grpc_gcp_StartServerHandshakeReq_resize_application_protocols(grpc_gcp_StartServerHandshakeReq *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(20, 40), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(24, 48), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool grpc_gcp_StartServerHandshakeReq_add_application_protocols(grpc_gcp_StartServerHandshakeReq *msg, upb_strview val, upb_arena *arena) {
   return _upb_array_append_accessor(
-      msg, UPB_SIZE(20, 40), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+      msg, UPB_SIZE(24, 48), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
 }
 UPB_INLINE grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry** grpc_gcp_StartServerHandshakeReq_mutable_handshake_parameters(grpc_gcp_StartServerHandshakeReq *msg, size_t *len) {
-  return (grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry**)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 48), len);
+  return (grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry**)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 56), len);
 }
 UPB_INLINE grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry** grpc_gcp_StartServerHandshakeReq_resize_handshake_parameters(grpc_gcp_StartServerHandshakeReq *msg, size_t len, upb_arena *arena) {
-  return (grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry**)_upb_array_resize_accessor(msg, UPB_SIZE(24, 48), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry**)_upb_array_resize_accessor(msg, UPB_SIZE(28, 56), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* grpc_gcp_StartServerHandshakeReq_add_handshake_parameters(grpc_gcp_StartServerHandshakeReq *msg, upb_arena *arena) {
   struct grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* sub = (struct grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry*)upb_msg_new(&grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(24, 48), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(28, 56), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
 UPB_INLINE void grpc_gcp_StartServerHandshakeReq_set_in_bytes(grpc_gcp_StartServerHandshakeReq *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)) = value;
 }
 UPB_INLINE void grpc_gcp_StartServerHandshakeReq_set_local_endpoint(grpc_gcp_StartServerHandshakeReq *msg, grpc_gcp_Endpoint* value) {
-  UPB_FIELD_AT(msg, grpc_gcp_Endpoint*, UPB_SIZE(8, 16)) = value;
+  UPB_FIELD_AT(msg, grpc_gcp_Endpoint*, UPB_SIZE(12, 24)) = value;
 }
 UPB_INLINE struct grpc_gcp_Endpoint* grpc_gcp_StartServerHandshakeReq_mutable_local_endpoint(grpc_gcp_StartServerHandshakeReq *msg, upb_arena *arena) {
   struct grpc_gcp_Endpoint* sub = (struct grpc_gcp_Endpoint*)grpc_gcp_StartServerHandshakeReq_local_endpoint(msg);
@@ -384,7 +389,7 @@ UPB_INLINE struct grpc_gcp_Endpoint* grpc_gcp_StartServerHandshakeReq_mutable_lo
   return sub;
 }
 UPB_INLINE void grpc_gcp_StartServerHandshakeReq_set_remote_endpoint(grpc_gcp_StartServerHandshakeReq *msg, grpc_gcp_Endpoint* value) {
-  UPB_FIELD_AT(msg, grpc_gcp_Endpoint*, UPB_SIZE(12, 24)) = value;
+  UPB_FIELD_AT(msg, grpc_gcp_Endpoint*, UPB_SIZE(16, 32)) = value;
 }
 UPB_INLINE struct grpc_gcp_Endpoint* grpc_gcp_StartServerHandshakeReq_mutable_remote_endpoint(grpc_gcp_StartServerHandshakeReq *msg, upb_arena *arena) {
   struct grpc_gcp_Endpoint* sub = (struct grpc_gcp_Endpoint*)grpc_gcp_StartServerHandshakeReq_remote_endpoint(msg);
@@ -396,7 +401,7 @@ UPB_INLINE struct grpc_gcp_Endpoint* grpc_gcp_StartServerHandshakeReq_mutable_re
   return sub;
 }
 UPB_INLINE void grpc_gcp_StartServerHandshakeReq_set_rpc_versions(grpc_gcp_StartServerHandshakeReq *msg, struct grpc_gcp_RpcProtocolVersions* value) {
-  UPB_FIELD_AT(msg, struct grpc_gcp_RpcProtocolVersions*, UPB_SIZE(16, 32)) = value;
+  UPB_FIELD_AT(msg, struct grpc_gcp_RpcProtocolVersions*, UPB_SIZE(20, 40)) = value;
 }
 UPB_INLINE struct grpc_gcp_RpcProtocolVersions* grpc_gcp_StartServerHandshakeReq_mutable_rpc_versions(grpc_gcp_StartServerHandshakeReq *msg, upb_arena *arena) {
   struct grpc_gcp_RpcProtocolVersions* sub = (struct grpc_gcp_RpcProtocolVersions*)grpc_gcp_StartServerHandshakeReq_rpc_versions(msg);
@@ -406,6 +411,9 @@ UPB_INLINE struct grpc_gcp_RpcProtocolVersions* grpc_gcp_StartServerHandshakeReq
     grpc_gcp_StartServerHandshakeReq_set_rpc_versions(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void grpc_gcp_StartServerHandshakeReq_set_max_frame_size(grpc_gcp_StartServerHandshakeReq *msg, uint32_t value) {
+  UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)) = value;
 }
 
 /* grpc.gcp.StartServerHandshakeReq.HandshakeParametersEntry */
@@ -541,25 +549,26 @@ UPB_INLINE char *grpc_gcp_HandshakerResult_serialize(const grpc_gcp_HandshakerRe
   return upb_encode(msg, &grpc_gcp_HandshakerResult_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview grpc_gcp_HandshakerResult_application_protocol(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)); }
-UPB_INLINE upb_strview grpc_gcp_HandshakerResult_record_protocol(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 24)); }
-UPB_INLINE upb_strview grpc_gcp_HandshakerResult_key_data(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(20, 40)); }
-UPB_INLINE const grpc_gcp_Identity* grpc_gcp_HandshakerResult_peer_identity(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Identity*, UPB_SIZE(28, 56)); }
-UPB_INLINE const grpc_gcp_Identity* grpc_gcp_HandshakerResult_local_identity(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Identity*, UPB_SIZE(32, 64)); }
-UPB_INLINE bool grpc_gcp_HandshakerResult_keep_channel_open(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct grpc_gcp_RpcProtocolVersions* grpc_gcp_HandshakerResult_peer_rpc_versions(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, const struct grpc_gcp_RpcProtocolVersions*, UPB_SIZE(36, 72)); }
+UPB_INLINE upb_strview grpc_gcp_HandshakerResult_application_protocol(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 8)); }
+UPB_INLINE upb_strview grpc_gcp_HandshakerResult_record_protocol(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 24)); }
+UPB_INLINE upb_strview grpc_gcp_HandshakerResult_key_data(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(24, 40)); }
+UPB_INLINE const grpc_gcp_Identity* grpc_gcp_HandshakerResult_peer_identity(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Identity*, UPB_SIZE(32, 56)); }
+UPB_INLINE const grpc_gcp_Identity* grpc_gcp_HandshakerResult_local_identity(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, const grpc_gcp_Identity*, UPB_SIZE(36, 64)); }
+UPB_INLINE bool grpc_gcp_HandshakerResult_keep_channel_open(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(4, 4)); }
+UPB_INLINE const struct grpc_gcp_RpcProtocolVersions* grpc_gcp_HandshakerResult_peer_rpc_versions(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, const struct grpc_gcp_RpcProtocolVersions*, UPB_SIZE(40, 72)); }
+UPB_INLINE uint32_t grpc_gcp_HandshakerResult_max_frame_size(const grpc_gcp_HandshakerResult *msg) { return UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)); }
 
 UPB_INLINE void grpc_gcp_HandshakerResult_set_application_protocol(grpc_gcp_HandshakerResult *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)) = value;
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 8)) = value;
 }
 UPB_INLINE void grpc_gcp_HandshakerResult_set_record_protocol(grpc_gcp_HandshakerResult *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 24)) = value;
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 24)) = value;
 }
 UPB_INLINE void grpc_gcp_HandshakerResult_set_key_data(grpc_gcp_HandshakerResult *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(20, 40)) = value;
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(24, 40)) = value;
 }
 UPB_INLINE void grpc_gcp_HandshakerResult_set_peer_identity(grpc_gcp_HandshakerResult *msg, grpc_gcp_Identity* value) {
-  UPB_FIELD_AT(msg, grpc_gcp_Identity*, UPB_SIZE(28, 56)) = value;
+  UPB_FIELD_AT(msg, grpc_gcp_Identity*, UPB_SIZE(32, 56)) = value;
 }
 UPB_INLINE struct grpc_gcp_Identity* grpc_gcp_HandshakerResult_mutable_peer_identity(grpc_gcp_HandshakerResult *msg, upb_arena *arena) {
   struct grpc_gcp_Identity* sub = (struct grpc_gcp_Identity*)grpc_gcp_HandshakerResult_peer_identity(msg);
@@ -571,7 +580,7 @@ UPB_INLINE struct grpc_gcp_Identity* grpc_gcp_HandshakerResult_mutable_peer_iden
   return sub;
 }
 UPB_INLINE void grpc_gcp_HandshakerResult_set_local_identity(grpc_gcp_HandshakerResult *msg, grpc_gcp_Identity* value) {
-  UPB_FIELD_AT(msg, grpc_gcp_Identity*, UPB_SIZE(32, 64)) = value;
+  UPB_FIELD_AT(msg, grpc_gcp_Identity*, UPB_SIZE(36, 64)) = value;
 }
 UPB_INLINE struct grpc_gcp_Identity* grpc_gcp_HandshakerResult_mutable_local_identity(grpc_gcp_HandshakerResult *msg, upb_arena *arena) {
   struct grpc_gcp_Identity* sub = (struct grpc_gcp_Identity*)grpc_gcp_HandshakerResult_local_identity(msg);
@@ -583,10 +592,10 @@ UPB_INLINE struct grpc_gcp_Identity* grpc_gcp_HandshakerResult_mutable_local_ide
   return sub;
 }
 UPB_INLINE void grpc_gcp_HandshakerResult_set_keep_channel_open(grpc_gcp_HandshakerResult *msg, bool value) {
-  UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)) = value;
+  UPB_FIELD_AT(msg, bool, UPB_SIZE(4, 4)) = value;
 }
 UPB_INLINE void grpc_gcp_HandshakerResult_set_peer_rpc_versions(grpc_gcp_HandshakerResult *msg, struct grpc_gcp_RpcProtocolVersions* value) {
-  UPB_FIELD_AT(msg, struct grpc_gcp_RpcProtocolVersions*, UPB_SIZE(36, 72)) = value;
+  UPB_FIELD_AT(msg, struct grpc_gcp_RpcProtocolVersions*, UPB_SIZE(40, 72)) = value;
 }
 UPB_INLINE struct grpc_gcp_RpcProtocolVersions* grpc_gcp_HandshakerResult_mutable_peer_rpc_versions(grpc_gcp_HandshakerResult *msg, upb_arena *arena) {
   struct grpc_gcp_RpcProtocolVersions* sub = (struct grpc_gcp_RpcProtocolVersions*)grpc_gcp_HandshakerResult_peer_rpc_versions(msg);
@@ -596,6 +605,9 @@ UPB_INLINE struct grpc_gcp_RpcProtocolVersions* grpc_gcp_HandshakerResult_mutabl
     grpc_gcp_HandshakerResult_set_peer_rpc_versions(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void grpc_gcp_HandshakerResult_set_max_frame_size(grpc_gcp_HandshakerResult *msg, uint32_t value) {
+  UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)) = value;
 }
 
 /* grpc.gcp.HandshakerStatus */

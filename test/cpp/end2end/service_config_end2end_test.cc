@@ -245,10 +245,9 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
   std::shared_ptr<Channel> BuildChannelWithInvalidDefaultServiceConfig() {
     ChannelArguments args;
-    EXPECT_THAT(
-        grpc::experimental::ValidateServiceConfigJSON(
-            InvalidDefaultServiceConfig()),
-        ::testing::HasSubstr("failed to parse JSON for service config"));
+    EXPECT_THAT(grpc::experimental::ValidateServiceConfigJSON(
+                    InvalidDefaultServiceConfig()),
+                ::testing::HasSubstr("JSON parse error"));
     args.SetServiceConfigJSON(InvalidDefaultServiceConfig());
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());

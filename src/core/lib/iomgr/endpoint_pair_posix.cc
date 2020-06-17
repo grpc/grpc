@@ -20,7 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"

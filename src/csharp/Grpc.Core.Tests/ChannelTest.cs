@@ -113,5 +113,15 @@ namespace Grpc.Core.Tests
             Assert.Throws(typeof(ObjectDisposedException), () => { var x = channel.ResolvedTarget; });
             Assert.ThrowsAsync(typeof(TaskCanceledException), async () => await channel.ConnectAsync());
         }
+
+        [Test]
+        public async Task ChannelBaseShutdownAsyncInvokesShutdownAsync()
+        {
+            var channel = new Channel("localhost", ChannelCredentials.Insecure);
+            ChannelBase channelBase = channel;
+            await channelBase.ShutdownAsync();
+            // check that Channel.ShutdownAsync has run
+            Assert.AreEqual(ChannelState.Shutdown, channel.State);
+        }
     }
 }

@@ -16,7 +16,7 @@
 set -ex
 
 # clang format command
-CLANG_TIDY=${CLANG_TIDY:-clang-tidy-5.0}
+CLANG_TIDY=${CLANG_TIDY:-clang-tidy}
 
 cd ${CLANG_TIDY_ROOT}
 

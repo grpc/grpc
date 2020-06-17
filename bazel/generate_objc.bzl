@@ -1,3 +1,4 @@
+load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
     "//bazel:protobuf.bzl",
     "get_include_directory",

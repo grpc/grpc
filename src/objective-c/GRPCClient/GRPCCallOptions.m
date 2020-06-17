@@ -178,10 +178,10 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
     _interceptorFactories = interceptorFactories;
     _oauth2AccessToken = [oauth2AccessToken copy];
     _authTokenProvider = authTokenProvider;
-    _initialMetadata =
-        initialMetadata == nil
-            ? nil
-            : [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
+    _initialMetadata = initialMetadata == nil
+                           ? nil
+                           : [[NSDictionary alloc] initWithDictionary:initialMetadata
+                                                            copyItems:YES];
     _userAgentPrefix = [userAgentPrefix copy];
     _responseSizeLimit = responseSizeLimit;
     _compressionAlgorithm = compressionAlgorithm;
@@ -191,10 +191,10 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
     _connectMinTimeout = connectMinTimeout < 0 ? 0 : connectMinTimeout;
     _connectInitialBackoff = connectInitialBackoff < 0 ? 0 : connectInitialBackoff;
     _connectMaxBackoff = connectMaxBackoff < 0 ? 0 : connectMaxBackoff;
-    _additionalChannelArgs =
-        additionalChannelArgs == nil
-            ? nil
-            : [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
+    _additionalChannelArgs = additionalChannelArgs == nil
+                                 ? nil
+                                 : [[NSDictionary alloc] initWithDictionary:additionalChannelArgs
+                                                                  copyItems:YES];
     _PEMRootCertificates = [PEMRootCertificates copy];
     _PEMPrivateKey = [PEMPrivateKey copy];
     _PEMCertificateChain = [PEMCertificateChain copy];
@@ -533,8 +533,8 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 }
 
 - (void)setAdditionalChannelArgs:(NSDictionary *)additionalChannelArgs {
-  _additionalChannelArgs =
-      [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
+  _additionalChannelArgs = [[NSDictionary alloc] initWithDictionary:additionalChannelArgs
+                                                          copyItems:YES];
 }
 
 - (void)setPEMRootCertificates:(NSString *)PEMRootCertificates {

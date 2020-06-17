@@ -20,17 +20,29 @@ class HistogramParams extends \Google\Protobuf\Internal\Message
      *
      * Generated from protobuf field <code>double resolution = 1;</code>
      */
-    private $resolution = 0.0;
+    protected $resolution = 0.0;
     /**
      * use enough buckets to allow this value
      *
      * Generated from protobuf field <code>double max_possible = 2;</code>
      */
-    private $max_possible = 0.0;
+    protected $max_possible = 0.0;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type float $resolution
+     *           first bucket is [0, 1 + resolution)
+     *     @type float $max_possible
+     *           use enough buckets to allow this value
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Stats::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

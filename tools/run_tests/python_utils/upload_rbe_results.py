@@ -37,6 +37,7 @@ _RESULTS_SCHEMA = [
     ('build_id', 'INTEGER', 'Build ID of Kokoro job'),
     ('build_url', 'STRING', 'URL of Kokoro build'),
     ('test_target', 'STRING', 'Bazel target path'),
+    ('test_class_name', 'STRING', 'Name of test class'),
     ('test_case', 'STRING', 'Name of test case'),
     ('result', 'STRING', 'Test or build result'),
     ('timestamp', 'TIMESTAMP', 'Timestamp of test run'),
@@ -84,15 +85,14 @@ def _upload_results_to_bq(rows):
       rows: A list of dictionaries containing data for each row to insert
   """
     bq = big_query_utils.create_big_query()
-    big_query_utils.create_partitioned_table(
-        bq,
-        _PROJECT_ID,
-        _DATASET_ID,
-        _TABLE_ID,
-        _RESULTS_SCHEMA,
-        _DESCRIPTION,
-        partition_type=_PARTITION_TYPE,
-        expiration_ms=_EXPIRATION_MS)
+    big_query_utils.create_partitioned_table(bq,
+                                             _PROJECT_ID,
+                                             _DATASET_ID,
+                                             _TABLE_ID,
+                                             _RESULTS_SCHEMA,
+                                             _DESCRIPTION,
+                                             partition_type=_PARTITION_TYPE,
+                                             expiration_ms=_EXPIRATION_MS)
 
     max_retries = 3
     for attempt in range(max_retries):
@@ -124,9 +124,7 @@ def _get_resultstore_data(api_key, invocation_id):
             url=
             'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s&fields=next_page_token,actions.id,actions.status_attributes,actions.timing,actions.test_action'
             % (invocation_id, api_key, page_token),
-            headers={
-                'Content-Type': 'application/json'
-            })
+            headers={'Content-Type': 'application/json'})
         results = json.loads(urllib2.urlopen(req).read())
         all_actions.extend(results['actions'])
         if 'nextPageToken' not in results:
@@ -137,14 +135,41 @@ def _get_resultstore_data(api_key, invocation_id):
 
 if __name__ == "__main__":
     # Arguments are necessary if running in a non-Kokoro environment.
-    argp = argparse.ArgumentParser(description='Upload RBE results.')
-    argp.add_argument('--api_key', default='', type=str)
-    argp.add_argument('--invocation_id', default='', type=str)
+    argp = argparse.ArgumentParser(
+        description=
+        'Fetches results for given RBE invocation and uploads them to BigQuery table.'
+    )
+    argp.add_argument('--api_key',
+                      default='',
+                      type=str,
+                      help='The API key to read from ResultStore API')
+    argp.add_argument('--invocation_id',
+                      default='',
+                      type=str,
+                      help='UUID of bazel invocation to fetch.')
+    argp.add_argument('--bq_dump_file',
+                      default=None,
+                      type=str,
+                      help='Dump JSON data to file just before uploading')
+    argp.add_argument('--resultstore_dump_file',
+                      default=None,
+                      type=str,
+                      help='Dump JSON data as received from ResultStore API')
+    argp.add_argument('--skip_upload',
+                      default=False,
+                      action='store_const',
+                      const=True,
+                      help='Skip uploading to bigquery')
     args = argp.parse_args()
 
     api_key = args.api_key or _get_api_key()
     invocation_id = args.invocation_id or _get_invocation_id()
     resultstore_actions = _get_resultstore_data(api_key, invocation_id)
+
+    if args.resultstore_dump_file:
+        with open(args.resultstore_dump_file, 'w') as f:
+            json.dump(resultstore_actions, f, indent=4, sort_keys=True)
+        print('Dumped resultstore data to file %s' % args.resultstore_dump_file)
 
     # google.devtools.resultstore.v2.Action schema:
     # https://github.com/googleapis/googleapis/blob/master/google/devtools/resultstore/v2/action.proto
@@ -185,15 +210,16 @@ if __name__ == "__main__":
             # a close approximation.
             action['timing'] = {
                 'startTime':
-                resultstore_actions[index - 1]['timing']['startTime']
+                    resultstore_actions[index - 1]['timing']['startTime']
             }
         elif 'testSuite' not in action['testAction']:
             continue
         elif 'tests' not in action['testAction']['testSuite']:
             continue
         else:
-            test_cases = action['testAction']['testSuite']['tests'][0][
-                'testSuite']['tests']
+            test_cases = []
+            for tests_item in action['testAction']['testSuite']['tests']:
+                test_cases += tests_item['testSuite']['tests']
         for test_case in test_cases:
             if any(s in test_case['testCase'] for s in ['errors', 'failures']):
                 result = 'FAILED'
@@ -208,22 +234,24 @@ if __name__ == "__main__":
                     'insertId': str(uuid.uuid4()),
                     'json': {
                         'job_name':
-                        os.getenv('KOKORO_JOB_NAME'),
+                            os.getenv('KOKORO_JOB_NAME'),
                         'build_id':
-                        os.getenv('KOKORO_BUILD_NUMBER'),
+                            os.getenv('KOKORO_BUILD_NUMBER'),
                         'build_url':
-                        'https://source.cloud.google.com/results/invocations/%s'
-                        % invocation_id,
+                            'https://source.cloud.google.com/results/invocations/%s'
+                            % invocation_id,
                         'test_target':
-                        action['id']['targetId'],
+                            action['id']['targetId'],
+                        'test_class_name':
+                            test_case['testCase'].get('className', ''),
                         'test_case':
-                        test_case['testCase']['caseName'],
+                            test_case['testCase']['caseName'],
                         'result':
-                        result,
+                            result,
                         'timestamp':
-                        action['timing']['startTime'],
+                            action['timing']['startTime'],
                         'duration':
-                        _parse_test_duration(action['timing']['duration']),
+                            _parse_test_duration(action['timing']['duration']),
                     }
                 })
             except Exception as e:
@@ -233,23 +261,33 @@ if __name__ == "__main__":
                     'insertId': str(uuid.uuid4()),
                     'json': {
                         'job_name':
-                        os.getenv('KOKORO_JOB_NAME'),
+                            os.getenv('KOKORO_JOB_NAME'),
                         'build_id':
-                        os.getenv('KOKORO_BUILD_NUMBER'),
+                            os.getenv('KOKORO_BUILD_NUMBER'),
                         'build_url':
-                        'https://source.cloud.google.com/results/invocations/%s'
-                        % invocation_id,
+                            'https://source.cloud.google.com/results/invocations/%s'
+                            % invocation_id,
                         'test_target':
-                        action['id']['targetId'],
+                            action['id']['targetId'],
+                        'test_class_name':
+                            'N/A',
                         'test_case':
-                        'N/A',
+                            'N/A',
                         'result':
-                        'UNPARSEABLE',
+                            'UNPARSEABLE',
                         'timestamp':
-                        'N/A',
+                            'N/A',
                     }
                 })
 
-    # BigQuery sometimes fails with large uploads, so batch 1,000 rows at a time.
-    for i in range((len(bq_rows) / 1000) + 1):
-        _upload_results_to_bq(bq_rows[i * 1000:(i + 1) * 1000])
+    if args.bq_dump_file:
+        with open(args.bq_dump_file, 'w') as f:
+            json.dump(bq_rows, f, indent=4, sort_keys=True)
+        print('Dumped BQ data to file %s' % args.bq_dump_file)
+
+    if not args.skip_upload:
+        # BigQuery sometimes fails with large uploads, so batch 1,000 rows at a time.
+        for i in range((len(bq_rows) / 1000) + 1):
+            _upload_results_to_bq(bq_rows[i * 1000:(i + 1) * 1000])
+    else:
+        print('Skipped upload to bigquery.')

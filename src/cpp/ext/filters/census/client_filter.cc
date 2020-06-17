@@ -18,11 +18,17 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "src/cpp/ext/filters/census/client_filter.h"
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
+#include "opencensus/tags/tag_map.h"
 #include "src/core/lib/surface/call.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
@@ -152,6 +158,13 @@ void CensusClientCallData::Destroy(grpc_call_element* elem,
   const uint64_t request_size = GetOutgoingDataSize(final_info);
   const uint64_t response_size = GetIncomingDataSize(final_info);
   double latency_ms = absl::ToDoubleMilliseconds(absl::Now() - start_time_);
+  std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
+      context_.tags().tags();
+  std::string method = absl::StrCat(method_);
+  tags.emplace_back(ClientMethodTagKey(), method);
+  std::string final_status =
+      absl::StrCat(StatusCodeToString(final_info->final_status));
+  tags.emplace_back(ClientStatusTagKey(), final_status);
   ::opencensus::stats::Record(
       {{RpcClientSentBytesPerRpc(), static_cast<double>(request_size)},
        {RpcClientReceivedBytesPerRpc(), static_cast<double>(response_size)},
@@ -160,9 +173,13 @@ void CensusClientCallData::Destroy(grpc_call_element* elem,
         ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time_))},
        {RpcClientSentMessagesPerRpc(), sent_message_count_},
        {RpcClientReceivedMessagesPerRpc(), recv_message_count_}},
-      {{ClientMethodTagKey(), method_},
-       {ClientStatusTagKey(), StatusCodeToString(final_info->final_status)}});
+      tags);
   grpc_slice_unref_internal(path_);
+  if (final_info->final_status != GRPC_STATUS_OK) {
+    // TODO: Map grpc_status_code to trace::StatusCode.
+    context_.Span().SetStatus(opencensus::trace::StatusCode::UNKNOWN,
+                              StatusCodeToString(final_info->final_status));
+  }
   context_.EndSpan();
 }
 

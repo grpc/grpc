@@ -25,6 +25,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -255,6 +256,7 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

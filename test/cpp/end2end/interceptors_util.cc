@@ -66,7 +66,6 @@ void MakeServerStreamingCall(const std::shared_ptr<Channel>& channel) {
   ctx.AddMetadata("testkey", "testvalue");
   req.set_message("Hello");
   EchoResponse resp;
-  string expected_resp = "";
   auto reader = stub->ResponseStream(&ctx, req);
   int count = 0;
   while (reader->Read(&resp)) {
@@ -84,6 +83,7 @@ void MakeBidiStreamingCall(const std::shared_ptr<Channel>& channel) {
   EchoRequest req;
   EchoResponse resp;
   ctx.AddMetadata("testkey", "testvalue");
+  req.mutable_param()->set_echo_metadata(true);
   auto stream = stub->BidiStream(&ctx);
   for (auto i = 0; i < kNumStreamingMessages; i++) {
     req.set_message("Hello" + std::to_string(i));
@@ -94,6 +94,60 @@ void MakeBidiStreamingCall(const std::shared_ptr<Channel>& channel) {
   ASSERT_TRUE(stream->WritesDone());
   Status s = stream->Finish();
   EXPECT_EQ(s.ok(), true);
+}
+
+void MakeAsyncCQCall(const std::shared_ptr<Channel>& channel) {
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  CompletionQueue cq;
+  EchoRequest send_request;
+  EchoResponse recv_response;
+  Status recv_status;
+  ClientContext cli_ctx;
+
+  send_request.set_message("Hello");
+  cli_ctx.AddMetadata("testkey", "testvalue");
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
+      stub->AsyncEcho(&cli_ctx, send_request, &cq));
+  response_reader->Finish(&recv_response, &recv_status, tag(1));
+  Verifier().Expect(1, true).Verify(&cq);
+  EXPECT_EQ(send_request.message(), recv_response.message());
+  EXPECT_TRUE(recv_status.ok());
+}
+
+void MakeAsyncCQClientStreamingCall(const std::shared_ptr<Channel>& channel) {
+  // TODO(yashykt) : Fill this out
+}
+
+void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel>& channel) {
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  CompletionQueue cq;
+  EchoRequest send_request;
+  EchoResponse recv_response;
+  Status recv_status;
+  ClientContext cli_ctx;
+
+  cli_ctx.AddMetadata("testkey", "testvalue");
+  send_request.set_message("Hello");
+  std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
+      stub->AsyncResponseStream(&cli_ctx, send_request, &cq, tag(1)));
+  Verifier().Expect(1, true).Verify(&cq);
+  // Read the expected number of messages
+  for (int i = 0; i < kNumStreamingMessages; i++) {
+    cli_stream->Read(&recv_response, tag(2));
+    Verifier().Expect(2, true).Verify(&cq);
+    ASSERT_EQ(recv_response.message(), send_request.message());
+  }
+  // The next read should fail
+  cli_stream->Read(&recv_response, tag(3));
+  Verifier().Expect(3, false).Verify(&cq);
+  // Get the status
+  cli_stream->Finish(&recv_status, tag(4));
+  Verifier().Expect(4, true).Verify(&cq);
+  EXPECT_TRUE(recv_status.ok());
+}
+
+void MakeAsyncCQBidiStreamingCall(const std::shared_ptr<Channel>& channel) {
+  // TODO(yashykt) : Fill this out
 }
 
 void MakeCallbackCall(const std::shared_ptr<Channel>& channel) {
@@ -109,7 +163,6 @@ void MakeCallbackCall(const std::shared_ptr<Channel>& channel) {
   EchoResponse resp;
   stub->experimental_async()->Echo(&ctx, &req, &resp,
                                    [&resp, &mu, &done, &cv](Status s) {
-                                     // gpr_log(GPR_ERROR, "got the callback");
                                      EXPECT_EQ(s.ok(), true);
                                      EXPECT_EQ(resp.message(), "Hello");
                                      std::lock_guard<std::mutex> l(mu);

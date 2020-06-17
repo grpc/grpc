@@ -57,44 +57,28 @@ size_t GetSizeofTraceEvent() { return sizeof(ChannelTrace::TraceEvent); }
 
 namespace {
 
-grpc_json* GetJsonChild(grpc_json* parent, const char* key) {
-  EXPECT_NE(parent, nullptr);
-  for (grpc_json* child = parent->child; child != nullptr;
-       child = child->next) {
-    if (child->key != nullptr && strcmp(child->key, key) == 0) return child;
+void ValidateJsonArraySize(const Json& array, size_t expected) {
+  if (expected == 0) {
+    ASSERT_EQ(array.type(), Json::Type::JSON_NULL);
+  } else {
+    ASSERT_EQ(array.type(), Json::Type::ARRAY);
+    EXPECT_EQ(array.array_value().size(), expected);
   }
-  return nullptr;
 }
 
-void ValidateJsonArraySize(grpc_json* json, const char* key,
-                           size_t expected_size) {
-  grpc_json* arr = GetJsonChild(json, key);
-  // the events array should not be present if there are no events.
-  if (expected_size == 0) {
-    EXPECT_EQ(arr, nullptr);
-    return;
-  }
-  ASSERT_NE(arr, nullptr);
-  ASSERT_EQ(arr->type, GRPC_JSON_ARRAY);
-  size_t count = 0;
-  for (grpc_json* child = arr->child; child != nullptr; child = child->next) {
-    ++count;
-  }
-  ASSERT_EQ(count, expected_size);
-}
-
-void ValidateChannelTraceData(grpc_json* json,
+void ValidateChannelTraceData(const Json& json,
                               size_t num_events_logged_expected,
                               size_t actual_num_events_expected) {
-  ASSERT_NE(json, nullptr);
-  grpc_json* num_events_logged_json = GetJsonChild(json, "numEventsLogged");
-  ASSERT_NE(num_events_logged_json, nullptr);
-  grpc_json* start_time = GetJsonChild(json, "creationTimestamp");
-  ASSERT_NE(start_time, nullptr);
+  ASSERT_EQ(json.type(), Json::Type::OBJECT);
+  Json::Object object = json.object_value();
+  Json& num_events_logged_json = object["numEventsLogged"];
+  ASSERT_EQ(num_events_logged_json.type(), Json::Type::STRING);
   size_t num_events_logged =
-      (size_t)strtol(num_events_logged_json->value, nullptr, 0);
+      (size_t)strtol(num_events_logged_json.string_value().c_str(), nullptr, 0);
   ASSERT_EQ(num_events_logged, num_events_logged_expected);
-  ValidateJsonArraySize(json, "events", actual_num_events_expected);
+  Json& start_time_json = object["creationTimestamp"];
+  ASSERT_EQ(start_time_json.type(), Json::Type::STRING);
+  ValidateJsonArraySize(object["events"], actual_num_events_expected);
 }
 
 void AddSimpleTrace(ChannelTrace* tracer) {
@@ -105,15 +89,11 @@ void AddSimpleTrace(ChannelTrace* tracer) {
 // checks for the existence of all the required members of the tracer.
 void ValidateChannelTraceCustom(ChannelTrace* tracer, size_t num_events_logged,
                                 size_t num_events_expected) {
-  grpc_json* json = tracer->RenderJson();
-  EXPECT_NE(json, nullptr);
-  char* json_str = grpc_json_dump_to_string(json, 0);
-  grpc_json_destroy(json);
-  grpc::testing::ValidateChannelTraceProtoJsonTranslation(json_str);
-  grpc_json* parsed_json = grpc_json_parse_string(json_str);
-  ValidateChannelTraceData(parsed_json, num_events_logged, num_events_expected);
-  grpc_json_destroy(parsed_json);
-  gpr_free(json_str);
+  Json json = tracer->RenderJson();
+  ASSERT_EQ(json.type(), Json::Type::OBJECT);
+  std::string json_str = json.Dump();
+  grpc::testing::ValidateChannelTraceProtoJsonTranslation(json_str.c_str());
+  ValidateChannelTraceData(json, num_events_logged, num_events_expected);
 }
 
 void ValidateChannelTrace(ChannelTrace* tracer, size_t num_events_logged) {

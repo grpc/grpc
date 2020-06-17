@@ -27,11 +27,10 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 git_hash_pattern = re.compile('[0-9a-f]{40}')
 
 # Parse git hashes from submodules
-git_submodules = subprocess.check_output(
-    'git submodule', shell=True).strip().split('\n')
+git_submodules = subprocess.check_output('git submodule',
+                                         shell=True).strip().split('\n')
 git_submodule_hashes = {
-    re.search(git_hash_pattern, s).group()
-    for s in git_submodules
+    re.search(git_hash_pattern, s).group() for s in git_submodules
 }
 
 _BAZEL_SKYLIB_DEP_NAME = 'bazel_skylib'
@@ -65,9 +64,11 @@ _GRPC_DEP_NAMES = [
     'io_bazel_rules_go',
     'build_bazel_rules_apple',
     'build_bazel_apple_support',
+    'libuv',
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
+    'upb',  # third_party/upb is checked in locally
     'rules_cc',
     'com_google_absl',
     'io_opencensus_cpp',
@@ -109,7 +110,12 @@ class BazelEvalState(object):
         if args['name'] in _GRPC_BAZEL_ONLY_DEPS:
             self.names_and_urls[args['name']] = 'dont care'
             return
-        self.names_and_urls[args['name']] = args['url']
+        url = args.get('url', None)
+        if not url:
+            # we will only be looking for git commit hashes, so concatenating
+            # the urls is fine.
+            url = ' '.join(args['urls'])
+        self.names_and_urls[args['name']] = url
 
     def git_repository(self, **args):
         assert self.names_and_urls.get(args['name']) is None
@@ -151,8 +157,7 @@ for dep_name in _GRPC_BAZEL_ONLY_DEPS:
     names_without_bazel_only_deps.remove(dep_name)
 archive_urls = [names_and_urls[name] for name in names_without_bazel_only_deps]
 workspace_git_hashes = {
-    re.search(git_hash_pattern, url).group()
-    for url in archive_urls
+    re.search(git_hash_pattern, url).group() for url in archive_urls
 }
 if len(workspace_git_hashes) == 0:
     print("(Likely) parse error, did not find any bazel git dependencies.")
@@ -166,12 +171,17 @@ if len(workspace_git_hashes - git_submodule_hashes) > 0:
     print(
         "Found discrepancies between git submodules and Bazel WORKSPACE dependencies"
     )
+    print("workspace_git_hashes: %s" % workspace_git_hashes)
+    print("git_submodule_hashes: %s" % git_submodule_hashes)
+    print("workspace_git_hashes - git_submodule_hashes: %s" %
+          (workspace_git_hashes - git_submodule_hashes))
+    sys.exit(1)
 
 # Also check that we can override each dependency
 for name in _GRPC_DEP_NAMES:
     names_and_urls_with_overridden_name = {}
-    state = BazelEvalState(
-        names_and_urls_with_overridden_name, overridden_name=name)
+    state = BazelEvalState(names_and_urls_with_overridden_name,
+                           overridden_name=name)
     rules = {
         'native': state,
         'http_archive': lambda **args: state.http_archive(**args),

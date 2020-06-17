@@ -27,6 +27,7 @@
 #include <grpcpp/client_context.h>
 
 #include "src/core/lib/surface/call_test_only.h"
+#include "src/core/lib/transport/byte_stream.h"
 
 namespace grpc {
 namespace testing {
@@ -54,8 +55,11 @@ class InteropClientContextInspector {
     return grpc_call_test_only_get_compression_algorithm(context_.call_);
   }
 
-  uint32_t GetMessageFlags() const {
-    return grpc_call_test_only_get_message_flags(context_.call_);
+  bool WasCompressed() const {
+    return (grpc_call_test_only_get_message_flags(context_.call_) &
+            GRPC_WRITE_INTERNAL_COMPRESS) ||
+           (grpc_call_test_only_get_message_flags(context_.call_) &
+            GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED);
   }
 
  private:

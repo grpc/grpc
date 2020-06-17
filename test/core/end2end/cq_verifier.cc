@@ -23,12 +23,20 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+#include <vector>
+
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include "src/core/lib/compression/compression_internal.h"
+#include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/event_string.h"
 
@@ -50,6 +58,7 @@ typedef struct expectation {
   int line;
   grpc_completion_type type;
   void* tag;
+  bool check_success;
   int success;
 } expectation;
 
@@ -145,52 +154,42 @@ int raw_byte_buffer_eq_slice(grpc_byte_buffer* rbb, grpc_slice b) {
 }
 
 int byte_buffer_eq_slice(grpc_byte_buffer* bb, grpc_slice b) {
-  grpc_byte_buffer_reader reader;
-  grpc_byte_buffer* rbb;
-  int res;
-
-  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
-             "Couldn't init byte buffer reader");
-  rbb = grpc_raw_byte_buffer_from_reader(&reader);
-  res = raw_byte_buffer_eq_slice(rbb, b);
-  grpc_byte_buffer_reader_destroy(&reader);
-  grpc_byte_buffer_destroy(rbb);
-
-  return res;
+  if (bb->data.raw.compression > GRPC_COMPRESS_NONE) {
+    grpc_slice_buffer decompressed_buffer;
+    grpc_slice_buffer_init(&decompressed_buffer);
+    GPR_ASSERT(grpc_msg_decompress(
+        grpc_compression_algorithm_to_message_compression_algorithm(
+            bb->data.raw.compression),
+        &bb->data.raw.slice_buffer, &decompressed_buffer));
+    grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
+        decompressed_buffer.slices, decompressed_buffer.count);
+    int ret_val = raw_byte_buffer_eq_slice(rbb, b);
+    grpc_byte_buffer_destroy(rbb);
+    grpc_slice_buffer_destroy(&decompressed_buffer);
+    return ret_val;
+  }
+  return raw_byte_buffer_eq_slice(bb, b);
 }
 
 int byte_buffer_eq_string(grpc_byte_buffer* bb, const char* str) {
-  grpc_byte_buffer_reader reader;
-  grpc_byte_buffer* rbb;
-  int res;
-
-  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
-             "Couldn't init byte buffer reader");
-  rbb = grpc_raw_byte_buffer_from_reader(&reader);
-  res = raw_byte_buffer_eq_slice(rbb, grpc_slice_from_copied_string(str));
-  grpc_byte_buffer_reader_destroy(&reader);
-  grpc_byte_buffer_destroy(rbb);
-
-  return res;
+  return byte_buffer_eq_slice(bb, grpc_slice_from_copied_string(str));
 }
 
 static bool is_probably_integer(void* p) { return ((uintptr_t)p) < 1000000; }
 
-static void expectation_to_strvec(gpr_strvec* buf, expectation* e) {
-  char* tmp;
+namespace {
 
-  if (is_probably_integer(e->tag)) {
-    gpr_asprintf(&tmp, "tag(%" PRIdPTR ") ", (intptr_t)e->tag);
+std::string ExpectationString(const expectation& e) {
+  std::string out;
+  if (is_probably_integer(e.tag)) {
+    out = absl::StrFormat("tag(%" PRIdPTR ") ", (intptr_t)e.tag);
   } else {
-    gpr_asprintf(&tmp, "%p ", e->tag);
+    out = absl::StrFormat("%p ", e.tag);
   }
-  gpr_strvec_add(buf, tmp);
-
-  switch (e->type) {
+  switch (e.type) {
     case GRPC_OP_COMPLETE:
-      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE success=%d %s:%d", e->success,
-                   e->file, e->line);
-      gpr_strvec_add(buf, tmp);
+      absl::StrAppendFormat(&out, "GRPC_OP_COMPLETE success=%d %s:%d",
+                            e.success, e.file, e.line);
       break;
     case GRPC_QUEUE_TIMEOUT:
     case GRPC_QUEUE_SHUTDOWN:
@@ -198,27 +197,22 @@ static void expectation_to_strvec(gpr_strvec* buf, expectation* e) {
       abort();
       break;
   }
+  return out;
 }
 
-static void expectations_to_strvec(gpr_strvec* buf, cq_verifier* v) {
-  expectation* e;
-
-  for (e = v->first_expectation; e != nullptr; e = e->next) {
-    expectation_to_strvec(buf, e);
-    gpr_strvec_add(buf, gpr_strdup("\n"));
+std::string ExpectationsString(const cq_verifier& v) {
+  std::vector<std::string> expectations;
+  for (expectation* e = v.first_expectation; e != nullptr; e = e->next) {
+    expectations.push_back(ExpectationString(*e));
   }
+  return absl::StrJoin(expectations, "\n");
 }
+
+}  // namespace
 
 static void fail_no_event_received(cq_verifier* v) {
-  gpr_strvec buf;
-  char* msg;
-  gpr_strvec_init(&buf);
-  gpr_strvec_add(&buf, gpr_strdup("no event received, but expected:\n"));
-  expectations_to_strvec(&buf, v);
-  msg = gpr_strvec_flatten(&buf, nullptr);
-  gpr_log(GPR_ERROR, "%s", msg);
-  gpr_strvec_destroy(&buf);
-  gpr_free(msg);
+  gpr_log(GPR_ERROR, "no event received, but expected:%s",
+          ExpectationsString(*v).c_str());
   abort();
 }
 
@@ -226,14 +220,9 @@ static void verify_matches(expectation* e, grpc_event* ev) {
   GPR_ASSERT(e->type == ev->type);
   switch (e->type) {
     case GRPC_OP_COMPLETE:
-      if (e->success != ev->success) {
-        gpr_strvec expected;
-        gpr_strvec_init(&expected);
-        expectation_to_strvec(&expected, e);
-        char* s = gpr_strvec_flatten(&expected, nullptr);
-        gpr_strvec_destroy(&expected);
-        gpr_log(GPR_ERROR, "actual success does not match expected: %s", s);
-        gpr_free(s);
+      if (e->check_success && e->success != ev->success) {
+        gpr_log(GPR_ERROR, "actual success does not match expected: %s",
+                ExpectationString(*e).c_str());
         abort();
       }
       break;
@@ -269,16 +258,9 @@ void cq_verify(cq_verifier* v) {
       prev = e;
     }
     if (e == nullptr) {
-      char* s = grpc_event_string(&ev);
-      gpr_log(GPR_ERROR, "cq returned unexpected event: %s", s);
-      gpr_free(s);
-      gpr_strvec expectations;
-      gpr_strvec_init(&expectations);
-      expectations_to_strvec(&expectations, v);
-      s = gpr_strvec_flatten(&expectations, nullptr);
-      gpr_strvec_destroy(&expectations);
-      gpr_log(GPR_ERROR, "expected tags:\n%s", s);
-      gpr_free(s);
+      gpr_log(GPR_ERROR, "cq returned unexpected event: %s",
+              grpc_event_string(&ev).c_str());
+      gpr_log(GPR_ERROR, "expected tags:\n%s", ExpectationsString(*v).c_str());
       abort();
     }
   }
@@ -295,9 +277,8 @@ void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
 
   ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
-    char* s = grpc_event_string(&ev);
-    gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s", s);
-    gpr_free(s);
+    gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s",
+            grpc_event_string(&ev).c_str());
     abort();
   }
 }
@@ -305,12 +286,14 @@ void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
 void cq_verify_empty(cq_verifier* v) { cq_verify_empty_timeout(v, 1); }
 
 static void add(cq_verifier* v, const char* file, int line,
-                grpc_completion_type type, void* tag, bool success) {
+                grpc_completion_type type, void* tag, bool check_success,
+                bool success) {
   expectation* e = static_cast<expectation*>(gpr_malloc(sizeof(expectation)));
   e->type = type;
   e->file = file;
   e->line = line;
   e->tag = tag;
+  e->check_success = check_success;
   e->success = success;
   e->next = v->first_expectation;
   v->first_expectation = e;
@@ -318,5 +301,10 @@ static void add(cq_verifier* v, const char* file, int line,
 
 void cq_expect_completion(cq_verifier* v, const char* file, int line, void* tag,
                           bool success) {
-  add(v, file, line, GRPC_OP_COMPLETE, tag, success);
+  add(v, file, line, GRPC_OP_COMPLETE, tag, true, success);
+}
+
+void cq_expect_completion_any_status(cq_verifier* v, const char* file, int line,
+                                     void* tag) {
+  add(v, file, line, GRPC_OP_COMPLETE, tag, false, false);
 }

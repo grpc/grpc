@@ -2,6 +2,13 @@ package(default_visibility = ["//visibility:public"])
 
 load("//bazel:cython_library.bzl", "pyx_library")
 
+genrule(
+    name = "copy_roots_pem",
+    srcs = ["//:etc/roots.pem"],
+    outs = ["_credentials/roots.pem"],
+    cmd = "cp $(SRCS) $(@)",
+)
+
 pyx_library(
     name = "cygrpc",
     srcs = glob([
@@ -9,6 +16,7 @@ pyx_library(
         "cygrpc.pxd",
         "cygrpc.pyx",
     ]),
+    data = [":copy_roots_pem"],
     deps = [
         "//:grpc",
     ],

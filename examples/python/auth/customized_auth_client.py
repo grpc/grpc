@@ -57,8 +57,8 @@ class AuthGateway(grpc.AuthMetadataPlugin):
 @contextlib.contextmanager
 def create_client_channel(addr):
     # Call credential object will be invoked for every single RPC
-    call_credentials = grpc.metadata_call_credentials(
-        AuthGateway(), name='auth gateway')
+    call_credentials = grpc.metadata_call_credentials(AuthGateway(),
+                                                      name='auth gateway')
     # Channel credential will be valid for the entire channel
     channel_credential = grpc.ssl_channel_credentials(
         _credentials.ROOT_CERTIFICATE)
@@ -86,12 +86,11 @@ def send_rpc(channel):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--port',
-        nargs='?',
-        type=int,
-        default=50051,
-        help='the address of server')
+    parser.add_argument('--port',
+                        nargs='?',
+                        type=int,
+                        default=50051,
+                        help='the address of server')
     args = parser.parse_args()
 
     with create_client_channel(_SERVER_ADDR_TEMPLATE % args.port) as channel:

@@ -26,19 +26,17 @@ import shutil
 
 def _args():
     argp = argparse.ArgumentParser(description='Builds microbenchmarks')
-    argp.add_argument(
-        '-b',
-        '--benchmarks',
-        nargs='+',
-        choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-        default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-        help='Which benchmarks to build')
-    argp.add_argument(
-        '-j',
-        '--jobs',
-        type=int,
-        default=multiprocessing.cpu_count(),
-        help='How many CPUs to dedicate to this task')
+    argp.add_argument('-b',
+                      '--benchmarks',
+                      nargs='+',
+                      choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      help='Which benchmarks to build')
+    argp.add_argument('-j',
+                      '--jobs',
+                      type=int,
+                      default=multiprocessing.cpu_count(),
+                      help='How many CPUs to dedicate to this task')
     argp.add_argument(
         '-n',
         '--name',

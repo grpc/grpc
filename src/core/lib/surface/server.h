@@ -64,4 +64,36 @@ int grpc_server_has_open_connections(grpc_server* server);
 void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
                               size_t* pollset_count);
 
+namespace grpc_core {
+
+// An object to represent the most relevant characteristics of a newly-allocated
+// call object when using an AllocatingRequestMatcherBatch
+struct ServerBatchCallAllocation {
+  grpc_experimental_completion_queue_functor* tag;
+  grpc_call** call;
+  grpc_metadata_array* initial_metadata;
+  grpc_call_details* details;
+};
+
+// An object to represent the most relevant characteristics of a newly-allocated
+// call object when using an AllocatingRequestMatcherRegistered
+struct ServerRegisteredCallAllocation {
+  grpc_experimental_completion_queue_functor* tag;
+  grpc_call** call;
+  grpc_metadata_array* initial_metadata;
+  gpr_timespec* deadline;
+  grpc_byte_buffer** optional_payload;
+};
+
+// Functions to specify that a specific registered method or the unregistered
+// collection should use a specific allocator for request matching.
+void SetServerRegisteredMethodAllocator(
+    grpc_server* server, grpc_completion_queue* cq, void* method_tag,
+    std::function<ServerRegisteredCallAllocation()> allocator);
+void SetServerBatchMethodAllocator(
+    grpc_server* server, grpc_completion_queue* cq,
+    std::function<ServerBatchCallAllocation()> allocator);
+
+}  // namespace grpc_core
+
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */

@@ -45,8 +45,8 @@ class OpenLoopClientRunner(ClientRunner):
         super(OpenLoopClientRunner, self).__init__(client)
         self._is_running = False
         self._interval_generator = interval_generator
-        self._dispatch_thread = threading.Thread(
-            target=self._dispatch_requests, args=())
+        self._dispatch_thread = threading.Thread(target=self._dispatch_requests,
+                                                 args=())
 
     def start(self):
         self._is_running = True

@@ -13,8 +13,6 @@
 # limitations under the License.
 
 
-import threading
-
 # No-op implementations for Windows.
 
 def fork_handlers_and_grpc_init():
@@ -23,7 +21,7 @@ def fork_handlers_and_grpc_init():
 
 class ForkManagedThread(object):
     def __init__(self, target, args=()):
-        self._thread = threading.Thread(target=target, args=args)
+        self._thread = threading.Thread(target=_run_with_context(target), args=args)
 
     def setDaemon(self, daemonic):
         self._thread.daemon = daemonic

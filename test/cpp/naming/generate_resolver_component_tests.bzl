@@ -82,5 +82,5 @@ def generate_resolver_component_tests():
                 "--test_bin_name=resolver_component_test%s" % unsecure_build_config_suffix,
                 "--running_under_bazel=true",
             ],
-            tags = ["no_windows"],
+            tags = ["no_windows", "no_mac"],
         )

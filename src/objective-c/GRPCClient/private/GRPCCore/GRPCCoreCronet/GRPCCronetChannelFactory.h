@@ -22,7 +22,7 @@ typedef struct stream_engine stream_engine;
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface GRPCCronetChannelFactory : NSObject<GRPCChannelFactory>
+@interface GRPCCronetChannelFactory : NSObject <GRPCChannelFactory>
 
 + (nullable instancetype)sharedInstance;
 

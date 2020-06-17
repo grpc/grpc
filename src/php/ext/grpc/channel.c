@@ -206,7 +206,7 @@ target_bound_le_t* update_and_get_target_upper_bound(char* target, int bound) {
   php_grpc_int key_len = strlen(target);
   if (!(PHP_GRPC_PERSISTENT_LIST_FIND(&grpc_target_upper_bound_map, target,
       key_len, rsrc))) {
-    // Target is not not persisted.
+    // Target is not persisted.
     php_grpc_zend_resource new_rsrc;
     target_bound_status = malloc(sizeof(target_bound_le_t));
     if (bound == -1) {
@@ -350,7 +350,6 @@ PHP_METHOD(Channel, __construct) {
                            1 TSRMLS_CC);
       return;
     } else {
-      Z_ADDREF(*creds_obj);
       creds = PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel_credentials,
                                           creds_obj);
     }

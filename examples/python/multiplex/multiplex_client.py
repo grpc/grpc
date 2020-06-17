@@ -102,8 +102,8 @@ def generate_messages():
 def guide_route_chat(route_guide_stub):
     responses = route_guide_stub.RouteChat(generate_messages())
     for response in responses:
-        print("Received message %s at %s" % (response.message,
-                                             response.location))
+        print("Received message %s at %s" %
+              (response.message, response.location))
 
 
 def run():

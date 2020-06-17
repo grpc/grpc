@@ -135,6 +135,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "work_serializer_test",
+    srcs = ["work_serializer_test.cc"],
+    exec_properties = LARGE_MACHINE,
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",  # LARGE_MACHINE is not configured for windows RBE
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "mpmcqueue_test",
     srcs = ["mpmcqueue_test.cc"],
     language = "C++",
@@ -254,7 +272,10 @@ grpc_cc_test(
     name = "tcp_posix_test",
     srcs = ["tcp_posix_test.cc"],
     language = "C++",
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",  # TODO(jtattermusch): Reenable once https://github.com/grpc/grpc/issues/21282 is fixed.
+        "no_windows",
+    ],
     deps = [
         ":endpoint_tests",
         "//:gpr",

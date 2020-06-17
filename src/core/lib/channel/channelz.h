@@ -25,10 +25,11 @@
 
 #include <string>
 
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/atomic.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -91,11 +92,11 @@ class BaseNode : public RefCounted<BaseNode> {
   virtual ~BaseNode();
 
   // All children must implement this function.
-  virtual grpc_json* RenderJson() = 0;
+  virtual Json RenderJson() = 0;
 
   // Renders the json and returns allocated string that must be freed by the
   // caller.
-  char* RenderJsonString();
+  std::string RenderJsonString();
 
   EntityType type() const { return type_; }
   intptr_t uuid() const { return uuid_; }
@@ -124,7 +125,7 @@ class CallCountingHelper {
   void RecordCallSucceeded();
 
   // Common rendering of the call count data and last_call_started_timestamp.
-  void PopulateCallCounts(grpc_json* json);
+  void PopulateCallCounts(Json::Object* json);
 
  private:
   // testing peer friend.
@@ -148,7 +149,13 @@ class CallCountingHelper {
     // Make sure the size is exactly one cache line.
     uint8_t padding[GPR_CACHELINE_SIZE - 3 * sizeof(Atomic<intptr_t>) -
                     sizeof(Atomic<gpr_cycle_counter>)];
-  } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
+  };
+  // TODO(soheilhy,veblush): Revist this after abseil integration.
+  // This has a problem when using abseil inlined_vector because it
+  // carries an alignment attribute properly but our allocator doesn't
+  // respect this. To avoid UBSAN errors, this should be removed with
+  // abseil inlined_vector.
+  // GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
   struct CounterData {
     int64_t calls_started = 0;
@@ -161,7 +168,7 @@ class CallCountingHelper {
   void CollectData(CounterData* out);
 
   // Really zero-sized, but 0-sized arrays are illegal on MSVC.
-  InlinedVector<AtomicCounterData, 1> per_cpu_counter_data_storage_;
+  absl::InlinedVector<AtomicCounterData, 1> per_cpu_counter_data_storage_;
   size_t num_cores_ = 0;
 };
 
@@ -177,7 +184,7 @@ class ChannelNode : public BaseNode {
 
   intptr_t parent_uuid() const { return parent_uuid_; }
 
-  grpc_json* RenderJson() override;
+  Json RenderJson() override;
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
@@ -206,7 +213,7 @@ class ChannelNode : public BaseNode {
   void RemoveChildSubchannel(intptr_t child_uuid);
 
  private:
-  void PopulateChildRefs(grpc_json* json);
+  void PopulateChildRefs(Json::Object* json);
 
   // to allow the channel trace test to access trace_.
   friend class testing::ChannelNodePeer;
@@ -235,9 +242,10 @@ class ServerNode : public BaseNode {
 
   ~ServerNode() override;
 
-  grpc_json* RenderJson() override;
+  Json RenderJson() override;
 
-  char* RenderServerSockets(intptr_t start_socket_id, intptr_t max_results);
+  std::string RenderServerSockets(intptr_t start_socket_id,
+                                  intptr_t max_results);
 
   void AddChildSocket(RefCountedPtr<SocketNode> node);
 
@@ -275,7 +283,7 @@ class SocketNode : public BaseNode {
   SocketNode(std::string local, std::string remote, std::string name);
   ~SocketNode() override {}
 
-  grpc_json* RenderJson() override;
+  Json RenderJson() override;
 
   void RecordStreamStartedFromLocal();
   void RecordStreamStartedFromRemote();
@@ -314,7 +322,7 @@ class ListenSocketNode : public BaseNode {
   ListenSocketNode(std::string local_addr, std::string name);
   ~ListenSocketNode() override {}
 
-  grpc_json* RenderJson() override;
+  Json RenderJson() override;
 
  private:
   std::string local_addr_;

@@ -105,9 +105,8 @@ def test_server(max_workers=10, reuse_port=False):
 
      These servers have SO_REUSEPORT disabled to prevent cross-talk.
      """
-    return grpc.server(
-        futures.ThreadPoolExecutor(max_workers=max_workers),
-        options=(('grpc.so_reuseport', int(reuse_port)),))
+    return grpc.server(futures.ThreadPoolExecutor(max_workers=max_workers),
+                       options=(('grpc.so_reuseport', int(reuse_port)),))
 
 
 class WaitGroup(object):

@@ -51,8 +51,9 @@ class _LoggingPool(object):
         return self._backing_pool.submit(_wrap(fn), *args, **kwargs)
 
     def map(self, func, *iterables, **kwargs):
-        return self._backing_pool.map(
-            _wrap(func), *iterables, timeout=kwargs.get('timeout', None))
+        return self._backing_pool.map(_wrap(func),
+                                      *iterables,
+                                      timeout=kwargs.get('timeout', None))
 
     def shutdown(self, wait=True):
         self._backing_pool.shutdown(wait=wait)

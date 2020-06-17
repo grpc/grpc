@@ -17,7 +17,6 @@
   <%include file="../../debian_jessie_header.include"/>
 
   <%include file="../../apt_get_basic.include"/>
-  <%include file="../../gcp_api_libraries.include"/>
 
   # Install Electron apt dependencies
   RUN apt-get update && apt-get install -y ${'\\'}
@@ -30,6 +29,7 @@
     xvfb
 
   <%include file="../../python_deps.include"/>
+  <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../node_deps.include"/>
   <%include file="../../run_tests_addons.include"/>
   # Install Mako to generate files in grpc/grpc-node

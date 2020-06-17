@@ -85,23 +85,6 @@ def grpc_cc_library(
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
 
-    # This is a temporary solution to enable absl dependency only for
-    # Bazel-build with grpc_use_absl enabled to abseilfy in-house classes
-    # such as inlined_vector before absl is fully supported.
-    # When https://github.com/grpc/grpc/pull/20184 is merged, it will
-    # be removed.
-    more_external_deps = []
-    if name == "inlined_vector":
-        more_external_deps += select({
-            "//:grpc_use_absl": ["@com_google_absl//absl/container:inlined_vector"],
-            "//conditions:default": [],
-        })
-    if name == "gpr_base":
-        more_external_deps += select({
-            "//:grpc_use_absl": ["@com_google_absl//absl/strings:strings"],
-            "//conditions:default": [],
-        })
-
     native.cc_library(
         name = name,
         srcs = srcs,
@@ -117,13 +100,9 @@ def grpc_cc_library(
                       "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
                       "//conditions:default": [],
-                  }) +
-                  select({
-                      "//:grpc_use_absl": ["GRPC_USE_ABSL=1"],
-                      "//conditions:default": [],
                   }),
         hdrs = hdrs + public_hdrs,
-        deps = deps + _get_external_deps(external_deps) + more_external_deps,
+        deps = deps + _get_external_deps(external_deps),
         copts = copts,
         visibility = visibility,
         testonly = testonly,
@@ -189,10 +168,13 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None):
     copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
+
+    # NOTE: these attributes won't be used for the poller-specific versions of a test
+    # automatically, you need to set them explicitly (if applicable)
     args = {
         "srcs": srcs,
         "args": args,
@@ -204,6 +186,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "timeout": timeout,
         "exec_compatible_with": exec_compatible_with,
         "exec_properties": exec_properties,
+        "shard_count": shard_count,
+        "flaky": flaky,
     }
     if uses_polling:
         # the vanilla version of the test should run on platforms that only
@@ -234,10 +218,12 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                 tags = (tags + ["no_windows", "no_mac"]),
                 exec_compatible_with = exec_compatible_with,
                 exec_properties = exec_properties,
+                shard_count = shard_count,
+                flaky = flaky,
             )
     else:
         # the test behavior doesn't depend on polling, just generate the test
-        native.cc_test(name = name, tags = tags, **args)
+        native.cc_test(name = name, tags = tags + ["no_uses_polling"], **args)
     ios_cc_test(
         name = name,
         tags = tags,

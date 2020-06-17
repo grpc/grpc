@@ -89,8 +89,8 @@ def _running_server(port, maximum_hashes):
     # We use only a single servicer thread here to demonstrate that, if managed
     # carefully, cancelled RPCs can need not continue occupying servicers
     # threads.
-    server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=1), maximum_concurrent_rpcs=1)
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1),
+                         maximum_concurrent_rpcs=1)
     hash_name_pb2_grpc.add_HashFinderServicer_to_server(
         HashFinder(maximum_hashes), server)
     address = '{}:{}'.format(_SERVER_HOST, port)
@@ -102,12 +102,11 @@ def _running_server(port, maximum_hashes):
 
 def main():
     parser = argparse.ArgumentParser(description=_DESCRIPTION)
-    parser.add_argument(
-        '--port',
-        type=int,
-        default=50051,
-        nargs='?',
-        help='The port on which the server will listen.')
+    parser.add_argument('--port',
+                        type=int,
+                        default=50051,
+                        nargs='?',
+                        help='The port on which the server will listen.')
     parser.add_argument(
         '--maximum-hashes',
         type=int,

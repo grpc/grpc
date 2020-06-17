@@ -27,10 +27,9 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-// The idle filter is enabled in client channel by default.
-// Set GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS to [1000, INT_MAX) in channel args to
-// configure the idle timeout.
-#define DEFAULT_IDLE_TIMEOUT_MS (30 /*minutes*/ * 60 * 1000)
+// TODO(juanlishen): The idle filter is disabled in client channel by default
+// due to b/143502997. Try to fix the bug and enable the filter by default.
+#define DEFAULT_IDLE_TIMEOUT_MS INT_MAX
 // The user input idle timeout smaller than this would be capped to it.
 #define MIN_IDLE_TIMEOUT_MS (1 /*second*/ * 1000)
 

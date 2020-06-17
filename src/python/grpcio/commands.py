@@ -149,11 +149,10 @@ def check_and_update_cythonization(extensions):
         for source in extension.sources:
             base, file_ext = os.path.splitext(source)
             if file_ext == '.pyx':
-                generated_pyx_source = next(
-                    (base + gen_ext for gen_ext in (
-                        '.c',
-                        '.cpp',
-                    ) if os.path.isfile(base + gen_ext)), None)
+                generated_pyx_source = next((base + gen_ext for gen_ext in (
+                    '.c',
+                    '.cpp',
+                ) if os.path.isfile(base + gen_ext)), None)
                 if generated_pyx_source:
                     generated_pyx_sources.append(generated_pyx_source)
                 else:
@@ -195,8 +194,7 @@ def try_cythonize(extensions, linetracing=False, mandatory=True):
     return Cython.Build.cythonize(
         extensions,
         include_path=[
-            include_dir
-            for extension in extensions
+            include_dir for extension in extensions
             for include_dir in extension.include_dirs
         ] + [CYTHON_STEM],
         compiler_directives=cython_compiler_directives)
@@ -217,11 +215,13 @@ class BuildExt(build_ext.build_ext):
             """Test if default compiler is okay with specifying c++ version
             when invoked in C mode. GCC is okay with this, while clang is not.
             """
-            cc_test = subprocess.Popen(
-                ['cc', '-x', 'c', '-std=c++11', '-'],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
+            if platform.system() != 'Windows':
+                return False
+            # TODO(lidiz) Remove the generated a.out for success tests.
+            cc_test = subprocess.Popen(['cc', '-x', 'c', '-std=c++11', '-'],
+                                       stdin=subprocess.PIPE,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
             _, cc_err = cc_test.communicate(input=b'int main(){return 0;}')
             return not 'invalid argument' in str(cc_err)
 
@@ -271,10 +271,10 @@ class Gather(setuptools.Command):
     """Command to gather project dependencies."""
 
     description = 'gather dependencies for grpcio'
-    user_options = [('test', 't',
-                     'flag indicating to gather test dependencies'),
-                    ('install', 'i',
-                     'flag indicating to gather install dependencies')]
+    user_options = [
+        ('test', 't', 'flag indicating to gather test dependencies'),
+        ('install', 'i', 'flag indicating to gather install dependencies')
+    ]
 
     def initialize_options(self):
         self.test = False

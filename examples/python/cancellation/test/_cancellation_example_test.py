@@ -47,16 +47,16 @@ def _start_client(server_port,
         '--show-inferior', interesting_distance)
     return subprocess.Popen((_CLIENT_PATH, desired_string, '--server',
                              'localhost:{}'.format(server_port),
-                             '--ideal-distance',
-                             str(ideal_distance)) + interesting_distance_args)
+                             '--ideal-distance', str(ideal_distance)) +
+                            interesting_distance_args)
 
 
 class CancellationExampleTest(unittest.TestCase):
 
     def test_successful_run(self):
         with _get_port() as test_port:
-            server_process = subprocess.Popen((_SERVER_PATH, '--port',
-                                               str(test_port)))
+            server_process = subprocess.Popen(
+                (_SERVER_PATH, '--port', str(test_port)))
             try:
                 client_process = _start_client(test_port, 'aa', 0)
                 client_return_code = client_process.wait()
@@ -68,8 +68,8 @@ class CancellationExampleTest(unittest.TestCase):
 
     def test_graceful_sigint(self):
         with _get_port() as test_port:
-            server_process = subprocess.Popen((_SERVER_PATH, '--port',
-                                               str(test_port)))
+            server_process = subprocess.Popen(
+                (_SERVER_PATH, '--port', str(test_port)))
             try:
                 client_process1 = _start_client(test_port, 'aaaaaaaaaa', 0)
                 client_process1.send_signal(signal.SIGINT)

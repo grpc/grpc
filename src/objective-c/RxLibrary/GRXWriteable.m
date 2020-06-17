@@ -54,9 +54,9 @@
       // the two domains.
       static NSString *kGRPCErrorDomain = @"io.grpc";
       static NSUInteger kGRPCErrorCodeInternal = 13;
-      singleHandler(
-          nil,
-          [NSError errorWithDomain:kGRPCErrorDomain code:kGRPCErrorCodeInternal userInfo:userInfo]);
+      singleHandler(nil, [NSError errorWithDomain:kGRPCErrorDomain
+                                             code:kGRPCErrorCodeInternal
+                                         userInfo:userInfo]);
     }
   };
   return [self writeableWithEventHandler:^(BOOL done, id value, NSError *error) {
@@ -70,9 +70,10 @@
   if (!handler) {
     return [[self alloc] init];
   }
-  return [[self alloc] initWithValueHandler:^(id value) {
-    handler(NO, value, nil);
-  }
+  return [[self alloc]
+      initWithValueHandler:^(id value) {
+        handler(NO, value, nil);
+      }
       completionHandler:^(NSError *errorOrNil) {
         handler(YES, nil, errorOrNil);
       }];

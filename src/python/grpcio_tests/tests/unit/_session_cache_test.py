@@ -53,10 +53,9 @@ def handle_unary_unary(request, servicer_context):
 
 
 def start_secure_server():
-    handler = grpc.method_handlers_generic_handler('test', {
-        'UnaryUnary':
-        grpc.unary_unary_rpc_method_handler(handle_unary_unary)
-    })
+    handler = grpc.method_handlers_generic_handler(
+        'test',
+        {'UnaryUnary': grpc.unary_unary_rpc_method_handler(handle_unary_unary)})
     server = test_common.test_server()
     server.add_generic_rpc_handlers((handler,))
     server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
@@ -70,8 +69,9 @@ class SSLSessionCacheTest(unittest.TestCase):
 
     def _do_one_shot_client_rpc(self, channel_creds, channel_options, port,
                                 expect_ssl_session_reused):
-        channel = grpc.secure_channel(
-            'localhost:{}'.format(port), channel_creds, options=channel_options)
+        channel = grpc.secure_channel('localhost:{}'.format(port),
+                                      channel_creds,
+                                      options=channel_options)
         response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
         auth_data = pickle.loads(response)
         self.assertEqual(expect_ssl_session_reused,
@@ -88,57 +88,50 @@ class SSLSessionCacheTest(unittest.TestCase):
             ('grpc.ssl_session_cache', cache),)
 
         # Initial connection has no session to resume
-        self._do_one_shot_client_rpc(
-            channel_creds,
-            channel_options,
-            port_1,
-            expect_ssl_session_reused=[b'false'])
+        self._do_one_shot_client_rpc(channel_creds,
+                                     channel_options,
+                                     port_1,
+                                     expect_ssl_session_reused=[b'false'])
 
         # Connection to server_1 resumes from initial session
-        self._do_one_shot_client_rpc(
-            channel_creds,
-            channel_options,
-            port_1,
-            expect_ssl_session_reused=[b'true'])
+        self._do_one_shot_client_rpc(channel_creds,
+                                     channel_options,
+                                     port_1,
+                                     expect_ssl_session_reused=[b'true'])
 
         # Connection to a different server with the same name overwrites the cache entry
         server_2, port_2 = start_secure_server()
-        self._do_one_shot_client_rpc(
-            channel_creds,
-            channel_options,
-            port_2,
-            expect_ssl_session_reused=[b'false'])
-        self._do_one_shot_client_rpc(
-            channel_creds,
-            channel_options,
-            port_2,
-            expect_ssl_session_reused=[b'true'])
+        self._do_one_shot_client_rpc(channel_creds,
+                                     channel_options,
+                                     port_2,
+                                     expect_ssl_session_reused=[b'false'])
+        self._do_one_shot_client_rpc(channel_creds,
+                                     channel_options,
+                                     port_2,
+                                     expect_ssl_session_reused=[b'true'])
         server_2.stop(None)
 
         # Connection to server_1 now falls back to full TLS handshake
-        self._do_one_shot_client_rpc(
-            channel_creds,
-            channel_options,
-            port_1,
-            expect_ssl_session_reused=[b'false'])
+        self._do_one_shot_client_rpc(channel_creds,
+                                     channel_options,
+                                     port_1,
+                                     expect_ssl_session_reused=[b'false'])
 
         # Re-creating server_1 causes old sessions to become invalid
         server_1.stop(None)
         server_1, port_1 = start_secure_server()
 
         # Old sessions should no longer be valid
-        self._do_one_shot_client_rpc(
-            channel_creds,
-            channel_options,
-            port_1,
-            expect_ssl_session_reused=[b'false'])
+        self._do_one_shot_client_rpc(channel_creds,
+                                     channel_options,
+                                     port_1,
+                                     expect_ssl_session_reused=[b'false'])
 
         # Resumption should work for subsequent connections
-        self._do_one_shot_client_rpc(
-            channel_creds,
-            channel_options,
-            port_1,
-            expect_ssl_session_reused=[b'true'])
+        self._do_one_shot_client_rpc(channel_creds,
+                                     channel_options,
+                                     port_1,
+                                     expect_ssl_session_reused=[b'true'])
         server_1.stop(None)
 
 

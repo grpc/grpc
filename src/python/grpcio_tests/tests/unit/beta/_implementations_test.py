@@ -41,8 +41,8 @@ class CallCredentialsTest(unittest.TestCase):
     def test_google_call_credentials(self):
         creds = oauth2client_client.GoogleCredentials(
             'token', 'client_id', 'secret', 'refresh_token',
-            datetime.datetime(2008, 6,
-                              24), 'https://refresh.uri.com/', 'user_agent')
+            datetime.datetime(2008, 6, 24), 'https://refresh.uri.com/',
+            'user_agent')
         call_creds = implementations.google_call_credentials(creds)
         self.assertIsInstance(call_creds, implementations.CallCredentials)
 

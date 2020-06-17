@@ -14,8 +14,9 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 grpc_package(
@@ -26,9 +27,10 @@ grpc_package(
 exports_files([
     "echo.proto",
     "echo_messages.proto",
-    "test.proto",
     "empty.proto",
     "messages.proto",
+    "simple_messages.proto",
+    "test.proto",
 ])
 
 grpc_proto_library(
@@ -230,4 +232,56 @@ py_grpc_library(
     name = "test_py_pb2_grpc",
     srcs = [":test_proto_descriptor"],
     deps = [":py_test_proto"],
+)
+
+proto_library(
+    name = "worker_service_descriptor",
+    srcs = ["worker_service.proto"],
+    deps = [":control_descriptor"],
+)
+
+py_proto_library(
+    name = "worker_service_py_pb2",
+    deps = [":worker_service_descriptor"],
+)
+
+py_grpc_library(
+    name = "worker_service_py_pb2_grpc",
+    srcs = [":worker_service_descriptor"],
+    deps = [":worker_service_py_pb2"],
+)
+
+proto_library(
+    name = "stats_descriptor",
+    srcs = ["stats.proto"],
+    deps = ["//src/proto/grpc/core:stats_descriptor"],
+)
+
+py_proto_library(
+    name = "stats_py_pb2",
+    deps = [":stats_descriptor"],
+)
+
+proto_library(
+    name = "payloads_descriptor",
+    srcs = ["payloads.proto"],
+)
+
+py_proto_library(
+    name = "payloads_py_pb2",
+    deps = [":payloads_descriptor"],
+)
+
+proto_library(
+    name = "control_descriptor",
+    srcs = ["control.proto"],
+    deps = [
+        ":payloads_descriptor",
+        ":stats_descriptor",
+    ],
+)
+
+py_proto_library(
+    name = "control_py_pb2",
+    deps = [":control_descriptor"],
 )

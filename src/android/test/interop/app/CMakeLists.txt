@@ -14,6 +14,7 @@ add_subdirectory(${GRPC_SRC_DIR} ${GRPC_BUILD_DIR})
 
 #include_directories(${GRPC_SRC_DIR}/include)
 include_directories(${GRPC_SRC_DIR})
+include_directories(${_gRPC_ABSL_INCLUDE_DIR})
 
 set(GRPC_PROTO_GENS_DIR ${CMAKE_BINARY_DIR}/gens)
 file(MAKE_DIRECTORY ${GRPC_PROTO_GENS_DIR})
@@ -109,7 +110,9 @@ add_library(grpc-interop
   SHARED
   src/main/cpp/grpc-interop.cc
   ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.h
-  ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.cc)
+  ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.cc
+  ${GRPC_SRC_DIR}/test/core/util/histogram.h
+  ${GRPC_SRC_DIR}/test/core/util/histogram.cc)
 
 target_link_libraries(grpc-interop
   messages_proto_lib

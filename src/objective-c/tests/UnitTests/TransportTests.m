@@ -31,7 +31,7 @@ static const GRPCTransportID kFakeTransportID = "io.grpc.transport.unittest.fake
 dispatch_once_t initFakeTransportFactory;
 static GRPCFakeTransportFactory *fakeTransportFactory;
 
-@interface GRPCFakeTransportFactory : NSObject<GRPCTransportFactory>
+@interface GRPCFakeTransportFactory : NSObject <GRPCTransportFactory>
 
 @property(atomic) GRPCTransport *nextTransportInstance;
 - (void)setTransportInterceptorFactories:(NSArray<id<GRPCInterceptorFactory>> *)factories;
@@ -114,7 +114,7 @@ static GRPCFakeTransportFactory *fakeTransportFactory;
 
 @end
 
-@interface DummyInterceptorFactory : NSObject<GRPCInterceptorFactory>
+@interface DummyInterceptorFactory : NSObject <GRPCInterceptorFactory>
 
 - (instancetype)initWithPassthrough:(BOOL)passthrough;
 
@@ -143,7 +143,7 @@ static GRPCFakeTransportFactory *fakeTransportFactory;
 
 @end
 
-@interface TestsBlockCallbacks : NSObject<GRPCResponseHandler>
+@interface TestsBlockCallbacks : NSObject <GRPCResponseHandler>
 
 - (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
                                    dataCallback:(void (^)(id))dataCallback

@@ -25,15 +25,18 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 BANNED_EXCEPT = {
     'grpc_slice_from_static_buffer(': ['src/core/lib/slice/slice.cc'],
     'grpc_resource_quota_ref(': ['src/core/lib/iomgr/resource_quota.cc'],
-    'grpc_resource_quota_unref(':
-    ['src/core/lib/iomgr/resource_quota.cc', 'src/core/lib/surface/server.cc'],
+    'grpc_resource_quota_unref(': [
+        'src/core/lib/iomgr/resource_quota.cc', 'src/core/lib/surface/server.cc'
+    ],
     'grpc_slice_buffer_destroy(': ['src/core/lib/slice/slice_buffer.cc'],
-    'grpc_slice_buffer_reset_and_unref(':
-    ['src/core/lib/slice/slice_buffer.cc'],
+    'grpc_slice_buffer_reset_and_unref(': [
+        'src/core/lib/slice/slice_buffer.cc'
+    ],
     'grpc_slice_ref(': ['src/core/lib/slice/slice.cc'],
     'grpc_slice_unref(': ['src/core/lib/slice/slice.cc'],
-    'grpc_error_create(':
-    ['src/core/lib/iomgr/error.cc', 'src/core/lib/iomgr/error_cfstream.cc'],
+    'grpc_error_create(': [
+        'src/core/lib/iomgr/error.cc', 'src/core/lib/iomgr/error_cfstream.cc'
+    ],
     'grpc_error_ref(': ['src/core/lib/iomgr/error.cc'],
     'grpc_error_unref(': ['src/core/lib/iomgr/error.cc'],
     'grpc_os_error(': ['src/core/lib/iomgr/error.cc'],

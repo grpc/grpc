@@ -22,11 +22,10 @@
 
 #include "src/core/lib/gpr/useful.h"
 
-typedef struct {
+struct status_string_entry {
   const char* str;
   grpc_status_code status;
-} status_string_entry;
-
+};
 static const status_string_entry g_status_string_entries[] = {
     {"OK", GRPC_STATUS_OK},
     {"CANCELLED", GRPC_STATUS_CANCELLED},

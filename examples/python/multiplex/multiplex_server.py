@@ -48,8 +48,8 @@ def _get_distance(start, end):
     delta_lon_rad = math.radians(lon_2 - lon_1)
 
     a = (pow(math.sin(delta_lat_rad / 2), 2) +
-         (math.cos(lat_rad_1) * math.cos(lat_rad_2) * pow(
-             math.sin(delta_lon_rad / 2), 2)))
+         (math.cos(lat_rad_1) * math.cos(lat_rad_2) *
+          pow(math.sin(delta_lon_rad / 2), 2)))
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     R = 6371000
     # metres

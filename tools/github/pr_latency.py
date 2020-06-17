@@ -104,9 +104,10 @@ def get_pr_data():
 def get_commits_data(pr_number):
     commits = json.loads(gh(COMMITS.format(pr_number=pr_number)))
     return {
-        'num_commits': len(commits),
+        'num_commits':
+            len(commits),
         'most_recent_date':
-        parse_timestamp(commits[-1]['commit']['author']['date'])
+            parse_timestamp(commits[-1]['commit']['author']['date'])
     }
 
 
@@ -121,7 +122,8 @@ def get_status_data(statuses_url, system):
     if system == 'kokoro': string_in_target_url = 'kokoro'
     elif system == 'jenkins': string_in_target_url = 'grpc-testing'
     for status in statuses['statuses']:
-        if not status['target_url'] or string_in_target_url not in status['target_url']:
+        if not status['target_url'] or string_in_target_url not in status[
+                'target_url']:
             continue  # Ignore jenkins
         if status['state'] == 'pending': return None
         elif status['state'] == 'success': successes += 1
@@ -148,18 +150,16 @@ def get_status_data(statuses_url, system):
 def build_args_parser():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--format',
-        type=str,
-        choices=['human', 'csv'],
-        default='human',
-        help='Output format: are you a human or a machine?')
-    parser.add_argument(
-        '--system',
-        type=str,
-        choices=['jenkins', 'kokoro'],
-        required=True,
-        help='Consider only the given CI system')
+    parser.add_argument('--format',
+                        type=str,
+                        choices=['human', 'csv'],
+                        default='human',
+                        help='Output format: are you a human or a machine?')
+    parser.add_argument('--system',
+                        type=str,
+                        choices=['jenkins', 'kokoro'],
+                        required=True,
+                        help='Consider only the given CI system')
     parser.add_argument(
         '--token',
         type=str,
@@ -188,15 +188,14 @@ def main():
         if last_status:
             diff = last_status['latest_datetime'] - base_timestamp
             if diff < timedelta(hours=5):
-                output(
-                    pr_data['number'],
-                    base_timestamp,
-                    last_status['latest_datetime'],
-                    diff,
-                    last_status['successes'],
-                    last_status['failures'],
-                    last_status['errors'],
-                    mode=args.format)
+                output(pr_data['number'],
+                       base_timestamp,
+                       last_status['latest_datetime'],
+                       diff,
+                       last_status['successes'],
+                       last_status['failures'],
+                       last_status['errors'],
+                       mode=args.format)
 
 
 if __name__ == '__main__':

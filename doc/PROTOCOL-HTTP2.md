@@ -31,12 +31,12 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Timeout** → "grpc-timeout" TimeoutValue TimeoutUnit
 * **TimeoutValue** → {_positive integer as ASCII string of at most 8 digits_}
 * **TimeoutUnit** → Hour / Minute / Second / Millisecond / Microsecond / Nanosecond
-* **Hour** → "H"
-* **Minute** → "M"
-* **Second** → "S"
-* **Millisecond** → "m"
-* **Microsecond** → "u"
-* **Nanosecond** → "n"
+  * **Hour** → "H"
+  * **Minute** → "M"
+  * **Second** → "S"
+  * **Millisecond** → "m"
+  * **Microsecond** → "u"
+  * **Nanosecond** → "n"
 * **Content-Type** → "content-type" "application/grpc" [("+proto" / "+json" / {_custom_})]
 * **Content-Coding** → "identity" / "gzip" / "deflate" / "snappy" / {_custom_}
 * <a name="message-encoding"></a>**Message-Encoding** → "grpc-encoding" Content-Coding
@@ -52,12 +52,12 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 
 HTTP2 requires that reserved headers, ones starting with ":" appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.
 
-Some gRPC implementations may allow the **Path** format shown above
-to be overridden, but this functionality is strongly discouraged.
-gRPC does not go out of its way to break users that are using this kind
-of override, but we do not actively support it, and some functionality
-(e.g., service config support) will not work when the path is not of
-the form shown above.
+**Path** is case-sensitive. Some gRPC implementations may allow the **Path**
+format shown above to be overridden, but this functionality is strongly
+discouraged. gRPC does not go out of its way to break users that are using this
+kind of override, but we do not actively support it, and some functionality
+(e.g., service config support) will not work when the path is not of the form
+shown above.
 
 If **Timeout** is omitted a server should assume an infinite timeout. Client implementations are free to send a default minimum timeout based on their deployment requirements.
 

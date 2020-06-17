@@ -370,7 +370,7 @@ static void uv_resolve_callback(uv_getaddrinfo_t* req, int status,
                                tcp_error_create("getaddrinfo failed", status));
 }
 
-static grpc_error* uv_resolve(char* host, char* port,
+static grpc_error* uv_resolve(const char* host, const char* port,
                               grpc_resolved_addresses** result) {
   int status;
   uv_getaddrinfo_t req;
@@ -388,7 +388,8 @@ static grpc_error* uv_resolve(char* host, char* port,
   return tcp_error_create("getaddrinfo failed", status);
 }
 
-static void uv_resolve_async(grpc_custom_resolver* r, char* host, char* port) {
+static void uv_resolve_async(grpc_custom_resolver* r, const char* host,
+                             const char* port) {
   int status;
   uv_getaddrinfo_t* req =
       (uv_getaddrinfo_t*)gpr_malloc(sizeof(uv_getaddrinfo_t));

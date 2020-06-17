@@ -24,7 +24,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/percent_encoding.h"
 
 bool squelch = true;
@@ -32,7 +31,6 @@ bool leak_check = true;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_init();
-  grpc_test_only_control_plane_credentials_force_init();
   grpc_slice input = grpc_slice_from_copied_buffer((const char*)data, size);
   grpc_slice output;
   if (grpc_strict_percent_decode_slice(
@@ -45,7 +43,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   }
   grpc_slice_unref(grpc_permissive_percent_decode_slice(input));
   grpc_slice_unref(input);
-  grpc_test_only_control_plane_credentials_destroy();
   grpc_shutdown_blocking();
   return 0;
 }

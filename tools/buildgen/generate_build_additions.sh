@@ -16,22 +16,22 @@
 set -e
 
 gen_build_yaml_dirs="  \
+  src/abseil-cpp       \
   src/boringssl        \
-  src/benchmark \
+  src/benchmark        \
   src/proto            \
   src/upb              \
   src/zlib             \
   src/c-ares           \
-  test/core/bad_client \
-  test/core/bad_ssl    \
   test/core/end2end    \
-  test/cpp/naming \
-  test/cpp/qps \
+  test/cpp/naming      \
   tools/run_tests/lb_interop_tests"
+
+
 gen_build_files=""
 for gen_build_yaml in $gen_build_yaml_dirs
 do
   output_file=`mktemp /tmp/genXXXXXX`
-  $gen_build_yaml/gen_build_yaml.py > $output_file
+  python $gen_build_yaml/gen_build_yaml.py > $output_file
   gen_build_files="$gen_build_files $output_file"
 done

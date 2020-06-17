@@ -17,6 +17,7 @@
 import gen_build_yaml as gen
 import json
 
+
 def generate_args():
     all_scenario_set = gen.generate_yaml()
     all_scenario_set = all_scenario_set['tests']
@@ -34,6 +35,8 @@ def generate_args():
     serialized_scenarios_str = str(all_scenarios).encode('ascii', 'ignore')
     with open('qps_json_driver_scenarios.bzl', 'w') as f:
         f.write('"""Scenarios of qps driver."""\n\n')
-        f.write('QPS_JSON_DRIVER_SCENARIOS = ' + serialized_scenarios_str + '\n')
+        f.write('QPS_JSON_DRIVER_SCENARIOS = ' + serialized_scenarios_str +
+                '\n')
+
 
 generate_args()

@@ -347,4 +347,18 @@ size_t grpc_slice_memory_usage(grpc_slice s);
 grpc_core::UnmanagedMemorySlice grpc_slice_sub_no_ref(
     const grpc_core::UnmanagedMemorySlice& source, size_t begin, size_t end);
 
+namespace grpc_core {
+
+struct SliceHash {
+  std::size_t operator()(const grpc_slice& slice) const {
+    return grpc_slice_hash_internal(slice);
+  }
+};
+
+}  // namespace grpc_core
+
+inline bool operator==(const grpc_slice& s1, const grpc_slice& s2) {
+  return grpc_slice_eq(s1, s2);
+}
+
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

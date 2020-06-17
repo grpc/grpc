@@ -23,29 +23,30 @@ _MAX_HEADER_LIST_SIZE = 16 * 1024 * 1024
 Setting = collections.namedtuple('Setting', 'id default min max on_error')
 OnError = collections.namedtuple('OnError', 'behavior code')
 clamp_invalid_value = OnError('CLAMP_INVALID_VALUE', 'PROTOCOL_ERROR')
-disconnect_on_invalid_value = lambda e: OnError('DISCONNECT_ON_INVALID_VALUE', e)
+disconnect_on_invalid_value = lambda e: OnError('DISCONNECT_ON_INVALID_VALUE', e
+                                               )
 DecoratedSetting = collections.namedtuple('DecoratedSetting',
                                           'enum name setting')
 
 _SETTINGS = {
     'HEADER_TABLE_SIZE':
-    Setting(1, 4096, 0, 0xffffffff, clamp_invalid_value),
+        Setting(1, 4096, 0, 0xffffffff, clamp_invalid_value),
     'ENABLE_PUSH':
-    Setting(2, 1, 0, 1, disconnect_on_invalid_value('PROTOCOL_ERROR')),
+        Setting(2, 1, 0, 1, disconnect_on_invalid_value('PROTOCOL_ERROR')),
     'MAX_CONCURRENT_STREAMS':
-    Setting(3, 0xffffffff, 0, 0xffffffff,
-            disconnect_on_invalid_value('PROTOCOL_ERROR')),
+        Setting(3, 0xffffffff, 0, 0xffffffff,
+                disconnect_on_invalid_value('PROTOCOL_ERROR')),
     'INITIAL_WINDOW_SIZE':
-    Setting(4, 65535, 0, 0x7fffffff,
-            disconnect_on_invalid_value('FLOW_CONTROL_ERROR')),
+        Setting(4, 65535, 0, 0x7fffffff,
+                disconnect_on_invalid_value('FLOW_CONTROL_ERROR')),
     'MAX_FRAME_SIZE':
-    Setting(5, 16384, 16384, 16777215,
-            disconnect_on_invalid_value('PROTOCOL_ERROR')),
+        Setting(5, 16384, 16384, 16777215,
+                disconnect_on_invalid_value('PROTOCOL_ERROR')),
     'MAX_HEADER_LIST_SIZE':
-    Setting(6, _MAX_HEADER_LIST_SIZE, 0, _MAX_HEADER_LIST_SIZE,
-            clamp_invalid_value),
+        Setting(6, _MAX_HEADER_LIST_SIZE, 0, _MAX_HEADER_LIST_SIZE,
+                clamp_invalid_value),
     'GRPC_ALLOW_TRUE_BINARY_METADATA':
-    Setting(0xfe03, 0, 0, 1, clamp_invalid_value),
+        Setting(0xfe03, 0, 0, 1, clamp_invalid_value),
 }
 
 H = open('src/core/ext/transport/chttp2/transport/http2_settings.h', 'w')

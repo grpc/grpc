@@ -77,3 +77,16 @@ service ReconnectService {
   rpc Start(grpc.testing.ReconnectParams) returns (grpc.testing.Empty);
   rpc Stop(grpc.testing.Empty) returns (grpc.testing.ReconnectInfo);
 }
+
+// A service used to obtain stats for verifying LB behavior.
+service LoadBalancerStatsService {
+  // Gets the backend distribution for RPCs sent by a test client.
+  rpc GetClientStats(LoadBalancerStatsRequest)
+      returns (LoadBalancerStatsResponse) {}
+}
+
+// A service to remotely control health status of an xDS test server.
+service XdsUpdateHealthService {
+  rpc SetServing(grpc.testing.Empty) returns (grpc.testing.Empty);
+  rpc SetNotServing(grpc.testing.Empty) returns (grpc.testing.Empty);
+}

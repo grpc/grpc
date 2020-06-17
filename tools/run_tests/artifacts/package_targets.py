@@ -59,16 +59,15 @@ def create_jobspec(name,
                    timeout_retries=0,
                    cpu_cost=1.0):
     """Creates jobspec."""
-    jobspec = jobset.JobSpec(
-        cmdline=cmdline,
-        environ=environ,
-        cwd=cwd,
-        shortname='build_package.%s' % (name),
-        timeout_seconds=10 * 60,
-        flake_retries=flake_retries,
-        timeout_retries=timeout_retries,
-        cpu_cost=cpu_cost,
-        shell=shell)
+    jobspec = jobset.JobSpec(cmdline=cmdline,
+                             environ=environ,
+                             cwd=cwd,
+                             shortname='build_package.%s' % (name),
+                             timeout_seconds=10 * 60,
+                             flake_retries=flake_retries,
+                             timeout_retries=timeout_retries,
+                             cpu_cost=cpu_cost,
+                             shell=shell)
     return jobspec
 
 
@@ -92,16 +91,14 @@ class CSharpPackage:
         if self.unity:
             # use very high CPU cost to avoid running nuget package build
             # and unity build concurrently
-            return create_jobspec(
-                self.name, ['build_unitypackage.bat'],
-                cwd='src\\csharp',
-                cpu_cost=1e6,
-                shell=True)
+            return create_jobspec(self.name, ['build_unitypackage.bat'],
+                                  cwd='src\\csharp',
+                                  cpu_cost=1e6,
+                                  shell=True)
         else:
-            return create_jobspec(
-                self.name, ['build_packages_dotnetcli.bat'],
-                cwd='src\\csharp',
-                shell=True)
+            return create_jobspec(self.name, ['build_packages_dotnetcli.bat'],
+                                  cwd='src\\csharp',
+                                  shell=True)
 
     def __str__(self):
         return self.name

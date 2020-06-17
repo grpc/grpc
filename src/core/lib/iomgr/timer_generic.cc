@@ -56,7 +56,7 @@ grpc_core::TraceFlag grpc_timer_check_trace(false, "timer_check");
  * stats maintained in 'stats' and the relevant timers are then moved from the
  * 'list' to 'heap'.
  */
-typedef struct {
+struct timer_shard {
   gpr_mu mu;
   grpc_time_averaged_stats stats;
   /* All and only timers with deadlines < this will be in the heap. */
@@ -70,8 +70,7 @@ typedef struct {
   grpc_timer_heap heap;
   /* This holds timers whose deadline is >= queue_deadline_cap. */
   grpc_timer list;
-} timer_shard;
-
+};
 static size_t g_num_shards;
 
 /* Array of timer shards. Whenever a timer (grpc_timer *) is added, its address
@@ -548,9 +547,8 @@ static grpc_timer* pop_one(timer_shard* shard, grpc_millis now) {
     }
     if (timer->deadline > now) return nullptr;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_trace)) {
-      gpr_log(GPR_INFO, "TIMER %p: FIRE %" PRId64 "ms late via %s scheduler",
-              timer, now - timer->deadline,
-              timer->closure->scheduler->vtable->name);
+      gpr_log(GPR_INFO, "TIMER %p: FIRE %" PRId64 "ms late", timer,
+              now - timer->deadline);
     }
     timer->pending = false;
     grpc_timer_heap_pop(&shard->heap);

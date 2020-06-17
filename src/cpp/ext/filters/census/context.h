@@ -25,6 +25,9 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "opencensus/context/context.h"
+#include "opencensus/tags/tag_map.h"
+#include "opencensus/trace/context_util.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/trace_params.h"
@@ -41,25 +44,32 @@ namespace grpc {
 // Thread compatible.
 class CensusContext {
  public:
-  CensusContext() : span_(::opencensus::trace::Span::BlankSpan()) {}
+  CensusContext() : span_(::opencensus::trace::Span::BlankSpan()), tags_({}) {}
 
-  explicit CensusContext(absl::string_view name)
-      : span_(::opencensus::trace::Span::StartSpan(name)) {}
+  explicit CensusContext(absl::string_view name,
+                         const ::opencensus::tags::TagMap& tags)
+      : span_(::opencensus::trace::Span::StartSpan(name)), tags_(tags) {}
 
-  CensusContext(absl::string_view name, const ::opencensus::trace::Span* parent)
-      : span_(::opencensus::trace::Span::StartSpan(name, parent)) {}
+  CensusContext(absl::string_view name, const ::opencensus::trace::Span* parent,
+                const ::opencensus::tags::TagMap& tags)
+      : span_(::opencensus::trace::Span::StartSpan(name, parent)),
+        tags_(tags) {}
 
   CensusContext(absl::string_view name,
                 const ::opencensus::trace::SpanContext& parent_ctxt)
       : span_(::opencensus::trace::Span::StartSpanWithRemoteParent(
-            name, parent_ctxt)) {}
+            name, parent_ctxt)),
+        tags_({}) {}
 
-  ::opencensus::trace::SpanContext Context() const { return span_.context(); }
-  ::opencensus::trace::Span Span() const { return span_; }
-  void EndSpan() { span_.End(); }
+  const ::opencensus::trace::Span& Span() const { return span_; }
+  const ::opencensus::tags::TagMap& tags() const { return tags_; }
+
+  ::opencensus::trace::SpanContext Context() const { return Span().context(); }
+  void EndSpan() { Span().End(); }
 
  private:
   ::opencensus::trace::Span span_;
+  ::opencensus::tags::TagMap tags_;
 };
 
 // Serializes the outgoing trace context. Field IDs are 1 byte followed by

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.26.0-dev
+PROJECT_NUMBER         = 1.31.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -778,6 +778,7 @@ doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
 doc/grpc_release_schedule.md \
+doc/grpc_xds_features.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \
@@ -798,6 +799,7 @@ doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
+doc/xds-test-descriptions.md \
 include/grpc++/alarm.h \
 include/grpc++/channel.h \
 include/grpc++/client_context.h \
@@ -877,10 +879,12 @@ include/grpc++/support/sync_stream.h \
 include/grpc++/support/time.h \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
+include/grpc/census.h \
 include/grpc/compression.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
+include/grpc/grpc_security.h \
 include/grpc/grpc_security_constants.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
@@ -900,6 +904,7 @@ include/grpc/impl/codegen/propagation_bits.h \
 include/grpc/impl/codegen/slice.h \
 include/grpc/impl/codegen/status.h \
 include/grpc/impl/codegen/sync.h \
+include/grpc/impl/codegen/sync_abseil.h \
 include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
@@ -919,6 +924,7 @@ include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
 include/grpc/support/sync.h \
+include/grpc/support/sync_abseil.h \
 include/grpc/support/sync_custom.h \
 include/grpc/support/sync_generic.h \
 include/grpc/support/sync_posix.h \
@@ -990,6 +996,7 @@ include/grpcpp/impl/codegen/rpc_service_method.h \
 include/grpcpp/impl/codegen/security/auth_context.h \
 include/grpcpp/impl/codegen/serialization_traits.h \
 include/grpcpp/impl/codegen/server_callback.h \
+include/grpcpp/impl/codegen/server_callback_handlers.h \
 include/grpcpp/impl/codegen/server_callback_impl.h \
 include/grpcpp/impl/codegen/server_context.h \
 include/grpcpp/impl/codegen/server_context_impl.h \
@@ -1046,6 +1053,7 @@ include/grpcpp/support/client_interceptor.h \
 include/grpcpp/support/config.h \
 include/grpcpp/support/interceptor.h \
 include/grpcpp/support/message_allocator.h \
+include/grpcpp/support/method_handler.h \
 include/grpcpp/support/proto_buffer_reader.h \
 include/grpcpp/support/proto_buffer_writer.h \
 include/grpcpp/support/server_callback.h \

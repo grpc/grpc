@@ -33,14 +33,13 @@ class SanityTest(unittest.TestCase):
         loader = tests.Loader()
         loader.loadTestsFromNames([self.TEST_PKG_MODULE_NAME])
         test_suite_names = sorted({
-            test_case_class.id().rsplit('.', 1)[0]
-            for test_case_class in tests._loader.iterate_suite_cases(
-                loader.suite)
+            test_case_class.id().rsplit('.', 1)[0] for test_case_class in
+            tests._loader.iterate_suite_cases(loader.suite)
         })
 
         tests_json_string = pkgutil.get_data(self.TEST_PKG_PATH, 'tests.json')
-        tests_json = json.loads(tests_json_string.decode()
-                                if six.PY3 else tests_json_string)
+        tests_json = json.loads(
+            tests_json_string.decode() if six.PY3 else tests_json_string)
 
         self.assertSequenceEqual(tests_json, test_suite_names)
 

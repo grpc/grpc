@@ -143,7 +143,7 @@ void Executor::SetThreading(bool threading) {
 
   if (threading) {
     if (curr_num_threads > 0) {
-      EXECUTOR_TRACE("(%s) SetThreading(true). curr_num_threads == 0", name_);
+      EXECUTOR_TRACE("(%s) SetThreading(true). curr_num_threads > 0", name_);
       return;
     }
 

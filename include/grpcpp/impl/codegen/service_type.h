@@ -109,34 +109,15 @@ class Service {
     explicit experimental_type(Service* service) : service_(service) {}
 
     void MarkMethodCallback(int index, internal::MethodHandler* handler) {
-      // This does not have to be a hard error, however no one has approached us
-      // with a use case yet. Please file an issue if you believe you have one.
-      size_t idx = static_cast<size_t>(index);
-      GPR_CODEGEN_ASSERT(
-          service_->methods_[idx].get() != nullptr &&
-          "Cannot mark the method as 'callback' because it has already been "
-          "marked as 'generic'.");
-      service_->methods_[idx]->SetHandler(handler);
-      service_->methods_[idx]->SetServerApiType(
-          internal::RpcServiceMethod::ApiType::CALL_BACK);
+      service_->MarkMethodCallbackInternal(index, handler);
     }
 
     void MarkMethodRawCallback(int index, internal::MethodHandler* handler) {
-      // This does not have to be a hard error, however no one has approached us
-      // with a use case yet. Please file an issue if you believe you have one.
-      size_t idx = static_cast<size_t>(index);
-      GPR_CODEGEN_ASSERT(
-          service_->methods_[idx].get() != nullptr &&
-          "Cannot mark the method as 'raw callback' because it has already "
-          "been marked as 'generic'.");
-      service_->methods_[idx]->SetHandler(handler);
-      service_->methods_[idx]->SetServerApiType(
-          internal::RpcServiceMethod::ApiType::RAW_CALL_BACK);
+      service_->MarkMethodRawCallbackInternal(index, handler);
     }
 
     internal::MethodHandler* GetHandler(int index) {
-      size_t idx = static_cast<size_t>(index);
-      return service_->methods_[idx]->handler();
+      return service_->GetHandlerInternal(index);
     }
 
    private:
@@ -239,7 +220,54 @@ class Service {
     methods_[idx]->SetMethodType(internal::RpcMethod::BIDI_STREAMING);
   }
 
+#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  void MarkMethodCallback(int index, internal::MethodHandler* handler) {
+    MarkMethodCallbackInternal(index, handler);
+  }
+
+  void MarkMethodRawCallback(int index, internal::MethodHandler* handler) {
+    MarkMethodRawCallbackInternal(index, handler);
+  }
+
+  internal::MethodHandler* GetHandler(int index) {
+    return GetHandlerInternal(index);
+  }
+#endif
  private:
+  // TODO(vjpai): migrate the Internal functions to mainline functions once
+  //              callback API is fully de-experimental
+  void MarkMethodCallbackInternal(int index, internal::MethodHandler* handler) {
+    // This does not have to be a hard error, however no one has approached us
+    // with a use case yet. Please file an issue if you believe you have one.
+    size_t idx = static_cast<size_t>(index);
+    GPR_CODEGEN_ASSERT(
+        methods_[idx].get() != nullptr &&
+        "Cannot mark the method as 'callback' because it has already been "
+        "marked as 'generic'.");
+    methods_[idx]->SetHandler(handler);
+    methods_[idx]->SetServerApiType(
+        internal::RpcServiceMethod::ApiType::CALL_BACK);
+  }
+
+  void MarkMethodRawCallbackInternal(int index,
+                                     internal::MethodHandler* handler) {
+    // This does not have to be a hard error, however no one has approached us
+    // with a use case yet. Please file an issue if you believe you have one.
+    size_t idx = static_cast<size_t>(index);
+    GPR_CODEGEN_ASSERT(
+        methods_[idx].get() != nullptr &&
+        "Cannot mark the method as 'raw callback' because it has already "
+        "been marked as 'generic'.");
+    methods_[idx]->SetHandler(handler);
+    methods_[idx]->SetServerApiType(
+        internal::RpcServiceMethod::ApiType::RAW_CALL_BACK);
+  }
+
+  internal::MethodHandler* GetHandlerInternal(int index) {
+    size_t idx = static_cast<size_t>(index);
+    return methods_[idx]->handler();
+  }
+
   friend class grpc_impl::Server;
   friend class ServerInterface;
   ServerInterface* server_;

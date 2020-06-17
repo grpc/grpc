@@ -16,6 +16,15 @@
 These APIs are subject to be removed during any minor version release.
 """
 
+import copy
+import functools
+import sys
+import warnings
+
+import grpc
+
+_EXPERIMENTAL_APIS_USED = set()
+
 
 class ChannelOptions(object):
     """Indicates a channel option unique to gRPC Python.
@@ -30,3 +39,89 @@ class ChannelOptions(object):
 
 class UsageError(Exception):
     """Raised by the gRPC library to indicate usage not allowed by the API."""
+
+
+_insecure_channel_credentials_sentinel = object()
+_insecure_channel_credentials = grpc.ChannelCredentials(
+    _insecure_channel_credentials_sentinel)
+
+
+def insecure_channel_credentials():
+    """Creates a ChannelCredentials for use with an insecure channel.
+
+    THIS IS AN EXPERIMENTAL API.
+
+    This is not for use with secure_channel function. Intead, this should be
+    used with grpc.unary_unary, grpc.unary_stream, grpc.stream_unary, or
+    grpc.stream_stream.
+    """
+    return _insecure_channel_credentials
+
+
+class ExperimentalApiWarning(Warning):
+    """A warning that an API is experimental."""
+
+
+def _warn_experimental(api_name, stack_offset):
+    if api_name not in _EXPERIMENTAL_APIS_USED:
+        _EXPERIMENTAL_APIS_USED.add(api_name)
+        msg = ("'{}' is an experimental API. It is subject to change or ".
+               format(api_name) +
+               "removal between minor releases. Proceed with caution.")
+        warnings.warn(msg, ExperimentalApiWarning, stacklevel=2 + stack_offset)
+
+
+def experimental_api(f):
+
+    @functools.wraps(f)
+    def _wrapper(*args, **kwargs):
+        _warn_experimental(f.__name__, 1)
+        return f(*args, **kwargs)
+
+    return _wrapper
+
+
+def wrap_server_method_handler(wrapper, handler):
+    """Wraps the server method handler function.
+
+    The server implementation requires all server handlers being wrapped as
+    RpcMethodHandler objects. This helper function ease the pain of writing
+    server handler wrappers.
+
+    Args:
+        wrapper: A wrapper function that takes in a method handler behavior
+          (the actual function) and returns a wrapped function.
+        handler: A RpcMethodHandler object to be wrapped.
+
+    Returns:
+        A newly created RpcMethodHandler.
+    """
+    if not handler:
+        return None
+
+    if not handler.request_streaming:
+        if not handler.response_streaming:
+            # NOTE(lidiz) _replace is a public API:
+            #   https://docs.python.org/dev/library/collections.html
+            return handler._replace(unary_unary=wrapper(handler.unary_unary))
+        else:
+            return handler._replace(unary_stream=wrapper(handler.unary_stream))
+    else:
+        if not handler.response_streaming:
+            return handler._replace(stream_unary=wrapper(handler.stream_unary))
+        else:
+            return handler._replace(
+                stream_stream=wrapper(handler.stream_stream))
+
+
+__all__ = (
+    'ChannelOptions',
+    'ExperimentalApiWarning',
+    'UsageError',
+    'insecure_channel_credentials',
+    'wrap_server_method_handler',
+)
+
+if sys.version_info[0] == 3 and sys.version_info[1] >= 6:
+    from grpc._simple_stubs import unary_unary, unary_stream, stream_unary, stream_stream
+    __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream)

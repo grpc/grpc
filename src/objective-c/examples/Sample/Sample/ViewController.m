@@ -66,18 +66,18 @@
                                              path:method.HTTPPath
                                    requestsWriter:requestsWriter];
 
-  id<GRXWriteable> responsesWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
+      initWithValueHandler:^(NSData *value) {
         RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value error:NULL];
         NSLog(@"Received response:\n%@", response);
       }
-          completionHandler:^(NSError *errorOrNil) {
-            if (errorOrNil) {
-              NSLog(@"Finished with error: %@", errorOrNil);
-            } else {
-              NSLog(@"Finished successfully.");
-            }
-          }];
+      completionHandler:^(NSError *errorOrNil) {
+        if (errorOrNil) {
+          NSLog(@"Finished with error: %@", errorOrNil);
+        } else {
+          NSLog(@"Finished successfully.");
+        }
+      }];
 
   [call startWithWriteable:responsesWriteable];
 }

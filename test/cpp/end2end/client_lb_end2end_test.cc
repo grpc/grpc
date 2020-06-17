@@ -155,7 +155,7 @@ class FakeResolverResponseGeneratorWrapper {
                             grpc_core::FakeResolverResponseGenerator>()) {}
 
   FakeResolverResponseGeneratorWrapper(
-      FakeResolverResponseGeneratorWrapper&& other) {
+      FakeResolverResponseGeneratorWrapper&& other) noexcept {
     response_generator_ = std::move(other.response_generator_);
   }
 
@@ -233,9 +233,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
     for (size_t i = 0; i < servers_.size(); ++i) {
       servers_[i]->Shutdown();
     }
-    // Explicitly destroy all the members so that we can make sure grpc_shutdown
-    // has finished by the end of this function, and thus all the registered
-    // LB policy factories are removed.
     servers_.clear();
     creds_.reset();
     grpc_shutdown_blocking();
@@ -630,9 +627,11 @@ TEST_F(ClientLbEnd2endTest, PickFirstResetConnectionBackoff) {
       channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10)));
   // Reset connection backoff.
   experimental::ChannelResetConnectionBackoff(channel.get());
-  // Wait for connect.  Should happen ~immediately.
+  // Wait for connect.  Should happen as soon as the client connects to
+  // the newly started server, which should be before the initial
+  // backoff timeout elapses.
   EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10)));
+      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(20)));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
   const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited_ms);
@@ -1637,11 +1636,18 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
  protected:
   void SetUp() override {
     ClientLbEnd2endTest::SetUp();
-    grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
-        ReportTrailerIntercepted, this);
+    current_test_instance_ = this;
   }
 
   void TearDown() override { ClientLbEnd2endTest::TearDown(); }
+
+  static void SetUpTestCase() {
+    grpc_init();
+    grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
+        ReportTrailerIntercepted, nullptr);
+  }
+
+  static void TearDownTestCase() { grpc_shutdown_blocking(); }
 
   int trailers_intercepted() {
     grpc::internal::MutexLock lock(&mu_);
@@ -1657,8 +1663,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   static void ReportTrailerIntercepted(
       void* arg, const grpc_core::LoadBalancingPolicy::BackendMetricData*
                      backend_metric_data) {
-    ClientLbInterceptTrailingMetadataTest* self =
-        static_cast<ClientLbInterceptTrailingMetadataTest*>(arg);
+    ClientLbInterceptTrailingMetadataTest* self = current_test_instance_;
     grpc::internal::MutexLock lock(&self->mu_);
     self->trailers_intercepted_++;
     if (backend_metric_data != nullptr) {
@@ -1669,22 +1674,26 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
           backend_metric_data->mem_utilization);
       self->load_report_->set_rps(backend_metric_data->requests_per_second);
       for (const auto& p : backend_metric_data->request_cost) {
-        grpc_core::UniquePtr<char> name =
-            grpc_core::StringViewToCString(p.first);
-        (*self->load_report_->mutable_request_cost())[name.get()] = p.second;
+        std::string name = std::string(p.first);
+        (*self->load_report_->mutable_request_cost())[std::move(name)] =
+            p.second;
       }
       for (const auto& p : backend_metric_data->utilization) {
-        grpc_core::UniquePtr<char> name =
-            grpc_core::StringViewToCString(p.first);
-        (*self->load_report_->mutable_utilization())[name.get()] = p.second;
+        std::string name = std::string(p.first);
+        (*self->load_report_->mutable_utilization())[std::move(name)] =
+            p.second;
       }
     }
   }
 
+  static ClientLbInterceptTrailingMetadataTest* current_test_instance_;
   grpc::internal::Mutex mu_;
   int trailers_intercepted_ = 0;
   std::unique_ptr<udpa::data::orca::v1::OrcaLoadReport> load_report_;
 };
+
+ClientLbInterceptTrailingMetadataTest*
+    ClientLbInterceptTrailingMetadataTest::current_test_instance_ = nullptr;
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
   const int kNumServers = 1;

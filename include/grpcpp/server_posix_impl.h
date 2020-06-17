@@ -37,6 +37,6 @@ void AddInsecureChannelFromFd(grpc::Server* server, int fd);
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
-}  // namespace grpc
+}  // namespace grpc_impl
 
 #endif  // GRPCPP_SERVER_POSIX_IMPL_H

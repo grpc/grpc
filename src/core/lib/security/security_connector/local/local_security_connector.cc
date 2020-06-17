@@ -46,7 +46,8 @@
 
 namespace {
 
-grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create() {
+grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
+    const tsi_peer* peer) {
   /* Create auth context. */
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
@@ -55,11 +56,17 @@ grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create() {
       GRPC_LOCAL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
                  ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME) == 1);
+  GPR_ASSERT(peer->property_count == 1);
+  const tsi_peer_property* prop = &peer->properties[0];
+  GPR_ASSERT(prop != nullptr);
+  GPR_ASSERT(strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0);
+  grpc_auth_context_add_property(ctx.get(),
+                                 GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+                                 prop->value.data, prop->value.length);
   return ctx;
 }
 
-void local_check_peer(grpc_security_connector* /*sc*/, tsi_peer /*peer*/,
-                      grpc_endpoint* ep,
+void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
                       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                       grpc_closure* on_peer_checked,
                       grpc_local_connect_type type) {
@@ -103,12 +110,30 @@ void local_check_peer(grpc_security_connector* /*sc*/, tsi_peer /*peer*/,
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     return;
   }
+  // Add TSI_SECURITY_LEVEL_PEER_PROPERTY type peer property.
+  size_t new_property_count = peer.property_count + 1;
+  tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
+      gpr_zalloc(sizeof(*new_properties) * new_property_count));
+  for (size_t i = 0; i < peer.property_count; i++) {
+    new_properties[i] = peer.properties[i];
+  }
+  if (peer.properties != nullptr) gpr_free(peer.properties);
+  peer.properties = new_properties;
+  // TODO(yihuazhang): Set security level of local TCP to TSI_SECURITY_NONE.
+  const char* security_level =
+      tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
+  tsi_result result = tsi_construct_string_peer_property_from_cstring(
+      TSI_SECURITY_LEVEL_PEER_PROPERTY, security_level,
+      &peer.properties[peer.property_count]);
+  if (result != TSI_OK) return;
+  peer.property_count++;
   /* Create an auth context which is necessary to pass the santiy check in
    * {client, server}_auth_filter that verifies if the peer's auth context is
    * obtained during handshakes. The auth context is only checked for its
    * existence and not actually used.
    */
-  *auth_context = local_auth_context_create();
+  *auth_context = local_auth_context_create(&peer);
+  tsi_peer_destruct(&peer);
   error = *auth_context != nullptr ? GRPC_ERROR_NONE
                                    : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                          "Could not create local auth context");
@@ -152,11 +177,11 @@ class grpc_local_channel_security_connector final
                   grpc_closure* on_peer_checked) override {
     grpc_local_credentials* creds =
         reinterpret_cast<grpc_local_credentials*>(mutable_channel_creds());
-    local_check_peer(this, peer, ep, auth_context, on_peer_checked,
+    local_check_peer(peer, ep, auth_context, on_peer_checked,
                      creds->connect_type());
   }
 
-  bool check_call_host(grpc_core::StringView host,
+  bool check_call_host(absl::string_view host,
                        grpc_auth_context* /*auth_context*/,
                        grpc_closure* /*on_call_host_checked*/,
                        grpc_error** error) override {
@@ -201,7 +226,7 @@ class grpc_local_server_security_connector final
                   grpc_closure* on_peer_checked) override {
     grpc_local_server_credentials* creds =
         static_cast<grpc_local_server_credentials*>(mutable_server_creds());
-    local_check_peer(this, peer, ep, auth_context, on_peer_checked,
+    local_check_peer(peer, ep, auth_context, on_peer_checked,
                      creds->connect_type());
   }
 

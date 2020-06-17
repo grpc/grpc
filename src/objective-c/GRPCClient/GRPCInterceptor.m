@@ -21,7 +21,7 @@
 #import "GRPCInterceptor.h"
 #import "private/GRPCTransport+Private.h"
 
-@interface GRPCInterceptorManager ()<GRPCInterceptorInterface, GRPCResponseHandler>
+@interface GRPCInterceptorManager () <GRPCInterceptorInterface, GRPCResponseHandler>
 
 @end
 
@@ -86,8 +86,8 @@
       arrayWithArray:[_factories subarrayWithRange:NSMakeRange(1, _factories.count - 1)]];
   while (_nextInterceptor == nil) {
     if (interceptorFactories.count == 0) {
-      _nextInterceptor =
-          [[GRPCTransportManager alloc] initWithTransportID:_transportID previousInterceptor:self];
+      _nextInterceptor = [[GRPCTransportManager alloc] initWithTransportID:_transportID
+                                                       previousInterceptor:self];
       break;
     } else {
       _nextInterceptor = [[GRPCInterceptorManager alloc] initWithFactories:interceptorFactories

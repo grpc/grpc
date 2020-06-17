@@ -31,7 +31,14 @@
  * Defines GRPC_USE_ABSL to use Abseil Common Libraries (C++)
  */
 #ifndef GRPC_USE_ABSL
-#define GRPC_USE_ABSL 0
+#define GRPC_USE_ABSL 1
+#endif
+
+/*
+ * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil
+ */
+#ifndef GPR_ABSEIL_SYNC
+/* #define GPR_ABSEIL_SYNC 1 */
 #endif
 
 /* Get windows.h included everywhere (we need it) */
@@ -46,6 +53,8 @@
 #define NOMINMAX
 #endif /* NOMINMAX */
 
+#include <windows.h>
+
 #ifndef _WIN32_WINNT
 #error \
     "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
@@ -55,8 +64,6 @@
     "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
 #endif /* _WIN32_WINNT < 0x0600 */
 #endif /* defined(_WIN32_WINNT) */
-
-#include <windows.h>
 
 #ifdef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
 #undef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
@@ -105,31 +112,6 @@
 #define GPR_WINDOWS_ATOMIC 1
 #define GPR_MSVC_TLS 1
 #endif
-#elif defined(GPR_MANYLINUX1)
-// TODO(atash): manylinux1 is just another __linux__ but with ancient
-// libraries; it should be integrated with the `__linux__` definitions below.
-#define GPR_PLATFORM_STRING "manylinux"
-#define GPR_POSIX_CRASH_HANDLER 1
-#define GPR_CPU_POSIX 1
-#define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
-#define GPR_LINUX 1
-#define GPR_LINUX_LOG 1
-#define GPR_SUPPORT_CHANNELS_FROM_FD 1
-#define GPR_LINUX_ENV 1
-#define GPR_POSIX_TMPFILE 1
-#define GPR_POSIX_STRING 1
-#define GPR_POSIX_SUBPROCESS 1
-#define GPR_POSIX_SYNC 1
-#define GPR_POSIX_TIME 1
-#define GPR_HAS_PTHREAD_H 1
-#define GPR_GETPID_IN_UNISTD_H 1
-#ifdef _LP64
-#define GPR_ARCH_64 1
-#else /* _LP64 */
-#define GPR_ARCH_32 1
-#endif /* _LP64 */
-#include <linux/version.h>
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
@@ -659,17 +641,21 @@ typedef unsigned __int64 uint64_t;
 #endif /* GPR_ATTRIBUTE_NO_TSAN (1) */
 
 /* GRPC_TSAN_ENABLED will be defined, when compiled with thread sanitizer. */
+#ifndef GRPC_TSAN_SUPPRESSED
 #if defined(__SANITIZE_THREAD__)
 #define GRPC_TSAN_ENABLED
 #elif GPR_HAS_FEATURE(thread_sanitizer)
 #define GRPC_TSAN_ENABLED
 #endif
+#endif
 
 /* GRPC_ASAN_ENABLED will be defined, when compiled with address sanitizer. */
+#ifndef GRPC_ASAN_SUPPRESSED
 #if defined(__SANITIZE_ADDRESS__)
 #define GRPC_ASAN_ENABLED
 #elif GPR_HAS_FEATURE(address_sanitizer)
 #define GRPC_ASAN_ENABLED
+#endif
 #endif
 
 /* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */

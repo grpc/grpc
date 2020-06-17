@@ -86,7 +86,7 @@ func testAllSettingsFramesAcked(ctx *HTTP2InteropCtx) error {
 			settingsFramesReceived += 1
 			if settingsFramesReceived == 1 {
 				if f.Header.Flags&SETTINGS_FLAG_ACK > 0 {
-					return fmt.Errorf("settings frame should not have used ack: %v")
+					return fmt.Errorf("settings frame should not have used ack: %v", f)
 				}
 				continue
 			}

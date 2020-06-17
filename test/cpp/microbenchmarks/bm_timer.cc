@@ -81,7 +81,7 @@ static void BM_TimerBatch(benchmark::State& state) {
       grpc_timer_init(&timer_closure->timer, deadline, &timer_closure->closure);
     }
     if (check) {
-      grpc_millis next;
+      grpc_millis next = GRPC_MILLIS_INF_FUTURE;
       grpc_timer_check(&next);
     }
     for (grpc_millis deadline = start; deadline != end; deadline += increment) {

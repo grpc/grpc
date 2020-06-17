@@ -63,6 +63,7 @@ static void BM_SliceReIntern(benchmark::State& state) {
   for (auto _ : state) {
     grpc_slice_unref(grpc_core::ManagedMemorySlice(&slice));
   }
+  grpc_slice_unref(slice);
   track_counters.Finish(state);
 }
 BENCHMARK(BM_SliceReIntern);

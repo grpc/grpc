@@ -20,7 +20,6 @@
 
 #include <cstring>
 #include <memory>
-#include <mutex>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -214,7 +213,14 @@ bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
 namespace {
 class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
-  ShutdownCallback() { functor_run = &ShutdownCallback::Run; }
+  ShutdownCallback() {
+    functor_run = &ShutdownCallback::Run;
+    // Set inlineable to true since this callback is trivial and thus does not
+    // need to be run from the executor (triggering a thread hop). This should
+    // only be used by internal callbacks like this and not by user application
+    // code.
+    inlineable = true;
+  }
   // TakeCQ takes ownership of the cq into the shutdown callback
   // so that the shutdown callback will be responsible for destroying it
   void TakeCQ(::grpc::CompletionQueue* cq) { cq_ = cq; }

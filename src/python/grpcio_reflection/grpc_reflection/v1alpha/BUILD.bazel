@@ -17,7 +17,7 @@ py_grpc_library(
 
 py_library(
     name = "grpc_reflection",
-    srcs = ["reflection.py"],
+    srcs = glob(["*.py"]),
     imports = ["../../"],
     deps = [
         ":reflection_py_pb2",

@@ -22,7 +22,9 @@ cp -r /var/local/jenkins/grpc-java /tmp/grpc-java
 cp -r /var/local/jenkins/service_account $HOME || true
 
 pushd /tmp/grpc-java
-./gradlew --no-daemon :grpc-interop-testing:installDist -PskipCodegen=true
+# make two attempts; downloads can fail. See https://github.com/grpc/grpc/issues/18892
+./gradlew --no-daemon :grpc-interop-testing:installDist -PskipCodegen=true -PskipAndroid=true || \
+    ./gradlew --no-daemon :grpc-interop-testing:installDist -PskipCodegen=true -PskipAndroid=true
 
 mkdir -p /var/local/git/grpc-java/
 cp -r --parents -t /var/local/git/grpc-java/ \

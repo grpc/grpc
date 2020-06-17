@@ -17,23 +17,8 @@ set -ex
 
 cd $(dirname $0)/../..
 
-DIFF_COMMAND="git diff --name-only HEAD | grep -v ^third_party/"
+tools/buildgen/generate_projects.sh
+tools/distrib/clang_format_code.sh
+tools/distrib/check_copyright.py
+tools/distrib/check_trailing_newlines.sh
 
-if [ "x$1" == 'x--pre-commit' ]; then
-  if eval $DIFF_COMMAND | grep '^build.yaml$'; then
-    ./tools/buildgen/generate_projects.sh
-  else
-    templates=$(eval $DIFF_COMMAND | grep '\.template$' || true)
-    if [ -n "$templates" ]; then
-      ./tools/buildgen/generate_projects.sh --templates $templates
-    fi
-  fi
-  CHANGED_FILES=$(eval $DIFF_COMMAND) ./tools/distrib/clang_format_code.sh
-  ./tools/distrib/check_copyright.py --precommit
-  ./tools/distrib/check_trailing_newlines.sh
-else
-  ./tools/buildgen/generate_projects.sh
-  ./tools/distrib/clang_format_code.sh
-  ./tools/distrib/check_copyright.py
-  ./tools/distrib/check_trailing_newlines.sh
-fi

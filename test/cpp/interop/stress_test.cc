@@ -108,15 +108,15 @@ DEFINE_string(server_host_override, "",
 
 using grpc::testing::ALTS;
 using grpc::testing::INSECURE;
+using grpc::testing::kTestCaseList;
 using grpc::testing::MetricsService;
 using grpc::testing::MetricsServiceImpl;
 using grpc::testing::StressTestInteropClient;
-using grpc::testing::TLS;
 using grpc::testing::TestCaseType;
+using grpc::testing::TLS;
+using grpc::testing::transport_security;
 using grpc::testing::UNKNOWN_TEST;
 using grpc::testing::WeightedRandomTestSelector;
-using grpc::testing::kTestCaseList;
-using grpc::testing::transport_security;
 
 static int log_level = GPR_LOG_SEVERITY_DEBUG;
 

@@ -36,7 +36,6 @@
 
 #include <map>
 #include <memory>
-#include <mutex>
 #include <string>
 
 #include <grpc/impl/codegen/compression_types.h>
@@ -67,6 +66,7 @@ template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
 class CallOpClientRecvStatus;
 class CallOpRecvInitialMetadata;
+class ServerContextImpl;
 }  // namespace internal
 
 namespace testing {
@@ -106,6 +106,9 @@ template <class W, class R>
 class ClientAsyncReaderWriter;
 template <class R>
 class ClientAsyncResponseReader;
+
+class ServerContextBase;
+class CallbackServerContext;
 
 /// Options for \a ClientContext::FromServerContext specifying which traits from
 /// the \a ServerContext to propagate (copy) from it into a new \a
@@ -195,6 +198,9 @@ class ClientContext {
   /// server_context, with traits propagated (copied) according to \a options.
   static std::unique_ptr<ClientContext> FromServerContext(
       const grpc_impl::ServerContext& server_context,
+      PropagationOptions options = PropagationOptions());
+  static std::unique_ptr<ClientContext> FromCallbackServerContext(
+      const grpc_impl::CallbackServerContext& server_context,
       PropagationOptions options = PropagationOptions());
 
   /// Add the (\a meta_key, \a meta_value) pair to the metadata associated with
@@ -474,6 +480,10 @@ class ClientContext {
   grpc::string authority() { return authority_; }
 
   void SendCancelToInterceptors();
+
+  static std::unique_ptr<ClientContext> FromInternalServerContext(
+      const grpc_impl::ServerContextBase& server_context,
+      PropagationOptions options);
 
   bool initial_metadata_received_;
   bool wait_for_ready_;

@@ -30,6 +30,14 @@ def mako_plugin(dictionary):
                 'test/core/util/one_corpus_entry_fuzzer.cc')
             new_target['own_src'].append(
                 'test/core/util/one_corpus_entry_fuzzer.cc')
+
+            # avoid having two main() methods
+            to_remove = 'test/core/util/fuzzer_corpus_test.cc'
+            if to_remove in new_target['src']:
+                new_target['src'].remove(to_remove)
+            if to_remove in new_target['own_src']:
+                new_target['own_src'].remove(to_remove)
+
             targets.append(new_target)
             for corpus in new_target['corpus_dirs']:
                 for fn in sorted(glob.glob('%s/*' % corpus)):

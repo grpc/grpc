@@ -256,9 +256,9 @@ void grpc_mdctx_global_shutdown() {
         abort();
       }
     }
-      // For ASAN builds, we don't want to crash here, because that will
-      // prevent ASAN from providing leak detection information, which is
-      // far more useful than this simple assertion.
+    // For ASAN builds, we don't want to crash here, because that will
+    // prevent ASAN from providing leak detection information, which is
+    // far more useful than this simple assertion.
 #ifndef GRPC_ASAN_ENABLED
     GPR_DEBUG_ASSERT(shard->count == 0);
 #endif

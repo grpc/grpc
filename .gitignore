@@ -19,6 +19,11 @@ py27_gevent/
 py27_native/
 py3[0-9]_gevent/
 py3[0-9]_native/
+a.out
+src/python/grpcio_*/LICENSE
+src/python/grpcio_status/grpc_status/google/rpc/status.proto
+.pytype
+*.egg-info
 
 # Node installation output
 node_modules
@@ -111,11 +116,7 @@ Podfile.lock
 .idea/
 
 # Bazel files
-bazel-bin
-bazel-genfiles
-bazel-grpc
-bazel-out
-bazel-testlogs
+bazel-*
 bazel_format_virtual_environment/
 tools/bazel-*
 
@@ -136,7 +137,7 @@ bm_diff_old/
 bm_*.json
 
 # cmake build files
-/cmake/build
+**/cmake/build/
 
 # Visual Studio Code artifacts
 .vscode/*
@@ -150,4 +151,3 @@ BenchmarkDotNet.Artifacts/
 
 # pyenv config
 .python-version
-

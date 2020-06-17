@@ -27,9 +27,9 @@ end
 
 module Grpc
   module Testing
-    ByteBufferParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ByteBufferParams").msgclass
-    SimpleProtoParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.SimpleProtoParams").msgclass
-    ComplexProtoParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ComplexProtoParams").msgclass
-    PayloadConfig = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.PayloadConfig").msgclass
+    ByteBufferParams = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ByteBufferParams").msgclass
+    SimpleProtoParams = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.SimpleProtoParams").msgclass
+    ComplexProtoParams = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ComplexProtoParams").msgclass
+    PayloadConfig = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.PayloadConfig").msgclass
   end
 end

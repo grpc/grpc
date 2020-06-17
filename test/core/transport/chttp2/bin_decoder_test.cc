@@ -28,6 +28,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "test/core/util/test_config.h"
 
 static int all_ok = 1;
 
@@ -87,7 +88,8 @@ static size_t base64_infer_length(const char* s) {
   EXPECT_SLICE_EQ(           \
       s, grpc_chttp2_base64_decode_with_length(base64_encode(s), strlen(s)));
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;

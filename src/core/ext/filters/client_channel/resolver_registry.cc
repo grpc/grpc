@@ -22,6 +22,8 @@
 
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -90,7 +92,7 @@ class RegistryState {
   // more factories are needed and the additional allocations are
   // hurting performance (which is unlikely, since these allocations
   // only occur at gRPC initialization time).
-  InlinedVector<std::unique_ptr<ResolverFactory>, 10> factories_;
+  absl::InlinedVector<std::unique_ptr<ResolverFactory>, 10> factories_;
   grpc_core::UniquePtr<char> default_prefix_;
 };
 
@@ -145,7 +147,8 @@ bool ResolverRegistry::IsValidTarget(const char* target) {
 
 OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
     const char* target, const grpc_channel_args* args,
-    grpc_pollset_set* pollset_set, Combiner* combiner,
+    grpc_pollset_set* pollset_set,
+    std::shared_ptr<WorkSerializer> work_serializer,
     std::unique_ptr<Resolver::ResultHandler> result_handler) {
   GPR_ASSERT(g_state != nullptr);
   grpc_uri* uri = nullptr;
@@ -156,7 +159,7 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
   resolver_args.uri = uri;
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
-  resolver_args.combiner = combiner;
+  resolver_args.work_serializer = std::move(work_serializer);
   resolver_args.result_handler = std::move(result_handler);
   OrphanablePtr<Resolver> resolver =
       factory == nullptr ? nullptr

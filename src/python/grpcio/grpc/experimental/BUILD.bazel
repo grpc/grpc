@@ -2,12 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "aio",
-    srcs = [
-        "aio/__init__.py",
-        "aio/_call.py",
-        "aio/_channel.py",
-        "aio/_server.py",
-    ],
+    srcs = glob(["aio/**/*.py"]),
     deps = [
         "//src/python/grpcio/grpc/_cython:cygrpc",
     ],

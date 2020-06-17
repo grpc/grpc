@@ -19,7 +19,8 @@ def anything():
 
 
 def one_of(values):
-    return lambda v: ('{0} is not in [{1}]'.format(v, values) if v not in values else None)
+    return lambda v: ('{0} is not in [{1}]'.format(v, values)
+                      if v not in values else None)
 
 
 def subset_of(values):
@@ -41,6 +42,7 @@ VALID_ATTRIBUTE_KEYS_MAP = {
         'boringssl': one_of((True,)),
         'build_system': anything(),
         'build': anything(),
+        'cmake_target': anything(),
         'defaults': anything(),
         'deps_linkage': one_of(('static',)),
         'deps': anything(),

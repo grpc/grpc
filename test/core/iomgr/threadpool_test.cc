@@ -49,6 +49,7 @@ class SimpleFunctorForAdd : public grpc_experimental_completion_queue_functor {
   friend class SimpleFunctorCheckForAdd;
   SimpleFunctorForAdd() {
     functor_run = &SimpleFunctorForAdd::Run;
+    inlineable = true;
     internal_next = this;
     internal_success = 0;
   }
@@ -142,6 +143,7 @@ class SimpleFunctorCheckForAdd
  public:
   SimpleFunctorCheckForAdd(int ok, int* count) : count_(count) {
     functor_run = &SimpleFunctorCheckForAdd::Run;
+    inlineable = true;
     internal_success = ok;
   }
   ~SimpleFunctorCheckForAdd() {}

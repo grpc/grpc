@@ -27,7 +27,10 @@
 #include "include/grpc++/grpc++.h"
 #include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
+#include "opencensus/stats/tag_key.h"
 #include "opencensus/stats/testing/test_utils.h"
+#include "opencensus/tags/tag_map.h"
+#include "opencensus/tags/with_tag_map.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -41,6 +44,12 @@ using ::opencensus::stats::Distribution;
 using ::opencensus::stats::View;
 using ::opencensus::stats::ViewDescriptor;
 using ::opencensus::stats::testing::TestUtils;
+using ::opencensus::tags::TagKey;
+using ::opencensus::tags::TagMap;
+using ::opencensus::tags::WithTagMap;
+
+static const auto TEST_TAG_KEY = TagKey::Register("my_key");
+static const auto TEST_TAG_VALUE = "my_value";
 
 class EchoServer final : public EchoTestService::Service {
   ::grpc::Status Echo(::grpc::ServerContext* context,
@@ -104,7 +113,8 @@ TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
           .set_measure(kRpcClientRoundtripLatencyMeasureName)
           .set_name("client_method")
           .set_aggregation(Aggregation::Count())
-          .add_column(ClientMethodTagKey());
+          .add_column(ClientMethodTagKey())
+          .add_column(TEST_TAG_KEY);
   View client_method_view(client_method_descriptor);
   const auto server_method_descriptor =
       ViewDescriptor()
@@ -112,6 +122,7 @@ TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
           .set_name("server_method")
           .set_aggregation(Aggregation::Count())
           .add_column(ServerMethodTagKey());
+  //.add_column(TEST_TAG_KEY);
   View server_method_view(server_method_descriptor);
 
   const auto client_status_descriptor =
@@ -119,7 +130,8 @@ TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
           .set_measure(kRpcClientRoundtripLatencyMeasureName)
           .set_name("client_status")
           .set_aggregation(Aggregation::Count())
-          .add_column(ClientStatusTagKey());
+          .add_column(ClientStatusTagKey())
+          .add_column(TEST_TAG_KEY);
   View client_status_view(client_status_descriptor);
   const auto server_status_descriptor =
       ViewDescriptor()
@@ -136,19 +148,56 @@ TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
     request.mutable_param()->mutable_expected_error()->set_code(i);
     EchoResponse response;
     ::grpc::ClientContext context;
-    ::grpc::Status status = stub_->Echo(&context, request, &response);
+    {
+      WithTagMap tags({{TEST_TAG_KEY, TEST_TAG_VALUE}});
+      ::grpc::Status status = stub_->Echo(&context, request, &response);
+    }
   }
   absl::SleepFor(absl::Milliseconds(500));
   TestUtils::Flush();
 
-  EXPECT_THAT(client_method_view.GetData().int_data(),
-              ::testing::UnorderedElementsAre(::testing::Pair(
-                  ::testing::ElementsAre(client_method_name_), 17)));
+  // Client side views can be tagged with custom tags.
+  EXPECT_THAT(
+      client_method_view.GetData().int_data(),
+      ::testing::UnorderedElementsAre(::testing::Pair(
+          ::testing::ElementsAre(client_method_name_, TEST_TAG_VALUE), 17)));
+  // TODO: Implement server view tagging with custom tags.
   EXPECT_THAT(server_method_view.GetData().int_data(),
               ::testing::UnorderedElementsAre(::testing::Pair(
                   ::testing::ElementsAre(server_method_name_), 17)));
 
-  auto codes = {
+  // Client side views can be tagged with custom tags.
+  auto client_tags = {
+      ::testing::Pair(::testing::ElementsAre("OK", TEST_TAG_VALUE), 1),
+      ::testing::Pair(::testing::ElementsAre("CANCELLED", TEST_TAG_VALUE), 1),
+      ::testing::Pair(::testing::ElementsAre("UNKNOWN", TEST_TAG_VALUE), 1),
+      ::testing::Pair(
+          ::testing::ElementsAre("INVALID_ARGUMENT", TEST_TAG_VALUE), 1),
+      ::testing::Pair(
+          ::testing::ElementsAre("DEADLINE_EXCEEDED", TEST_TAG_VALUE), 1),
+      ::testing::Pair(::testing::ElementsAre("NOT_FOUND", TEST_TAG_VALUE), 1),
+      ::testing::Pair(::testing::ElementsAre("ALREADY_EXISTS", TEST_TAG_VALUE),
+                      1),
+      ::testing::Pair(
+          ::testing::ElementsAre("PERMISSION_DENIED", TEST_TAG_VALUE), 1),
+      ::testing::Pair(::testing::ElementsAre("UNAUTHENTICATED", TEST_TAG_VALUE),
+                      1),
+      ::testing::Pair(
+          ::testing::ElementsAre("RESOURCE_EXHAUSTED", TEST_TAG_VALUE), 1),
+      ::testing::Pair(
+          ::testing::ElementsAre("FAILED_PRECONDITION", TEST_TAG_VALUE), 1),
+      ::testing::Pair(::testing::ElementsAre("ABORTED", TEST_TAG_VALUE), 1),
+      ::testing::Pair(::testing::ElementsAre("OUT_OF_RANGE", TEST_TAG_VALUE),
+                      1),
+      ::testing::Pair(::testing::ElementsAre("UNIMPLEMENTED", TEST_TAG_VALUE),
+                      1),
+      ::testing::Pair(::testing::ElementsAre("INTERNAL", TEST_TAG_VALUE), 1),
+      ::testing::Pair(::testing::ElementsAre("UNAVAILABLE", TEST_TAG_VALUE), 1),
+      ::testing::Pair(::testing::ElementsAre("DATA_LOSS", TEST_TAG_VALUE), 1),
+  };
+
+  // TODO: Implement server view tagging with custom tags.
+  auto server_tags = {
       ::testing::Pair(::testing::ElementsAre("OK"), 1),
       ::testing::Pair(::testing::ElementsAre("CANCELLED"), 1),
       ::testing::Pair(::testing::ElementsAre("UNKNOWN"), 1),
@@ -169,9 +218,9 @@ TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
   };
 
   EXPECT_THAT(client_status_view.GetData().int_data(),
-              ::testing::UnorderedElementsAreArray(codes));
+              ::testing::UnorderedElementsAreArray(client_tags));
   EXPECT_THAT(server_status_view.GetData().int_data(),
-              ::testing::UnorderedElementsAreArray(codes));
+              ::testing::UnorderedElementsAreArray(server_tags));
 }
 
 TEST_F(StatsPluginEnd2EndTest, RequestReceivedBytesPerRpc) {

@@ -24,6 +24,9 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
+// Same number as the micro of SO_REUSEPORT in kernel
+#define GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT (0x00000200u)
+
 typedef struct grpc_tcp_listener grpc_tcp_listener;
 typedef struct grpc_custom_tcp_connect grpc_custom_tcp_connect;
 

@@ -350,19 +350,17 @@ BENCHMARK(BM_ClosureSched4OnTwoCombiners);
 // the benchmark is complete
 class Rescheduler {
  public:
-  Rescheduler(benchmark::State& state, grpc_closure_scheduler* scheduler)
-      : state_(state) {
-    GRPC_CLOSURE_INIT(&closure_, Step, this, scheduler);
+  explicit Rescheduler(benchmark::State& state) : state_(state) {
+    GRPC_CLOSURE_INIT(&closure_, Step, this, nullptr);
   }
 
   void ScheduleFirst() {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
   }
 
-  void ScheduleFirstAgainstDifferentScheduler(
-      grpc_closure_scheduler* scheduler) {
+  void ScheduleFirstAgainstDifferentScheduler() {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                            GRPC_CLOSURE_CREATE(Step, this, scheduler),
+                            GRPC_CLOSURE_CREATE(Step, this, nullptr),
                             GRPC_ERROR_NONE);
   }
 
@@ -381,7 +379,7 @@ class Rescheduler {
 static void BM_ClosureReschedOnExecCtx(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  Rescheduler r(state, grpc_schedule_on_exec_ctx);
+  Rescheduler r(state);
   r.ScheduleFirst();
   grpc_core::ExecCtx::Get()->Flush();
   track_counters.Finish(state);

@@ -56,6 +56,7 @@ grpc_cc_binary(
     language = "C++",
     deps = [
         "fake_handshaker_lib",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
 )

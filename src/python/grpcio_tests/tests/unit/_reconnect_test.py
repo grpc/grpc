@@ -40,7 +40,7 @@ class ReconnectTest(unittest.TestCase):
         server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
         handler = grpc.method_handlers_generic_handler('test', {
             'UnaryUnary':
-            grpc.unary_unary_rpc_method_handler(_handle_unary_unary)
+                grpc.unary_unary_rpc_method_handler(_handle_unary_unary)
         })
         options = (('grpc.so_reuseport', 1),)
         with bound_socket() as (host, port):

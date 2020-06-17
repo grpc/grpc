@@ -56,20 +56,22 @@ const grpc_completion_queue_attributes kCompletionQueueAttr = {
     });
     dispatch_async(gDefaultConcurrentQueue, ^{
       while (YES) {
-        // The following call blocks until an event is available.
-        grpc_event event =
-            grpc_completion_queue_next(unmanagedQueue, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-        GRPCQueueCompletionHandler handler;
-        switch (event.type) {
-          case GRPC_OP_COMPLETE:
-            handler = (__bridge_transfer GRPCQueueCompletionHandler)event.tag;
-            handler(event.success);
-            break;
-          case GRPC_QUEUE_SHUTDOWN:
-            grpc_completion_queue_destroy(unmanagedQueue);
-            return;
-          default:
-            [NSException raise:@"Unrecognized completion type" format:@""];
+        @autoreleasepool {
+          // The following call blocks until an event is available.
+          grpc_event event =
+              grpc_completion_queue_next(unmanagedQueue, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+          GRPCQueueCompletionHandler handler;
+          switch (event.type) {
+            case GRPC_OP_COMPLETE:
+              handler = (__bridge_transfer GRPCQueueCompletionHandler)event.tag;
+              handler(event.success);
+              break;
+            case GRPC_QUEUE_SHUTDOWN:
+              grpc_completion_queue_destroy(unmanagedQueue);
+              return;
+            default:
+              [NSException raise:@"Unrecognized completion type" format:@""];
+          }
         }
       };
     });

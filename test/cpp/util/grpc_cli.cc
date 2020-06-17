@@ -51,6 +51,9 @@
        --decode=grpc.testing.SimpleResponse \
        src/proto/grpc/testing/messages.proto \
        < output.bin > output.txt
+   10. --default_service_config, optional default service config to use
+       on the channel. Note that this may be ignored if the name resolver
+       returns a service config.
 */
 
 #include <fstream>
@@ -68,10 +71,10 @@ DEFINE_string(outfile, "", "Output file (default is stdout)");
 static bool SimplePrint(const grpc::string& outfile,
                         const grpc::string& output) {
   if (outfile.empty()) {
-    std::cout << output << std::endl;
+    std::cout << output << std::flush;
   } else {
     std::ofstream output_file(outfile, std::ios::app | std::ios::binary);
-    output_file << output << std::endl;
+    output_file << output << std::flush;
     output_file.close();
   }
   return true;

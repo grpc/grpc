@@ -92,9 +92,9 @@ def _call(url, method='GET', json=None):
 
 
 def _latest_commit():
-    resp = _call('/repos/%s/pulls/%s/commits' %
-                 (_GITHUB_REPO,
-                  os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']))
+    resp = _call(
+        '/repos/%s/pulls/%s/commits' %
+        (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']))
     return resp.json()[-1]
 
 
@@ -123,19 +123,18 @@ def check_on_pr(name, summary, success=True):
         return
     completion_time = str(
         datetime.datetime.utcnow().replace(microsecond=0).isoformat()) + 'Z'
-    resp = _call(
-        '/repos/%s/check-runs' % _GITHUB_REPO,
-        method='POST',
-        json={
-            'name': name,
-            'head_sha': os.environ['KOKORO_GIT_COMMIT'],
-            'status': 'completed',
-            'completed_at': completion_time,
-            'conclusion': 'success' if success else 'failure',
-            'output': {
-                'title': name,
-                'summary': summary,
-            }
-        })
+    resp = _call('/repos/%s/check-runs' % _GITHUB_REPO,
+                 method='POST',
+                 json={
+                     'name': name,
+                     'head_sha': os.environ['KOKORO_GIT_COMMIT'],
+                     'status': 'completed',
+                     'completed_at': completion_time,
+                     'conclusion': 'success' if success else 'failure',
+                     'output': {
+                         'title': name,
+                         'summary': summary,
+                     }
+                 })
     print('Result of Creating/Updating Check on PR:',
           json.dumps(resp.json(), indent=2))

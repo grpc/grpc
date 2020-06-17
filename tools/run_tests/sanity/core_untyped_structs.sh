@@ -21,7 +21,7 @@ cd "$(dirname "$0")/../../.."
 # Make sure that all core struct/unions have a name or are typedef'ed
 #
 
-egrep -Irn '(struct|union) *{' include/grpc |
-    egrep -v typedef |
+grep -EIrn '(struct|union) *{' include/grpc |
+    grep -Ev typedef |
     diff - /dev/null
 

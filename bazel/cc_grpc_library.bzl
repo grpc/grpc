@@ -1,5 +1,6 @@
 """Generates and compiles C++ grpc stubs from proto_library rules."""
 
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:generate_cc.bzl", "generate_cc")
 load("//bazel:protobuf.bzl", "well_known_proto_libs")
 
@@ -63,8 +64,7 @@ def cc_grpc_library(
         proto_deps += [dep.split(":")[0] + ":" + "_" + dep.split(":")[1] + "_only" for dep in deps if dep.find(":") != -1]
         if well_known_protos:
             proto_deps += well_known_proto_libs()
-
-        native.proto_library(
+        proto_library(
             name = proto_target,
             srcs = srcs,
             deps = proto_deps,

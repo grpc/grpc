@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 
-+ (nullable instancetype) new NS_UNAVAILABLE;
++ (nullable instancetype)new NS_UNAVAILABLE;
 
 /**
  * Initialize with an actual channel object \a channel and a reference to the channel pool.
@@ -76,7 +76,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 
-+ (nullable instancetype) new NS_UNAVAILABLE;
++ (nullable instancetype)new NS_UNAVAILABLE;
 
 /**
  * Get the global channel pool.

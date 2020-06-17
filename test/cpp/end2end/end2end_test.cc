@@ -31,10 +31,13 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/string_ref.h>
+#include <grpcpp/test/channel_test_peer.h>
 
 #include <mutex>
 #include <thread>
 
+#include "absl/strings/str_format.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -48,9 +51,9 @@
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"
-#endif  // GRPC_POSIX_SOCKET
+#endif  // GRPC_POSIX_SOCKET_EV
 
 #include <gtest/gtest.h>
 
@@ -83,7 +86,61 @@ bool CheckIsLocalhost(const grpc::string& addr) {
          addr.substr(0, kIpv6.size()) == kIpv6;
 }
 
+const int kClientChannelBackupPollIntervalMs = 200;
+
 const char kTestCredsPluginErrorMsg[] = "Could not find plugin metadata.";
+
+const char kFakeToken[] = "fake_token";
+const char kFakeSelector[] = "fake_selector";
+const char kExpectedFakeCredsDebugString[] =
+    "SecureCallCredentials{GoogleIAMCredentials{Token:present,"
+    "AuthoritySelector:fake_selector}}";
+
+const char kWrongToken[] = "wrong_token";
+const char kWrongSelector[] = "wrong_selector";
+const char kExpectedWrongCredsDebugString[] =
+    "SecureCallCredentials{GoogleIAMCredentials{Token:present,"
+    "AuthoritySelector:wrong_selector}}";
+
+const char kFakeToken1[] = "fake_token1";
+const char kFakeSelector1[] = "fake_selector1";
+const char kExpectedFakeCreds1DebugString[] =
+    "SecureCallCredentials{GoogleIAMCredentials{Token:present,"
+    "AuthoritySelector:fake_selector1}}";
+
+const char kFakeToken2[] = "fake_token2";
+const char kFakeSelector2[] = "fake_selector2";
+const char kExpectedFakeCreds2DebugString[] =
+    "SecureCallCredentials{GoogleIAMCredentials{Token:present,"
+    "AuthoritySelector:fake_selector2}}";
+
+const char kExpectedAuthMetadataPluginKeyFailureCredsDebugString[] =
+    "SecureCallCredentials{TestMetadataCredentials{key:TestPluginMetadata,"
+    "value:Does not matter, will fail the key is invalid.}}";
+const char kExpectedAuthMetadataPluginValueFailureCredsDebugString[] =
+    "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
+    "value:With illegal \n value.}}";
+const char kExpectedAuthMetadataPluginWithDeadlineCredsDebugString[] =
+    "SecureCallCredentials{TestMetadataCredentials{key:meta_key,value:Does not "
+    "matter}}";
+const char kExpectedNonBlockingAuthMetadataPluginFailureCredsDebugString[] =
+    "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
+    "value:Does not matter, will fail anyway (see 3rd param)}}";
+const char
+    kExpectedNonBlockingAuthMetadataPluginAndProcessorSuccessCredsDebugString
+        [] = "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-"
+             "metadata,value:Dr Jekyll}}";
+const char
+    kExpectedNonBlockingAuthMetadataPluginAndProcessorFailureCredsDebugString
+        [] = "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-"
+             "metadata,value:Mr Hyde}}";
+const char kExpectedBlockingAuthMetadataPluginFailureCredsDebugString[] =
+    "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
+    "value:Does not matter, will fail anyway (see 3rd param)}}";
+const char kExpectedCompositeCallCredsDebugString[] =
+    "SecureCallCredentials{CompositeCallCredentials{TestMetadataCredentials{"
+    "key:call-creds-key1,value:call-creds-val1},TestMetadataCredentials{key:"
+    "call-creds-key2,value:call-creds-val2}}}";
 
 class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
  public:
@@ -121,6 +178,11 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
     } else {
       return Status(StatusCode::NOT_FOUND, kTestCredsPluginErrorMsg);
     }
+  }
+
+  grpc::string DebugString() override {
+    return absl::StrFormat("TestMetadataCredentials{key:%s,value:%s}",
+                           metadata_key_.c_str(), metadata_value_.c_str());
   }
 
  private:
@@ -812,6 +874,19 @@ TEST_P(End2endTest, MultipleRpcs) {
   }
 }
 
+TEST_P(End2endTest, ManyStubs) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  ChannelTestPeer peer(channel_.get());
+  int registered_calls_pre = peer.registered_calls();
+  int registration_attempts_pre = peer.registration_attempts();
+  for (int i = 0; i < 1000; ++i) {
+    grpc::testing::EchoTestService::NewStub(channel_);
+  }
+  EXPECT_EQ(peer.registered_calls(), registered_calls_pre);
+  EXPECT_GT(peer.registration_attempts(), registration_attempts_pre);
+}
+
 TEST_P(End2endTest, EmptyBinaryMetadata) {
   MAYBE_SKIP_TEST;
   ResetStub();
@@ -833,22 +908,23 @@ TEST_P(End2endTest, ReconnectChannel) {
   int poller_slowdown_factor = 1;
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
   grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   if (0 == strcmp(poller.get(), "poll")) {
     poller_slowdown_factor = 2;
   }
-#endif  // GRPC_POSIX_SOCKET
+#endif  // GRPC_POSIX_SOCKET_EV
   ResetStub();
   SendRpc(stub_.get(), 1, false);
   RestartServer(std::shared_ptr<AuthMetadataProcessor>());
   // It needs more than GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS time to
-  // reconnect the channel.
-  gpr_sleep_until(gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME),
-      gpr_time_from_millis(
-          300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
-          GPR_TIMESPAN)));
+  // reconnect the channel. Make it a factor of 5x
+  gpr_sleep_until(
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_millis(kClientChannelBackupPollIntervalMs * 5 *
+                                            poller_slowdown_factor *
+                                            grpc_test_slowdown_factor(),
+                                        GPR_TIMESPAN)));
   SendRpc(stub_.get(), 1, false);
 }
 
@@ -1131,6 +1207,42 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
   }
 }
 
+TEST_P(End2endTest, CancelRpcAfterStart) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+  request.mutable_param()->set_server_notify_client_when_started(true);
+  request.mutable_param()->set_skip_cancelled_check(true);
+  Status s;
+  std::thread echo_thread([this, &s, &context, &request, &response] {
+    s = stub_->Echo(&context, request, &response);
+    EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
+  });
+  if (!GetParam().callback_server) {
+    service_.ClientWaitUntilRpcStarted();
+  } else {
+    callback_service_.ClientWaitUntilRpcStarted();
+  }
+
+  context.TryCancel();
+
+  if (!GetParam().callback_server) {
+    service_.SignalServerToContinue();
+  } else {
+    callback_service_.SignalServerToContinue();
+  }
+
+  echo_thread.join();
+  EXPECT_EQ("", response.message());
+  EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+  }
+}
+
 // Client cancels request stream after sending two messages
 TEST_P(End2endTest, ClientCancelsRequestStream) {
   MAYBE_SKIP_TEST;
@@ -1406,80 +1518,6 @@ TEST_P(End2endTest, ExpectErrorTest) {
                 std::string::npos);
     EXPECT_TRUE(context.debug_error_string().find("13") != std::string::npos);
   }
-}
-
-TEST_P(End2endTest, DelayedRpcEarlyCanceledUsingCancelCallback) {
-  MAYBE_SKIP_TEST;
-  // This test case is only relevant with callback server.
-  // Additionally, using interceptors makes this test subject to
-  // timing-dependent failures if the interceptors take too long to run.
-  if (!GetParam().callback_server || GetParam().use_interceptors) {
-    return;
-  }
-
-  ResetStub();
-  ClientContext context;
-  context.AddMetadata(kServerUseCancelCallback,
-                      grpc::to_string(MAYBE_USE_CALLBACK_EARLY_CANCEL));
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-  request.mutable_param()->set_skip_cancelled_check(true);
-  context.TryCancel();
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-}
-
-TEST_P(End2endTest, DelayedRpcLateCanceledUsingCancelCallback) {
-  MAYBE_SKIP_TEST;
-  // This test case is only relevant with callback server.
-  // Additionally, using interceptors makes this test subject to
-  // timing-dependent failures if the interceptors take too long to run.
-  if (!GetParam().callback_server || GetParam().use_interceptors) {
-    return;
-  }
-
-  ResetStub();
-  ClientContext context;
-  context.AddMetadata(kServerUseCancelCallback,
-                      grpc::to_string(MAYBE_USE_CALLBACK_LATE_CANCEL));
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-  request.mutable_param()->set_skip_cancelled_check(true);
-  // Let server sleep for 200 ms first to give the cancellation a chance.
-  // This is split into 100 ms to start the cancel and 100 ms extra time for
-  // it to make it to the server, to make it highly probable that the server
-  // RPC would have already started by the time the cancellation is sent
-  // and the server-side gets enough time to react to it.
-  request.mutable_param()->set_server_sleep_us(200000);
-
-  std::thread echo_thread{[this, &context, &request, &response] {
-    Status s = stub_->Echo(&context, request, &response);
-    EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  }};
-  std::this_thread::sleep_for(std::chrono::microseconds(100000));
-  context.TryCancel();
-  echo_thread.join();
-}
-
-TEST_P(End2endTest, DelayedRpcNonCanceledUsingCancelCallback) {
-  MAYBE_SKIP_TEST;
-  if (!GetParam().callback_server) {
-    return;
-  }
-
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-
-  ClientContext context;
-  context.AddMetadata(kServerUseCancelCallback,
-                      grpc::to_string(MAYBE_USE_CALLBACK_NO_CANCEL));
-
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_TRUE(s.ok());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1798,7 +1836,7 @@ TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
   EchoResponse response;
   ClientContext context;
   std::shared_ptr<CallCredentials> creds =
-      GoogleIAMCredentials("fake_token", "fake_selector");
+      GoogleIAMCredentials(kFakeToken, kFakeSelector);
   context.set_credentials(creds);
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);
@@ -1808,10 +1846,12 @@ TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
   EXPECT_TRUE(s.ok());
   EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
                                GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                               "fake_token"));
+                               kFakeToken));
   EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
                                GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                               "fake_selector"));
+                               kFakeSelector));
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedFakeCredsDebugString);
 }
 
 class CredentialsInterceptor : public experimental::Interceptor {
@@ -1822,7 +1862,7 @@ class CredentialsInterceptor : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       std::shared_ptr<CallCredentials> creds =
-          GoogleIAMCredentials("fake_token", "fake_selector");
+          GoogleIAMCredentials(kFakeToken, kFakeSelector);
       info_->client_context()->set_credentials(creds);
     }
     methods->Proceed();
@@ -1862,10 +1902,12 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterception) {
   EXPECT_TRUE(s.ok());
   EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
                                GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                               "fake_token"));
+                               kFakeToken));
   EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
                                GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                               "fake_selector"));
+                               kFakeSelector));
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedFakeCredsDebugString);
 }
 
 TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
@@ -1882,9 +1924,11 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
   EchoResponse response;
   ClientContext context;
   std::shared_ptr<CallCredentials> creds1 =
-      GoogleIAMCredentials("wrong_token", "wrong_selector");
+      GoogleIAMCredentials(kWrongToken, kWrongSelector);
   context.set_credentials(creds1);
   EXPECT_EQ(context.credentials(), creds1);
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedWrongCredsDebugString);
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);
 
@@ -1893,10 +1937,12 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
   EXPECT_TRUE(s.ok());
   EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
                                GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                               "fake_token"));
+                               kFakeToken));
   EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
                                GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                               "fake_selector"));
+                               kFakeSelector));
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedFakeCredsDebugString);
 }
 
 TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
@@ -1906,11 +1952,13 @@ TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
   EchoResponse response;
   ClientContext context;
   std::shared_ptr<CallCredentials> creds1 =
-      GoogleIAMCredentials("fake_token1", "fake_selector1");
+      GoogleIAMCredentials(kFakeToken1, kFakeSelector1);
   context.set_credentials(creds1);
   EXPECT_EQ(context.credentials(), creds1);
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedFakeCreds1DebugString);
   std::shared_ptr<CallCredentials> creds2 =
-      GoogleIAMCredentials("fake_token2", "fake_selector2");
+      GoogleIAMCredentials(kFakeToken2, kFakeSelector2);
   context.set_credentials(creds2);
   EXPECT_EQ(context.credentials(), creds2);
   request.set_message("Hello");
@@ -1919,16 +1967,18 @@ TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
                                GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                               "fake_token2"));
+                               kFakeToken2));
   EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
                                GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                               "fake_selector2"));
+                               kFakeSelector2));
   EXPECT_FALSE(MetadataContains(context.GetServerTrailingMetadata(),
                                 GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                                "fake_token1"));
+                                kFakeToken1));
   EXPECT_FALSE(MetadataContains(context.GetServerTrailingMetadata(),
                                 GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                "fake_selector1"));
+                                kFakeSelector1));
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedFakeCreds2DebugString);
   EXPECT_EQ(request.message(), response.message());
   EXPECT_TRUE(s.ok());
 }
@@ -1950,6 +2000,8 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginKeyFailure) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
   EXPECT_EQ(s.error_code(), StatusCode::UNAVAILABLE);
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedAuthMetadataPluginKeyFailureCredsDebugString);
 }
 
 TEST_P(SecureEnd2endTest, AuthMetadataPluginValueFailure) {
@@ -1968,6 +2020,8 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginValueFailure) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
   EXPECT_EQ(s.error_code(), StatusCode::UNAVAILABLE);
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedAuthMetadataPluginValueFailureCredsDebugString);
 }
 
 TEST_P(SecureEnd2endTest, AuthMetadataPluginWithDeadline) {
@@ -1992,6 +2046,8 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginWithDeadline) {
     EXPECT_TRUE(s.error_code() == StatusCode::DEADLINE_EXCEEDED ||
                 s.error_code() == StatusCode::UNAVAILABLE);
   }
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedAuthMetadataPluginWithDeadlineCredsDebugString);
 }
 
 TEST_P(SecureEnd2endTest, AuthMetadataPluginWithCancel) {
@@ -2019,6 +2075,8 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginWithCancel) {
                 s.error_code() == StatusCode::UNAVAILABLE);
   }
   cancel_thread.join();
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedAuthMetadataPluginWithDeadlineCredsDebugString);
 }
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
@@ -2041,6 +2099,8 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
   EXPECT_EQ(s.error_message(),
             grpc::string("Getting metadata from plugin failed with error: ") +
                 kTestCredsPluginErrorMsg);
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedNonBlockingAuthMetadataPluginFailureCredsDebugString);
 }
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
@@ -2067,6 +2127,9 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
   EXPECT_FALSE(MetadataContains(
       context.GetServerTrailingMetadata(), GRPC_AUTHORIZATION_METADATA_KEY,
       grpc::string("Bearer ") + TestAuthMetadataProcessor::kGoodGuy));
+  EXPECT_EQ(
+      context.credentials()->DebugString(),
+      kExpectedNonBlockingAuthMetadataPluginAndProcessorSuccessCredsDebugString);
 }
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorFailure) {
@@ -2083,6 +2146,9 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorFailure) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
   EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(
+      context.credentials()->DebugString(),
+      kExpectedNonBlockingAuthMetadataPluginAndProcessorFailureCredsDebugString);
 }
 
 TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
@@ -2105,6 +2171,8 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
   EXPECT_EQ(s.error_message(),
             grpc::string("Getting metadata from plugin failed with error: ") +
                 kTestCredsPluginErrorMsg);
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedBlockingAuthMetadataPluginFailureCredsDebugString);
 }
 
 TEST_P(SecureEnd2endTest, CompositeCallCreds) {
@@ -2136,6 +2204,8 @@ TEST_P(SecureEnd2endTest, CompositeCallCreds) {
                                kMetadataKey1, kMetadataVal1));
   EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
                                kMetadataKey2, kMetadataVal2));
+  EXPECT_EQ(context.credentials()->DebugString(),
+            kExpectedCompositeCallCredsDebugString);
 }
 
 TEST_P(SecureEnd2endTest, ClientAuthContext) {
@@ -2206,7 +2276,8 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
 
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 200);
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms,
+                        kClientChannelBackupPollIntervalMs);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   gpr_setenv("grpc_cfstream", "0");

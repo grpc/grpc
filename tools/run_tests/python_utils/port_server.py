@@ -188,10 +188,8 @@ class Handler(BaseHTTPRequestHandler):
             mu.acquire()
             now = time.time()
             out = yaml.dump({
-                'pool':
-                pool,
-                'in_use':
-                dict((k, now - v) for k, v in in_use.items())
+                'pool': pool,
+                'in_use': dict((k, now - v) for k, v in in_use.items())
             })
             mu.release()
             self.wfile.write(out)

@@ -99,10 +99,10 @@ def main(argv):
         elif opt == '-P':
             assert not got_preprocessed_input
             assert json_dict == {}
-            sys.path.insert(0,
-                            os.path.abspath(
-                                os.path.join(
-                                    os.path.dirname(sys.argv[0]), 'plugins')))
+            sys.path.insert(
+                0,
+                os.path.abspath(
+                    os.path.join(os.path.dirname(sys.argv[0]), 'plugins')))
             with open(arg, 'r') as dict_file:
                 dictionary = pickle.load(dict_file)
             got_preprocessed_input = True
@@ -136,11 +136,10 @@ def main(argv):
         for src in srcs:
             if isinstance(src, basestring):
                 assert len(srcs) == 1
-                template = Template(
-                    src,
-                    filename=arg,
-                    module_directory=module_directory,
-                    lookup=TemplateLookup(directories=['.']))
+                template = Template(src,
+                                    filename=arg,
+                                    module_directory=module_directory,
+                                    lookup=TemplateLookup(directories=['.']))
                 with open(output_name, 'w') as output_file:
                     template.render_context(Context(output_file, **dictionary))
             else:

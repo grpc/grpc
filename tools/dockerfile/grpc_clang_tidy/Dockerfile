@@ -12,16 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM debian:10
 
-
-RUN apt-get update && apt-get -y install wget xz-utils
-RUN wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
-RUN tar xf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
-RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-format /usr/local/bin/clang-format
-ENV CLANG_FORMAT=clang-format
-RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-tidy /usr/local/bin/clang-tidy
-ENV CLANG_TIDY=clang-tidy
+# Install clang-tidy 6.0
+# This is because clang-tidy 7.0 started treating compiler errors as tidy errors
+# and there are a couple of files which are not properly compiled via tidy so it
+# should be using 6.0 version until all compilation errors are addressed.
+RUN apt-get update && apt-get install -y clang-tidy-6.0
+ENV CLANG_TIDY=clang-tidy-6.0
 
 #====================
 # Python dependencies
@@ -31,11 +29,12 @@ ENV CLANG_TIDY=clang-tidy
 RUN apt-get update && apt-get install -y \
     python-all-dev \
     python3-all-dev \
-    python-pip
+    python-setuptools
 
 # Install Python packages from PyPI
-RUN pip install --upgrade pip==10.0.1
-RUN pip install virtualenv
+RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
+RUN pip install --upgrade pip==19.3.1
+RUN pip install virtualenv==16.7.9
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
 
 ADD clang_tidy_all_the_things.sh /

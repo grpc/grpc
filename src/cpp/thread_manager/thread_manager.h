@@ -19,10 +19,8 @@
 #ifndef GRPC_INTERNAL_CPP_THREAD_MANAGER_H
 #define GRPC_INTERNAL_CPP_THREAD_MANAGER_H
 
-#include <condition_variable>
 #include <list>
 #include <memory>
-#include <mutex>
 
 #include <grpcpp/support/config.h>
 

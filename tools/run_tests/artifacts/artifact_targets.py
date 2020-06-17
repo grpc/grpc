@@ -83,16 +83,15 @@ def create_jobspec(name,
     else:
         environ['ARTIFACTS_OUT'] = os.path.join('artifacts', name)
 
-    jobspec = jobset.JobSpec(
-        cmdline=cmdline,
-        environ=environ,
-        shortname='build_artifact.%s' % (name),
-        timeout_seconds=timeout_seconds,
-        flake_retries=flake_retries,
-        timeout_retries=timeout_retries,
-        shell=shell,
-        cpu_cost=cpu_cost,
-        verbose_success=verbose_success)
+    jobspec = jobset.JobSpec(cmdline=cmdline,
+                             environ=environ,
+                             shortname='build_artifact.%s' % (name),
+                             timeout_seconds=timeout_seconds,
+                             flake_retries=flake_retries,
+                             timeout_retries=timeout_retries,
+                             shell=shell,
+                             cpu_cost=cpu_cost,
+                             verbose_success=verbose_success)
     return jobspec
 
 
@@ -145,30 +144,17 @@ class PythonArtifact:
             environ['PYTHON'] = '/opt/python/{}/bin/python'.format(
                 self.py_version)
             environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.py_version)
-            # Platform autodetection for the manylinux1 image breaks so we set the
-            # defines ourselves.
-            # TODO(atash) get better platform-detection support in core so we don't
-            # need to do this manually...
-            environ['CFLAGS'] = '-DGPR_MANYLINUX1=1'
             environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
             environ['GRPC_BUILD_MANYLINUX_WHEEL'] = 'TRUE'
-
-            if self.platform == 'manylinux1':
-                # manylinux1 currently has too old version of gcc
-                # so we need to use this workaround to avoid
-                # the "SSE2 instruction set not enabled" boringssl build error
-                # https://gcc.gnu.org/ml/gcc-patches/2013-04/msg00740.html
-                environ['CFLAGS'] += ' -msse2'
-
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/grpc_artifact_python_%s_%s' % (self.platform,
-                                                                 self.arch),
+                # NOTE(rbellevi): Do *not* update this without also ensuring the
+                # base_docker_image attribute is accurate.
+                'tools/dockerfile/grpc_artifact_python_%s_%s' %
+                (self.platform, self.arch),
                 'tools/run_tests/artifacts/build_artifact_python.sh',
                 environ=environ,
-                timeout_seconds=60 * 60,
-                docker_base_image='quay.io/pypa/manylinux1_i686'
-                if self.arch == 'x86' else 'quay.io/pypa/manylinux1_x86_64')
+                timeout_seconds=60 * 60)
         elif self.platform == 'windows':
             if 'Python27' in self.py_version:
                 environ['EXT_COMPILER'] = 'mingw32'
@@ -178,14 +164,13 @@ class PythonArtifact:
             # seed.  We create a random temp-dir here
             dir = ''.join(
                 random.choice(string.ascii_uppercase) for _ in range(10))
-            return create_jobspec(
-                self.name, [
-                    'tools\\run_tests\\artifacts\\build_artifact_python.bat',
-                    self.py_version, '32' if self.arch == 'x86' else '64'
-                ],
-                environ=environ,
-                timeout_seconds=45 * 60,
-                use_workspace=True)
+            return create_jobspec(self.name, [
+                'tools\\run_tests\\artifacts\\build_artifact_python.bat',
+                self.py_version, '32' if self.arch == 'x86' else '64'
+            ],
+                                  environ=environ,
+                                  timeout_seconds=45 * 60,
+                                  use_workspace=True)
         else:
             environ['PYTHON'] = self.py_version
             environ['SKIP_PIP_INSTALL'] = 'TRUE'
@@ -243,21 +228,18 @@ class CSharpExtArtifact:
                 self.name,
                 'tools/dockerfile/grpc_artifact_android_ndk',
                 'tools/run_tests/artifacts/build_artifact_csharp_android.sh',
-                environ={
-                    'ANDROID_ABI': self.arch_abi
-                })
+                environ={'ANDROID_ABI': self.arch_abi})
         elif self.arch == 'ios':
             return create_jobspec(
                 self.name,
                 ['tools/run_tests/artifacts/build_artifact_csharp_ios.sh'],
                 use_workspace=True)
         elif self.platform == 'windows':
-            return create_jobspec(
-                self.name, [
-                    'tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
-                    self.arch
-                ],
-                use_workspace=True)
+            return create_jobspec(self.name, [
+                'tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
+                self.arch
+            ],
+                                  use_workspace=True)
         else:
             if self.platform == 'linux':
                 cmake_arch_option = ''  # x64 is the default architecture
@@ -271,11 +253,9 @@ class CSharpExtArtifact:
                     cmake_arch_option = '-DOPENSSL_NO_ASM=ON'
                 return create_docker_jobspec(
                     self.name,
-                    'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
+                    'tools/dockerfile/grpc_artifact_centos6_%s' % self.arch,
                     'tools/run_tests/artifacts/build_artifact_csharp.sh',
-                    environ={
-                        'CMAKE_ARCH_OPTION': cmake_arch_option
-                    })
+                    environ={'CMAKE_ARCH_OPTION': cmake_arch_option})
             else:
                 cmake_arch_option = ''  # x64 is the default architecture
                 if self.arch == 'x86':
@@ -304,8 +284,9 @@ class PHPArtifact:
 
     def build_jobspec(self):
         return create_docker_jobspec(
-            self.name, 'tools/dockerfile/grpc_artifact_linux_{}'.format(
-                self.arch), 'tools/run_tests/artifacts/build_artifact_php.sh')
+            self.name,
+            'tools/dockerfile/grpc_artifact_centos6_{}'.format(self.arch),
+            'tools/run_tests/artifacts/build_artifact_php.sh')
 
 
 class ProtocArtifact:
@@ -362,8 +343,7 @@ class ProtocArtifact:
 def targets():
     """Gets list of supported targets"""
     return ([
-        Cls(platform, arch)
-        for Cls in (CSharpExtArtifact, ProtocArtifact)
+        Cls(platform, arch) for Cls in (CSharpExtArtifact, ProtocArtifact)
         for platform in ('linux', 'macos', 'windows') for arch in ('x86', 'x64')
     ] + [
         CSharpExtArtifact('linux', 'android', arch_abi='arm64-v8a'),
@@ -372,12 +352,6 @@ def targets():
         CSharpExtArtifact('macos', 'ios'),
         # TODO(https://github.com/grpc/grpc/issues/20283)
         # Add manylinux2010_x86 targets once this issue is resolved.
-        PythonArtifact('manylinux1', 'x86', 'cp27-cp27m'),
-        PythonArtifact('manylinux1', 'x86', 'cp27-cp27mu'),
-        PythonArtifact('manylinux1', 'x86', 'cp35-cp35m'),
-        PythonArtifact('manylinux1', 'x86', 'cp36-cp36m'),
-        PythonArtifact('manylinux1', 'x86', 'cp37-cp37m'),
-        PythonArtifact('manylinux1', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x86', 'cp27-cp27m'),
         PythonArtifact('manylinux2010', 'x86', 'cp27-cp27mu'),
         PythonArtifact('manylinux2010', 'x86', 'cp35-cp35m'),
@@ -390,12 +364,6 @@ def targets():
         PythonArtifact('linux_extra', 'armv6', '2.7'),
         PythonArtifact('linux_extra', 'armv6', '3.5'),
         PythonArtifact('linux_extra', 'armv6', '3.6'),
-        PythonArtifact('manylinux1', 'x64', 'cp27-cp27m'),
-        PythonArtifact('manylinux1', 'x64', 'cp27-cp27mu'),
-        PythonArtifact('manylinux1', 'x64', 'cp35-cp35m'),
-        PythonArtifact('manylinux1', 'x64', 'cp36-cp36m'),
-        PythonArtifact('manylinux1', 'x64', 'cp37-cp37m'),
-        PythonArtifact('manylinux1', 'x64', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x64', 'cp27-cp27m'),
         PythonArtifact('manylinux2010', 'x64', 'cp27-cp27mu'),
         PythonArtifact('manylinux2010', 'x64', 'cp35-cp35m'),
@@ -406,20 +374,17 @@ def targets():
         PythonArtifact('macos', 'x64', 'python3.5'),
         PythonArtifact('macos', 'x64', 'python3.6'),
         PythonArtifact('macos', 'x64', 'python3.7'),
-        # TODO(https://github.com/grpc/grpc/issues/20615) Enable this artifact
-        # PythonArtifact('macos', 'x64', 'python3.8'),
-        PythonArtifact('windows', 'x86', 'Python27_32bits'),
-        PythonArtifact('windows', 'x86', 'Python35_32bits'),
-        PythonArtifact('windows', 'x86', 'Python36_32bits'),
-        PythonArtifact('windows', 'x86', 'Python37_32bits'),
-        # TODO(https://github.com/grpc/grpc/issues/20615) Enable this artifact
-        # PythonArtifact('windows', 'x86', 'Python38_32bits'),
+        PythonArtifact('macos', 'x64', 'python3.8'),
+        PythonArtifact('windows', 'x86', 'Python27_32bit'),
+        PythonArtifact('windows', 'x86', 'Python35_32bit'),
+        PythonArtifact('windows', 'x86', 'Python36_32bit'),
+        PythonArtifact('windows', 'x86', 'Python37_32bit'),
+        PythonArtifact('windows', 'x86', 'Python38_32bit'),
         PythonArtifact('windows', 'x64', 'Python27'),
         PythonArtifact('windows', 'x64', 'Python35'),
         PythonArtifact('windows', 'x64', 'Python36'),
         PythonArtifact('windows', 'x64', 'Python37'),
-        # TODO(https://github.com/grpc/grpc/issues/20615) Enable this artifact
-        # PythonArtifact('windows', 'x64', 'Python38'),
+        PythonArtifact('windows', 'x64', 'Python38'),
         RubyArtifact('linux', 'x64'),
         RubyArtifact('macos', 'x64'),
         PHPArtifact('linux', 'x64')

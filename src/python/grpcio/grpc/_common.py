@@ -14,7 +14,6 @@
 """Shared implementation."""
 
 import logging
-
 import time
 import six
 
@@ -25,15 +24,15 @@ _LOGGER = logging.getLogger(__name__)
 
 CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
     cygrpc.ConnectivityState.idle:
-    grpc.ChannelConnectivity.IDLE,
+        grpc.ChannelConnectivity.IDLE,
     cygrpc.ConnectivityState.connecting:
-    grpc.ChannelConnectivity.CONNECTING,
+        grpc.ChannelConnectivity.CONNECTING,
     cygrpc.ConnectivityState.ready:
-    grpc.ChannelConnectivity.READY,
+        grpc.ChannelConnectivity.READY,
     cygrpc.ConnectivityState.transient_failure:
-    grpc.ChannelConnectivity.TRANSIENT_FAILURE,
+        grpc.ChannelConnectivity.TRANSIENT_FAILURE,
     cygrpc.ConnectivityState.shutdown:
-    grpc.ChannelConnectivity.SHUTDOWN,
+        grpc.ChannelConnectivity.SHUTDOWN,
 }
 
 CYGRPC_STATUS_CODE_TO_STATUS_CODE = {
@@ -56,8 +55,7 @@ CYGRPC_STATUS_CODE_TO_STATUS_CODE = {
     cygrpc.StatusCode.data_loss: grpc.StatusCode.DATA_LOSS,
 }
 STATUS_CODE_TO_CYGRPC_STATUS_CODE = {
-    grpc_code: cygrpc_code
-    for cygrpc_code, grpc_code in six.iteritems(
+    grpc_code: cygrpc_code for cygrpc_code, grpc_code in six.iteritems(
         CYGRPC_STATUS_CODE_TO_STATUS_CODE)
 }
 

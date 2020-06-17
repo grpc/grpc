@@ -13,17 +13,19 @@
 - script: tools/run_tests/sanity/check_tracer_sanity.py
 - script: tools/run_tests/sanity/core_banned_functions.py
 - script: tools/run_tests/sanity/core_untyped_structs.sh
+- script: tools/run_tests/sanity/cpp_banned_constructs.sh
 - script: tools/buildgen/generate_projects.sh -j 3
   cpu_cost: 3
 - script: tools/distrib/check_copyright.py
 - script: tools/distrib/check_include_guards.py
 - script: tools/distrib/check_trailing_newlines.sh
 - script: tools/distrib/check_upb_output.sh
+- script: tools/distrib/check_pytype.sh
 - script: tools/distrib/clang_format_code.sh
 - script: tools/distrib/clang_tidy_code.sh
 - script: tools/distrib/pylint_code.sh
 - script: tools/distrib/python/check_grpcio_tools.py
-- script: tools/distrib/yapf_code.sh
+- script: tools/distrib/yapf_code.sh --diff
   cpu_cost: 1000
 - script: tools/distrib/check_protobuf_pod_version.sh
-- script: tools/distrib/check_shadow_boringssl_symbol_list.sh
+- script: tools/distrib/check_boringssl_prefix_symbol.sh

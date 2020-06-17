@@ -19,11 +19,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <string>
 #include <vector>
+
+#include "absl/container/inlined_vector.h"
 
 #include <grpc/impl/codegen/slice.h>
 
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
@@ -31,67 +34,52 @@
 
 namespace grpc_core {
 
+class XdsClient;
+
 class XdsBootstrap {
  public:
-  struct MetadataValue {
-    enum class Type { MD_NULL, DOUBLE, STRING, BOOL, STRUCT, LIST };
-    Type type = Type::MD_NULL;
-    // TODO(roth): Once we can use C++17, these can be in a std::variant.
-    double double_value;
-    const char* string_value;
-    bool bool_value;
-    std::map<const char*, MetadataValue, StringLess> struct_value;
-    std::vector<MetadataValue> list_value;
-  };
-
   struct Node {
-    const char* id = nullptr;
-    const char* cluster = nullptr;
-    const char* locality_region = nullptr;
-    const char* locality_zone = nullptr;
-    const char* locality_subzone = nullptr;
-    std::map<const char*, MetadataValue, StringLess> metadata;
+    std::string id;
+    std::string cluster;
+    std::string locality_region;
+    std::string locality_zone;
+    std::string locality_subzone;
+    Json metadata;
   };
 
   struct ChannelCreds {
-    const char* type = nullptr;
-    grpc_json* config = nullptr;
+    std::string type;
+    Json config;
+  };
+
+  struct XdsServer {
+    std::string server_uri;
+    absl::InlinedVector<ChannelCreds, 1> channel_creds;
   };
 
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
   // error reading the file.
-  static std::unique_ptr<XdsBootstrap> ReadFromFile(grpc_error** error);
+  static std::unique_ptr<XdsBootstrap> ReadFromFile(XdsClient* client,
+                                                    TraceFlag* tracer,
+                                                    grpc_error** error);
 
   // Do not instantiate directly -- use ReadFromFile() above instead.
-  XdsBootstrap(grpc_slice contents, grpc_error** error);
-  ~XdsBootstrap();
+  XdsBootstrap(Json json, grpc_error** error);
 
-  const char* server_uri() const { return server_uri_; }
-  const InlinedVector<ChannelCreds, 1>& channel_creds() const {
-    return channel_creds_;
-  }
+  // TODO(roth): We currently support only one server. Fix this when we
+  // add support for fallback for the xds channel.
+  const XdsServer& server() const { return servers_[0]; }
   const Node* node() const { return node_.get(); }
 
  private:
-  grpc_error* ParseXdsServer(grpc_json* json);
-  grpc_error* ParseChannelCredsArray(grpc_json* json);
-  grpc_error* ParseChannelCreds(grpc_json* json, size_t idx);
-  grpc_error* ParseNode(grpc_json* json);
-  grpc_error* ParseLocality(grpc_json* json);
+  grpc_error* ParseXdsServerList(Json* json);
+  grpc_error* ParseXdsServer(Json* json, size_t idx);
+  grpc_error* ParseChannelCredsArray(Json* json, XdsServer* server);
+  grpc_error* ParseChannelCreds(Json* json, size_t idx, XdsServer* server);
+  grpc_error* ParseNode(Json* json);
+  grpc_error* ParseLocality(Json* json);
 
-  InlinedVector<grpc_error*, 1> ParseMetadataStruct(
-      grpc_json* json,
-      std::map<const char*, MetadataValue, StringLess>* result);
-  InlinedVector<grpc_error*, 1> ParseMetadataList(
-      grpc_json* json, std::vector<MetadataValue>* result);
-  grpc_error* ParseMetadataValue(grpc_json* json, size_t idx,
-                                 MetadataValue* result);
-
-  grpc_slice contents_;
-  grpc_json* tree_ = nullptr;
-
-  const char* server_uri_ = nullptr;
-  InlinedVector<ChannelCreds, 1> channel_creds_;
+  absl::InlinedVector<XdsServer, 1> servers_;
   std::unique_ptr<Node> node_;
 };
 

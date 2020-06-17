@@ -65,10 +65,14 @@ UPB_INLINE char *envoy_api_v2_core_Pipe_serialize(const envoy_api_v2_core_Pipe *
   return upb_encode(msg, &envoy_api_v2_core_Pipe_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_api_v2_core_Pipe_path(const envoy_api_v2_core_Pipe *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+UPB_INLINE upb_strview envoy_api_v2_core_Pipe_path(const envoy_api_v2_core_Pipe *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)); }
+UPB_INLINE uint32_t envoy_api_v2_core_Pipe_mode(const envoy_api_v2_core_Pipe *msg) { return UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)); }
 
 UPB_INLINE void envoy_api_v2_core_Pipe_set_path(envoy_api_v2_core_Pipe *msg, upb_strview value) {
-  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)) = value;
+}
+UPB_INLINE void envoy_api_v2_core_Pipe_set_mode(envoy_api_v2_core_Pipe *msg, uint32_t value) {
+  UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(0, 0)) = value;
 }
 
 /* envoy.api.v2.core.SocketAddress */

@@ -787,7 +787,7 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = ${
-    ' \\\n'.join(sorted(
+    ' \\\n'.join(sorted(set(
         itertools.chain(
             itertools.chain.from_iterable(
     			      target.public_headers +
@@ -798,7 +798,7 @@ INPUT                  = ${
             glob.glob('doc/*.md'),
             glob.glob('doc/%s/*.md' % docpackage),
             [] if not internal else srcdoc)
-    ))
+    )))
 }
 
 # This tag can be used to specify the character encoding of the source files

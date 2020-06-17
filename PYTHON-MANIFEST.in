@@ -4,8 +4,9 @@ graft src/python/grpcio/grpcio.egg-info
 graft src/core
 graft src/boringssl
 graft include/grpc
+graft third_party/abseil-cpp/absl
 graft third_party/address_sorting
-graft third_party/boringssl
+graft third_party/boringssl-with-bazel
 graft third_party/cares
 graft third_party/upb
 graft third_party/zlib

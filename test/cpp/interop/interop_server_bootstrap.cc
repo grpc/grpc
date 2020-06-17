@@ -18,6 +18,7 @@
 
 #include <signal.h>
 
+#include "test/core/util/test_config.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
@@ -28,6 +29,7 @@ static void sigint_handler(int /*x*/) {
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   signal(SIGINT, sigint_handler);
 

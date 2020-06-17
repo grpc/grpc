@@ -19,7 +19,6 @@
 #include "src/cpp/thread_manager/thread_manager.h"
 
 #include <climits>
-#include <mutex>
 
 #include <grpc/support/log.h>
 #include "src/core/lib/gprpp/thd.h"

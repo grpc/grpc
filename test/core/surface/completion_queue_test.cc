@@ -382,6 +382,7 @@ static void test_callback(void) {
    public:
     ShutdownCallback(bool* done) : done_(done) {
       functor_run = &ShutdownCallback::Run;
+      inlineable = false;
     }
     ~ShutdownCallback() {}
     static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
@@ -416,6 +417,8 @@ static void test_callback(void) {
        public:
         TagCallback(int* counter, int tag) : counter_(counter), tag_(tag) {
           functor_run = &TagCallback::Run;
+          // Inlineable should be false since this callback takes locks.
+          inlineable = false;
         }
         ~TagCallback() {}
         static void Run(grpc_experimental_completion_queue_functor* cb,

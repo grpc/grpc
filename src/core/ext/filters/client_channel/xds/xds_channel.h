@@ -24,6 +24,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 
@@ -36,7 +37,8 @@ namespace grpc_core {
 grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args);
 
 grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
-                               const grpc_channel_args& args);
+                               const grpc_channel_args& args,
+                               grpc_error** error);
 
 }  // namespace grpc_core
 

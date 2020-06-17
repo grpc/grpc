@@ -36,8 +36,9 @@ _ABORT_METADATA = (('a-trailing-metadata', '42'),)
 
 
 class _Status(
-        collections.namedtuple(
-            '_Status', ('code', 'details', 'trailing_metadata')), grpc.Status):
+        collections.namedtuple('_Status',
+                               ('code', 'details', 'trailing_metadata')),
+        grpc.Status):
     pass
 
 

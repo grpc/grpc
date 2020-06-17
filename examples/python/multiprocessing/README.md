@@ -1,28 +1,27 @@
 ## Multiprocessing with gRPC Python
 
 Multiprocessing allows application developers to sidestep the Python global
-interpreter lock and achieve true concurrency on multicore systems.
+interpreter lock and achieve true parallelism on multicore systems.
 Unfortunately, using multiprocessing and gRPC Python is not yet as simple as
 instantiating your server with a `futures.ProcessPoolExecutor`.
 
 The library is implemented as a C extension, maintaining much of the state that
 drives the system in native code. As such, upon calling
-[`fork`](http://man7.org/linux/man-pages/man2/fork.2.html), much of the
-state copied into the child process is invalid, leading to hangs and crashes.
+[`fork`](http://man7.org/linux/man-pages/man2/fork.2.html), any threads in a
+critical section may leave the state of the gRPC library invalid in the child
+process. See this [excellent research
+paper](https://www.microsoft.com/en-us/research/uploads/prod/2019/04/fork-hotos19.pdf)
+for a thorough discussion of the topic.
 
-However, calling `fork` without `exec` in your python process is supported
-*before* any gRPC servers have been instantiated. Application developers can
+Calling `fork` without `exec` in your process *is* supported
+before any gRPC servers have been instantiated. Application developers can
 take advantage of this to parallelize their CPU-intensive operations.
 
 ## Calculating Prime Numbers with Multiple Processes
 
 This example calculates the first 10,000 prime numbers as an RPC. We instantiate
 one server per subprocess, balancing requests between the servers using the
-[`SO_REUSEPORT`](https://lwn.net/Articles/542629/) socket option. Note that this
-option is not available in `manylinux1` distributions, which are, as of the time
-of writing, the only gRPC Python wheels available on PyPI. To take advantage of this
-feature, you'll need to build from source, either using bazel (as we do for
-these examples) or via pip, using `pip install grpcio --no-binary grpcio`.
+[`SO_REUSEPORT`](https://lwn.net/Articles/542629/) socket option.
 
 ```python
 _PROCESS_COUNT = multiprocessing.cpu_count()
@@ -64,4 +63,12 @@ For example,
 
 ```
 bazel run //examples/python/multiprocessing:client -- [::]:33915
+```
+
+Alternatively, generate code using the following and then run the client and server
+directly:
+
+```python
+cd examples/python/helloworld
+python -m grpc_tools.protoc -I . prime.proto  --python_out=. --grpc_python_out=.
 ```

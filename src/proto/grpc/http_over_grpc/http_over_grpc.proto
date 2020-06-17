@@ -1,0 +1,51 @@
+// Copyright 2019 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grpc.http_over_grpc;
+
+// Represents HTTP 1.1 header.
+message Header {
+  string key = 1;
+  repeated string values = 2;
+}
+
+// An HTTP 1.1 request encapsulated in a gRPC.
+message HTTPOverGRPCRequest {
+  // The HTTP request method.
+  string method = 1;
+  // The HTTP request URL.
+  string url = 2;
+  // The HTTP request headers.
+  repeated Header headers = 3;
+  // HTTP request body.
+  bytes body = 4;
+}
+
+// An HTTP 1.1 reply encapsulated in an RPC.
+message HTTPOverGRPCReply {
+  // The HTTP status code (e.g. 200, 400, 404).
+  int32 status = 1;
+  // The HTTP response headers.
+  repeated Header headers = 2;
+  // The HTTP response body.
+  bytes body = 3;
+}
+
+// Currently does not support HTTP chunked transfer encoding.
+service HTTPOverGRPC {
+ // Perform the given HTTP request.
+ rpc HTTPRequest(HTTPOverGRPCRequest) returns (HTTPOverGRPCReply) {}
+}

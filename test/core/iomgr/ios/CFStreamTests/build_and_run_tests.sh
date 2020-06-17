@@ -34,9 +34,9 @@ xcodebuild \
     -scheme CFStreamTests \
     -destination name="iPhone 8" \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+    | grep -E -v "$XCODEBUILD_FILTER" \
+    | grep -E -v '^$' \
+    | grep -E -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
 
@@ -45,9 +45,9 @@ xcodebuild \
     -scheme CFStreamTests_Asan \
     -destination name="iPhone 8" \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+    | grep -E -v "$XCODEBUILD_FILTER" \
+    | grep -E -v '^$' \
+    | grep -E -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
 
@@ -56,9 +56,9 @@ xcodebuild \
     -scheme CFStreamTests_Tsan \
     -destination name="iPhone 8" \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+    | grep -E -v "$XCODEBUILD_FILTER" \
+    | grep -E -v '^$' \
+    | grep -E -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
 
@@ -67,6 +67,6 @@ xcodebuild \
     -scheme CFStreamTests_Msan \
     -destination name="iPhone 8" \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+    | grep -E -v "$XCODEBUILD_FILTER" \
+    | grep -E -v '^$' \
+    | grep -E -v "(GPBDictionary|GPBArray)" -

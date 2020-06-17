@@ -5,61 +5,190 @@ ARG_WITH("grpc", "grpc support", "no");
 
 if (PHP_GRPC != "no") {
 
-  grpc_source =
-    "src\\php\\ext\\grpc\\byte_buffer.c " +
-    "src\\php\\ext\\grpc\\call.c " +
-    "src\\php\\ext\\grpc\\call_credentials.c " +
-    "src\\php\\ext\\grpc\\channel.c " +
-    "src\\php\\ext\\grpc\\channel_credentials.c " +
-    "src\\php\\ext\\grpc\\completion_queue.c " +
-    "src\\php\\ext\\grpc\\php_grpc.c " +
-    "src\\php\\ext\\grpc\\server.c " +
-    "src\\php\\ext\\grpc\\server_credentials.c " +
-    "src\\php\\ext\\grpc\\timeval.c " +
-    "third_party\\address_sorting\\address_sorting.c " +
-    "third_party\\address_sorting\\address_sorting_posix.c " +
-    "third_party\\address_sorting\\address_sorting_windows.c " +
-    "src\\core\\lib\\gpr\\alloc.cc " +
-    "src\\core\\lib\\gpr\\atm.cc " +
-    "src\\core\\lib\\gpr\\cpu_iphone.cc " +
-    "src\\core\\lib\\gpr\\cpu_linux.cc " +
-    "src\\core\\lib\\gpr\\cpu_posix.cc " +
-    "src\\core\\lib\\gpr\\cpu_windows.cc " +
-    "src\\core\\lib\\gpr\\env_linux.cc " +
-    "src\\core\\lib\\gpr\\env_posix.cc " +
-    "src\\core\\lib\\gpr\\env_windows.cc " +
-    "src\\core\\lib\\gpr\\log.cc " +
-    "src\\core\\lib\\gpr\\log_android.cc " +
-    "src\\core\\lib\\gpr\\log_linux.cc " +
-    "src\\core\\lib\\gpr\\log_posix.cc " +
-    "src\\core\\lib\\gpr\\log_windows.cc " +
-    "src\\core\\lib\\gpr\\murmur_hash.cc " +
-    "src\\core\\lib\\gpr\\string.cc " +
-    "src\\core\\lib\\gpr\\string_posix.cc " +
-    "src\\core\\lib\\gpr\\string_util_windows.cc " +
-    "src\\core\\lib\\gpr\\string_windows.cc " +
-    "src\\core\\lib\\gpr\\sync.cc " +
-    "src\\core\\lib\\gpr\\sync_posix.cc " +
-    "src\\core\\lib\\gpr\\sync_windows.cc " +
-    "src\\core\\lib\\gpr\\time.cc " +
-    "src\\core\\lib\\gpr\\time_posix.cc " +
-    "src\\core\\lib\\gpr\\time_precise.cc " +
-    "src\\core\\lib\\gpr\\time_windows.cc " +
-    "src\\core\\lib\\gpr\\tls_pthread.cc " +
-    "src\\core\\lib\\gpr\\tmpfile_msys.cc " +
-    "src\\core\\lib\\gpr\\tmpfile_posix.cc " +
-    "src\\core\\lib\\gpr\\tmpfile_windows.cc " +
-    "src\\core\\lib\\gpr\\wrap_memcpy.cc " +
-    "src\\core\\lib\\gprpp\\arena.cc " +
-    "src\\core\\lib\\gprpp\\fork.cc " +
-    "src\\core\\lib\\gprpp\\global_config_env.cc " +
-    "src\\core\\lib\\gprpp\\host_port.cc " +
-    "src\\core\\lib\\gprpp\\mpscq.cc " +
-    "src\\core\\lib\\gprpp\\thd_posix.cc " +
-    "src\\core\\lib\\gprpp\\thd_windows.cc " +
-    "src\\core\\lib\\profiling\\basic_timers.cc " +
-    "src\\core\\lib\\profiling\\stap_timers.cc " +
-    "src\\core\\lib\\surface\\init.cc " +
+  EXTENSION("grpc",
+    "src\\core\\ext\\filters\\census\\grpc_context.cc " +
+    "src\\core\\ext\\filters\\client_channel\\backend_metric.cc " +
+    "src\\core\\ext\\filters\\client_channel\\backup_poller.cc " +
+    "src\\core\\ext\\filters\\client_channel\\channel_connectivity.cc " +
+    "src\\core\\ext\\filters\\client_channel\\client_channel.cc " +
+    "src\\core\\ext\\filters\\client_channel\\client_channel_channelz.cc " +
+    "src\\core\\ext\\filters\\client_channel\\client_channel_factory.cc " +
+    "src\\core\\ext\\filters\\client_channel\\client_channel_plugin.cc " +
+    "src\\core\\ext\\filters\\client_channel\\global_subchannel_pool.cc " +
+    "src\\core\\ext\\filters\\client_channel\\health\\health_check_client.cc " +
+    "src\\core\\ext\\filters\\client_channel\\http_connect_handshaker.cc " +
+    "src\\core\\ext\\filters\\client_channel\\http_proxy.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\address_filtering.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\child_policy_handler.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\client_load_reporting_filter.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_balancer_addresses.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_channel_secure.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_client_stats.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\load_balancer_api.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first\\pick_first.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\priority\\priority.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\round_robin\\round_robin.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\weighted_target\\weighted_target.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\cds.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\eds.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\lrs.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds_routing.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy_registry.cc " +
+    "src\\core\\ext\\filters\\client_channel\\local_subchannel_pool.cc " +
+    "src\\core\\ext\\filters\\client_channel\\parse_address.cc " +
+    "src\\core\\ext\\filters\\client_channel\\proxy_mapper_registry.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\dns_resolver_ares.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_ev_driver.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_ev_driver_libuv.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_ev_driver_posix.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_ev_driver_windows.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper_fallback.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper_libuv.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper_posix.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper_windows.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\dns_resolver_selection.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\native\\dns_resolver.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\fake\\fake_resolver.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\sockaddr\\sockaddr_resolver.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\xds\\xds_resolver.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver_registry.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver_result_parsing.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolving_lb_policy.cc " +
+    "src\\core\\ext\\filters\\client_channel\\retry_throttle.cc " +
+    "src\\core\\ext\\filters\\client_channel\\server_address.cc " +
+    "src\\core\\ext\\filters\\client_channel\\service_config.cc " +
+    "src\\core\\ext\\filters\\client_channel\\service_config_parser.cc " +
+    "src\\core\\ext\\filters\\client_channel\\subchannel.cc " +
+    "src\\core\\ext\\filters\\client_channel\\subchannel_pool_interface.cc " +
+    "src\\core\\ext\\filters\\client_channel\\xds\\xds_api.cc " +
+    "src\\core\\ext\\filters\\client_channel\\xds\\xds_bootstrap.cc " +
+    "src\\core\\ext\\filters\\client_channel\\xds\\xds_channel_secure.cc " +
+    "src\\core\\ext\\filters\\client_channel\\xds\\xds_client.cc " +
+    "src\\core\\ext\\filters\\client_channel\\xds\\xds_client_stats.cc " +
+    "src\\core\\ext\\filters\\client_idle\\client_idle_filter.cc " +
+    "src\\core\\ext\\filters\\deadline\\deadline_filter.cc " +
+    "src\\core\\ext\\filters\\http\\client\\http_client_filter.cc " +
+    "src\\core\\ext\\filters\\http\\client_authority_filter.cc " +
+    "src\\core\\ext\\filters\\http\\http_filters_plugin.cc " +
+    "src\\core\\ext\\filters\\http\\message_compress\\message_compress_filter.cc " +
+    "src\\core\\ext\\filters\\http\\message_compress\\message_decompress_filter.cc " +
+    "src\\core\\ext\\filters\\http\\server\\http_server_filter.cc " +
+    "src\\core\\ext\\filters\\max_age\\max_age_filter.cc " +
+    "src\\core\\ext\\filters\\message_size\\message_size_filter.cc " +
+    "src\\core\\ext\\filters\\workarounds\\workaround_cronet_compression_filter.cc " +
+    "src\\core\\ext\\filters\\workarounds\\workaround_utils.cc " +
+    "src\\core\\ext\\transport\\chttp2\\alpn\\alpn.cc " +
+    "src\\core\\ext\\transport\\chttp2\\client\\authority.cc " +
+    "src\\core\\ext\\transport\\chttp2\\client\\chttp2_connector.cc " +
+    "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create.cc " +
+    "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create_posix.cc " +
+    "src\\core\\ext\\transport\\chttp2\\client\\secure\\secure_channel_create.cc " +
+    "src\\core\\ext\\transport\\chttp2\\server\\chttp2_server.cc " +
+    "src\\core\\ext\\transport\\chttp2\\server\\insecure\\server_chttp2.cc " +
+    "src\\core\\ext\\transport\\chttp2\\server\\insecure\\server_chttp2_posix.cc " +
+    "src\\core\\ext\\transport\\chttp2\\server\\secure\\server_secure_chttp2.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\bin_decoder.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\bin_encoder.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\chttp2_plugin.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\chttp2_transport.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\context_list.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\flow_control.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\frame_data.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\frame_goaway.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\frame_ping.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\frame_rst_stream.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\frame_settings.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\frame_window_update.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\hpack_encoder.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\hpack_parser.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\hpack_table.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\http2_settings.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\huffsyms.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\incoming_metadata.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\parsing.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\stream_lists.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\stream_map.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\varint.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\writing.cc " +
+    "src\\core\\ext\\transport\\inproc\\inproc_plugin.cc " +
+    "src\\core\\ext\\transport\\inproc\\inproc_transport.cc " +
+    "src\\core\\ext\\upb-generated\\envoy\\annotations\\deprecation.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\annotations\\resource.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\cert.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\common.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\secret.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\tls.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\circuit_breaker.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\filter.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\outlier_detection.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\address.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\backoff.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\base.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\config_source.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\event_service_config.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\grpc_service.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\health_check.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\http_uri.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\protocol.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\socket_option.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\discovery.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\eds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\endpoint.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\endpoint_components.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\load_report.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\lds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener\\listener.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener\\listener_components.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener\\udp_listener_config.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\rds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\route.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\route\\route.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\route\\route_components.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\scoped_route.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\srds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\filter\\accesslog\\v2\\accesslog.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\filter\\network\\http_connection_manager\\v2\\http_connection_manager.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v2\\api_listener.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v2\\http_tracer.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v2\\ads.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\load_stats\\v2\\lrs.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\http.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\regex.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\string.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\metadata\\v2\\metadata.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\percent.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\range.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\semantic_version.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\tracing\\v2\\custom_tag.upb.c " +
+    "src\\core\\ext\\upb-generated\\gogoproto\\gogo.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\api\\annotations.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\api\\http.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\any.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\descriptor.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\duration.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\empty.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\struct.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\timestamp.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\wrappers.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\rpc\\status.upb.c " +
+    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\gcp\\altscontext.upb.c " +
+    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\gcp\\handshaker.upb.c " +
+    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\gcp\\transport_security_common.upb.c " +
+    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\health\\v1\\health.upb.c " +
+    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\lb\\v1\\load_balancer.upb.c " +
+    "src\\core\\ext\\upb-generated\\udpa\\annotations\\migrate.upb.c " +
+    "src\\core\\ext\\upb-generated\\udpa\\annotations\\sensitive.upb.c " +
+    "src\\core\\ext\\upb-generated\\udpa\\annotations\\status.upb.c " +
+    "src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1\\orca_load_report.upb.c " +
+    "src\\core\\ext\\upb-generated\\validate\\validate.upb.c " +
     "src\\core\\lib\\avl\\avl.cc " +
     "src\\core\\lib\\backoff\\backoff.cc " +
     "src\\core\\lib\\channel\\channel_args.cc " +
@@ -81,13 +210,55 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\compression\\stream_compression_identity.cc " +
     "src\\core\\lib\\debug\\stats.cc " +
     "src\\core\\lib\\debug\\stats_data.cc " +
+    "src\\core\\lib\\debug\\trace.cc " +
+    "src\\core\\lib\\gpr\\alloc.cc " +
+    "src\\core\\lib\\gpr\\atm.cc " +
+    "src\\core\\lib\\gpr\\cpu_iphone.cc " +
+    "src\\core\\lib\\gpr\\cpu_linux.cc " +
+    "src\\core\\lib\\gpr\\cpu_posix.cc " +
+    "src\\core\\lib\\gpr\\cpu_windows.cc " +
+    "src\\core\\lib\\gpr\\env_linux.cc " +
+    "src\\core\\lib\\gpr\\env_posix.cc " +
+    "src\\core\\lib\\gpr\\env_windows.cc " +
+    "src\\core\\lib\\gpr\\log.cc " +
+    "src\\core\\lib\\gpr\\log_android.cc " +
+    "src\\core\\lib\\gpr\\log_linux.cc " +
+    "src\\core\\lib\\gpr\\log_posix.cc " +
+    "src\\core\\lib\\gpr\\log_windows.cc " +
+    "src\\core\\lib\\gpr\\murmur_hash.cc " +
+    "src\\core\\lib\\gpr\\string.cc " +
+    "src\\core\\lib\\gpr\\string_posix.cc " +
+    "src\\core\\lib\\gpr\\string_util_windows.cc " +
+    "src\\core\\lib\\gpr\\string_windows.cc " +
+    "src\\core\\lib\\gpr\\sync.cc " +
+    "src\\core\\lib\\gpr\\sync_abseil.cc " +
+    "src\\core\\lib\\gpr\\sync_posix.cc " +
+    "src\\core\\lib\\gpr\\sync_windows.cc " +
+    "src\\core\\lib\\gpr\\time.cc " +
+    "src\\core\\lib\\gpr\\time_posix.cc " +
+    "src\\core\\lib\\gpr\\time_precise.cc " +
+    "src\\core\\lib\\gpr\\time_windows.cc " +
+    "src\\core\\lib\\gpr\\tls_pthread.cc " +
+    "src\\core\\lib\\gpr\\tmpfile_msys.cc " +
+    "src\\core\\lib\\gpr\\tmpfile_posix.cc " +
+    "src\\core\\lib\\gpr\\tmpfile_windows.cc " +
+    "src\\core\\lib\\gpr\\wrap_memcpy.cc " +
+    "src\\core\\lib\\gprpp\\arena.cc " +
+    "src\\core\\lib\\gprpp\\fork.cc " +
+    "src\\core\\lib\\gprpp\\global_config_env.cc " +
+    "src\\core\\lib\\gprpp\\host_port.cc " +
+    "src\\core\\lib\\gprpp\\mpscq.cc " +
+    "src\\core\\lib\\gprpp\\thd_posix.cc " +
+    "src\\core\\lib\\gprpp\\thd_windows.cc " +
     "src\\core\\lib\\http\\format_request.cc " +
     "src\\core\\lib\\http\\httpcli.cc " +
+    "src\\core\\lib\\http\\httpcli_security_connector.cc " +
     "src\\core\\lib\\http\\parser.cc " +
     "src\\core\\lib\\iomgr\\buffer_list.cc " +
     "src\\core\\lib\\iomgr\\call_combiner.cc " +
     "src\\core\\lib\\iomgr\\cfstream_handle.cc " +
     "src\\core\\lib\\iomgr\\combiner.cc " +
+    "src\\core\\lib\\iomgr\\dualstack_socket_posix.cc " +
     "src\\core\\lib\\iomgr\\endpoint.cc " +
     "src\\core\\lib\\iomgr\\endpoint_cfstream.cc " +
     "src\\core\\lib\\iomgr\\endpoint_pair_posix.cc " +
@@ -95,6 +266,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\endpoint_pair_windows.cc " +
     "src\\core\\lib\\iomgr\\error.cc " +
     "src\\core\\lib\\iomgr\\error_cfstream.cc " +
+    "src\\core\\lib\\iomgr\\ev_apple.cc " +
     "src\\core\\lib\\iomgr\\ev_epoll1_linux.cc " +
     "src\\core\\lib\\iomgr\\ev_epollex_linux.cc " +
     "src\\core\\lib\\iomgr\\ev_poll_posix.cc " +
@@ -123,6 +295,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\is_epollexclusive_available.cc " +
     "src\\core\\lib\\iomgr\\load_file.cc " +
     "src\\core\\lib\\iomgr\\lockfree_event.cc " +
+    "src\\core\\lib\\iomgr\\poller\\eventmanager_libuv.cc " +
     "src\\core\\lib\\iomgr\\polling_entity.cc " +
     "src\\core\\lib\\iomgr\\pollset.cc " +
     "src\\core\\lib\\iomgr\\pollset_custom.cc " +
@@ -175,10 +348,53 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\wakeup_fd_nospecial.cc " +
     "src\\core\\lib\\iomgr\\wakeup_fd_pipe.cc " +
     "src\\core\\lib\\iomgr\\wakeup_fd_posix.cc " +
-    "src\\core\\lib\\json\\json.cc " +
+    "src\\core\\lib\\iomgr\\work_serializer.cc " +
     "src\\core\\lib\\json\\json_reader.cc " +
-    "src\\core\\lib\\json\\json_string.cc " +
     "src\\core\\lib\\json\\json_writer.cc " +
+    "src\\core\\lib\\profiling\\basic_timers.cc " +
+    "src\\core\\lib\\profiling\\stap_timers.cc " +
+    "src\\core\\lib\\security\\context\\security_context.cc " +
+    "src\\core\\lib\\security\\credentials\\alts\\alts_credentials.cc " +
+    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment.cc " +
+    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_linux.cc " +
+    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_no_op.cc " +
+    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_windows.cc " +
+    "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_client_options.cc " +
+    "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_options.cc " +
+    "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_server_options.cc " +
+    "src\\core\\lib\\security\\credentials\\composite\\composite_credentials.cc " +
+    "src\\core\\lib\\security\\credentials\\credentials.cc " +
+    "src\\core\\lib\\security\\credentials\\credentials_metadata.cc " +
+    "src\\core\\lib\\security\\credentials\\fake\\fake_credentials.cc " +
+    "src\\core\\lib\\security\\credentials\\google_default\\credentials_generic.cc " +
+    "src\\core\\lib\\security\\credentials\\google_default\\google_default_credentials.cc " +
+    "src\\core\\lib\\security\\credentials\\iam\\iam_credentials.cc " +
+    "src\\core\\lib\\security\\credentials\\jwt\\json_token.cc " +
+    "src\\core\\lib\\security\\credentials\\jwt\\jwt_credentials.cc " +
+    "src\\core\\lib\\security\\credentials\\jwt\\jwt_verifier.cc " +
+    "src\\core\\lib\\security\\credentials\\local\\local_credentials.cc " +
+    "src\\core\\lib\\security\\credentials\\oauth2\\oauth2_credentials.cc " +
+    "src\\core\\lib\\security\\credentials\\plugin\\plugin_credentials.cc " +
+    "src\\core\\lib\\security\\credentials\\ssl\\ssl_credentials.cc " +
+    "src\\core\\lib\\security\\credentials\\tls\\grpc_tls_credentials_options.cc " +
+    "src\\core\\lib\\security\\credentials\\tls\\tls_credentials.cc " +
+    "src\\core\\lib\\security\\security_connector\\alts\\alts_security_connector.cc " +
+    "src\\core\\lib\\security\\security_connector\\fake\\fake_security_connector.cc " +
+    "src\\core\\lib\\security\\security_connector\\load_system_roots_fallback.cc " +
+    "src\\core\\lib\\security\\security_connector\\load_system_roots_linux.cc " +
+    "src\\core\\lib\\security\\security_connector\\local\\local_security_connector.cc " +
+    "src\\core\\lib\\security\\security_connector\\security_connector.cc " +
+    "src\\core\\lib\\security\\security_connector\\ssl\\ssl_security_connector.cc " +
+    "src\\core\\lib\\security\\security_connector\\ssl_utils.cc " +
+    "src\\core\\lib\\security\\security_connector\\ssl_utils_config.cc " +
+    "src\\core\\lib\\security\\security_connector\\tls\\tls_security_connector.cc " +
+    "src\\core\\lib\\security\\transport\\client_auth_filter.cc " +
+    "src\\core\\lib\\security\\transport\\secure_endpoint.cc " +
+    "src\\core\\lib\\security\\transport\\security_handshaker.cc " +
+    "src\\core\\lib\\security\\transport\\server_auth_filter.cc " +
+    "src\\core\\lib\\security\\transport\\target_authority_table.cc " +
+    "src\\core\\lib\\security\\transport\\tsi_error.cc " +
+    "src\\core\\lib\\security\\util\\json_util.cc " +
     "src\\core\\lib\\slice\\b64.cc " +
     "src\\core\\lib\\slice\\percent_encoding.cc " +
     "src\\core\\lib\\slice\\slice.cc " +
@@ -198,6 +414,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\surface\\completion_queue.cc " +
     "src\\core\\lib\\surface\\completion_queue_factory.cc " +
     "src\\core\\lib\\surface\\event_string.cc " +
+    "src\\core\\lib\\surface\\init.cc " +
+    "src\\core\\lib\\surface\\init_secure.cc " +
     "src\\core\\lib\\surface\\lame_client.cc " +
     "src\\core\\lib\\surface\\metadata_array.cc " +
     "src\\core\\lib\\surface\\server.cc " +
@@ -217,73 +435,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\transport\\transport.cc " +
     "src\\core\\lib\\transport\\transport_op_string.cc " +
     "src\\core\\lib\\uri\\uri_parser.cc " +
-    "src\\core\\lib\\debug\\trace.cc " +
-    "src\\core\\ext\\transport\\chttp2\\server\\secure\\server_secure_chttp2.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\bin_decoder.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\bin_encoder.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\chttp2_plugin.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\chttp2_transport.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\context_list.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\flow_control.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\frame_data.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\frame_goaway.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\frame_ping.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\frame_rst_stream.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\frame_settings.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\frame_window_update.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\hpack_encoder.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\hpack_parser.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\hpack_table.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\http2_settings.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\huffsyms.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\incoming_metadata.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\parsing.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\stream_lists.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\stream_map.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\varint.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\writing.cc " +
-    "src\\core\\ext\\transport\\chttp2\\alpn\\alpn.cc " +
-    "src\\core\\ext\\filters\\http\\client\\http_client_filter.cc " +
-    "src\\core\\ext\\filters\\http\\http_filters_plugin.cc " +
-    "src\\core\\ext\\filters\\http\\message_compress\\message_compress_filter.cc " +
-    "src\\core\\ext\\filters\\http\\server\\http_server_filter.cc " +
-    "src\\core\\lib\\http\\httpcli_security_connector.cc " +
-    "src\\core\\lib\\security\\context\\security_context.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\alts_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\composite\\composite_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\credentials_metadata.cc " +
-    "src\\core\\lib\\security\\credentials\\fake\\fake_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\google_default\\credentials_generic.cc " +
-    "src\\core\\lib\\security\\credentials\\google_default\\google_default_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\iam\\iam_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\jwt\\json_token.cc " +
-    "src\\core\\lib\\security\\credentials\\jwt\\jwt_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\jwt\\jwt_verifier.cc " +
-    "src\\core\\lib\\security\\credentials\\local\\local_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\oauth2\\oauth2_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\plugin\\plugin_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\ssl\\ssl_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\tls\\grpc_tls_credentials_options.cc " +
-    "src\\core\\lib\\security\\credentials\\tls\\spiffe_credentials.cc " +
-    "src\\core\\lib\\security\\security_connector\\alts\\alts_security_connector.cc " +
-    "src\\core\\lib\\security\\security_connector\\fake\\fake_security_connector.cc " +
-    "src\\core\\lib\\security\\security_connector\\load_system_roots_fallback.cc " +
-    "src\\core\\lib\\security\\security_connector\\load_system_roots_linux.cc " +
-    "src\\core\\lib\\security\\security_connector\\local\\local_security_connector.cc " +
-    "src\\core\\lib\\security\\security_connector\\security_connector.cc " +
-    "src\\core\\lib\\security\\security_connector\\ssl\\ssl_security_connector.cc " +
-    "src\\core\\lib\\security\\security_connector\\ssl_utils.cc " +
-    "src\\core\\lib\\security\\security_connector\\ssl_utils_config.cc " +
-    "src\\core\\lib\\security\\security_connector\\tls\\spiffe_security_connector.cc " +
-    "src\\core\\lib\\security\\transport\\client_auth_filter.cc " +
-    "src\\core\\lib\\security\\transport\\secure_endpoint.cc " +
-    "src\\core\\lib\\security\\transport\\security_handshaker.cc " +
-    "src\\core\\lib\\security\\transport\\server_auth_filter.cc " +
-    "src\\core\\lib\\security\\transport\\target_authority_table.cc " +
-    "src\\core\\lib\\security\\transport\\tsi_error.cc " +
-    "src\\core\\lib\\security\\util\\json_util.cc " +
-    "src\\core\\lib\\surface\\init_secure.cc " +
+    "src\\core\\plugin_registry\\grpc_plugin_registry.cc " +
     "src\\core\\tsi\\alts\\crypt\\aes_gcm.cc " +
     "src\\core\\tsi\\alts\\crypt\\gsec.cc " +
     "src\\core\\tsi\\alts\\frame_protector\\alts_counter.cc " +
@@ -296,406 +448,350 @@ if (PHP_GRPC != "no") {
     "src\\core\\tsi\\alts\\handshaker\\alts_handshaker_client.cc " +
     "src\\core\\tsi\\alts\\handshaker\\alts_shared_resource.cc " +
     "src\\core\\tsi\\alts\\handshaker\\alts_tsi_handshaker.cc " +
+    "src\\core\\tsi\\alts\\handshaker\\alts_tsi_utils.cc " +
+    "src\\core\\tsi\\alts\\handshaker\\transport_security_common_api.cc " +
     "src\\core\\tsi\\alts\\zero_copy_frame_protector\\alts_grpc_integrity_only_record_protocol.cc " +
     "src\\core\\tsi\\alts\\zero_copy_frame_protector\\alts_grpc_privacy_integrity_record_protocol.cc " +
     "src\\core\\tsi\\alts\\zero_copy_frame_protector\\alts_grpc_record_protocol_common.cc " +
     "src\\core\\tsi\\alts\\zero_copy_frame_protector\\alts_iovec_record_protocol.cc " +
     "src\\core\\tsi\\alts\\zero_copy_frame_protector\\alts_zero_copy_grpc_protector.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_linux.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_no_op.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_windows.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_client_options.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_options.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_server_options.cc " +
-    "src\\core\\tsi\\alts\\handshaker\\alts_tsi_utils.cc " +
-    "src\\core\\tsi\\alts\\handshaker\\transport_security_common_api.cc " +
-    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\gcp\\altscontext.upb.c " +
-    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\gcp\\handshaker.upb.c " +
-    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\gcp\\transport_security_common.upb.c " +
-    "src\\core\\tsi\\transport_security.cc " +
-    "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create.cc " +
-    "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create_posix.cc " +
-    "src\\core\\ext\\transport\\chttp2\\client\\authority.cc " +
-    "src\\core\\ext\\transport\\chttp2\\client\\chttp2_connector.cc " +
-    "src\\core\\ext\\filters\\client_channel\\backend_metric.cc " +
-    "src\\core\\ext\\filters\\client_channel\\backup_poller.cc " +
-    "src\\core\\ext\\filters\\client_channel\\channel_connectivity.cc " +
-    "src\\core\\ext\\filters\\client_channel\\client_channel.cc " +
-    "src\\core\\ext\\filters\\client_channel\\client_channel_channelz.cc " +
-    "src\\core\\ext\\filters\\client_channel\\client_channel_factory.cc " +
-    "src\\core\\ext\\filters\\client_channel\\client_channel_plugin.cc " +
-    "src\\core\\ext\\filters\\client_channel\\connector.cc " +
-    "src\\core\\ext\\filters\\client_channel\\global_subchannel_pool.cc " +
-    "src\\core\\ext\\filters\\client_channel\\health\\health_check_client.cc " +
-    "src\\core\\ext\\filters\\client_channel\\http_connect_handshaker.cc " +
-    "src\\core\\ext\\filters\\client_channel\\http_proxy.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy_registry.cc " +
-    "src\\core\\ext\\filters\\client_channel\\local_subchannel_pool.cc " +
-    "src\\core\\ext\\filters\\client_channel\\parse_address.cc " +
-    "src\\core\\ext\\filters\\client_channel\\proxy_mapper.cc " +
-    "src\\core\\ext\\filters\\client_channel\\proxy_mapper_registry.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver_registry.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver_result_parsing.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolving_lb_policy.cc " +
-    "src\\core\\ext\\filters\\client_channel\\retry_throttle.cc " +
-    "src\\core\\ext\\filters\\client_channel\\server_address.cc " +
-    "src\\core\\ext\\filters\\client_channel\\service_config.cc " +
-    "src\\core\\ext\\filters\\client_channel\\subchannel.cc " +
-    "src\\core\\ext\\filters\\client_channel\\subchannel_pool_interface.cc " +
-    "src\\core\\ext\\filters\\deadline\\deadline_filter.cc " +
-    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\health\\v1\\health.upb.c " +
-    "src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1\\orca_load_report.upb.c " +
-    "src\\core\\ext\\upb-generated\\gogoproto\\gogo.upb.c " +
-    "src\\core\\ext\\upb-generated\\validate\\validate.upb.c " +
-    "src\\core\\ext\\upb-generated\\google\\api\\annotations.upb.c " +
-    "src\\core\\ext\\upb-generated\\google\\api\\http.upb.c " +
-    "src\\core\\ext\\upb-generated\\google\\protobuf\\any.upb.c " +
-    "src\\core\\ext\\upb-generated\\google\\protobuf\\descriptor.upb.c " +
-    "src\\core\\ext\\upb-generated\\google\\protobuf\\duration.upb.c " +
-    "src\\core\\ext\\upb-generated\\google\\protobuf\\empty.upb.c " +
-    "src\\core\\ext\\upb-generated\\google\\protobuf\\struct.upb.c " +
-    "src\\core\\ext\\upb-generated\\google\\protobuf\\timestamp.upb.c " +
-    "src\\core\\ext\\upb-generated\\google\\protobuf\\wrappers.upb.c " +
-    "src\\core\\ext\\upb-generated\\google\\rpc\\status.upb.c " +
     "src\\core\\tsi\\fake_transport_security.cc " +
     "src\\core\\tsi\\local_transport_security.cc " +
     "src\\core\\tsi\\ssl\\session_cache\\ssl_session_boringssl.cc " +
     "src\\core\\tsi\\ssl\\session_cache\\ssl_session_cache.cc " +
     "src\\core\\tsi\\ssl\\session_cache\\ssl_session_openssl.cc " +
     "src\\core\\tsi\\ssl_transport_security.cc " +
+    "src\\core\\tsi\\transport_security.cc " +
     "src\\core\\tsi\\transport_security_grpc.cc " +
-    "src\\core\\ext\\transport\\chttp2\\server\\chttp2_server.cc " +
-    "src\\core\\ext\\transport\\chttp2\\client\\secure\\secure_channel_create.cc " +
-    "src\\core\\ext\\transport\\chttp2\\server\\insecure\\server_chttp2.cc " +
-    "src\\core\\ext\\transport\\chttp2\\server\\insecure\\server_chttp2_posix.cc " +
-    "src\\core\\ext\\transport\\inproc\\inproc_plugin.cc " +
-    "src\\core\\ext\\transport\\inproc\\inproc_transport.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\client_load_reporting_filter.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_channel_secure.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_client_stats.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\load_balancer_api.cc " +
-    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\lb\\v1\\load_balancer.upb.c " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\fake\\fake_resolver.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\cds.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_api.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_bootstrap.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_channel_secure.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_client.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_client_stats.cc " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\cert.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cds.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\circuit_breaker.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\filter.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\outlier_detection.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\discovery.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\eds.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\endpoint.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\load_report.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v2\\ads.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\service\\load_stats\\v2\\lrs.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\address.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\base.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\config_source.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\grpc_service.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\health_check.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\http_uri.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\protocol.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\http.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\percent.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\range.upb.c " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first\\pick_first.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\round_robin\\round_robin.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\dns_resolver_ares.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_ev_driver.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_ev_driver_libuv.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_ev_driver_posix.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_ev_driver_windows.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper_fallback.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper_libuv.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper_posix.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper_windows.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\dns_resolver_selection.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\native\\dns_resolver.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\sockaddr\\sockaddr_resolver.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver\\xds\\xds_resolver.cc " +
-    "src\\core\\ext\\filters\\census\\grpc_context.cc " +
-    "src\\core\\ext\\filters\\client_idle\\client_idle_filter.cc " +
-    "src\\core\\ext\\filters\\max_age\\max_age_filter.cc " +
-    "src\\core\\ext\\filters\\message_size\\message_size_filter.cc " +
-    "src\\core\\ext\\filters\\http\\client_authority_filter.cc " +
-    "src\\core\\ext\\filters\\workarounds\\workaround_cronet_compression_filter.cc " +
-    "src\\core\\ext\\filters\\workarounds\\workaround_utils.cc " +
-    "src\\core\\plugin_registry\\grpc_plugin_registry.cc " +
-    "src\\boringssl\\err_data.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_bitstr.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_bool.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_d2i_fp.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_dup.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_enum.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_gentm.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_i2d_fp.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_int.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_mbstr.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_object.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_octet.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_print.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_strnid.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_time.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_type.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_utctm.c " +
-    "third_party\\boringssl\\crypto\\asn1\\a_utf8.c " +
-    "third_party\\boringssl\\crypto\\asn1\\asn1_lib.c " +
-    "third_party\\boringssl\\crypto\\asn1\\asn1_par.c " +
-    "third_party\\boringssl\\crypto\\asn1\\asn_pack.c " +
-    "third_party\\boringssl\\crypto\\asn1\\f_enum.c " +
-    "third_party\\boringssl\\crypto\\asn1\\f_int.c " +
-    "third_party\\boringssl\\crypto\\asn1\\f_string.c " +
-    "third_party\\boringssl\\crypto\\asn1\\tasn_dec.c " +
-    "third_party\\boringssl\\crypto\\asn1\\tasn_enc.c " +
-    "third_party\\boringssl\\crypto\\asn1\\tasn_fre.c " +
-    "third_party\\boringssl\\crypto\\asn1\\tasn_new.c " +
-    "third_party\\boringssl\\crypto\\asn1\\tasn_typ.c " +
-    "third_party\\boringssl\\crypto\\asn1\\tasn_utl.c " +
-    "third_party\\boringssl\\crypto\\asn1\\time_support.c " +
-    "third_party\\boringssl\\crypto\\base64\\base64.c " +
-    "third_party\\boringssl\\crypto\\bio\\bio.c " +
-    "third_party\\boringssl\\crypto\\bio\\bio_mem.c " +
-    "third_party\\boringssl\\crypto\\bio\\connect.c " +
-    "third_party\\boringssl\\crypto\\bio\\fd.c " +
-    "third_party\\boringssl\\crypto\\bio\\file.c " +
-    "third_party\\boringssl\\crypto\\bio\\hexdump.c " +
-    "third_party\\boringssl\\crypto\\bio\\pair.c " +
-    "third_party\\boringssl\\crypto\\bio\\printf.c " +
-    "third_party\\boringssl\\crypto\\bio\\socket.c " +
-    "third_party\\boringssl\\crypto\\bio\\socket_helper.c " +
-    "third_party\\boringssl\\crypto\\bn_extra\\bn_asn1.c " +
-    "third_party\\boringssl\\crypto\\bn_extra\\convert.c " +
-    "third_party\\boringssl\\crypto\\buf\\buf.c " +
-    "third_party\\boringssl\\crypto\\bytestring\\asn1_compat.c " +
-    "third_party\\boringssl\\crypto\\bytestring\\ber.c " +
-    "third_party\\boringssl\\crypto\\bytestring\\cbb.c " +
-    "third_party\\boringssl\\crypto\\bytestring\\cbs.c " +
-    "third_party\\boringssl\\crypto\\bytestring\\unicode.c " +
-    "third_party\\boringssl\\crypto\\chacha\\chacha.c " +
-    "third_party\\boringssl\\crypto\\cipher_extra\\cipher_extra.c " +
-    "third_party\\boringssl\\crypto\\cipher_extra\\derive_key.c " +
-    "third_party\\boringssl\\crypto\\cipher_extra\\e_aesccm.c " +
-    "third_party\\boringssl\\crypto\\cipher_extra\\e_aesctrhmac.c " +
-    "third_party\\boringssl\\crypto\\cipher_extra\\e_aesgcmsiv.c " +
-    "third_party\\boringssl\\crypto\\cipher_extra\\e_chacha20poly1305.c " +
-    "third_party\\boringssl\\crypto\\cipher_extra\\e_null.c " +
-    "third_party\\boringssl\\crypto\\cipher_extra\\e_rc2.c " +
-    "third_party\\boringssl\\crypto\\cipher_extra\\e_rc4.c " +
-    "third_party\\boringssl\\crypto\\cipher_extra\\e_tls.c " +
-    "third_party\\boringssl\\crypto\\cipher_extra\\tls_cbc.c " +
-    "third_party\\boringssl\\crypto\\cmac\\cmac.c " +
-    "third_party\\boringssl\\crypto\\conf\\conf.c " +
-    "third_party\\boringssl\\crypto\\cpu-aarch64-fuchsia.c " +
-    "third_party\\boringssl\\crypto\\cpu-aarch64-linux.c " +
-    "third_party\\boringssl\\crypto\\cpu-arm-linux.c " +
-    "third_party\\boringssl\\crypto\\cpu-arm.c " +
-    "third_party\\boringssl\\crypto\\cpu-intel.c " +
-    "third_party\\boringssl\\crypto\\cpu-ppc64le.c " +
-    "third_party\\boringssl\\crypto\\crypto.c " +
-    "third_party\\boringssl\\crypto\\curve25519\\spake25519.c " +
-    "third_party\\boringssl\\crypto\\dh\\check.c " +
-    "third_party\\boringssl\\crypto\\dh\\dh.c " +
-    "third_party\\boringssl\\crypto\\dh\\dh_asn1.c " +
-    "third_party\\boringssl\\crypto\\dh\\params.c " +
-    "third_party\\boringssl\\crypto\\digest_extra\\digest_extra.c " +
-    "third_party\\boringssl\\crypto\\dsa\\dsa.c " +
-    "third_party\\boringssl\\crypto\\dsa\\dsa_asn1.c " +
-    "third_party\\boringssl\\crypto\\ec_extra\\ec_asn1.c " +
-    "third_party\\boringssl\\crypto\\ec_extra\\ec_derive.c " +
-    "third_party\\boringssl\\crypto\\ecdh_extra\\ecdh_extra.c " +
-    "third_party\\boringssl\\crypto\\ecdsa_extra\\ecdsa_asn1.c " +
-    "third_party\\boringssl\\crypto\\engine\\engine.c " +
-    "third_party\\boringssl\\crypto\\err\\err.c " +
-    "third_party\\boringssl\\crypto\\evp\\digestsign.c " +
-    "third_party\\boringssl\\crypto\\evp\\evp.c " +
-    "third_party\\boringssl\\crypto\\evp\\evp_asn1.c " +
-    "third_party\\boringssl\\crypto\\evp\\evp_ctx.c " +
-    "third_party\\boringssl\\crypto\\evp\\p_dsa_asn1.c " +
-    "third_party\\boringssl\\crypto\\evp\\p_ec.c " +
-    "third_party\\boringssl\\crypto\\evp\\p_ec_asn1.c " +
-    "third_party\\boringssl\\crypto\\evp\\p_ed25519.c " +
-    "third_party\\boringssl\\crypto\\evp\\p_ed25519_asn1.c " +
-    "third_party\\boringssl\\crypto\\evp\\p_rsa.c " +
-    "third_party\\boringssl\\crypto\\evp\\p_rsa_asn1.c " +
-    "third_party\\boringssl\\crypto\\evp\\p_x25519.c " +
-    "third_party\\boringssl\\crypto\\evp\\p_x25519_asn1.c " +
-    "third_party\\boringssl\\crypto\\evp\\pbkdf.c " +
-    "third_party\\boringssl\\crypto\\evp\\print.c " +
-    "third_party\\boringssl\\crypto\\evp\\scrypt.c " +
-    "third_party\\boringssl\\crypto\\evp\\sign.c " +
-    "third_party\\boringssl\\crypto\\ex_data.c " +
-    "third_party\\boringssl\\crypto\\fipsmodule\\bcm.c " +
-    "third_party\\boringssl\\crypto\\fipsmodule\\fips_shared_support.c " +
-    "third_party\\boringssl\\crypto\\fipsmodule\\is_fips.c " +
-    "third_party\\boringssl\\crypto\\hkdf\\hkdf.c " +
-    "third_party\\boringssl\\crypto\\hrss\\hrss.c " +
-    "third_party\\boringssl\\crypto\\lhash\\lhash.c " +
-    "third_party\\boringssl\\crypto\\mem.c " +
-    "third_party\\boringssl\\crypto\\obj\\obj.c " +
-    "third_party\\boringssl\\crypto\\obj\\obj_xref.c " +
-    "third_party\\boringssl\\crypto\\pem\\pem_all.c " +
-    "third_party\\boringssl\\crypto\\pem\\pem_info.c " +
-    "third_party\\boringssl\\crypto\\pem\\pem_lib.c " +
-    "third_party\\boringssl\\crypto\\pem\\pem_oth.c " +
-    "third_party\\boringssl\\crypto\\pem\\pem_pk8.c " +
-    "third_party\\boringssl\\crypto\\pem\\pem_pkey.c " +
-    "third_party\\boringssl\\crypto\\pem\\pem_x509.c " +
-    "third_party\\boringssl\\crypto\\pem\\pem_xaux.c " +
-    "third_party\\boringssl\\crypto\\pkcs7\\pkcs7.c " +
-    "third_party\\boringssl\\crypto\\pkcs7\\pkcs7_x509.c " +
-    "third_party\\boringssl\\crypto\\pkcs8\\p5_pbev2.c " +
-    "third_party\\boringssl\\crypto\\pkcs8\\pkcs8.c " +
-    "third_party\\boringssl\\crypto\\pkcs8\\pkcs8_x509.c " +
-    "third_party\\boringssl\\crypto\\poly1305\\poly1305.c " +
-    "third_party\\boringssl\\crypto\\poly1305\\poly1305_arm.c " +
-    "third_party\\boringssl\\crypto\\poly1305\\poly1305_vec.c " +
-    "third_party\\boringssl\\crypto\\pool\\pool.c " +
-    "third_party\\boringssl\\crypto\\rand_extra\\deterministic.c " +
-    "third_party\\boringssl\\crypto\\rand_extra\\forkunsafe.c " +
-    "third_party\\boringssl\\crypto\\rand_extra\\fuchsia.c " +
-    "third_party\\boringssl\\crypto\\rand_extra\\rand_extra.c " +
-    "third_party\\boringssl\\crypto\\rand_extra\\windows.c " +
-    "third_party\\boringssl\\crypto\\rc4\\rc4.c " +
-    "third_party\\boringssl\\crypto\\refcount_c11.c " +
-    "third_party\\boringssl\\crypto\\refcount_lock.c " +
-    "third_party\\boringssl\\crypto\\rsa_extra\\rsa_asn1.c " +
-    "third_party\\boringssl\\crypto\\rsa_extra\\rsa_print.c " +
-    "third_party\\boringssl\\crypto\\siphash\\siphash.c " +
-    "third_party\\boringssl\\crypto\\stack\\stack.c " +
-    "third_party\\boringssl\\crypto\\thread.c " +
-    "third_party\\boringssl\\crypto\\thread_none.c " +
-    "third_party\\boringssl\\crypto\\thread_pthread.c " +
-    "third_party\\boringssl\\crypto\\thread_win.c " +
-    "third_party\\boringssl\\crypto\\x509\\a_digest.c " +
-    "third_party\\boringssl\\crypto\\x509\\a_sign.c " +
-    "third_party\\boringssl\\crypto\\x509\\a_strex.c " +
-    "third_party\\boringssl\\crypto\\x509\\a_verify.c " +
-    "third_party\\boringssl\\crypto\\x509\\algorithm.c " +
-    "third_party\\boringssl\\crypto\\x509\\asn1_gen.c " +
-    "third_party\\boringssl\\crypto\\x509\\by_dir.c " +
-    "third_party\\boringssl\\crypto\\x509\\by_file.c " +
-    "third_party\\boringssl\\crypto\\x509\\i2d_pr.c " +
-    "third_party\\boringssl\\crypto\\x509\\rsa_pss.c " +
-    "third_party\\boringssl\\crypto\\x509\\t_crl.c " +
-    "third_party\\boringssl\\crypto\\x509\\t_req.c " +
-    "third_party\\boringssl\\crypto\\x509\\t_x509.c " +
-    "third_party\\boringssl\\crypto\\x509\\t_x509a.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_att.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_cmp.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_d2.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_def.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_ext.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_lu.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_obj.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_r2x.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_req.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_set.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_trs.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_txt.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_v3.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_vfy.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509_vpm.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509cset.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509name.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509rset.c " +
-    "third_party\\boringssl\\crypto\\x509\\x509spki.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_algor.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_all.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_attrib.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_crl.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_exten.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_info.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_name.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_pkey.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_pubkey.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_req.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_sig.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_spki.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_val.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_x509.c " +
-    "third_party\\boringssl\\crypto\\x509\\x_x509a.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\pcy_cache.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\pcy_data.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\pcy_lib.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\pcy_map.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\pcy_node.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\pcy_tree.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_akey.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_akeya.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_alt.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_bcons.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_bitst.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_conf.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_cpols.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_crld.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_enum.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_extku.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_genn.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_ia5.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_info.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_int.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_lib.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_ncons.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_ocsp.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_pci.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_pcia.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_pcons.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_pku.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_pmaps.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_prn.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_purp.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_skey.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_sxnet.c " +
-    "third_party\\boringssl\\crypto\\x509v3\\v3_utl.c " +
-    "third_party\\boringssl\\ssl\\bio_ssl.cc " +
-    "third_party\\boringssl\\ssl\\d1_both.cc " +
-    "third_party\\boringssl\\ssl\\d1_lib.cc " +
-    "third_party\\boringssl\\ssl\\d1_pkt.cc " +
-    "third_party\\boringssl\\ssl\\d1_srtp.cc " +
-    "third_party\\boringssl\\ssl\\dtls_method.cc " +
-    "third_party\\boringssl\\ssl\\dtls_record.cc " +
-    "third_party\\boringssl\\ssl\\handoff.cc " +
-    "third_party\\boringssl\\ssl\\handshake.cc " +
-    "third_party\\boringssl\\ssl\\handshake_client.cc " +
-    "third_party\\boringssl\\ssl\\handshake_server.cc " +
-    "third_party\\boringssl\\ssl\\s3_both.cc " +
-    "third_party\\boringssl\\ssl\\s3_lib.cc " +
-    "third_party\\boringssl\\ssl\\s3_pkt.cc " +
-    "third_party\\boringssl\\ssl\\ssl_aead_ctx.cc " +
-    "third_party\\boringssl\\ssl\\ssl_asn1.cc " +
-    "third_party\\boringssl\\ssl\\ssl_buffer.cc " +
-    "third_party\\boringssl\\ssl\\ssl_cert.cc " +
-    "third_party\\boringssl\\ssl\\ssl_cipher.cc " +
-    "third_party\\boringssl\\ssl\\ssl_file.cc " +
-    "third_party\\boringssl\\ssl\\ssl_key_share.cc " +
-    "third_party\\boringssl\\ssl\\ssl_lib.cc " +
-    "third_party\\boringssl\\ssl\\ssl_privkey.cc " +
-    "third_party\\boringssl\\ssl\\ssl_session.cc " +
-    "third_party\\boringssl\\ssl\\ssl_stat.cc " +
-    "third_party\\boringssl\\ssl\\ssl_transcript.cc " +
-    "third_party\\boringssl\\ssl\\ssl_versions.cc " +
-    "third_party\\boringssl\\ssl\\ssl_x509.cc " +
-    "third_party\\boringssl\\ssl\\t1_enc.cc " +
-    "third_party\\boringssl\\ssl\\t1_lib.cc " +
-    "third_party\\boringssl\\ssl\\tls13_both.cc " +
-    "third_party\\boringssl\\ssl\\tls13_client.cc " +
-    "third_party\\boringssl\\ssl\\tls13_enc.cc " +
-    "third_party\\boringssl\\ssl\\tls13_server.cc " +
-    "third_party\\boringssl\\ssl\\tls_method.cc " +
-    "third_party\\boringssl\\ssl\\tls_record.cc " +
-    "third_party\\boringssl\\third_party\\fiat\\curve25519.c " +
+    "src\\php\\ext\\grpc\\byte_buffer.c " +
+    "src\\php\\ext\\grpc\\call.c " +
+    "src\\php\\ext\\grpc\\call_credentials.c " +
+    "src\\php\\ext\\grpc\\channel.c " +
+    "src\\php\\ext\\grpc\\channel_credentials.c " +
+    "src\\php\\ext\\grpc\\completion_queue.c " +
+    "src\\php\\ext\\grpc\\php_grpc.c " +
+    "src\\php\\ext\\grpc\\server.c " +
+    "src\\php\\ext\\grpc\\server_credentials.c " +
+    "src\\php\\ext\\grpc\\timeval.c " +
+    "third_party\\abseil-cpp\\absl\\base\\dynamic_annotations.cc " +
+    "third_party\\abseil-cpp\\absl\\base\\internal\\cycleclock.cc " +
+    "third_party\\abseil-cpp\\absl\\base\\internal\\raw_logging.cc " +
+    "third_party\\abseil-cpp\\absl\\base\\internal\\spinlock.cc " +
+    "third_party\\abseil-cpp\\absl\\base\\internal\\spinlock_wait.cc " +
+    "third_party\\abseil-cpp\\absl\\base\\internal\\sysinfo.cc " +
+    "third_party\\abseil-cpp\\absl\\base\\internal\\thread_identity.cc " +
+    "third_party\\abseil-cpp\\absl\\base\\internal\\throw_delegate.cc " +
+    "third_party\\abseil-cpp\\absl\\base\\internal\\unscaledcycleclock.cc " +
+    "third_party\\abseil-cpp\\absl\\base\\log_severity.cc " +
+    "third_party\\abseil-cpp\\absl\\numeric\\int128.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\ascii.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\charconv.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\escaping.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\charconv_bigint.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\charconv_parse.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\escaping.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\memutil.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\ostringstream.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\str_format\\arg.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\str_format\\bind.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\str_format\\extension.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\str_format\\float_conversion.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\str_format\\output.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\str_format\\parser.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\utf8.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\match.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\numbers.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\str_cat.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\str_replace.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\str_split.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\string_view.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\substitute.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\civil_time.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\clock.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\duration.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\format.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\civil_time_detail.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_fixed.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_format.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_if.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_impl.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_info.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_libc.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_lookup.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_posix.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\zone_info_source.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\time.cc " +
+    "third_party\\abseil-cpp\\absl\\types\\bad_optional_access.cc " +
+    "third_party\\address_sorting\\address_sorting.c " +
+    "third_party\\address_sorting\\address_sorting_posix.c " +
+    "third_party\\address_sorting\\address_sorting_windows.c " +
+    "third_party\\boringssl-with-bazel\\err_data.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_bitstr.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_bool.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_d2i_fp.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_dup.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_enum.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_gentm.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_i2d_fp.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_int.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_mbstr.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_object.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_octet.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_print.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_strnid.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_time.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_type.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_utctm.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\a_utf8.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\asn1_lib.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\asn1_par.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\asn_pack.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\f_enum.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\f_int.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\f_string.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\tasn_dec.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\tasn_enc.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\tasn_fre.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\tasn_new.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\tasn_typ.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\tasn_utl.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\time_support.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\base64\\base64.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bio\\bio.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bio\\bio_mem.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bio\\connect.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bio\\fd.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bio\\file.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bio\\hexdump.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bio\\pair.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bio\\printf.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bio\\socket.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bio\\socket_helper.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bn_extra\\bn_asn1.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bn_extra\\convert.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\buf\\buf.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bytestring\\asn1_compat.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bytestring\\ber.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bytestring\\cbb.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bytestring\\cbs.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\bytestring\\unicode.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\chacha\\chacha.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cipher_extra\\cipher_extra.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cipher_extra\\derive_key.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cipher_extra\\e_aesccm.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cipher_extra\\e_aesctrhmac.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cipher_extra\\e_aesgcmsiv.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cipher_extra\\e_chacha20poly1305.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cipher_extra\\e_null.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cipher_extra\\e_rc2.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cipher_extra\\e_rc4.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cipher_extra\\e_tls.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cipher_extra\\tls_cbc.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cmac\\cmac.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\conf\\conf.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cpu-aarch64-fuchsia.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cpu-aarch64-linux.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cpu-arm-linux.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cpu-arm.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cpu-intel.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\cpu-ppc64le.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\crypto.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\curve25519\\curve25519.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\curve25519\\spake25519.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\dh\\check.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\dh\\dh.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\dh\\dh_asn1.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\dh\\params.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\digest_extra\\digest_extra.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\dsa\\dsa.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\dsa\\dsa_asn1.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\ec_extra\\ec_asn1.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\ec_extra\\ec_derive.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\ec_extra\\hash_to_curve.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\ecdh_extra\\ecdh_extra.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\ecdsa_extra\\ecdsa_asn1.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\engine\\engine.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\err\\err.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\digestsign.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\evp.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\evp_asn1.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\evp_ctx.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\p_dsa_asn1.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\p_ec.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\p_ec_asn1.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\p_ed25519.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\p_ed25519_asn1.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\p_rsa.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\p_rsa_asn1.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\p_x25519.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\p_x25519_asn1.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\pbkdf.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\print.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\scrypt.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\evp\\sign.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\ex_data.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\fipsmodule\\bcm.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\fipsmodule\\fips_shared_support.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\fipsmodule\\is_fips.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\hkdf\\hkdf.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\hrss\\hrss.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\lhash\\lhash.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\mem.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\obj\\obj.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\obj\\obj_xref.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pem\\pem_all.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pem\\pem_info.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pem\\pem_lib.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pem\\pem_oth.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pem\\pem_pk8.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pem\\pem_pkey.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pem\\pem_x509.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pem\\pem_xaux.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pkcs7\\pkcs7.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pkcs7\\pkcs7_x509.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pkcs8\\p5_pbev2.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pkcs8\\pkcs8.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pkcs8\\pkcs8_x509.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\poly1305\\poly1305.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\poly1305\\poly1305_arm.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\poly1305\\poly1305_vec.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\pool\\pool.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\rand_extra\\deterministic.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\rand_extra\\forkunsafe.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\rand_extra\\fuchsia.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\rand_extra\\rand_extra.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\rand_extra\\windows.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\rc4\\rc4.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\refcount_c11.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\refcount_lock.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\rsa_extra\\rsa_asn1.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\rsa_extra\\rsa_print.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\siphash\\siphash.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\stack\\stack.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\thread.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\thread_none.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\thread_pthread.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\thread_win.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\trust_token\\pmbtoken.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\trust_token\\trust_token.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\a_digest.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\a_sign.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\a_strex.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\a_verify.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\algorithm.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\asn1_gen.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\by_dir.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\by_file.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\i2d_pr.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\rsa_pss.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\t_crl.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\t_req.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\t_x509.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\t_x509a.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_att.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_cmp.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_d2.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_def.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_ext.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_lu.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_obj.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_r2x.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_req.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_set.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_trs.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_txt.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_v3.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_vfy.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509_vpm.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509cset.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509name.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509rset.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x509spki.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_algor.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_all.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_attrib.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_crl.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_exten.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_info.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_name.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_pkey.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_pubkey.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_req.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_sig.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_spki.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_val.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_x509.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509\\x_x509a.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\pcy_cache.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\pcy_data.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\pcy_lib.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\pcy_map.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\pcy_node.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\pcy_tree.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_akey.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_akeya.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_alt.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_bcons.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_bitst.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_conf.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_cpols.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_crld.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_enum.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_extku.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_genn.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_ia5.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_info.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_int.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_lib.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_ncons.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_ocsp.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_pci.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_pcia.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_pcons.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_pku.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_pmaps.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_prn.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_purp.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_skey.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_sxnet.c " +
+    "third_party\\boringssl-with-bazel\\src\\crypto\\x509v3\\v3_utl.c " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\bio_ssl.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\d1_both.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\d1_lib.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\d1_pkt.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\d1_srtp.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\dtls_method.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\dtls_record.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\handoff.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\handshake.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\handshake_client.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\handshake_server.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\s3_both.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\s3_lib.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\s3_pkt.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_aead_ctx.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_asn1.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_buffer.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_cert.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_cipher.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_file.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_key_share.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_lib.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_privkey.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_session.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_stat.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_transcript.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_versions.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\ssl_x509.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\t1_enc.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\t1_lib.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\tls13_both.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\tls13_client.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\tls13_enc.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\tls13_server.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\tls_method.cc " +
+    "third_party\\boringssl-with-bazel\\src\\ssl\\tls_record.cc " +
     "third_party\\upb\\upb\\decode.c " +
     "third_party\\upb\\upb\\encode.c " +
     "third_party\\upb\\upb\\msg.c " +
@@ -717,17 +813,17 @@ if (PHP_GRPC != "no") {
     "third_party\\zlib\\trees.c " +
     "third_party\\zlib\\uncompr.c " +
     "third_party\\zlib\\zutil.c " +
-    "";
-
-  EXTENSION("grpc", grpc_source, null,
+    ""
+    , null,
     "/DOPENSSL_NO_ASM /D_GNU_SOURCE /DWIN32_LEAN_AND_MEAN "+
     "/D_HAS_EXCEPTIONS=0 /DNOMINMAX /DGRPC_ARES=0 /D_WIN32_WINNT=0x600 "+
     "/I"+configure_module_dirname+" "+
     "/I"+configure_module_dirname+"\\include "+
     "/I"+configure_module_dirname+"\\src\\core\\ext\\upb-generated "+
     "/I"+configure_module_dirname+"\\src\\php\\ext\\grpc "+
+    "/I"+configure_module_dirname+"\\third_party\\abseil-cpp "+
     "/I"+configure_module_dirname+"\\third_party\\address_sorting\\include "+
-    "/I"+configure_module_dirname+"\\third_party\\boringssl\\include "+
+    "/I"+configure_module_dirname+"\\third_party\\boringssl-with-bazel\\src\\include "+
     "/I"+configure_module_dirname+"\\third_party\\upb "+
     "/I"+configure_module_dirname+"\\third_party\\zlib ");
 
@@ -735,7 +831,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\boringssl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters");
@@ -745,7 +840,9 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\priority");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\round_robin");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\weighted_target");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\dns");
@@ -777,18 +874,37 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\inproc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\annotations");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\route");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\filter");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\filter\\accesslog");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\filter\\accesslog\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\filter\\network");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\filter\\network\\http_connection_manager");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\filter\\network\\http_connection_manager\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\listener");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\trace");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\discovery");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\load_stats");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\load_stats\\v2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\matcher");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\metadata");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\metadata\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\tracing");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\tracing\\v2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\gogoproto");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\api");
@@ -803,6 +919,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src\\proto\\grpc\\lb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src\\proto\\grpc\\lb\\v1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\annotations");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data\\orca");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1");
@@ -818,6 +935,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\executor");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\poller");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");
@@ -859,49 +977,62 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php\\ext\\grpc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\base");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\base\\internal");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\numeric");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal\\str_format");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time\\internal");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time\\internal\\cctz");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\types");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\address_sorting");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\asn1");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\base64");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\bio");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\bn_extra");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\buf");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\bytestring");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\chacha");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\cipher_extra");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\cmac");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\conf");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\curve25519");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\dh");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\digest_extra");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\dsa");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\ec_extra");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\ecdh_extra");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\ecdsa_extra");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\engine");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\err");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\evp");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\fipsmodule");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\hkdf");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\hrss");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\lhash");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\obj");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\pem");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\pkcs7");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\pkcs8");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\poly1305");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\pool");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\rand_extra");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\rc4");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\rsa_extra");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\siphash");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\stack");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\x509");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\x509v3");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\ssl");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\third_party");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\third_party\\fiat");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\asn1");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\base64");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\bio");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\bn_extra");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\buf");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\bytestring");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\chacha");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\cipher_extra");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\cmac");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\conf");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\curve25519");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\dh");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\digest_extra");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\dsa");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\ec_extra");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\ecdh_extra");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\ecdsa_extra");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\engine");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\err");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\evp");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\fipsmodule");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\hkdf");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\hrss");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\lhash");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\obj");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\pem");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\pkcs7");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\pkcs8");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\poly1305");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\pool");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\rand_extra");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\rc4");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\rsa_extra");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\siphash");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\stack");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\trust_token");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\x509");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\x509v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\ssl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\zlib");
@@ -912,5 +1043,4 @@ if (PHP_GRPC != "no") {
     }
   }
   build_dirs = _build_dirs;
-
 }

@@ -27,9 +27,9 @@
 
 namespace grpc_objective_c_generator {
 
+using ::grpc::string;
 using ::grpc::protobuf::FileDescriptor;
 using ::grpc::protobuf::ServiceDescriptor;
-using ::grpc::string;
 
 inline string MessageHeaderName(const FileDescriptor* file) {
   return google::protobuf::compiler::objectivec::FilePath(file) + ".pbobjc.h";

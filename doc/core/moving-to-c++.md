@@ -34,7 +34,18 @@ C++ compatible with
   You can easily see whether PR is free from this issue by checking the result of
   `Artifact Build Linux` test.
 - `thread_local` is not allowed to use on Apple's products because their old OSes
-  (e.g. ios < 9.0) don't support `thread_local`.
+  (e.g. ios < 9.0) don't support `thread_local`. Please use `GPR_TLS_DECL` instead.
+- gRPC main libraries (grpc, grpc+++, and plugins) cannot use following C++ libraries:
+  (Test and example codes are relatively free from this constraints)
+  - `<thread>`. Use `grpc_core::Thread`.
+  - `<condition_variable>`. Use `grpc_core::CondVar`.
+  - `<mutex>`. Use `grpc_core::Mutex`, `grpc_core::MutexLock`, and `grpc_core::ReleasableMutexLock`.
+  - `<future>`
+  - `<ratio>`
+  - `<system_error>`
+  - `<filesystem>`
+- `grpc_core::Atomic` is prefered over `std::atomic` in gRPC library because it provides
+  additional debugging information.
 
 ## Roadmap
 

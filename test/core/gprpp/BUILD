@@ -83,19 +83,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "inlined_vector_test",
-    srcs = ["inlined_vector_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:inlined_vector",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "mpscq_test",
     srcs = ["mpscq_test.cc"],
     exec_properties = LARGE_MACHINE,
@@ -104,19 +91,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "optional_test",
-    srcs = ["optional_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:optional",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -157,19 +131,6 @@ grpc_cc_test(
     deps = [
         "//:ref_counted",
         "//:ref_counted_ptr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "string_view_test",
-    srcs = ["string_view_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr_base",
         "//test/core/util:grpc_test_util",
     ],
 )

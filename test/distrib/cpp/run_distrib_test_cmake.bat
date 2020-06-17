@@ -29,6 +29,13 @@ powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [Sys
 @rem set absolute path to OpenSSL with forward slashes
 set OPENSSL_DIR=%cd:\=/%/OpenSSL-Win32
 
+@rem Install absl
+mkdir third_party\abseil-cpp\cmake\build
+pushd third_party\abseil-cpp\cmake\build
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
+cmake --build . --config Release --target install || goto :error
+popd
+
 @rem Install c-ares
 mkdir third_party\cares\cares\cmake\build
 pushd third_party\cares\cares\cmake\build
@@ -64,6 +71,7 @@ cmake ^
   -DZLIB_ROOT=%INSTALL_DIR% ^
   -DgRPC_INSTALL=ON ^
   -DgRPC_BUILD_TESTS=OFF ^
+  -DgRPC_ABSL_PROVIDER=package ^
   -DgRPC_CARES_PROVIDER=package ^
   -DgRPC_PROTOBUF_PROVIDER=package ^
   -DgRPC_SSL_PROVIDER=package ^
