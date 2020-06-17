@@ -447,6 +447,9 @@ def test_gentle_failover(gcp,
         patch_backend_instances(gcp, backend_service, [primary_instance_group])
         resize_instance_group(gcp, primary_instance_group,
                               num_primary_instances)
+        instance_names = get_instance_names(gcp, primary_instance_group)
+        wait_until_all_rpcs_go_to_given_backends(instance_names,
+                                                 _WAIT_FOR_BACKEND_SEC)
 
 
 def test_new_instance_group_receives_traffic(gcp, backend_service,
