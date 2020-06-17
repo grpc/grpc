@@ -13,6 +13,8 @@
 # limitations under the License.
 """Provides distutils command classes for the GRPC Python setup process."""
 
+from __future__ import print_function
+
 import distutils
 import glob
 import os
@@ -218,7 +220,10 @@ class BuildExt(build_ext.build_ext):
             if platform.system() != 'Windows':
                 return False
             # TODO(lidiz) Remove the generated a.out for success tests.
-            cc_test = subprocess.Popen(['cc', '-x', 'c', '-std=c++11', '-'],
+            cc_test = subprocess.Popen([
+                distutils.ccompiler.executable_filename, '-x', 'c',
+                '-std=c++11', '-'
+            ],
                                        stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
@@ -290,3 +295,41 @@ class Gather(setuptools.Command):
                 self.distribution.install_requires)
         if self.test and self.distribution.tests_require:
             self.distribution.fetch_build_eggs(self.distribution.tests_require)
+
+
+class Clean(setuptools.Command):
+    """Command to clean build artifacts."""
+
+    description = 'Clean build artifacts.'
+    user_options = []
+
+    _FILE_PATTERNS = [
+        'python_build',
+        'src/python/grpcio/__pycache__/',
+        'src/python/grpcio/grpc/_cython/cygrpc.cpp',
+        'src/python/grpcio/grpc/_cython/*.so',
+        'src/python/grpcio/grpcio.egg-info/',
+    ]
+    _CURRENT_DIRECTORY = os.path.normpath(
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../.."))
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        for path_spec in self._FILE_PATTERNS:
+            this_glob = os.path.normpath(
+                os.path.join(Clean._CURRENT_DIRECTORY, path_spec))
+            abs_paths = glob.glob(this_glob)
+            for path in abs_paths:
+                if not str(path).startswith(Clean._CURRENT_DIRECTORY):
+                    raise ValueError(
+                        "Cowardly refusing to delete {}.".format(path))
+                print("Removing {}".format(os.path.relpath(path)))
+                if os.path.isfile(path):
+                    os.remove(str(path))
+                else:
+                    shutil.rmtree(str(path))
