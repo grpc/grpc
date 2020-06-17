@@ -64,6 +64,12 @@ def parse_interop_client_args():
     parser.add_argument('--default_service_account',
                         type=str,
                         help='email address of the default service account')
+    parser.add_argument("--grpc_test_use_grpclb_with_child_policy",
+                        type=str,
+                        help=("If non-empty, set a static service config on channels created by " +
+                        "grpc::CreateTestChannel, that configures the grpclb LB policy " +
+                        "with a child policy being the value of this flag (e.g. round_robin " +
+                        "or pick_first)."))
     return parser.parse_args()
 
 
@@ -93,7 +99,9 @@ def _create_call_credentials(args):
 def get_secure_channel_parameters(args):
     call_credentials = _create_call_credentials(args)
 
-    channel_opts = None
+    channel_opts = ()
+    if args.grpc_test_use_grpclb_with_child_policy:
+        channel_opts += (("grpc.service_config", '{"loadBalancingConfig": [{"grpclb": {"childPolicy": [{"%s": {}}]}}]}' % args.grpc_test_use_grpclb_with_child_policy),)
     if args.custom_credentials_type is not None:
         if args.custom_credentials_type == "google_default_credentials":
             channel_credentials = grpc.google_default_channel_credentials()
@@ -115,7 +123,7 @@ def get_secure_channel_parameters(args):
                 channel_credentials, call_credentials)
 
         if args.server_host_override:
-            channel_opts = ((
+            channel_opts += ((
                 'grpc.ssl_target_name_override',
                 args.server_host_override,
             ),)
