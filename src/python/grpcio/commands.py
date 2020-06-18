@@ -220,10 +220,7 @@ class BuildExt(build_ext.build_ext):
             if platform.system() != 'Windows':
                 return False
             # TODO(lidiz) Remove the generated a.out for success tests.
-            cc_test = subprocess.Popen([
-                self.compiler.compiler[0], '-x', 'c',
-                '-std=c++11', '-'
-            ],
+            cc_test = subprocess.Popen(['cc', '-x', 'c', '-std=c++11', '-'],
                                        stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
