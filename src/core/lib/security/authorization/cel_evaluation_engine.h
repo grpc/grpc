@@ -20,12 +20,10 @@
 
 #include <map>
 #include <memory>
-
 #include "src/core/ext/upb-generated/envoy/config/rbac/v2/rbac.upb.h"
-
 #include "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h"
 
-/* Evaluates Envoy attributes and returns an authorization decision based on the 
+/* Evaluates a request and returns an authorization decision based on the 
  * CEL condition field from an RBAC policy.
  * Example:
  * CelEvaluationEngine* cel_engine = new CelEvaluationEngine(rbac_policy);
@@ -33,6 +31,7 @@
  */
 class CelEvaluationEngine {
  public:
+  /* Builds a CEL Evaluation engine from Envoy RBAC */
   explicit CelEvaluationEngine(const envoy_config_rbac_v2_RBAC& rbac_policy);
   // TODO(mywang@google.com): add an Evaluate member function
 

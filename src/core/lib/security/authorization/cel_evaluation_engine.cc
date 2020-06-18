@@ -18,10 +18,6 @@
 
 #include "src/core/lib/security/authorization/cel_evaluation_engine.h"
 
-/* Creates a CelEvaluationEngine that makes authorization decisions based on the
- * CEL condition fields of the provided rbac policies. All rbac policies should
- * have principals and permissions set to any.
- */
 CelEvaluationEngine::CelEvaluationEngine(
     const envoy_config_rbac_v2_RBAC& rbac_policy) {
   for (const auto& policy : rbac_policy.policies()) {
@@ -29,4 +25,3 @@ CelEvaluationEngine::CelEvaluationEngine(
       std::make_unique<google_api_expr_v1alpha1_Expr>(policy.second.condition());
   }
 }
- 
