@@ -19,19 +19,24 @@ import os
 
 _MAXIMUM_CHANNELS = 10
 
-os.environ["GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"] = "1"
+_DEFAULT_TIMEOUT = 1.0
+
+os.environ["GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"] = "2"
 os.environ["GRPC_PYTHON_MANAGED_CHANNEL_MAXIMUM"] = str(_MAXIMUM_CHANNELS)
+os.environ["GRPC_PYTHON_DEFAULT_TIMEOUT_SECONDS"] = str(_DEFAULT_TIMEOUT)
 
 import contextlib
 import datetime
 import inspect
 import logging
+import threading
 import unittest
 import sys
 import time
 from typing import Callable, Optional
 
 from tests.unit import test_common
+from tests.unit.framework.common import get_socket
 from tests.unit import resources
 import grpc
 import grpc.experimental
@@ -50,6 +55,7 @@ _UNARY_UNARY = "/test/UnaryUnary"
 _UNARY_STREAM = "/test/UnaryStream"
 _STREAM_UNARY = "/test/StreamUnary"
 _STREAM_STREAM = "/test/StreamStream"
+_BLACK_HOLE = "/test/BlackHole"
 
 
 @contextlib.contextmanager
@@ -80,6 +86,17 @@ def _stream_stream_handler(request_iterator, context):
         yield request
 
 
+def _black_hole_handler(request, context):
+    event = threading.Event()
+
+    def _on_done():
+        event.set()
+
+    context.add_callback(_on_done)
+    while not event.is_set():
+        time.sleep(0.1)
+
+
 class _GenericHandler(grpc.GenericRpcHandler):
 
     def service(self, handler_call_details):
@@ -91,6 +108,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return grpc.stream_unary_rpc_method_handler(_stream_unary_handler)
         elif handler_call_details.method == _STREAM_STREAM:
             return grpc.stream_stream_rpc_method_handler(_stream_stream_handler)
+        elif handler_call_details.method == _BLACK_HOLE:
+            return grpc.unary_unary_rpc_method_handler(_black_hole_handler)
         else:
             raise NotImplementedError()
 
@@ -169,7 +188,8 @@ class SimpleStubsTest(unittest.TestCase):
                 target,
                 _UNARY_UNARY,
                 channel_credentials=grpc.experimental.
-                insecure_channel_credentials())
+                insecure_channel_credentials(),
+                timeout=None)
             self.assertEqual(_REQUEST, response)
 
     def test_unary_unary_secure(self):
@@ -179,7 +199,8 @@ class SimpleStubsTest(unittest.TestCase):
                 _REQUEST,
                 target,
                 _UNARY_UNARY,
-                channel_credentials=grpc.local_channel_credentials())
+                channel_credentials=grpc.local_channel_credentials(),
+                timeout=None)
             self.assertEqual(_REQUEST, response)
 
     def test_channels_cached(self):
@@ -310,6 +331,83 @@ class SimpleStubsTest(unittest.TestCase):
                     _UNARY_UNARY,
                     insecure=True,
                     channel_credentials=grpc.local_channel_credentials())
+
+    def test_default_wait_for_ready(self):
+        addr, port, sock = get_socket()
+        sock.close()
+        target = f'{addr}:{port}'
+        channel = grpc._simple_stubs.ChannelCache.get().get_channel(
+            target, (), None, True, None)
+        rpc_finished_event = threading.Event()
+        rpc_failed_event = threading.Event()
+        server = None
+
+        def _on_connectivity_changed(connectivity):
+            nonlocal server
+            if connectivity is grpc.ChannelConnectivity.TRANSIENT_FAILURE:
+                self.assertFalse(rpc_finished_event.is_set())
+                self.assertFalse(rpc_failed_event.is_set())
+                server = test_common.test_server()
+                server.add_insecure_port(target)
+                server.add_generic_rpc_handlers((_GenericHandler(),))
+                server.start()
+                channel.unsubscribe(_on_connectivity_changed)
+            elif connectivity in (grpc.ChannelConnectivity.IDLE,
+                                  grpc.ChannelConnectivity.CONNECTING):
+                pass
+            else:
+                self.fail("Encountered unknown state.")
+
+        channel.subscribe(_on_connectivity_changed)
+
+        def _send_rpc():
+            try:
+                response = grpc.experimental.unary_unary(_REQUEST,
+                                                         target,
+                                                         _UNARY_UNARY,
+                                                         timeout=None,
+                                                         insecure=True)
+                rpc_finished_event.set()
+            except Exception as e:
+                rpc_failed_event.set()
+
+        t = threading.Thread(target=_send_rpc)
+        t.start()
+        t.join()
+        self.assertFalse(rpc_failed_event.is_set())
+        self.assertTrue(rpc_finished_event.is_set())
+        if server is not None:
+            server.stop(None)
+
+    def assert_times_out(self, invocation_args):
+        with _server(None) as port:
+            target = f'localhost:{port}'
+            with self.assertRaises(grpc.RpcError) as cm:
+                response = grpc.experimental.unary_unary(_REQUEST,
+                                                         target,
+                                                         _BLACK_HOLE,
+                                                         insecure=True,
+                                                         **invocation_args)
+            self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED,
+                             cm.exception.code())
+
+    def test_default_timeout(self):
+        not_present = object()
+        wait_for_ready_values = [True, not_present]
+        timeout_values = [0.5, not_present]
+        cases = []
+        for wait_for_ready in wait_for_ready_values:
+            for timeout in timeout_values:
+                case = {}
+                if timeout is not not_present:
+                    case["timeout"] = timeout
+                if wait_for_ready is not not_present:
+                    case["wait_for_ready"] = wait_for_ready
+                cases.append(case)
+
+        for case in cases:
+            with self.subTest(**case):
+                self.assert_times_out(case)
 
 
 if __name__ == "__main__":

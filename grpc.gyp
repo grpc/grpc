@@ -1313,6 +1313,7 @@
       ],
       'sources': [
         'src/cpp/client/channel_cc.cc',
+        'src/cpp/client/client_callback.cc',
         'src/cpp/client/client_context.cc',
         'src/cpp/client/client_interceptor.cc',
         'src/cpp/client/create_channel.cc',
@@ -1464,6 +1465,7 @@
       ],
       'sources': [
         'src/cpp/client/channel_cc.cc',
+        'src/cpp/client/client_callback.cc',
         'src/cpp/client/client_context.cc',
         'src/cpp/client/client_interceptor.cc',
         'src/cpp/client/create_channel.cc',

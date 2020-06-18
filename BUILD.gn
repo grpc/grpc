@@ -1220,6 +1220,7 @@ config("grpc_config") {
         "include/grpcpp/support/time.h",
         "include/grpcpp/support/validate_service_config.h",
         "src/cpp/client/channel_cc.cc",
+        "src/cpp/client/client_callback.cc",
         "src/cpp/client/client_context.cc",
         "src/cpp/client/client_interceptor.cc",
         "src/cpp/client/create_channel.cc",

@@ -616,6 +616,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/transport_security_grpc.h',
                       'src/core/tsi/transport_security_interface.h',
                       'src/cpp/client/channel_cc.cc',
+                      'src/cpp/client/client_callback.cc',
                       'src/cpp/client/client_context.cc',
                       'src/cpp/client/client_interceptor.cc',
                       'src/cpp/client/create_channel.cc',

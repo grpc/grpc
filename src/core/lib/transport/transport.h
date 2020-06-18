@@ -242,6 +242,12 @@ struct grpc_transport_stream_op_batch_payload {
 
   struct {
     grpc_metadata_batch* send_trailing_metadata = nullptr;
+    // Set by the transport to true if the stream successfully wrote the
+    // trailing metadata. If this is not set but there was a send trailing
+    // metadata op present, this can indicate that a server call can be marked
+    // as  a cancellation (since the stream was write-closed before status could
+    // be delivered).
+    bool* sent = nullptr;
   } send_trailing_metadata;
 
   struct {

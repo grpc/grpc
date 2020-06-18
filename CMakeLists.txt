@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.31.0-dev")
-set(gRPC_CORE_VERSION     "10.0.0")
-set(gRPC_CORE_SOVERSION   "10")
+set(gRPC_CORE_VERSION     "11.0.0")
+set(gRPC_CORE_SOVERSION   "11")
 set(gRPC_CPP_VERSION      "1.31.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
 set(gRPC_CSHARP_VERSION   "2.31.0-dev")
@@ -2482,6 +2482,7 @@ endif()
 
 add_library(grpc++
   src/cpp/client/channel_cc.cc
+  src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
@@ -3183,6 +3184,7 @@ endif()
 
 add_library(grpc++_unsecure
   src/cpp/client/channel_cc.cc
+  src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
