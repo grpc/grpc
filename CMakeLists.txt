@@ -1626,6 +1626,7 @@ add_library(grpc
   src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_writer.cc
+  src/core/lib/security/authorization/cel_evaluation_engine.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc

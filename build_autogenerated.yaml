@@ -641,6 +641,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
+  - src/core/lib/security/authorization/cel_evaluation_engine.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -1044,6 +1045,7 @@ libs:
   - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_writer.cc
+  - src/core/lib/security/authorization/cel_evaluation_engine.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
