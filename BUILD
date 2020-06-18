@@ -1761,6 +1761,7 @@ grpc_cc_library(
     name = "grpc_secure",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
+        "src/core/lib/security/authorization/cel_evaluation_engine.cc",
         "src/core/lib/security/context/security_context.cc",
         "src/core/lib/security/credentials/alts/alts_credentials.cc",
         "src/core/lib/security/credentials/composite/composite_credentials.cc",
@@ -1801,6 +1802,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
+        "src/core/lib/security/authorization/cel_evaluation_engine.h"
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
