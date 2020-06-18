@@ -39,9 +39,11 @@
 
 #include <string>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -196,8 +198,6 @@ static void on_read(void* arg, grpc_error* err) {
   /* loop until accept4 returns EAGAIN, and then re-arm notification */
   for (;;) {
     grpc_resolved_address addr;
-    char* addr_str;
-    char* name;
     memset(&addr, 0, sizeof(addr));
     addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
     /* Note: If we ever decide to return this address to the user, remember to
@@ -238,14 +238,14 @@ static void on_read(void* arg, grpc_error* err) {
 
     grpc_set_socket_no_sigpipe_if_possible(fd);
 
-    addr_str = grpc_sockaddr_to_uri(&addr);
-    gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
-
+    std::string addr_str = grpc_sockaddr_to_uri(&addr);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s", addr_str);
+      gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s",
+              addr_str.c_str());
     }
 
-    grpc_fd* fdobj = grpc_fd_create(fd, name, true);
+    std::string name = absl::StrCat("tcp-server-connection:", addr_str);
+    grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
 
     read_notifier_pollset =
         sp->server->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
@@ -264,11 +264,8 @@ static void on_read(void* arg, grpc_error* err) {
 
     sp->server->on_accept_cb(
         sp->server->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, sp->server->channel_args, addr_str),
+        grpc_tcp_create(fdobj, sp->server->channel_args, addr_str.c_str()),
         read_notifier_pollset, acceptor);
-
-    gpr_free(name);
-    gpr_free(addr_str);
   }
 
   GPR_UNREACHABLE_CODE(return );
@@ -352,7 +349,6 @@ static grpc_error* add_wildcard_addrs_to_server(grpc_tcp_server* s,
 static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
   grpc_tcp_listener* sp = nullptr;
   std::string addr_str;
-  char* name;
   grpc_error* err;
 
   for (grpc_tcp_listener* l = listener->next; l && l->is_sibling; l = l->next) {
@@ -371,7 +367,6 @@ static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
     if (err != GRPC_ERROR_NONE) return err;
     listener->server->nports++;
     addr_str = grpc_sockaddr_to_string(&listener->addr, true);
-    gpr_asprintf(&name, "tcp-server-listener:%s/clone-%d", addr_str.c_str(), i);
     sp = static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
     sp->next = listener->next;
     listener->next = sp;
@@ -382,7 +377,11 @@ static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
     listener->sibling = sp;
     sp->server = listener->server;
     sp->fd = fd;
-    sp->emfd = grpc_fd_create(fd, name, true);
+    sp->emfd = grpc_fd_create(
+        fd,
+        absl::StrFormat("tcp-server-listener:%s/clone-%d", addr_str.c_str(), i)
+            .c_str(),
+        true);
     memcpy(&sp->addr, &listener->addr, sizeof(grpc_resolved_address));
     sp->port = port;
     sp->port_index = listener->port_index;
@@ -391,7 +390,6 @@ static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
     while (listener->server->tail->next != nullptr) {
       listener->server->tail = listener->server->tail->next;
     }
-    gpr_free(name);
   }
 
   return GRPC_ERROR_NONE;
@@ -577,8 +575,6 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
   void Handle(int listener_fd, int fd, grpc_byte_buffer* buf) override {
     grpc_pollset* read_notifier_pollset;
     grpc_resolved_address addr;
-    char* addr_str;
-    char* name;
     memset(&addr, 0, sizeof(addr));
     addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
     grpc_core::ExecCtx exec_ctx;
@@ -590,13 +586,13 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
       return;
     }
     grpc_set_socket_no_sigpipe_if_possible(fd);
-    addr_str = grpc_sockaddr_to_uri(&addr);
-    gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
+    std::string addr_str = grpc_sockaddr_to_uri(&addr);
     if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming external connection: %s",
-              addr_str);
+              addr_str.c_str());
     }
-    grpc_fd* fdobj = grpc_fd_create(fd, name, true);
+    std::string name = absl::StrCat("tcp-server-connection:", addr_str);
+    grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
     read_notifier_pollset =
         s_->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
                          &s_->next_pollset_to_assign, 1)) %
@@ -611,10 +607,8 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     acceptor->listener_fd = listener_fd;
     acceptor->pending_data = buf;
     s_->on_accept_cb(s_->on_accept_cb_arg,
-                     grpc_tcp_create(fdobj, s_->channel_args, addr_str),
+                     grpc_tcp_create(fdobj, s_->channel_args, addr_str.c_str()),
                      read_notifier_pollset, acceptor);
-    gpr_free(name);
-    gpr_free(addr_str);
   }
 
  private:

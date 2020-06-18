@@ -27,6 +27,8 @@
 #include <inttypes.h>
 #include <io.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
@@ -42,6 +44,7 @@
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
@@ -222,14 +225,13 @@ static grpc_error* prepare_socket(SOCKET sock,
 
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  char* tgtaddr = grpc_sockaddr_to_uri(addr);
   grpc_error_set_int(
-      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Failed to prepare server socket", &error, 1),
-                         GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_slice_from_copied_string(tgtaddr)),
+      grpc_error_set_str(
+          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+              "Failed to prepare server socket", &error, 1),
+          GRPC_ERROR_STR_TARGET_ADDRESS,
+          grpc_slice_from_cpp_string(grpc_sockaddr_to_uri(addr))),
       GRPC_ERROR_INT_FD, (intptr_t)sock);
-  gpr_free(tgtaddr);
   GRPC_ERROR_UNREF(error);
   if (sock != INVALID_SOCKET) closesocket(sock);
   return error;
@@ -301,8 +303,6 @@ static void on_accept(void* arg, grpc_error* error) {
   grpc_winsocket_callback_info* info = &sp->socket->read_info;
   grpc_endpoint* ep = NULL;
   grpc_resolved_address peer_name;
-  char* peer_name_string;
-  char* fd_name;
   DWORD transfered_bytes;
   DWORD flags;
   BOOL wsa_success;
@@ -337,7 +337,6 @@ static void on_accept(void* arg, grpc_error* error) {
     closesocket(sock);
   } else {
     if (!sp->shutting_down) {
-      peer_name_string = NULL;
       err = setsockopt(sock, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
                        (char*)&sp->socket->socket, sizeof(sp->socket->socket));
       if (err) {
@@ -348,6 +347,7 @@ static void on_accept(void* arg, grpc_error* error) {
       int peer_name_len = (int)peer_name.len;
       err = getpeername(sock, (grpc_sockaddr*)peer_name.addr, &peer_name_len);
       peer_name.len = (size_t)peer_name_len;
+      std::string peer_name_string;
       if (!err) {
         peer_name_string = grpc_sockaddr_to_uri(&peer_name);
       } else {
@@ -355,11 +355,9 @@ static void on_accept(void* arg, grpc_error* error) {
         gpr_log(GPR_ERROR, "getpeername error: %s", utf8_message);
         gpr_free(utf8_message);
       }
-      gpr_asprintf(&fd_name, "tcp_server:%s", peer_name_string);
-      ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name),
-                           sp->server->channel_args, peer_name_string);
-      gpr_free(fd_name);
-      gpr_free(peer_name_string);
+      std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
+      ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name.c_str()),
+                           sp->server->channel_args, peer_name_string.c_str());
     } else {
       closesocket(sock);
     }

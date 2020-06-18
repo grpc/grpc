@@ -24,8 +24,9 @@
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -40,14 +41,11 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
   GPR_ASSERT(reserved == nullptr);
 
   grpc_core::ExecCtx exec_ctx;
-  char* name;
-  gpr_asprintf(&name, "fd:%d", fd);
 
+  std::string name = absl::StrCat("fd:", fd);
   grpc_endpoint* server_endpoint =
-      grpc_tcp_create(grpc_fd_create(fd, name, true),
-                      grpc_server_get_channel_args(server), name);
-
-  gpr_free(name);
+      grpc_tcp_create(grpc_fd_create(fd, name.c_str(), true),
+                      grpc_server_get_channel_args(server), name.c_str());
 
   const grpc_channel_args* server_args = grpc_server_get_channel_args(server);
   grpc_transport* transport = grpc_create_chttp2_transport(

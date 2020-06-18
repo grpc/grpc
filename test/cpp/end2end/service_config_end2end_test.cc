@@ -21,13 +21,15 @@
 #include <mutex>
 #include <random>
 #include <set>
+#include <string>
 #include <thread>
+
+#include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -167,16 +169,14 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   grpc_core::Resolver::Result BuildFakeResults(const std::vector<int>& ports) {
     grpc_core::Resolver::Result result;
     for (const int& port : ports) {
-      char* lb_uri_str;
-      gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", port);
-      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str, true);
+      std::string lb_uri_str = absl::StrCat("ipv4:127.0.0.1:", port);
+      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str.c_str(), true);
       GPR_ASSERT(lb_uri != nullptr);
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
       result.addresses.emplace_back(address.addr, address.len,
                                     nullptr /* args */);
       grpc_uri_destroy(lb_uri);
-      gpr_free(lb_uri_str);
     }
     return result;
   }

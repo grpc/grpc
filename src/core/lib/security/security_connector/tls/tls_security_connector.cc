@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -130,11 +131,9 @@ grpc_status_code TlsFetchKeyMaterials(
 grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    char* msg;
-    gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return error;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
+            .c_str());
   }
   return GRPC_ERROR_NONE;
 }
@@ -402,31 +401,30 @@ void TlsChannelSecurityConnector::ServerAuthorizationCheckDone(
 grpc_error* TlsChannelSecurityConnector::ProcessServerAuthorizationCheckResult(
     grpc_tls_server_authorization_check_arg* arg) {
   grpc_error* error = GRPC_ERROR_NONE;
-  char* msg = nullptr;
   /* Server authorization check is cancelled by caller. */
   if (arg->status == GRPC_STATUS_CANCELLED) {
-    gpr_asprintf(&msg,
-                 "Server authorization check is cancelled by the caller with "
-                 "error: %s",
-                 arg->error_details->error_details().c_str());
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Server authorization check is cancelled by the caller "
+                     "with error: ",
+                     arg->error_details->error_details())
+            .c_str());
   } else if (arg->status == GRPC_STATUS_OK) {
     /* Server authorization check completed successfully but returned check
      * failure. */
     if (!arg->success) {
-      gpr_asprintf(&msg, "Server authorization check failed with error: %s",
-                   arg->error_details->error_details().c_str());
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Server authorization check failed with error: ",
+                       arg->error_details->error_details())
+              .c_str());
     }
     /* Server authorization check did not complete correctly. */
   } else {
-    gpr_asprintf(
-        &msg,
-        "Server authorization check did not finish correctly with error: %s",
-        arg->error_details->error_details().c_str());
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat(
+            "Server authorization check did not finish correctly with error: ",
+            arg->error_details->error_details())
+            .c_str());
   }
-  gpr_free(msg);
   return error;
 }
 

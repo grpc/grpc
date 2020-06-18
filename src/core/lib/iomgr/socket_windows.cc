@@ -27,10 +27,11 @@
 // must be included after winsock2.h
 #include <mswsock.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -42,14 +43,12 @@
 static DWORD s_wsa_socket_flags;
 
 grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name) {
-  char* final_name;
   grpc_winsocket* r = (grpc_winsocket*)gpr_malloc(sizeof(grpc_winsocket));
   memset(r, 0, sizeof(grpc_winsocket));
   r->socket = socket;
   gpr_mu_init(&r->state_mu);
-  gpr_asprintf(&final_name, "%s:socket=0x%p", name, r);
-  grpc_iomgr_register_object(&r->iomgr_object, final_name);
-  gpr_free(final_name);
+  grpc_iomgr_register_object(
+      &r->iomgr_object, absl::StrFormat("%s:socket=0x%p", name, r).c_str());
   grpc_iocp_add_socket(r);
   return r;
 }

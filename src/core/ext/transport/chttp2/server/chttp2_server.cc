@@ -24,14 +24,14 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-
-#include "absl/strings/str_format.h"
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -391,23 +391,18 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
     }
   }
   if (count == 0) {
-    char* msg;
-    gpr_asprintf(&msg, "No address added out of total %" PRIuPTR " resolved",
-                 naddrs);
-    err = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(msg, errors, naddrs);
-    gpr_free(msg);
+    err = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
+        absl::StrCat("No address added out of total ", naddrs, " resolved")
+            .c_str(),
+        errors, naddrs);
     goto error;
   } else if (count != naddrs) {
-    char* msg;
-    gpr_asprintf(&msg,
-                 "Only %" PRIuPTR " addresses added out of total %" PRIuPTR
-                 " resolved",
-                 count, naddrs);
-    err = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(msg, errors, naddrs);
-    gpr_free(msg);
-
-    const char* warning_message = grpc_error_string(err);
-    gpr_log(GPR_INFO, "WARNING: %s", warning_message);
+    err = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
+        absl::StrCat("Only ", count, " addresses added out of total ", naddrs,
+                     " resolved")
+            .c_str(),
+        errors, naddrs);
+    gpr_log(GPR_INFO, "WARNING: %s", grpc_error_string(err));
 
     /* we managed to bind some addresses: continue */
   }

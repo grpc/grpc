@@ -21,11 +21,12 @@
 #include <assert.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/compression.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -223,14 +224,12 @@ void CallData::FinishRecvMessage() {
   grpc_slice_buffer_init(&decompressed_slices);
   if (grpc_msg_decompress(algorithm_, &recv_slices_, &decompressed_slices) ==
       0) {
-    char* msg;
-    gpr_asprintf(
-        &msg,
-        "Unexpected error decompressing data for algorithm with enum value %d",
-        algorithm_);
     GPR_DEBUG_ASSERT(error_ == GRPC_ERROR_NONE);
-    error_ = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+    error_ = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unexpected error decompressing data for algorithm with "
+                     "enum value ",
+                     algorithm_)
+            .c_str());
     grpc_slice_buffer_destroy_internal(&decompressed_slices);
   } else {
     uint32_t recv_flags =

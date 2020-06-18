@@ -22,10 +22,13 @@
 
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/percent_encoding.h"
@@ -37,22 +40,12 @@
 
 static grpc_uri* bad_uri(const char* uri_text, size_t pos, const char* section,
                          bool suppress_errors) {
-  char* line_prefix;
-  size_t pfx_len;
-
   if (!suppress_errors) {
-    gpr_asprintf(&line_prefix, "bad uri.%s: '", section);
-    pfx_len = strlen(line_prefix) + pos;
-    gpr_log(GPR_ERROR, "%s%s'", line_prefix, uri_text);
-    gpr_free(line_prefix);
-
-    line_prefix = static_cast<char*>(gpr_malloc(pfx_len + 1));
-    memset(line_prefix, ' ', pfx_len);
-    line_prefix[pfx_len] = 0;
-    gpr_log(GPR_ERROR, "%s^ here", line_prefix);
-    gpr_free(line_prefix);
+    std::string line_prefix = absl::StrFormat("bad uri.%s: '", section);
+    gpr_log(GPR_ERROR, "%s%s'", line_prefix.c_str(), uri_text);
+    size_t pfx_len = line_prefix.size() + pos;
+    gpr_log(GPR_ERROR, "%s^ here", std::string(pfx_len, ' ').c_str());
   }
-
   return nullptr;
 }
 
