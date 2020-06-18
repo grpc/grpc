@@ -14,6 +14,9 @@
 // limitations under the License.
 //
 
+// This filter reads GRPC_ARG_SERVICE_CONFIG and populates ServiceConfigCallData
+// in the call context per call for direct channels.
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/service_config_call_data.h"
@@ -26,18 +29,44 @@ namespace grpc_core {
 
 namespace {
 
-struct ServiceConfigChannelArgChannelData {
-  grpc_core::RefCountedPtr<grpc_core::ServiceConfig> svc_cfg;
+class ServiceConfigChannelArgCallData {};
+
+class ServiceConfigChannelArgChannelData {
+ public:
+  explicit ServiceConfigChannelArgChannelData(
+      const grpc_channel_element_args* args) {
+    const char* service_config_str = grpc_channel_arg_find_string(
+        args->channel_args, GRPC_ARG_SERVICE_CONFIG);
+    if (service_config_str != nullptr) {
+      grpc_error* service_config_error = GRPC_ERROR_NONE;
+      auto svc_cfg = grpc_core::ServiceConfig::Create(service_config_str,
+                                                      &service_config_error);
+      if (service_config_error == GRPC_ERROR_NONE) {
+        svc_cfg_ = std::move(svc_cfg);
+      } else {
+        gpr_log(GPR_ERROR, "%s", grpc_error_string(service_config_error));
+      }
+      GRPC_ERROR_UNREF(service_config_error);
+    }
+  }
+
+  grpc_core::RefCountedPtr<grpc_core::ServiceConfig> svc_cfg() const {
+    return svc_cfg_;
+  }
+
+ private:
+  grpc_core::RefCountedPtr<grpc_core::ServiceConfig> svc_cfg_;
 };
 
 grpc_error* ServiceConfigChannelArgInitCallElem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   ServiceConfigChannelArgChannelData* chand =
       static_cast<ServiceConfigChannelArgChannelData*>(elem->channel_data);
-  if (chand->svc_cfg != nullptr) {
+  if (chand->svc_cfg() != nullptr) {
     GPR_DEBUG_ASSERT(args->context != nullptr);
     args->arena->New<ServiceConfigCallData>(
-        chand->svc_cfg, chand->svc_cfg->GetMethodParsedConfigVector(args->path),
+        chand->svc_cfg(),
+        chand->svc_cfg()->GetMethodParsedConfigVector(args->path),
         args->context);
   }
   return GRPC_ERROR_NONE;
@@ -51,7 +80,7 @@ grpc_error* ServiceConfigChannelArgInitChannelElem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   ServiceConfigChannelArgChannelData* chand =
       static_cast<ServiceConfigChannelArgChannelData*>(elem->channel_data);
-  new (chand) ServiceConfigChannelArgChannelData();
+  new (chand) ServiceConfigChannelArgChannelData(args);
   const char* service_config_str = grpc_channel_arg_get_string(
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG));
   if (service_config_str != nullptr) {
@@ -74,12 +103,10 @@ void ServiceConfigChannelArgDestroyChannelElem(grpc_channel_element* elem) {
   chand->~ServiceConfigChannelArgChannelData();
 }
 
-// This filter reads GRPC_ARG_SERVICE_CONFIG and populates ServiceConfigCallData
-// for direct channels.
 const grpc_channel_filter ServiceConfigChannelArgFilter = {
     grpc_call_next_op,
     grpc_channel_next_op,
-    0,
+    sizeof(ServiceConfigChannelArgCallData),
     ServiceConfigChannelArgInitCallElem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     ServiceConfigChannelArgDestroyCallElem,

@@ -27,6 +27,8 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/filters/client_channel/service_config_call_data.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -42,6 +44,25 @@ namespace grpc_core {
 namespace {
 size_t g_message_size_parser_index;
 }  // namespace
+
+//
+// MessageSizeParsedConfig
+//
+
+const MessageSizeParsedConfig* MessageSizeParsedConfig::GetFromCallContext(
+    const grpc_call_context_element* context) {
+  if (context == nullptr) return nullptr;
+  auto* svc_cfg_call_data = static_cast<ServiceConfigCallData*>(
+      context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  if (svc_cfg_call_data == nullptr) return nullptr;
+  return static_cast<const MessageSizeParsedConfig*>(
+      svc_cfg_call_data->GetMethodParsedConfig(
+          MessageSizeParser::ParserIndex()));
+}
+
+//
+// MessageSizeParser
+//
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 MessageSizeParser::ParsePerMethodParams(const Json& json, grpc_error** error) {
@@ -96,39 +117,20 @@ void MessageSizeParser::Register() {
 
 size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }
 
-int get_max_recv_size(const grpc_channel_args* args) {
-  return grpc_channel_args_want_minimal_stack(args)
-             ? -1
-             : grpc_channel_args_find_integer(
-                   args, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
-                   {GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH, -1, INT_MAX});
+int GetMaxRecvSizeFromChannelArgs(const grpc_channel_args* args) {
+  if (grpc_channel_args_want_minimal_stack(args)) return -1;
+  return grpc_channel_args_find_integer(
+      args, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
+      {GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH, -1, INT_MAX});
 }
 
-int get_max_send_size(const grpc_channel_args* args) {
-  return grpc_channel_args_want_minimal_stack(args)
-             ? -1
-             : grpc_channel_args_find_integer(
-                   args, GRPC_ARG_MAX_SEND_MESSAGE_LENGTH,
-                   {grpc_channel_args_want_minimal_stack(args)
-                        ? -1
-                        : GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
-                    -1, INT_MAX});
+int GetMaxSendSizeFromChannelArgs(const grpc_channel_args* args) {
+  if (grpc_channel_args_want_minimal_stack(args)) return -1;
+  return grpc_channel_args_find_integer(
+      args, GRPC_ARG_MAX_SEND_MESSAGE_LENGTH,
+      {GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH, -1, INT_MAX});
 }
 
-const MessageSizeParsedConfig* get_message_size_config_from_call_context(
-    const grpc_call_context_element* context) {
-  grpc_core::ServiceConfigCallData* svc_cfg_call_data = nullptr;
-  if (context != nullptr) {
-    svc_cfg_call_data = static_cast<grpc_core::ServiceConfigCallData*>(
-        context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-  }
-  if (svc_cfg_call_data != nullptr) {
-    return static_cast<const grpc_core::MessageSizeParsedConfig*>(
-        svc_cfg_call_data->GetMethodParsedConfig(
-            grpc_core::MessageSizeParser::ParserIndex()));
-  }
-  return nullptr;
-}
 }  // namespace grpc_core
 
 namespace {

@@ -40,18 +40,25 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
+namespace grpc_core {
 namespace {
 
-struct ChannelData {
-  int max_recv_size;
+class ChannelData {
+ public:
+  explicit ChannelData(const grpc_channel_element_args* args)
+      : max_recv_size_(get_max_recv_size(args->channel_args)) {}
+
+  int max_recv_size() const { return max_recv_size_; }
+
+ private:
+  int max_recv_size_;
 };
 
 class CallData {
  public:
-  explicit CallData(const grpc_call_element_args& args,
-                    const ChannelData* chand)
+  CallData(const grpc_call_element_args& args, const ChannelData* chand)
       : call_combiner_(args.call_combiner),
-        max_recv_message_length_(chand->max_recv_size) {
+        max_recv_message_length_(chand->max_recv_size()) {
     // Initialize state for recv_initial_metadata_ready callback
     GRPC_CLOSURE_INIT(&on_recv_initial_metadata_ready_,
                       OnRecvInitialMetadataReady, this,
@@ -66,8 +73,8 @@ class CallData {
     GRPC_CLOSURE_INIT(&on_recv_trailing_metadata_ready_,
                       OnRecvTrailingMetadataReady, this,
                       grpc_schedule_on_exec_ctx);
-    const grpc_core::MessageSizeParsedConfig* limits =
-        grpc_core::get_message_size_config_from_call_context(args.context);
+    const MessageSizeParsedConfig* limits =
+        get_message_size_config_from_call_context(args.context);
     if (limits != nullptr && limits->limits().max_recv_size >= 0 &&
         (limits->limits().max_recv_size < max_recv_message_length_ ||
          max_recv_message_length_ < 0)) {
@@ -96,7 +103,7 @@ class CallData {
   void MaybeResumeOnRecvTrailingMetadataReady();
   static void OnRecvTrailingMetadataReady(void* arg, grpc_error* error);
 
-  grpc_core::CallCombiner* call_combiner_;
+  CallCombiner* call_combiner_;
   // Overall error for the call
   grpc_error* error_ = GRPC_ERROR_NONE;
   // Fields for handling recv_initial_metadata_ready callback
@@ -110,13 +117,13 @@ class CallData {
   grpc_closure on_recv_message_ready_;
   grpc_closure* original_recv_message_ready_ = nullptr;
   grpc_closure on_recv_message_next_done_;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message_ = nullptr;
+  OrphanablePtr<ByteStream>* recv_message_ = nullptr;
   // recv_slices_ holds the slices read from the original recv_message stream.
   // It is initialized during construction and reset when a new stream is
   // created using it.
   grpc_slice_buffer recv_slices_;
-  std::aligned_storage<sizeof(grpc_core::SliceBufferByteStream),
-                       alignof(grpc_core::SliceBufferByteStream)>::type
+  std::aligned_storage<sizeof(SliceBufferByteStream),
+                       alignof(SliceBufferByteStream)>::type
       recv_replacement_stream_;
   // Fields for handling recv_trailing_metadata_ready callback
   bool seen_recv_trailing_metadata_ready_ = false;
@@ -154,7 +161,7 @@ void CallData::OnRecvInitialMetadataReady(void* arg, grpc_error* error) {
   calld->MaybeResumeOnRecvTrailingMetadataReady();
   grpc_closure* closure = calld->original_recv_initial_metadata_ready_;
   calld->original_recv_initial_metadata_ready_ = nullptr;
-  grpc_core::Closure::Run(DEBUG_LOCATION, closure, GRPC_ERROR_REF(error));
+  Closure::Run(DEBUG_LOCATION, closure, GRPC_ERROR_REF(error));
 }
 
 void CallData::MaybeResumeOnRecvMessageReady() {
@@ -269,9 +276,9 @@ void CallData::FinishRecvMessage() {
     // Initializing recv_replacement_stream_ with decompressed_slices removes
     // all the slices from decompressed_slices leaving it empty.
     new (&recv_replacement_stream_)
-        grpc_core::SliceBufferByteStream(&decompressed_slices, recv_flags);
-    recv_message_->reset(reinterpret_cast<grpc_core::SliceBufferByteStream*>(
-        &recv_replacement_stream_));
+        SliceBufferByteStream(&decompressed_slices, recv_flags);
+    recv_message_->reset(
+        reinterpret_cast<SliceBufferByteStream*>(&recv_replacement_stream_));
     recv_message_ = nullptr;
   }
   ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error_));
@@ -282,7 +289,7 @@ void CallData::ContinueRecvMessageReadyCallback(grpc_error* error) {
   // The surface will clean up the receiving stream if there is an error.
   grpc_closure* closure = original_recv_message_ready_;
   original_recv_message_ready_ = nullptr;
-  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
+  Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
 void CallData::MaybeResumeOnRecvTrailingMetadataReady() {
@@ -311,7 +318,7 @@ void CallData::OnRecvTrailingMetadataReady(void* arg, grpc_error* error) {
   calld->error_ = GRPC_ERROR_NONE;
   grpc_closure* closure = calld->original_recv_trailing_metadata_ready_;
   calld->original_recv_trailing_metadata_ready_ = nullptr;
-  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
+  Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
 void CallData::DecompressStartTransportStreamOpBatch(
@@ -367,8 +374,7 @@ void DecompressDestroyCallElem(grpc_call_element* elem,
 grpc_error* DecompressInitChannelElem(grpc_channel_element* elem,
                                       grpc_channel_element_args* args) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
-  new (chand) ChannelData();
-  chand->max_recv_size = grpc_core::get_max_recv_size(args->channel_args);
+  new (chand) ChannelData(args);
   return GRPC_ERROR_NONE;
 }
 
@@ -379,7 +385,7 @@ void DecompressDestroyChannelElem(grpc_channel_element* elem) {
 
 }  // namespace
 
-const grpc_channel_filter grpc_message_decompress_filter = {
+const grpc_channel_filter MessageDecompressFilter = {
     DecompressStartTransportStreamOpBatch,
     grpc_channel_next_op,
     sizeof(CallData),
@@ -391,3 +397,4 @@ const grpc_channel_filter grpc_message_decompress_filter = {
     DecompressDestroyChannelElem,
     grpc_channel_next_get_info,
     "message_decompress"};
+}  // namespace grpc_core
