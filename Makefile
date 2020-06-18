@@ -6602,14 +6602,14 @@ else
 
 
 
-$(BINDIR)/$(CONFIG)/check_epollexclusive: $(CHECK_EPOLLEXCLUSIVE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/check_epollexclusive: $(CHECK_EPOLLEXCLUSIVE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libre2.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CHECK_EPOLLEXCLUSIVE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/check_epollexclusive
+	$(Q) $(LDXX) $(LDFLAGS) $(CHECK_EPOLLEXCLUSIVE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libre2.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/check_epollexclusive
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/build/check_epollexclusive.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/build/check_epollexclusive.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libre2.a
 
 deps_check_epollexclusive: $(CHECK_EPOLLEXCLUSIVE_OBJS:.o=.dep)
 
