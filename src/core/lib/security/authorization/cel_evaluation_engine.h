@@ -31,7 +31,7 @@
 // Example:
 // CelEvaluationEngine* cel_engine = new CelEvaluationEngine(rbac_policy);
 // cel_engine->Evaluate(evaluate_args); // returns ALLOW or DENY
- 
+
 class CelEvaluationEngine {
  public:
   // Builds a CEL Evaluation engine from Envoy RBAC
@@ -42,4 +42,4 @@ class CelEvaluationEngine {
   std::map<std::string, google_api_expr_v1alpha1_Expr> policies_;
 };
 
-#endif // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_EVALUATION_ENGINE_H
+#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_EVALUATION_ENGINE_H
