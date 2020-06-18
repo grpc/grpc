@@ -186,8 +186,12 @@ argp.add_argument('--log_client_output',
                   help='Log captured client output',
                   default=False,
                   action='store_true')
+# TODO(ericgribkoff) Remove this flag once all test environments are verified to
+# have access to the alpha compute APIs.
 argp.add_argument('--only_stable_gcp_apis',
-                  help='Do not use alpha compute APIs',
+                  help='Do not use alpha compute APIs. Some tests may be '
+                  'incompatible with this option (gRPC health checks are '
+                  'currently alpha and required for simulating server failure',
                   default=False,
                   action='store_true')
 args = argp.parse_args()

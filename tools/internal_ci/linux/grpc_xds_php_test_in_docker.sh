@@ -65,6 +65,5 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_routing_lb,cds_lb,ed
   --source_image=projects/grpc-testing/global/images/xds-test-server \
   --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
   --gcp_suffix=$(date '+%s') \
-  --only_stable_gcp_apis \
   --verbose \
   --client_cmd='php -d extension=grpc.so -d extension=pthreads.so src/php/tests/interop/xds_client.php --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps}'
