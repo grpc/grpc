@@ -19,6 +19,7 @@
 #ifndef GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_HELPERS_H
 #define GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_HELPERS_H
 
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <iostream>
