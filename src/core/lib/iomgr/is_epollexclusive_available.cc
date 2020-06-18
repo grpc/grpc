@@ -94,8 +94,7 @@ bool grpc_is_epollexclusive_available(void) {
     return false;
   }
   // Check that EPOLLEXCLUSIVE is supported at all.
-  ev.events =
-      static_cast<uint32_t>(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE);
+  ev.events = static_cast<uint32_t>(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE);
   if (epoll_ctl(fd, EPOLL_CTL_ADD, evfd, &ev) != 0) {
     if (!logged_why_not) {
       gpr_log(GPR_DEBUG,
