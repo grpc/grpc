@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2020 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# TODO: Manually format.
 
 from libc cimport stdlib
 from libcpp.vector cimport vector
@@ -37,8 +35,16 @@ cdef extern from "grpc_tools/main.h" namespace "grpc_tools":
     string message
 
   int protoc_main(int argc, char *argv[])
-  int protoc_get_protos(char* protobuf_path, vector[string]* include_path, vector[pair[string, string]]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) nogil except +
-  int protoc_get_services(char* protobuf_path, vector[string]* include_path, vector[pair[string, string]]* files_out, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings) nogil except +
+  int protoc_get_protos(char* protobuf_path,
+                        vector[string]* include_path,
+                        vector[pair[string, string]]* files_out,
+                        vector[cProtocError]* errors,
+                        vector[cProtocWarning]* wrnings) nogil except +
+  int protoc_get_services(char* protobuf_path,
+                          vector[string]* include_path,
+                          vector[pair[string, string]]* files_out,
+                          vector[cProtocError]* errors,
+                          vector[cProtocWarning]* wrnings) nogil except +
 
 def run_main(list args not None):
   cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))
@@ -54,10 +60,12 @@ class ProtocError(Exception):
         self.message = message
 
     def __repr__(self):
-        return "ProtocError(filename=\"{}\", line={}, column={}, message=\"{}\")".format(self.filename, self.line, self.column, self.message)
+        return "ProtocError(filename=\"{}\", line={}, column={}, message=\"{}\")".format(
+                self.filename, self.line, self.column, self.message)
 
     def __str__(self):
-        return "{}:{}:{} error: {}".format(self.filename.decode("ascii"), self.line, self.column, self.message.decode("ascii"))
+        return "{}:{}:{} error: {}".format(self.filename.decode("ascii"),
+                self.line, self.column, self.message.decode("ascii"))
 
 class ProtocWarning(Warning):
     def __init__(self, filename, line, column, message):
@@ -67,9 +75,9 @@ class ProtocWarning(Warning):
         self.message = message
 
     def __repr__(self):
-        return "ProtocWarning(filename=\"{}\", line={}, column={}, message=\"{}\")".format(self.filename, self.line, self.column, self.message)
+        return "ProtocWarning(filename=\"{}\", line={}, column={}, message=\"{}\")".format(
+                self.filename, self.line, self.column, self.message)
 
-    # TODO: Maybe come up with something better than this
     __str__ = __repr__
 
 
@@ -87,19 +95,20 @@ class ProtocErrors(Exception):
         return "\n".join(str(err) for err in self._errors)
 
 cdef _c_protoc_error_to_protoc_error(cProtocError c_protoc_error):
-    return ProtocError(c_protoc_error.filename, c_protoc_error.line, c_protoc_error.column, c_protoc_error.message)
+    return ProtocError(c_protoc_error.filename, c_protoc_error.line,
+            c_protoc_error.column, c_protoc_error.message)
 
 cdef _c_protoc_warning_to_protoc_warning(cProtocWarning c_protoc_warning):
-    return ProtocWarning(c_protoc_warning.filename, c_protoc_warning.line, c_protoc_warning.column, c_protoc_warning.message)
+    return ProtocWarning(c_protoc_warning.filename, c_protoc_warning.line,
+            c_protoc_warning.column, c_protoc_warning.message)
 
 cdef _handle_errors(int rc, vector[cProtocError]* errors, vector[cProtocWarning]* wrnings, bytes protobuf_path):
   for warning in dereference(wrnings):
       warnings.warn(_c_protoc_warning_to_protoc_warning(warning))
   if rc != 0:
     if dereference(errors).size() != 0:
-       py_errors = [_c_protoc_error_to_protoc_error(c_error) for c_error in dereference(errors)]
-       # TODO: Come up with a good system for printing multiple errors from
-       # protoc.
+       py_errors = [_c_protoc_error_to_protoc_error(c_error)
+               for c_error in dereference(errors)]
        raise ProtocErrors(py_errors)
     raise Exception("An unknown error occurred while compiling {}".format(protobuf_path))
 
