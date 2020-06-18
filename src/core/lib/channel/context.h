@@ -42,10 +42,7 @@ typedef enum {
 } grpc_context_index;
 
 struct grpc_call_context_element {
-  union {
-    void* value = nullptr;
-    int value_int;
-  };
+  void* value = nullptr;
   void (*destroy)(void*) = nullptr;
 };
 
