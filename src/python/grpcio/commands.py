@@ -221,7 +221,7 @@ class BuildExt(build_ext.build_ext):
                 return False
             # TODO(lidiz) Remove the generated a.out for success tests.
             cc_test = subprocess.Popen([
-                distutils.ccompiler.executable_filename, '-x', 'c',
+                self.compiler.compiler[0], '-x', 'c',
                 '-std=c++11', '-'
             ],
                                        stdin=subprocess.PIPE,
