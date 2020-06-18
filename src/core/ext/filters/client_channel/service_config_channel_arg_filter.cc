@@ -34,16 +34,11 @@ grpc_error* ServiceConfigChannelArgInitCallElem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   ServiceConfigChannelArgChannelData* chand =
       static_cast<ServiceConfigChannelArgChannelData*>(elem->channel_data);
-  grpc_core::ServiceConfigCallData* svc_cfg_call_data = nullptr;
-  if (args->context != nullptr) {
-    svc_cfg_call_data = static_cast<grpc_core::ServiceConfigCallData*>(
-        args->context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-    if (svc_cfg_call_data == nullptr && chand->svc_cfg != nullptr) {
-      args->arena->New<ServiceConfigCallData>(
-          chand->svc_cfg,
-          chand->svc_cfg->GetMethodParsedConfigVector(args->path),
-          args->context);
-    }
+  if (chand->svc_cfg != nullptr) {
+    GPR_DEBUG_ASSERT(args->context != nullptr);
+    args->arena->New<ServiceConfigCallData>(
+        chand->svc_cfg, chand->svc_cfg->GetMethodParsedConfigVector(args->path),
+        args->context);
   }
   return GRPC_ERROR_NONE;
 }
@@ -79,6 +74,8 @@ void ServiceConfigChannelArgDestroyChannelElem(grpc_channel_element* elem) {
   chand->~ServiceConfigChannelArgChannelData();
 }
 
+// This filter reads GRPC_ARG_SERVICE_CONFIG and populates ServiceConfigCallData
+// for direct channels.
 const grpc_channel_filter ServiceConfigChannelArgFilter = {
     grpc_call_next_op,
     grpc_channel_next_op,
@@ -107,15 +104,12 @@ bool maybe_add_service_config_channel_arg_filter(
 
 }  // namespace
 
+}  // namespace grpc_core
+
 void grpc_service_config_channel_arg_filter_init(void) {
   grpc_channel_init_register_stage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_service_config_channel_arg_filter, nullptr);
-  grpc_channel_init_register_stage(
       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_service_config_channel_arg_filter, nullptr);
+      grpc_core::maybe_add_service_config_channel_arg_filter, nullptr);
 }
 
 void grpc_service_config_channel_arg_filter_shutdown(void) {}
-
-}  // namespace grpc_core
