@@ -900,24 +900,28 @@ static tsi_result tsi_set_min_and_max_tls_versions(
   }
   // Set the min TLS version of the SSL context.
   switch (min_tls_version) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
     case grpc_tls_version::TLS1_2:
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
       break;
     case grpc_tls_version::TLS1_3:
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_3_VERSION);
       break;
+#endif
     default:
       gpr_log(GPR_INFO, "TLS version is not supported.");
       return TSI_FAILED_PRECONDITION;
   }
   // Set the max TLS version of the SSL context.
   switch (max_tls_version) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
     case grpc_tls_version::TLS1_2:
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_2_VERSION);
       break;
     case grpc_tls_version::TLS1_3:
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_3_VERSION);
       break;
+#endif
     default:
       gpr_log(GPR_INFO, "TLS version is not supported.");
       return TSI_FAILED_PRECONDITION;
