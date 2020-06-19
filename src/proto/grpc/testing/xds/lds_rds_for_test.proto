@@ -29,6 +29,10 @@ import "google/protobuf/any.proto";
 import "google/protobuf/wrappers.proto";
 import "src/proto/grpc/testing/xds/cds_for_test.proto";
 
+message BoolValue {
+  // The bool value.
+  bool value = 1;
+}
 
 message RouteMatch {
   oneof path_specifier {
@@ -37,6 +41,7 @@ message RouteMatch {
     string prefix = 1;
     string path = 2;
   }
+  BoolValue case_sensitive = 4;
 }
 
 message WeightedCluster {

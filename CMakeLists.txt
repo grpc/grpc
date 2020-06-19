@@ -2498,6 +2498,7 @@ endif()
 
 add_library(grpc++
   src/cpp/client/channel_cc.cc
+  src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
@@ -3206,6 +3207,7 @@ endif()
 
 add_library(grpc++_unsecure
   src/cpp/client/channel_cc.cc
+  src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc

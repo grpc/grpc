@@ -124,6 +124,7 @@ GRPC_SECURE_PUBLIC_HDRS = [
 # TODO(ctiller): layer grpc atop grpc_unsecure, layer grpc++ atop grpc++_unsecure
 GRPCXX_SRCS = [
     "src/cpp/client/channel_cc.cc",
+    "src/cpp/client/client_callback.cc",
     "src/cpp/client/client_context.cc",
     "src/cpp/client/client_interceptor.cc",
     "src/cpp/client/create_channel.cc",

@@ -7,14 +7,13 @@
     <TargetFrameworks>net45;netstandard1.3</TargetFrameworks>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' and '$(MSBuildRuntimeType)' == 'Core' ">
-    <!-- Use Mono reference assemblies in SDK build: https://github.com/dotnet/sdk/issues/335.
-         This is a different approach than used in Grpc.Core/Common.csproj.include because
-         the workaround used there doesn't seem to be working for Microsoft.Build.* assemblies -->
-    <FrameworkPathOverride Condition="Exists('/usr/lib/mono/4.5-api')">/usr/lib/mono/4.5-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="Exists('/usr/local/lib/mono/4.5-api')">/usr/local/lib/mono/4.5-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="Exists('/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api')">/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api</FrameworkPathOverride>
-  </PropertyGroup>
+  <!-- Needed for the net45 build to work on Unix. See https://github.com/dotnet/designs/pull/33 -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
   <PropertyGroup Label="Asset root folders. TODO(kkm): Change with package separation.">
     <!-- TODO(kkm): Rework whole section when splitting packages.  -->
