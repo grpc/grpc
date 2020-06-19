@@ -460,7 +460,7 @@
     for lib in libs:
       if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
       if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 'z']: continue  # we build these using CMake instead
+      if lib.name in ['ares', 'benchmark', 'z', 'uv_linux', 'uv_darwin', 'uv_win']: continue  # we build these using CMake instead
       if is_absl_lib(lib.name): continue  # we build these using CMake instead
       cmake_libs.append(lib)
   %>
@@ -486,19 +486,6 @@
   %     endif
   %   endif
   % endfor
-
-  if(gRPC_BUILD_TESTS)
-  if(_gRPC_PLATFORM_LINUX)
-    add_library(uv ALIAS uv_linux)
-  elseif(_gRPC_PLATFORM_MAC)
-    add_library(uv ALIAS uv_darwin)
-  elseif(_gRPC_PLATFORM_WINDOWS)
-    add_library(uv ALIAS uv_win)
-  endif()
-
-
-  endif()
-
 
   % for tgt in targets:
   % if tgt.build in ["all", "protoc", "tool", "test", "private"] and not tgt.boringssl:
