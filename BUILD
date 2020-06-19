@@ -1450,9 +1450,6 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc",
     ],
-    external_deps = [
-        "absl/random",
-    ],
     language = "c++",
     deps = [
         "grpc_base",

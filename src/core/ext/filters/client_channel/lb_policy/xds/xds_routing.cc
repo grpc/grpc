@@ -20,7 +20,6 @@
 #include <limits.h>
 #include <string.h>
 
-#include "absl/random/random.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -306,9 +305,8 @@ bool HeadersMatch(
 }
 
 bool UnderFraction(const uint32_t fraction_per_million) {
-  absl::BitGen random;
-  uint32_t random_number =
-      absl::uniform_int_distribution<int>(0, 1000000)(random);
+  // Generate a random number in [0, 1000000).
+  const uint32_t random_number = rand() % 1000000;
   return random_number < fraction_per_million;
 }
 
