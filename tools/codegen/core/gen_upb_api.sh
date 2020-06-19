@@ -79,6 +79,7 @@ proto_files=( \
   "envoy/service/discovery/v2/ads.proto" \
   "envoy/service/load_stats/v2/lrs.proto" \
   "envoy/type/http.proto" \
+  "envoy/type/matcher/metadata.proto" \
   "envoy/type/matcher/regex.proto" \
   "envoy/api/v2/listener/udp_listener_config.proto" \
   "envoy/type/matcher/path.proto" \

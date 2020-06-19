@@ -182,7 +182,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/types/optional', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC'
 
-    ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
+    ss.source_files = 'filter/accesslog/v2/accesslog.upb.c',
+                      'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/client_channel/backend_metric.cc',
                       'src/core/ext/filters/client_channel/backend_metric.h',
                       'src/core/ext/filters/client_channel/backup_poller.cc',
@@ -454,7 +455,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/srds.upb.c',
                       'src/core/ext/upb-generated/envoy/api/v2/srds.upb.h',
-                      'src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c',
                       'src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.h',
                       'src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c',
                       'src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h',
@@ -470,6 +470,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h',
                       'src/core/ext/upb-generated/envoy/type/http.upb.c',
                       'src/core/ext/upb-generated/envoy/type/http.upb.h',
+                      'src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.c',
+                      'src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.h',
+                      'src/core/ext/upb-generated/envoy/type/matcher/path.upb.c',
+                      'src/core/ext/upb-generated/envoy/type/matcher/path.upb.h',
                       'src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c',
                       'src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h',
                       'src/core/ext/upb-generated/envoy/type/matcher/string.upb.c',
@@ -1182,6 +1186,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h',
                               'src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h',
                               'src/core/ext/upb-generated/envoy/type/http.upb.h',
+                              'src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.h',
+                              'src/core/ext/upb-generated/envoy/type/matcher/path.upb.h',
                               'src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h',
                               'src/core/ext/upb-generated/envoy/type/matcher/string.upb.h',
                               'src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.h',

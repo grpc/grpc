@@ -2513,7 +2513,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/srds.upb.c",
-        "src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c",
+        "filter/accesslog/v2/accesslog.upb.c",
         "src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c",
         "src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c",
         "src/core/ext/upb-generated/envoy/config/rbac/v2/rbac.upb.c",
@@ -2633,6 +2633,7 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/upb-generated/envoy/type/http.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.c",
+        "src/core/ext/upb-generated/envoy/type/matcher/path.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/string.upb.c",
         "src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c",
@@ -2644,6 +2645,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/upb-generated/envoy/type/http.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.h",
+        "src/core/ext/upb-generated/envoy/type/matcher/path.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/string.upb.h",
         "src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.h",

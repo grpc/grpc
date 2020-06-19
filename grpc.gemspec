@@ -49,6 +49,7 @@ Gem::Specification.new do |s|
 
   s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
 
+  s.files += %w( filter/accesslog/v2/accesslog.upb.c )
   s.files += %w( include/grpc/byte_buffer.h )
   s.files += %w( include/grpc/byte_buffer_reader.h )
   s.files += %w( include/grpc/census.h )
@@ -376,7 +377,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/api/v2/srds.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/api/v2/srds.upb.h )
-  s.files += %w( src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h )
@@ -392,6 +392,10 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/type/http.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/type/http.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/path.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/path.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/string.upb.c )

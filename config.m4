@@ -37,6 +37,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_SUBST(GRPC_SHARED_LIBADD)
 
   PHP_NEW_EXTENSION(grpc,
+    filter/accesslog/v2/accesslog.upb.c \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/client_channel/backend_metric.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
@@ -185,7 +186,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
     src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
     src/core/ext/upb-generated/envoy/config/rbac/v2/rbac.upb.c \
@@ -193,6 +193,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
     src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
     src/core/ext/upb-generated/envoy/type/http.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/path.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
     src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
@@ -836,6 +838,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1)
 
+  PHP_ADD_BUILD_DIR($ext_builddir/filter/accesslog/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/health)
@@ -879,7 +882,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/endpoint)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/listener)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/route)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/filter/accesslog/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/listener/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/rbac/v2)
