@@ -280,6 +280,7 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
+  builder->AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
   if (driver_port >= 0) {
     std::string server_address = grpc_core::JoinHostPort("::", driver_port);
     builder->AddListeningPort(
@@ -291,11 +292,10 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
   server_ = builder->BuildAndStart();
   if (server_ == nullptr) {
     gpr_log(GPR_ERROR,
-            "QpsWorker: Fail to BuildAndStart(driver_port=%d, server_port=%d)",
+            "QpsWorker: Fail to BuildAndStart(port=%d) (server_port=%d)",
             driver_port, server_port);
   } else {
-    gpr_log(GPR_INFO,
-            "QpsWorker: BuildAndStart(driver_port=%d, server_port=%d) done",
+    gpr_log(GPR_INFO, "QpsWorker: BuildAndStart(port=%d) (server_port=%d)",
             driver_port, server_port);
   }
 }
