@@ -3748,7 +3748,6 @@ target_link_libraries(check_epollexclusive
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
   gpr
-  re2
 )
 
 

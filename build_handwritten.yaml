@@ -25,7 +25,6 @@ targets:
   deps:
   - grpc
   - gpr
-  - re2
 - name: gen_hpack_tables
   build: tool
   language: c++
