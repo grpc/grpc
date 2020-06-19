@@ -888,6 +888,43 @@ static int NullVerifyCallback(int /*preverify_ok*/, X509_STORE_CTX* /*ctx*/) {
   return 1;
 }
 
+// Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
+// |max_tls_version|, respectively.
+static tsi_result tsi_set_min_and_max_tls_versions(
+    SSL_CTX* ssl_context, grpc_tls_version min_tls_version,
+    grpc_tls_version max_tls_version) {
+  if (ssl_context == nullptr) {
+    gpr_log(GPR_INFO,
+            "Invalid nullptr argument to |tsi_set_min_and_max_tls_versions|.");
+    return TSI_INVALID_ARGUMENT;
+  }
+  // Set the min TLS version of the SSL context.
+  switch (min_tls_version) {
+    case grpc_tls_version::TLS1_2:
+      SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
+      break;
+    case grpc_tls_version::TLS1_3:
+      SSL_CTX_set_min_proto_version(ssl_context, TLS1_3_VERSION);
+      break;
+    default:
+      gpr_log(GPR_INFO, "TLS version is not supported.");
+      return TSI_FAILED_PRECONDITION;
+  }
+  // Set the max TLS version of the SSL context.
+  switch (max_tls_version) {
+    case grpc_tls_version::TLS1_2:
+      SSL_CTX_set_max_proto_version(ssl_context, TLS1_2_VERSION);
+      break;
+    case grpc_tls_version::TLS1_3:
+      SSL_CTX_set_max_proto_version(ssl_context, TLS1_3_VERSION);
+      break;
+    default:
+      gpr_log(GPR_INFO, "TLS version is not supported.");
+      return TSI_FAILED_PRECONDITION;
+  }
+  return TSI_OK;
+}
+
 /* --- tsi_ssl_root_certs_store methods implementation. ---*/
 
 tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
@@ -1843,10 +1880,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-  // TODO(mattstev): Allow user to set min/max TLS version.
-  // https://github.com/grpc/grpc/issues/22403
   ssl_context = SSL_CTX_new(TLS_method());
-  SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
+  result = tsi_set_min_and_max_tls_versions(
+      ssl_context, options->min_tls_version, options->max_tls_version);
+  if (result != TSI_OK) return result;
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
@@ -2010,10 +2047,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   for (i = 0; i < options->num_key_cert_pairs; i++) {
     do {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-      // TODO(mattstev): Allow user to set min/max TLS version.
-      // https://github.com/grpc/grpc/issues/22403
       impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
-      SSL_CTX_set_min_proto_version(impl->ssl_contexts[i], TLS1_2_VERSION);
+      result = tsi_set_min_and_max_tls_versions(impl->ssl_contexts[i],
+                                                options->min_tls_version,
+                                                options->max_tls_version);
+      if (result != TSI_OK) return result;
 #else
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif

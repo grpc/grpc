@@ -117,6 +117,16 @@ void grpc_ssl_credentials::build_config(
   }
 }
 
+void grpc_ssl_credentials::set_min_tls_version(
+    grpc_tls_version min_tls_version) {
+  config_.min_tls_version = min_tls_version;
+}
+
+void grpc_ssl_credentials::set_max_tls_version(
+    grpc_tls_version max_tls_version) {
+  config_.max_tls_version = max_tls_version;
+}
+
 /* Deprecated in favor of grpc_ssl_credentials_create_ex. Will be removed
  * once all of its call sites are migrated to grpc_ssl_credentials_create_ex. */
 grpc_channel_credentials* grpc_ssl_credentials_create(
@@ -211,6 +221,16 @@ void grpc_ssl_server_credentials::build_config(
   config_.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
       pem_key_cert_pairs, num_key_cert_pairs);
   config_.num_key_cert_pairs = num_key_cert_pairs;
+}
+
+void grpc_ssl_server_credentials::set_min_tls_version(
+    grpc_tls_version min_tls_version) {
+  config_.min_tls_version = min_tls_version;
+}
+
+void grpc_ssl_server_credentials::set_max_tls_version(
+    grpc_tls_version max_tls_version) {
+  config_.max_tls_version = max_tls_version;
 }
 
 grpc_ssl_server_certificate_config* grpc_ssl_server_certificate_config_create(

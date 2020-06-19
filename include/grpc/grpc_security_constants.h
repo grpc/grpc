@@ -139,6 +139,9 @@ typedef enum {
  */
 typedef enum { UDS = 0, LOCAL_TCP } grpc_local_connect_type;
 
+/** The TLS versions that are supported by the SSL stack. **/
+typedef enum { TLS1_2, TLS1_3 } grpc_tls_version;
+
 #ifdef __cplusplus
 }
 #endif

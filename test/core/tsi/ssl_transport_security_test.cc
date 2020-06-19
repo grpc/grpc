@@ -55,6 +55,9 @@ const size_t kSessionTicketEncryptionKeySize = 80;
 const size_t kSessionTicketEncryptionKeySize = 48;
 #endif
 
+// Indicates the TLS version used for the test.
+static grpc_tls_version test_tls_version = grpc_tls_version::TLS1_3;
+
 typedef enum AlpnMode {
   NO_ALPN,
   ALPN_CLIENT_NO_SERVER,
@@ -127,6 +130,8 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   if (ssl_fixture->session_cache != nullptr) {
     client_options.session_cache = ssl_fixture->session_cache;
   }
+  client_options.min_tls_version = test_tls_version;
+  client_options.max_tls_version = test_tls_version;
   GPR_ASSERT(tsi_create_ssl_client_handshaker_factory_with_options(
                  &client_options, &ssl_fixture->client_handshaker_factory) ==
              TSI_OK);
@@ -159,6 +164,8 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   }
   server_options.session_ticket_key = ssl_fixture->session_ticket_key;
   server_options.session_ticket_key_size = ssl_fixture->session_ticket_key_size;
+  server_options.min_tls_version = test_tls_version;
+  server_options.max_tls_version = test_tls_version;
   GPR_ASSERT(tsi_create_ssl_server_handshaker_factory_with_options(
                  &server_options, &ssl_fixture->server_handshaker_factory) ==
              TSI_OK);
@@ -317,13 +324,17 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
   GPR_ASSERT(ssl_fixture->key_cert_lib != nullptr);
   ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib;
   tsi_peer peer;
+  // In TLS 1.3, the client-side handshake succeeds even if the client sends a
+  // bad certificate. In such a case, the server would fail the TLS handshake
+  // and send an alert to the client as the first application data message. In
+  // TLS 1.2, the client-side handshake will fail if the client sends a bad
+  // certificate.
   bool expect_server_success =
       !(key_cert_lib->use_bad_server_cert ||
         (key_cert_lib->use_bad_client_cert && ssl_fixture->force_client_auth));
-  // In TLS 1.3, the client-side handshake succeeds even if the client sends a
-  // bad certificate. In such a case, the server would fail the TLS handshake
-  // and send an alert to the client as the first application data message.
-  bool expect_client_success = !key_cert_lib->use_bad_server_cert;
+  bool expect_client_success = test_tls_version == grpc_tls_version::TLS1_2
+                                   ? expect_server_success
+                                   : !key_cert_lib->use_bad_server_cert;
   if (expect_client_success) {
     GPR_ASSERT(tsi_handshaker_result_extract_peer(
                    ssl_fixture->base.client_result, &peer) == TSI_OK);
@@ -954,31 +965,39 @@ void ssl_tsi_test_extract_cert_chain() {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  ssl_tsi_test_do_handshake_tiny_handshake_buffer();
-  ssl_tsi_test_do_handshake_small_handshake_buffer();
-  ssl_tsi_test_do_handshake();
-  ssl_tsi_test_do_handshake_with_root_store();
-  ssl_tsi_test_do_handshake_with_client_authentication();
-  ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
-  ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
-  ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
-  ssl_tsi_test_do_handshake_with_wrong_server_name_indication();
-  ssl_tsi_test_do_handshake_with_bad_server_cert();
-  ssl_tsi_test_do_handshake_with_bad_client_cert();
+  const size_t number_tls_versions = 2;
+  const grpc_tls_version tls_versions[] = {grpc_tls_version::TLS1_2,
+                                           grpc_tls_version::TLS1_3};
+  for (size_t i = 0; i < number_tls_versions; i++) {
+    // Set the TLS version to be used in the tests.
+    test_tls_version = tls_versions[i];
+    // Run all the tests using that TLS version for both the client and server.
+    ssl_tsi_test_do_handshake_tiny_handshake_buffer();
+    ssl_tsi_test_do_handshake_small_handshake_buffer();
+    ssl_tsi_test_do_handshake();
+    ssl_tsi_test_do_handshake_with_root_store();
+    ssl_tsi_test_do_handshake_with_client_authentication();
+    ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
+    ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
+    ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
+    ssl_tsi_test_do_handshake_with_wrong_server_name_indication();
+    ssl_tsi_test_do_handshake_with_bad_server_cert();
+    ssl_tsi_test_do_handshake_with_bad_client_cert();
 #ifdef OPENSSL_IS_BORINGSSL
-  // BoringSSL and OpenSSL have different behaviors on mismatched ALPN.
-  ssl_tsi_test_do_handshake_alpn_client_no_server();
-  ssl_tsi_test_do_handshake_alpn_client_server_mismatch();
+    // BoringSSL and OpenSSL have different behaviors on mismatched ALPN.
+    ssl_tsi_test_do_handshake_alpn_client_no_server();
+    ssl_tsi_test_do_handshake_alpn_client_server_mismatch();
 #endif
-  ssl_tsi_test_do_handshake_alpn_server_no_client();
-  ssl_tsi_test_do_handshake_alpn_client_server_ok();
-  ssl_tsi_test_do_handshake_session_cache();
-  ssl_tsi_test_do_round_trip_for_all_configs();
-  ssl_tsi_test_do_round_trip_odd_buffer_size();
-  ssl_tsi_test_handshaker_factory_internals();
-  ssl_tsi_test_duplicate_root_certificates();
-  ssl_tsi_test_extract_x509_subject_names();
-  ssl_tsi_test_extract_cert_chain();
+    ssl_tsi_test_do_handshake_alpn_server_no_client();
+    ssl_tsi_test_do_handshake_alpn_client_server_ok();
+    ssl_tsi_test_do_handshake_session_cache();
+    ssl_tsi_test_do_round_trip_for_all_configs();
+    ssl_tsi_test_do_round_trip_odd_buffer_size();
+    ssl_tsi_test_handshaker_factory_internals();
+    ssl_tsi_test_duplicate_root_certificates();
+    ssl_tsi_test_extract_x509_subject_names();
+    ssl_tsi_test_extract_cert_chain();
+  }
   grpc_shutdown();
   return 0;
 }
