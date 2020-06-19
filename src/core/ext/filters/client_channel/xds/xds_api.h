@@ -116,8 +116,6 @@ class XdsApi {
       std::vector<ClusterWeight> weighted_clusters;
 
       bool operator==(const RdsRoute& other) const {
-        // TODO @donnadionne: implement this properly with all the fields
-        // finalized.
         return (matchers == other.matchers &&
                 cluster_name == other.cluster_name &&
                 weighted_clusters == other.weighted_clusters);

@@ -2037,11 +2037,11 @@ std::string CreateServiceConfigRoute(const std::string& action_name,
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::RANGE:
         header_matcher = absl::StrFormat(
-            "             \"%s\":{\n"
+            "             \"range_match\":{\n"
             "              \"start\":%d,\n"
             "              \"end\":%d\n"
             "             }",
-            "range_match", header.range_start, header.range_end);
+            header.range_start, header.range_end);
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::PRESENT:

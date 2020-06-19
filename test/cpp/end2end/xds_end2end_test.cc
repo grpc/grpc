@@ -2451,25 +2451,7 @@ TEST_P(LdsRdsTest, RouteMatchHasValidPrefixEmptyOrSingleSlash) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
-// Tests that LDS client should send a NACK if the single route match has a
-// prefix string with no "/".
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNonEmptyNoSlash) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("grpc.testing.EchoTest1Service");
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
-}
-
-// Tests that LDS client should send a NACK if the single route match has a
+// Tests that LDS client should ignore route which has a path
 // prefix string does not start with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
@@ -2487,7 +2469,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
-// Tests that LDS client should send a NACK if route match has a prefix
+// Tests that LDS client should ignore route which has a prefix
 // string with more than 2 slashes.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
@@ -2501,14 +2483,13 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Prefix cannot have more than 2 slashes");
+  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
-// Tests that LDS client should send a NACK if route match has a prefix
+// Tests that LDS client should ignore route which has a prefix
 // string "//".
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoContent) {
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixDoubleSlash) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2520,12 +2501,11 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoContent) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Prefix contains empty string between the 2 slashes");
+  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
-// Tests that LDS client should send a NACK if the single route match has path
+// Tests that LDS client should ignore route which has path
 // but it's empty.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
@@ -2543,7 +2523,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
-// Tests that LDS client should send a NACK if the single route match has path
+// Tests that LDS client should ignore route which has path
 // string does not start with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
@@ -2561,9 +2541,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
-// Tests that LDS client should send a NACK if the single route match has path
-// string that ends with "/".
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEndsWithSlash) {
+// Tests that LDS client should ignore route which has path
+// string that has too many slashes; for example, ends with "/".
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPathTooManySlashes) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2579,9 +2559,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEndsWithSlash) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
-// Tests that LDS client should send a NACK if the single route match has path
-// string that misses "/" between service and method.
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMiddleSlash) {
+// Tests that LDS client should ignore route which has path
+// string that has only 1 slash: missing "/" between service and method.
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPathOnlyOneSlash) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2597,7 +2577,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMiddleSlash) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
-// Tests that LDS client should send a NACK if the single route match has path
+// Tests that LDS client should ignore route which has path
 // string that is missing service.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
@@ -2615,7 +2595,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
-// Tests that LDS client should send a NACK if the single route match has path
+// Tests that LDS client should ignore route which has path
 // string that is missing method.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
@@ -3394,7 +3374,8 @@ TEST_P(LdsRdsTest, RouteMatchHeaderMatcher) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   route1->mutable_match()
-      ->mutable_runtime_fraction()
+      ->mutable_runtime_fraction()  // TODO: separate to another test for
+                                    // fraction
       ->mutable_default_value()
       ->set_numerator(50);
   auto* header_matcher1 = route1->mutable_match()->add_headers();
@@ -3420,7 +3401,8 @@ TEST_P(LdsRdsTest, RouteMatchHeaderMatcher) {
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_match()
-      ->mutable_runtime_fraction()
+      ->mutable_runtime_fraction()  // TODO: separate to another test for
+                                    // fraction
       ->mutable_default_value()
       ->set_numerator(50);
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
