@@ -2038,8 +2038,8 @@ std::string CreateServiceConfigRoute(const std::string& action_name,
           HeaderMatcherType::RANGE:
         header_matcher = absl::StrFormat(
             "             \"%s\":{\n"
-            "              \"range_start\":%d,\n"
-            "              \"range_end\":%d\n"
+            "              \"start\":%d,\n"
+            "              \"end\":%d\n"
             "             }",
             "range_match", header.range_start, header.range_end);
         break;
@@ -2111,7 +2111,7 @@ std::string CreateServiceConfigRoute(const std::string& action_name,
       "      }",
       path_match_str, absl::StrJoin(headers_service_config, ""),
       route.matchers.fraction_per_million.has_value()
-          ? absl::StrFormat("\"fraction_numerator\":%d,\n",
+          ? absl::StrFormat("\"match_fraction\":%d,\n",
                             route.matchers.fraction_per_million.value())
           : "",
       action_name);
