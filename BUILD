@@ -2632,6 +2632,7 @@ grpc_cc_library(
     name = "envoy_type_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/type/http.upb.c",
+        "src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/string.upb.c",
         "src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c",
@@ -2642,6 +2643,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/upb-generated/envoy/type/http.upb.h",
+        "src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/string.upb.h",
         "src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.h",
