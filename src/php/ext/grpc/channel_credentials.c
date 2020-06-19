@@ -16,6 +16,11 @@
  *
  */
 
+/**
+ * class ChannelCredentials
+ * @see https://github.com/grpc/grpc/tree/master/src/php/ext/grpc/channel_credentials.c
+ */
+
 #include "channel_credentials.h"
 
 #include <ext/standard/sha1.h>
@@ -134,10 +139,10 @@ PHP_METHOD(ChannelCredentials, createDefault) {
 
 /**
  * Create SSL credentials.
- * @param string $pem_root_certs PEM encoding of the server root certificates
- * @param string $pem_key_cert_pair.private_key PEM encoding of the client's
+ * @param string $pem_root_certs = "" PEM encoding of the server root certificates (optional)
+ * @param string $private_key = "" PEM encoding of the client's
  *                                              private key (optional)
- * @param string $pem_key_cert_pair.cert_chain PEM encoding of the client's
+ * @param string $cert_chain = "" PEM encoding of the client's
  *                                             certificate chain (optional)
  * @return ChannelCredentials The new SSL credentials object
  */
