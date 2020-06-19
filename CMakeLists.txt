@@ -1471,6 +1471,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c
   src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c
+  src/core/ext/upb-generated/envoy/config/rbac/v2/rbac.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c
   src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
   src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
@@ -2141,6 +2142,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c
   src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c
+  src/core/ext/upb-generated/envoy/config/rbac/v2/rbac.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c
   src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
   src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
