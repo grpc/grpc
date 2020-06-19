@@ -152,7 +152,7 @@ struct call_data {
     // apply the max request size to the send limit and the max response
     // size to the receive limit.
     const grpc_core::MessageSizeParsedConfig* limits =
-        grpc_core::get_message_size_config_from_call_context(args.context);
+        grpc_core::MessageSizeParsedConfig::GetFromCallContext(args.context);
     if (limits != nullptr) {
       if (limits->limits().max_send_size >= 0 &&
           (limits->limits().max_send_size < this->limits.max_send_size ||
@@ -308,8 +308,8 @@ static void message_size_destroy_call_elem(
 grpc_core::MessageSizeParsedConfig::message_size_limits get_message_size_limits(
     const grpc_channel_args* channel_args) {
   grpc_core::MessageSizeParsedConfig::message_size_limits lim;
-  lim.max_send_size = grpc_core::get_max_send_size(channel_args);
-  lim.max_recv_size = grpc_core::get_max_recv_size(channel_args);
+  lim.max_send_size = grpc_core::GetMaxSendSizeFromChannelArgs(channel_args);
+  lim.max_recv_size = grpc_core::GetMaxRecvSizeFromChannelArgs(channel_args);
   return lim;
 }
 
