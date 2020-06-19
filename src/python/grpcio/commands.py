@@ -300,13 +300,13 @@ class Clean(setuptools.Command):
     description = 'Clean build artifacts.'
     user_options = []
 
-    _FILE_PATTERNS = [
+    _FILE_PATTERNS = (
         'python_build',
         'src/python/grpcio/__pycache__/',
         'src/python/grpcio/grpc/_cython/cygrpc.cpp',
         'src/python/grpcio/grpc/_cython/*.so',
         'src/python/grpcio/grpcio.egg-info/',
-    ]
+    )
     _CURRENT_DIRECTORY = os.path.normpath(
         os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../.."))
 

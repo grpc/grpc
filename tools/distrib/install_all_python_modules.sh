@@ -21,7 +21,7 @@ BASEDIR=$(dirname "$0")
 BASEDIR=$(realpath "$BASEDIR")/../..
 
 (cd "$BASEDIR";
-  pip install cython;
+  pip install --upgrade cython;
   python setup.py install;
   pushd tools/distrib/python/grpcio_tools;
     ../make_grpcio_tools.py
