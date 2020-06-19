@@ -37,8 +37,8 @@ class ServiceConfigChannelArgChannelData {
         args->channel_args, GRPC_ARG_SERVICE_CONFIG);
     if (service_config_str != nullptr) {
       grpc_error* service_config_error = GRPC_ERROR_NONE;
-      auto service_config = grpc_core::ServiceConfig::Create(
-          service_config_str, &service_config_error);
+      auto service_config =
+          ServiceConfig::Create(service_config_str, &service_config_error);
       if (service_config_error == GRPC_ERROR_NONE) {
         service_config_ = std::move(service_config);
       } else {
@@ -48,12 +48,12 @@ class ServiceConfigChannelArgChannelData {
     }
   }
 
-  grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config() const {
+  RefCountedPtr<ServiceConfig> service_config() const {
     return service_config_;
   }
 
  private:
-  grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config_;
+  RefCountedPtr<ServiceConfig> service_config_;
 };
 
 class ServiceConfigChannelArgCallData {
@@ -62,8 +62,7 @@ class ServiceConfigChannelArgCallData {
                                   const grpc_call_element_args* args) {
     ServiceConfigChannelArgChannelData* chand =
         static_cast<ServiceConfigChannelArgChannelData*>(elem->channel_data);
-    grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config =
-        chand->service_config();
+    RefCountedPtr<ServiceConfig> service_config = chand->service_config();
     if (service_config != nullptr) {
       GPR_DEBUG_ASSERT(args->context != nullptr);
       const auto* method_params_vector =
