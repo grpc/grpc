@@ -703,8 +703,7 @@ static void on_response_trailers_received(
 static void create_grpc_frame(grpc_slice_buffer* write_slice_buffer,
                               char** pp_write_buffer,
                               size_t* p_write_buffer_size, uint32_t flags) {
-  grpc_slice slice = grpc_slice_buffer_take_first(write_slice_buffer);
-  size_t length = GRPC_SLICE_LENGTH(slice);
+  size_t length = write_slice_buffer->length;
   *p_write_buffer_size = length + GRPC_HEADER_SIZE_IN_BYTES;
   /* This is freed in the on_write_completed callback */
   char* write_buffer =
@@ -720,8 +719,12 @@ static void create_grpc_frame(grpc_slice_buffer* write_slice_buffer,
   *p++ = static_cast<uint8_t>(length >> 8);
   *p++ = static_cast<uint8_t>(length);
   /* append actual data */
-  memcpy(p, GRPC_SLICE_START_PTR(slice), length);
-  grpc_slice_unref_internal(slice);
+  size_t offset = 0;
+  for (size_t i = 0; i < write_slice_buffer->count; ++i) {
+    memcpy(p + offset, GRPC_SLICE_START_PTR(write_slice_buffer->slices[i]),
+           GRPC_SLICE_LENGTH(write_slice_buffer->slices[i]));
+    offset += GRPC_SLICE_LENGTH(write_slice_buffer->slices[i]);
+  }
 }
 
 /*
@@ -1090,22 +1093,28 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       grpc_slice_buffer write_slice_buffer;
       grpc_slice slice;
       grpc_slice_buffer_init(&write_slice_buffer);
-      if (1 != stream_op->payload->send_message.send_message->Next(
-                   stream_op->payload->send_message.send_message->length(),
-                   nullptr)) {
-        /* Should never reach here */
-        GPR_ASSERT(false);
-      }
-      if (GRPC_ERROR_NONE !=
-          stream_op->payload->send_message.send_message->Pull(&slice)) {
-        /* Should never reach here */
-        GPR_ASSERT(false);
-      }
-      grpc_slice_buffer_add(&write_slice_buffer, slice);
-      if (GPR_UNLIKELY(write_slice_buffer.count != 1)) {
+      do {
+        /* TODO(roth): When we add support for incremental sending,this code
+         * will need to be changed to support asynchronous delivery of the
+         * send_message payload. */
+        if (!stream_op->payload->send_message.send_message->Next(
+                stream_op->payload->send_message.send_message->length(),
+                nullptr)) {
+          /* Should never reach here */
+          GPR_ASSERT(false);
+        }
+        if (GRPC_ERROR_NONE !=
+            stream_op->payload->send_message.send_message->Pull(&slice)) {
+          /* Should never reach here */
+          GPR_ASSERT(false);
+        }
+        grpc_slice_buffer_add(&write_slice_buffer, slice);
+      } while (write_slice_buffer.length <
+               stream_op->payload->send_message.send_message->length());
+      if (GPR_UNLIKELY(write_slice_buffer.count < 1)) {
         /* Empty request not handled yet */
         gpr_log(GPR_ERROR, "Empty request is not supported");
-        GPR_ASSERT(write_slice_buffer.count == 1);
+        GPR_ASSERT(write_slice_buffer.count >= 1);
       }
       if (write_slice_buffer.count > 0) {
         size_t write_buffer_size;
