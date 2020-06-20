@@ -15,7 +15,6 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
 
 CORE_SOURCE_FILES = [
-    'filter/accesslog/v2/accesslog.upb.c',
     'src/core/ext/filters/census/grpc_context.cc',
     'src/core/ext/filters/client_channel/backend_metric.cc',
     'src/core/ext/filters/client_channel/backup_poller.cc',
@@ -164,6 +163,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c',
     'src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c',
     'src/core/ext/upb-generated/envoy/api/v2/srds.upb.c',
+    'src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c',
     'src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c',
     'src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c',
     'src/core/ext/upb-generated/envoy/config/rbac/v2/rbac.upb.c',
@@ -172,9 +172,11 @@ CORE_SOURCE_FILES = [
     'src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c',
     'src/core/ext/upb-generated/envoy/type/http.upb.c',
     'src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.c',
+    'src/core/ext/upb-generated/envoy/type/matcher/number.upb.c',
     'src/core/ext/upb-generated/envoy/type/matcher/path.upb.c',
     'src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c',
     'src/core/ext/upb-generated/envoy/type/matcher/string.upb.c',
+    'src/core/ext/upb-generated/envoy/type/matcher/value.upb.c',
     'src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c',
     'src/core/ext/upb-generated/envoy/type/percent.upb.c',
     'src/core/ext/upb-generated/envoy/type/range.upb.c',
@@ -182,6 +184,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c',
     'src/core/ext/upb-generated/gogoproto/gogo.upb.c',
     'src/core/ext/upb-generated/google/api/annotations.upb.c',
+    'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c',
     'src/core/ext/upb-generated/google/api/http.upb.c',
     'src/core/ext/upb-generated/google/protobuf/any.upb.c',
     'src/core/ext/upb-generated/google/protobuf/descriptor.upb.c',
@@ -365,7 +368,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/json/json_writer.cc',
     'src/core/lib/profiling/basic_timers.cc',
     'src/core/lib/profiling/stap_timers.cc',
-    'src/core/lib/security/authorization/cel_evaluation_engine.cc',
     'src/core/lib/security/context/security_context.cc',
     'src/core/lib/security/credentials/alts/alts_credentials.cc',
     'src/core/lib/security/credentials/alts/check_gcp_environment.cc',

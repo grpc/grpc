@@ -1761,7 +1761,6 @@ grpc_cc_library(
     name = "grpc_secure",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
-        "src/core/lib/security/authorization/cel_evaluation_engine.cc",
         "src/core/lib/security/context/security_context.cc",
         "src/core/lib/security/credentials/alts/alts_credentials.cc",
         "src/core/lib/security/credentials/composite/composite_credentials.cc",
@@ -1802,7 +1801,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
-        "src/core/lib/security/authorization/cel_evaluation_engine.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
@@ -1845,6 +1843,28 @@ grpc_cc_library(
         "tsi",
     ],
 )
+
+
+grpc_cc_library(
+    name = "grpc_cel_engine",
+    srcs = [
+        "src/core/lib/security/authorization/cel_evaluation_engine.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/authorization/cel_evaluation_engine.h",
+    ],
+    language = "c++",
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
+    deps = [
+        "alts_util",
+        "envoy_ads_upb",
+        "google_api_upb",
+        "grpc_base",
+        "grpc_transport_chttp2_alpn",
+        "tsi",
+    ],
+)
+
 
 grpc_cc_library(
     name = "grpc_transport_chttp2",
@@ -2513,7 +2533,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/srds.upb.c",
-        "filter/accesslog/v2/accesslog.upb.c",
+        "src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c",
         "src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c",
         "src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c",
         "src/core/ext/upb-generated/envoy/config/rbac/v2/rbac.upb.c",
@@ -2633,9 +2653,11 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/upb-generated/envoy/type/http.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.c",
+        "src/core/ext/upb-generated/envoy/type/matcher/number.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/path.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/string.upb.c",
+        "src/core/ext/upb-generated/envoy/type/matcher/value.upb.c",
         "src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c",
         "src/core/ext/upb-generated/envoy/type/percent.upb.c",
         "src/core/ext/upb-generated/envoy/type/range.upb.c",
@@ -2645,9 +2667,11 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/upb-generated/envoy/type/http.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/metadata.upb.h",
+        "src/core/ext/upb-generated/envoy/type/matcher/number.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/path.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/regex.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/string.upb.h",
+        "src/core/ext/upb-generated/envoy/type/matcher/value.upb.h",
         "src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.h",
         "src/core/ext/upb-generated/envoy/type/percent.upb.h",
         "src/core/ext/upb-generated/envoy/type/range.upb.h",
@@ -2754,6 +2778,7 @@ grpc_cc_library(
     name = "google_api_upb",
     srcs = [
         "src/core/ext/upb-generated/google/api/annotations.upb.c",
+        "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c",
         "src/core/ext/upb-generated/google/api/http.upb.c",
         "src/core/ext/upb-generated/google/protobuf/any.upb.c",
         "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c",
@@ -2766,6 +2791,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/upb-generated/google/api/annotations.upb.h",
+        "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h",
         "src/core/ext/upb-generated/google/api/http.upb.h",
         "src/core/ext/upb-generated/google/protobuf/any.upb.h",
         "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h",
