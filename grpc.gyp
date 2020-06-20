@@ -429,7 +429,6 @@
         'upb',
         'absl/types:optional',
         'absl/strings:strings',
-        'absl/random:random',
         'absl/container:inlined_vector',
       ],
       'sources': [
@@ -937,7 +936,6 @@
         'upb',
         'absl/types:optional',
         'absl/strings:strings',
-        'absl/random:random',
         'absl/container:inlined_vector',
       ],
       'sources': [
