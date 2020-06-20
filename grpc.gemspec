@@ -199,6 +199,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/service_config.cc )
   s.files += %w( src/core/ext/filters/client_channel/service_config.h )
   s.files += %w( src/core/ext/filters/client_channel/service_config_call_data.h )
+  s.files += %w( src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc )
   s.files += %w( src/core/ext/filters/client_channel/service_config_parser.cc )
   s.files += %w( src/core/ext/filters/client_channel/service_config_parser.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.cc )
