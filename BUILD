@@ -1318,6 +1318,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/xds/xds_client.h",
     ],
     language = "c++",
+    external_deps = [
+        "re2",
+    ],
     deps = [
         "envoy_ads_upb",
         "grpc_base",
@@ -1344,6 +1347,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
     ],
     language = "c++",
+    external_deps = [
+        "re2",
+    ],
     deps = [
         "envoy_ads_upb",
         "grpc_base",
@@ -1449,6 +1455,10 @@ grpc_cc_library(
     name = "grpc_lb_policy_xds_routing",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc",
+    ],
+    external_deps = [
+        "absl/strings",
+        "re2",
     ],
     language = "c++",
     deps = [

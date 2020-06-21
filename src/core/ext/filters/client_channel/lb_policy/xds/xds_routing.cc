@@ -25,6 +25,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "re2/re2.h"
 
 #include <grpc/grpc.h>
 
@@ -236,6 +237,7 @@ bool PathMatch(
     const absl::string_view& path,
     const XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher& path_matcher) {
   if (path_matcher.path_matcher.empty()) return true;
+  RE2 regex(path_matcher.path_matcher);
   switch (path_matcher.path_type) {
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         PREFIX:
@@ -245,7 +247,7 @@ bool PathMatch(
       return path == path_matcher.path_matcher;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         REGEX:
-      return true;  // TODO(donnadionne) after re2 integration
+      return RE2::FullMatch(path.data(), regex);
     default:
       return false;
   }
@@ -266,13 +268,14 @@ bool HeaderMatchHelper(
       return false;
     }
   }
+  RE2 regex(header_matcher.header_matcher);
   switch (header_matcher.header_type) {
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::EXACT:
       return value.value() == header_matcher.header_matcher;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::REGEX:
-      return true;  // TODO(donnadionne) after re2 integration
+      return RE2::FullMatch(value.value().data(), regex);
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::RANGE:
       int64_t int_value;

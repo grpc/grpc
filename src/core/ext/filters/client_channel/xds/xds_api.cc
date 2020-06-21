@@ -26,6 +26,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "re2/re2.h"
 
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
@@ -1074,12 +1075,17 @@ grpc_error* RoutePathMatchParse(const envoy_api_v2_route_RouteMatch* match,
   } else if (envoy_api_v2_route_RouteMatch_has_safe_regex(match)) {
     const envoy_type_matcher_RegexMatcher* regex_matcher =
         envoy_api_v2_route_RouteMatch_safe_regex(match);
-    GPR_ASSERT(regex_matcher !=
-               nullptr);  // TODO(donnadionne): compile with re2
+    GPR_ASSERT(regex_matcher != nullptr);
+    const std::string matcher = UpbStringToStdString(
+        envoy_type_matcher_RegexMatcher_regex(regex_matcher));
+    RE2 regex(matcher);
+    if (!regex.ok()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Invalid regex string specified.");
+    }
     rds_route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
         Matchers::PathMatcher::PathMatcherType::REGEX;
-    rds_route->matchers.path_matcher.path_matcher = UpbStringToStdString(
-        envoy_type_matcher_RegexMatcher_regex(regex_matcher));
+    rds_route->matchers.path_matcher.path_matcher = std::move(matcher);
   } else {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid route path specifier specified.");
@@ -1107,10 +1113,15 @@ grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
           HeaderMatcher::HeaderMatcherType::REGEX;
       const envoy_type_matcher_RegexMatcher* regex_matcher =
           envoy_api_v2_route_HeaderMatcher_safe_regex_match(header);
-      GPR_ASSERT(regex_matcher !=
-                 nullptr);  // TODO(donnadionne): compile with re2
-      header_matcher.header_matcher = UpbStringToStdString(
+      GPR_ASSERT(regex_matcher != nullptr);
+      const std::string matcher = UpbStringToStdString(
           envoy_type_matcher_RegexMatcher_regex(regex_matcher));
+      RE2 regex(matcher);
+      if (!regex.ok()) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Invalid regex string specified.");
+      }
+      header_matcher.header_matcher = matcher;
     } else if (envoy_api_v2_route_HeaderMatcher_has_range_match(header)) {
       header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
           HeaderMatcher::HeaderMatcherType::RANGE;
@@ -1119,7 +1130,6 @@ grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
       header_matcher.range_start = envoy_type_Int64Range_start(range_matcher);
       header_matcher.range_end = envoy_type_Int64Range_end(range_matcher);
       if (header_matcher.range_end < header_matcher.range_start) {
-        // TODO(donnadionne): add a test
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Invalid range header matcher specifier specified: range_end "
             "cannot be smaller than range_start.");
@@ -1360,8 +1370,6 @@ grpc_error* RouteConfigParse(
     static_cast<void>(envoy_api_v2_route_RouteMatch_query_parameters(
         match, &query_parameters_size));
     if (query_parameters_size > 0) {
-      // TODO: donnadionne add a test Query parameters are never used, so we
-      // ignore this route.
       continue;
     }
     XdsApi::RdsUpdate::RdsRoute rds_route;

@@ -2784,7 +2784,28 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
-TEST_P(LdsRdsTest, RouteHeaderMatchIncorrectRange) {
+TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
+  const char* kNewCluster1Name = "new_cluster_1";
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* header_matcher1 = route1->mutable_match()->add_headers();
+  header_matcher1->set_name("header1");
+  header_matcher1->mutable_safe_regex_match()->set_regex("a[z-a]");
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "Invalid regex string specified.");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
+}
+
+TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config =
@@ -3450,7 +3471,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   header_matcher1->set_exact_match("POST");
   auto* header_matcher2 = route1->mutable_match()->add_headers();
   header_matcher2->set_name("header2");
-  header_matcher2->mutable_safe_regex_match()->set_regex("[a-z]{1}");
+  header_matcher2->mutable_safe_regex_match()->set_regex("[a-z]*");
   auto* header_matcher3 = route1->mutable_match()->add_headers();
   header_matcher3->set_name("header3");
   header_matcher3->mutable_range_match()->set_start(1);
@@ -3472,7 +3493,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   SetRouteConfiguration(0, route_config);
   std::vector<std::pair<std::string, std::string>> metadata;
   metadata.push_back(std::make_pair("header1", "POST"));
-  metadata.push_back(std::make_pair("header2", "blah1"));
+  metadata.push_back(std::make_pair("header2", "blah"));
   metadata.push_back(std::make_pair("header3", "5"));
   metadata.push_back(
       std::make_pair("header5", "/grpc.testing.EchoTest1Service/"));
@@ -3484,14 +3505,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
                                     .set_rpc_method(METHOD_ECHO1)
                                     .set_metadata(metadata)
                                     .set_wait_for_ready(true));
-  for (size_t i = 0; i < 2; ++i) {
-    gpr_log(GPR_INFO, "backend %d service count %d", i,
-            backends_[i]->backend_service()->request_count());
-    gpr_log(GPR_INFO, "backend %d service1 count %d", i,
-            backends_[i]->backend_service1()->request_count());
-    gpr_log(GPR_INFO, "backend %d service2 count %d", i,
-            backends_[i]->backend_service2()->request_count());
-  }
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
@@ -3551,14 +3564,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingWithRuntimeFraction) {
                                     .set_rpc_method(METHOD_ECHO1)
                                     .set_metadata(metadata)
                                     .set_wait_for_ready(true));
-  for (size_t i = 0; i < 2; ++i) {
-    gpr_log(GPR_INFO, "backend %d service count %d", i,
-            backends_[i]->backend_service()->request_count());
-    gpr_log(GPR_INFO, "backend %d service1 count %d", i,
-            backends_[i]->backend_service1()->request_count());
-    gpr_log(GPR_INFO, "backend %d service2 count %d", i,
-            backends_[i]->backend_service2()->request_count());
-  }
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   const int default_backend_count =
       backends_[0]->backend_service1()->request_count();
@@ -3643,7 +3648,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   route3->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   auto* header_matcher3 = route3->mutable_match()->add_headers();
   header_matcher3->set_name("header3");
-  header_matcher3->set_present_match(false);
+  header_matcher3->mutable_safe_regex_match()->set_regex("[a-z]*");
   route3->mutable_route()->set_cluster(kNewCluster3Name);
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
@@ -3653,7 +3658,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   // Send headers which will mismatch each route
   metadata.push_back(std::make_pair("header1", "POST1"));
   metadata.push_back(std::make_pair("header2", "1001"));
-  metadata.push_back(std::make_pair("header3", "should-not-be-here"));
+  metadata.push_back(std::make_pair("header3", "blah1"));
   CheckRpcSendOk(kNumEchoRpcs,
                  RpcOptions().set_wait_for_ready(true).set_metadata(metadata));
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
@@ -3664,12 +3669,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   // Verify that only the default backend got RPCs since all previous routes
   // were mismatched.
   for (size_t i = 1; i < 4; ++i) {
-    gpr_log(GPR_INFO, "backend %d service count %d", i,
-            backends_[i]->backend_service()->request_count());
-    gpr_log(GPR_INFO, "backend %d service1 count %d", i,
-            backends_[i]->backend_service1()->request_count());
-    gpr_log(GPR_INFO, "backend %d service2 count %d", i,
-            backends_[i]->backend_service2()->request_count());
     EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
     EXPECT_EQ(0, backends_[i]->backend_service1()->request_count());
     EXPECT_EQ(0, backends_[i]->backend_service2()->request_count());
