@@ -1014,8 +1014,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                   header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
                       Matchers::HeaderMatcher::HeaderMatcherType::PRESENT;
                   header_matcher.present_match = true;
-                  route->matchers.header_matchers.emplace_back(
-                      std::move(header_matcher));
+                  route->matchers.header_matchers.emplace_back(header_matcher);
                 } else if (header_it->second.type() == Json::Type::JSON_FALSE) {
                   header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
                       Matchers::HeaderMatcher::HeaderMatcherType::PRESENT;

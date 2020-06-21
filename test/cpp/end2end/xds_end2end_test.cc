@@ -2427,17 +2427,34 @@ TEST_P(LdsRdsTest, RouteMatchHasCaseSensitiveFalse) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/blah");
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   route1->mutable_match()->mutable_case_sensitive()->set_value(false);
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
-  balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "case_sensitive if set must be set to true.");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
+}
+
+// Tests that LDS client should ignore route which has query_parameters.
+TEST_P(LdsRdsTest, RouteMatchHasQueryParameters) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  route1->mutable_match()->add_query_parameters();
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
@@ -2764,6 +2781,30 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "RouteAction weighted_cluster cluster missing weight");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
+}
+
+TEST_P(LdsRdsTest, RouteHeaderMatchIncorrectRange) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
+  const char* kNewCluster1Name = "new_cluster_1";
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* header_matcher1 = route1->mutable_match()->add_headers();
+  header_matcher1->set_name("header1");
+  header_matcher1->mutable_range_match()->set_start(1001);
+  header_matcher1->mutable_range_match()->set_end(1000);
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "Invalid range header matcher specifier specified: range_end "
+            "cannot be smaller than range_start.");
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
@@ -3429,7 +3470,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
-  // WaitForAllBackends(0, 1);
   std::vector<std::pair<std::string, std::string>> metadata;
   metadata.push_back(std::make_pair("header1", "POST"));
   metadata.push_back(std::make_pair("header2", "blah1"));
@@ -3437,7 +3477,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   metadata.push_back(
       std::make_pair("header5", "/grpc.testing.EchoTest1Service/"));
   metadata.push_back(std::make_pair("header6", "grpc.java"));
-  // CheckRpcSendFailure();
   CheckRpcSendOk(kNumEchoRpcs,
                  RpcOptions().set_wait_for_ready(true).set_metadata(metadata));
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
@@ -3503,10 +3542,8 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingWithRuntimeFraction) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
-  // WaitForAllBackends(0, 1);
   std::vector<std::pair<std::string, std::string>> metadata;
   metadata.push_back(std::make_pair("header1", "POST"));
-  // CheckRpcSendFailure();
   CheckRpcSendOk(kNumEchoRpcs,
                  RpcOptions().set_wait_for_ready(true).set_metadata(metadata));
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()

@@ -66,6 +66,10 @@ message HeaderMatcher {
   bool invert_match = 8;
 }
 
+message QueryParameterMatcher {
+  string name = 1;
+}
+
 message RuntimeFractionalPercent {
   FractionalPercent default_value = 1;
 }
@@ -79,6 +83,7 @@ message RouteMatch {
     RegexMatcher safe_regex = 10;
   }
   BoolValue case_sensitive = 4;
+  repeated QueryParameterMatcher query_parameters = 7;
   RuntimeFractionalPercent runtime_fraction = 9;
   repeated HeaderMatcher headers = 6;
 }
