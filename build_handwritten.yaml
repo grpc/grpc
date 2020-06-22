@@ -15,7 +15,7 @@ settings:
   core_version: 10.0.0
   csharp_major_version: 2
   g_stands_for: gradius
-  version: 1.30.0-pre1
+  version: 1.30.0
 targets:
 - name: check_epollexclusive
   build: tool
