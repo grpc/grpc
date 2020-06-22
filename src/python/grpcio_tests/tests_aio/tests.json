@@ -26,7 +26,7 @@
   "unit.compatibility_test.TestCompatibility",
   "unit.compression_test.TestCompression",
   "unit.connectivity_test.TestConnectivityState",
-  "unit.context_peer.TestContextPeer",
+  "unit.context_peer_test.TestContextPeer",
   "unit.done_callback_test.TestDoneCallback",
   "unit.init_test.TestChannel",
   "unit.metadata_test.TestMetadata",
