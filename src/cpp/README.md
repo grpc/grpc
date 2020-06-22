@@ -167,10 +167,10 @@ documentation site at [grpc.io](https://grpc.io), specifically:
 
 * [Overview](https://grpc.io/docs): An introduction to gRPC with a simple
   Hello World example in all our supported languages, including C++.
-* [gRPC Basics - C++](https://grpc.io/docs/tutorials/basic/cpp):
+* [gRPC Basics - C++](https://grpc.io/docs/languages/cpp/basics):
   A tutorial that steps you through creating a simple gRPC C++ example
   application.
-* [Asynchronous Basics - C++](https://grpc.io/docs/tutorials/async/helloasync-cpp):
+* [Asynchronous Basics - C++](https://grpc.io/docs/languages/cpp/async):
   A tutorial that shows you how to use gRPC C++'s asynchronous/non-blocking
   APIs.
 

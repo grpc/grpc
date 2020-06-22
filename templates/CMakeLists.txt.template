@@ -690,7 +690,7 @@
   configure_file(cmake/gRPCConfig.cmake.in
     gRPCConfig.cmake @ONLY)
   write_basic_package_version_file(<%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>gRPCConfigVersion.cmake
-    VERSION <%text>${PACKAGE_VERSION}</%text>
+    VERSION <%text>${gRPC_CPP_VERSION}</%text>
     COMPATIBILITY AnyNewerVersion)
   install(FILES
       <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>gRPCConfig.cmake
@@ -757,7 +757,7 @@
   generate_pkgconfig(
     "gRPC++"
     "C++ wrapper for gRPC"
-    "<%text>${PACKAGE_VERSION}</%text>"
+    "<%text>${gRPC_CPP_VERSION}</%text>"
     "grpc"
     "${" ".join(("-l" + l) for l in ["grpc++",] + list_absl_lib_files_for("grpc++"))}"
     ""
@@ -767,7 +767,7 @@
   generate_pkgconfig(
     "gRPC++ unsecure"
     "C++ wrapper for gRPC without SSL"
-    "<%text>${PACKAGE_VERSION}</%text>"
+    "<%text>${gRPC_CPP_VERSION}</%text>"
     "grpc_unsecure"
     "${" ".join(("-l" + l) for l in ["grpc++_unsecure",] + list_absl_lib_files_for("grpc++_unsecure"))}"
     ""
