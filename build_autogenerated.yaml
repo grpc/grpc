@@ -377,6 +377,7 @@ libs:
   - src/core/ext/filters/client_channel/client_channel.h
   - src/core/ext/filters/client_channel/client_channel_channelz.h
   - src/core/ext/filters/client_channel/client_channel_factory.h
+  - src/core/ext/filters/client_channel/config_selector.h
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
@@ -746,6 +747,7 @@ libs:
   - src/core/ext/filters/client_channel/client_channel_channelz.cc
   - src/core/ext/filters/client_channel/client_channel_factory.cc
   - src/core/ext/filters/client_channel/client_channel_plugin.cc
+  - src/core/ext/filters/client_channel/config_selector.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -793,6 +795,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config.cc
+  - src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   - src/core/ext/filters/client_channel/service_config_parser.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
@@ -1300,6 +1303,7 @@ libs:
   - src/core/ext/filters/client_channel/client_channel.h
   - src/core/ext/filters/client_channel/client_channel_channelz.h
   - src/core/ext/filters/client_channel/client_channel_factory.h
+  - src/core/ext/filters/client_channel/config_selector.h
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
@@ -1605,6 +1609,7 @@ libs:
   - src/core/ext/filters/client_channel/client_channel_channelz.cc
   - src/core/ext/filters/client_channel/client_channel_factory.cc
   - src/core/ext/filters/client_channel/client_channel_plugin.cc
+  - src/core/ext/filters/client_channel/config_selector.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -1652,6 +1657,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config.cc
+  - src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   - src/core/ext/filters/client_channel/service_config_parser.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
@@ -2203,6 +2209,7 @@ libs:
   - src/cpp/thread_manager/thread_manager.h
   src:
   - src/cpp/client/channel_cc.cc
+  - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
   - src/cpp/client/create_channel.cc
@@ -2592,6 +2599,7 @@ libs:
   - src/cpp/thread_manager/thread_manager.h
   src:
   - src/cpp/client/channel_cc.cc
+  - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
   - src/cpp/client/create_channel.cc
@@ -4128,18 +4136,6 @@ targets:
   headers: []
   src:
   - test/core/surface/sequential_connectivity_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
-- name: server_chttp2_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/server_chttp2_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -6930,6 +6926,19 @@ targets:
   - linux
   - posix
   - mac
+- name: server_chttp2_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/server_chttp2_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: server_context_test_spouse_test
   gtest: true
   build: test

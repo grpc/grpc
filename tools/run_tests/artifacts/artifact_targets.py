@@ -144,14 +144,8 @@ class PythonArtifact:
             environ['PYTHON'] = '/opt/python/{}/bin/python'.format(
                 self.py_version)
             environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.py_version)
-            # Platform autodetection for the manylinux1 image breaks so we set the
-            # defines ourselves.
-            # TODO(atash) get better platform-detection support in core so we don't
-            # need to do this manually...
-            environ['CFLAGS'] = '-DGPR_MANYLINUX1=1'
             environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
             environ['GRPC_BUILD_MANYLINUX_WHEEL'] = 'TRUE'
-
             return create_docker_jobspec(
                 self.name,
                 # NOTE(rbellevi): Do *not* update this without also ensuring the
@@ -160,9 +154,7 @@ class PythonArtifact:
                 (self.platform, self.arch),
                 'tools/run_tests/artifacts/build_artifact_python.sh',
                 environ=environ,
-                timeout_seconds=60 * 60,
-                docker_base_image='quay.io/pypa/manylinux1_i686'
-                if self.arch == 'x86' else 'quay.io/pypa/manylinux1_x86_64')
+                timeout_seconds=60 * 60)
         elif self.platform == 'windows':
             if 'Python27' in self.py_version:
                 environ['EXT_COMPILER'] = 'mingw32'

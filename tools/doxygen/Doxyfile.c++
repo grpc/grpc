@@ -778,6 +778,7 @@ doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
 doc/grpc_release_schedule.md \
+doc/grpc_xds_features.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \

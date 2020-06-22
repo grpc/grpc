@@ -3,7 +3,7 @@
 ## Versioning Overview
 
 All gRPC implementations use a three-part version number (`vX.Y.Z`) and follow [semantic versioning](https://semver.org/), which defines the semantics of major, minor and patch components of the version number. In addition to that, gRPC versions evolve according to these rules:
-- **Major version bumps** only happen on rare occasions. In order to qualify for a major version bump, certain criteria described later in this document need to be met. Most importantly, a major version increase must not break wire compatibility with other gRPC implementations so that existing gRPC libraries remain fully interoperable. 
+- **Major version bumps** only happen on rare occasions. In order to qualify for a major version bump, certain criteria described later in this document need to be met. Most importantly, a major version increase must not break wire compatibility with other gRPC implementations so that existing gRPC libraries remain fully interoperable.
 - **Minor version bumps** happen approx. every 6 weeks as part of the normal release cycle as defined by the gRPC release process. A new release branch named vMAJOR.MINOR.PATCH) is cut every 6 weeks based on the [release schedule](https://github.com/grpc/grpc/blob/master/doc/grpc_release_schedule.md).
 - **Patch version bump** corresponds to bugfixes done on release branch.
 
@@ -24,7 +24,7 @@ There are also a few extra rules regarding adding new gRPC implementations (e.g.
 To avoid user confusion and simplify reasoning, the gRPC releases in different languages try to stay synchronized in terms of major and minor version (all languages follow the same release schedule). Nevertheless, because we also strictly follow semantic versioning, there are circumstances in which a gRPC implementation needs to break the version synchronicity and do a major version bump independently of other languages.
 
 ### Situations when it's ok to do a major version bump
-- **change forced by the language ecosystem:** when the language itself or its standard libraries that we depend on make a breaking change (something which is out of our control), reacting with updating gRPC APIs may be the only adequate response. 
+- **change forced by the language ecosystem:** when the language itself or its standard libraries that we depend on make a breaking change (something which is out of our control), reacting with updating gRPC APIs may be the only adequate response.
 - **voluntary change:** Even in non-forced situations, there might be circumstances in which a breaking API change makes sense and represents a net win, but as a rule of thumb breaking changes are very disruptive for users, cause user fragmentation and incur high maintenance costs. Therefore, breaking API changes should be very rare events that need to be considered with extreme care and the bar for accepting such changes is intentionally set very high.
   Example scenarios where a breaking API change might be adequate:
   - fixing a security problem which requires changes to API (need to consider the non-breaking alternatives first)

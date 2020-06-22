@@ -6,8 +6,8 @@ gRPC
 Tutorial
 --------
 
-If you want to see gRPC in action first, visit the `Python Quickstart <https://grpc.io/docs/quickstart/python.html>`_.
-Or, if you would like dive in with more extensive usage of gRPC Python, check `gRPC Basics - Python <https://grpc.io/docs/tutorials/basic/python.html>`_ out.
+If you want to see gRPC in action first, visit the `Python Quickstart <https://grpc.io/docs/languages/python/quickstart>`_.
+Or, if you would like dive in with more extensive usage of gRPC Python, check `gRPC Basics - Python <https://grpc.io/docs/languages/python/basics>`_ out.
 
 
 Example
