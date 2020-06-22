@@ -79,7 +79,7 @@ g_stands_for = "gradius"
 
 core_version = "10.0.0"
 
-version = "1.30.0-pre1"
+version = "1.30.0"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
