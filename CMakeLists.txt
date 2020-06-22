@@ -15128,7 +15128,7 @@ include(CMakePackageConfigHelpers)
 configure_file(cmake/gRPCConfig.cmake.in
   gRPCConfig.cmake @ONLY)
 write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/gRPCConfigVersion.cmake
-  VERSION ${PACKAGE_VERSION}
+  VERSION ${gRPC_CPP_VERSION}
   COMPATIBILITY AnyNewerVersion)
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/gRPCConfig.cmake
@@ -15195,7 +15195,7 @@ generate_pkgconfig(
 generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
-  "${PACKAGE_VERSION}"
+  "${gRPC_CPP_VERSION}"
   "grpc"
   "-lgrpc++ -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
@@ -15205,7 +15205,7 @@ generate_pkgconfig(
 generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
-  "${PACKAGE_VERSION}"
+  "${gRPC_CPP_VERSION}"
   "grpc_unsecure"
   "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
