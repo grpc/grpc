@@ -573,7 +573,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c secure_endpoint_test)
   add_dependencies(buildtests_c security_connector_test)
   add_dependencies(buildtests_c sequential_connectivity_test)
-  add_dependencies(buildtests_c server_chttp2_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c server_ssl_test)
   endif()
@@ -797,6 +796,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx server_builder_with_socket_mutator_test)
   endif()
+  add_dependencies(buildtests_cxx server_chttp2_test)
   add_dependencies(buildtests_cxx server_context_test_spouse_test)
   add_dependencies(buildtests_cxx server_early_return_test)
   add_dependencies(buildtests_cxx server_interceptors_end2end_test)
@@ -1336,6 +1336,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
+  src/core/ext/filters/client_channel/config_selector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -1383,6 +1384,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
   src/core/ext/filters/client_channel/service_config.cc
+  src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   src/core/ext/filters/client_channel/service_config_parser.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
@@ -2012,6 +2014,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
+  src/core/ext/filters/client_channel/config_selector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -2059,6 +2062,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
   src/core/ext/filters/client_channel/service_config.cc
+  src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   src/core/ext/filters/client_channel/service_config_parser.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
@@ -2498,6 +2502,7 @@ endif()
 
 add_library(grpc++
   src/cpp/client/channel_cc.cc
+  src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
@@ -3206,6 +3211,7 @@ endif()
 
 add_library(grpc++_unsecure
   src/cpp/client/channel_cc.cc
+  src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
@@ -6952,36 +6958,6 @@ target_include_directories(sequential_connectivity_test
 )
 
 target_link_libraries(sequential_connectivity_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(server_chttp2_test
-  test/core/surface/server_chttp2_test.cc
-)
-
-target_include_directories(server_chttp2_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(server_chttp2_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -13282,6 +13258,45 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(server_chttp2_test
+  test/core/surface/server_chttp2_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(server_chttp2_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(server_chttp2_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(server_context_test_spouse_test
   test/cpp/test/server_context_test_spouse_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -15452,7 +15467,7 @@ include(CMakePackageConfigHelpers)
 configure_file(cmake/gRPCConfig.cmake.in
   gRPCConfig.cmake @ONLY)
 write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/gRPCConfigVersion.cmake
-  VERSION ${PACKAGE_VERSION}
+  VERSION ${gRPC_CPP_VERSION}
   COMPATIBILITY AnyNewerVersion)
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/gRPCConfig.cmake
@@ -15519,7 +15534,7 @@ generate_pkgconfig(
 generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
-  "${PACKAGE_VERSION}"
+  "${gRPC_CPP_VERSION}"
   "grpc"
   "-lgrpc++ -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
@@ -15529,7 +15544,7 @@ generate_pkgconfig(
 generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
-  "${PACKAGE_VERSION}"
+  "${gRPC_CPP_VERSION}"
   "grpc_unsecure"
   "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""

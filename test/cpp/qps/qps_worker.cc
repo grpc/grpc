@@ -280,6 +280,7 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
+  builder->AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
   if (driver_port >= 0) {
     std::string server_address = grpc_core::JoinHostPort("::", driver_port);
     builder->AddListeningPort(

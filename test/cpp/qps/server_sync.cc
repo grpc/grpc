@@ -162,7 +162,8 @@ class SynchronousServer final : public grpc::testing::Server {
     if (port_num >= 0) {
       std::string server_address = grpc_core::JoinHostPort("::", port_num);
       builder->AddListeningPort(server_address.c_str(),
-                                Server::CreateServerCredentials(config));
+                                Server::CreateServerCredentials(config),
+                                &port_num);
     }
 
     ApplyConfigToBuilder(config, builder.get());
@@ -170,6 +171,11 @@ class SynchronousServer final : public grpc::testing::Server {
     builder->RegisterService(&service_);
 
     impl_ = builder->BuildAndStart();
+    if (impl_ == nullptr) {
+      gpr_log(GPR_ERROR, "Server: Fail to BuildAndStart(port=%d)", port_num);
+    } else {
+      gpr_log(GPR_INFO, "Server: BuildAndStart(port=%d)", port_num);
+    }
   }
 
   std::shared_ptr<Channel> InProcessChannel(

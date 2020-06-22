@@ -38,7 +38,8 @@ static optional_filter compress_filter = {
     &grpc_message_compress_filter, GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION};
 
 static optional_filter decompress_filter = {
-    &grpc_message_decompress_filter, GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION};
+    &grpc_core::MessageDecompressFilter,
+    GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION};
 
 static bool is_building_http_like_transport(
     grpc_channel_stack_builder* builder) {
