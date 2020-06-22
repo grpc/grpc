@@ -261,7 +261,7 @@ class ServerBuilder {
   /// experimental.
   class experimental_type {
    public:
-    explicit experimental_type(grpc_impl::ServerBuilder* builder)
+    explicit experimental_type(ServerBuilder* builder)
         : builder_(builder) {}
 
     void SetInterceptorCreators(
