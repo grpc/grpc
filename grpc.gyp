@@ -176,7 +176,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'test/core/end2end/cq_verifier.cc',
@@ -278,7 +277,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'test/core/end2end/cq_verifier.cc',
@@ -432,7 +430,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
         'absl/types:optional',
         'absl/strings:strings',
         'absl/container:inlined_vector',
@@ -864,7 +861,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'src/csharp/ext/grpc_csharp_ext.c',
@@ -878,7 +874,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'test/core/util/cmdline.cc',
@@ -911,7 +906,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'test/core/util/cmdline.cc',
@@ -943,7 +937,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
         'absl/types:optional',
         'absl/strings:strings',
         'absl/container:inlined_vector',
@@ -1303,7 +1296,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
         'benchmark',
       ],
       'sources': [
@@ -1321,7 +1313,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'src/cpp/client/channel_cc.cc',
@@ -1381,7 +1372,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'src/cpp/common/alts_context.cc',
@@ -1397,7 +1387,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'src/proto/grpc/status/status.proto',
@@ -1413,7 +1402,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'src/proto/grpc/reflection/v1alpha/reflection.proto',
@@ -1430,7 +1418,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'src/cpp/client/channel_test_peer.cc',
@@ -1456,7 +1443,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'test/core/end2end/data/client_certs.cc',
@@ -1478,7 +1464,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'src/cpp/client/channel_cc.cc',
@@ -1546,7 +1531,6 @@
         'gpr',
         'address_sorting',
         'upb',
-        're2',
       ],
       'sources': [
         'src/proto/grpc/channelz/channelz.proto',
@@ -1866,37 +1850,6 @@
         'third_party/benchmark/src/string_util.cc',
         'third_party/benchmark/src/sysinfo.cc',
         'third_party/benchmark/src/timers.cc',
-      ],
-    },
-    {
-      'target_name': 're2',
-      'type': 'static_library',
-      'dependencies': [
-      ],
-      'sources': [
-        'third_party/re2/re2/bitstate.cc',
-        'third_party/re2/re2/compile.cc',
-        'third_party/re2/re2/dfa.cc',
-        'third_party/re2/re2/filtered_re2.cc',
-        'third_party/re2/re2/mimics_pcre.cc',
-        'third_party/re2/re2/nfa.cc',
-        'third_party/re2/re2/onepass.cc',
-        'third_party/re2/re2/parse.cc',
-        'third_party/re2/re2/perl_groups.cc',
-        'third_party/re2/re2/prefilter.cc',
-        'third_party/re2/re2/prefilter_tree.cc',
-        'third_party/re2/re2/prog.cc',
-        'third_party/re2/re2/re2.cc',
-        'third_party/re2/re2/regexp.cc',
-        'third_party/re2/re2/set.cc',
-        'third_party/re2/re2/simplify.cc',
-        'third_party/re2/re2/stringpiece.cc',
-        'third_party/re2/re2/tostring.cc',
-        'third_party/re2/re2/unicode_casefold.cc',
-        'third_party/re2/re2/unicode_groups.cc',
-        'third_party/re2/util/pcre.cc',
-        'third_party/re2/util/rune.cc',
-        'third_party/re2/util/strutil.cc',
       ],
     },
     {
