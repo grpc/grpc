@@ -21,6 +21,10 @@ import glob
 
 out = {}
 
+# The following header and source files for different systems are collected
+# from https://github.com/libuv/libuv/blob/vX.XX.X/Makefile.am (replace vX.XX.X
+# with the current libuv version used by grpc).
+
 common_uv_srcs = glob.glob("third_party/libuv/src/*.c")
 
 unix_uv_srcs = [

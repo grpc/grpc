@@ -320,6 +320,7 @@ def grpc_deps():
         http_archive(
             name = "com_github_libuv_libuv",
             build_file = "@com_github_grpc_grpc//third_party:libuv.BUILD",
+            # This corresponds to https://github.com/libuv/libuv/releases/tag/v1.35.0.
             sha256 = "47dd6df502d09f6bffd6b12ce776d5f0033fc41de02c32f85ae96ea7f74ff560",
             strip_prefix = "libuv-e45f1ec38db882f8dc17b51f51a6684027034609",
             urls = [
