@@ -292,10 +292,11 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
   server_ = builder->BuildAndStart();
   if (server_ == nullptr) {
     gpr_log(GPR_ERROR,
-            "QpsWorker: Fail to BuildAndStart(port=%d) (server_port=%d)",
+            "QpsWorker: Fail to BuildAndStart(driver_port=%d, server_port=%d)",
             driver_port, server_port);
   } else {
-    gpr_log(GPR_INFO, "QpsWorker: BuildAndStart(port=%d) (server_port=%d)",
+    gpr_log(GPR_INFO,
+            "QpsWorker: BuildAndStart(driver_port=%d, server_port=%d) done",
             driver_port, server_port);
   }
 }
