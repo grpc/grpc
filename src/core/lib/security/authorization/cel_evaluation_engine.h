@@ -25,9 +25,10 @@
 
 // CelEvaluationEngine makes an AuthorizationDecision to ALLOW or DENY the
 // current action based on the condition fields in the provided RBAC policy.
-// This engine ignores the principal and permission fields in RBAC policy.
-// It is the caller's responsibility to provide an RBAC policy that is
-// compatible with this engine.
+// The engine returns UNDECIDED decision if it fails to find a match in RBAC 
+// policy. This engine ignores the principal and permission fields in RBAC 
+// policy. It is the caller's responsibility to provide an RBAC policy that 
+// is compatible with this engine.
 //
 // Example:
 // CelEvaluationEngine* cel_engine = new CelEvaluationEngine(rbac_policy);

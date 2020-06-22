@@ -1856,12 +1856,8 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
-        "alts_util",
         "envoy_ads_upb",
-        "google_api_upb",
-        "grpc_base",
-        "grpc_transport_chttp2_alpn",
-        "tsi",
+        "google_api_upb"
     ],
 )
 
