@@ -49,11 +49,7 @@ extern "C" {
 #include <openssl/engine.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
-#ifndef OPENSSL_IS_BORINGSSL
-/* For the TLS1_3_version macro in OpenSSL. In BoringSSL, this macro is defined
- * in ssl.h. */
 #include <openssl/tls1.h>
-#endif
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 }
