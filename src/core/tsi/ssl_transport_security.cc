@@ -905,9 +905,11 @@ static tsi_result tsi_set_min_and_max_tls_versions(
     case grpc_tls_version::TLS1_2:
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
       break;
+#if defined(TLS1_3_VERSION)
     case grpc_tls_version::TLS1_3:
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_3_VERSION);
       break;
+#endif
 #endif
     default:
       gpr_log(GPR_INFO, "TLS version is not supported.");
@@ -919,9 +921,11 @@ static tsi_result tsi_set_min_and_max_tls_versions(
     case grpc_tls_version::TLS1_2:
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_2_VERSION);
       break;
+#if defined(TLS1_3_VERSION)
     case grpc_tls_version::TLS1_3:
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_3_VERSION);
       break;
+#endif
 #endif
     default:
       gpr_log(GPR_INFO, "TLS version is not supported.");
