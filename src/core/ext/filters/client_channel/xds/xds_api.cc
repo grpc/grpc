@@ -135,6 +135,31 @@ const char* XdsApi::kEdsTypeUrl =
 
 namespace {
 
+const char* kLdsV3TypeUrl =
+    "type.googleapis.com/envoy.config.listener.v3.Listener";
+const char* kRdsV3TypeUrl =
+    "type.googleapis.com/envoy.config.route.v3.RouteConfiguration";
+const char* kCdsV3TypeUrl =
+    "type.googleapis.com/envoy.config.cluster.v3.Cluster";
+const char* kEdsV3TypeUrl =
+    "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment";
+
+bool IsLds(absl::string_view type_url) {
+  return type_url == XdsApi::kLdsTypeUrl || type_url == kLdsV3TypeUrl;
+}
+
+bool IsRds(absl::string_view type_url) {
+  return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV3TypeUrl;
+}
+
+bool IsCds(absl::string_view type_url) {
+  return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV3TypeUrl;
+}
+
+bool IsEds(absl::string_view type_url) {
+  return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV3TypeUrl;
+}
+
 bool ShouldUseV3(const XdsBootstrap* bootstrap) {
   if (bootstrap == nullptr) return false;
   const auto& server_features = bootstrap->server().server_features;
@@ -223,6 +248,37 @@ void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
     }
   }
 }
+
+// FIXME: code from haberman to encode string field
+#if 0
+#include <string>
+#include <stdint.h>
+
+std::string EncodeVarint(uint64_t val) {
+  std::string data;
+  do {
+    uint8_t byte = val & 0x7fU;
+    val >>= 7;
+    if (val) byte |= 0x80U;
+    data += byte;
+  } while (val);
+  return data;
+}
+
+std::string EncodeTag(uint32_t field_number, uint8_t wire_type) {
+  return EncodeVarint((field_number << 3) | wire_type);
+}
+
+std::string EncodeStringField(uint32_t field_number, std::string str) {
+  static const uint8_t kDelimitedWireType = 2;
+  return EncodeTag(field_number, kDelimitedWireType) +
+      EncodeVarint(str.size()) + str;
+}
+
+// Use like:
+//   std::string unknown = EncodeStringField(field_number, "abc");
+//   upb_msg_addunknown(msg, unknown.data(), unknown.size(), arena);
+#endif
 
 void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
                   const std::string& build_version,
@@ -464,6 +520,25 @@ grpc_slice SerializeDiscoveryRequest(upb_arena* arena,
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
+absl::string_view TypeUrlExternalToInternal(bool use_v3,
+                                            const std::string& type_url) {
+  if (use_v3) {
+    if (type_url == XdsApi::kLdsTypeUrl) {
+      return kLdsV3TypeUrl;
+    }
+    if (type_url == XdsApi::kRdsTypeUrl) {
+      return kRdsV3TypeUrl;
+    }
+    if (type_url == XdsApi::kCdsTypeUrl) {
+      return kCdsV3TypeUrl;
+    }
+    if (type_url == XdsApi::kEdsTypeUrl) {
+      return kEdsV3TypeUrl;
+    }
+  }
+  return type_url;
+}
+
 }  // namespace
 
 grpc_slice XdsApi::CreateAdsRequest(
@@ -476,8 +551,10 @@ grpc_slice XdsApi::CreateAdsRequest(
   envoy_service_discovery_v3_DiscoveryRequest* request =
       envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
   // Set type_url.
+  absl::string_view real_type_url =
+      TypeUrlExternalToInternal(use_v3_, type_url);
   envoy_service_discovery_v3_DiscoveryRequest_set_type_url(
-      request, upb_strview_make(type_url.data(), type_url.size()));
+      request, upb_strview_make(real_type_url.data(), real_type_url.size()));
   // Set version_info.
   if (!version.empty()) {
     envoy_service_discovery_v3_DiscoveryRequest_set_version_info(
@@ -1177,7 +1254,7 @@ grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
   for (size_t i = 0; i < size; ++i) {
     // Check the type_url of the resource.
     const upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
-    if (!upb_strview_eql(type_url, upb_strview_makez(XdsApi::kLdsTypeUrl))) {
+    if (!IsLds(UpbStringToAbsl(type_url))) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not LDS.");
     }
     // Decode the listener.
@@ -1206,6 +1283,10 @@ grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
         http_connection_manager =
             envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(
                 encoded_api_listener.data, encoded_api_listener.size, arena);
+    if (http_connection_manager == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Could not parse HttpConnectionManager config from ApiListener");
+    }
     // Found inlined route_config. Parse it to find the cluster_name.
     if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
             http_connection_manager)) {
@@ -1266,7 +1347,7 @@ grpc_error* RdsResponseParse(
   for (size_t i = 0; i < size; ++i) {
     // Check the type_url of the resource.
     const upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
-    if (!upb_strview_eql(type_url, upb_strview_makez(XdsApi::kRdsTypeUrl))) {
+    if (!IsRds(UpbStringToAbsl(type_url))) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not RDS.");
     }
     // Decode the route_config.
@@ -1313,7 +1394,7 @@ grpc_error* CdsResponseParse(
     XdsApi::CdsUpdate cds_update;
     // Check the type_url of the resource.
     const upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
-    if (!upb_strview_eql(type_url, upb_strview_makez(XdsApi::kCdsTypeUrl))) {
+    if (!IsCds(UpbStringToAbsl(type_url))) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not CDS.");
     }
     // Decode the cluster.
@@ -1499,7 +1580,7 @@ grpc_error* EdsResponseParse(
     XdsApi::EdsUpdate eds_update;
     // Check the type_url of the resource.
     upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
-    if (!upb_strview_eql(type_url, upb_strview_makez(XdsApi::kEdsTypeUrl))) {
+    if (!IsEds(UpbStringToAbsl(type_url))) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not EDS.");
     }
     // Get the cluster_load_assignment.
@@ -1567,17 +1648,27 @@ grpc_error* EdsResponseParse(
   return GRPC_ERROR_NONE;
 }
 
+std::string TypeUrlInternalToExternal(absl::string_view type_url) {
+  if (type_url == kLdsV3TypeUrl) {
+    return XdsApi::kLdsTypeUrl;
+  } else if (type_url == kRdsV3TypeUrl) {
+    return XdsApi::kRdsTypeUrl;
+  } else if (type_url == kCdsV3TypeUrl) {
+    return XdsApi::kCdsTypeUrl;
+  } else if (type_url == kEdsV3TypeUrl) {
+    return XdsApi::kEdsTypeUrl;
+  }
+  return std::string(type_url);
+}
+
 }  // namespace
 
-grpc_error* XdsApi::ParseAdsResponse(
+XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
     const grpc_slice& encoded_response, const std::string& expected_server_name,
     const std::set<absl::string_view>& expected_route_configuration_names,
     const std::set<absl::string_view>& expected_cluster_names,
-    const std::set<absl::string_view>& expected_eds_service_names,
-    absl::optional<LdsUpdate>* lds_update,
-    absl::optional<RdsUpdate>* rds_update, CdsUpdateMap* cds_update_map,
-    EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
-    std::string* type_url) {
+    const std::set<absl::string_view>& expected_eds_service_names) {
+  AdsParseResult result;
   upb::Arena arena;
   // Decode the response.
   const envoy_service_discovery_v3_DiscoveryResponse* response =
@@ -1586,39 +1677,42 @@ grpc_error* XdsApi::ParseAdsResponse(
           GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
   // If decoding fails, output an empty type_url and return.
   if (response == nullptr) {
-    *type_url = "";
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Can't decode the whole response.");
+    result.parse_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Can't decode DiscoveryResponse.");
+    return result;
   }
   MaybeLogDiscoveryResponse(client_, tracer_, response);
   // Record the type_url, the version_info, and the nonce of the response.
   upb_strview type_url_strview =
       envoy_service_discovery_v3_DiscoveryResponse_type_url(response);
-  *type_url = UpbStringToStdString(type_url_strview);
+  result.type_url =
+      TypeUrlInternalToExternal(UpbStringToAbsl(type_url_strview));
   upb_strview version_info =
       envoy_service_discovery_v3_DiscoveryResponse_version_info(response);
-  *version = UpbStringToStdString(version_info);
-  upb_strview nonce_strview = envoy_service_discovery_v3_DiscoveryResponse_nonce(response);
-  *nonce = UpbStringToStdString(nonce_strview);
+  result.version = UpbStringToStdString(version_info);
+  upb_strview nonce_strview =
+      envoy_service_discovery_v3_DiscoveryResponse_nonce(response);
+  result.nonce = UpbStringToStdString(nonce_strview);
   // Parse the response according to the resource type.
-  if (*type_url == kLdsTypeUrl) {
-    return LdsResponseParse(client_, tracer_, response, expected_server_name,
-                            xds_routing_enabled_, lds_update, arena.ptr());
-  } else if (*type_url == kRdsTypeUrl) {
-    return RdsResponseParse(client_, tracer_, response, expected_server_name,
-                            expected_route_configuration_names,
-                            xds_routing_enabled_, rds_update, arena.ptr());
-  } else if (*type_url == kCdsTypeUrl) {
-    return CdsResponseParse(client_, tracer_, response, expected_cluster_names,
-                            cds_update_map, arena.ptr());
-  } else if (*type_url == kEdsTypeUrl) {
-    return EdsResponseParse(client_, tracer_, response,
-                            expected_eds_service_names, eds_update_map,
-                            arena.ptr());
-  } else {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Unsupported ADS resource type.");
+  if (IsLds(result.type_url)) {
+    result.parse_error = LdsResponseParse(
+        client_, tracer_, response, expected_server_name, xds_routing_enabled_,
+        &result.lds_update, arena.ptr());
+  } else if (IsRds(result.type_url)) {
+    result.parse_error = RdsResponseParse(
+        client_, tracer_, response, expected_server_name,
+        expected_route_configuration_names, xds_routing_enabled_,
+        &result.rds_update, arena.ptr());
+  } else if (IsCds(result.type_url)) {
+    result.parse_error = CdsResponseParse(
+        client_, tracer_, response, expected_cluster_names,
+        &result.cds_update_map, arena.ptr());
+  } else if (IsEds(result.type_url)) {
+    result.parse_error = EdsResponseParse(
+        client_, tracer_, response, expected_eds_service_names,
+        &result.eds_update_map, arena.ptr());
   }
+  return result;
 }
 
 namespace {
