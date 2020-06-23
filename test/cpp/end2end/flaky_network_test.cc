@@ -213,6 +213,9 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     ClientContext context;
     if (timeout_ms > 0) {
       context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
+      // Allow an RPC to be canceled (for deadline exceeded) after it has
+      // reached the server.
+      request.mutable_param()->set_skip_cancelled_check(true);
     }
     // See https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md for
     // details of wait-for-ready semantics

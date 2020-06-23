@@ -75,7 +75,7 @@ grpc_proto_library(
 ```
 
 
-By adding such a flag now a header file `echo_mock.grpc.pb.h` containing the mocked stub will also be generated. 
+By adding such a flag now a header file `echo_mock.grpc.pb.h` containing the mocked stub will also be generated.
 
 This header file can then be included in test files along with a gmock dependency.
 

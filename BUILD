@@ -124,6 +124,7 @@ GRPC_SECURE_PUBLIC_HDRS = [
 # TODO(ctiller): layer grpc atop grpc_unsecure, layer grpc++ atop grpc++_unsecure
 GRPCXX_SRCS = [
     "src/cpp/client/channel_cc.cc",
+    "src/cpp/client/client_callback.cc",
     "src/cpp/client/client_context.cc",
     "src/cpp/client/client_interceptor.cc",
     "src/cpp/client/create_channel.cc",
@@ -1026,6 +1027,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_channelz.cc",
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
+        "src/core/ext/filters/client_channel/config_selector.cc",
         "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
@@ -1043,6 +1045,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/server_address.cc",
         "src/core/ext/filters/client_channel/service_config.cc",
+        "src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc",
         "src/core/ext/filters/client_channel/service_config_parser.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
@@ -1053,6 +1056,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel.h",
         "src/core/ext/filters/client_channel/client_channel_channelz.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
+        "src/core/ext/filters/client_channel/config_selector.h",
         "src/core/ext/filters/client_channel/connector.h",
         "src/core/ext/filters/client_channel/global_subchannel_pool.h",
         "src/core/ext/filters/client_channel/health/health_check_client.h",
@@ -1183,6 +1187,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
+        "grpc_message_size_filter",
     ],
 )
 
