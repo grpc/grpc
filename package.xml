@@ -181,7 +181,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_call_data.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
