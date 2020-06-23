@@ -228,7 +228,7 @@ class XdsApi {
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       ClusterLoadReport>;
 
-  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
+  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap* bootstrap);
 
   // Creates an ADS request.
   // Takes ownership of \a error.
@@ -269,8 +269,9 @@ class XdsApi {
  private:
   XdsClient* client_;
   TraceFlag* tracer_;
+  const bool use_v3_;
   const bool xds_routing_enabled_;
-  const XdsBootstrap::Node* node_;
+  const XdsBootstrap* bootstrap_;  // Do not own.
   const std::string build_version_;
   const std::string user_agent_name_;
 };

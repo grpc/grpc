@@ -1786,8 +1786,7 @@ XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
       interested_parties_(interested_parties),
       bootstrap_(
           XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
-      api_(this, &grpc_xds_client_trace,
-           bootstrap_ == nullptr ? nullptr : bootstrap_->node()),
+      api_(this, &grpc_xds_client_trace, bootstrap_.get()),
       server_name_(server_name),
       service_config_watcher_(std::move(watcher)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {

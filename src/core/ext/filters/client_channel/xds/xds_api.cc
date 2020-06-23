@@ -131,6 +131,13 @@ const char* XdsApi::kEdsTypeUrl =
 
 namespace {
 
+bool ShouldUseV3(const XdsBootstrap* bootstrap) {
+  if (bootstrap == nullptr) return false;
+  const auto& server_features = bootstrap->server().server_features;
+  auto it = server_features.find("xds_v3");
+  return it != server_features.end();
+}
+
 bool XdsRoutingEnabled() {
   char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
   bool parsed_value;
@@ -142,11 +149,12 @@ bool XdsRoutingEnabled() {
 }  // namespace
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
-               const XdsBootstrap::Node* node)
+               const XdsBootstrap* bootstrap)
     : client_(client),
       tracer_(tracer),
+      use_v3_(ShouldUseV3(bootstrap)),
       xds_routing_enabled_(XdsRoutingEnabled()),
-      node_(node),
+      bootstrap_(bootstrap),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string())),
       user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING)) {}
@@ -493,8 +501,8 @@ grpc_slice XdsApi::CreateAdsRequest(
   if (populate_node) {
     envoy_api_v2_core_Node* node_msg =
         envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
-    PopulateNode(arena.ptr(), node_, build_version_, user_agent_name_, "",
-                 node_msg);
+    PopulateNode(arena.ptr(), bootstrap_->node(), build_version_,
+                 user_agent_name_, "", node_msg);
   }
   // Add resource_names.
   for (const auto& resource_name : resource_names) {
@@ -1748,8 +1756,8 @@ grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
   envoy_api_v2_core_Node* node_msg =
       envoy_service_load_stats_v2_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
-  PopulateNode(arena.ptr(), node_, build_version_, user_agent_name_,
-               server_name, node_msg);
+  PopulateNode(arena.ptr(), bootstrap_->node(), build_version_,
+               user_agent_name_, server_name, node_msg);
   envoy_api_v2_core_Node_add_client_features(
       node_msg, upb_strview_makez("envoy.lrs.supports_send_all_clusters"),
       arena.ptr());

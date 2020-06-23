@@ -66,7 +66,14 @@ std::string BootstrapString(const XdsBootstrap& bootstrap) {
     parts.push_back(absl::StrFormat("      {type=\"%s\", config=%s},\n",
                                     creds.type, creds.config.Dump()));
   }
-  parts.push_back("    ]\n  }\n]");
+  parts.push_back("    ],\n");
+  if (!bootstrap.server().server_features.empty()) {
+    parts.push_back(absl::StrCat(
+        "    server_features=[",
+        absl::StrJoin(bootstrap.server().server_features, ", "),
+        "],\n"));
+  }
+  parts.push_back("  }\n]");
   return absl::StrJoin(parts, "");
 }
 
@@ -191,6 +198,16 @@ grpc_error* XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
+  it = json->mutable_object()->find("server_features");
+  if (it != json->mutable_object()->end()) {
+    if (it->second.type() != Json::Type::ARRAY) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "\"server_features\" field is not an array"));
+    } else {
+      grpc_error* parse_error = ParseServerFeaturesArray(&it->second, &server);
+      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    }
+  }
   // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
   // string is not static in this case.
   if (error_list.empty()) return GRPC_ERROR_NONE;
@@ -260,6 +277,26 @@ grpc_error* XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
     error = grpc_error_add_child(error, error_list[i]);
   }
   return error;
+}
+
+grpc_error* XdsBootstrap::ParseServerFeaturesArray(Json* json,
+                                                   XdsServer* server) {
+  std::vector<grpc_error*> error_list;
+  for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
+    Json& child = json->mutable_array()->at(i);
+    if (child.type() != Json::Type::STRING) {
+      char* msg;
+      gpr_asprintf(&msg, "array element %" PRIuPTR " is not a string", i);
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+      gpr_free(msg);
+    } else if (child.string_value() == "xds_v3") {
+// FIXME: gate this on the value of the GRPC_XDS_EXPERIMENTAL_V3_SUPPORT env var
+      server->server_features.insert(
+          std::move(*child.mutable_string_value()));
+    }
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR(
+      "errors parsing \"server_features\" array", &error_list);
 }
 
 grpc_error* XdsBootstrap::ParseNode(Json* json) {
