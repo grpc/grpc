@@ -27,6 +27,7 @@ out = {}
 out['libs'] = [{
     'name':
         're2',
+        #TODO @donnadionne: extracting the list of source files from bazel build for optimization
     'build':
         'all',
     'language':
