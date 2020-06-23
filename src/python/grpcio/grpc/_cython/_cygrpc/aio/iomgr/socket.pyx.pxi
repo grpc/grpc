@@ -37,7 +37,7 @@ cdef class _AsyncioSocket:
         self._py_socket = None
         self._peername = None
         self._closed = False
-        self._loop = asyncio.get_running_loop()
+        self._loop = get_working_loop()
 
     @staticmethod
     cdef _AsyncioSocket create(grpc_custom_socket * grpc_socket,

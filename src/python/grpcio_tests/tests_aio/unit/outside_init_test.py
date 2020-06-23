@@ -34,7 +34,7 @@ class TestOutsideInit(unittest.TestCase):
             aio.secure_channel('', channel_creds)
 
         with self.assertRaises(RuntimeError):
-            aio.server('', None)
+            aio.server()
 
         # Ensures init_grpc_aio fail outside of AsyncIO
         with self.assertRaises(RuntimeError):

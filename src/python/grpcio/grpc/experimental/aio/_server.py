@@ -41,7 +41,7 @@ class Server(_base_server.Server):
                  options: ChannelArgumentType,
                  maximum_concurrent_rpcs: Optional[int],
                  compression: Optional[grpc.Compression]):
-        self._loop = asyncio.get_running_loop()
+        self._loop = cygrpc.get_working_loop()
         if interceptors:
             invalid_interceptors = [
                 interceptor for interceptor in interceptors
