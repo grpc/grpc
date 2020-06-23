@@ -1523,10 +1523,13 @@ static tsi_result ssl_handshaker_next(
   if (ssl_handshaker_get_result(impl) == TSI_HANDSHAKE_IN_PROGRESS) {
     *handshaker_result = nullptr;
   } else {
-    // In TLS 1.3, the ClientFinished or ServerFinished record may have
-    // (encrypted) application data appended to the end of the record. In TLS
-    // 1.2, this is explicitly disallowed by the RFC; application data will
-    // never be appended to a handshake record.
+    // In TLS 1.3, the client may send application data records in the same
+    // flight of messages as the record containing the ClientFinished message.
+    // In TLS 1.2, this is not allowed; both the client and server must complete
+    // the handshake before any application data may be sent.
+    //
+    // These application data records are removed from the BIO after the
+    // server-side handshake completes, and set to |unused_bytes|.
     unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = 0;
     status = ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size);
