@@ -44,6 +44,6 @@ CelEvaluationEngine::CelEvaluationEngine(
     policies_.insert(std::make_pair(policy_name, parsed_condition));
   }
   
-  action_allow_ = (envoy_config_rbac_v2_RBAC_Action(&rbac_policy) == 0);
+  action_allow_ = (envoy_config_rbac_v2_RBAC_action(&rbac_policy) == 0);
 }
  
