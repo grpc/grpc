@@ -7,8 +7,10 @@ build --define=use_fast_cpp_protos=true
 
 build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
+build:opt --copt=-Werror=non-virtual-dtor
 
 build:dbg --compilation_mode=dbg
+build:opt --copt=-Werror=non-virtual-dtor
 
 build:windows_opt --compilation_mode=opt
 build:windows_dbg --compilation_mode=dbg
@@ -17,6 +19,7 @@ build:asan --strip=never
 build:asan --copt=-fsanitize=address
 build:asan --copt=-O0
 build:asan --copt=-fno-omit-frame-pointer
+build:asan --copt=-Werror=non-virtual-dtor
 build:asan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:asan --copt=-DGRPC_ASAN
 build:asan --copt=-DADDRESS_SANITIZER  # used by absl
@@ -51,6 +54,7 @@ build:msan --copt=-O0
 build:msan --copt=-fsanitize-memory-track-origins
 build:msan --copt=-fsanitize-memory-use-after-dtor
 build:msan --copt=-fno-omit-frame-pointer
+build:msan --copt=-Werror=non-virtual-dtor
 build:msan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:msan --copt=-DMEMORY_SANITIZER  # used by absl
 build:msan --linkopt=-fsanitize=memory
@@ -59,6 +63,7 @@ build:msan --action_env=MSAN_OPTIONS=poison_in_dtor=1
 build:tsan --strip=never
 build:tsan --copt=-fsanitize=thread
 build:tsan --copt=-fno-omit-frame-pointer
+build:tsan --copt=-Werror=non-virtual-dtor
 build:tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan --copt=-DGRPC_TSAN
 # TODO(jtattermusch): ideally we would set --copt=-DTHREAD_SANITIZER (used by absl)
@@ -69,6 +74,7 @@ build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressio
 build:ubsan --strip=never
 build:ubsan --copt=-fsanitize=undefined
 build:ubsan --copt=-fno-omit-frame-pointer
+build:ubsan --copt=-Werror=non-virtual-dtor
 build:ubsan --copt=-DGRPC_UBSAN
 build:ubsan --copt=-DNDEBUG
 build:ubsan --copt=-DUNDEFINED_BEHAVIOR_SANITIZER  # used by absl

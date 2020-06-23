@@ -363,6 +363,7 @@ CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
 endif
 CFLAGS += -g
+CXXFLAGS += -Werror=non-virtual-dtor
 CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/upb -Isrc/core/ext/upb-generated
 COREFLAGS += -fno-exceptions
 LDFLAGS += -g
