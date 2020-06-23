@@ -68,8 +68,8 @@ ServerBuilder::~ServerBuilder() {
   }
 }
 
-std::unique_ptr<grpc_impl::ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
-    bool is_frequently_polled) {
+std::unique_ptr<grpc_impl::ServerCompletionQueue>
+ServerBuilder::AddCompletionQueue(bool is_frequently_polled) {
   grpc_impl::ServerCompletionQueue* cq = new grpc_impl::ServerCompletionQueue(
       GRPC_CQ_NEXT,
       is_frequently_polled ? GRPC_CQ_DEFAULT_POLLING : GRPC_CQ_NON_LISTENING,
@@ -289,9 +289,11 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   // This is different from the completion queues added to the server via
   // ServerBuilder's AddCompletionQueue() method (those completion queues
   // are in 'cqs_' member variable of ServerBuilder object)
-  std::shared_ptr<std::vector<std::unique_ptr<grpc_impl::ServerCompletionQueue>>>
-      sync_server_cqs(std::make_shared<
-                      std::vector<std::unique_ptr<grpc_impl::ServerCompletionQueue>>>());
+  std::shared_ptr<
+      std::vector<std::unique_ptr<grpc_impl::ServerCompletionQueue>>>
+      sync_server_cqs(
+          std::make_shared<std::vector<
+              std::unique_ptr<grpc_impl::ServerCompletionQueue>>>());
 
   bool has_frequently_polled_cqs = false;
   for (const auto& cq : cqs_) {
@@ -319,8 +321,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
 
     // Create completion queues to listen to incoming rpc requests
     for (int i = 0; i < sync_server_settings_.num_cqs; i++) {
-      sync_server_cqs->emplace_back(
-          new grpc_impl::ServerCompletionQueue(GRPC_CQ_NEXT, polling_type, nullptr));
+      sync_server_cqs->emplace_back(new grpc_impl::ServerCompletionQueue(
+          GRPC_CQ_NEXT, polling_type, nullptr));
     }
   }
 
