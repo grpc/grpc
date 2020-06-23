@@ -37,9 +37,11 @@ class CelEvaluationEngine {
  public:
   explicit CelEvaluationEngine(const envoy_config_rbac_v2_RBAC& rbac_policy);
   // TODO(mywang@google.com): add an Evaluate member function
+  ~CelEvaluationEngine();
 
  private:
   std::map<std::string, google_api_expr_v1alpha1_Expr*> policies_;
+  upb_arena* arena_;
 };
 
 #endif //  GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_EVALUATION_ENGINE_H

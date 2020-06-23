@@ -22,6 +22,7 @@ CelEvaluationEngine::CelEvaluationEngine(
   size_t size;
   const envoy_config_rbac_v2_RBAC_PoliciesEntry* const* 
    policies = envoy_config_rbac_v2_RBAC_policies(&rbac_policy, &size);
+  arena_ = upb_arena_new();
 
   for (size_t i = 0; i < size; ++i) {
     std::string key = envoy_config_rbac_v2_RBAC_PoliciesEntry_key(
@@ -30,12 +31,19 @@ CelEvaluationEngine::CelEvaluationEngine(
      policy = envoy_config_rbac_v2_RBAC_PoliciesEntry_value(policies[i]);
     const google_api_expr_v1alpha1_Expr* 
      condition = envoy_config_rbac_v2_Policy_condition(policy);
-    
-    // TODO(mywang@google.com): get rid of casts and store the 
-    //                   google_api_expr_v1alpha1_Expr directly
-    policies_.insert(
-               std::make_pair<std::string, google_api_expr_v1alpha1_Expr*>(
-               (std::string) key, (google_api_expr_v1alpha1_Expr*) condition));
+    // Parse condition to make a pointer tied to the lifetime of arena_
+    size_t serial_len;
+    char* serialized = google_api_expr_v1alpha1_Expr_serialize(
+                                               condition, arena_, &serial_len);
+    google_api_expr_v1alpha1_Expr* 
+     parsed_condition = google_api_expr_v1alpha1_Expr_parse(
+                                               serialized, serial_len, arena_);
+       
+    policies_.insert(std::make_pair(key, parsed_condition));
   }
+}
+
+CelEvaluationEngine::~CelEvaluationEngine() {
+  upb_arena_free(arena_);
 }
  
