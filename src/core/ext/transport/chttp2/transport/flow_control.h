@@ -333,8 +333,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
 };
 
 // Fat interface with all methods a stream flow control implementation needs
-// to support. gRPC C Core does not support pure virtual functions, so instead
-// we abort in any methods which require implementation in the base class.
+// to support.
 class StreamFlowControlBase {
  public:
   StreamFlowControlBase() {}
@@ -347,19 +346,19 @@ class StreamFlowControlBase {
 
   // Using the protected members, returns an Action for this stream to be
   // taken by the tranport.
-  virtual FlowControlAction MakeAction() { abort(); }
+  virtual FlowControlAction MakeAction() = 0;
 
   // Bookkeeping for when data is sent on this stream.
-  virtual void SentData(int64_t /* outgoing_frame_size */) { abort(); }
+  virtual void SentData(int64_t /* outgoing_frame_size */) = 0;
 
   // Bookkeeping and error checking for when data is received by this stream.
-  virtual grpc_error* RecvData(int64_t /* incoming_frame_size */) { abort(); }
+  virtual grpc_error* RecvData(int64_t /* incoming_frame_size */) = 0;
 
   // Called to check if this stream needs to send a WINDOW_UPDATE frame.
-  virtual uint32_t MaybeSendUpdate() { abort(); }
+  virtual uint32_t MaybeSendUpdate() = 0;
 
   // Bookkeeping for receiving a WINDOW_UPDATE from for this stream.
-  virtual void RecvUpdate(uint32_t /* size */) { abort(); }
+  virtual void RecvUpdate(uint32_t /* size */) = 0;
 
   // Bookkeeping for when a call pulls bytes out of the transport. At this
   // point we consider the data 'used' and can thus let out peer know we are
