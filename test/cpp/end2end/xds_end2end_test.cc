@@ -2004,6 +2004,26 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
   WaitForAllBackends();
 }
 
+TEST_P(XdsResolverOnlyTest, DefaultRouteCaseInsensitive) {
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_match()
+      ->mutable_case_sensitive()
+      ->set_value(false);
+  balancers_[0]->ads_service()->SetLdsResource(
+      AdsServiceImpl::BuildListener(route_config));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  CheckRpcSendOk(5, RpcOptions().set_wait_for_ready(true));
+}
+
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
  public:
   XdsResolverLoadReportingOnlyTest() : XdsEnd2endTest(4, 1, 3) {}
@@ -2388,6 +2408,29 @@ TEST_P(LdsRdsTest, RouteMatchHasUnsupportedSpecifier) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "No prefix field found in Default RouteMatch.");
+}
+
+// Tests that LDS client should send a NACK if route match has a case_sensitive
+// set to false.
+TEST_P(LdsRdsTest, RouteMatchHasCaseSensitiveFalse) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  route1->mutable_match()->mutable_case_sensitive()->set_value(false);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "case_sensitive if set must be set to true.");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route match has a prefix
@@ -4198,9 +4241,13 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
             AdsServiceImpl::ResponseState::NOT_SENT);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[1]->ads_service()->eds_response_state().error_message;
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[2]->ads_service()->eds_response_state().error_message;
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
   SetNextResolutionForLbChannel({balancers_[1]->port()});
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
@@ -4218,9 +4265,13 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
             AdsServiceImpl::ResponseState::NOT_SENT);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[1]->ads_service()->eds_response_state().error_message;
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[2]->ads_service()->eds_response_state().error_message;
 }
 
 // Tests that the old LB call is still used after multiple balancer address
@@ -4253,9 +4304,13 @@ TEST_P(BalancerUpdateTest, Repeated) {
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
             AdsServiceImpl::ResponseState::NOT_SENT);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[1]->ads_service()->eds_response_state().error_message;
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[2]->ads_service()->eds_response_state().error_message;
   std::vector<int> ports;
   ports.emplace_back(balancers_[0]->port());
   ports.emplace_back(balancers_[1]->port());
@@ -4317,9 +4372,13 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
             AdsServiceImpl::ResponseState::NOT_SENT);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[1]->ads_service()->eds_response_state().error_message;
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[2]->ads_service()->eds_response_state().error_message;
   // Kill balancer 0
   gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 0 *************");
   balancers_[0]->Shutdown();
@@ -4333,11 +4392,17 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // The ADS service of no balancers sent anything
   EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[0]->ads_service()->eds_response_state().error_message;
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[1]->ads_service()->eds_response_state().error_message;
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[2]->ads_service()->eds_response_state().error_message;
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
   SetNextResolutionForLbChannel({balancers_[1]->port()});
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
@@ -4355,11 +4420,15 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   EXPECT_EQ(10U, backends_[1]->backend_service()->request_count());
   // The ADS service of balancer 1 sent at least 1 response.
   EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[0]->ads_service()->eds_response_state().error_message;
   EXPECT_GT(balancers_[1]->ads_service()->eds_response_state().state,
             AdsServiceImpl::ResponseState::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[2]->ads_service()->eds_response_state().error_message;
 }
 
 // The re-resolution tests are deferred because they rely on the fallback mode,

@@ -244,7 +244,7 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   cq_verify(cqv);
 
   GPR_ASSERT(status == mode.expect_status);
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
