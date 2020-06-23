@@ -18,7 +18,7 @@
 
 CelEvaluationEngine::CelEvaluationEngine(
     const envoy_config_rbac_v2_RBAC& rbac_policy) {
-  // Extract array of policies and store their condition fields in policies_
+  // Extract array of policies and store their condition fields in policies_.
   size_t size;
   const envoy_config_rbac_v2_RBAC_PoliciesEntry* const* 
    policies = envoy_config_rbac_v2_RBAC_policies(&rbac_policy, &size);
@@ -31,7 +31,7 @@ CelEvaluationEngine::CelEvaluationEngine(
      policy = envoy_config_rbac_v2_RBAC_PoliciesEntry_value(policies[i]);
     const google_api_expr_v1alpha1_Expr* 
      condition = envoy_config_rbac_v2_Policy_condition(policy);
-    // Parse condition to make a pointer tied to the lifetime of arena_
+    // Parse condition to make a pointer tied to the lifetime of arena_.
     size_t serial_len;
     char* serialized = google_api_expr_v1alpha1_Expr_serialize(
                                                condition, temp_arena.ptr(), &serial_len);

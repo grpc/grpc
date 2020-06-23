@@ -33,11 +33,11 @@
 //
 // Example:
 // CelEvaluationEngine* cel_engine = new CelEvaluationEngine(rbac_policy);
-// cel_engine->Evaluate(evaluate_args); // returns ALLOW or DENY
+// cel_engine->Evaluate(evaluate_args); // returns ALLOW or DENY.
 class CelEvaluationEngine {
  public:
   explicit CelEvaluationEngine(const envoy_config_rbac_v2_RBAC& rbac_policy);
-  // TODO(mywang@google.com): add an Evaluate member function
+  // TODO(mywang@google.com): add an Evaluate member function.
 
  private:
   bool action_allow_;
