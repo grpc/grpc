@@ -24,12 +24,8 @@ gRPC Async API objects may only be used on the thread on which they were
 created. AsyncIO doesn't provide thread safety for most of its APIs.
 
 
-Enable AsyncIO in gRPC
-----------------------
-
-Enable AsyncIO in gRPC Python is automatic when instantiating gRPC AsyncIO
-objects (e.g., channels and servers). No additional function invocation is
-required.
+Blocking Code in AsyncIO
+------------------------
 
 Making blocking function calls in coroutines or in the thread running event
 loop will block the event loop, potentially starving all RPCs in the process.

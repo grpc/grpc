@@ -169,7 +169,7 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
     await future
 
 
-if PY_MAJOR_VERSION >=3 and PY_MINOR_VERSION >=7:
+if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 7:
     def get_working_loop():
         """Returns a running event loop."""
         return asyncio.get_running_loop()
@@ -185,4 +185,5 @@ else:
         if loop.is_running():
             return loop
         else:
-            raise RuntimeError('no running event loop')
+            raise RuntimeError('No running event loop detected. This function '
+                             + 'must be called from inside of a running event loop.')
