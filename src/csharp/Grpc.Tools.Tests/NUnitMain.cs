@@ -23,7 +23,10 @@ namespace Grpc.Tools.Tests
 {
     static class NUnitMain
     {
-        public static int Main(string[] args) =>
-            new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args);
-    };
+        public static int Main(string[] args)
+        {
+            MsBuildAssemblyHelper.TweakAssemblyPathIfOnMono();
+            return new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args);
+        }
+    }
 }

@@ -23,8 +23,8 @@ from typing import AsyncIterable, Awaitable, Generic, Optional, Union
 
 import grpc
 
-from ._typing import (DoneCallbackType, EOFType, MetadataType, RequestType,
-                      ResponseType)
+from ._typing import (DoneCallbackType, EOFType, RequestType, ResponseType)
+from ._metadata import Metadata
 
 __all__ = 'RpcContext', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
 
@@ -86,7 +86,7 @@ class Call(RpcContext, metaclass=ABCMeta):
     """The abstract base class of an RPC on the client-side."""
 
     @abstractmethod
-    async def initial_metadata(self) -> MetadataType:
+    async def initial_metadata(self) -> Metadata:
         """Accesses the initial metadata sent by the server.
 
         Returns:
@@ -94,7 +94,7 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def trailing_metadata(self) -> MetadataType:
+    async def trailing_metadata(self) -> Metadata:
         """Accesses the trailing metadata sent by the server.
 
         Returns:

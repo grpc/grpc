@@ -14,11 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_generate_objc_one_off_targets", "grpc_objc_library")
+load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
+
 licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
-
-load("//bazel:grpc_build_system.bzl", "grpc_generate_objc_one_off_targets", "grpc_objc_library")
 
 exports_files(["LICENSE"])
 
@@ -194,8 +195,6 @@ grpc_objc_library(
         "@com_google_protobuf//:protobuf_objc",
     ],
 )
-
-load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 
 apple_resource_bundle(
     # The choice of name is signicant here, since it determines the bundle name.
