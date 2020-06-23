@@ -63,7 +63,7 @@ def grpc_deps():
 
     native.bind(
         name = "gtest",
-        actual = "@com_github_google_googletest//:gtest",
+        actual = "@com_google_googletest//:gtest",
     )
 
     native.bind(
@@ -162,9 +162,9 @@ def grpc_deps():
             ],
         )
 
-    if "com_github_google_googletest" not in native.existing_rules():
+    if "com_google_googletest" not in native.existing_rules():
         http_archive(
-            name = "com_github_google_googletest",
+            name = "com_google_googletest",
             sha256 = "443d383db648ebb8e391382c0ab63263b7091d03197f304390baac10f178a468",
             strip_prefix = "googletest-c9ccac7cb7345901884aabf5d1a786cfa6e2f397",
             urls = [
