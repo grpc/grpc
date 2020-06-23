@@ -255,7 +255,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
  private:
   // Friends for access to server registration lists that enable checking and
   // logging on shutdown
-  friend class ServerBuilder;
+  friend class ::grpc::ServerBuilder;
   friend class ::grpc_impl::Server;
 
   // Friend synchronous wrappers so that they can access Pluck(), which is
@@ -445,7 +445,7 @@ class ServerCompletionQueue : public CompletionQueue {
         polling_type_(polling_type) {}
 
   grpc_cq_polling_type polling_type_;
-  friend class ServerBuilder;
+  friend class ::grpc::ServerBuilder;
   friend class ::grpc_impl::Server;
 };
 

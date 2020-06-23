@@ -225,7 +225,7 @@ class ServerBuilder {
 
   /// Set the attached buffer pool for this server
   ServerBuilder& SetResourceQuota(
-      const grpc_impl::ResourceQuota& resource_quota);
+      const grpc::ResourceQuota& resource_quota);
 
   ServerBuilder& SetOption(std::unique_ptr<grpc::ServerBuilderOption> option);
 
