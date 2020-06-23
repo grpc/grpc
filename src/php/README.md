@@ -21,7 +21,7 @@ in 2020).
 ## Install the _grpc_ extension
 
 There are two ways to install the `grpc` extension.
-* `pecl`
+* Via `pecl`
 * Build from source
 
 ### Install from PECL
@@ -33,11 +33,11 @@ $ [sudo] pecl install grpc
 or specific version
 
 ```sh
-$ [sudo] pecl install grpc-1.25.0
+$ [sudo] pecl install grpc-1.30.0
 ```
 
-Note: for users on CentOS/RHEL 6, unfortunately this step won’t work.
-Please follow the instructions below to compile the PECL extension from source.
+Please make sure your `gcc` version satisfies the minimum requirement as
+specified [here](https://grpc.io/docs/languages/#official-support).
 
 
 ### Install on Windows
@@ -47,7 +47,7 @@ You can download the pre-compiled `grpc.dll` extension from the PECL
 
 ### Build from source
 
-Clone this repository at the [latest stable release tag](https://github.com/grpc/grpc/releases)
+Clone this repository at the [latest stable release tag](https://github.com/grpc/grpc/releases).
 
 ```sh
 $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
@@ -94,10 +94,10 @@ extension=grpc.so
 In addition to the `grpc` extension, you will need to install the `grpc/grpc`
 composer package as well. Add this to your project's `composer.json` file.
 
-```
-  "require": {
-    "grpc/grpc": "v1.25.0"
-  }
+```json
+    "require": {
+        "grpc/grpc": "~v1.30.0"
+    }
 ```
 
 To run tests with generated stub code from `.proto` files, you will also
@@ -127,32 +127,18 @@ the version of grpc inside package.xml file.
 The compatibility between the grpc and protobuf version is listed as table
 below:
 
-grpc | protobuf
---- | ---
-v1.0.0 | 3.0.0(GA)
-v1.0.1 | 3.0.2
-v1.1.0 | 3.1.0
-v1.2.0 | 3.2.0
-v1.2.0 | 3.2.0
-v1.3.4 | 3.3.0
-v1.3.5 | 3.2.0
-v1.4.0 | 3.3.0
-v1.6.0 | 3.4.0
-v1.8.0 | 3.5.0
-v1.12.0 | 3.5.2
-v1.13.1 | 3.5.2
-v1.14.2 | 3.5.2
-v1.15.1 | 3.6.1
-v1.16.1 | 3.6.1
-v1.17.2 | 3.6.1
-v1.18.0 | 3.6.1
-v1.19.1 | 3.6.1
-v1.20.1 | 3.7.0
-v1.21.3 | 3.7.0
-v1.22.0 | 3.8.0
-v1.23.1 | 3.8.0
-v1.24.0 | 3.8.0
-v1.25.0 | 3.8.0
+grpc | protobuf | grpc | protobuf | grpc | protobuf
+--- | --- | --- | --- | --- | ---
+v1.0.0 | 3.0.0(GA) | v1.12.0 | 3.5.2 | v1.22.0 | 3.8.0
+v1.0.1 | 3.0.2 | v1.13.1 | 3.5.2 | v1.23.1 | 3.8.0
+v1.1.0 | 3.1.0  | v1.14.2 | 3.5.2 | v1.24.0 | 3.8.0
+v1.2.0 | 3.2.0  | v1.15.1 | 3.6.1 | v1.25.0 | 3.8.0
+v1.2.0 | 3.2.0  | v1.16.1 | 3.6.1 | v1.26.0 | 3.8.0
+v1.3.4 | 3.3.0  | v1.17.2 | 3.6.1 | v1.27.3 | 3.11.2
+v1.3.5 | 3.2.0 | v1.18.0 | 3.6.1 | v1.28.1 | 3.11.2
+v1.4.0 | 3.3.0  | v1.19.1 | 3.6.1 | v1.29.0 | 3.11.2
+v1.6.0 | 3.4.0 | v1.20.1 | 3.7.0 | v1.30.0 | 3.12.2
+v1.8.0 | 3.5.0 | v1.21.3 | 3.7.0
 
 If `protoc` hasn't been installed, you can download the `protoc` binary from
 the protocol buffers
@@ -190,6 +176,18 @@ $ git submodule update --init
 $ make grpc_php_plugin
 ```
 
+Alternatively, you can also build the `grpc_php_plugin` with `bazel` now:
+
+```sh
+$ bazel build @com_google_protobuf//:protoc
+$ bazel build src/compiler:grpc_php_plugin
+```
+
+The `protoc` binary will be found in
+`bazel-bin/external/com_google_protobuf/protoc`.
+The `grpc_php_plugin` binary will be found in
+`bazel-bin/src/compiler/grpc_php_plugin`.
+
 Plugin may use the new feature of the new protobuf version, thus please also
 make sure that the protobuf version installed is compatible with the grpc
 version you build this plugin.
@@ -210,7 +208,7 @@ $ [sudo] pecl install protobuf
 or specific version
 
 ``` sh
-$ [sudo] pecl install protobuf-3.8.0
+$ [sudo] pecl install protobuf-3.12.2
 ```
 
 And add this to your `php.ini` file:
@@ -224,10 +222,10 @@ extension=protobuf.so
 Or require the `google/protobuf` composer package. Add this to your
 `composer.json` file:
 
-```
-  "require": {
-    "google/protobuf": "^v3.8.0"
-  }
+```json
+    "require": {
+        "google/protobuf": "~v3.12.2"
+    }
 ```
 
 ### Generate PHP classes from your service definition
@@ -280,8 +278,8 @@ by the `./bin/generate_proto_php.sh` script.
 
 ### Run test server
 
-Run a local server serving the math services. Please see [Node][] for how to
-run an example server.
+Run a local server serving the `Math`
+[service](https://github.com/grpc/grpc/blob/master/src/proto/math/math.proto#L42).
 
 ```sh
 $ cd grpc/src/php/tests/generated_code
@@ -312,7 +310,7 @@ end-to-end example.
 
 Here's how you can specify SSL credentials when creating your PHP client:
 
-```
+```php
 $client = new Helloworld\GreeterClient('localhost:50051', [
     'credentials' => Grpc\ChannelCredentials::createSsl(
         file_get_contents('<path to certificate>'))
@@ -337,16 +335,27 @@ all possible values of the `grpc.grpc.trace` option, please check
 
 ```
 grpc.grpc_verbosity=debug
-grpc.grpc_trace=all,-timer_check
+grpc.grpc_trace=all,-polling,-polling_api,-pollable_refcount,-timer,-timer_check
 grpc.log_filename=/var/log/grpc.log
 ```
+
+> Make sure the log file above is writable, by doing the following:
+> ```
+> $ sudo touch /var/log/grpc.log
+> $ sudo chmod 666 /var/log/grpc.log
+> ```
+> Note: The log file does grow pretty quickly depending on how much logs are
+> being printed out. Make sure you have other mechanisms (perhaps another
+> cronjob) to zero out the log file from time to time,
+> e.g. `cp /dev/null /var/log/grpc.log`, or turn these off when logs or tracing
+> are not necessary for debugging purposes.
 
 ### User agent string
 
 You can customize the user agent string for your gRPC PHP client by specifying
 this `grpc.primary_user_agent` option when constructing your PHP client:
 
-```
+```php
 $client = new Helloworld\GreeterClient('localhost:50051', [
     'credentials' => Grpc\ChannelCredentials::createInsecure(),
     'grpc.primary_user_agent' => 'my-user-agent-identifier',
@@ -358,7 +367,7 @@ $client = new Helloworld\GreeterClient('localhost:50051', [
 To change the default maximum message size, specify this
 `grpc.max_receive_message_length` option when constructing your PHP client:
 
-```
+```php
 $client = new Helloworld\GreeterClient('localhost:50051', [
     'credentials' => Grpc\ChannelCredentials::createInsecure(),
     'grpc.max_receive_message_length' => 8*1024*1024,
@@ -369,26 +378,28 @@ $client = new Helloworld\GreeterClient('localhost:50051', [
 
 You can customize the compression behavior on the client side, by specifying the following options when constructing your PHP client.
 
-```
-Possible values for grpc.default_compression_algorithm:
-0 - No compression
-1 - Compress with DEFLATE algorithm
-2 - Compress with GZIP algorithm
-3 - Stream compression with GZIP algorithm
-```
-```
-Possible values for grpc.default_compression_level:
-0 - None
-1 - Low level
-2 - Medium level
-3 - High level
-```
-Here's an example on how you can put them all together:
-```
+```php
 $client = new Helloworld\GreeterClient('localhost:50051', [
-        'credentials' => Grpc\ChannelCredentials::createInsecure(),
-        'grpc.default_compression_algorithm' => 2,
-        'grpc.default_compression_level' => 2,
+    'credentials' => Grpc\ChannelCredentials::createInsecure(),
+    'grpc.default_compression_algorithm' => 2,
+    'grpc.default_compression_level' => 2,
 ]);
+```
 
-[Node]:https://github.com/grpc/grpc/tree/master/src/node/examples
+Possible values for `grpc.default_compression_algorithm`:
+
+```
+0: No compression
+1: Compress with DEFLATE algorithm
+2: Compress with GZIP algorithm
+3: Stream compression with GZIP algorithm
+```
+
+Possible values for `grpc.default_compression_level`:
+
+```
+0: None
+1: Low level
+2: Medium level
+3: High level
+```
