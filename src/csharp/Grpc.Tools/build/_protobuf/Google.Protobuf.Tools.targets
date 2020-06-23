@@ -135,7 +135,7 @@
       <!-- Out-of-project files will have respective ProtoRoot='%(RelativeDir)'. -->
       <Protobuf_Rooted Include="@(_Protobuf_NoRootElsewhere)">
         <ProtoRoot>%(RelativeDir)</ProtoRoot>
-		<ProtoRoot Condition=" '$(Protobuf_ProtoRoot)' != '' ">$(Protobuf_ProtoRoot)</ProtoRoot>
+        <ProtoRoot Condition=" '$(Protobuf_ProtoRoot)' != '' ">$(Protobuf_ProtoRoot)</ProtoRoot>
       </Protobuf_Rooted>
     </ItemGroup>
   </Target>
@@ -170,11 +170,11 @@
       <Output TaskParameter="PossibleOutputs" ItemName="Protobuf_ExpectedOutputs" />
       <Output TaskParameter="PatchedProtobuf" ItemName="_PatchedProtobuf" />
     </ProtoCompilerOutputs>
-	<!-- Replace Protobuf_Compile with PatchedProtobuf. -->
-	<ItemGroup>
+    <!-- Replace Protobuf_Compile with PatchedProtobuf. -->
+    <ItemGroup>
        <Protobuf_Compile Remove="@(_PatchedProtobuf)"/>
        <Protobuf_Compile Include ="@(_PatchedProtobuf)"/>
-	</ItemGroup>
+    </ItemGroup>
     <!-- Read any dependency files from previous compiles. -->
     <ProtoReadDependencies Condition=" '$(Protobuf_DepFilesPath)' != '' and '$(DisableProtobufDesignTimeBuild)' != 'true' "
                            Protobuf="@(Protobuf_Compile)"
