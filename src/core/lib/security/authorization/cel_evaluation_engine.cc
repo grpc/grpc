@@ -22,7 +22,7 @@ CelEvaluationEngine::CelEvaluationEngine(
   size_t size;
   const envoy_config_rbac_v2_RBAC_PoliciesEntry* const* 
    policies = envoy_config_rbac_v2_RBAC_policies(&rbac_policy, &size);
-  arena_ = upb_arena_new();
+  upb::Arena temp_arena;
 
   for (size_t i = 0; i < size; ++i) {
     std::string key = envoy_config_rbac_v2_RBAC_PoliciesEntry_key(
@@ -34,16 +34,12 @@ CelEvaluationEngine::CelEvaluationEngine(
     // Parse condition to make a pointer tied to the lifetime of arena_
     size_t serial_len;
     char* serialized = google_api_expr_v1alpha1_Expr_serialize(
-                                               condition, arena_, &serial_len);
+                                               condition, temp_arena.ptr(), &serial_len);
     google_api_expr_v1alpha1_Expr* 
      parsed_condition = google_api_expr_v1alpha1_Expr_parse(
-                                               serialized, serial_len, arena_);
+                                               serialized, serial_len, arena_.ptr());
        
     policies_.insert(std::make_pair(key, parsed_condition));
   }
-}
-
-CelEvaluationEngine::~CelEvaluationEngine() {
-  upb_arena_free(arena_);
 }
  

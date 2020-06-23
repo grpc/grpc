@@ -22,6 +22,7 @@
 
 #include "src/core/ext/upb-generated/envoy/config/rbac/v2/rbac.upb.h"
 #include "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h"
+#include "upb/upb.h"
 
 // CelEvaluationEngine makes an AuthorizationDecision to ALLOW or DENY the
 // current action based on the condition fields in the provided RBAC policy.
@@ -37,11 +38,10 @@ class CelEvaluationEngine {
  public:
   explicit CelEvaluationEngine(const envoy_config_rbac_v2_RBAC& rbac_policy);
   // TODO(mywang@google.com): add an Evaluate member function
-  ~CelEvaluationEngine();
 
  private:
   std::map<std::string, google_api_expr_v1alpha1_Expr*> policies_;
-  upb_arena* arena_;
+  upb::Arena arena_;
 };
 
 #endif //  GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_EVALUATION_ENGINE_H
