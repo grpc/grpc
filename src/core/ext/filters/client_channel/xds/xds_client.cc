@@ -686,9 +686,10 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   GPR_ASSERT(xds_client() != nullptr);
   GPR_ASSERT(!xds_client()->server_name_.empty());
   // Create a call with the specified method name.
-  const auto& method = xds_client()->bootstrap_->server().ShouldUseV3()
-      ? GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V3_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES
-      : GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES;
+  const auto& method =
+      xds_client()->bootstrap_->server().ShouldUseV3()
+          ? GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V3_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES
+          : GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES;
   call_ = grpc_channel_create_pollset_set_call(
       chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       xds_client()->interested_parties_, method, nullptr,

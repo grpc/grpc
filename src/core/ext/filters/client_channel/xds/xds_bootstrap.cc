@@ -74,8 +74,7 @@ std::string BootstrapString(const XdsBootstrap& bootstrap) {
   if (!bootstrap.server().server_features.empty()) {
     parts.push_back(absl::StrCat(
         "    server_features=[",
-        absl::StrJoin(bootstrap.server().server_features, ", "),
-        "],\n"));
+        absl::StrJoin(bootstrap.server().server_features, ", "), "],\n"));
   }
   parts.push_back("  }\n]");
   return absl::StrJoin(parts, "");

@@ -39,25 +39,25 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
-#include "envoy/service/cluster/v3/cds.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
 #include "envoy/config/core/v3/health_check.upb.h"
-#include "envoy/service/discovery/v3/discovery.upb.h"
-#include "envoy/service/endpoint/v3/eds.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/config/endpoint/v3/load_report.upb.h"
-#include "envoy/service/listener/v3/lds.upb.h"
+#include "envoy/config/listener/v3/api_listener.upb.h"
 #include "envoy/config/listener/v3/listener.upb.h"
-#include "envoy/service/route/v3/rds.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
-#include "envoy/config/listener/v3/api_listener.upb.h"
+#include "envoy/service/cluster/v3/cds.upb.h"
+#include "envoy/service/discovery/v3/discovery.upb.h"
+#include "envoy/service/endpoint/v3/eds.upb.h"
+#include "envoy/service/listener/v3/lds.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upb.h"
+#include "envoy/service/route/v3/rds.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
@@ -262,7 +262,7 @@ std::string EncodeTag(uint32_t field_number, uint8_t wire_type) {
 std::string EncodeStringField(uint32_t field_number, const std::string& str) {
   static const uint8_t kDelimitedWireType = 2;
   return EncodeTag(field_number, kDelimitedWireType) +
-      EncodeVarint(str.size()) + str;
+         EncodeVarint(str.size()) + str;
 }
 
 void PopulateBuildVersion(upb_arena* arena, envoy_config_core_v3_Node* node_msg,
@@ -281,7 +281,7 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap* bootstrap,
   if (node != nullptr) {
     if (!node->id.empty()) {
       envoy_config_core_v3_Node_set_id(node_msg,
-                                    upb_strview_makez(node->id.c_str()));
+                                       upb_strview_makez(node->id.c_str()));
     }
     if (!node->cluster.empty()) {
       envoy_config_core_v3_Node_set_cluster(
@@ -376,8 +376,8 @@ inline void AddLocalityField(int indent_level,
                  fields);
   // sub_zone
   field = absl::StrCat(indent, "sub_zone");
-  AddStringField(field.c_str(), envoy_config_core_v3_Locality_sub_zone(locality),
-                 fields);
+  AddStringField(field.c_str(),
+                 envoy_config_core_v3_Locality_sub_zone(locality), fields);
 }
 
 void AddNodeLogFields(const envoy_config_core_v3_Node* node,
@@ -437,10 +437,6 @@ void AddNodeLogFields(const envoy_config_core_v3_Node* node,
     AddLocalityField(2, locality, fields);
     fields->emplace_back("  }");
   }
-  // build_version
-// FIXME
-//  AddStringField("  build_version", envoy_config_core_v3_Node_build_version(node),
-//                 fields);
   // user_agent_name
   AddStringField("  user_agent_name",
                  envoy_config_core_v3_Node_user_agent_name(node), fields);
@@ -457,17 +453,19 @@ void AddNodeLogFields(const envoy_config_core_v3_Node* node,
   fields->emplace_back("}");
 }
 
-void MaybeLogDiscoveryRequest(XdsClient* client, TraceFlag* tracer,
-                              const envoy_service_discovery_v3_DiscoveryRequest* request) {
+void MaybeLogDiscoveryRequest(
+    XdsClient* client, TraceFlag* tracer,
+    const envoy_service_discovery_v3_DiscoveryRequest* request) {
   if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     // TODO(roth): When we can upgrade upb, use upb textformat code to dump
     // the raw proto instead of doing this manually.
     std::vector<std::string> fields;
     // version_info
-    AddStringField("version_info",
-                   envoy_service_discovery_v3_DiscoveryRequest_version_info(request),
-                   &fields);
+    AddStringField(
+        "version_info",
+        envoy_service_discovery_v3_DiscoveryRequest_version_info(request),
+        &fields);
     // node
     const envoy_config_core_v3_Node* node =
         envoy_service_discovery_v3_DiscoveryRequest_node(request);
@@ -475,18 +473,20 @@ void MaybeLogDiscoveryRequest(XdsClient* client, TraceFlag* tracer,
     // resource_names
     size_t num_resource_names;
     const upb_strview* resource_names =
-        envoy_service_discovery_v3_DiscoveryRequest_resource_names(request,
-                                                     &num_resource_names);
+        envoy_service_discovery_v3_DiscoveryRequest_resource_names(
+            request, &num_resource_names);
     for (size_t i = 0; i < num_resource_names; ++i) {
       AddStringField("resource_names", resource_names[i], &fields);
     }
     // type_url
-    AddStringField("type_url", envoy_service_discovery_v3_DiscoveryRequest_type_url(request),
-                   &fields);
+    AddStringField(
+        "type_url",
+        envoy_service_discovery_v3_DiscoveryRequest_type_url(request), &fields);
     // response_nonce
-    AddStringField("response_nonce",
-                   envoy_service_discovery_v3_DiscoveryRequest_response_nonce(request),
-                   &fields);
+    AddStringField(
+        "response_nonce",
+        envoy_service_discovery_v3_DiscoveryRequest_response_nonce(request),
+        &fields);
     // error_detail
     const struct google_rpc_Status* error_detail =
         envoy_service_discovery_v3_DiscoveryRequest_error_detail(request);
@@ -505,11 +505,11 @@ void MaybeLogDiscoveryRequest(XdsClient* client, TraceFlag* tracer,
   }
 }
 
-grpc_slice SerializeDiscoveryRequest(upb_arena* arena,
-                                     envoy_service_discovery_v3_DiscoveryRequest* request) {
+grpc_slice SerializeDiscoveryRequest(
+    upb_arena* arena, envoy_service_discovery_v3_DiscoveryRequest* request) {
   size_t output_length;
-  char* output =
-      envoy_service_discovery_v3_DiscoveryRequest_serialize(request, arena, &output_length);
+  char* output = envoy_service_discovery_v3_DiscoveryRequest_serialize(
+      request, arena, &output_length);
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
@@ -568,17 +568,18 @@ grpc_slice XdsApi::CreateAdsRequest(
                              GPR_SLICE_START_PTR(error_description_slice)),
                          GPR_SLICE_LENGTH(error_description_slice));
     google_rpc_Status* error_detail =
-        envoy_service_discovery_v3_DiscoveryRequest_mutable_error_detail(request,
-                                                           arena.ptr());
+        envoy_service_discovery_v3_DiscoveryRequest_mutable_error_detail(
+            request, arena.ptr());
     google_rpc_Status_set_message(error_detail, error_description_strview);
     GRPC_ERROR_UNREF(error);
   }
   // Populate node.
   if (populate_node) {
     envoy_config_core_v3_Node* node_msg =
-        envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request, arena.ptr());
-    PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_,
-                 "", node_msg);
+        envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
+                                                                 arena.ptr());
+    PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_, "",
+                 node_msg);
   }
   // Add resource_names.
   for (const auto& resource_name : resource_names) {
@@ -592,27 +593,33 @@ grpc_slice XdsApi::CreateAdsRequest(
 
 namespace {
 
-void MaybeLogDiscoveryResponse(XdsClient* client, TraceFlag* tracer,
-                               const envoy_service_discovery_v3_DiscoveryResponse* response) {
+void MaybeLogDiscoveryResponse(
+    XdsClient* client, TraceFlag* tracer,
+    const envoy_service_discovery_v3_DiscoveryResponse* response) {
   if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     // TODO(roth): When we can upgrade upb, use upb textformat code to dump
     // the raw proto instead of doing this manually.
     std::vector<std::string> fields;
     // version_info
-    AddStringField("version_info",
-                   envoy_service_discovery_v3_DiscoveryResponse_version_info(response),
-                   &fields);
+    AddStringField(
+        "version_info",
+        envoy_service_discovery_v3_DiscoveryResponse_version_info(response),
+        &fields);
     // resources
     size_t num_resources;
-    envoy_service_discovery_v3_DiscoveryResponse_resources(response, &num_resources);
+    envoy_service_discovery_v3_DiscoveryResponse_resources(response,
+                                                           &num_resources);
     fields.emplace_back(
         absl::StrCat("resources: <", num_resources, " element(s)>"));
     // type_url
-    AddStringField("type_url",
-                   envoy_service_discovery_v3_DiscoveryResponse_type_url(response), &fields);
+    AddStringField(
+        "type_url",
+        envoy_service_discovery_v3_DiscoveryResponse_type_url(response),
+        &fields);
     // nonce
-    AddStringField("nonce", envoy_service_discovery_v3_DiscoveryResponse_nonce(response),
+    AddStringField("nonce",
+                   envoy_service_discovery_v3_DiscoveryResponse_nonce(response),
                    &fields);
     gpr_log(GPR_DEBUG, "[xds_client %p] received response: %s", client,
             absl::StrJoin(fields, "\n").c_str());
@@ -628,19 +635,21 @@ void MaybeLogRouteConfiguration(
     // the raw proto instead of doing this manually.
     std::vector<std::string> fields;
     // name
-    AddStringField("name", envoy_config_route_v3_RouteConfiguration_name(route_config),
+    AddStringField("name",
+                   envoy_config_route_v3_RouteConfiguration_name(route_config),
                    &fields);
     // virtual_hosts
     size_t num_virtual_hosts;
     const envoy_config_route_v3_VirtualHost* const* virtual_hosts =
-        envoy_config_route_v3_RouteConfiguration_virtual_hosts(route_config,
-                                                      &num_virtual_hosts);
+        envoy_config_route_v3_RouteConfiguration_virtual_hosts(
+            route_config, &num_virtual_hosts);
     for (size_t i = 0; i < num_virtual_hosts; ++i) {
       const auto* virtual_host = virtual_hosts[i];
       fields.push_back("virtual_hosts {");
       // name
-      AddStringField(
-          "  name", envoy_config_route_v3_VirtualHost_name(virtual_host), &fields);
+      AddStringField("  name",
+                     envoy_config_route_v3_VirtualHost_name(virtual_host),
+                     &fields);
       // domains
       size_t num_domains;
       const upb_strview* const domains =
@@ -666,11 +675,13 @@ void MaybeLogRouteConfiguration(
           // path matching
           if (envoy_config_route_v3_RouteMatch_has_prefix(match)) {
             AddStringField("      prefix",
-                           envoy_config_route_v3_RouteMatch_prefix(match), &fields,
+                           envoy_config_route_v3_RouteMatch_prefix(match),
+                           &fields,
                            /*add_if_empty=*/true);
           } else if (envoy_config_route_v3_RouteMatch_has_path(match)) {
             AddStringField("      path",
-                           envoy_config_route_v3_RouteMatch_path(match), &fields,
+                           envoy_config_route_v3_RouteMatch_path(match),
+                           &fields,
                            /*add_if_empty=*/true);
           } else if (envoy_config_route_v3_RouteMatch_has_safe_regex(match)) {
             fields.emplace_back("      safe_regex: <not printed>");
@@ -699,7 +710,8 @@ void MaybeLogRouteConfiguration(
                          action)) {
             AddStringField(
                 "      cluster_header",
-                envoy_config_route_v3_RouteAction_cluster_header(action), &fields);
+                envoy_config_route_v3_RouteAction_cluster_header(action),
+                &fields);
           } else if (envoy_config_route_v3_RouteAction_has_weighted_clusters(
                          action)) {
             const envoy_config_route_v3_WeightedCluster* weighted_clusters =
@@ -707,8 +719,9 @@ void MaybeLogRouteConfiguration(
             fields.emplace_back("      weighted_clusters {");
             size_t num_cluster_weights;
             const envoy_config_route_v3_WeightedCluster_ClusterWeight* const*
-                cluster_weights = envoy_config_route_v3_WeightedCluster_clusters(
-                    weighted_clusters, &num_cluster_weights);
+                cluster_weights =
+                    envoy_config_route_v3_WeightedCluster_clusters(
+                        weighted_clusters, &num_cluster_weights);
             for (size_t i = 0; i < num_cluster_weights; ++i) {
               const envoy_config_route_v3_WeightedCluster_ClusterWeight*
                   cluster_weight = cluster_weights[i];
@@ -725,10 +738,11 @@ void MaybeLogRouteConfiguration(
                   &fields);
               fields.emplace_back("        }");
             }
-            AddUInt32ValueField("        total_weight",
-                                envoy_config_route_v3_WeightedCluster_total_weight(
-                                    weighted_clusters),
-                                &fields);
+            AddUInt32ValueField(
+                "        total_weight",
+                envoy_config_route_v3_WeightedCluster_total_weight(
+                    weighted_clusters),
+                &fields);
             fields.emplace_back("      }");
           }
           fields.emplace_back("    }");
@@ -756,11 +770,12 @@ void MaybeLogCluster(XdsClient* client, TraceFlag* tracer,
     // the raw proto instead of doing this manually.
     std::vector<std::string> fields;
     // name
-    AddStringField("name", envoy_config_cluster_v3_Cluster_name(cluster), &fields);
+    AddStringField("name", envoy_config_cluster_v3_Cluster_name(cluster),
+                   &fields);
     // type
     if (envoy_config_cluster_v3_Cluster_has_type(cluster)) {
-      fields.emplace_back(
-          absl::StrCat("type: ", envoy_config_cluster_v3_Cluster_type(cluster)));
+      fields.emplace_back(absl::StrCat(
+          "type: ", envoy_config_cluster_v3_Cluster_type(cluster)));
     } else if (envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
       fields.emplace_back("cluster_type: <not printed>");
     } else {
@@ -773,7 +788,8 @@ void MaybeLogCluster(XdsClient* client, TraceFlag* tracer,
       fields.emplace_back("eds_cluster_config {");
       // eds_config
       const struct envoy_config_core_v3_ConfigSource* eds_config =
-          envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(eds_cluster_config);
+          envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
+              eds_cluster_config);
       if (eds_config != nullptr) {
         if (envoy_config_core_v3_ConfigSource_has_ads(eds_config)) {
           fields.emplace_back("  eds_config { ads {} }");
@@ -782,15 +798,16 @@ void MaybeLogCluster(XdsClient* client, TraceFlag* tracer,
         }
       }
       // service_name
-      AddStringField("  service_name",
-                     envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
-                         eds_cluster_config),
-                     &fields);
+      AddStringField(
+          "  service_name",
+          envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
+              eds_cluster_config),
+          &fields);
       fields.emplace_back("}");
     }
     // lb_policy
-    fields.emplace_back(
-        absl::StrCat("lb_policy: ", envoy_config_cluster_v3_Cluster_lb_policy(cluster)));
+    fields.emplace_back(absl::StrCat(
+        "lb_policy: ", envoy_config_cluster_v3_Cluster_lb_policy(cluster)));
     // lrs_server
     const envoy_config_core_v3_ConfigSource* lrs_server =
         envoy_config_cluster_v3_Cluster_lrs_server(cluster);
@@ -815,20 +832,23 @@ void MaybeLogClusterLoadAssignment(
     // the raw proto instead of doing this manually.
     std::vector<std::string> fields;
     // cluster_name
-    AddStringField("cluster_name",
-                   envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(cla),
-                   &fields);
+    AddStringField(
+        "cluster_name",
+        envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(cla),
+        &fields);
     // endpoints
     size_t num_localities;
     const struct envoy_config_endpoint_v3_LocalityLbEndpoints* const*
         locality_endpoints =
-            envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(cla, &num_localities);
+            envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
+                cla, &num_localities);
     for (size_t i = 0; i < num_localities; ++i) {
       const auto* locality_endpoint = locality_endpoints[i];
       fields.emplace_back("endpoints {");
       // locality
       const auto* locality =
-          envoy_config_endpoint_v3_LocalityLbEndpoints_locality(locality_endpoint);
+          envoy_config_endpoint_v3_LocalityLbEndpoints_locality(
+              locality_endpoint);
       if (locality != nullptr) {
         fields.emplace_back("  locality {");
         AddLocalityField(2, locality, &fields);
@@ -896,8 +916,8 @@ void MaybeLogClusterLoadAssignment(
               locality_endpoint),
           &fields);
       // priority
-      uint32_t priority =
-          envoy_config_endpoint_v3_LocalityLbEndpoints_priority(locality_endpoint);
+      uint32_t priority = envoy_config_endpoint_v3_LocalityLbEndpoints_priority(
+          locality_endpoint);
       if (priority > 0) {
         fields.emplace_back(absl::StrCat("  priority: ", priority));
       }
@@ -1028,11 +1048,11 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route,
     size_t clusters_size;
     const envoy_config_route_v3_WeightedCluster_ClusterWeight* const* clusters =
         envoy_config_route_v3_WeightedCluster_clusters(weighted_cluster,
-                                                    &clusters_size);
+                                                       &clusters_size);
     uint32_t sum_of_weights = 0;
     for (size_t j = 0; j < clusters_size; ++j) {
-      const envoy_config_route_v3_WeightedCluster_ClusterWeight* cluster_weight =
-          clusters[j];
+      const envoy_config_route_v3_WeightedCluster_ClusterWeight*
+          cluster_weight = clusters[j];
       XdsApi::RdsUpdate::RdsRoute::ClusterWeight cluster;
       cluster.name = UpbStringToStdString(
           envoy_config_route_v3_WeightedCluster_ClusterWeight_name(
@@ -1077,7 +1097,8 @@ grpc_error* RouteConfigParse(
   // Get the virtual hosts.
   size_t size;
   const envoy_config_route_v3_VirtualHost* const* virtual_hosts =
-      envoy_config_route_v3_RouteConfiguration_virtual_hosts(route_config, &size);
+      envoy_config_route_v3_RouteConfiguration_virtual_hosts(route_config,
+                                                             &size);
   // Find the best matched virtual host.
   // The search order for 4 groups of domain patterns:
   //   1. Exact match.
@@ -1094,8 +1115,8 @@ grpc_error* RouteConfigParse(
   // matched virtual host.
   for (size_t i = 0; i < size; ++i) {
     size_t domain_size;
-    upb_strview const* domains =
-        envoy_config_route_v3_VirtualHost_domains(virtual_hosts[i], &domain_size);
+    upb_strview const* domains = envoy_config_route_v3_VirtualHost_domains(
+        virtual_hosts[i], &domain_size);
     for (size_t j = 0; j < domain_size; ++j) {
       const std::string domain_pattern(domains[j].data, domains[j].size);
       // Check the match type first. Skip the pattern if it's not better than
@@ -1234,12 +1255,11 @@ grpc_error* RouteConfigParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
-                             const envoy_service_discovery_v3_DiscoveryResponse* response,
-                             const std::string& expected_server_name,
-                             const bool xds_routing_enabled,
-                             absl::optional<XdsApi::LdsUpdate>* lds_update,
-                             upb_arena* arena) {
+grpc_error* LdsResponseParse(
+    XdsClient* client, TraceFlag* tracer,
+    const envoy_service_discovery_v3_DiscoveryResponse* response,
+    const std::string& expected_server_name, const bool xds_routing_enabled,
+    absl::optional<XdsApi::LdsUpdate>* lds_update, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1253,8 +1273,9 @@ grpc_error* LdsResponseParse(XdsClient* client, TraceFlag* tracer,
     // Decode the listener.
     const upb_strview encoded_listener =
         google_protobuf_Any_value(resources[i]);
-    const envoy_config_listener_v3_Listener* listener = envoy_config_listener_v3_Listener_parse(
-        encoded_listener.data, encoded_listener.size, arena);
+    const envoy_config_listener_v3_Listener* listener =
+        envoy_config_listener_v3_Listener_parse(encoded_listener.data,
+                                                encoded_listener.size, arena);
     if (listener == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode listener.");
     }
@@ -1347,8 +1368,8 @@ grpc_error* RdsResponseParse(
     const upb_strview encoded_route_config =
         google_protobuf_Any_value(resources[i]);
     const envoy_config_route_v3_RouteConfiguration* route_config =
-        envoy_config_route_v3_RouteConfiguration_parse(encoded_route_config.data,
-                                              encoded_route_config.size, arena);
+        envoy_config_route_v3_RouteConfiguration_parse(
+            encoded_route_config.data, encoded_route_config.size, arena);
     if (route_config == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode route_config.");
     }
@@ -1392,8 +1413,9 @@ grpc_error* CdsResponseParse(
     }
     // Decode the cluster.
     const upb_strview encoded_cluster = google_protobuf_Any_value(resources[i]);
-    const envoy_config_cluster_v3_Cluster* cluster = envoy_config_cluster_v3_Cluster_parse(
-        encoded_cluster.data, encoded_cluster.size, arena);
+    const envoy_config_cluster_v3_Cluster* cluster =
+        envoy_config_cluster_v3_Cluster_parse(encoded_cluster.data,
+                                              encoded_cluster.size, arena);
     if (cluster == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode cluster.");
     }
@@ -1410,21 +1432,24 @@ grpc_error* CdsResponseParse(
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType not found.");
     }
-    if (envoy_config_cluster_v3_Cluster_type(cluster) != envoy_config_cluster_v3_Cluster_EDS) {
+    if (envoy_config_cluster_v3_Cluster_type(cluster) !=
+        envoy_config_cluster_v3_Cluster_EDS) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType is not EDS.");
     }
     // Check the EDS config source.
     const envoy_config_cluster_v3_Cluster_EdsClusterConfig* eds_cluster_config =
         envoy_config_cluster_v3_Cluster_eds_cluster_config(cluster);
     const envoy_config_core_v3_ConfigSource* eds_config =
-        envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(eds_cluster_config);
+        envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
+            eds_cluster_config);
     if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "EDS ConfigSource is not ADS.");
     }
     // Record EDS service_name (if any).
     upb_strview service_name =
-        envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(eds_cluster_config);
+        envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
+            eds_cluster_config);
     if (service_name.size != 0) {
       cds_update.eds_service_name = UpbStringToStdString(service_name);
     }
@@ -1500,7 +1525,8 @@ grpc_error* LocalityParse(
   if (output_locality->lb_weight == 0) return GRPC_ERROR_NONE;
   // Parse locality name.
   const envoy_config_core_v3_Locality* locality =
-      envoy_config_endpoint_v3_LocalityLbEndpoints_locality(locality_lb_endpoints);
+      envoy_config_endpoint_v3_LocalityLbEndpoints_locality(
+          locality_lb_endpoints);
   upb_strview region = envoy_config_core_v3_Locality_region(locality);
   upb_strview zone = envoy_config_core_v3_Locality_region(locality);
   upb_strview sub_zone = envoy_config_core_v3_Locality_sub_zone(locality);
@@ -1519,12 +1545,14 @@ grpc_error* LocalityParse(
   }
   // Parse the priority.
   output_locality->priority =
-      envoy_config_endpoint_v3_LocalityLbEndpoints_priority(locality_lb_endpoints);
+      envoy_config_endpoint_v3_LocalityLbEndpoints_priority(
+          locality_lb_endpoints);
   return GRPC_ERROR_NONE;
 }
 
 grpc_error* DropParseAndAppend(
-    const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload* drop_overload,
+    const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload*
+        drop_overload,
     XdsApi::DropConfig* drop_config) {
   // Get the category.
   upb_strview category =
@@ -1537,7 +1565,8 @@ grpc_error* DropParseAndAppend(
   const envoy_type_v3_FractionalPercent* drop_percentage =
       envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_drop_percentage(
           drop_overload);
-  uint32_t numerator = envoy_type_v3_FractionalPercent_numerator(drop_percentage);
+  uint32_t numerator =
+      envoy_type_v3_FractionalPercent_numerator(drop_percentage);
   const auto denominator =
       static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
           envoy_type_v3_FractionalPercent_denominator(drop_percentage));
@@ -1590,8 +1619,9 @@ grpc_error* EdsResponseParse(
     MaybeLogClusterLoadAssignment(client, tracer, cluster_load_assignment);
     // Check the cluster name (which actually means eds_service_name). Ignore
     // unexpected names.
-    upb_strview cluster_name = envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(
-        cluster_load_assignment);
+    upb_strview cluster_name =
+        envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(
+            cluster_load_assignment);
     absl::string_view cluster_name_strview(cluster_name.data,
                                            cluster_name.size);
     if (expected_eds_service_names.find(cluster_name_strview) ==
@@ -1601,8 +1631,8 @@ grpc_error* EdsResponseParse(
     // Get the endpoints.
     size_t locality_size;
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
-        envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(cluster_load_assignment,
-                                                     &locality_size);
+        envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
+            cluster_load_assignment, &locality_size);
     for (size_t j = 0; j < locality_size; ++j) {
       XdsApi::PriorityListUpdate::LocalityMap::Locality locality;
       grpc_error* error = LocalityParse(endpoints[j], &locality);
@@ -1622,7 +1652,8 @@ grpc_error* EdsResponseParse(
     // Get the drop config.
     eds_update.drop_config = MakeRefCounted<XdsApi::DropConfig>();
     const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* policy =
-        envoy_config_endpoint_v3_ClusterLoadAssignment_policy(cluster_load_assignment);
+        envoy_config_endpoint_v3_ClusterLoadAssignment_policy(
+            cluster_load_assignment);
     if (policy != nullptr) {
       size_t drop_size;
       const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload* const*
@@ -1670,8 +1701,8 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
           GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
   // If decoding fails, output an empty type_url and return.
   if (response == nullptr) {
-    result.parse_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Can't decode DiscoveryResponse.");
+    result.parse_error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode DiscoveryResponse.");
     return result;
   }
   MaybeLogDiscoveryResponse(client_, tracer_, response);
@@ -1688,22 +1719,22 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   result.nonce = UpbStringToStdString(nonce_strview);
   // Parse the response according to the resource type.
   if (IsLds(result.type_url)) {
-    result.parse_error = LdsResponseParse(
-        client_, tracer_, response, expected_server_name, xds_routing_enabled_,
-        &result.lds_update, arena.ptr());
+    result.parse_error =
+        LdsResponseParse(client_, tracer_, response, expected_server_name,
+                         xds_routing_enabled_, &result.lds_update, arena.ptr());
   } else if (IsRds(result.type_url)) {
-    result.parse_error = RdsResponseParse(
-        client_, tracer_, response, expected_server_name,
-        expected_route_configuration_names, xds_routing_enabled_,
-        &result.rds_update, arena.ptr());
+    result.parse_error =
+        RdsResponseParse(client_, tracer_, response, expected_server_name,
+                         expected_route_configuration_names,
+                         xds_routing_enabled_, &result.rds_update, arena.ptr());
   } else if (IsCds(result.type_url)) {
-    result.parse_error = CdsResponseParse(
-        client_, tracer_, response, expected_cluster_names,
-        &result.cds_update_map, arena.ptr());
+    result.parse_error =
+        CdsResponseParse(client_, tracer_, response, expected_cluster_names,
+                         &result.cds_update_map, arena.ptr());
   } else if (IsEds(result.type_url)) {
-    result.parse_error = EdsResponseParse(
-        client_, tracer_, response, expected_eds_service_names,
-        &result.eds_update_map, arena.ptr());
+    result.parse_error =
+        EdsResponseParse(client_, tracer_, response, expected_eds_service_names,
+                         &result.eds_update_map, arena.ptr());
   }
   return result;
 }
@@ -1738,10 +1769,10 @@ void MaybeLogLrsRequest(
           envoy_config_endpoint_v3_ClusterStats_cluster_name(cluster_stat),
           &fields);
       // cluster_service_name
-      AddStringField(
-          "  cluster_service_name",
-          envoy_config_endpoint_v3_ClusterStats_cluster_service_name(cluster_stat),
-          &fields);
+      AddStringField("  cluster_service_name",
+                     envoy_config_endpoint_v3_ClusterStats_cluster_service_name(
+                         cluster_stat),
+                     &fields);
       // upstream_locality_stats
       size_t num_stats;
       const envoy_config_endpoint_v3_UpstreamLocalityStats* const* stats =
@@ -1787,16 +1818,17 @@ void MaybeLogLrsRequest(
               cluster_stat)));
       // dropped_requests
       size_t num_drops;
-      const envoy_config_endpoint_v3_ClusterStats_DroppedRequests* const* drops =
-          envoy_config_endpoint_v3_ClusterStats_dropped_requests(cluster_stat,
-                                                              &num_drops);
+      const envoy_config_endpoint_v3_ClusterStats_DroppedRequests* const*
+          drops = envoy_config_endpoint_v3_ClusterStats_dropped_requests(
+              cluster_stat, &num_drops);
       for (size_t j = 0; j < num_drops; ++j) {
         const auto* drop = drops[j];
         fields.emplace_back("  dropped_requests {");
         // category
         AddStringField(
             "    category",
-            envoy_config_endpoint_v3_ClusterStats_DroppedRequests_category(drop),
+            envoy_config_endpoint_v3_ClusterStats_DroppedRequests_category(
+                drop),
             &fields);
         // dropped_count
         fields.emplace_back(absl::StrCat(
@@ -1807,7 +1839,8 @@ void MaybeLogLrsRequest(
       }
       // load_report_interval
       const auto* load_report_interval =
-          envoy_config_endpoint_v3_ClusterStats_load_report_interval(cluster_stat);
+          envoy_config_endpoint_v3_ClusterStats_load_report_interval(
+              cluster_stat);
       if (load_report_interval != nullptr) {
         fields.emplace_back("  load_report_interval {");
         fields.emplace_back(absl::StrCat(
@@ -1856,14 +1889,14 @@ grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
 
 namespace {
 
-void LocalityStatsPopulate(envoy_config_endpoint_v3_UpstreamLocalityStats* output,
-                           const XdsLocalityName& locality_name,
-                           const XdsClusterLocalityStats::Snapshot& snapshot,
-                           upb_arena* arena) {
+void LocalityStatsPopulate(
+    envoy_config_endpoint_v3_UpstreamLocalityStats* output,
+    const XdsLocalityName& locality_name,
+    const XdsClusterLocalityStats::Snapshot& snapshot, upb_arena* arena) {
   // Set locality.
   envoy_config_core_v3_Locality* locality =
       envoy_config_endpoint_v3_UpstreamLocalityStats_mutable_locality(output,
-                                                                   arena);
+                                                                      arena);
   if (!locality_name.region().empty()) {
     envoy_config_core_v3_Locality_set_region(
         locality, upb_strview_makez(locality_name.region().c_str()));
@@ -1943,8 +1976,8 @@ grpc_slice XdsApi::CreateLrsRequest(
       const char* category = p.first.c_str();
       const uint64_t count = p.second;
       envoy_config_endpoint_v3_ClusterStats_DroppedRequests* dropped_requests =
-          envoy_config_endpoint_v3_ClusterStats_add_dropped_requests(cluster_stats,
-                                                                  arena.ptr());
+          envoy_config_endpoint_v3_ClusterStats_add_dropped_requests(
+              cluster_stats, arena.ptr());
       envoy_config_endpoint_v3_ClusterStats_DroppedRequests_set_category(
           dropped_requests, upb_strview_makez(category));
       envoy_config_endpoint_v3_ClusterStats_DroppedRequests_set_dropped_count(
