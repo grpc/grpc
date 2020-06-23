@@ -19,7 +19,7 @@
 #include <grpc/grpc.h>
 #include <grpcpp/resource_quota.h>
 
-namespace grpc_impl {
+namespace grpc {
 
 ResourceQuota::ResourceQuota() : impl_(grpc_resource_quota_create(nullptr)) {}
 
@@ -37,4 +37,4 @@ ResourceQuota& ResourceQuota::SetMaxThreads(int new_max_threads) {
   grpc_resource_quota_set_max_threads(impl_, new_max_threads);
   return *this;
 }
-}  // namespace grpc_impl
+}  // namespace grpc
