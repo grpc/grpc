@@ -210,10 +210,10 @@ def _pull_image_for_lang(lang, image, release):
         % (image, image)
     ]
     return jobset.JobSpec(cmdline=cmdline,
-                           shortname='pull_image_{}'.format(image),
-                           timeout_seconds=_PULL_IMAGE_TIMEOUT_SECONDS,
-                           shell=True,
-                           flake_retries=2)
+                          shortname='pull_image_{}'.format(image),
+                          timeout_seconds=_PULL_IMAGE_TIMEOUT_SECONDS,
+                          shell=True,
+                          flake_retries=2)
 
 
 def _test_release(lang, runtime, release, image, xml_report_tree, skip_tests):
@@ -223,9 +223,7 @@ def _test_release(lang, runtime, release, image, xml_report_tree, skip_tests):
                                                  suite_name)
 
     if not job_spec_list:
-        jobset.message('FAILED',
-                       'No test cases were found.',
-                       do_newline=True)
+        jobset.message('FAILED', 'No test cases were found.', do_newline=True)
         total_num_failures += 1
     else:
         num_failures, resultset = jobset.run(job_spec_list,
@@ -237,8 +235,7 @@ def _test_release(lang, runtime, release, image, xml_report_tree, skip_tests):
             upload_test_results.upload_interop_results_to_bq(
                 resultset, args.bq_result_table)
         if skip_tests:
-            jobset.message('FAILED', 'Tests were skipped',
-                           do_newline=True)
+            jobset.message('FAILED', 'Tests were skipped', do_newline=True)
             total_num_failures += 1
         if num_failures:
             total_num_failures += num_failures
@@ -278,18 +275,24 @@ def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
         if pull_failures:
             jobset.message(
                 'FAILED',
-                'Image download failed. Skipping tests for language "%s"' % lang,
+                'Image download failed. Skipping tests for language "%s"' %
+                lang,
                 do_newline=True)
             skip_tests = True
         for release, image in images[chunk_start:chunk_end]:
-            total_num_failures += _test_release(lang, runtime, release, image, xml_report_tree, skip_tests)
+            total_num_failures += _test_release(lang, runtime, release, image,
+                                                xml_report_tree, skip_tests)
         if not args.keep:
             for _, image in images[chunk_start:chunk_end]:
                 _cleanup_docker_image(image)
     if not total_num_failures:
-        jobset.message('SUCCESS', 'All {} tests passed'.format(lang), do_newline=True)
+        jobset.message('SUCCESS',
+                       'All {} tests passed'.format(lang),
+                       do_newline=True)
     else:
-        jobset.message('FAILED', 'Some {} tests failed'.format(lang), do_newline=True)
+        jobset.message('FAILED',
+                       'Some {} tests failed'.format(lang),
+                       do_newline=True)
 
     return total_num_failures
 
