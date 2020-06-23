@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/ext/upb-generated/envoy/config/rbac/v2/rbac.upb.h"
-#include "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h"
 #include "src/core/lib/security/authorization/cel_evaluation_engine.h"
 
 CelEvaluationEngine::CelEvaluationEngine(
