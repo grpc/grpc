@@ -18,7 +18,7 @@ cdef class _AsyncioTimer:
         self._grpc_timer = NULL
         self._timer_future = None
         self._active = False
-        self._loop = asyncio.get_event_loop()
+        self._loop = asyncio.get_running_loop()
         cpython.Py_INCREF(self)
 
     @staticmethod

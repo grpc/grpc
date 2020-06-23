@@ -269,7 +269,7 @@ class Channel(_base_channel.Channel):
                         "{} or ".format(StreamUnaryClientInterceptor.__name__) +
                         "{}. ".format(StreamStreamClientInterceptor.__name__))
 
-        self._loop = asyncio.get_event_loop()
+        self._loop = asyncio.get_running_loop()
         self._channel = cygrpc.AioChannel(
             _common.encode(target),
             _augment_channel_arguments(options, compression), credentials,
