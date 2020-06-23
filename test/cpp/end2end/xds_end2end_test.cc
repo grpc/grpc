@@ -843,6 +843,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
         ASSERT_FALSE(request.node().client_features().empty());
         EXPECT_EQ(request.node().client_features(0),
                   "envoy.lb.does_not_support_overprovisioning");
+        EXPECT_FALSE(request.node().build_version().empty());
         seen_first_request = true;
       }
       {

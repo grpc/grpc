@@ -20,7 +20,9 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdint>
 #include <cstdlib>
+#include <string>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -242,11 +244,8 @@ void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
   }
 }
 
-// FIXME: code from haberman to encode string field
-#if 0
-#include <string>
-#include <stdint.h>
-
+// Helper functions to manually do protobuf string encoding, so that we
+// can populate the node build_version field that was removed in v3.
 std::string EncodeVarint(uint64_t val) {
   std::string data;
   do {
@@ -257,27 +256,28 @@ std::string EncodeVarint(uint64_t val) {
   } while (val);
   return data;
 }
-
 std::string EncodeTag(uint32_t field_number, uint8_t wire_type) {
   return EncodeVarint((field_number << 3) | wire_type);
 }
-
-std::string EncodeStringField(uint32_t field_number, std::string str) {
+std::string EncodeStringField(uint32_t field_number, const std::string& str) {
   static const uint8_t kDelimitedWireType = 2;
   return EncodeTag(field_number, kDelimitedWireType) +
       EncodeVarint(str.size()) + str;
 }
 
-// Use like:
-//   std::string unknown = EncodeStringField(field_number, "abc");
-//   upb_msg_addunknown(msg, unknown.data(), unknown.size(), arena);
-#endif
+void PopulateBuildVersion(upb_arena* arena, envoy_config_core_v3_Node* node_msg,
+                          const std::string& build_version) {
+  std::string encoded_build_version = EncodeStringField(5, build_version);
+  upb_msg_addunknown(node_msg, encoded_build_version.data(),
+                     encoded_build_version.size(), arena);
+}
 
-void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
+void PopulateNode(upb_arena* arena, const XdsBootstrap* bootstrap,
                   const std::string& build_version,
                   const std::string& user_agent_name,
                   const std::string& server_name,
                   envoy_config_core_v3_Node* node_msg) {
+  const XdsBootstrap::Node* node = bootstrap->node();
   if (node != nullptr) {
     if (!node->id.empty()) {
       envoy_config_core_v3_Node_set_id(node_msg,
@@ -322,9 +322,9 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
       }
     }
   }
-// FIXME
-//  envoy_config_core_v3_Node_set_build_version(
-//      node_msg, upb_strview_make(build_version.data(), build_version.size()));
+  if (!bootstrap->server().ShouldUseV3()) {
+    PopulateBuildVersion(arena, node_msg, build_version);
+  }
   envoy_config_core_v3_Node_set_user_agent_name(
       node_msg,
       upb_strview_make(user_agent_name.data(), user_agent_name.size()));
@@ -577,8 +577,8 @@ grpc_slice XdsApi::CreateAdsRequest(
   if (populate_node) {
     envoy_config_core_v3_Node* node_msg =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request, arena.ptr());
-    PopulateNode(arena.ptr(), bootstrap_->node(), build_version_,
-                 user_agent_name_, "", node_msg);
+    PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_,
+                 "", node_msg);
   }
   // Add resource_names.
   for (const auto& resource_name : resource_names) {
@@ -1845,8 +1845,8 @@ grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
   envoy_config_core_v3_Node* node_msg =
       envoy_service_load_stats_v3_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
-  PopulateNode(arena.ptr(), bootstrap_->node(), build_version_,
-               user_agent_name_, server_name, node_msg);
+  PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_,
+               server_name, node_msg);
   envoy_config_core_v3_Node_add_client_features(
       node_msg, upb_strview_makez("envoy.lrs.supports_send_all_clusters"),
       arena.ptr());
