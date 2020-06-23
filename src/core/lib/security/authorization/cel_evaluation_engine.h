@@ -33,7 +33,7 @@
 //
 // Example:
 // CelEvaluationEngine* cel_engine = new CelEvaluationEngine(rbac_policy);
-// cel_engine->Evaluate(evaluate_args); // returns ALLOW or DENY.
+// cel_engine->Evaluate(evaluate_args); // returns authorization decision.
 class CelEvaluationEngine {
  public:
   explicit CelEvaluationEngine(const envoy_config_rbac_v2_RBAC& rbac_policy);
