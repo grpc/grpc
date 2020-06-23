@@ -36,6 +36,10 @@
 
 namespace grpc_core {
 
+bool XdsBootstrap::XdsServer::ShouldUseV3() const {
+  return server_features.find("xds_v3") != server_features.end();
+}
+
 namespace {
 
 std::string BootstrapString(const XdsBootstrap& bootstrap) {

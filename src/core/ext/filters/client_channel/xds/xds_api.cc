@@ -160,13 +160,6 @@ bool IsEds(absl::string_view type_url) {
   return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV3TypeUrl;
 }
 
-bool ShouldUseV3(const XdsBootstrap* bootstrap) {
-  if (bootstrap == nullptr) return false;
-  const auto& server_features = bootstrap->server().server_features;
-  auto it = server_features.find("xds_v3");
-  return it != server_features.end();
-}
-
 bool XdsRoutingEnabled() {
   char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
   bool parsed_value;
@@ -181,7 +174,7 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
                const XdsBootstrap* bootstrap)
     : client_(client),
       tracer_(tracer),
-      use_v3_(ShouldUseV3(bootstrap)),
+      use_v3_(bootstrap != nullptr && bootstrap->server().ShouldUseV3()),
       xds_routing_enabled_(XdsRoutingEnabled()),
       bootstrap_(bootstrap),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",

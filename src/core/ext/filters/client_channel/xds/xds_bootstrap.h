@@ -57,6 +57,8 @@ class XdsBootstrap {
     std::string server_uri;
     absl::InlinedVector<ChannelCreds, 1> channel_creds;
     std::set<std::string> server_features;
+
+    bool ShouldUseV3() const;
   };
 
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
