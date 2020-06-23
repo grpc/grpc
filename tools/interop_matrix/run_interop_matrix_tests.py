@@ -203,69 +203,37 @@ def _generate_test_case_jobspecs(lang, runtime, release, suite_name):
     return job_spec_list
 
 
-def _pull_images_for_lang(lang, images):
-    """Pull all images for given lang from container registry."""
-    jobset.message('START',
-                   'Downloading images for language "%s"' % lang,
-                   do_newline=True)
-    download_specs = []
-    for release, image in images:
-        # Pull the image and warm it up.
-        # First time we use an image with "docker run", it takes time to unpack
-        # the image and later this delay would fail our test cases.
-        cmdline = [
-            'time gcloud docker -- pull %s && time docker run --rm=true %s /bin/true'
-            % (image, image)
-        ]
-        spec = jobset.JobSpec(cmdline=cmdline,
-                              shortname='pull_image_%s' % (image),
-                              timeout_seconds=_PULL_IMAGE_TIMEOUT_SECONDS,
-                              shell=True,
-                              flake_retries=2)
-        download_specs.append(spec)
-    # too many image downloads at once tend to get stuck
-    max_pull_jobs = min(args.jobs, _MAX_PARALLEL_DOWNLOADS)
-    num_failures, resultset = jobset.run(download_specs,
+# TODO: Return a spec and then parallelize.
+def _pull_image_for_lang(lang, image, release):
+    """Pull an image for a given language form the image registry."""
+    cmdline = [
+        'time gcloud docker -- pull %s && time docker run --rm=true %s /bin/true'
+        % (image, image)
+    ]
+    spec =  jobset.JobSpec(cmdline=cmdline,
+                           shortname='pull_image_{}'.format(image),
+                           timeout_seconds=_PULL_IMAGE_TIMEOUT_SECONDS,
+                           shell=True,
+                           # TODO: Pull out to constant.
+                           flake_retries=2)
+    num_failures, resultset = jobset.run([spec],
                                          newline_on_success=True,
-                                         maxjobs=max_pull_jobs)
-    if num_failures:
-        jobset.message('FAILED',
-                       'Failed to download some images',
-                       do_newline=True)
-        return False
-    else:
-        jobset.message('SUCCESS',
-                       'All images downloaded successfully.',
-                       do_newline=True)
-        return True
+                                         maxjobs=1)
+    return not num_failures
 
 
-def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
-    """Find and run all test cases for a language.
-
-  images is a list of (<release-tag>, <image-full-path>) tuple.
-  """
-    skip_tests = False
-    if not _pull_images_for_lang(lang, images):
-        jobset.message(
-            'FAILED',
-            'Image download failed. Skipping tests for language "%s"' % lang,
-            do_newline=True)
-        skip_tests = True
-
+def _test_release(lang, runtime, release, image, xml_report_tree, skip_tests):
     total_num_failures = 0
-    for release, image in images:
-        suite_name = '%s__%s_%s' % (lang, runtime, release)
-        job_spec_list = _generate_test_case_jobspecs(lang, runtime, release,
-                                                     suite_name)
+    suite_name = '%s__%s_%s' % (lang, runtime, release)
+    job_spec_list = _generate_test_case_jobspecs(lang, runtime, release,
+                                                 suite_name)
 
-        if not job_spec_list:
-            jobset.message('FAILED',
-                           'No test cases were found.',
-                           do_newline=True)
-            total_num_failures += 1
-            continue
-
+    if not job_spec_list:
+        jobset.message('FAILED',
+                       'No test cases were found.',
+                       do_newline=True)
+        total_num_failures += 1
+    else:
         num_failures, resultset = jobset.run(job_spec_list,
                                              newline_on_success=True,
                                              add_env={'docker_image': image},
@@ -275,22 +243,41 @@ def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
             upload_test_results.upload_interop_results_to_bq(
                 resultset, args.bq_result_table)
         if skip_tests:
-            jobset.message('FAILED', 'Tests were skipped', do_newline=True)
+            jobset.message('FAILED', 'Tests were skipped',
+                           do_newline=True)
             total_num_failures += 1
-        elif num_failures:
-            jobset.message('FAILED', 'Some tests failed', do_newline=True)
+        if num_failures:
             total_num_failures += num_failures
-        else:
-            jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 
         report_utils.append_junit_xml_results(xml_report_tree, resultset,
                                               'grpc_interop_matrix', suite_name,
                                               str(uuid.uuid4()))
+    return total_num_failures
 
-    # cleanup all downloaded docker images
-    for _, image in images:
+
+def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
+    """Find and run all test cases for a language.
+
+  images is a list of (<release-tag>, <image-full-path>) tuple.
+  """
+    skip_tests = False
+    total_num_failures = 0
+
+    # TODO: Do more intelligent chunking.
+    for release, image in images:
+        if not skip_tests and not _pull_image_for_lang(lang, image, release):
+            jobset.message(
+                'FAILED',
+                'Image download failed. Skipping tests for language "%s"' % lang,
+                do_newline=True)
+            skip_tests = True
+        total_num_failures += _test_release(lang, runtime, release, image, xml_report_tree, skip_tests)
         if not args.keep:
             _cleanup_docker_image(image)
+    if not total_num_failures:
+        jobset.message('SUCCESS', 'All {} tests passed'.format(lang), do_newline=True)
+    else:
+        jobset.message('FAILED', 'Some {} tests failed'.format(lang), do_newline=True)
 
     return total_num_failures
 
