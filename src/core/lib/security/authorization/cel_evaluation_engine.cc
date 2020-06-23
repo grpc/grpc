@@ -41,5 +41,7 @@ CelEvaluationEngine::CelEvaluationEngine(
        
     policies_.insert(std::make_pair(key, parsed_condition));
   }
+  
+  action_allow_ = false;
 }
  
