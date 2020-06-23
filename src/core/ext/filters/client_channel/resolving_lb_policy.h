@@ -68,6 +68,8 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config;
     };
 
+    virtual ~ChannelConfigHelper() = default;
+
     // Applies the service config to the channel.
     virtual ApplyServiceConfigResult ApplyServiceConfig(
         const Resolver::Result& result) = 0;

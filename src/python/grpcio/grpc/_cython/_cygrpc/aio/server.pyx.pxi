@@ -213,6 +213,43 @@ cdef class _ServicerContext:
     def disable_next_message_compression(self):
         self._rpc_state.disable_next_compression = True
 
+    def peer(self):
+        cdef char *c_peer = NULL
+        c_peer = grpc_call_get_peer(self._rpc_state.call)
+        peer = (<bytes>c_peer).decode('utf8')
+        gpr_free(c_peer)
+        return peer
+
+    def peer_identities(self):
+        cdef Call query_call = Call()
+        query_call.c_call = self._rpc_state.call
+        identities = peer_identities(query_call)
+        query_call.c_call = NULL
+        return identities
+
+    def peer_identity_key(self):
+        cdef Call query_call = Call()
+        query_call.c_call = self._rpc_state.call
+        identity_key = peer_identity_key(query_call)
+        query_call.c_call = NULL
+        if identity_key:
+            return identity_key.decode('utf8')
+        else:
+            return None
+
+    def auth_context(self):
+        cdef Call query_call = Call()
+        query_call.c_call = self._rpc_state.call
+        bytes_ctx = auth_context(query_call)
+        query_call.c_call = NULL
+        if bytes_ctx:
+            ctx = {}
+            for key in bytes_ctx:
+                ctx[key.decode('utf8')] = bytes_ctx[key]
+            return ctx
+        else:
+            return {}
+
 
 cdef class _SyncServicerContext:
     """Sync servicer context for sync handler compatibility."""
@@ -259,6 +296,18 @@ cdef class _SyncServicerContext:
 
     def add_callback(self, object callback):
         self._callbacks.append(callback)
+
+    def peer(self):
+        return self._context.peer()
+
+    def peer_identities(self):
+        return self._context.peer_identities()
+
+    def peer_identity_key(self):
+        return self._context.peer_identity_key()
+
+    def auth_context(self):
+        return self._context.auth_context()
 
 
 async def _run_interceptor(object interceptors, object query_handler,

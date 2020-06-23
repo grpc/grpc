@@ -250,7 +250,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/server_initializer_impl.h",
     "include/grpcpp/impl/service_type.h",
     "include/grpcpp/resource_quota.h",
-    "include/grpcpp/resource_quota_impl.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
     "include/grpcpp/security/auth_metadata_processor_impl.h",
@@ -1045,7 +1044,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/server_address.cc",
         "src/core/ext/filters/client_channel/service_config.cc",
-        "src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc",
         "src/core/ext/filters/client_channel/service_config_parser.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
@@ -1187,7 +1185,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
-        "grpc_message_size_filter",
     ],
 )
 
