@@ -253,6 +253,7 @@ python_dependencies:
   - address_sorting
   - ares
   - boringssl
+  - re2
   - z
 ruby_gem:
   deps:

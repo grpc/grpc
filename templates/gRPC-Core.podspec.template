@@ -62,9 +62,9 @@
   # ObjectiveC doesn't use c-ares so we don't need address_sorting files at all
   address_sorting_unwanted_files = list_lib_files("address_sorting", ("public_headers", "headers", "src"))
 
-  grpc_private_files = list(sorted(set(list_lib_files("grpc", ("headers", "src"))) - set(address_sorting_unwanted_files)))
-  grpc_public_headers = list(sorted(set(list_lib_files("grpc", ("public_headers",))) - set(address_sorting_unwanted_files)))
-  grpc_private_headers = list(sorted(set(list_lib_files("grpc", ("headers",))) - set(address_sorting_unwanted_files)))
+  grpc_private_files = list(sorted((set(list_lib_files("grpc", ("headers", "src"))) - set(address_sorting_unwanted_files)) | set(list_lib_files("re2", ("headers", "src")))))
+  grpc_public_headers = list(sorted((set(list_lib_files("grpc", ("public_headers",))) - set(address_sorting_unwanted_files)) | set(list_lib_files("re2", ("public_headers",)))))
+  grpc_private_headers = list(sorted((set(list_lib_files("grpc", ("headers",))) - set(address_sorting_unwanted_files)) | set(list_lib_files("re2", ("headers",)))))
   grpc_abseil_specs = list_abseil_specs("grpc")
 
 
