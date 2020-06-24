@@ -16,7 +16,8 @@
 
 static void test_empty_engine(void) {
   upb::Arena arena;
-  envoy_config_rbac_v2_RBAC *rbac_policy = envoy_config_rbac_v2_RBAC_new(arena.ptr());
+  envoy_config_rbac_v2_RBAC* rbac_policy =
+      envoy_config_rbac_v2_RBAC_new(arena.ptr());
   CelEvaluationEngine cel_engine(*rbac_policy);
 }
 
@@ -24,4 +25,3 @@ int main(int argc, char** argv) {
   test_empty_engine();
   return 0;
 }
-
