@@ -222,16 +222,13 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   if (max_receive_message_size_ >= -1) {
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
+  if (max_send_message_size_ >= -1) {
+    args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
+  }
   for (const auto& option : options_) {
     option->UpdateArguments(&args);
     option->UpdatePlugins(&plugins_);
   }
-  // The default message size is -1 (max), so no need to explicitly set it for
-  // -1.
-  if (max_send_message_size_ >= 0) {
-    args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
-  }
-
   args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
               enabled_compression_algorithms_bitset_);
   if (maybe_default_compression_level_.is_set) {
