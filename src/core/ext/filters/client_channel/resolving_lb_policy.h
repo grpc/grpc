@@ -23,6 +23,7 @@
 
 #include "absl/container/inlined_vector.h"
 
+#include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
@@ -52,22 +53,39 @@ namespace grpc_core {
 // child LB policy and config to use.
 class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
-  // Synchronous callback that takes the resolver result and sets
-  // lb_policy_config to point to the right data.
-  // Returns true if the service config has changed since the last result.
-  // If the returned no_valid_service_config is true, that means that we
-  // don't have a valid service config to use, and we should set the channel
-  // to be in TRANSIENT_FAILURE.
-  typedef bool (*ProcessResolverResultCallback)(
-      void* user_data, const Resolver::Result& result,
-      RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config,
-      grpc_error** service_config_error, bool* no_valid_service_config);
-  // If error is set when this returns, then construction failed, and
-  // the caller may not use the new object.
-  ResolvingLoadBalancingPolicy(
-      Args args, TraceFlag* tracer, grpc_core::UniquePtr<char> target_uri,
-      ProcessResolverResultCallback process_resolver_result,
-      void* process_resolver_result_user_data);
+  class ChannelConfigHelper {
+   public:
+    struct ApplyServiceConfigResult {
+      // Set to true if the service config has changed since the last result.
+      bool service_config_changed = false;
+      // Set to true if we don't have a valid service config to use.
+      // This tells the ResolvingLoadBalancingPolicy to put the channel
+      // into TRANSIENT_FAILURE.
+      bool no_valid_service_config = false;
+      // A service config parsing error occurred.
+      grpc_error* service_config_error = GRPC_ERROR_NONE;
+      // The LB policy config to use.
+      RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config;
+    };
+
+    virtual ~ChannelConfigHelper() = default;
+
+    // Applies the service config to the channel.
+    virtual ApplyServiceConfigResult ApplyServiceConfig(
+        const Resolver::Result& result) = 0;
+
+    // Applies the ConfigSelector to the channel.
+    virtual void ApplyConfigSelector(
+        bool service_config_changed,
+        RefCountedPtr<ConfigSelector> config_selector) = 0;
+
+    // Indicates a resolver transient failure.
+    virtual void ResolverTransientFailure(grpc_error* error) = 0;
+  };
+
+  ResolvingLoadBalancingPolicy(Args args, TraceFlag* tracer,
+                               grpc_core::UniquePtr<char> target_uri,
+                               ChannelConfigHelper* helper);
 
   virtual const char* name() const override { return "resolving_lb"; }
 
@@ -105,14 +123,15 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // Passed in from caller at construction time.
   TraceFlag* tracer_;
   grpc_core::UniquePtr<char> target_uri_;
-  ProcessResolverResultCallback process_resolver_result_ = nullptr;
-  void* process_resolver_result_user_data_ = nullptr;
-  grpc_core::UniquePtr<char> child_policy_name_;
-  RefCountedPtr<LoadBalancingPolicy::Config> child_lb_config_;
+  ChannelConfigHelper* helper_;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;
   bool previous_resolution_contained_addresses_ = false;
+
+  // Determined by resolver results.
+  grpc_core::UniquePtr<char> child_policy_name_;
+  RefCountedPtr<LoadBalancingPolicy::Config> child_lb_config_;
 
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;

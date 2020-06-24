@@ -14,7 +14,7 @@
 """Abstract base classes for server-side classes."""
 
 import abc
-from typing import Generic, Optional, Sequence
+from typing import Generic, Mapping, Optional, Iterable, Sequence
 
 import grpc
 
@@ -250,4 +250,45 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         This method will override any compression configuration set during
         server creation or set on the call.
+        """
+
+    @abc.abstractmethod
+    def peer(self) -> str:
+        """Identifies the peer that invoked the RPC being serviced.
+
+        Returns:
+          A string identifying the peer that invoked the RPC being serviced.
+          The string format is determined by gRPC runtime.
+        """
+
+    @abc.abstractmethod
+    def peer_identities(self) -> Optional[Iterable[bytes]]:
+        """Gets one or more peer identity(s).
+
+        Equivalent to
+        servicer_context.auth_context().get(servicer_context.peer_identity_key())
+
+        Returns:
+          An iterable of the identities, or None if the call is not
+          authenticated. Each identity is returned as a raw bytes type.
+        """
+
+    @abc.abstractmethod
+    def peer_identity_key(self) -> Optional[str]:
+        """The auth property used to identify the peer.
+
+        For example, "x509_common_name" or "x509_subject_alternative_name" are
+        used to identify an SSL peer.
+
+        Returns:
+          The auth property (string) that indicates the
+          peer identity, or None if the call is not authenticated.
+        """
+
+    @abc.abstractmethod
+    def auth_context(self) -> Mapping[str, Iterable[bytes]]:
+        """Gets the auth context for the call.
+
+        Returns:
+          A map of strings to an iterable of bytes for each auth property.
         """

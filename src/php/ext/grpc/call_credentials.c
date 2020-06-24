@@ -16,6 +16,11 @@
  *
  */
 
+/**
+ * class CallCredentials
+ * @see https://github.com/grpc/grpc/tree/master/src/php/ext/grpc/call_credentials.c
+ */
+
 #include "call_credentials.h"
 
 #include <ext/spl/spl_exceptions.h>
