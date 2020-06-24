@@ -73,6 +73,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "cel_engine_test",
+    srcs = ["cel_engine_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc_cel_engine",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+
+grpc_cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.cc"],
     language = "C++",

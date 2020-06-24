@@ -457,6 +457,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c bin_decoder_test)
   add_dependencies(buildtests_c bin_encoder_test)
   add_dependencies(buildtests_c buffer_list_test)
+  add_dependencies(buildtests_c cel_engine_test)
   add_dependencies(buildtests_c channel_args_test)
   add_dependencies(buildtests_c channel_create_test)
   add_dependencies(buildtests_c channel_stack_builder_test)
@@ -4501,6 +4502,36 @@ target_include_directories(buffer_list_test
 )
 
 target_link_libraries(buffer_list_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  address_sorting
+  upb
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(cel_engine_test
+  src/core/lib/security/authorization/cel_evaluation_engine.cc
+  test/core/security/cel_engine_test.cc
+)
+
+target_include_directories(cel_engine_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+
+target_link_libraries(cel_engine_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
