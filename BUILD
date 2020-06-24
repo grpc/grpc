@@ -2627,24 +2627,24 @@ grpc_cc_library(
 grpc_cc_library(
     name = "envoy_type_upb",
     srcs = [
-        "src/core/ext/upb-generated/envoy/type/v3/http.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c",
         "src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c",
+        "src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c",
+        "src/core/ext/upb-generated/envoy/type/v3/http.upb.c",
         "src/core/ext/upb-generated/envoy/type/v3/percent.upb.c",
         "src/core/ext/upb-generated/envoy/type/v3/range.upb.c",
         "src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c",
-        "src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c",
     ],
     hdrs = [
-        "src/core/ext/upb-generated/envoy/type/v3/http.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.h",
         "src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.h",
+        "src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.h",
+        "src/core/ext/upb-generated/envoy/type/v3/http.upb.h",
         "src/core/ext/upb-generated/envoy/type/v3/percent.upb.h",
         "src/core/ext/upb-generated/envoy/type/v3/range.upb.h",
         "src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h",
-        "src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.h",
     ],
     external_deps = [
         "upb_lib",
