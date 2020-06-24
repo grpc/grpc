@@ -219,23 +219,12 @@ ServerBuilder& ServerBuilder::AddListeningPort(
 
 std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   grpc::ChannelArguments args;
-
+  if (max_receive_message_size_ >= -1) {
+    args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
+  }
   for (const auto& option : options_) {
     option->UpdateArguments(&args);
     option->UpdatePlugins(&plugins_);
-  }
-  if (max_receive_message_size_ >= -1) {
-    grpc_channel_args c_args = args.c_channel_args();
-    const grpc_arg* arg =
-        grpc_channel_args_find(&c_args, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
-    // Some option has set max_receive_message_length and it is also set
-    // directly on the ServerBuilder.
-    if (arg != nullptr) {
-      gpr_log(
-          GPR_ERROR,
-          "gRPC ServerBuilder receives multiple max_receive_message_length");
-    }
-    args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
   // The default message size is -1 (max), so no need to explicitly set it for
   // -1.
