@@ -16,6 +16,8 @@
  *
  */
 
+#include "upb/upb.hpp"
+
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/alts_util.h>
 #include <grpcpp/security/auth_context.h>

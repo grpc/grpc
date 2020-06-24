@@ -263,14 +263,15 @@ def grpc_deps():
                 "https://github.com/census-instrumentation/opencensus-cpp/archive/c9a4da319bc669a772928ffc55af4a61be1a1176.tar.gz",
             ],
         )
+
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "e9c136e56b98c8eb48ad1c9f8df4a6348e99f9f336ee6199c4259a312c2e3598",
-            strip_prefix = "upb-d8f3d6f9d415b31f3ce56d46791706c38fa311bc",
+            sha256 = "79f7de61203c4ee5e4fcb2f17c5f3338119d6eb94aca8bce05332d2c1cfee108",
+            strip_prefix = "upb-92e63da73328d01b417cf26c2de7b0a27a0f83af",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/d8f3d6f9d415b31f3ce56d46791706c38fa311bc.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/d8f3d6f9d415b31f3ce56d46791706c38fa311bc.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/92e63da73328d01b417cf26c2de7b0a27a0f83af.tar.gz",
+                "https://github.com/protocolbuffers/upb/archive/92e63da73328d01b417cf26c2de7b0a27a0f83af.tar.gz",
             ],
         )
 
