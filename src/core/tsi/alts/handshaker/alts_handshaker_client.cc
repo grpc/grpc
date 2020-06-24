@@ -22,6 +22,8 @@
 
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
+#include "upb/upb.hpp"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -549,17 +551,12 @@ static grpc_byte_buffer* get_serialized_start_server(
       grpc_gcp_HandshakerReq_mutable_server_start(req, arena.ptr());
   grpc_gcp_StartServerHandshakeReq_add_application_protocols(
       start_server, upb_strview_makez(ALTS_APPLICATION_PROTOCOL), arena.ptr());
-  grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* param =
-      grpc_gcp_StartServerHandshakeReq_add_handshake_parameters(start_server,
-                                                                arena.ptr());
-  grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_set_key(
-      param, grpc_gcp_ALTS);
   grpc_gcp_ServerHandshakeParameters* value =
       grpc_gcp_ServerHandshakeParameters_new(arena.ptr());
   grpc_gcp_ServerHandshakeParameters_add_record_protocols(
       value, upb_strview_makez(ALTS_RECORD_PROTOCOL), arena.ptr());
-  grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_set_value(param,
-                                                                      value);
+  grpc_gcp_StartServerHandshakeReq_handshake_parameters_set(
+      start_server, grpc_gcp_ALTS, value, arena.ptr());
   grpc_gcp_StartServerHandshakeReq_set_in_bytes(
       start_server, upb_strview_make(reinterpret_cast<const char*>(
                                          GRPC_SLICE_START_PTR(*bytes_received)),
