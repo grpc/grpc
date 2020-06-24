@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include <grpcpp/server_builder.h>
+#include <grpcpp/server_builder_impl.h>
 #include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
