@@ -216,7 +216,7 @@ def grpc_deps():
     if "com_github_google_re2" not in native.existing_rules():
         http_archive(
             name = "com_github_google_re2",
-            sha256 = "",
+            sha256 = "9f385e146410a8150b6f4cb1a57eab7ec806ced48d427554b1e754877ff26c3e",
             strip_prefix = "re2-aecba11114cf1fac5497aeb844b6966106de3eb6",
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/aecba11114cf1fac5497aeb844b6966106de3eb6.tar.gz",
