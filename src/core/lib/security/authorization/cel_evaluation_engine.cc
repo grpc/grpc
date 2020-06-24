@@ -15,7 +15,8 @@
 #include "src/core/lib/security/authorization/cel_evaluation_engine.h"
 
 CelEvaluationEngine::CelEvaluationEngine(
-    const envoy_config_rbac_v2_RBAC& rbac_policy) {
+            const envoy_config_rbac_v2_RBAC& rbac_policy) : allowed_if_matched_(
+                          envoy_config_rbac_v2_RBAC_action(&rbac_policy) == 0) {
   // Extract array of policies and store their condition fields in policies_.
   size_t num_policies;
   const envoy_config_rbac_v2_RBAC_PoliciesEntry* const* 
@@ -43,7 +44,5 @@ CelEvaluationEngine::CelEvaluationEngine(
        
     policies_.insert(std::make_pair(policy_name, parsed_condition));
   }
-  
-  action_allow_ = (envoy_config_rbac_v2_RBAC_action(&rbac_policy) == 0);
 }
  

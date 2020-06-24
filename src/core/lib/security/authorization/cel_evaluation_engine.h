@@ -40,10 +40,9 @@ class CelEvaluationEngine {
   // TODO(mywang@google.com): add an Evaluate member function.
 
  private:
-  // If action_allow is set to true, the policy acts as an allowlist (equivalent
-  // to ALLOW in RBAC). If false, the policy acts as a blocklist (equivalent to 
-  // DENY in RBAC).
-  bool action_allow_;
+  // Set allowed_if_matched_ to true if the RBAC policy is an ALLOW policy,
+  // and false if it is a DENY policy.
+  const bool allowed_if_matched_;
   std::map<std::string, google_api_expr_v1alpha1_Expr*> policies_;
   upb::Arena arena_;
 };
