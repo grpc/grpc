@@ -197,7 +197,7 @@ const upb_msglayout envoy_config_filter_accesslog_v2_ResponseFlagFilter_msginit 
 };
 
 static const upb_msglayout_field envoy_config_filter_accesslog_v2_GrpcStatusFilter__fields[2] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 14, 3},
+  {1, UPB_SIZE(4, 8), 0, 0, 14, _UPB_LABEL_PACKED},
   {2, UPB_SIZE(0, 0), 0, 0, 8, 1},
 };
 

@@ -910,6 +910,7 @@ void ssl_tsi_test_extract_x509_subject_names() {
   GPR_ASSERT(check_subject_alt_name(&peer, "foo.test.domain.com") == 1);
   GPR_ASSERT(check_subject_alt_name(&peer, "bar.test.domain.com") == 1);
   // Check URI
+  // Note that a valid SPIFFE certificate should only have one URI.
   GPR_ASSERT(check_subject_alt_name(&peer, "spiffe://foo.com/bar/baz") == 1);
   GPR_ASSERT(
       check_subject_alt_name(&peer, "https://foo.test.domain.com/test") == 1);

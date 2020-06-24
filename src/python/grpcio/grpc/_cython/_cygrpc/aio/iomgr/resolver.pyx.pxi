@@ -15,7 +15,7 @@
 
 cdef class _AsyncioResolver:
     def __cinit__(self):
-        self._loop = asyncio.get_event_loop()
+        self._loop = get_working_loop()
         self._grpc_resolver = NULL
         self._task_resolve = None
 

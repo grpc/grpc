@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_SRDS_PROTO_UPB_H_
 #define ENVOY_API_V2_SRDS_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -31,7 +30,7 @@ extern const upb_msglayout envoy_api_v2_SrdsDummy_msginit;
 /* envoy.api.v2.SrdsDummy */
 
 UPB_INLINE envoy_api_v2_SrdsDummy *envoy_api_v2_SrdsDummy_new(upb_arena *arena) {
-  return (envoy_api_v2_SrdsDummy *)upb_msg_new(&envoy_api_v2_SrdsDummy_msginit, arena);
+  return (envoy_api_v2_SrdsDummy *)_upb_msg_new(&envoy_api_v2_SrdsDummy_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_SrdsDummy *envoy_api_v2_SrdsDummy_parse(const char *buf, size_t size,
                         upb_arena *arena) {

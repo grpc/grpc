@@ -49,7 +49,7 @@ static const upb_msglayout_field envoy_api_v2_listener_FilterChainMatch__fields[
   {4, UPB_SIZE(8, 8), 0, 0, 9, 1},
   {5, UPB_SIZE(24, 40), 0, 1, 11, 1},
   {6, UPB_SIZE(36, 64), 0, 0, 11, 3},
-  {7, UPB_SIZE(40, 72), 0, 0, 13, 3},
+  {7, UPB_SIZE(40, 72), 0, 0, 13, _UPB_LABEL_PACKED},
   {8, UPB_SIZE(28, 48), 0, 1, 11, 1},
   {9, UPB_SIZE(16, 24), 0, 0, 9, 1},
   {10, UPB_SIZE(44, 80), 0, 0, 9, 3},

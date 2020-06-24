@@ -260,7 +260,8 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       transport_security_type);
   const char* spiffe_data = nullptr;
   size_t spiffe_length = 0;
-  int spiffe_id_count = 0;
+  int uri_count = 0;
+  bool has_spiffe_id = false;
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
     if (prop->name == nullptr) continue;
@@ -293,11 +294,12 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
           ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
           prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
+      uri_count++;
       absl::string_view spiffe_id(prop->value.data, prop->value.length);
       if (IsSpiffeId(spiffe_id)) {
         spiffe_data = prop->value.data;
         spiffe_length = prop->value.length;
-        spiffe_id_count += 1;
+        has_spiffe_id = true;
       }
     }
   }
@@ -305,16 +307,17 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
     GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
                    ctx.get(), peer_identity_property_name) == 1);
   }
-  // SPIFFE ID should be unique. If we find more than one SPIFFE IDs, we log
-  // the error without returning the error.
-  if (spiffe_id_count > 1) {
-    gpr_log(GPR_INFO, "Invalid SPIFFE ID: SPIFFE ID should be unique.");
-  }
-  if (spiffe_id_count == 1) {
-    GPR_ASSERT(spiffe_length > 0);
-    GPR_ASSERT(spiffe_data != nullptr);
-    grpc_auth_context_add_property(ctx.get(), GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
-                                   spiffe_data, spiffe_length);
+  // A valid SPIFFE certificate can only have exact one URI SAN field.
+  if (has_spiffe_id) {
+    if (uri_count == 1) {
+      GPR_ASSERT(spiffe_length > 0);
+      GPR_ASSERT(spiffe_data != nullptr);
+      grpc_auth_context_add_property(ctx.get(),
+                                     GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
+                                     spiffe_data, spiffe_length);
+    } else {
+      gpr_log(GPR_INFO, "Invalid SPIFFE ID: multiple URI SANs.");
+    }
   }
   return ctx;
 }
