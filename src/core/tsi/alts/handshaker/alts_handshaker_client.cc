@@ -661,11 +661,18 @@ static void handshaker_client_destruct(alts_handshaker_client* c) {
     // TODO(apolcyn): we could remove this indirection and call
     // grpc_call_unref inline if there was an internal variant of
     // grpc_call_unref that didn't need to flush an ExecCtx.
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION,
-        GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call,
-                            grpc_schedule_on_exec_ctx),
-        GRPC_ERROR_NONE);
+    if (grpc_core::ExecCtx::Get() == nullptr) {
+      // Unref handshaker call if there is no exec_ctx, e.g., in the case of
+      // Envoy ALTS transport socket.
+      grpc_call_unref(client->call);
+    } else {
+      // Using existing exec_ctx to unref handshaker call.
+      grpc_core::ExecCtx::Run(
+          DEBUG_LOCATION,
+          GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call,
+                              grpc_schedule_on_exec_ctx),
+          GRPC_ERROR_NONE);
+    }
   }
 }
 
