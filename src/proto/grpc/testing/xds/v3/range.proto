@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package envoy.type;
+
+// [#protodoc-title: Range]
+
+// Specifies the int64 start and end of the range using half-open interval semantics [start,
+// end).
+message Int64Range {
+  // start of the range (inclusive)
+  int64 start = 1;
+
+  // end of the range (exclusive)
+  int64 end = 2;
+}

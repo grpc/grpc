@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package envoy.type.matcher.v3;
+
+// [#protodoc-title: Regex matcher]
+
+// A regex matcher designed for safety when used with untrusted input.
+message RegexMatcher {
+  // Google's `RE2 <https://github.com/google/re2>`_ regex engine. The regex string must adhere to
+  // the documented `syntax <https://github.com/google/re2/wiki/Syntax>`_. The engine is designed
+  // to complete execution in linear time as well as limit the amount of memory used.
+  message GoogleRE2 {
+  }
+
+  oneof engine_type {
+    // Google's RE2 regex engine.
+    GoogleRE2 google_re2 = 1;
+  }
+
+  // The regex match string. The string must be supported by the configured engine.
+  string regex = 2;
+}
