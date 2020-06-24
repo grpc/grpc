@@ -12,6 +12,16 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "upb_lib_descriptor",
+        actual = "@upb//:descriptor_upb_proto",
+    )
+
+    native.bind(
+        name = "upb_textformat_lib",
+        actual = "@upb//:textformat",
+    )
+
+    native.bind(
         name = "absl",
         actual = "@com_google_absl//absl",
     )
@@ -63,7 +73,7 @@ def grpc_deps():
 
     native.bind(
         name = "gtest",
-        actual = "@com_github_google_googletest//:gtest",
+        actual = "@com_google_googletest//:gtest",
     )
 
     native.bind(
@@ -162,9 +172,9 @@ def grpc_deps():
             ],
         )
 
-    if "com_github_google_googletest" not in native.existing_rules():
+    if "com_google_googletest" not in native.existing_rules():
         http_archive(
-            name = "com_github_google_googletest",
+            name = "com_google_googletest",
             sha256 = "443d383db648ebb8e391382c0ab63263b7091d03197f304390baac10f178a468",
             strip_prefix = "googletest-c9ccac7cb7345901884aabf5d1a786cfa6e2f397",
             urls = [
@@ -263,14 +273,15 @@ def grpc_deps():
                 "https://github.com/census-instrumentation/opencensus-cpp/archive/c9a4da319bc669a772928ffc55af4a61be1a1176.tar.gz",
             ],
         )
+
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "e9c136e56b98c8eb48ad1c9f8df4a6348e99f9f336ee6199c4259a312c2e3598",
-            strip_prefix = "upb-d8f3d6f9d415b31f3ce56d46791706c38fa311bc",
+            sha256 = "79f7de61203c4ee5e4fcb2f17c5f3338119d6eb94aca8bce05332d2c1cfee108",
+            strip_prefix = "upb-92e63da73328d01b417cf26c2de7b0a27a0f83af",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/d8f3d6f9d415b31f3ce56d46791706c38fa311bc.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/d8f3d6f9d415b31f3ce56d46791706c38fa311bc.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/92e63da73328d01b417cf26c2de7b0a27a0f83af.tar.gz",
+                "https://github.com/protocolbuffers/upb/archive/92e63da73328d01b417cf26c2de7b0a27a0f83af.tar.gz",
             ],
         )
 

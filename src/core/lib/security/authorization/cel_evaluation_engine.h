@@ -22,7 +22,7 @@
 
 #include "src/core/ext/upb-generated/envoy/config/rbac/v2/rbac.upb.h"
 #include "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h"
-#include "upb/upb.h"
+#include "upb/upb.hpp"
 
 // CelEvaluationEngine makes an AuthorizationDecision to ALLOW or DENY the
 // current action based on the condition fields in the provided RBAC policy.

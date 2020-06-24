@@ -1,5 +1,6 @@
 
 #include "upbc/message_layout.h"
+#include "google/protobuf/descriptor.pb.h"
 
 namespace upbc {
 
@@ -25,7 +26,8 @@ MessageLayout::Size MessageLayout::Place(
 bool MessageLayout::HasHasbit(const protobuf::FieldDescriptor* field) {
   return field->file()->syntax() == protobuf::FileDescriptor::SYNTAX_PROTO2 &&
          field->label() != protobuf::FieldDescriptor::LABEL_REPEATED &&
-         !field->containing_oneof();
+         !field->containing_oneof() &&
+         !field->containing_type()->options().map_entry();
 }
 
 MessageLayout::SizeAndAlign MessageLayout::SizeOf(
@@ -43,7 +45,7 @@ MessageLayout::SizeAndAlign MessageLayout::SizeOfUnwrapped(
     case protobuf::FieldDescriptor::CPPTYPE_MESSAGE:
       return {{4, 8}, {4, 8}};  // Pointer to message.
     case protobuf::FieldDescriptor::CPPTYPE_STRING:
-      return {{8, 16}, {4, 8}};  // upb_stringview
+      return {{8, 16}, {4, 8}};  // upb_strview
     case protobuf::FieldDescriptor::CPPTYPE_BOOL:
       return {{1, 1}, {1, 1}};
     case protobuf::FieldDescriptor::CPPTYPE_FLOAT:
@@ -104,8 +106,18 @@ int64_t MessageLayout::FieldLayoutRank(const protobuf::FieldDescriptor* field) {
 void MessageLayout::ComputeLayout(const protobuf::Descriptor* descriptor) {
   size_ = Size{0, 0};
   maxalign_ = Size{0, 0};
-  PlaceNonOneofFields(descriptor);
-  PlaceOneofFields(descriptor);
+
+  if (descriptor->options().map_entry()) {
+    // Map entries aren't actually stored, they are only used during parsing.
+    // For parsing, it helps a lot if all map entry messages have the same
+    // layout.
+    SizeAndAlign size{{8, 16}, {4, 8}};  // upb_strview
+    field_offsets_[descriptor->FindFieldByNumber(1)] = Place(size);
+    field_offsets_[descriptor->FindFieldByNumber(2)] = Place(size);
+  } else {
+    PlaceNonOneofFields(descriptor);
+    PlaceOneofFields(descriptor);
+  }
 
   // Align overall size up to max size.
   size_.AlignUp(maxalign_);

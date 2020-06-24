@@ -46,7 +46,7 @@ _GRPC_DEP_NAMES = [
     'boringssl',
     'zlib',
     'com_google_protobuf',
-    'com_github_google_googletest',
+    'com_google_googletest',
     'rules_cc',
     'com_github_gflags_gflags',
     'com_github_google_benchmark',
