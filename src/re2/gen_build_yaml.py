@@ -25,9 +25,9 @@ os.chdir(os.path.dirname(sys.argv[0]) + '/../..')
 out = {}
 
 out['libs'] = [{
+    #TODO @donnadionne: extracting the list of source files from bazel build for optimization
     'name':
         're2',
-        #TODO @donnadionne: extracting the list of source files from bazel build for optimization
     'build':
         'all',
     'language':
