@@ -1093,7 +1093,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       grpc_slice_buffer write_slice_buffer;
       grpc_slice slice;
       grpc_slice_buffer_init(&write_slice_buffer);
-      do {
+      while (write_slice_buffer.length <
+             stream_op->payload->send_message.send_message->length()) {
         /* TODO(roth): When we add support for incremental sending,this code
          * will need to be changed to support asynchronous delivery of the
          * send_message payload. */
@@ -1109,19 +1110,12 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           GPR_ASSERT(false);
         }
         grpc_slice_buffer_add(&write_slice_buffer, slice);
-      } while (write_slice_buffer.length <
-               stream_op->payload->send_message.send_message->length());
-      if (GPR_UNLIKELY(write_slice_buffer.count < 1)) {
-        /* Empty request not handled yet */
-        gpr_log(GPR_ERROR, "Empty request is not supported");
-        GPR_ASSERT(write_slice_buffer.count >= 1);
       }
-      if (write_slice_buffer.count > 0) {
-        size_t write_buffer_size;
-        create_grpc_frame(
-            &write_slice_buffer, &stream_state->ws.write_buffer,
-            &write_buffer_size,
-            stream_op->payload->send_message.send_message->flags());
+      size_t write_buffer_size;
+      create_grpc_frame(&write_slice_buffer, &stream_state->ws.write_buffer,
+                        &write_buffer_size,
+                        stream_op->payload->send_message.send_message->flags());
+      if (write_buffer_size > 0) {
         CRONET_LOG(GPR_DEBUG, "bidirectional_stream_write (%p, %p)", s->cbs,
                    stream_state->ws.write_buffer);
         stream_state->state_callback_received[OP_SEND_MESSAGE] = false;
@@ -1141,7 +1135,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           result = ACTION_TAKEN_WITH_CALLBACK;
         }
       } else {
-        result = NO_ACTION_POSSIBLE;
+        /* Should never reach here */
+        GPR_ASSERT(false);
       }
     }
     stream_state->state_op_done[OP_SEND_MESSAGE] = true;
