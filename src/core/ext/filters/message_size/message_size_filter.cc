@@ -117,38 +117,17 @@ void MessageSizeParser::Register() {
 
 size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }
 
-namespace {
-const grpc_arg* ChannelArgsFindLast(const grpc_channel_args* args,
-                                    const char* name) {
-  grpc_arg* arg = nullptr;
-  if (args != nullptr) {
-    for (size_t i = 0; i < args->num_args; ++i) {
-      if (strcmp(args->args[i].key, name) == 0) {
-        arg = &args->args[i];
-      }
-    }
-  }
-  return arg;
-}
-}  // namespace
-
 int GetMaxRecvSizeFromChannelArgs(const grpc_channel_args* args) {
   if (grpc_channel_args_want_minimal_stack(args)) return -1;
-  // We are not using grpc_channel_args_find_integer here because of ordering
-  // issues. The logic below maintains existing behavior by choosing the last
-  // matching channel argument instead of the first.
-  return grpc_channel_arg_get_integer(
-      ChannelArgsFindLast(args, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH),
+  return grpc_channel_args_find_integer(
+      args, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
       {GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH, -1, INT_MAX});
 }
 
 int GetMaxSendSizeFromChannelArgs(const grpc_channel_args* args) {
   if (grpc_channel_args_want_minimal_stack(args)) return -1;
-  // We are not using grpc_channel_args_find_integer here because of ordering
-  // issues. The logic below maintains existing behavior by choosing the last
-  // matching channel argument instead of the first.
-  return grpc_channel_arg_get_integer(
-      ChannelArgsFindLast(args, GRPC_ARG_MAX_SEND_MESSAGE_LENGTH),
+  return grpc_channel_args_find_integer(
+      args, GRPC_ARG_MAX_SEND_MESSAGE_LENGTH,
       {GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH, -1, INT_MAX});
 }
 
