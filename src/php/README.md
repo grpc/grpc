@@ -96,7 +96,7 @@ composer package as well. Add this to your project's `composer.json` file.
 
 ```json
     "require": {
-        "grpc/grpc": "~v1.30.0"
+        "grpc/grpc": "~1.30.0"
     }
 ```
 
