@@ -15,34 +15,31 @@
 #include "src/core/lib/security/authorization/cel_evaluation_engine.h"
 
 CelEvaluationEngine::CelEvaluationEngine(
-            const envoy_config_rbac_v2_RBAC& rbac_policy) : allowed_if_matched_(
-                          envoy_config_rbac_v2_RBAC_action(&rbac_policy) == 0) {
+    const envoy_config_rbac_v2_RBAC& rbac_policy)
+    : allowed_if_matched_(envoy_config_rbac_v2_RBAC_action(&rbac_policy) == 0) {
   // Extract array of policies and store their condition fields in policies_.
   size_t num_policies;
-  const envoy_config_rbac_v2_RBAC_PoliciesEntry* const* 
-   policies = envoy_config_rbac_v2_RBAC_policies(&rbac_policy, &num_policies);
+  const envoy_config_rbac_v2_RBAC_PoliciesEntry* const* policies =
+      envoy_config_rbac_v2_RBAC_policies(&rbac_policy, &num_policies);
   upb::Arena temp_arena;
 
   for (size_t i = 0; i < num_policies; ++i) {
-    const upb_strview 
-     policy_name_strview = envoy_config_rbac_v2_RBAC_PoliciesEntry_key(
-                                                                   policies[i]); 
-    const std::string 
-     policy_name = std::string(policy_name_strview.data, 
-                                                      policy_name_strview.size);
-    const envoy_config_rbac_v2_Policy* 
-     policy = envoy_config_rbac_v2_RBAC_PoliciesEntry_value(policies[i]);
-    const google_api_expr_v1alpha1_Expr* 
-     condition = envoy_config_rbac_v2_Policy_condition(policy);
+    const upb_strview policy_name_strview =
+        envoy_config_rbac_v2_RBAC_PoliciesEntry_key(policies[i]);
+    const std::string policy_name =
+        std::string(policy_name_strview.data, policy_name_strview.size);
+    const envoy_config_rbac_v2_Policy* policy =
+        envoy_config_rbac_v2_RBAC_PoliciesEntry_value(policies[i]);
+    const google_api_expr_v1alpha1_Expr* condition =
+        envoy_config_rbac_v2_Policy_condition(policy);
     // Parse condition to make a pointer tied to the lifetime of arena_.
     size_t serial_len;
     char* serialized = google_api_expr_v1alpha1_Expr_serialize(
-                                      condition, temp_arena.ptr(), &serial_len);
-    google_api_expr_v1alpha1_Expr* 
-     parsed_condition = google_api_expr_v1alpha1_Expr_parse(
-                                          serialized, serial_len, arena_.ptr());
-       
+        condition, temp_arena.ptr(), &serial_len);
+    google_api_expr_v1alpha1_Expr* parsed_condition =
+        google_api_expr_v1alpha1_Expr_parse(serialized, serial_len,
+                                            arena_.ptr());
+
     policies_.insert(std::make_pair(policy_name, parsed_condition));
   }
 }
- 
