@@ -38,7 +38,8 @@
 namespace grpc_core {
 namespace internal {
 
-class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
+class ClientChannelGlobalParsedConfig
+    : public ServiceConfigParser::ParsedConfig {
  public:
   struct RetryThrottling {
     intptr_t max_milli_tokens = 0;
@@ -78,7 +79,8 @@ class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
   const char* health_check_service_name_;
 };
 
-class ClientChannelMethodParsedConfig : public ServiceConfig::ParsedConfig {
+class ClientChannelMethodParsedConfig
+    : public ServiceConfigParser::ParsedConfig {
  public:
   struct RetryPolicy {
     int max_attempts = 0;
@@ -107,12 +109,12 @@ class ClientChannelMethodParsedConfig : public ServiceConfig::ParsedConfig {
   std::unique_ptr<RetryPolicy> retry_policy_;
 };
 
-class ClientChannelServiceConfigParser : public ServiceConfig::Parser {
+class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
  public:
-  std::unique_ptr<ServiceConfig::ParsedConfig> ParseGlobalParams(
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
       const Json& json, grpc_error** error) override;
 
-  std::unique_ptr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
       const Json& json, grpc_error** error) override;
 
   static size_t ParserIndex();

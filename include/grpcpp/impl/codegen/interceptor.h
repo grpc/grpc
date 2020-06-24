@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_INTERCEPTOR_H
 #define GRPCPP_IMPL_CODEGEN_INTERCEPTOR_H
 
+#include <memory>
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/config.h>

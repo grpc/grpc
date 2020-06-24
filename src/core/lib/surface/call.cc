@@ -225,7 +225,9 @@ struct grpc_call {
   grpc_closure receiving_initial_metadata_ready;
   grpc_closure receiving_trailing_metadata_ready;
   uint32_t test_only_last_message_flags = 0;
-  gpr_atm cancelled = 0;
+  // Status about operation of call
+  bool sent_server_trailing_metadata = false;
+  gpr_atm cancelled_with_error = 0;
 
   grpc_closure release_call;
 
@@ -670,12 +672,11 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
   return GRPC_CALL_OK;
 }
 
-typedef struct {
+struct cancel_state {
   grpc_call* call;
   grpc_closure start_batch;
   grpc_closure finish_batch;
-} cancel_state;
-
+};
 // The on_complete callback used when sending a cancel_stream batch down
 // the filter stack.  Yields the call combiner when the batch is done.
 static void done_termination(void* arg, grpc_error* /*error*/) {
@@ -687,7 +688,7 @@ static void done_termination(void* arg, grpc_error* /*error*/) {
 }
 
 static void cancel_with_error(grpc_call* c, grpc_error* error) {
-  if (!gpr_atm_rel_cas(&c->cancelled, 0, 1)) {
+  if (!gpr_atm_rel_cas(&c->cancelled_with_error, 0, 1)) {
     GRPC_ERROR_UNREF(error);
     return;
   }
@@ -752,13 +753,13 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
     }
   } else {
     *call->final_op.server.cancelled =
-        error != GRPC_ERROR_NONE ||
-        reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&call->status_error)) !=
-            GRPC_ERROR_NONE;
+        error != GRPC_ERROR_NONE || !call->sent_server_trailing_metadata;
     grpc_core::channelz::ServerNode* channelz_server =
         grpc_server_get_channelz_node(call->final_op.server.server);
     if (channelz_server != nullptr) {
-      if (*call->final_op.server.cancelled) {
+      if (*call->final_op.server.cancelled ||
+          reinterpret_cast<grpc_error*>(
+              gpr_atm_acq_load(&call->status_error)) != GRPC_ERROR_NONE) {
         channelz_server->RecordCallFailed();
       } else {
         channelz_server->RecordCallSucceeded();
@@ -1792,6 +1793,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         }
         stream_op_payload->send_trailing_metadata.send_trailing_metadata =
             &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */];
+        stream_op_payload->send_trailing_metadata.sent =
+            &call->sent_server_trailing_metadata;
         has_send_ops = true;
         break;
       }

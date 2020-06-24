@@ -21,6 +21,9 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -37,20 +40,15 @@ static void test_noop(void) { Arena::Create(1)->Destroy(); }
 
 static void test(const char* name, size_t init_size, const size_t* allocs,
                  size_t nallocs) {
-  gpr_strvec v;
-  char* s;
-  gpr_strvec_init(&v);
-  gpr_asprintf(&s, "test '%s': %" PRIdPTR " <- {", name, init_size);
-  gpr_strvec_add(&v, s);
+  std::vector<std::string> parts;
+  parts.push_back(
+      absl::StrFormat("test '%s': %" PRIdPTR " <- {", name, init_size));
   for (size_t i = 0; i < nallocs; i++) {
-    gpr_asprintf(&s, "%" PRIdPTR ",", allocs[i]);
-    gpr_strvec_add(&v, s);
+    parts.push_back(absl::StrFormat("%" PRIdPTR ",", allocs[i]));
   }
-  gpr_strvec_add(&v, gpr_strdup("}"));
-  s = gpr_strvec_flatten(&v, nullptr);
-  gpr_strvec_destroy(&v);
-  gpr_log(GPR_INFO, "%s", s);
-  gpr_free(s);
+  parts.push_back("}");
+  std::string s = absl::StrJoin(parts, "");
+  gpr_log(GPR_INFO, "%s", s.c_str());
 
   Arena* a = Arena::Create(init_size);
   void** ps = static_cast<void**>(gpr_zalloc(sizeof(*ps) * nallocs));

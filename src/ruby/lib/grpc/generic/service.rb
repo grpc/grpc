@@ -31,6 +31,7 @@ module GRPC
     #
     # @param s [String] the string to be converted.
     def self.underscore(s)
+      s = +s # Avoid mutating the argument, as it might be frozen.
       s.gsub!(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
       s.gsub!(/([a-z\d])([A-Z])/, '\1_\2')
       s.tr!('-', '_')

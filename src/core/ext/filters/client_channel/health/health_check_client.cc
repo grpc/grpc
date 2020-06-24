@@ -125,8 +125,7 @@ void HealthCheckClient::StartCallLocked() {
   call_state_->StartCall();
 }
 
-void HealthCheckClient::StartRetryTimer() {
-  MutexLock lock(&mu_);
+void HealthCheckClient::StartRetryTimerLocked() {
   SetHealthStatusLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                         "health check call failed; will retry after backoff");
   grpc_millis next_try = retry_backoff_.NextAttemptTime();
@@ -297,14 +296,7 @@ void HealthCheckClient::CallState::StartCall() {
             "checking call on subchannel (%s); will retry",
             health_check_client_.get(), this, grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
-    // Schedule instead of running directly, since we must not be
-    // holding health_check_client_->mu_ when CallEnded() is called.
-    call_->Ref(DEBUG_LOCATION, "call_end_closure").release();
-    ExecCtx::Run(
-        DEBUG_LOCATION,
-        GRPC_CLOSURE_INIT(&batch_.handler_private.closure, CallEndedRetry, this,
-                          grpc_schedule_on_exec_ctx),
-        GRPC_ERROR_NONE);
+    CallEndedLocked(/*retry=*/true);
     return;
   }
   // Initialize payload and batch.
@@ -582,18 +574,11 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
                                                 kErrorMessage);
     retry = false;
   }
-  self->CallEnded(retry);
+  MutexLock lock(&self->health_check_client_->mu_);
+  self->CallEndedLocked(retry);
 }
 
-void HealthCheckClient::CallState::CallEndedRetry(void* arg,
-                                                  grpc_error* /*error*/) {
-  HealthCheckClient::CallState* self =
-      static_cast<HealthCheckClient::CallState*>(arg);
-  self->CallEnded(true /* retry */);
-  self->call_->Unref(DEBUG_LOCATION, "call_end_closure");
-}
-
-void HealthCheckClient::CallState::CallEnded(bool retry) {
+void HealthCheckClient::CallState::CallEndedLocked(bool retry) {
   // If this CallState is still in use, this call ended because of a failure,
   // so we need to stop using it and optionally create a new one.
   // Otherwise, we have deliberately ended this call, and no further action
@@ -606,10 +591,10 @@ void HealthCheckClient::CallState::CallEnded(bool retry) {
         // If the call fails after we've gotten a successful response, reset
         // the backoff and restart the call immediately.
         health_check_client_->retry_backoff_.Reset();
-        health_check_client_->StartCall();
+        health_check_client_->StartCallLocked();
       } else {
         // If the call failed without receiving any messages, retry later.
-        health_check_client_->StartRetryTimer();
+        health_check_client_->StartRetryTimerLocked();
       }
     }
   }

@@ -83,7 +83,7 @@ typedef struct tsi_ssl_client_handshaker_factory
     tsi_ssl_client_handshaker_factory;
 
 /* Object that holds a private key / certificate chain pair in PEM format. */
-typedef struct {
+struct tsi_ssl_pem_key_cert_pair {
   /* private_key is the NULL-terminated string containing the PEM encoding of
      the client's private key. */
   const char* private_key;
@@ -91,8 +91,7 @@ typedef struct {
   /* cert_chain is the NULL-terminated string containing the PEM encoding of
      the client's certificate chain. */
   const char* cert_chain;
-} tsi_ssl_pem_key_cert_pair;
-
+};
 /* TO BE DEPRECATED.
    Creates a client handshaker factory.
    - pem_key_cert_pair is a pointer to the object containing client's private
@@ -334,10 +333,9 @@ typedef void (*tsi_ssl_handshaker_factory_destructor)(
     tsi_ssl_handshaker_factory* factory);
 
 /* Virtual table for tsi_ssl_handshaker_factory. */
-typedef struct {
+struct tsi_ssl_handshaker_factory_vtable {
   tsi_ssl_handshaker_factory_destructor destroy;
-} tsi_ssl_handshaker_factory_vtable;
-
+};
 /* Set destructor of handshaker_factory to new_destructor, returns previous
    destructor. */
 const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(

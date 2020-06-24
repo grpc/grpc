@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.30.0-dev'
+  version = '1.31.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -93,7 +93,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/generic/generic_stub_impl.h',
                       'include/grpcpp/grpcpp.h',
                       'include/grpcpp/health_check_service_interface.h',
-                      'include/grpcpp/health_check_service_interface_impl.h',
                       'include/grpcpp/impl/call.h',
                       'include/grpcpp/impl/channel_argument_option.h',
                       'include/grpcpp/impl/client_unary_call.h',
@@ -164,7 +163,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/server_initializer_impl.h',
                       'include/grpcpp/impl/service_type.h',
                       'include/grpcpp/resource_quota.h',
-                      'include/grpcpp/resource_quota_impl.h',
                       'include/grpcpp/security/auth_context.h',
                       'include/grpcpp/security/auth_metadata_processor.h',
                       'include/grpcpp/security/auth_metadata_processor_impl.h',
@@ -227,6 +225,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/client_channel.h',
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
+                      'src/core/ext/filters/client_channel/config_selector.h',
                       'src/core/ext/filters/client_channel/connector.h',
                       'src/core/ext/filters/client_channel/global_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/health/health_check_client.h',
@@ -261,6 +260,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/retry_throttle.h',
                       'src/core/ext/filters/client_channel/server_address.h',
                       'src/core/ext/filters/client_channel/service_config.h',
+                      'src/core/ext/filters/client_channel/service_config_call_data.h',
+                      'src/core/ext/filters/client_channel/service_config_parser.h',
                       'src/core/ext/filters/client_channel/subchannel.h',
                       'src/core/ext/filters/client_channel/subchannel_interface.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
@@ -614,6 +615,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/transport_security_grpc.h',
                       'src/core/tsi/transport_security_interface.h',
                       'src/cpp/client/channel_cc.cc',
+                      'src/cpp/client/client_callback.cc',
                       'src/cpp/client/client_context.cc',
                       'src/cpp/client/client_interceptor.cc',
                       'src/cpp/client/create_channel.cc',
@@ -684,6 +686,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/client_channel.h',
                               'src/core/ext/filters/client_channel/client_channel_channelz.h',
                               'src/core/ext/filters/client_channel/client_channel_factory.h',
+                              'src/core/ext/filters/client_channel/config_selector.h',
                               'src/core/ext/filters/client_channel/connector.h',
                               'src/core/ext/filters/client_channel/global_subchannel_pool.h',
                               'src/core/ext/filters/client_channel/health/health_check_client.h',
@@ -718,6 +721,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/retry_throttle.h',
                               'src/core/ext/filters/client_channel/server_address.h',
                               'src/core/ext/filters/client_channel/service_config.h',
+                              'src/core/ext/filters/client_channel/service_config_call_data.h',
+                              'src/core/ext/filters/client_channel/service_config_parser.h',
                               'src/core/ext/filters/client_channel/subchannel.h',
                               'src/core/ext/filters/client_channel/subchannel_interface.h',
                               'src/core/ext/filters/client_channel/subchannel_pool_interface.h',

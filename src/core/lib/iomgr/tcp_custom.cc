@@ -52,7 +52,7 @@ void grpc_custom_endpoint_init(grpc_socket_vtable* impl) {
   grpc_set_tcp_server_impl(&custom_tcp_server_vtable);
 }
 
-typedef struct {
+struct custom_tcp_endpoint {
   grpc_endpoint base;
   gpr_refcount refcount;
   grpc_custom_socket* socket;
@@ -69,8 +69,7 @@ typedef struct {
   bool shutting_down;
 
   char* peer_string;
-} custom_tcp_endpoint;
-
+};
 static void tcp_free(grpc_custom_socket* s) {
   custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)s->endpoint;
   grpc_resource_user_unref(tcp->resource_user);

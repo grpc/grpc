@@ -87,6 +87,13 @@ using namespace google;
 using namespace gflags;
 
 DEFINE_string(target_name, "", "Target name to resolve.");
+DEFINE_string(do_ordered_address_comparison, "",
+              "Whether or not to compare resolved addresses to expected "
+              "addresses using an ordered comparison. This is useful for "
+              "testing certain behaviors that involve sorting of resolved "
+              "addresses. Note it would be better if this argument was a "
+              "bool flag, but it's a string for ease of invocation from "
+              "the generated python test runner.");
 DEFINE_string(expected_addrs, "",
               "List of expected backend or balancer addresses in the form "
               "'<ip0:port0>,<is_balancer0>;<ip1:port1>,<is_balancer1>;...'. "
@@ -484,8 +491,18 @@ class CheckingResultHandler : public ResultHandler {
               found_lb_addrs.size(), args->expected_addrs.size());
       abort();
     }
-    EXPECT_THAT(args->expected_addrs,
-                UnorderedElementsAreArray(found_lb_addrs));
+    if (FLAGS_do_ordered_address_comparison == "True") {
+      EXPECT_EQ(args->expected_addrs, found_lb_addrs);
+    } else if (FLAGS_do_ordered_address_comparison == "False") {
+      EXPECT_THAT(args->expected_addrs,
+                  UnorderedElementsAreArray(found_lb_addrs));
+    } else {
+      gpr_log(GPR_ERROR,
+              "Invalid for setting for --do_ordered_address_comparison. "
+              "Have %s, want True or False",
+              FLAGS_do_ordered_address_comparison.c_str());
+      GPR_ASSERT(0);
+    }
     const char* service_config_json =
         result.service_config == nullptr
             ? nullptr

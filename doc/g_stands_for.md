@@ -29,4 +29,5 @@
 - 1.27 'g' stands for ['guantao'](https://github.com/grpc/grpc/tree/v1.27.x)
 - 1.28 'g' stands for ['galactic'](https://github.com/grpc/grpc/tree/v1.28.x)
 - 1.29 'g' stands for ['gringotts'](https://github.com/grpc/grpc/tree/v1.29.x)
-- 1.30 'g' stands for ['gradius'](https://github.com/grpc/grpc/tree/master)
+- 1.30 'g' stands for ['gradius'](https://github.com/grpc/grpc/tree/v1.30.x)
+- 1.31 'g' stands for ['galore'](https://github.com/grpc/grpc/tree/master)

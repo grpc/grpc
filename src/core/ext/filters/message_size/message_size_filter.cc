@@ -27,6 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/filters/client_channel/service_config_call_data.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gpr/string.h"
@@ -44,7 +45,7 @@ namespace {
 size_t g_message_size_parser_index;
 }  // namespace
 
-std::unique_ptr<ServiceConfig::ParsedConfig>
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
 MessageSizeParser::ParsePerMethodParams(const Json& json, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error*> error_list;
@@ -91,8 +92,8 @@ MessageSizeParser::ParsePerMethodParams(const Json& json, grpc_error** error) {
 }
 
 void MessageSizeParser::Register() {
-  g_message_size_parser_index =
-      ServiceConfig::RegisterParser(absl::make_unique<MessageSizeParser>());
+  g_message_size_parser_index = ServiceConfigParser::RegisterParser(
+      absl::make_unique<MessageSizeParser>());
 }
 
 size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }
@@ -118,9 +119,9 @@ struct call_data {
     // apply the max request size to the send limit and the max response
     // size to the receive limit.
     const grpc_core::MessageSizeParsedConfig* limits = nullptr;
-    grpc_core::ServiceConfig::CallData* svc_cfg_call_data = nullptr;
+    grpc_core::ServiceConfigCallData* svc_cfg_call_data = nullptr;
     if (args.context != nullptr) {
-      svc_cfg_call_data = static_cast<grpc_core::ServiceConfig::CallData*>(
+      svc_cfg_call_data = static_cast<grpc_core::ServiceConfigCallData*>(
           args.context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
     }
     if (svc_cfg_call_data != nullptr) {

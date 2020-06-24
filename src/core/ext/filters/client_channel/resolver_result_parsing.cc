@@ -54,8 +54,9 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
 }
 
 void ClientChannelServiceConfigParser::Register() {
-  g_client_channel_service_config_parser_index = ServiceConfig::RegisterParser(
-      absl::make_unique<ClientChannelServiceConfigParser>());
+  g_client_channel_service_config_parser_index =
+      ServiceConfigParser::RegisterParser(
+          absl::make_unique<ClientChannelServiceConfigParser>());
 }
 
 namespace {
@@ -312,7 +313,7 @@ const char* ParseHealthCheckConfig(const Json& field, grpc_error** error) {
 
 }  // namespace
 
-std::unique_ptr<ServiceConfig::ParsedConfig>
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
                                                     grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
@@ -393,7 +394,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
   return nullptr;
 }
 
-std::unique_ptr<ServiceConfig::ParsedConfig>
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(const Json& json,
                                                        grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);

@@ -131,11 +131,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "a3d4de4f03cb321ef943678d72a045c9a19d26b23d6f4e313f97600c65201a27",
-            strip_prefix = "boringssl-1c2769383f027befac5b75b6cedd25daf3bf4dcf",
+            sha256 = "3909329105e28cfeedcd8028865c92f1081ae2524a0ad6c09eba5d91d9ae3869",
+            strip_prefix = "boringssl-3ab047a8e377083a9b38dc908fe1612d5743a021",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/1c2769383f027befac5b75b6cedd25daf3bf4dcf.tar.gz",
-                "https://github.com/google/boringssl/archive/1c2769383f027befac5b75b6cedd25daf3bf4dcf.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/3ab047a8e377083a9b38dc908fe1612d5743a021.tar.gz",
+                "https://github.com/google/boringssl/archive/3ab047a8e377083a9b38dc908fe1612d5743a021.tar.gz",
             ],
         )
 
@@ -154,11 +154,11 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "2435b7fb83b8a608c24ca677907aa9a35e482a7f018e65ca69481b3c8c9f7caf",
-            strip_prefix = "protobuf-d0bfd5221182da1a7cc280f3337b5e41a89539cf",
+            sha256 = "efaf69303e01caccc2447064fc1832dfd23c0c130df0dc5fc98a13185bb7d1a7",
+            strip_prefix = "protobuf-678da4f76eb9168c9965afc2149944a66cd48546",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/protobuf/archive/d0bfd5221182da1a7cc280f3337b5e41a89539cf.tar.gz",
-                "https://github.com/google/protobuf/archive/d0bfd5221182da1a7cc280f3337b5e41a89539cf.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/protobuf/archive/678da4f76eb9168c9965afc2149944a66cd48546.tar.gz",
+                "https://github.com/google/protobuf/archive/678da4f76eb9168c9965afc2149944a66cd48546.tar.gz",
             ],
         )
 

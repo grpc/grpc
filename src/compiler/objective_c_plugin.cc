@@ -52,15 +52,16 @@ inline ::grpc::string ImportProtoHeaders(
 
   ::grpc::string base_name = header;
   grpc_generator::StripPrefix(&base_name, "google/protobuf/");
+  ::grpc::string file_name = "GPB" + base_name;
   // create the import code snippet
   ::grpc::string framework_header =
-      ::grpc::string(ProtobufLibraryFrameworkName) + "/" + base_name;
+      ::grpc::string(ProtobufLibraryFrameworkName) + "/" + file_name;
 
   static const ::grpc::string kFrameworkImportsCondition =
       "GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS";
   return PreprocIfElse(kFrameworkImportsCondition,
                        indent + SystemImport(framework_header),
-                       indent + LocalImport(header));
+                       indent + LocalImport(file_name));
 }
 
 }  // namespace
@@ -71,10 +72,14 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   virtual ~ObjectiveCGrpcGenerator() {}
 
  public:
+  uint64_t GetSupportedFeatures() const override {
+    return FEATURE_PROTO3_OPTIONAL;
+  }
+
   virtual bool Generate(const grpc::protobuf::FileDescriptor* file,
                         const ::grpc::string& parameter,
                         grpc::protobuf::compiler::GeneratorContext* context,
-                        ::grpc::string* error) const {
+                        ::grpc::string* error) const override {
     if (file->service_count() == 0) {
       // No services.  Do nothing.
       return true;

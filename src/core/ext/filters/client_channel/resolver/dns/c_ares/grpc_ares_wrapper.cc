@@ -181,6 +181,12 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
     // TODO(apolcyn): allow c-ares to return a service config
     // with no addresses along side it
   }
+  if (r->balancer_addresses_out != nullptr) {
+    ServerAddressList* balancer_addresses = r->balancer_addresses_out->get();
+    if (balancer_addresses != nullptr) {
+      grpc_cares_wrapper_address_sorting_sort(r, balancer_addresses);
+    }
+  }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, r->error);
 }
 

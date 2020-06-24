@@ -86,8 +86,6 @@ static void run_test(const test_fixture* fixture, bool share_subchannel) {
   gpr_log(GPR_INFO, "TEST: %s sharing subchannel: %d", fixture->name,
           share_subchannel);
 
-  grpc_init();
-
   std::string addr =
       grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
 
@@ -147,8 +145,6 @@ static void run_test(const test_fixture* fixture, bool share_subchannel) {
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(server_cq);
   grpc_completion_queue_destroy(cq);
-
-  grpc_shutdown();
 }
 
 static void insecure_test_add_port(grpc_server* server, const char* addr) {
@@ -176,13 +172,13 @@ static void secure_test_add_port(grpc_server* server, const char* addr) {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
+  grpc_init();
 
   const test_fixture insecure_test = {
       "insecure",
       insecure_test_add_port,
       nullptr,
   };
-
   run_test(&insecure_test, /*share_subchannel=*/true);
   run_test(&insecure_test, /*share_subchannel=*/false);
 
@@ -202,4 +198,6 @@ int main(int argc, char** argv) {
   run_test(&secure_test, /*share_subchannel=*/true);
   run_test(&secure_test, /*share_subchannel=*/false);
   grpc_channel_credentials_release(ssl_creds);
+
+  grpc_shutdown();
 }

@@ -32,10 +32,14 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   NodeGrpcGenerator() {}
   ~NodeGrpcGenerator() {}
 
+  uint64_t GetSupportedFeatures() const override {
+    return FEATURE_PROTO3_OPTIONAL;
+  }
+
   bool Generate(const grpc::protobuf::FileDescriptor* file,
                 const grpc::string& parameter,
                 grpc::protobuf::compiler::GeneratorContext* context,
-                grpc::string* error) const {
+                grpc::string* error) const override {
     grpc_node_generator::Parameters generator_parameters;
     generator_parameters.minimum_node_version = 4;
 

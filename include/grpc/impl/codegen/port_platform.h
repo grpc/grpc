@@ -53,6 +53,8 @@
 #define NOMINMAX
 #endif /* NOMINMAX */
 
+#include <windows.h>
+
 #ifndef _WIN32_WINNT
 #error \
     "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
@@ -62,8 +64,6 @@
     "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
 #endif /* _WIN32_WINNT < 0x0600 */
 #endif /* defined(_WIN32_WINNT) */
-
-#include <windows.h>
 
 #ifdef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
 #undef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
@@ -112,31 +112,6 @@
 #define GPR_WINDOWS_ATOMIC 1
 #define GPR_MSVC_TLS 1
 #endif
-#elif defined(GPR_MANYLINUX1)
-// TODO(atash): manylinux1 is just another __linux__ but with ancient
-// libraries; it should be integrated with the `__linux__` definitions below.
-#define GPR_PLATFORM_STRING "manylinux"
-#define GPR_POSIX_CRASH_HANDLER 1
-#define GPR_CPU_POSIX 1
-#define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
-#define GPR_LINUX 1
-#define GPR_LINUX_LOG 1
-#define GPR_SUPPORT_CHANNELS_FROM_FD 1
-#define GPR_LINUX_ENV 1
-#define GPR_POSIX_TMPFILE 1
-#define GPR_POSIX_STRING 1
-#define GPR_POSIX_SUBPROCESS 1
-#define GPR_POSIX_SYNC 1
-#define GPR_POSIX_TIME 1
-#define GPR_HAS_PTHREAD_H 1
-#define GPR_GETPID_IN_UNISTD_H 1
-#ifdef _LP64
-#define GPR_ARCH_64 1
-#else /* _LP64 */
-#define GPR_ARCH_32 1
-#endif /* _LP64 */
-#include <linux/version.h>
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1

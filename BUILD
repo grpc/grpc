@@ -75,11 +75,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "gradius"
+g_stands_for = "galore"
 
 core_version = "10.0.0"
 
-version = "1.30.0-dev"
+version = "1.31.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -124,6 +124,7 @@ GRPC_SECURE_PUBLIC_HDRS = [
 # TODO(ctiller): layer grpc atop grpc_unsecure, layer grpc++ atop grpc++_unsecure
 GRPCXX_SRCS = [
     "src/cpp/client/channel_cc.cc",
+    "src/cpp/client/client_callback.cc",
     "src/cpp/client/client_context.cc",
     "src/cpp/client/client_interceptor.cc",
     "src/cpp/client/create_channel.cc",
@@ -233,7 +234,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/generic/generic_stub_impl.h",
     "include/grpcpp/grpcpp.h",
     "include/grpcpp/health_check_service_interface.h",
-    "include/grpcpp/health_check_service_interface_impl.h",
     "include/grpcpp/impl/call.h",
     "include/grpcpp/impl/channel_argument_option.h",
     "include/grpcpp/impl/client_unary_call.h",
@@ -250,7 +250,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/server_initializer_impl.h",
     "include/grpcpp/impl/service_type.h",
     "include/grpcpp/resource_quota.h",
-    "include/grpcpp/resource_quota_impl.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
     "include/grpcpp/security/auth_metadata_processor_impl.h",
@@ -1027,6 +1026,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_channelz.cc",
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
+        "src/core/ext/filters/client_channel/config_selector.cc",
         "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
@@ -1044,6 +1044,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/server_address.cc",
         "src/core/ext/filters/client_channel/service_config.cc",
+        "src/core/ext/filters/client_channel/service_config_parser.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
     ],
@@ -1053,6 +1054,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel.h",
         "src/core/ext/filters/client_channel/client_channel_channelz.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
+        "src/core/ext/filters/client_channel/config_selector.h",
         "src/core/ext/filters/client_channel/connector.h",
         "src/core/ext/filters/client_channel/global_subchannel_pool.h",
         "src/core/ext/filters/client_channel/health/health_check_client.h",
@@ -1074,6 +1076,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/server_address.h",
         "src/core/ext/filters/client_channel/service_config.h",
+        "src/core/ext/filters/client_channel/service_config_call_data.h",
+        "src/core/ext/filters/client_channel/service_config_parser.h",
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_interface.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",

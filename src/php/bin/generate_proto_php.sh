@@ -46,14 +46,6 @@ $PROTOC --proto_path=. \
        src/proto/grpc/testing/empty.proto \
        src/proto/grpc/testing/test.proto
 
-# qps test protos
-$PROTOC --proto_path=. \
-       --php_out=src/php/tests/qps/generated_code \
-       --grpc_out=src/php/tests/qps/generated_code \
-       --plugin=$PLUGIN \
-       src/proto/grpc/core/stats.proto \
-       src/proto/grpc/testing/{benchmark_service,compiler_test,control,echo_messages,empty,empty_service,messages,payloads,proxy-service,report_qps_scenario_service,stats,test,worker_service}.proto
-
 # change it back
 sed 's/message EmptyMessage/message Empty/g' \
   src/proto/grpc/testing/empty.proto > $output_file
@@ -61,3 +53,12 @@ mv $output_file ./src/proto/grpc/testing/empty.proto
 sed 's/grpc\.testing\.EmptyMessage/grpc\.testing\.Empty/g' \
   src/proto/grpc/testing/test.proto > $output_file
 mv $output_file ./src/proto/grpc/testing/test.proto
+
+# Hack for xDS interop: need this to be a separate file in the correct namespace.
+# To be removed when grpc_php_plugin generates service stubs.
+echo '<?php
+// DO NOT EDIT
+namespace Grpc\Testing;
+class LoadBalancerStatsServiceStub {
+}
+' > ./src/php/tests/interop/Grpc/Testing/LoadBalancerStatsServiceStub.php

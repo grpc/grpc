@@ -65,6 +65,8 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -235,7 +237,7 @@ class GrpcLb : public LoadBalancingPolicy {
     const std::vector<GrpcLbServer>& serverlist() const { return serverlist_; }
 
     // Returns a text representation suitable for logging.
-    grpc_core::UniquePtr<char> AsText() const;
+    std::string AsText() const;
 
     // Extracts all non-drop entries into a ServerAddressList.
     ServerAddressList GetServerAddressList(
@@ -445,9 +447,8 @@ void ParseServer(const GrpcLbServer& server, grpc_resolved_address* addr) {
   }
 }
 
-grpc_core::UniquePtr<char> GrpcLb::Serverlist::AsText() const {
-  gpr_strvec entries;
-  gpr_strvec_init(&entries);
+std::string GrpcLb::Serverlist::AsText() const {
+  std::vector<std::string> entries;
   for (size_t i = 0; i < serverlist_.size(); ++i) {
     const GrpcLbServer& server = serverlist_[i];
     std::string ipport;
@@ -458,14 +459,10 @@ grpc_core::UniquePtr<char> GrpcLb::Serverlist::AsText() const {
       ParseServer(server, &addr);
       ipport = grpc_sockaddr_to_string(&addr, false);
     }
-    char* entry;
-    gpr_asprintf(&entry, "  %" PRIuPTR ": %s token=%s\n", i, ipport.c_str(),
-                 server.load_balance_token);
-    gpr_strvec_add(&entries, entry);
+    entries.push_back(absl::StrFormat("  %" PRIuPTR ": %s token=%s\n", i,
+                                      ipport, server.load_balance_token));
   }
-  grpc_core::UniquePtr<char> result(gpr_strvec_flatten(&entries, nullptr));
-  gpr_strvec_destroy(&entries);
-  return result;
+  return absl::StrJoin(entries, "");
 }
 
 // vtables for channel args for LB token and client stats.
@@ -1057,14 +1054,12 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
         auto serverlist_wrapper =
             MakeRefCounted<Serverlist>(std::move(response.serverlist));
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-          grpc_core::UniquePtr<char> serverlist_text =
-              serverlist_wrapper->AsText();
           gpr_log(GPR_INFO,
                   "[grpclb %p] lb_calld=%p: Serverlist with %" PRIuPTR
                   " servers received:\n%s",
                   grpclb_policy(), this,
                   serverlist_wrapper->serverlist().size(),
-                  serverlist_text.get());
+                  serverlist_wrapper->AsText().c_str());
         }
         seen_serverlist_ = true;
         // Start sending client load report only after we start using the

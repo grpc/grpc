@@ -43,14 +43,13 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
-typedef struct {
+struct request {
   char* name;
   char* default_port;
   grpc_closure request_closure;
   grpc_closure* on_done;
   grpc_resolved_addresses** addresses;
-} request;
-
+};
 static grpc_error* windows_blocking_resolve_address(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
