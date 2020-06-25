@@ -769,6 +769,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/fake/fake_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/fake/fake_credentials.h )
   s.files += %w( src/core/lib/security/credentials/google_default/credentials_generic.cc )
+  s.files += %w( src/core/lib/security/credentials/google_default/gce_channel_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/google_default/google_default_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/google_default/google_default_credentials.h )
   s.files += %w( src/core/lib/security/credentials/iam/iam_credentials.cc )

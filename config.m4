@@ -398,6 +398,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/credentials_metadata.cc \
     src/core/lib/security/credentials/fake/fake_credentials.cc \
     src/core/lib/security/credentials/google_default/credentials_generic.cc \
+    src/core/lib/security/credentials/google_default/gce_channel_credentials.cc \
     src/core/lib/security/credentials/google_default/google_default_credentials.cc \
     src/core/lib/security/credentials/iam/iam_credentials.cc \
     src/core/lib/security/credentials/jwt/json_token.cc \
