@@ -30,6 +30,7 @@
 
 #include <grpc/slice_buffer.h>
 
+#include "re2/re2.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
@@ -58,6 +59,7 @@ class XdsApi {
             REGEX,
           };
           PathMatcherType path_type;
+          std::unique_ptr<RE2> regex_path_matcher;
           std::string path_matcher;
           bool operator==(const PathMatcher& other) const {
             return (path_type == other.path_type &&
@@ -79,6 +81,7 @@ class XdsApi {
           int64_t range_start;
           int64_t range_end;
           std::string header_matcher;
+          std::unique_ptr<RE2> regex_match;
           bool present_match;
           bool invert_match;
           bool operator==(const HeaderMatcher& other) const {
