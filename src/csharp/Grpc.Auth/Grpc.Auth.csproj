@@ -11,7 +11,15 @@
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
     <PackageTags>gRPC RPC HTTP/2 Auth OAuth2</PackageTags>
     <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
 
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard1.5;netstandard2.0</TargetFrameworks>
