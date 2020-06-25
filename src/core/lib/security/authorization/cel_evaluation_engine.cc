@@ -21,24 +21,23 @@ CelEvaluationEngine::CelEvaluationEngine(
   upb::Arena temp_arena;
   size_t num_policies = UPB_MAP_BEGIN;
   const envoy_config_rbac_v2_RBAC_PoliciesEntry* policy_entry;
-  while ((policy_entry = 
-         envoy_config_rbac_v2_RBAC_policies_next(&rbac_policy, &num_policies))
-                                                                   != nullptr) {
+  while ((policy_entry = envoy_config_rbac_v2_RBAC_policies_next(
+              &rbac_policy, &num_policies)) != nullptr) {
     const upb_strview policy_name_strview =
-                      envoy_config_rbac_v2_RBAC_PoliciesEntry_key(policy_entry);
-    const std::string policy_name(policy_name_strview.data, 
-                                                      policy_name_strview.size);
+        envoy_config_rbac_v2_RBAC_PoliciesEntry_key(policy_entry);
+    const std::string policy_name(policy_name_strview.data,
+                                  policy_name_strview.size);
     const envoy_config_rbac_v2_Policy* policy =
         envoy_config_rbac_v2_RBAC_PoliciesEntry_value(policy_entry);
     const google_api_expr_v1alpha1_Expr* condition =
-                                  envoy_config_rbac_v2_Policy_condition(policy);
+        envoy_config_rbac_v2_Policy_condition(policy);
     // Parse condition to make a pointer tied to the lifetime of arena_.
     size_t serial_len;
     char* serialized = google_api_expr_v1alpha1_Expr_serialize(
-                                      condition, temp_arena.ptr(), &serial_len);
+        condition, temp_arena.ptr(), &serial_len);
     google_api_expr_v1alpha1_Expr* parsed_condition =
-                     google_api_expr_v1alpha1_Expr_parse(serialized, serial_len,
-                                                                  arena_.ptr());
+        google_api_expr_v1alpha1_Expr_parse(serialized, serial_len,
+                                            arena_.ptr());
 
     policies_.insert(std::make_pair(policy_name, parsed_condition));
   }
