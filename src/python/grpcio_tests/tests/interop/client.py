@@ -52,7 +52,7 @@ def parse_interop_client_args():
                         type=resources.parse_bool,
                         help='replace platform root CAs with ca.pem')
     parser.add_argument('--custom_credentials_type',
-                        choices=["google_default_credentials"],
+                        choices=["compute_engine_channel_creds"],
                         default=None,
                         help='use google default credentials')
     parser.add_argument('--server_host_override',
@@ -64,12 +64,14 @@ def parse_interop_client_args():
     parser.add_argument('--default_service_account',
                         type=str,
                         help='email address of the default service account')
-    parser.add_argument("--grpc_test_use_grpclb_with_child_policy",
-                        type=str,
-                        help=("If non-empty, set a static service config on channels created by " +
-                        "grpc::CreateTestChannel, that configures the grpclb LB policy " +
-                        "with a child policy being the value of this flag (e.g. round_robin " +
-                        "or pick_first)."))
+    parser.add_argument(
+        "--grpc_test_use_grpclb_with_child_policy",
+        type=str,
+        help=(
+            "If non-empty, set a static service config on channels created by "
+            + "grpc::CreateTestChannel, that configures the grpclb LB policy " +
+            "with a child policy being the value of this flag (e.g. round_robin "
+            + "or pick_first)."))
     return parser.parse_args()
 
 
@@ -101,13 +103,27 @@ def get_secure_channel_parameters(args):
 
     channel_opts = ()
     if args.grpc_test_use_grpclb_with_child_policy:
-        channel_opts += (("grpc.service_config", '{"loadBalancingConfig": [{"grpclb": {"childPolicy": [{"%s": {}}]}}]}' % args.grpc_test_use_grpclb_with_child_policy),)
+        channel_opts += ((
+            "grpc.service_config",
+            '{"loadBalancingConfig": [{"grpclb": {"childPolicy": [{"%s": {}}]}}]}'
+            % args.grpc_test_use_grpclb_with_child_policy),)
     if args.custom_credentials_type is not None:
-        if args.custom_credentials_type == "google_default_credentials":
-            channel_credentials = grpc.google_default_channel_credentials()
+        if args.custom_credentials_type == "compute_engine_channel_creds":
+            # channel_credentials = grpc.google_default_channel_credentials()
             if call_credentials is not None:
-                channel_credentials = grpc.composite_channel_credentials(
-                    channel_credentials, call_credentials)
+                raise ValueError("What? That's not true! That's impossible!")
+            google_credentials, unused_project_id = google_auth.default(
+                scopes=[args.oauth_scope])
+            call_creds = grpc.metadata_call_credentials(
+                google_auth.transport.grpc.AuthMetadataPlugin(
+                    credentials=google_credentials,
+                    request=google_auth.transport.requests.Request()))
+            # TODO: Is there any reason why it actually had to take this argument?
+            # Couldn't we just as easily have created a composite channel credential?
+            channel_credentials = grpc.gce_channel_credentials(call_creds)
+            # channel_credentials = grpc.composite_channel_credentials(channel_credent)
+            #     channel_credentials = grpc.composite_channel_credentials(
+            #         channel_credentials, call_credentials)
         else:
             raise ValueError("Unknown credentials type '{}'".format(
                 args.custom_credentials_type))
