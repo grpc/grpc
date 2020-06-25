@@ -1866,7 +1866,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_ads_upb",
-        "google_api_upb"
+        "google_api_upb",
     ],
 )
 
