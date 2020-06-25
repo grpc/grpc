@@ -10,7 +10,7 @@
 #include <src/core/lib/transport/metadata_batch.h>
 
 
-//Holds grpc values that will be converted to the necessary Envoy args.
+//Holds grpc values that will be converted to the necessary Envoy values.
 struct EvaluateArgs {
   const grpc_metadata_batch* metadata;
   const grpc_endpoint* endpoint;
