@@ -5,7 +5,15 @@
     <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
     <!-- If changing targets, change also paths in Google.Protobuf.Tools.targets. -->
     <TargetFrameworks>net45;netstandard1.3</TargetFrameworks>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
 
   <!-- Needed for the net45 build to work on Unix. See https://github.com/dotnet/designs/pull/33 -->
   <ItemGroup>
