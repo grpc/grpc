@@ -2788,7 +2788,6 @@ foreach(_hdr
   include/grpcpp/completion_queue.h
   include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
-  include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
   include/grpcpp/create_channel_posix_impl.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
@@ -3480,7 +3479,6 @@ foreach(_hdr
   include/grpcpp/completion_queue.h
   include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
-  include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
   include/grpcpp/create_channel_posix_impl.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
