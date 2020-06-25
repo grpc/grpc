@@ -1111,7 +1111,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   }
   absl::Status status = absl::Status(absl::StatusCode::kUnavailable,
                                      "Transport received too many pings");
-  status.SetPayload("keepalive_throttle",
+  status.SetPayload("grpc.internal.keepalive_throttle",
                     absl::Cord(std::to_string(t->keepalive_time)));
   /* lie: use transient failure from the transport to indicate goaway has been
    * received */

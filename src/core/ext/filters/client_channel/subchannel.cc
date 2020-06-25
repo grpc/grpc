@@ -346,6 +346,21 @@ class Subchannel::ConnectedSubchannelStateWatcher
           if (c->channelz_node() != nullptr) {
             c->channelz_node()->SetChildSocket(nullptr);
           }
+          absl::optional<absl::Cord> keepalive_throttling =
+              status.GetPayload("grpc.internal.keepalive_throttling");
+          if (keepalive_throttling.has_value()) {
+            int new_keepalive_time =
+                2 * atoi(std::string(keepalive_throttling.value()).c_str());
+            const grpc_arg arg_to_add = grpc_channel_arg_integer_create(
+                const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
+                new_keepalive_time);
+            const char* arg_to_remove = GRPC_ARG_KEEPALIVE_TIME_MS;
+            grpc_channel_args* new_args =
+                grpc_channel_args_copy_and_add_and_remove(
+                    c->args_, &arg_to_remove, 1, &arg_to_add, 1);
+            grpc_channel_args_destroy(c->args_);
+            c->args_ = new_args;
+          }
           c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, status);
           c->backoff_begun_ = false;
           c->backoff_.Reset();
@@ -712,7 +727,8 @@ Subchannel::~Subchannel() {
 }
 
 Subchannel* Subchannel::Create(OrphanablePtr<SubchannelConnector> connector,
-                               const grpc_channel_args* args) {
+                               const grpc_channel_args* args,
+                               int keepalive_time) {
   SubchannelKey* key = new SubchannelKey(args);
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
@@ -722,7 +738,16 @@ Subchannel* Subchannel::Create(OrphanablePtr<SubchannelConnector> connector,
     delete key;
     return c;
   }
-  c = new Subchannel(key, std::move(connector), args);
+  if (keepalive_time > 0) {
+    grpc_arg arg_to_add = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), keepalive_time);
+    grpc_channel_args* new_args =
+        grpc_channel_args_copy_and_add(args, &arg_to_add, 1);
+    c = new Subchannel(key, std::move(connector), new_args);
+    grpc_channel_args_destroy(new_args);
+  } else {
+    c = new Subchannel(key, std::move(connector), args);
+  }
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while

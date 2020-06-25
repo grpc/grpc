@@ -50,7 +50,8 @@ class Watcher : public ConnectivityStateWatcherInterface {
     if (destroyed_ != nullptr) *destroyed_ = true;
   }
 
-  void Notify(grpc_connectivity_state new_state) override {
+  void Notify(grpc_connectivity_state new_state,
+              const absl::Status& /* status */) override {
     ++*count_;
     *output_ = new_state;
   }

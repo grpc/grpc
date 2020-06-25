@@ -177,4 +177,13 @@ void ConnectivityStateTracker::SetState(grpc_connectivity_state state,
   SetState(state, reason, absl::Status());
 }
 
+grpc_connectivity_state ConnectivityStateTracker::state() const {
+  grpc_connectivity_state state = state_.Load(MemoryOrder::RELAXED);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_connectivity_state_trace)) {
+    gpr_log(GPR_INFO, "ConnectivityStateTracker %s[%p]: get current state: %s",
+            name_, this, ConnectivityStateName(state));
+  }
+  return state;
+}
+
 }  // namespace grpc_core

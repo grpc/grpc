@@ -226,7 +226,7 @@ class Subchannel {
 
   // Creates a subchannel given \a connector and \a args.
   static Subchannel* Create(OrphanablePtr<SubchannelConnector> connector,
-                            const grpc_channel_args* args);
+                            const grpc_channel_args* args, int keepalive_time);
 
   // Strong and weak refcounting.
   Subchannel* Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);

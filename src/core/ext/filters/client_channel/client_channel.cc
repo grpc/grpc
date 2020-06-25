@@ -335,6 +335,7 @@ class ChannelData {
   // applied in the data plane mutex when the picker is updated.
   std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>>
       pending_subchannel_updates_;
+  int keepalive_time_ = -1;
 
   //
   // Fields accessed from both data plane mutex and control plane
@@ -1096,6 +1097,13 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                 watcher_.get());
       }
       ConnectivityStateChange state_change = PopConnectivityStateChange();
+      absl::optional<absl::Cord> keepalive_throttling =
+          state_change.status.GetPayload("grpc.internal.keepalive_throttling");
+      if (keepalive_throttling.has_value()) {
+        parent_->chand_->keepalive_time_ = std::max(
+            parent_->chand_->keepalive_time_,
+            2 * atoi(std::string(keepalive_throttling.value()).c_str()));
+      }
       // Ignore update if the parent WatcherWrapper has been replaced
       // since this callback was scheduled.
       if (watcher_ != nullptr) {
@@ -1312,8 +1320,8 @@ class ChannelData::ClientChannelControlHelper
         chand_->subchannel_pool_.get());
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
         &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &arg, 1);
-    Subchannel* subchannel =
-        chand_->client_channel_factory_->CreateSubchannel(new_args);
+    Subchannel* subchannel = chand_->client_channel_factory_->CreateSubchannel(
+        new_args, chand_->keepalive_time_);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
     return MakeRefCounted<SubchannelWrapper>(
@@ -1644,9 +1652,22 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
                                &new_args);
   target_uri_.reset(proxy_name != nullptr ? proxy_name
                                           : gpr_strdup(server_uri));
-  channel_args_ = new_args != nullptr
-                      ? new_args
-                      : grpc_channel_args_copy(args->channel_args);
+  keepalive_time_ = grpc_channel_args_find_integer(
+      new_args != nullptr ? new_args : args->channel_args,
+      GRPC_ARG_KEEPALIVE_TIME_MS, {-1 /* default value, unset */, 1, INT_MAX});
+  const char* arg_to_remove = GRPC_ARG_KEEPALIVE_TIME_MS;
+  if (new_args != nullptr) {
+    if (keepalive_time_ > 0) {
+      channel_args_ =
+          grpc_channel_args_copy_and_remove(new_args, &arg_to_remove, 1);
+      grpc_channel_args_destroy(new_args);
+    } else {
+      channel_args_ = new_args;
+    }
+  } else {
+    channel_args_ = grpc_channel_args_copy_and_remove(args->channel_args,
+                                                      &arg_to_remove, 1);
+  }
   if (!ResolverRegistry::IsValidTarget(target_uri_.get())) {
     *error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("the target uri is not valid.");
