@@ -317,7 +317,8 @@ class GrpcLb : public LoadBalancingPolicy {
     ~StateWatcher() { parent_.reset(DEBUG_LOCATION, "StateWatcher"); }
 
    private:
-    void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
+    void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                   const absl::Status& /* status */) override {
       if (parent_->fallback_at_startup_checks_pending_ &&
           new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into

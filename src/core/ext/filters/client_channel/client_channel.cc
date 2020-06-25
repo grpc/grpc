@@ -222,7 +222,8 @@ class ChannelData {
 
     void Start();
 
-    void Notify(grpc_connectivity_state state) override;
+    void Notify(grpc_connectivity_state state,
+                const absl::Status& /* status */) override;
 
     void Cancel();
 
@@ -1180,7 +1181,7 @@ void ChannelData::ExternalConnectivityWatcher::Start() {
 }
 
 void ChannelData::ExternalConnectivityWatcher::Notify(
-    grpc_connectivity_state state) {
+    grpc_connectivity_state state, const absl::Status& /* status */) {
   bool done = false;
   if (!done_.CompareExchangeStrong(&done, true, MemoryOrder::RELAXED,
                                    MemoryOrder::RELAXED)) {
@@ -1679,7 +1680,7 @@ void ChannelData::UpdateStateAndPickerLocked(
     received_first_resolver_result_ = false;
   }
   // Update connectivity state.
-  state_tracker_.SetState(state, reason);
+  state_tracker_.SetState(state, reason, absl::Status());
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
     channelz_node_->AddTraceEvent(
