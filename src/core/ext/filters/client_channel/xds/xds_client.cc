@@ -1462,11 +1462,14 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
   GPR_ASSERT(!xds_client()->server_name_.empty());
+  const auto& method =
+      xds_client()->bootstrap_->server().ShouldUseV3()
+          ? GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V3_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS
+          : GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V2_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS;
   call_ = grpc_channel_create_pollset_set_call(
       chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
-      xds_client()->interested_parties_,
-      GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V2_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS,
-      nullptr, GRPC_MILLIS_INF_FUTURE, nullptr);
+      xds_client()->interested_parties_, method, nullptr,
+      GRPC_MILLIS_INF_FUTURE, nullptr);
   GPR_ASSERT(call_ != nullptr);
   // Init the request payload.
   grpc_slice request_payload_slice =

@@ -1260,26 +1260,22 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   result.nonce = UpbStringToStdString(nonce_strview);
   // Parse the response according to the resource type.
   if (IsLds(result.type_url)) {
-    result.parse_error =
-        LdsResponseParse(client_, tracer_, symtab_.ptr(), response,
-                         expected_server_name, xds_routing_enabled_,
-                         &result.lds_update, arena.ptr());
+    result.parse_error = LdsResponseParse(
+        client_, tracer_, symtab_.ptr(), response, expected_server_name,
+        xds_routing_enabled_, &result.lds_update, arena.ptr());
   } else if (IsRds(result.type_url)) {
-    result.parse_error =
-        RdsResponseParse(client_, tracer_, symtab_.ptr(), response,
-                         expected_server_name,
-                         expected_route_configuration_names,
-                         xds_routing_enabled_, &result.rds_update, arena.ptr());
+    result.parse_error = RdsResponseParse(
+        client_, tracer_, symtab_.ptr(), response, expected_server_name,
+        expected_route_configuration_names, xds_routing_enabled_,
+        &result.rds_update, arena.ptr());
   } else if (IsCds(result.type_url)) {
-    result.parse_error =
-        CdsResponseParse(client_, tracer_, symtab_.ptr(), response,
-                         expected_cluster_names, &result.cds_update_map,
-                         arena.ptr());
+    result.parse_error = CdsResponseParse(client_, tracer_, symtab_.ptr(),
+                                          response, expected_cluster_names,
+                                          &result.cds_update_map, arena.ptr());
   } else if (IsEds(result.type_url)) {
-    result.parse_error =
-        EdsResponseParse(client_, tracer_, symtab_.ptr(), response,
-                         expected_eds_service_names, &result.eds_update_map,
-                         arena.ptr());
+    result.parse_error = EdsResponseParse(client_, tracer_, symtab_.ptr(),
+                                          response, expected_eds_service_names,
+                                          &result.eds_update_map, arena.ptr());
   }
   return result;
 }
