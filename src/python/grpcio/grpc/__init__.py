@@ -1868,12 +1868,21 @@ def alts_server_credentials():
     return ServerCredentials(_cygrpc.server_credentials_alts())
 
 
-def compute_engine_channel_credentials(call_creds):
-    """
-    TODO: Document.
+def compute_engine_channel_credentials():
+    """Creates a compute engine channel credential.
+
+    This is an EXPERIMENAL API.
+    This credential can only be used in a GCP environment as ir relies on
+    a handshaker service. For more infor about ALTS, see
+    https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security
+
+    This channel credential is expected to be used as part of a composite
+    credential in conjunction with a compute_engine_call_credential. if used
+    with any other call credential, the connection may suddenly and unexpectedly
+    begin failing RPCs.
     """
     return ChannelCredentials(
-        _cygrpc.channel_credentials_compute_engine(call_creds._credentials))
+        _cygrpc.channel_credentials_compute_engine())
 
 
 def channel_ready_future(channel):

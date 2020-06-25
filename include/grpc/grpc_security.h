@@ -303,17 +303,15 @@ GRPCAPI grpc_call_credentials* grpc_google_compute_engine_credentials_create(
 
 /** Creates compute engine channel credentials to connect to a google gRPC service.
 
-   call_credentials is expected to be a gce_call_credentials object.
-
-   The grpc_call_credentials instance passed to this function is expected to
-   remain valid for the lifetime of the grpc_channel_credentials object
-   returned.
+   This channel credential is expected to be used within a composite credential
+   alongside a compute_engine_credential. If used in conjunction with any call
+   credential besides a compute_engine_credential, the connection may suddenly
+   and unexpectedly begin to fail RPCs.
 
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. The security level of the
    resulting connection is GRPC_PRIVACY_AND_INTEGRITY. */
-GRPCAPI grpc_channel_credentials* grpc_compute_engine_channel_credentials_create(
-    grpc_call_credentials* call_credentials, void* reserved);
+GRPCAPI grpc_channel_credentials* grpc_compute_engine_channel_credentials_create(void* reserved);
 
 GRPCAPI gpr_timespec grpc_max_auth_token_lifetime(void);
 

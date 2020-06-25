@@ -381,21 +381,17 @@ def server_credentials_alts():
   grpc_alts_credentials_options_destroy(c_options)
   return credentials
 
+
 cdef class ComputeEngineChannelCredentials(ChannelCredentials):
   cdef grpc_channel_credentials* _c_creds
-  cdef grpc_call_credentials* _c_call_creds
 
-  def __cinit__(self, CallCredentials call_creds):
+  def __cinit__(self):
     self._c_creds = NULL
-    self._c_call_creds = call_creds.c()
 
   cdef grpc_channel_credentials *c(self) except *:
-    self._c_creds = grpc_compute_engine_channel_credentials_create(self._c_call_creds, NULL)
+    self._c_creds = grpc_compute_engine_channel_credentials_create(NULL)
     return self._c_creds
 
-  # TODO: Does this thing need to be deleted?
-  # I suppose the reason the google default one doesn't need to be is
-  # because there's one per process. We'll see.
 
-def channel_credentials_compute_engine(call_creds):
-  return ComputeEngineChannelCredentials(call_creds)
+def channel_credentials_compute_engine():
+  return ComputeEngineChannelCredentials()

@@ -505,7 +505,7 @@ cdef extern from "grpc/grpc_security.h":
       grpc_ssl_roots_override_callback cb) nogil
 
   grpc_channel_credentials *grpc_google_default_credentials_create() nogil
-  grpc_channel_credentials *grpc_compute_engine_channel_credentials_create(grpc_call_credentials* call_creds, void* reserved) nogil
+  grpc_channel_credentials *grpc_compute_engine_channel_credentials_create(void* reserved) nogil
   grpc_channel_credentials *grpc_ssl_credentials_create(
       const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
       verify_peer_options *verify_options, void *reserved) nogil

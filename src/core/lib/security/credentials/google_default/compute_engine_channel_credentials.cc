@@ -44,20 +44,16 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
 
-grpc_channel_credentials* grpc_compute_engine_channel_credentials_create(
-    grpc_call_credentials* call_credentials, void* reserved) {
+grpc_channel_credentials* grpc_compute_engine_channel_credentials_create(void* reserved) {
   // If we haven't initialized the google_default_credentials singleton,
   // then we don't know whether or not we're on GCE and can't safely
   // created an ALTS connection.
   // TODO: Fix.
   auto default_warmer = grpc_google_default_credentials_create();
-  grpc_channel_credentials* result = nullptr;
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Failed to create GCE channel credentials");
   grpc_core::ExecCtx exec_ctx;
 
-  GRPC_API_TRACE("grpc_gce_channel_credentials_create(%p, %p)", 2,
-                 (call_credentials, reserved));
+  GRPC_API_TRACE("grpc_gce_channel_credentials_create(%p)", 1,
+                 (reserved));
 
   // TODO: Should we cache this here?
   grpc_channel_credentials* ssl_creds =
@@ -69,16 +65,11 @@ grpc_channel_credentials* grpc_compute_engine_channel_credentials_create(
   grpc_alts_credentials_options_destroy(options);
 
   auto creds =
-      grpc_core::MakeRefCounted<grpc_google_default_channel_credentials>(
+      new grpc_google_default_channel_credentials(
           alts_creds != nullptr ? alts_creds->Ref() : nullptr,
           ssl_creds != nullptr ? ssl_creds->Ref() : nullptr);
   if (ssl_creds) ssl_creds->Unref();
   if (alts_creds) alts_creds->Unref();
 
-  // TODO: Why not let the wrapped language do this?
-  result = grpc_composite_channel_credentials_create(creds.get(),
-                                                     call_credentials, nullptr);
-  GPR_ASSERT(result != nullptr);
-  GRPC_ERROR_UNREF(error);
-  return result;
+  return creds;
 }
