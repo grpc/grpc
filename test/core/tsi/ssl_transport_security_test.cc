@@ -56,7 +56,7 @@ const size_t kSessionTicketEncryptionKeySize = 48;
 #endif
 
 // Indicates the TLS version used for the test.
-static grpc_tls_version test_tls_version = grpc_tls_version::TLS1_3;
+static tsi_tls_version test_tls_version = tsi_tls_version::TSI_TLS1_3;
 
 typedef enum AlpnMode {
   NO_ALPN,
@@ -332,7 +332,7 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
   bool expect_server_success =
       !(key_cert_lib->use_bad_server_cert ||
         (key_cert_lib->use_bad_client_cert && ssl_fixture->force_client_auth));
-  bool expect_client_success = test_tls_version == grpc_tls_version::TLS1_2
+  bool expect_client_success = test_tls_version == tsi_tls_version::TSI_TLS1_2
                                    ? expect_server_success
                                    : !key_cert_lib->use_bad_server_cert;
   if (expect_client_success) {
@@ -970,8 +970,8 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   const size_t number_tls_versions = 2;
-  const grpc_tls_version tls_versions[] = {grpc_tls_version::TLS1_2,
-                                           grpc_tls_version::TLS1_3};
+  const tsi_tls_version tls_versions[] = {tsi_tls_version::TSI_TLS1_2,
+                                          tsi_tls_version::TSI_TLS1_3};
   for (size_t i = 0; i < number_tls_versions; i++) {
     // Set the TLS version to be used in the tests.
     test_tls_version = tls_versions[i];

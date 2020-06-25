@@ -154,8 +154,8 @@ struct tsi_ssl_client_handshaker_options {
   bool skip_server_certificate_verification;
 
   /* The min and max TLS versions that will be negotiated by the handshaker. */
-  grpc_tls_version min_tls_version;
-  grpc_tls_version max_tls_version;
+  tsi_tls_version min_tls_version;
+  tsi_tls_version max_tls_version;
 
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
@@ -166,8 +166,8 @@ struct tsi_ssl_client_handshaker_options {
         num_alpn_protocols(0),
         session_cache(nullptr),
         skip_server_certificate_verification(false),
-        min_tls_version(grpc_tls_version::TLS1_2),
-        max_tls_version(grpc_tls_version::TLS1_3) {}
+        min_tls_version(tsi_tls_version::TSI_TLS1_2),
+        max_tls_version(tsi_tls_version::TSI_TLS1_3) {}
 };
 
 /* Creates a client handshaker factory.
@@ -284,8 +284,8 @@ struct tsi_ssl_server_handshaker_options {
   /* session_ticket_key_size is a size of session ticket encryption key. */
   size_t session_ticket_key_size;
   /* The min and max TLS versions that will be negotiated by the handshaker. */
-  grpc_tls_version min_tls_version;
-  grpc_tls_version max_tls_version;
+  tsi_tls_version min_tls_version;
+  tsi_tls_version max_tls_version;
 
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
@@ -297,8 +297,8 @@ struct tsi_ssl_server_handshaker_options {
         num_alpn_protocols(0),
         session_ticket_key(nullptr),
         session_ticket_key_size(0),
-        min_tls_version(grpc_tls_version::TLS1_2),
-        max_tls_version(grpc_tls_version::TLS1_3) {}
+        min_tls_version(tsi_tls_version::TSI_TLS1_2),
+        max_tls_version(tsi_tls_version::TSI_TLS1_3) {}
 };
 
 /* Creates a server handshaker factory.

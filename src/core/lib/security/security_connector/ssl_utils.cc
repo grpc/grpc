@@ -137,6 +137,18 @@ grpc_get_tsi_client_certificate_request_type(
   }
 }
 
+tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version) {
+  switch (tls_version) {
+    case grpc_tls_version::TLS1_2:
+      return tsi_tls_version::TSI_TLS1_2;
+    case grpc_tls_version::TLS1_3:
+      return tsi_tls_version::TSI_TLS1_3;
+    default:
+      gpr_log(GPR_INFO, "Falling back to TLS 1.2.");
+      return tsi_tls_version::TSI_TLS1_2;
+  }
+}
+
 grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer) {
 #if TSI_OPENSSL_ALPN_SUPPORT
   /* Check the ALPN if ALPN is supported. */

@@ -892,8 +892,8 @@ static int NullVerifyCallback(int /*preverify_ok*/, X509_STORE_CTX* /*ctx*/) {
 // Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
 // |max_tls_version|, respectively.
 static tsi_result tsi_set_min_and_max_tls_versions(
-    SSL_CTX* ssl_context, grpc_tls_version min_tls_version,
-    grpc_tls_version max_tls_version) {
+    SSL_CTX* ssl_context, tsi_tls_version min_tls_version,
+    tsi_tls_version max_tls_version) {
   if (ssl_context == nullptr) {
     gpr_log(GPR_INFO,
             "Invalid nullptr argument to |tsi_set_min_and_max_tls_versions|.");
@@ -902,11 +902,11 @@ static tsi_result tsi_set_min_and_max_tls_versions(
   // Set the min TLS version of the SSL context.
   switch (min_tls_version) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-    case grpc_tls_version::TLS1_2:
+    case tsi_tls_version::TSI_TLS1_2:
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
       break;
 #if defined(TLS1_3_VERSION)
-    case grpc_tls_version::TLS1_3:
+    case tsi_tls_version::TSI_TLS1_3:
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_3_VERSION);
       break;
 #endif
@@ -918,11 +918,11 @@ static tsi_result tsi_set_min_and_max_tls_versions(
   // Set the max TLS version of the SSL context.
   switch (max_tls_version) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-    case grpc_tls_version::TLS1_2:
+    case tsi_tls_version::TSI_TLS1_2:
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_2_VERSION);
       break;
 #if defined(TLS1_3_VERSION)
-    case grpc_tls_version::TLS1_3:
+    case tsi_tls_version::TSI_TLS1_3:
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_3_VERSION);
       break;
 #endif
@@ -1473,7 +1473,7 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
   // If an unexpected number of bytes were read, return an error status and free
   // all of the bytes that were read.
   if (bytes_read < 0 || static_cast<size_t>(bytes_read) != bytes_in_ssl) {
-    gpr_log(GPR_INFO,
+    gpr_log(GPR_ERROR,
             "Failed to read the expected number of bytes from SSL object.");
     gpr_free(*bytes_remaining);
     *bytes_remaining = nullptr;
@@ -1532,7 +1532,7 @@ static tsi_result ssl_handshaker_next(
     status = ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size);
     if (status != TSI_OK) return status;
     if (unused_bytes_size > received_bytes_size) {
-      gpr_log(GPR_INFO, "More unused bytes than received bytes.");
+      gpr_log(GPR_ERROR, "More unused bytes than received bytes.");
       gpr_free(unused_bytes);
       return TSI_INTERNAL_ERROR;
     }
