@@ -22,7 +22,6 @@
 #include <grpc/grpc_security.h>
 
 #include <grpcpp/security/credentials.h>
-#include <grpcpp/security/credentials_impl.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/config.h>
 
@@ -33,6 +32,9 @@
 namespace grpc_impl {
 
 class Channel;
+}  // namespace grpc_impl
+
+namespace grpc {
 
 class SecureChannelCredentials final : public ChannelCredentials {
  public:
@@ -84,10 +86,6 @@ grpc_sts_credentials_options StsCredentialsCppToCoreOptions(
     const StsCredentialsOptions& options);
 
 }  // namespace experimental
-
-}  // namespace grpc_impl
-
-namespace grpc {
 
 class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
  public:
