@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPCPP_CREATE_CHANNEL_POSIX_IMPL_H
-#define GRPCPP_CREATE_CHANNEL_POSIX_IMPL_H
+#ifndef GRPCPP_CREATE_CHANNEL_POSIX_H
+#define GRPCPP_CREATE_CHANNEL_POSIX_H
 
 #include <memory>
 
@@ -25,7 +25,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/support/channel_arguments.h>
 
-namespace grpc_impl {
+namespace grpc {
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
@@ -65,6 +65,6 @@ CreateCustomInsecureChannelWithInterceptorsFromFd(
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
-}  // namespace grpc_impl
+}  // namespace grpc
 
-#endif  // GRPCPP_CREATE_CHANNEL_POSIX_IMPL_H
+#endif  // GRPCPP_CREATE_CHANNEL_POSIX_H
