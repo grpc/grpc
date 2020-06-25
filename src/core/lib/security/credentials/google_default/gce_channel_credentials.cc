@@ -1,0 +1,77 @@
+/*
+ *
+ * Copyright 2020 The gRPC authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/security/credentials/credentials.h"
+
+#include <string.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/security/credentials/alts/alts_credentials.h"
+#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+#include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
+#include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/surface/api_trace.h"
+
+grpc_channel_credentials*
+grpc_gce_channel_credentials_create(grpc_call_credentials* call_credentials, void* reserved) {
+  grpc_channel_credentials* result = nullptr;
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Failed to create GCE channel credentials");
+  grpc_core::ExecCtx exec_ctx;
+
+  GRPC_API_TRACE("grpc_gce_channel_credentials_create(%p, %p)", 2, (call_credentials, reserved));
+
+  // TODO: Should we cache this here?
+  grpc_channel_credentials* ssl_creds =
+      grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
+  GPR_ASSERT(ssl_creds != nullptr);
+  grpc_alts_credentials_options* options =
+      grpc_alts_credentials_client_options_create();
+  grpc_channel_credentials* alts_creds =
+      grpc_alts_credentials_create(options);
+  grpc_alts_credentials_options_destroy(options);
+
+  auto creds =
+      grpc_core::MakeRefCounted<grpc_google_default_channel_credentials>(
+          alts_creds != nullptr ? alts_creds->Ref() : nullptr,
+          ssl_creds != nullptr ? ssl_creds->Ref() : nullptr);
+  if (ssl_creds) ssl_creds->Unref();
+  if (alts_creds) alts_creds->Unref();
+  result = grpc_composite_channel_credentials_create(
+      creds.get(), call_credentials, nullptr);
+  GPR_ASSERT(result != nullptr);
+  GRPC_ERROR_UNREF(error);
+  return result;
+}
