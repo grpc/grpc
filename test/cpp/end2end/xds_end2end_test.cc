@@ -66,6 +66,14 @@
 #include "src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 
+#include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

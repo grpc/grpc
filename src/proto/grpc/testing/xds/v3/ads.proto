@@ -21,10 +21,6 @@ service AggregatedDiscoveryService {
   // This is a gRPC-only API.
   rpc StreamAggregatedResources(stream DiscoveryRequest) returns (stream DiscoveryResponse) {
   }
-
-  rpc DeltaAggregatedResources(stream DeltaDiscoveryRequest)
-      returns (stream DeltaDiscoveryResponse) {
-  }
 }
 
 // [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing

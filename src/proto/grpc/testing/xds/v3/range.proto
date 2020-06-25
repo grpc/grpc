@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package envoy.type;
+package envoy.type.v3;
 
 // [#protodoc-title: Range]
 

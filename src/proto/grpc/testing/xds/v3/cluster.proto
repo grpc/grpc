@@ -101,7 +101,7 @@ message Cluster {
   oneof cluster_discovery_type {
     // The :ref:`service discovery type <arch_overview_service_discovery_types>`
     // to use for resolving the cluster.
-    DiscoveryType type = 2 [(validate.rules).enum = {defined_only: true}];
+    DiscoveryType type = 2;
   }
 
   // Configuration to use for EDS updates for the Cluster.
@@ -109,7 +109,7 @@ message Cluster {
 
   // The :ref:`load balancer type <arch_overview_load_balancing_types>` to use
   // when picking a host in the cluster.
-  LbPolicy lb_policy = 6 [(validate.rules).enum = {defined_only: true}];
+  LbPolicy lb_policy = 6;
 
   // [#not-implemented-hide:]
   // If present, tells the client where to send load reports via LRS. If not present, the
