@@ -36,16 +36,14 @@
 
 static void on_server_destroyed(void* data, grpc_error* /*error*/) {
   test_tcp_server* server = static_cast<test_tcp_server*>(data);
-  server->shutdown = 1;
+  server->shutdown = true;
 }
 
 void test_tcp_server_init(test_tcp_server* server,
                           grpc_tcp_server_cb on_connect, void* user_data) {
   grpc_init();
-  server->tcp_server = nullptr;
   GRPC_CLOSURE_INIT(&server->shutdown_complete, on_server_destroyed, server,
                     grpc_schedule_on_exec_ctx);
-  server->shutdown = 0;
 
   grpc_pollset* pollset =
       static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));

@@ -16,11 +16,12 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/surface/server.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -33,6 +34,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -131,8 +133,7 @@ struct channel_data {
   grpc_server* server;
   grpc_channel* channel;
   size_t cq_idx;
-  std::list<channel_data*>::iterator list_position;
-  bool listed;
+  absl::optional<std::list<channel_data*>::iterator> list_position;
 
   // registered_methods is a hash-table of the methods and hosts of the
   // registered methods.
@@ -437,6 +438,7 @@ class ChannelBroadcaster {
   // This function copies over the channels from the locked server
   void FillChannelsLocked(const grpc_server* s) {
     GPR_DEBUG_ASSERT(channels_.empty());
+    channels_.reserve(s->channels.size());
     for (const channel_data* chand : s->channels) {
       channels_.push_back(chand->channel);
       GRPC_CHANNEL_INTERNAL_REF(chand->channel, "broadcast");
@@ -510,26 +512,42 @@ class RealRequestMatcher : public RequestMatcherInterface {
     if (requests_per_cq_[request_queue_index].Push(&call->mpscq_node)) {
       /* this was the first queued request: we need to lock and start
          matching calls */
-      grpc_core::ReleasableMutexLock lock(&server_->mu_call);
-      while (!pending_.empty()) {
-        requested_call* rc = reinterpret_cast<requested_call*>(
-            requests_per_cq_[request_queue_index].Pop());
-        if (rc == nullptr) break;
-        call_data* calld = pending_.front();
-        pending_.pop_front();
-        lock.Unlock();
-        if (!gpr_atm_full_cas(&calld->state, PENDING, ACTIVATED)) {
+      struct pending_call {
+        requested_call* rc = nullptr;
+        call_data* calld;
+      };
+      auto pop_next_pending = [this, request_queue_index] {
+        pending_call pending;
+        {
+          grpc_core::MutexLock lock(&server_->mu_call);
+          if (!pending_.empty()) {
+            pending.rc = reinterpret_cast<requested_call*>(
+                requests_per_cq_[request_queue_index].Pop());
+            if (pending.rc != nullptr) {
+              pending.calld = pending_.front();
+              pending_.pop_front();
+            }
+          }
+        }
+        return pending;
+      };
+      while (true) {
+        pending_call next_pending = pop_next_pending();
+        if (next_pending.rc == nullptr) break;
+        if (!gpr_atm_full_cas(&next_pending.calld->state, PENDING, ACTIVATED)) {
           // Zombied Call
           GRPC_CLOSURE_INIT(
-              &calld->kill_zombie_closure, kill_zombie,
-              grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
+              &next_pending.calld->kill_zombie_closure, kill_zombie,
+              grpc_call_stack_element(
+                  grpc_call_get_call_stack(next_pending.calld->call), 0),
               grpc_schedule_on_exec_ctx);
-          grpc_core::ExecCtx::Run(DEBUG_LOCATION, &calld->kill_zombie_closure,
+          grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                                  &next_pending.calld->kill_zombie_closure,
                                   GRPC_ERROR_NONE);
         } else {
-          publish_call(server_, calld, request_queue_index, rc);
+          publish_call(server_, next_pending.calld, request_queue_index,
+                       next_pending.rc);
         }
-        lock.Lock();
       }
     }
   }
@@ -552,29 +570,45 @@ class RealRequestMatcher : public RequestMatcherInterface {
 
     /* no cq to take the request found: queue it on the slow list */
     GRPC_STATS_INC_SERVER_SLOWPATH_REQUESTS_QUEUED();
-    grpc_core::ReleasableMutexLock lock(&server_->mu_call);
 
     // We need to ensure that all the queues are empty.  We do this under
     // the server mu_call lock to ensure that if something is added to
     // an empty request queue, it will block until the call is actually
     // added to the pending list.
-    for (size_t i = 0; i < requests_per_cq_.size(); i++) {
-      size_t cq_idx = (start_request_queue_index + i) % requests_per_cq_.size();
-      requested_call* rc =
-          reinterpret_cast<requested_call*>(requests_per_cq_[cq_idx].Pop());
-      if (rc == nullptr) {
-        continue;
-      } else {
-        lock.Unlock();
-        GRPC_STATS_INC_SERVER_CQS_CHECKED(i + requests_per_cq_.size());
-        gpr_atm_no_barrier_store(&calld->state, ACTIVATED);
-        publish_call(server_, calld, cq_idx, rc);
-        return; /* early out */
+    struct check_queue_result {
+      requested_call* rc;
+      size_t loop_count;
+      size_t cq_idx;
+    };
+
+    auto check_queues = [this, start_request_queue_index] {
+      for (size_t i = 0; i < requests_per_cq_.size(); i++) {
+        size_t cq_idx =
+            (start_request_queue_index + i) % requests_per_cq_.size();
+        requested_call* rc =
+            reinterpret_cast<requested_call*>(requests_per_cq_[cq_idx].Pop());
+        if (rc != nullptr) {
+          return check_queue_result{rc, i, cq_idx};
+        }
+      }
+      return check_queue_result{nullptr, 0u, 0u};
+    };
+
+    check_queue_result result;
+
+    {
+      grpc_core::MutexLock lock(&server_->mu_call);
+      result = check_queues();
+      if (result.rc == nullptr) {
+        gpr_atm_no_barrier_store(&calld->state, PENDING);
+        pending_.push_back(calld);
+        return;
       }
     }
-
-    gpr_atm_no_barrier_store(&calld->state, PENDING);
-    pending_.push_back(calld);
+    GRPC_STATS_INC_SERVER_CQS_CHECKED(result.loop_count +
+                                      requests_per_cq_.size());
+    gpr_atm_no_barrier_store(&calld->state, ACTIVATED);
+    publish_call(server_, calld, result.cq_idx, result.rc);
   }
 
   grpc_server* server() const override { return server_; }
@@ -694,8 +728,6 @@ void server_unref(grpc_server* server) {
   }
 }
 
-bool is_channel_orphaned(channel_data* chand) { return !chand->listed; }
-
 void finish_destroy_channel(void* cd, grpc_error* /*error*/) {
   channel_data* chand = static_cast<channel_data*>(cd);
   grpc_server* server = chand->server;
@@ -704,10 +736,10 @@ void finish_destroy_channel(void* cd, grpc_error* /*error*/) {
 }
 
 void destroy_channel(channel_data* chand) {
-  if (is_channel_orphaned(chand)) return;
+  if (!chand->list_position.has_value()) return;
   GPR_ASSERT(chand->server != nullptr);
-  chand->server->channels.erase(chand->list_position);
-  chand->listed = false;
+  chand->server->channels.erase(*chand->list_position);
+  chand->list_position.reset();
   server_ref(chand->server);
   maybe_finish_shutdown(chand->server);
   GRPC_CLOSURE_INIT(&chand->finish_destroy_channel_closure,
@@ -1100,7 +1132,7 @@ grpc_error* server_init_channel_elem(grpc_channel_element* elem,
   GPR_ASSERT(!args->is_last);
   chand->server = nullptr;
   chand->channel = nullptr;
-  chand->listed = false;
+  chand->list_position.reset();
   chand->registered_methods.reset();
   return GRPC_ERROR_NONE;
 }
@@ -1128,9 +1160,9 @@ void server_destroy_channel_elem(grpc_channel_element* elem) {
     }
     {
       grpc_core::MutexLock lock(&chand->server->mu_global);
-      if (chand->listed) {
-        chand->server->channels.erase(chand->list_position);
-        chand->listed = false;
+      if (chand->list_position.has_value()) {
+        chand->server->channels.erase(*chand->list_position);
+        chand->list_position.reset();
       }
       maybe_finish_shutdown(chand->server);
     }
@@ -1430,7 +1462,6 @@ void grpc_server_setup_transport(
     grpc_core::MutexLock lock(&s->mu_global);
     s->channels.push_front(chand);
     chand->list_position = s->channels.begin();
-    chand->listed = true;
   }
 
   op = grpc_make_transport_op(nullptr);

@@ -65,7 +65,8 @@ class Chttp2ServerListener : public ServerListenerInterface {
   Chttp2ServerListener(grpc_server* server, grpc_channel_args* args);
   ~Chttp2ServerListener();
 
-  void Start(grpc_server* server, const std::vector<grpc_pollset*>* pollsets) override;
+  void Start(grpc_server* server,
+             const std::vector<grpc_pollset*>* pollsets) override;
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return channelz_listen_socket_.get();

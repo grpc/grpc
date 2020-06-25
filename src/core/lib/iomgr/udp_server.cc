@@ -186,7 +186,8 @@ struct grpc_udp_server {
   /* shutdown callback */
   grpc_closure* shutdown_complete;
 
-  /* all pollsets interested in new connections */
+  /* all pollsets interested in new connections. The object pointed at is not
+   * owned by this struct. */
   const std::vector<grpc_pollset*>* pollsets;
   /* opaque object to pass to callbacks */
   void* user_data;

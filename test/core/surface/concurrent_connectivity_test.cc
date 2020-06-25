@@ -24,6 +24,7 @@
 
 #include <memory.h>
 #include <stdio.h>
+#include <atomic>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -90,14 +91,16 @@ void create_loop_destroy(void* addr) {
   }
 }
 
+// Always stack-allocate or new server_thread_args; never use gpr_malloc since
+// this contains C++ objects.
 struct server_thread_args {
-  char* addr;
-  grpc_server* server;
-  grpc_completion_queue* cq;
+  char* addr = nullptr;
+  grpc_server* server = nullptr;
+  grpc_completion_queue* cq = nullptr;
   std::vector<grpc_pollset*> pollset;
-  gpr_mu* mu;
+  gpr_mu* mu = nullptr;
   gpr_event ready;
-  gpr_atm stop;
+  std::atomic_bool stop{false};
 };
 
 void server_thread(void* vargs) {
@@ -148,14 +151,14 @@ void bad_server_thread(void* vargs) {
   gpr_event_set(&args->ready, (void*)1);
 
   gpr_mu_lock(args->mu);
-  while (gpr_atm_acq_load(&args->stop) == 0) {
+  while (args->stop.load(std::memory_order_acquire) == false) {
     grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 100;
 
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(args->pollset[0], &worker, deadline))) {
-      gpr_atm_rel_store(&args->stop, 1);
+      args->stop.store(true, std::memory_order_release);
     }
     gpr_mu_unlock(args->mu);
 
@@ -175,7 +178,6 @@ static void done_pollset_shutdown(void* pollset, grpc_error* /*error*/) {
 
 int run_concurrent_connectivity_test() {
   struct server_thread_args args;
-  memset(&args, 0, sizeof(args));
 
   grpc_init();
 
@@ -243,7 +245,7 @@ int run_concurrent_connectivity_test() {
       th.Join();
     }
 
-    gpr_atm_rel_store(&args.stop, 1);
+    args.stop.store(true, std::memory_order_release);
     server3.Join();
     {
       grpc_core::ExecCtx exec_ctx;
