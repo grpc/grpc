@@ -1854,7 +1854,6 @@ grpc_cc_library(
     ],
 )
 
-
 grpc_cc_library(
     name = "grpc_cel_engine",
     srcs = [
@@ -1867,9 +1866,9 @@ grpc_cc_library(
     deps = [
         "envoy_ads_upb",
         "google_api_upb",
+        "grpc_base",
     ],
 )
-
 
 grpc_cc_library(
     name = "grpc_transport_chttp2",
