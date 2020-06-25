@@ -43,7 +43,7 @@ class CelEvaluationEngine {
   // Set allowed_if_matched_ to true if the RBAC policy is an ALLOW policy,
   // and false if it is a DENY policy.
   const bool allowed_if_matched_;
-  std::map<std::string, google_api_expr_v1alpha1_Expr*> policies_;
+  std::map<const std::string, const google_api_expr_v1alpha1_Expr*> policies_;
   upb::Arena arena_;
 };
 
