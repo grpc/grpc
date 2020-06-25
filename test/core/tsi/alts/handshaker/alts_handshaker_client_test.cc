@@ -16,6 +16,8 @@
  *
  */
 
+#include "upb/upb.hpp"
+
 #include <grpc/grpc.h>
 
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
@@ -230,17 +232,11 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
                                                              nullptr);
   GPR_ASSERT(upb_strview_eql(application_protocols[0],
                              upb_strview_makez(ALTS_APPLICATION_PROTOCOL)));
-  size_t handshake_parameters_count;
-  const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* const*
-      handshake_parameters =
-          grpc_gcp_StartServerHandshakeReq_handshake_parameters(
-              server_start, &handshake_parameters_count);
-  GPR_ASSERT(handshake_parameters_count == 1);
-  GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_key(
-                 handshake_parameters[0]) == grpc_gcp_ALTS);
-  const grpc_gcp_ServerHandshakeParameters* value =
-      grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_value(
-          handshake_parameters[0]);
+  GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_handshake_parameters_size(
+                 server_start) == 1);
+  grpc_gcp_ServerHandshakeParameters* value;
+  GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_handshake_parameters_get(
+      server_start, grpc_gcp_ALTS, &value));
   upb_strview const* record_protocols =
       grpc_gcp_ServerHandshakeParameters_record_protocols(value, nullptr);
   GPR_ASSERT(upb_strview_eql(record_protocols[0],

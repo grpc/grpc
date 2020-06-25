@@ -11,14 +11,14 @@ def parse_include(line):
   return match.groups()[0] if match else None
 
 class Amalgamator:
-  def __init__(self, output_path):
+  def __init__(self, output_path, prefix):
     self.include_paths = ["."]
     self.included = set(["upb/port_def.inc", "upb/port_undef.inc"])
-    self.output_h = open(output_path + "upb.h", "w")
-    self.output_c = open(output_path + "upb.c", "w")
+    self.output_h = open(output_path + prefix + "upb.h", "w")
+    self.output_c = open(output_path + prefix + "upb.c", "w")
 
     self.output_c.write("/* Amalgamated source file */\n")
-    self.output_c.write('#include "upb.h"\n')
+    self.output_c.write('#include "%supb.h"\n' % (prefix))
     self.output_c.write(open("upb/port_def.inc").read())
 
     self.output_h.write("/* Amalgamated source file */\n")
@@ -45,14 +45,24 @@ class Amalgamator:
         raise RuntimeError("Couldn't open file " + infile_name)
 
     for line in file:
-      include = parse_include(line)
-      if include is not None and (include.startswith("upb") or
-                                  include.startswith("google")):
-        if include not in self.included:
-          self.included.add(include)
-          self._add_header(include)
-      else:
+      if not self._process_include(line, outfile):
         outfile.write(line)
+
+  def _process_include(self, line, outfile):
+    include = parse_include(line)
+    if not include:
+      return False
+    if not (include.startswith("upb") or include.startswith("google")):
+      return False
+    if include.endswith("hpp"):
+      # Skip, we don't support the amalgamation from C++.
+      return True
+    else:
+      # Include this upb header inline.
+      if include not in self.included:
+        self.included.add(include)
+        self._add_header(include)
+      return True
 
   def _add_header(self, filename):
     self._process_file(filename, self.output_h)
@@ -63,10 +73,11 @@ class Amalgamator:
 # ---- main ----
 
 output_path = sys.argv[1]
-amalgamator = Amalgamator(output_path)
+prefix = sys.argv[2]
+amalgamator = Amalgamator(output_path, prefix)
 files = []
 
-for arg in sys.argv[2:]:
+for arg in sys.argv[3:]:
   arg = arg.strip()
   if arg.startswith("-I"):
     amalgamator.add_include_path(arg[2:])

@@ -68,6 +68,8 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
+#include "upb/upb.hpp"
+
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

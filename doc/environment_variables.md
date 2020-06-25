@@ -73,7 +73,7 @@ some configuration as environment variables that can be set.
     completion queue
   - pick_first - traces the pick first load balancing policy
   - plugin_credentials - traces plugin credentials
-  - pollable_refcount - traces reference counting of 'pollable' objects (only 
+  - pollable_refcount - traces reference counting of 'pollable' objects (only
     in DEBUG)
   - priority_lb - traces priority LB policy
   - resource_quota - trace resource quota objects internals

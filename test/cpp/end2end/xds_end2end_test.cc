@@ -4512,9 +4512,13 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
             AdsServiceImpl::ResponseState::NOT_SENT);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[1]->ads_service()->eds_response_state().error_message;
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[2]->ads_service()->eds_response_state().error_message;
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
   SetNextResolutionForLbChannel({balancers_[1]->port()});
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
@@ -4532,9 +4536,13 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
             AdsServiceImpl::ResponseState::NOT_SENT);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[1]->ads_service()->eds_response_state().error_message;
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[2]->ads_service()->eds_response_state().error_message;
 }
 
 // Tests that the old LB call is still used after multiple balancer address
@@ -4567,9 +4575,13 @@ TEST_P(BalancerUpdateTest, Repeated) {
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
             AdsServiceImpl::ResponseState::NOT_SENT);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[1]->ads_service()->eds_response_state().error_message;
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[2]->ads_service()->eds_response_state().error_message;
   std::vector<int> ports;
   ports.emplace_back(balancers_[0]->port());
   ports.emplace_back(balancers_[1]->port());
@@ -4631,9 +4643,13 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   EXPECT_GT(balancers_[0]->ads_service()->eds_response_state().state,
             AdsServiceImpl::ResponseState::NOT_SENT);
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[1]->ads_service()->eds_response_state().error_message;
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[2]->ads_service()->eds_response_state().error_message;
   // Kill balancer 0
   gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 0 *************");
   balancers_[0]->Shutdown();
@@ -4647,11 +4663,17 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // The ADS service of no balancers sent anything
   EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[0]->ads_service()->eds_response_state().error_message;
   EXPECT_EQ(balancers_[1]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[1]->ads_service()->eds_response_state().error_message;
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[2]->ads_service()->eds_response_state().error_message;
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
   SetNextResolutionForLbChannel({balancers_[1]->port()});
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
@@ -4669,11 +4691,15 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   EXPECT_EQ(10U, backends_[1]->backend_service()->request_count());
   // The ADS service of balancer 1 sent at least 1 response.
   EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[0]->ads_service()->eds_response_state().error_message;
   EXPECT_GT(balancers_[1]->ads_service()->eds_response_state().state,
             AdsServiceImpl::ResponseState::NOT_SENT);
   EXPECT_EQ(balancers_[2]->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+            AdsServiceImpl::ResponseState::NOT_SENT)
+      << "Error Message:"
+      << balancers_[2]->ads_service()->eds_response_state().error_message;
 }
 
 // The re-resolution tests are deferred because they rely on the fallback mode,

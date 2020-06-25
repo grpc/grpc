@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_EDS_PROTO_UPB_H_
 #define ENVOY_API_V2_EDS_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -31,7 +30,7 @@ extern const upb_msglayout envoy_api_v2_EdsDummy_msginit;
 /* envoy.api.v2.EdsDummy */
 
 UPB_INLINE envoy_api_v2_EdsDummy *envoy_api_v2_EdsDummy_new(upb_arena *arena) {
-  return (envoy_api_v2_EdsDummy *)upb_msg_new(&envoy_api_v2_EdsDummy_msginit, arena);
+  return (envoy_api_v2_EdsDummy *)_upb_msg_new(&envoy_api_v2_EdsDummy_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_EdsDummy *envoy_api_v2_EdsDummy_parse(const char *buf, size_t size,
                         upb_arena *arena) {

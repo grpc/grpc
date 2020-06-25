@@ -82,7 +82,8 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     if (port_num >= 0) {
       std::string server_address = grpc_core::JoinHostPort("::", port_num);
       builder->AddListeningPort(server_address.c_str(),
-                                Server::CreateServerCredentials(config));
+                                Server::CreateServerCredentials(config),
+                                &port_num);
     }
 
     register_service(builder.get(), &async_service_);
@@ -105,6 +106,11 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     ApplyConfigToBuilder(config, builder.get());
 
     server_ = builder->BuildAndStart();
+    if (server_ == nullptr) {
+      gpr_log(GPR_ERROR, "Server: Fail to BuildAndStart(port=%d)", port_num);
+    } else {
+      gpr_log(GPR_INFO, "Server: BuildAndStart(port=%d)", port_num);
+    }
 
     auto process_rpc_bound =
         std::bind(process_rpc, config.payload_config(), std::placeholders::_1,
