@@ -1463,8 +1463,8 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
     return TSI_INVALID_ARGUMENT;
   }
   // Atempt to read all of the bytes in SSL's read BIO. These bytes should
-  // contain (encrypted) application data that was appended to a ClientFinished
-  // or ServerFinished record.
+  // contain application data records that were appended to a handshake record
+  // containing the ClientFinished or ServerFinished message.
   size_t bytes_in_ssl = BIO_pending(SSL_get_rbio(impl->ssl));
   if (bytes_in_ssl == 0) return TSI_OK;
   *bytes_remaining = static_cast<uint8_t*>(gpr_malloc(bytes_in_ssl));
@@ -1523,13 +1523,10 @@ static tsi_result ssl_handshaker_next(
   if (ssl_handshaker_get_result(impl) == TSI_HANDSHAKE_IN_PROGRESS) {
     *handshaker_result = nullptr;
   } else {
-    // In TLS 1.3, the client may send application data records in the same
-    // flight of messages as the record containing the ClientFinished message.
-    // In TLS 1.2, this is not allowed; both the client and server must complete
-    // the handshake before any application data may be sent.
-    //
-    // These application data records are removed from the BIO after the
-    // server-side handshake completes, and set to |unused_bytes|.
+    // Any bytes that remain in |impl->ssl|'s read BIO after the handshake is
+    // complete must be extracted and set to the unused bytes of the handshaker
+    // result. This indicates to the gRPC stack that there are bytes from the
+    // peer that must be processed.
     unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = 0;
     status = ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size);

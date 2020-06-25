@@ -436,7 +436,7 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   ssl_tsi_test_fixture* ssl_fixture =
       static_cast<ssl_tsi_test_fixture*>(gpr_zalloc(sizeof(*ssl_fixture)));
   tsi_test_fixture_init(&ssl_fixture->base);
-  ssl_fixture->base.test_unused_bytes = false;
+  ssl_fixture->base.test_unused_bytes = true;
   ssl_fixture->base.vtable = &vtable;
   /* Create ssl_key_cert_lib. */
   ssl_key_cert_lib* key_cert_lib =
@@ -509,6 +509,9 @@ void ssl_tsi_test_do_handshake_tiny_handshake_buffer() {
   gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_tiny_handshake_buffer");
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
   fixture->handshake_buffer_size = TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE;
+  // Handshake buffer is too small to hold both handshake messages and the
+  // unused bytes.
+  fixture->test_unused_bytes = false;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
 }
