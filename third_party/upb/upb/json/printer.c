@@ -6,6 +6,7 @@
 #include "upb/json/printer.h"
 
 #include <ctype.h>
+#include <inttypes.h>
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -64,12 +65,8 @@ strpc *newstrpc(upb_handlers *h, const upb_fielddef *f,
     ret->ptr = upb_gstrdup(upb_fielddef_name(f));
     ret->len = strlen(ret->ptr);
   } else {
-    size_t len;
-    ret->len = upb_fielddef_getjsonname(f, NULL, 0);
-    ret->ptr = upb_gmalloc(ret->len);
-    len = upb_fielddef_getjsonname(f, ret->ptr, ret->len);
-    UPB_ASSERT(len == ret->len);
-    ret->len--;  /* NULL */
+    ret->ptr = upb_gstrdup(upb_fielddef_jsonname(f));
+    ret->len = strlen(ret->ptr);
   }
 
   upb_handlers_addcleanup(h, ret, freestrpc);
@@ -88,7 +85,7 @@ strpc *newstrpc_str(upb_handlers *h, const char * str) {
 /* ------------ JSON string printing: values, maps, arrays ------------------ */
 
 static void print_data(
-    upb_json_printer *p, const char *buf, unsigned int len) {
+    upb_json_printer *p, const char *buf, size_t len) {
   /* TODO: Will need to change if we support pushback from the sink. */
   size_t n = upb_bytessink_putbuf(p->output_, p->subc_, buf, len, NULL);
   UPB_ASSERT(n == len);
@@ -128,7 +125,7 @@ UPB_INLINE const char* json_nice_escape(char c) {
 /* Write a properly escaped string chunk. The surrounding quotes are *not*
  * printed; this is so that the caller has the option of emitting the string
  * content in chunks. */
-static void putstring(upb_json_printer *p, const char *buf, unsigned int len) {
+static void putstring(upb_json_printer *p, const char *buf, size_t len) {
   const char* unescaped_run = NULL;
   unsigned int i;
   for (i = 0; i < len; i++) {
@@ -208,28 +205,26 @@ static size_t fmt_bool(bool val, char* buf, size_t length) {
   return n;
 }
 
-static size_t fmt_int64_as_number(long long val, char* buf, size_t length) {
-  size_t n = _upb_snprintf(buf, length, "%lld", val);
+static size_t fmt_int64_as_number(int64_t val, char* buf, size_t length) {
+  size_t n = _upb_snprintf(buf, length, "%" PRId64, val);
   CHKLENGTH(n > 0 && n < length);
   return n;
 }
 
-static size_t fmt_uint64_as_number(
-    unsigned long long val, char* buf, size_t length) {
-  size_t n = _upb_snprintf(buf, length, "%llu", val);
+static size_t fmt_uint64_as_number(uint64_t val, char* buf, size_t length) {
+  size_t n = _upb_snprintf(buf, length, "%" PRIu64, val);
   CHKLENGTH(n > 0 && n < length);
   return n;
 }
 
-static size_t fmt_int64_as_string(long long val, char* buf, size_t length) {
-  size_t n = _upb_snprintf(buf, length, "\"%lld\"", val);
+static size_t fmt_int64_as_string(int64_t val, char* buf, size_t length) {
+  size_t n = _upb_snprintf(buf, length, "\"%" PRId64 "\"", val);
   CHKLENGTH(n > 0 && n < length);
   return n;
 }
 
-static size_t fmt_uint64_as_string(
-    unsigned long long val, char* buf, size_t length) {
-  size_t n = _upb_snprintf(buf, length, "\"%llu\"", val);
+static size_t fmt_uint64_as_string(uint64_t val, char* buf, size_t length) {
+  size_t n = _upb_snprintf(buf, length, "\"%" PRIu64 "\"", val);
   CHKLENGTH(n > 0 && n < length);
   return n;
 }
@@ -1372,10 +1367,6 @@ static void json_printer_reset(upb_json_printer *p) {
 
 upb_json_printer *upb_json_printer_create(upb_arena *a, const upb_handlers *h,
                                           upb_bytessink output) {
-#ifndef NDEBUG
-  size_t size_before = upb_arena_bytesallocated(a);
-#endif
-
   upb_json_printer *p = upb_arena_malloc(a, sizeof(upb_json_printer));
   if (!p) return NULL;
 
@@ -1385,9 +1376,6 @@ upb_json_printer *upb_json_printer_create(upb_arena *a, const upb_handlers *h,
   p->seconds = 0;
   p->nanos = 0;
 
-  /* If this fails, increase the value in printer.h. */
-  UPB_ASSERT_DEBUGVAR(upb_arena_bytesallocated(a) - size_before <=
-                      UPB_JSON_PRINTER_SIZE);
   return p;
 }
 

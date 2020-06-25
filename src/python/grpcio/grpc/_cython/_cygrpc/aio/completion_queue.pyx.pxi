@@ -41,7 +41,8 @@ cdef class BaseCompletionQueue:
 cdef class PollerCompletionQueue(BaseCompletionQueue):
 
     def __cinit__(self):
-        self._loop = asyncio.get_event_loop()
+        
+        self._loop = get_working_loop()
         self._cq = grpc_completion_queue_create_for_next(NULL)
         self._shutdown = False
         self._poller_thread = threading.Thread(target=self._poll_wrapper, daemon=True)
@@ -119,7 +120,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
 cdef class CallbackCompletionQueue(BaseCompletionQueue):
 
     def __cinit__(self):
-        self._loop = asyncio.get_event_loop()
+        self._loop = get_working_loop()
         self._shutdown_completed = self._loop.create_future()
         self._wrapper = CallbackWrapper(
             self._shutdown_completed,

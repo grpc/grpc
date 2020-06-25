@@ -9,7 +9,6 @@
 #ifndef ENVOY_CONFIG_CORE_V3_PROXY_PROTOCOL_PROTO_UPB_H_
 #define ENVOY_CONFIG_CORE_V3_PROXY_PROTOCOL_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -33,7 +32,7 @@ typedef enum {
 /* envoy.config.core.v3.ProxyProtocolConfig */
 
 UPB_INLINE envoy_config_core_v3_ProxyProtocolConfig *envoy_config_core_v3_ProxyProtocolConfig_new(upb_arena *arena) {
-  return (envoy_config_core_v3_ProxyProtocolConfig *)upb_msg_new(&envoy_config_core_v3_ProxyProtocolConfig_msginit, arena);
+  return (envoy_config_core_v3_ProxyProtocolConfig *)_upb_msg_new(&envoy_config_core_v3_ProxyProtocolConfig_msginit, arena);
 }
 UPB_INLINE envoy_config_core_v3_ProxyProtocolConfig *envoy_config_core_v3_ProxyProtocolConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -44,10 +43,10 @@ UPB_INLINE char *envoy_config_core_v3_ProxyProtocolConfig_serialize(const envoy_
   return upb_encode(msg, &envoy_config_core_v3_ProxyProtocolConfig_msginit, arena, len);
 }
 
-UPB_INLINE int32_t envoy_config_core_v3_ProxyProtocolConfig_version(const envoy_config_core_v3_ProxyProtocolConfig *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
+UPB_INLINE int32_t envoy_config_core_v3_ProxyProtocolConfig_version(const envoy_config_core_v3_ProxyProtocolConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
 
 UPB_INLINE void envoy_config_core_v3_ProxyProtocolConfig_set_version(envoy_config_core_v3_ProxyProtocolConfig *msg, int32_t value) {
-  UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 
 #ifdef __cplusplus

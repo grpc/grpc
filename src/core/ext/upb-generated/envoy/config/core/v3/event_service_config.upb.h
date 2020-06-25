@@ -9,7 +9,6 @@
 #ifndef ENVOY_CONFIG_CORE_V3_EVENT_SERVICE_CONFIG_PROTO_UPB_H_
 #define ENVOY_CONFIG_CORE_V3_EVENT_SERVICE_CONFIG_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -30,7 +29,7 @@ extern const upb_msglayout envoy_config_core_v3_GrpcService_msginit;
 /* envoy.config.core.v3.EventServiceConfig */
 
 UPB_INLINE envoy_config_core_v3_EventServiceConfig *envoy_config_core_v3_EventServiceConfig_new(upb_arena *arena) {
-  return (envoy_config_core_v3_EventServiceConfig *)upb_msg_new(&envoy_config_core_v3_EventServiceConfig_msginit, arena);
+  return (envoy_config_core_v3_EventServiceConfig *)_upb_msg_new(&envoy_config_core_v3_EventServiceConfig_msginit, arena);
 }
 UPB_INLINE envoy_config_core_v3_EventServiceConfig *envoy_config_core_v3_EventServiceConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -45,9 +44,9 @@ typedef enum {
   envoy_config_core_v3_EventServiceConfig_config_source_specifier_grpc_service = 1,
   envoy_config_core_v3_EventServiceConfig_config_source_specifier_NOT_SET = 0
 } envoy_config_core_v3_EventServiceConfig_config_source_specifier_oneofcases;
-UPB_INLINE envoy_config_core_v3_EventServiceConfig_config_source_specifier_oneofcases envoy_config_core_v3_EventServiceConfig_config_source_specifier_case(const envoy_config_core_v3_EventServiceConfig* msg) { return (envoy_config_core_v3_EventServiceConfig_config_source_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(4, 8)); }
+UPB_INLINE envoy_config_core_v3_EventServiceConfig_config_source_specifier_oneofcases envoy_config_core_v3_EventServiceConfig_config_source_specifier_case(const envoy_config_core_v3_EventServiceConfig* msg) { return (envoy_config_core_v3_EventServiceConfig_config_source_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
 
-UPB_INLINE bool envoy_config_core_v3_EventServiceConfig_has_grpc_service(const envoy_config_core_v3_EventServiceConfig *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
+UPB_INLINE bool envoy_config_core_v3_EventServiceConfig_has_grpc_service(const envoy_config_core_v3_EventServiceConfig *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 1; }
 UPB_INLINE const struct envoy_config_core_v3_GrpcService* envoy_config_core_v3_EventServiceConfig_grpc_service(const envoy_config_core_v3_EventServiceConfig *msg) { return UPB_READ_ONEOF(msg, const struct envoy_config_core_v3_GrpcService*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
 
 UPB_INLINE void envoy_config_core_v3_EventServiceConfig_set_grpc_service(envoy_config_core_v3_EventServiceConfig *msg, struct envoy_config_core_v3_GrpcService* value) {
@@ -56,7 +55,7 @@ UPB_INLINE void envoy_config_core_v3_EventServiceConfig_set_grpc_service(envoy_c
 UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_core_v3_EventServiceConfig_mutable_grpc_service(envoy_config_core_v3_EventServiceConfig *msg, upb_arena *arena) {
   struct envoy_config_core_v3_GrpcService* sub = (struct envoy_config_core_v3_GrpcService*)envoy_config_core_v3_EventServiceConfig_grpc_service(msg);
   if (sub == NULL) {
-    sub = (struct envoy_config_core_v3_GrpcService*)upb_msg_new(&envoy_config_core_v3_GrpcService_msginit, arena);
+    sub = (struct envoy_config_core_v3_GrpcService*)_upb_msg_new(&envoy_config_core_v3_GrpcService_msginit, arena);
     if (!sub) return NULL;
     envoy_config_core_v3_EventServiceConfig_set_grpc_service(msg, sub);
   }

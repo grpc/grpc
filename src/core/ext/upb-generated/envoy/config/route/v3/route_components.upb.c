@@ -53,7 +53,7 @@ static const upb_msglayout_field envoy_config_route_v3_VirtualHost__fields[18] =
   {11, UPB_SIZE(64, 120), 0, 0, 9, 3},
   {13, UPB_SIZE(68, 128), 0, 0, 9, 3},
   {14, UPB_SIZE(8, 8), 0, 0, 8, 1},
-  {15, UPB_SIZE(72, 136), 0, 7, 11, 3},
+  {15, UPB_SIZE(72, 136), 0, 7, 11, _UPB_LABEL_MAP},
   {16, UPB_SIZE(24, 40), 0, 4, 11, 1},
   {17, UPB_SIZE(28, 48), 0, 2, 11, 1},
   {18, UPB_SIZE(32, 56), 0, 9, 11, 1},
@@ -121,7 +121,7 @@ static const upb_msglayout_field envoy_config_route_v3_Route__fields[15] = {
   {10, UPB_SIZE(32, 64), 0, 0, 11, 3},
   {11, UPB_SIZE(36, 72), 0, 0, 9, 3},
   {12, UPB_SIZE(40, 80), 0, 0, 9, 3},
-  {13, UPB_SIZE(44, 88), 0, 6, 11, 3},
+  {13, UPB_SIZE(44, 88), 0, 6, 11, _UPB_LABEL_MAP},
   {14, UPB_SIZE(0, 0), 0, 0, 9, 1},
   {15, UPB_SIZE(20, 40), 0, 9, 11, 1},
   {16, UPB_SIZE(24, 48), 0, 10, 11, 1},
@@ -181,7 +181,7 @@ static const upb_msglayout_field envoy_config_route_v3_WeightedCluster_ClusterWe
   {5, UPB_SIZE(20, 40), 0, 0, 11, 3},
   {6, UPB_SIZE(24, 48), 0, 0, 9, 3},
   {9, UPB_SIZE(28, 56), 0, 0, 9, 3},
-  {10, UPB_SIZE(32, 64), 0, 2, 11, 3},
+  {10, UPB_SIZE(32, 64), 0, 2, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout envoy_config_route_v3_WeightedCluster_ClusterWeight_msginit = {
@@ -480,7 +480,7 @@ static const upb_msglayout_field envoy_config_route_v3_RetryPolicy__fields[10] =
   {4, UPB_SIZE(24, 40), 0, 3, 11, 1},
   {5, UPB_SIZE(32, 56), 0, 2, 11, 3},
   {6, UPB_SIZE(0, 0), 0, 0, 3, 1},
-  {7, UPB_SIZE(36, 64), 0, 0, 13, 3},
+  {7, UPB_SIZE(36, 64), 0, 0, 13, _UPB_LABEL_PACKED},
   {8, UPB_SIZE(28, 48), 0, 1, 11, 1},
   {9, UPB_SIZE(40, 72), 0, 0, 11, 3},
   {10, UPB_SIZE(44, 80), 0, 0, 11, 3},

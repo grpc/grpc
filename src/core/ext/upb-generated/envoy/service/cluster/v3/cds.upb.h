@@ -9,7 +9,6 @@
 #ifndef ENVOY_SERVICE_CLUSTER_V3_CDS_PROTO_UPB_H_
 #define ENVOY_SERVICE_CLUSTER_V3_CDS_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -28,7 +27,7 @@ extern const upb_msglayout envoy_service_cluster_v3_CdsDummy_msginit;
 /* envoy.service.cluster.v3.CdsDummy */
 
 UPB_INLINE envoy_service_cluster_v3_CdsDummy *envoy_service_cluster_v3_CdsDummy_new(upb_arena *arena) {
-  return (envoy_service_cluster_v3_CdsDummy *)upb_msg_new(&envoy_service_cluster_v3_CdsDummy_msginit, arena);
+  return (envoy_service_cluster_v3_CdsDummy *)_upb_msg_new(&envoy_service_cluster_v3_CdsDummy_msginit, arena);
 }
 UPB_INLINE envoy_service_cluster_v3_CdsDummy *envoy_service_cluster_v3_CdsDummy_parse(const char *buf, size_t size,
                         upb_arena *arena) {

@@ -9,7 +9,6 @@
 #ifndef ENVOY_SERVICE_ROUTE_V3_SRDS_PROTO_UPB_H_
 #define ENVOY_SERVICE_ROUTE_V3_SRDS_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -28,7 +27,7 @@ extern const upb_msglayout envoy_service_route_v3_SrdsDummy_msginit;
 /* envoy.service.route.v3.SrdsDummy */
 
 UPB_INLINE envoy_service_route_v3_SrdsDummy *envoy_service_route_v3_SrdsDummy_new(upb_arena *arena) {
-  return (envoy_service_route_v3_SrdsDummy *)upb_msg_new(&envoy_service_route_v3_SrdsDummy_msginit, arena);
+  return (envoy_service_route_v3_SrdsDummy *)_upb_msg_new(&envoy_service_route_v3_SrdsDummy_msginit, arena);
 }
 UPB_INLINE envoy_service_route_v3_SrdsDummy *envoy_service_route_v3_SrdsDummy_parse(const char *buf, size_t size,
                         upb_arena *arena) {

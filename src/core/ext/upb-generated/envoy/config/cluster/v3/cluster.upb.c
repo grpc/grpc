@@ -92,7 +92,7 @@ static const upb_msglayout_field envoy_config_cluster_v3_Cluster__fields[42] = {
   {32, UPB_SIZE(25, 25), 0, 0, 8, 1},
   {33, UPB_SIZE(116, 200), 0, 25, 11, 1},
   {34, UPB_SIZE(172, 296), UPB_SIZE(-177, -305), 6, 11, 1},
-  {36, UPB_SIZE(144, 256), 0, 10, 11, 3},
+  {36, UPB_SIZE(144, 256), 0, 10, 11, _UPB_LABEL_MAP},
   {37, UPB_SIZE(172, 296), UPB_SIZE(-177, -305), 5, 11, 1},
   {38, UPB_SIZE(160, 280), UPB_SIZE(-169, -289), 2, 11, 1},
   {39, UPB_SIZE(26, 26), 0, 0, 8, 1},

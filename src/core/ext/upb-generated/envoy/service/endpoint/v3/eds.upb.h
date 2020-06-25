@@ -9,7 +9,6 @@
 #ifndef ENVOY_SERVICE_ENDPOINT_V3_EDS_PROTO_UPB_H_
 #define ENVOY_SERVICE_ENDPOINT_V3_EDS_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -28,7 +27,7 @@ extern const upb_msglayout envoy_service_endpoint_v3_EdsDummy_msginit;
 /* envoy.service.endpoint.v3.EdsDummy */
 
 UPB_INLINE envoy_service_endpoint_v3_EdsDummy *envoy_service_endpoint_v3_EdsDummy_new(upb_arena *arena) {
-  return (envoy_service_endpoint_v3_EdsDummy *)upb_msg_new(&envoy_service_endpoint_v3_EdsDummy_msginit, arena);
+  return (envoy_service_endpoint_v3_EdsDummy *)_upb_msg_new(&envoy_service_endpoint_v3_EdsDummy_msginit, arena);
 }
 UPB_INLINE envoy_service_endpoint_v3_EdsDummy *envoy_service_endpoint_v3_EdsDummy_parse(const char *buf, size_t size,
                         upb_arena *arena) {

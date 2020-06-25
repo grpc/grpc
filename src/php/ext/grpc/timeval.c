@@ -16,6 +16,11 @@
  *
  */
 
+/**
+ * class Timeval
+ * @see https://github.com/grpc/grpc/tree/master/src/php/ext/grpc/timeval.c
+ */
+
 #include "timeval.h"
 
 #include <ext/spl/spl_exceptions.h>

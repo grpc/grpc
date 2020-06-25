@@ -102,7 +102,7 @@ static const upb_msglayout *const envoy_config_core_v3_Metadata_submsgs[1] = {
 };
 
 static const upb_msglayout_field envoy_config_core_v3_Metadata__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 3},
+  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout envoy_config_core_v3_Metadata_msginit = {

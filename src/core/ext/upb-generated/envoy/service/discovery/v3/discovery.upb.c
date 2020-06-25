@@ -68,7 +68,7 @@ static const upb_msglayout_field envoy_service_discovery_v3_DeltaDiscoveryReques
   {2, UPB_SIZE(0, 0), 0, 0, 9, 1},
   {3, UPB_SIZE(24, 48), 0, 0, 9, 3},
   {4, UPB_SIZE(28, 56), 0, 0, 9, 3},
-  {5, UPB_SIZE(32, 64), 0, 1, 11, 3},
+  {5, UPB_SIZE(32, 64), 0, 1, 11, _UPB_LABEL_MAP},
   {6, UPB_SIZE(8, 16), 0, 0, 9, 1},
   {7, UPB_SIZE(20, 40), 0, 2, 11, 1},
 };

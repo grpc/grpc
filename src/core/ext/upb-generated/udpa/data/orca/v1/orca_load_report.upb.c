@@ -22,8 +22,8 @@ static const upb_msglayout_field udpa_data_orca_v1_OrcaLoadReport__fields[5] = {
   {1, UPB_SIZE(0, 0), 0, 0, 1, 1},
   {2, UPB_SIZE(8, 8), 0, 0, 1, 1},
   {3, UPB_SIZE(16, 16), 0, 0, 4, 1},
-  {4, UPB_SIZE(24, 24), 0, 0, 11, 3},
-  {5, UPB_SIZE(28, 32), 0, 1, 11, 3},
+  {4, UPB_SIZE(24, 24), 0, 0, 11, _UPB_LABEL_MAP},
+  {5, UPB_SIZE(28, 32), 0, 1, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout udpa_data_orca_v1_OrcaLoadReport_msginit = {
@@ -33,8 +33,8 @@ const upb_msglayout udpa_data_orca_v1_OrcaLoadReport_msginit = {
 };
 
 static const upb_msglayout_field udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry__fields[2] = {
-  {1, UPB_SIZE(8, 8), 0, 0, 9, 1},
-  {2, UPB_SIZE(0, 0), 0, 0, 1, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {2, UPB_SIZE(8, 16), 0, 0, 1, 1},
 };
 
 const upb_msglayout udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_msginit = {
@@ -44,8 +44,8 @@ const upb_msglayout udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_msginit = 
 };
 
 static const upb_msglayout_field udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry__fields[2] = {
-  {1, UPB_SIZE(8, 8), 0, 0, 9, 1},
-  {2, UPB_SIZE(0, 0), 0, 0, 1, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {2, UPB_SIZE(8, 16), 0, 0, 1, 1},
 };
 
 const upb_msglayout udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_msginit = {
