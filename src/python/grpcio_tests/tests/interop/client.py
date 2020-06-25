@@ -120,7 +120,7 @@ def get_secure_channel_parameters(args):
                     request=google_auth.transport.requests.Request()))
             # TODO: Is there any reason why it actually had to take this argument?
             # Couldn't we just as easily have created a composite channel credential?
-            channel_credentials = grpc.gce_channel_credentials(call_creds)
+            channel_credentials = grpc.compute_engine_channel_credentials(call_creds)
             # channel_credentials = grpc.composite_channel_credentials(channel_credent)
             #     channel_credentials = grpc.composite_channel_credentials(
             #         channel_credentials, call_credentials)

@@ -1868,12 +1868,12 @@ def alts_server_credentials():
     return ServerCredentials(_cygrpc.server_credentials_alts())
 
 
-def gce_channel_credentials(call_creds):
+def compute_engine_channel_credentials(call_creds):
     """
     TODO: Document.
     """
     return ChannelCredentials(
-        _cygrpc.channel_credentials_gce(call_creds._credentials))
+        _cygrpc.channel_credentials_compute_engine(call_creds._credentials))
 
 
 def channel_ready_future(channel):

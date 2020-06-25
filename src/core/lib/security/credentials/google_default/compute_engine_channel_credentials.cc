@@ -44,7 +44,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
 
-grpc_channel_credentials* grpc_gce_channel_credentials_create(
+grpc_channel_credentials* grpc_compute_engine_channel_credentials_create(
     grpc_call_credentials* call_credentials, void* reserved) {
   // If we haven't initialized the google_default_credentials singleton,
   // then we don't know whether or not we're on GCE and can't safely
