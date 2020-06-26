@@ -30,7 +30,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
@@ -58,7 +57,6 @@ using grpc_core::Json;
  * means the detection is done via network test that is unreliable and the
  * unreliable result should not be referred by successive calls. */
 static int g_metadata_server_available = 0;
-static grpc_core::Atomic<bool> g_is_on_gce(false);
 static gpr_mu g_state_mu;
 /* Protect a metadata_server_detector instance that can be modified by more than
  * one gRPC threads */
@@ -366,9 +364,7 @@ void grpc_flush_cached_google_default_credentials(void) {
 }
 
 bool is_on_gce(void) {
-  bool on_gce = g_gce_tenancy_checker();
-  g_is_on_gce.Store(on_gce, grpc_core::MemoryOrder::RELEASE);
-  return on_gce;
+  return g_gce_tenancy_checker();
 }
 
 }  // namespace internal
