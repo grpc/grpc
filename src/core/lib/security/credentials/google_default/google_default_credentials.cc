@@ -363,9 +363,7 @@ void grpc_flush_cached_google_default_credentials(void) {
   gpr_mu_unlock(&g_state_mu);
 }
 
-bool is_on_gce(void) {
-  return g_gce_tenancy_checker();
-}
+bool is_on_gce(void) { return g_gce_tenancy_checker(); }
 
 }  // namespace internal
 }  // namespace grpc_core
