@@ -85,7 +85,7 @@ class XdsApi {
           std::string header_matcher;
           std::unique_ptr<RE2> regex_match;
           bool present_match;
-          bool invert_match;
+          bool invert_match = false;
           bool operator==(const HeaderMatcher& other) const {
             return (name == other.name && header_type == other.header_type &&
                     range_start == other.range_start &&
