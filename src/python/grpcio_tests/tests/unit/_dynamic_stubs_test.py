@@ -20,8 +20,6 @@ import sys
 import multiprocessing
 import functools
 
-# TODO: Support setup.py as test runner.
-
 
 @contextlib.contextmanager
 def _grpc_tools_unimportable():
