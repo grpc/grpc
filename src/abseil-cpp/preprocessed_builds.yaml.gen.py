@@ -206,7 +206,7 @@ def main():
   builds = generate_builds("absl")
   os.chdir(previous_dir)
   with open(OUTPUT_PATH, 'w') as outfile:
-    outfile.write(yaml.dump(builds, indent=2, sort_keys=True))
+    outfile.write(yaml.dump(builds, indent=2))
 
 
 if __name__ == "__main__":
