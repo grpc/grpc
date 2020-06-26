@@ -61,10 +61,8 @@ grpc_channel_credentials* grpc_compute_engine_channel_credentials_create(
   grpc_alts_credentials_options_destroy(options);
 
   auto creds = new grpc_google_default_channel_credentials(
-      alts_creds != nullptr ? alts_creds->Ref() : nullptr,
-      ssl_creds != nullptr ? ssl_creds->Ref() : nullptr);
-  if (ssl_creds) ssl_creds->Unref();
-  if (alts_creds) alts_creds->Unref();
+      grpc_core::RefCountedPtr<grpc_channel_credentials>(alts_creds),
+      grpc_core::RefCountedPtr<grpc_channel_credentials>(ssl_creds));
 
   return creds;
 }
