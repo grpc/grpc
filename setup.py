@@ -383,6 +383,7 @@ COMMAND_CLASS = {
     'build_py': commands.BuildPy,
     'build_ext': commands.BuildExt,
     'gather': commands.Gather,
+    'clean': commands.Clean,
 }
 
 # Ensure that package data is copied over before any commands have been run:
