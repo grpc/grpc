@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
@@ -57,7 +58,7 @@ using grpc_core::Json;
  * means the detection is done via network test that is unreliable and the
  * unreliable result should not be referred by successive calls. */
 static int g_metadata_server_available = 0;
-static int g_is_on_gce = 0;
+static grpc_core::Atomic<bool> g_is_on_gce(false);
 static gpr_mu g_state_mu;
 /* Protect a metadata_server_detector instance that can be modified by more than
  * one gRPC threads */
@@ -89,7 +90,7 @@ grpc_google_default_channel_credentials::create_security_connector(
   bool use_alts =
       is_grpclb_load_balancer || is_backend_from_grpclb_load_balancer;
   /* Return failure if ALTS is selected but not running on GCE. */
-  if (use_alts && !g_is_on_gce) {
+  if (use_alts && !grpc_core::internal::is_on_gce()) {
     gpr_log(GPR_ERROR, "ALTS is selected, but not running on GCE.");
     return nullptr;
   }
@@ -301,8 +302,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create() {
 
   /* Try a platform-provided hint for GCE. */
   if (!g_metadata_server_available) {
-    g_is_on_gce = g_gce_tenancy_checker();
-    g_metadata_server_available = g_is_on_gce;
+    g_metadata_server_available = grpc_core::internal::is_on_gce();
   }
   /* TODO: Add a platform-provided hint for GAE. */
 
@@ -363,6 +363,16 @@ void grpc_flush_cached_google_default_credentials(void) {
   gpr_mu_lock(&g_state_mu);
   g_metadata_server_available = 0;
   gpr_mu_unlock(&g_state_mu);
+}
+
+bool is_on_gce(void) {
+  bool on_gce;
+  if (GPR_UNLIKELY(
+          !(on_gce = g_is_on_gce.Load(grpc_core::MemoryOrder::ACQUIRE)))) {
+    on_gce = g_gce_tenancy_checker();
+    g_is_on_gce.Store(on_gce, grpc_core::MemoryOrder::RELEASE);
+  }
+  return on_gce;
 }
 
 }  // namespace internal
