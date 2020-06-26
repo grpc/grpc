@@ -74,4 +74,3 @@ py_binary(
         "//src/python/grpcio_tests/tests/interop:resources",
     ],
 )
-

@@ -28,8 +28,8 @@ py_library(
 py_binary(
     name = "client",
     srcs = ["client.py"],
-    deps = [":client_lib"],
     python_version = "PY3",
+    deps = [":client_lib"],
 )
 
 py_library(
