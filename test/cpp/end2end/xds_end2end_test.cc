@@ -2427,7 +2427,6 @@ TEST_P(LdsRdsTest, RouteMatchHasCaseSensitiveFalse) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   route1->mutable_match()->mutable_case_sensitive()->set_value(false);
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
@@ -3491,13 +3490,11 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
-  std::vector<std::pair<std::string, std::string>> metadata;
-  metadata.push_back(std::make_pair("header1", "POST"));
-  metadata.push_back(std::make_pair("header2", "blah"));
-  metadata.push_back(std::make_pair("header3", "1"));
-  metadata.push_back(
-      std::make_pair("header5", "/grpc.testing.EchoTest1Service/"));
-  metadata.push_back(std::make_pair("header6", "grpc.java"));
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"header1", "POST"},      {"header2", "blah"},
+      {"header3", "1"},         {"header5", "/grpc.testing.EchoTest1Service/"},
+      {"header6", "grpc.java"},
+  };
   const auto header_match_rpc_options = RpcOptions()
                                             .set_rpc_service(SERVICE_ECHO1)
                                             .set_rpc_method(METHOD_ECHO1)
@@ -3519,11 +3516,10 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
-TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingWithRuntimeFraction) {
+TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
-  const size_t kNumEcho1Rpcs = 1000;
-  const size_t kNumEchoRpcs = 5;
+  const size_t kNumRpcs = 1000;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -3545,47 +3541,30 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingWithRuntimeFraction) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   route1->mutable_match()
       ->mutable_runtime_fraction()
       ->mutable_default_value()
-      ->set_numerator(50);
-  auto* header_matcher1 = route1->mutable_match()->add_headers();
-  header_matcher1->set_name("header1");
-  header_matcher1->set_exact_match("POST");
+      ->set_numerator(25);
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
-  std::vector<std::pair<std::string, std::string>> metadata;
-  metadata.push_back(std::make_pair("header1", "POST"));
-  CheckRpcSendOk(kNumEchoRpcs,
-                 RpcOptions().set_wait_for_ready(true).set_metadata(metadata));
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
-                                    .set_rpc_service(SERVICE_ECHO1)
-                                    .set_rpc_method(METHOD_ECHO1)
-                                    .set_metadata(metadata)
-                                    .set_wait_for_ready(true));
-  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  WaitForAllBackends(0, 2);
+  CheckRpcSendOk(kNumRpcs);
   const int default_backend_count =
-      backends_[0]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
-  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+      backends_[0]->backend_service()->request_count();
   const int matched_backend_count =
-      backends_[1]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
+      backends_[1]->backend_service()->request_count();
   const double kErrorTolerance = 0.2;
-  EXPECT_THAT(
-      default_backend_count,
-      ::testing::AllOf(
-          ::testing::Ge(kNumEcho1Rpcs * 50 / 100 * (1 - kErrorTolerance)),
-          ::testing::Le(kNumEcho1Rpcs * 50 / 100 * (1 + kErrorTolerance))));
-  EXPECT_THAT(
-      matched_backend_count,
-      ::testing::AllOf(
-          ::testing::Ge(kNumEcho1Rpcs * 50 / 100 * (1 - kErrorTolerance)),
-          ::testing::Le(kNumEcho1Rpcs * 50 / 100 * (1 + kErrorTolerance))));
+  EXPECT_THAT(default_backend_count,
+              ::testing::AllOf(
+                  ::testing::Ge(kNumRpcs * 75 / 100 * (1 - kErrorTolerance)),
+                  ::testing::Le(kNumRpcs * 75 / 100 * (1 + kErrorTolerance))));
+  EXPECT_THAT(matched_backend_count,
+              ::testing::AllOf(
+                  ::testing::Ge(kNumRpcs * 25 / 100 * (1 - kErrorTolerance)),
+                  ::testing::Le(kNumRpcs * 25 / 100 * (1 + kErrorTolerance))));
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
@@ -3657,18 +3636,18 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
-  std::vector<std::pair<std::string, std::string>> metadata;
   // Send headers which will mismatch each route
-  metadata.push_back(std::make_pair("header1", "POST1"));
-  metadata.push_back(std::make_pair("header2", "1000"));
-  metadata.push_back(std::make_pair("header3", "blah1"));
-  CheckRpcSendOk(kNumEchoRpcs,
-                 RpcOptions().set_wait_for_ready(true).set_metadata(metadata));
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"header1", "POST1"},
+      {"header2", "1000"},
+      {"header3", "blah1"},
+  };
+  WaitForAllBackends(0, 1);
+  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_metadata(metadata));
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
                                     .set_rpc_service(SERVICE_ECHO1)
                                     .set_rpc_method(METHOD_ECHO1)
-                                    .set_metadata(metadata)
-                                    .set_wait_for_ready(true));
+                                    .set_metadata(metadata));
   // Verify that only the default backend got RPCs since all previous routes
   // were mismatched.
   for (size_t i = 1; i < 4; ++i) {
