@@ -142,7 +142,7 @@ task 'gem:native' do
 
         gem update --system --no-document && \
         bundle && \
-        rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem \
+        rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
           RUBY_CC_VERSION=2.7.0:2.6.0:2.5.0:2.4.0:2.3.0 \
           V=#{verbose} \
           GRPC_CONFIG=#{grpc_config}
