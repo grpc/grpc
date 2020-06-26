@@ -3494,7 +3494,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   std::vector<std::pair<std::string, std::string>> metadata;
   metadata.push_back(std::make_pair("header1", "POST"));
   metadata.push_back(std::make_pair("header2", "blah"));
-  metadata.push_back(std::make_pair("header3", "5"));
+  metadata.push_back(std::make_pair("header3", "1"));
   metadata.push_back(
       std::make_pair("header5", "/grpc.testing.EchoTest1Service/"));
   metadata.push_back(std::make_pair("header6", "grpc.java"));
@@ -3660,7 +3660,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   std::vector<std::pair<std::string, std::string>> metadata;
   // Send headers which will mismatch each route
   metadata.push_back(std::make_pair("header1", "POST1"));
-  metadata.push_back(std::make_pair("header2", "1001"));
+  metadata.push_back(std::make_pair("header2", "1000"));
   metadata.push_back(std::make_pair("header3", "blah1"));
   CheckRpcSendOk(kNumEchoRpcs,
                  RpcOptions().set_wait_for_ready(true).set_metadata(metadata));

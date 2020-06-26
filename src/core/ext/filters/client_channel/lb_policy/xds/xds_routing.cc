@@ -224,7 +224,7 @@ absl::optional<absl::string_view> GetMetadataValue(
   // TODO(roth): Using const auto& here trigger a warning in a macos or windows
   // build:
   //*(args.initial_metadata) is returning values not references.
-  GPR_DEBUG_ASSERT(initial_metadata);
+  GPR_DEBUG_ASSERT(initial_metadata != nullptr);
   for (const auto p : *(initial_metadata)) {
     if (p.first == key) {
       return p.second;
@@ -282,7 +282,7 @@ bool HeaderMatchHelper(
         return false;
       }
       return int_value >= header_matcher.range_start &&
-             int_value <= header_matcher.range_end;
+             int_value < header_matcher.range_end;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::PREFIX:
       return absl::StartsWith(value.value(), header_matcher.header_matcher);
