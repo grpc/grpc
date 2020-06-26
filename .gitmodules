@@ -49,3 +49,6 @@
 [submodule "third_party/libuv"]
 	path = third_party/libuv
 	url = https://github.com/libuv/libuv.git
+[submodule "re2"]
+	path = re2
+	url = https://github.com/google/re2.git
