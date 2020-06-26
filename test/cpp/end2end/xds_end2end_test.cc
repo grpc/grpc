@@ -2824,8 +2824,8 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
-            "Invalid range header matcher specifier specified: range_end "
-            "cannot be smaller than range_start.");
+            "Invalid range header matcher specifier specified: end "
+            "cannot be smaller than start.");
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
@@ -3499,9 +3499,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
       std::make_pair("header5", "/grpc.testing.EchoTest1Service/"));
   metadata.push_back(std::make_pair("header6", "grpc.java"));
   const auto header_match_rpc_options = RpcOptions()
-    .set_rpc_service(SERVICE_ECHO1)
-    .set_rpc_method(METHOD_ECHO1)
-    .set_metadata(std::move(metadata));
+                                            .set_rpc_service(SERVICE_ECHO1)
+                                            .set_rpc_method(METHOD_ECHO1)
+                                            .set_metadata(std::move(metadata));
   // Make sure all backends are up.
   WaitForAllBackends(0, 1);
   WaitForAllBackends(1, 2, true, header_match_rpc_options);

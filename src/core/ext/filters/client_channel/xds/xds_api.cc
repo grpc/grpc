@@ -63,8 +63,8 @@
 #include "envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.h"
 #include "envoy/config/listener/v2/api_listener.upb.h"
 #include "envoy/service/load_stats/v2/lrs.upb.h"
-#include "envoy/type/matcher/regex.upb.h"
 #include "envoy/service/load_stats/v2/lrs.upbdefs.h"
+#include "envoy/type/matcher/regex.upb.h"
 #include "envoy/type/percent.upb.h"
 #include "envoy/type/range.upb.h"
 #include "google/protobuf/any.upb.h"
@@ -161,7 +161,7 @@ std::string XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::ToString()
   std::string path_type_string;
   switch (path_type) {
     case PathMatcherType::PATH:
-      path_type_string = "patch match";
+      path_type_string = "path match";
       break;
     case PathMatcherType::PREFIX:
       path_type_string = "prefix match";
@@ -179,24 +179,24 @@ std::string XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::ToString()
     const {
   switch (header_type) {
     case HeaderMatcherType::EXACT:
-      return absl::StrFormat("Header exact match:%s /%s:%s/",
+      return absl::StrFormat("Header exact match:%s %s:%s",
                              invert_match ? " not" : "", name, header_matcher);
     case HeaderMatcherType::REGEX:
-      return absl::StrFormat("Header regex match:%s /%s:%s/",
+      return absl::StrFormat("Header regex match:%s %s:%s",
                              invert_match ? " not" : "", name, header_matcher);
     case HeaderMatcherType::RANGE:
-      return absl::StrFormat("Header range match:%s /%s:[%d, %d]/",
+      return absl::StrFormat("Header range match:%s %s:[%d, %d)",
                              invert_match ? " not" : "", name, range_start,
                              range_end);
     case HeaderMatcherType::PRESENT:
-      return absl::StrFormat("Header present match:%s /%s:%s",
+      return absl::StrFormat("Header present match:%s %s:%s",
                              invert_match ? " not" : "", name,
                              present_match ? "true" : "false");
     case HeaderMatcherType::PREFIX:
-      return absl::StrFormat("Header prefix Match:%s /%s:%s/",
+      return absl::StrFormat("Header prefix match:%s %s:%s",
                              invert_match ? " not" : "", name, header_matcher);
     case HeaderMatcherType::SUFFIX:
-      return absl::StrFormat("Header suffix match:%s /%s:%s/",
+      return absl::StrFormat("Header suffix match:%s %s:%s",
                              invert_match ? " not" : "", name, header_matcher);
     default:
       return "";
@@ -656,11 +656,11 @@ grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
       header_matcher.header_matcher = UpbStringToStdString(
           envoy_api_v2_route_HeaderMatcher_exact_match(header));
     } else if (envoy_api_v2_route_HeaderMatcher_has_safe_regex_match(header)) {
-      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
-          HeaderMatcher::HeaderMatcherType::REGEX;
       const envoy_type_matcher_RegexMatcher* regex_matcher =
           envoy_api_v2_route_HeaderMatcher_safe_regex_match(header);
       GPR_ASSERT(regex_matcher != nullptr);
+      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+          HeaderMatcher::HeaderMatcherType::REGEX;
       const std::string matcher = UpbStringToStdString(
           envoy_type_matcher_RegexMatcher_regex(regex_matcher));
       RE2 regex(matcher);
@@ -668,7 +668,7 @@ grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Invalid regex string specified.");
       }
-      header_matcher.header_matcher = matcher;
+      header_matcher.header_matcher = std::move(matcher);
     } else if (envoy_api_v2_route_HeaderMatcher_has_range_match(header)) {
       header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
           HeaderMatcher::HeaderMatcherType::RANGE;
@@ -678,8 +678,8 @@ grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
       header_matcher.range_end = envoy_type_Int64Range_end(range_matcher);
       if (header_matcher.range_end < header_matcher.range_start) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Invalid range header matcher specifier specified: range_end "
-            "cannot be smaller than range_start.");
+            "Invalid range header matcher specifier specified: end "
+            "cannot be smaller than start.");
       }
     } else if (envoy_api_v2_route_HeaderMatcher_has_present_match(header)) {
       header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
