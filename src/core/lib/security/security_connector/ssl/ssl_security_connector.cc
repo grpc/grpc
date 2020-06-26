@@ -33,6 +33,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
@@ -302,6 +303,7 @@ class grpc_ssl_server_security_connector
     bool status;
     if (!has_cert_config_fetcher()) return false;
 
+    grpc_core::MutexLock lock(&mu_);
     grpc_ssl_server_credentials* server_creds =
         static_cast<grpc_ssl_server_credentials*>(this->mutable_server_creds());
     grpc_ssl_certificate_config_reload_status cb_result =
@@ -381,6 +383,7 @@ class grpc_ssl_server_security_connector
     server_handshaker_factory_ = new_factory;
   }
 
+  grpc_core::Mutex mu_;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
 };
 }  // namespace

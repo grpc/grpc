@@ -527,6 +527,13 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* send_initial_metadata = nullptr;
   grpc_closure* send_initial_metadata_finished = nullptr;
   grpc_metadata_batch* send_trailing_metadata = nullptr;
+  // TODO(yashykt): Find a better name for the below field and others in this
+  //                struct to betteer distinguish inputs, return values, and
+  //                internal state.
+  // sent_trailing_metadata_op allows the transport to fill in to the upper
+  // layer whether this stream was able to send its trailing metadata (used for
+  // detecting cancellation on the server-side)..
+  bool* sent_trailing_metadata_op = nullptr;
   grpc_closure* send_trailing_metadata_finished = nullptr;
 
   grpc_core::OrphanablePtr<grpc_core::ByteStream> fetching_send_message;
@@ -835,6 +842,12 @@ void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id);
     with error code ENHANCE_YOUR_CALM and additional debug data resembling
     "too_many_pings" followed by immediately closing the connection. */
 void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t);
+
+/** Resets ping clock. Should be called when flushing window updates,
+ * initial/trailing metadata or data frames. For a server, it resets the number
+ * of ping strikes and the last_ping_recv_time. For a ping sender, it resets
+ * pings_before_data_required. */
+void grpc_chttp2_reset_ping_clock(grpc_chttp2_transport* t);
 
 /** add a ref to the stream and add it to the writable list;
     ref will be dropped in writing.c */
