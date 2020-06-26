@@ -1100,9 +1100,9 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       absl::optional<absl::Cord> keepalive_throttling =
           state_change.status.GetPayload("grpc.internal.keepalive_throttling");
       if (keepalive_throttling.has_value()) {
-        parent_->chand_->keepalive_time_ = std::max(
-            parent_->chand_->keepalive_time_,
-            2 * atoi(std::string(keepalive_throttling.value()).c_str()));
+        parent_->chand_->keepalive_time_ =
+            std::max(parent_->chand_->keepalive_time_,
+                     atoi(std::string(keepalive_throttling.value()).c_str()));
       }
       // Ignore update if the parent WatcherWrapper has been replaced
       // since this callback was scheduled.

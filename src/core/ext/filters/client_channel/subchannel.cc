@@ -350,7 +350,7 @@ class Subchannel::ConnectedSubchannelStateWatcher
               status.GetPayload("grpc.internal.keepalive_throttling");
           if (keepalive_throttling.has_value()) {
             int new_keepalive_time =
-                2 * atoi(std::string(keepalive_throttling.value()).c_str());
+                atoi(std::string(keepalive_throttling.value()).c_str());
             const grpc_arg arg_to_add = grpc_channel_arg_integer_create(
                 const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
                 new_keepalive_time);
