@@ -109,9 +109,6 @@ def _test_syntax_errors():
         assert False, "Compile error expected. None occurred."
 
 
-# TODO: Test warnings.
-
-
 class ProtocTest(unittest.TestCase):
 
     def test_import_protos(self):
@@ -137,8 +134,6 @@ class ProtocTest(unittest.TestCase):
 
     def test_syntax_errors(self):
         _run_in_subprocess(_test_syntax_errors)
-
-    # TODO: Write test to ensure the right module loader is used.
 
 
 if __name__ == '__main__':

@@ -112,7 +112,6 @@ py_library(
     for test_file_name in GRPCIO_TESTS_UNIT
 ]
 
-# TODO: Somehow incorporate into setup.py workflow.
 py2and3_test(
     name = "_dynamic_stubs_test",
     size = "small",

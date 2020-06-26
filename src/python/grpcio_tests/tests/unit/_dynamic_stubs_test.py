@@ -28,6 +28,14 @@ def _grpc_tools_unimportable():
     original_sys_path = sys.path
     sys.path = [path for path in sys.path if "grpcio_tools" not in path]
     try:
+        import grpc_tools
+    except ImportError:
+        pass
+    else:
+        del grpc_tools
+        sys.path = original_sys_path
+        raise unittest.SkipTest("Failed to make grpc_tools unimportable.")
+    try:
         yield
     finally:
         sys.path = original_sys_path
