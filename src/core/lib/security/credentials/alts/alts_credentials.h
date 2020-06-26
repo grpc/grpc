@@ -26,8 +26,6 @@
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
-#define GRPC_CREDENTIALS_TYPE_ALTS "Alts"
-
 /* Main struct for grpc ALTS channel credential. */
 class grpc_alts_credentials final : public grpc_channel_credentials {
  public:
