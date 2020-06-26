@@ -84,6 +84,7 @@ typedef struct alts_tsi_handshaker_result {
 
 static tsi_result handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
+  gpr_log(GPR_ERROR, "handshaker_result_extract_peer");
   if (self == nullptr || peer == nullptr) {
     gpr_log(GPR_ERROR, "Invalid argument to handshaker_result_extract_peer()");
     return TSI_INVALID_ARGUMENT;
@@ -255,6 +256,7 @@ static const tsi_handshaker_result_vtable result_vtable = {
 tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                              bool is_client,
                                              tsi_handshaker_result** self) {
+  gpr_log(GPR_ERROR, "Start of result create METHOD OF INTEREST");
 
   if (self == nullptr || resp == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to create_handshaker_result()");
@@ -311,6 +313,8 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Invalid peer identity");
     return TSI_FAILED_PRECONDITION;
   }
+  // client next side add teh map key value
+  // let ashitha know what the issue was
 
 
 
@@ -356,6 +360,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Null Peer Identity.");
     return TSI_FAILED_PRECONDITION;
   }
+  // need to searilze before storing
 
   size_t sample = 2048; // removing this line removes errors messages e0612
   size_t* lenz = &sample;
@@ -363,10 +368,11 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   // where do these labeled functions come from --> upb genreated files
   // grpc_gcp_Identity_AttributesEntry** peer_attributes_counter = peer_attributes;
   if(peer_attributes == nullptr ) { //|| *peer_attributes_counter == nullptr) {
-    gpr_log(GPR_ERROR, "Null Peer Attributes.");
-    GPR_ASSERT(0);
+    gpr_log(GPR_ERROR, "Null PEER ATTRIBUTES.");
+    // GPR_ASSERT(0);
     return TSI_FAILED_PRECONDITION; //This is triggering
   }
+  gpr_log(GPR_ERROR, "NON NULL PEER ATTRIBUTES");
   // // while(*peer_attributes_counter != nullptr) {//map<string, string>::iterator it = peer_attributes.begin(); it != peer_attributes.end(); it++ ) {
   // //   grpc_gcp_AltsContext_PeerAttributesEntry* peer_entry = grpc_gcp_AltsContext_add_peer_attributes(context, context_arena.ptr());
   // //   upb_strview key = grpc_gcp_Identity_AttributesEntry_key(*peer_attributes_counter); USE CONST_CAST
@@ -527,6 +533,7 @@ static tsi_result handshaker_next(
     size_t received_bytes_size, const unsigned char** /*bytes_to_send*/,
     size_t* /*bytes_to_send_size*/, tsi_handshaker_result** /*result*/,
     tsi_handshaker_on_next_done_cb cb, void* user_data) {
+  gpr_log(GPR_ERROR, "start of handshaker next");
   if (self == nullptr || cb == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to handshaker_next()");
     return TSI_INVALID_ARGUMENT;
@@ -646,6 +653,8 @@ tsi_result alts_tsi_handshaker_create(
     const char* handshaker_service_url, bool is_client,
     grpc_pollset_set* interested_parties, tsi_handshaker** self,
     size_t user_specified_max_frame_size) {
+  gpr_log(GPR_ERROR, "alts_tsi_handshaker_create");
+
   if (handshaker_service_url == nullptr || self == nullptr ||
       options == nullptr || (is_client && target_name == nullptr)) {
     gpr_log(GPR_ERROR, "Invalid arguments to alts_tsi_handshaker_create()");
@@ -678,6 +687,7 @@ tsi_result alts_tsi_handshaker_create(
 void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* self,
                                                  grpc_slice* recv_bytes,
                                                  size_t bytes_consumed) {
+  gpr_log(GPR_ERROR, "set unused_bytes");
   GPR_ASSERT(recv_bytes != nullptr && self != nullptr);
   if (GRPC_SLICE_LENGTH(*recv_bytes) == bytes_consumed) {
     return;
@@ -703,6 +713,7 @@ bool alts_tsi_handshaker_get_has_sent_start_message_for_testing(
 
 void alts_tsi_handshaker_set_client_vtable_for_testing(
     alts_tsi_handshaker* handshaker, alts_handshaker_client_vtable* vtable) {
+  gpr_log(GPR_ERROR, "set client vtable for testing");
   GPR_ASSERT(handshaker != nullptr);
   handshaker->client_vtable_for_testing = vtable;
 }

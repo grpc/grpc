@@ -51,6 +51,8 @@
   "test application protocol"
 #define ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL "test record protocol"
 #define ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE 256 * 1024
+#define ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY "peer"
+#define ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE "attributes"
 
 using grpc_core::internal::alts_handshaker_client_check_fields_for_testing;
 using grpc_core::internal::alts_handshaker_client_get_handshaker_for_testing;
@@ -122,9 +124,11 @@ static void wait(notification* n) {
  */
 static grpc_byte_buffer* generate_handshaker_response(
     alts_handshaker_response_type type) {
+  gpr_log(GPR_ERROR, "start of generate handshaker response");
   upb::Arena arena;
   grpc_gcp_HandshakerResult* result;
   grpc_gcp_Identity* peer_identity;
+  grpc_gcp_Identity_AttributesEntry* test_peer_attributes_entry;
   grpc_gcp_HandshakerResp* resp = grpc_gcp_HandshakerResp_new(arena.ptr());
   grpc_gcp_HandshakerStatus* status =
       grpc_gcp_HandshakerResp_mutable_status(resp, arena.ptr());
@@ -134,11 +138,15 @@ static grpc_byte_buffer* generate_handshaker_response(
     case INVALID:
       break;
     case CLIENT_START:
+      gpr_log(GPR_ERROR, "start of generate handshaker response client start");
     case SERVER_START:
+      gpr_log(GPR_ERROR, "start of generate handshaker response server start");
       grpc_gcp_HandshakerResp_set_out_frames(
           resp, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
       break;
     case CLIENT_NEXT:
+    // doggo
+      gpr_log(GPR_ERROR, "start of generate handshaker response client next");
       grpc_gcp_HandshakerResp_set_out_frames(
           resp, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
       grpc_gcp_HandshakerResp_set_bytes_consumed(
@@ -146,11 +154,24 @@ static grpc_byte_buffer* generate_handshaker_response(
       result = grpc_gcp_HandshakerResp_mutable_result(resp, arena.ptr());
       peer_identity =
           grpc_gcp_HandshakerResult_mutable_peer_identity(result, arena.ptr());
+      gpr_log(GPR_ERROR, "Setting Peer Identity in generate handshaker response client next");
+
+       // doggo this set of code gets it to not fail once but creates the same error later on
+      test_peer_attributes_entry = grpc_gcp_Identity_add_attributes(peer_identity, arena.ptr());
+      grpc_gcp_Identity_AttributesEntry_set_key(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY));
+      grpc_gcp_Identity_AttributesEntry_set_value(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE));
+      gpr_log(GPR_ERROR, "DEFINED PEER ATTRIBUTES ENTRY AND VALUES");
+
+
+
       grpc_gcp_Identity_set_service_account(
           peer_identity,
           upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY));
       grpc_gcp_HandshakerResult_set_key_data(
           result, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_KEY_DATA));
+
+
+
       GPR_ASSERT(grpc_gcp_handshaker_resp_set_peer_rpc_versions(
           resp, arena.ptr(), ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MAJOR,
           ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MINOR,
@@ -168,13 +189,23 @@ static grpc_byte_buffer* generate_handshaker_response(
           result, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
       grpc_gcp_HandshakerResult_set_max_frame_size(
           result, ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE);
+      gpr_log(GPR_ERROR, "start of generate handshaker response finished setting client info");
       break;
     case SERVER_NEXT:
+      gpr_log(GPR_ERROR, "start of generate handshaker response server next");
       grpc_gcp_HandshakerResp_set_bytes_consumed(
           resp, strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
       result = grpc_gcp_HandshakerResp_mutable_result(resp, arena.ptr());
       peer_identity =
           grpc_gcp_HandshakerResult_mutable_peer_identity(result, arena.ptr());
+
+        // doggo this set of code gets it to not fail once but creates the same error later on
+      test_peer_attributes_entry = grpc_gcp_Identity_add_attributes(peer_identity, arena.ptr());
+      grpc_gcp_Identity_AttributesEntry_set_key(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY));
+      grpc_gcp_Identity_AttributesEntry_set_value(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE));
+      gpr_log(GPR_ERROR, "DEFINED PEER ATTRIBUTES ENTRY AND VALUES");
+
+      
       grpc_gcp_Identity_set_service_account(
           peer_identity,
           upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY));
@@ -281,6 +312,7 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
                                       const unsigned char* bytes_to_send,
                                       size_t bytes_to_send_size,
                                       tsi_handshaker_result* result) {
+  gpr_log(GPR_ERROR, "start of on_client_next_success_cb");
   GPR_ASSERT(status == TSI_OK);
   GPR_ASSERT(user_data == nullptr);
   GPR_ASSERT(bytes_to_send_size == strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
@@ -502,15 +534,19 @@ static alts_handshaker_client_vtable vtable = {mock_client_start,
                                                mock_shutdown, mock_destruct};
 
 static tsi_handshaker* create_test_handshaker(bool is_client) {
+  gpr_log(GPR_ERROR, "create test handshaker");
   tsi_handshaker* handshaker = nullptr;
   grpc_alts_credentials_options* options =
       grpc_alts_credentials_client_options_create();
+  gpr_log(GPR_ERROR, "create test handhsaker CANNOT FIND: Where is grpc_alts_credentials_client_options_create");
   alts_tsi_handshaker_create(options, "target_name",
                              ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING, is_client,
                              nullptr, &handshaker, 0);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
+  gpr_log(GPR_ERROR, "create test handshaker set v table. WHAT IS THIS VTABLE");
   alts_tsi_handshaker_set_client_vtable_for_testing(alts_handshaker, &vtable);
+  gpr_log(GPR_ERROR, "create tset handshaker destroy handshaker options");
   grpc_alts_credentials_options_destroy(options);
   return handshaker;
 }
@@ -550,23 +586,28 @@ static void check_handshaker_next_success() {
    * Create handshakers for which internal mock client is going to do
    * correctness check.
    */
+  gpr_log(GPR_ERROR, "start of check_handshaker_next_success");
   tsi_handshaker* client_handshaker =
       create_test_handshaker(true /* is_client */);
   tsi_handshaker* server_handshaker =
       create_test_handshaker(false /* is_client */);
   /* Client start. */
+  gpr_log(GPR_ERROR, "check handshaker next success client start");
   GPR_ASSERT(tsi_handshaker_next(client_handshaker, nullptr, 0, nullptr,
                                  nullptr, nullptr, on_client_start_success_cb,
                                  nullptr) == TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   /* Client next. */
+  gpr_log(GPR_ERROR, "check handshaker next success client next");
   GPR_ASSERT(tsi_handshaker_next(
                  client_handshaker,
                  (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
                  strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
                  nullptr, on_client_next_success_cb, nullptr) == TSI_ASYNC);
+  gpr_log(GPR_ERROR, "check handshaker next success client next pre wait");
   wait(&tsi_to_caller_notification);
   /* Server start. */
+  gpr_log(GPR_ERROR, "check handshaker next success  server start");
   GPR_ASSERT(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr,
                                  nullptr, nullptr, on_server_start_success_cb,
                                  nullptr) == TSI_ASYNC);
@@ -850,10 +891,12 @@ static void check_handle_response_invalid_resp() {
 }
 
 static void check_handle_response_success(void* /*unused*/) {
+  gpr_log(GPR_ERROR, "Start of check handle response success");
   /* Client start. */
   wait(&caller_to_tsi_notification);
   alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
   /* Client next. */
+  gpr_log(GPR_ERROR, "check handle response success client next");
   wait(&caller_to_tsi_notification);
   alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
   alts_handshaker_client_ref_for_testing(cb_event);
@@ -863,9 +906,11 @@ static void check_handle_response_success(void* /*unused*/) {
         cb_event, GRPC_STATUS_OK, GRPC_ERROR_NONE);
   }
   /* Server start. */
+  gpr_log(GPR_ERROR, "check handle response success server start");
   wait(&caller_to_tsi_notification);
   alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
   /* Server next. */
+  gpr_log(GPR_ERROR, "check handle response success server next");
   wait(&caller_to_tsi_notification);
   alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
   alts_handshaker_client_ref_for_testing(cb_event);
@@ -983,11 +1028,13 @@ void check_handshaker_next_fails_after_shutdown() {
 
 void check_handshaker_success() {
   /* Initialization. */
+  gpr_log(GPR_ERROR, "Start of check handshaker success");
   notification_init(&caller_to_tsi_notification);
   notification_init(&tsi_to_caller_notification);
   /* Tests. */
   grpc_core::Thread thd("alts_tsi_handshaker_test",
                         &check_handle_response_success, nullptr);
+  gpr_log(GPR_ERROR, "handshaker success thread");
   thd.Start();
   check_handshaker_next_success();
   thd.Join();
@@ -1003,6 +1050,7 @@ int main(int argc, char** argv) {
   grpc_alts_shared_resource_dedicated_init();
   /* Tests. */
   should_handshaker_client_api_succeed = true;
+  gpr_log(GPR_ERROR, "Starting tests from main");
   check_handshaker_success();
   check_handshaker_next_invalid_input();
   check_handshaker_next_fails_after_shutdown();
