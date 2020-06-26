@@ -1881,8 +1881,7 @@ def compute_engine_channel_credentials():
     with any other call credential, the connection may suddenly and unexpectedly
     begin failing RPCs.
     """
-    return ChannelCredentials(
-        _cygrpc.channel_credentials_compute_engine())
+    return ChannelCredentials(_cygrpc.channel_credentials_compute_engine())
 
 
 def channel_ready_future(channel):

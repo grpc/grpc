@@ -110,8 +110,9 @@ def get_secure_channel_parameters(args):
     if args.custom_credentials_type is not None:
         if args.custom_credentials_type == "compute_engine_channel_creds":
             if call_credentials is not None:
-                raise ValueError("Cannot use both compute_engine_creds " +
-                                "and {} as call creds.".format(call_credentials))
+                raise ValueError(
+                    "Cannot use both compute_engine_creds " +
+                    "and {} as call creds.".format(call_credentials))
             google_credentials, unused_project_id = google_auth.default(
                 scopes=[args.oauth_scope])
             call_creds = grpc.metadata_call_credentials(
@@ -119,7 +120,8 @@ def get_secure_channel_parameters(args):
                     credentials=google_credentials,
                     request=google_auth.transport.requests.Request()))
             channel_credentials = grpc.compute_engine_channel_credentials()
-            channel_credentials = grpc.composite_channel_credentials(channel_credentials, call_creds)
+            channel_credentials = grpc.composite_channel_credentials(
+                channel_credentials, call_creds)
         else:
             raise ValueError("Unknown credentials type '{}'".format(
                 args.custom_credentials_type))
