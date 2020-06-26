@@ -56,6 +56,28 @@ typedef struct callback_params {
 
 static VALUE grpc_rb_call_credentials_callback(VALUE callback_args) {
   VALUE result = rb_hash_new();
+  if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    VALUE callback_args_as_str =
+        rb_funcall(callback_args, rb_intern("to_s"), 0);
+    VALUE callback_source_info = rb_funcall(rb_ary_entry(callback_args, 0),
+                                            rb_intern("source_location"), 0);
+    if (callback_source_info != Qnil) {
+      VALUE source_filename = rb_ary_entry(callback_source_info, 0);
+      VALUE source_line_number = rb_funcall(
+          rb_ary_entry(callback_source_info, 1), rb_intern("to_s"), 0);
+      gpr_log(GPR_DEBUG,
+              "GRPC_RUBY: grpc_rb_call_credentials invoking user callback "
+              "(source_filename:%s line_number:%s) with arguments:%s",
+              StringValueCStr(source_filename),
+              StringValueCStr(source_line_number),
+              StringValueCStr(callback_args_as_str));
+    } else {
+      gpr_log(GPR_DEBUG,
+              "GRPC_RUBY: grpc_rb_call_credentials invoking user callback "
+              "(failed to get source filename ane line) with arguments:%s",
+              StringValueCStr(callback_args_as_str));
+    }
+  }
   VALUE metadata = rb_funcall(rb_ary_entry(callback_args, 0), rb_intern("call"),
                               1, rb_ary_entry(callback_args, 1));
   rb_hash_aset(result, rb_str_new2("metadata"), metadata);
