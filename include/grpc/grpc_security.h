@@ -311,7 +311,11 @@ GRPCAPI grpc_call_credentials* grpc_google_compute_engine_credentials_create(
 
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. The security level of the
-   resulting connection is GRPC_PRIVACY_AND_INTEGRITY. */
+   resulting connection is GRPC_PRIVACY_AND_INTEGRITY.
+
+   This API is used for experimental purposes for now and may change in the
+   future.
+   */
 GRPCAPI grpc_channel_credentials*
 grpc_compute_engine_channel_credentials_create(void* reserved);
 
