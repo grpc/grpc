@@ -1299,7 +1299,12 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
     ],
     language = "c++",
+    external_deps = [
+        "upb_lib",
+        "upb_textformat_lib",
+    ],
     deps = [
+        "envoy_ads_upbdefs",
         "grpc_base",
     ],
 )
