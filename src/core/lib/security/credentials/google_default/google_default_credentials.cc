@@ -88,7 +88,7 @@ grpc_google_default_channel_credentials::create_security_connector(
   bool use_alts =
       is_grpclb_load_balancer || is_backend_from_grpclb_load_balancer;
   /* Return failure if ALTS is selected but not running on GCE. */
-  if (use_alts && !grpc_core::internal::is_on_gce()) {
+  if (use_alts && !grpc_core::internal::running_on_gce()) {
     gpr_log(GPR_ERROR, "ALTS is selected, but not running on GCE.");
     return nullptr;
   }
@@ -300,7 +300,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create() {
 
   /* Try a platform-provided hint for GCE. */
   if (!g_metadata_server_available) {
-    g_metadata_server_available = grpc_core::internal::is_on_gce();
+    g_metadata_server_available = grpc_core::internal::running_on_gce();
   }
   /* TODO: Add a platform-provided hint for GAE. */
 
@@ -363,7 +363,7 @@ void grpc_flush_cached_google_default_credentials(void) {
   gpr_mu_unlock(&g_state_mu);
 }
 
-bool is_on_gce(void) { return g_gce_tenancy_checker(); }
+bool running_on_gce(void) { return g_gce_tenancy_checker(); }
 
 }  // namespace internal
 }  // namespace grpc_core

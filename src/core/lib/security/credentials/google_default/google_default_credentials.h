@@ -77,7 +77,7 @@ typedef bool (*grpc_gce_tenancy_checker)(void);
 
 void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker);
 
-bool is_on_gce(void);
+bool running_on_gce(void);
 
 // TEST-ONLY. Reset the internal global state.
 void grpc_flush_cached_google_default_credentials(void);
