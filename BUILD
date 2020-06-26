@@ -1318,13 +1318,11 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
         "src/core/ext/filters/client_channel/xds/xds_client.h",
     ],
-    external_deps = [
-        "upb_lib",
-        "upb_textformat_lib",
-    ],
     language = "c++",
     external_deps = [
         "re2",
+        "upb_lib",
+        "upb_textformat_lib",
     ],
     deps = [
         "envoy_ads_upb",
@@ -1352,13 +1350,11 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/xds/xds_client.h",
         "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
     ],
-    external_deps = [
-        "upb_lib",
-        "upb_textformat_lib",
-    ],
     language = "c++",
     external_deps = [
         "re2",
+        "upb_lib",
+        "upb_textformat_lib",
     ],
     deps = [
         "envoy_ads_upb",
