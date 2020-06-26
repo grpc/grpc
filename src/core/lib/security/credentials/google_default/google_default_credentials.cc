@@ -366,12 +366,8 @@ void grpc_flush_cached_google_default_credentials(void) {
 }
 
 bool is_on_gce(void) {
-  bool on_gce;
-  if (GPR_UNLIKELY(
-          !(on_gce = g_is_on_gce.Load(grpc_core::MemoryOrder::ACQUIRE)))) {
-    on_gce = g_gce_tenancy_checker();
-    g_is_on_gce.Store(on_gce, grpc_core::MemoryOrder::RELEASE);
-  }
+  bool on_gce = g_gce_tenancy_checker();
+  g_is_on_gce.Store(on_gce, grpc_core::MemoryOrder::RELEASE);
   return on_gce;
 }
 
