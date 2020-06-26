@@ -37,6 +37,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
@@ -1522,6 +1523,28 @@ static void test_no_google_default_creds(void) {
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
+static void test_compute_engine_creds(void) {
+  set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
+  g_test_gce_tenancy_checker_called = false;
+  g_test_is_on_gce = true;
+
+  auto creds = reinterpret_cast<grpc_google_default_channel_credentials*>(
+      grpc_compute_engine_channel_credentials_create(nullptr));
+
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(
+      strcmp(creds->type(), GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT) == 0);
+
+  auto* alts_creds = creds->alts_creds();
+  GPR_ASSERT(alts_creds != nullptr);
+  GPR_ASSERT(strcmp(alts_creds->type(), GRPC_CREDENTIALS_TYPE_ALTS) == 0);
+
+  auto* ssl_creds = creds->ssl_creds();
+  GPR_ASSERT(ssl_creds != nullptr);
+  GPR_ASSERT(strcmp(ssl_creds->type(), GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) == 0);
+  creds->Unref();
+}
+
 typedef enum {
   PLUGIN_INITIAL_STATE,
   PLUGIN_GET_METADATA_CALLED_STATE,
@@ -1831,6 +1854,7 @@ int main(int argc, char** argv) {
   test_google_default_creds_gce();
   test_google_default_creds_non_gce();
   test_no_google_default_creds();
+  test_compute_engine_creds();
   test_metadata_plugin_success();
   test_metadata_plugin_failure();
   test_get_well_known_google_credentials_file_path();

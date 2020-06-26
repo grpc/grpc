@@ -51,6 +51,7 @@ grpc_channel_credentials* grpc_compute_engine_channel_credentials_create(
   GRPC_API_TRACE("grpc_gce_channel_credentials_create(%p)", 1, (reserved));
 
   GPR_ASSERT(grpc_core::internal::is_on_gce());
+
   grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
   GPR_ASSERT(ssl_creds != nullptr);
