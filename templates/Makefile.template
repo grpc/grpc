@@ -1532,7 +1532,6 @@
 
   LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 
-
   % if lib.get('defaults', None):
   %  for name, value in defaults.get(lib.defaults).iteritems():
   $(LIB${lib.name.upper()}_OBJS): ${name} += ${value}
