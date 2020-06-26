@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # Docker file for building gRPC manylinux Python artifacts.
+# Updated: 2020-06-25
 
 FROM quay.io/pypa/manylinux2014_i686
 
@@ -26,3 +27,4 @@ RUN /opt/python/cp35-cp35m/bin/pip install --upgrade cython
 RUN /opt/python/cp36-cp36m/bin/pip install --upgrade cython
 RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
+RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
