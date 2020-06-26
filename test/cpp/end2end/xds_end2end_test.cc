@@ -3498,13 +3498,16 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   metadata.push_back(
       std::make_pair("header5", "/grpc.testing.EchoTest1Service/"));
   metadata.push_back(std::make_pair("header6", "grpc.java"));
-  CheckRpcSendOk(kNumEchoRpcs,
-                 RpcOptions().set_wait_for_ready(true).set_metadata(metadata));
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
-                                    .set_rpc_service(SERVICE_ECHO1)
-                                    .set_rpc_method(METHOD_ECHO1)
-                                    .set_metadata(metadata)
-                                    .set_wait_for_ready(true));
+  const auto header_match_rpc_options = RpcOptions()
+    .set_rpc_service(SERVICE_ECHO1)
+    .set_rpc_method(METHOD_ECHO1)
+    .set_metadata(std::move(metadata));
+  // Make sure all backends are up.
+  WaitForAllBackends(0, 1);
+  WaitForAllBackends(1, 2, true, header_match_rpc_options);
+  // Send RPCs.
+  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(kNumEcho1Rpcs, header_match_rpc_options);
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
