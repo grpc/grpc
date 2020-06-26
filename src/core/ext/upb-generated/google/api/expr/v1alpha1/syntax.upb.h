@@ -9,6 +9,7 @@
 #ifndef GOOGLE_API_EXPR_V1ALPHA1_SYNTAX_PROTO_UPB_H_
 #define GOOGLE_API_EXPR_V1ALPHA1_SYNTAX_PROTO_UPB_H_
 
+#include "google/protobuf/struct.upb.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
