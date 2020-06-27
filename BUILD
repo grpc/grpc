@@ -1326,9 +1326,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/xds/xds_client.h",
     ],
     language = "c++",
-    external_deps = [
-        "re2",
-    ],
     deps = [
         "envoy_ads_upb",
         "envoy_ads_upbdefs",
@@ -1356,9 +1353,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
     ],
     language = "c++",
-    external_deps = [
-        "re2",
-    ],
     deps = [
         "envoy_ads_upb",
         "envoy_ads_upbdefs",
@@ -1468,7 +1462,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
-        "re2",
     ],
     language = "c++",
     deps = [
