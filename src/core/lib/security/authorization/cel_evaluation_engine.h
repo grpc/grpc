@@ -40,6 +40,8 @@ class CelEvaluationEngine {
  public:
   explicit CelEvaluationEngine(const envoy_config_rbac_v2_RBAC& rbac_policy);
   // TODO(mywang@google.com): add an Evaluate member function.
+  // TODO(mywang@google.com): change the engine to take two policies, one for
+  // ALLOW and the other for DENY.
 
  private:
   // Set allowed_if_matched_ to true if the RBAC policy is an ALLOW policy,
