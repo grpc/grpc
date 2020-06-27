@@ -1300,11 +1300,11 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
         "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
     ],
-    language = "c++",
     external_deps = [
         "upb_lib",
         "upb_textformat_lib",
     ],
+    language = "c++",
     deps = [
         "envoy_ads_upbdefs",
         "grpc_base",
