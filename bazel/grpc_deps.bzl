@@ -278,10 +278,10 @@ def grpc_deps():
         http_archive(
             name = "upb",
             sha256 = "79f7de61203c4ee5e4fcb2f17c5f3338119d6eb94aca8bce05332d2c1cfee108",
-            strip_prefix = "upb-92e63da73328d01b417cf26c2de7b0a27a0f83af",
+            strip_prefix = "upb-8f11ec57d25bc3385565a82dbf9acfe97c9c3f8e",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/92e63da73328d01b417cf26c2de7b0a27a0f83af.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/92e63da73328d01b417cf26c2de7b0a27a0f83af.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/8f11ec57d25bc3385565a82dbf9acfe97c9c3f8e.tar.gz",
+                "https://github.com/protocolbuffers/upb/archive/8f11ec57d25bc3385565a82dbf9acfe97c9c3f8e.tar.gz",
             ],
         )
 
