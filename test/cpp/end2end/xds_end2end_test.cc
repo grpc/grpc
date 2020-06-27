@@ -2783,27 +2783,6 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
-TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
-  const char* kNewCluster1Name = "new_cluster_1";
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* header_matcher1 = route1->mutable_match()->add_headers();
-  header_matcher1->set_name("header1");
-  header_matcher1->mutable_safe_regex_match()->set_regex("a[z-a]");
-  route1->mutable_route()->set_cluster(kNewCluster1Name);
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "Invalid regex string specified.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
-}
-
 TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
@@ -3630,7 +3609,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   route3->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   auto* header_matcher3 = route3->mutable_match()->add_headers();
   header_matcher3->set_name("header3");
-  header_matcher3->mutable_safe_regex_match()->set_regex("[a-z]*");
+  header_matcher3->set_suffix_match(".java");
   route3->mutable_route()->set_cluster(kNewCluster3Name);
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
@@ -3640,7 +3619,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"header1", "POST1"},
       {"header2", "1000"},
-      {"header3", "blah1"},
+      {"header3", "grpc.cpp"},
   };
   WaitForAllBackends(0, 1);
   CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_metadata(metadata));

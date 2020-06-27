@@ -32,7 +32,6 @@
 
 #include <grpc/slice_buffer.h>
 
-#include "re2/re2.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
@@ -61,18 +60,11 @@ class XdsApi {
             REGEX,
           };
           PathMatcherType path_type;
-          // regex_path_matcher field is used when PathMatcherType is REGEX.
-          std::unique_ptr<RE2> regex_path_matcher;
           // path_matcher field is used when PathMatcherType is PATH or PREFIX.
           std::string path_matcher;
           bool operator==(const PathMatcher& other) const {
             return (path_type == other.path_type &&
-                            (path_type == PathMatcherType::REGEX)
-                        ? (regex_path_matcher.get() &&
-                           other.regex_path_matcher.get() &&
-                           regex_path_matcher->pattern() ==
-                               other.regex_path_matcher->pattern())
-                        : path_matcher == other.path_matcher);
+                    path_matcher == other.path_matcher);
           }
           std::string ToString() const;
         };
@@ -94,8 +86,6 @@ class XdsApi {
           // header_matcher field is used when HeaderMatcherType is EXACT,
           // PREFIX, or SUFFIX.
           std::string header_matcher;
-          // regex_match field is used when HeaderMatcherType is REGEX.
-          std::unique_ptr<RE2> regex_match;
           // present_match field is used when HeaderMatcherType is PRESENT.
           bool present_match;
           // invert_match field may or may not exisit, so initialize it to 0.

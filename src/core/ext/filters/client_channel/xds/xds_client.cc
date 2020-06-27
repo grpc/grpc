@@ -2031,8 +2031,7 @@ std::string CreateServiceConfigRoute(const std::string& action_name,
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::REGEX:
-        header_matcher = absl::StrFormat("             \"regex_match\": \"%s\"",
-                                         header.regex_match->pattern());
+        header_matcher = absl::StrFormat("             \"regex_match\": \"\"");
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::RANGE:
@@ -2098,9 +2097,7 @@ std::string CreateServiceConfigRoute(const std::string& action_name,
       break;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         REGEX:
-      path_match_str = absl::StrFormat(
-          "\"regex\": \"%s\",\n",
-          route.matchers.path_matcher.regex_path_matcher->pattern());
+      path_match_str = absl::StrFormat("\"regex\": \"\",\n");
       break;
   }
   return absl::StrFormat(

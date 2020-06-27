@@ -25,7 +25,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-#include "re2/re2.h"
 
 #include <grpc/grpc.h>
 
@@ -246,7 +245,7 @@ bool PathMatch(
       return path == path_matcher.path_matcher;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         REGEX:
-      return RE2::FullMatch(path.data(), *path_matcher.regex_path_matcher);
+      return true;
     default:
       return false;
   }
@@ -273,7 +272,7 @@ bool HeaderMatchHelper(
       return value.value() == header_matcher.header_matcher;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::REGEX:
-      return RE2::FullMatch(value.value().data(), *header_matcher.regex_match);
+      return true;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::RANGE:
       int64_t int_value;
@@ -871,8 +870,6 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
         } else {
           route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
               Matchers::PathMatcher::PathMatcherType::REGEX;
-          route->matchers.path_matcher.regex_path_matcher =
-              absl::make_unique<RE2>(it->second.string_value());
         }
       }
     }
@@ -950,8 +947,6 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                 } else {
                   header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
                       Matchers::HeaderMatcher::HeaderMatcherType::REGEX;
-                  header_matcher.regex_match =
-                      absl::make_unique<RE2>(header_it->second.string_value());
                   route->matchers.header_matchers.emplace_back(
                       std::move(header_matcher));
                 }
