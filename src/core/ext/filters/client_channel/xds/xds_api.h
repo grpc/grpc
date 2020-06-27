@@ -61,11 +61,18 @@ class XdsApi {
             REGEX,
           };
           PathMatcherType path_type;
+          // regex_path_matcher field is used when PathMatcherType is REGEX.
           std::unique_ptr<RE2> regex_path_matcher;
+          // path_matcher field is used when PathMatcherType is PATH or PREFIX.
           std::string path_matcher;
           bool operator==(const PathMatcher& other) const {
             return (path_type == other.path_type &&
-                    path_matcher == other.path_matcher);
+                            (path_type == PathMatcherType::REGEX)
+                        ? (regex_path_matcher.get() &&
+                           other.regex_path_matcher.get() &&
+                           regex_path_matcher->pattern() ==
+                               other.regex_path_matcher->pattern())
+                        : path_matcher == other.path_matcher);
           }
           std::string ToString() const;
         };
@@ -80,11 +87,18 @@ class XdsApi {
           };
           std::string name;
           HeaderMatcherType header_type;
+          // range_start and range_end fields are used when HeaderMatcherType is
+          // RANGE.
           int64_t range_start;
           int64_t range_end;
+          // header_matcher field is used when HeaderMatcherType is EXACT,
+          // PREFIX, or SUFFIX.
           std::string header_matcher;
+          // regex_match field is used when HeaderMatcherType is REGEX.
           std::unique_ptr<RE2> regex_match;
+          // present_match field is used when HeaderMatcherType is PRESENT.
           bool present_match;
+          // invert_match field may or may not exisit, so initialize it to 0.
           bool invert_match = false;
           bool operator==(const HeaderMatcher& other) const {
             return (name == other.name && header_type == other.header_type &&

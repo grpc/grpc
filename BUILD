@@ -1328,8 +1328,6 @@ grpc_cc_library(
     language = "c++",
     external_deps = [
         "re2",
-        "upb_lib",
-        "upb_textformat_lib",
     ],
     deps = [
         "envoy_ads_upb",
@@ -1360,8 +1358,6 @@ grpc_cc_library(
     language = "c++",
     external_deps = [
         "re2",
-        "upb_lib",
-        "upb_textformat_lib",
     ],
     deps = [
         "envoy_ads_upb",
