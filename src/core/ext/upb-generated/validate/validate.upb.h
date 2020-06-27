@@ -1363,7 +1363,7 @@ UPB_INLINE bool validate_StringRules_uuid(const validate_StringRules *msg) { ret
 UPB_INLINE bool validate_StringRules_has_not_contains(const validate_StringRules *msg) { return _upb_hasbit(msg, 13); }
 UPB_INLINE upb_strview validate_StringRules_not_contains(const validate_StringRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(100, 144), upb_strview); }
 UPB_INLINE bool validate_StringRules_has_well_known_regex(const validate_StringRules *msg) { return _upb_getoneofcase(msg, UPB_SIZE(128, 184)) == 24; }
-UPB_INLINE int32_t validate_StringRules_well_known_regex(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, int32_t, UPB_SIZE(120, 176), UPB_SIZE(128, 184), 24, validate_UNKNOWN); }
+UPB_INLINE int32_t validate_StringRules_well_known_regex(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, int32_t, UPB_SIZE(120, 176), UPB_SIZE(128, 184), 24, 0); }
 UPB_INLINE bool validate_StringRules_has_strict(const validate_StringRules *msg) { return _upb_hasbit(msg, 7); }
 UPB_INLINE bool validate_StringRules_strict(const validate_StringRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(56, 56), bool); }
 
