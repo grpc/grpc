@@ -78,7 +78,7 @@ static VALUE grpc_rb_call_credentials_callback(VALUE args) {
     } else {
       gpr_log(GPR_DEBUG,
               "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:|%s| "
-              "(failed to get source filename ane line) with arguments:|%s|",
+              "(failed to get source filename and line) with arguments:|%s|",
               StringValueCStr(callback_func_str),
               StringValueCStr(callback_args_str));
     }
@@ -101,7 +101,8 @@ static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
   VALUE backtrace = rb_funcall(exception_object, rb_intern("backtrace"), 0);
   VALUE backtrace_str;
   if (backtrace != Qnil) {
-    backtrace_str = rb_funcall(backtrace, rb_intern("join"), 1, rb_str_new2("\n\tfrom "));
+    backtrace_str =
+        rb_funcall(backtrace, rb_intern("join"), 1, rb_str_new2("\n\tfrom "));
   } else {
     backtrace_str = rb_str_new2(
         "failed to get backtrace, this exception was likely thrown from native "
