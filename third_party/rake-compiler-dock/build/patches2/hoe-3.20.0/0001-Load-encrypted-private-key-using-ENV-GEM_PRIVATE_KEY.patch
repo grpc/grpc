@@ -1,0 +1,32 @@
+From ecc5669223457ceaba6bd94c2947ae99ddfa8f10 Mon Sep 17 00:00:00 2001
+From: Lars Kanis <lars@greiz-reinsdorf.de>
+Date: Fri, 27 Dec 2019 15:57:07 +0100
+Subject: [PATCH] Load encrypted private key using
+ ENV['GEM_PRIVATE_KEY_PASSPHRASE'] as passphrase.
+
+This way the password can be avoided to be entered several times when building multiple gems.
+It also allows parallel builds which are incompatible to interactive password prompts.
+
+The same feature has been implemented in rubygems:
+  https://github.com/rubygems/rubygems/commit/c1a114396fcec124d3feabf74708b4bdec02eac3
+---
+ lib/hoe/signing.rb | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/lib/hoe/signing.rb b/lib/hoe/signing.rb
+index 4833c55..11c8c2f 100644
+--- a/lib/hoe/signing.rb
++++ b/lib/hoe/signing.rb
+@@ -70,7 +70,8 @@ module Hoe::Signing
+     end
+
+     if signing_key and cert_chain then
+-      spec.signing_key = OpenSSL::PKey::RSA.new File.read signing_key
++      passphrase = ENV['GEM_PRIVATE_KEY_PASSPHRASE']
++      spec.signing_key = OpenSSL::PKey::RSA.new(File.read(signing_key), passphrase)
+       spec.cert_chain = cert_chain
+     end
+   end
+--
+2.20.1
+
