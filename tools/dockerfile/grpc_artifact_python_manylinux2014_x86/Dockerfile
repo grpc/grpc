@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC Authors
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,16 +15,14 @@
 # Docker file for building gRPC manylinux Python artifacts.
 # Updated: 2020-06-25
 
-FROM quay.io/pypa/manylinux2010_i686
+FROM quay.io/pypa/manylinux2014_i686
 
 # Update the package manager
 RUN yum update -y
-RUN yum install -y curl-devel expat-devel gettext-devel linux-headers openssl-devel zlib-devel gcc
+RUN yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel
 
 ###################################
 # Install Python build requirements
-RUN /opt/python/cp27-cp27m/bin/pip install --upgrade cython
-RUN /opt/python/cp27-cp27mu/bin/pip install --upgrade cython
 RUN /opt/python/cp35-cp35m/bin/pip install --upgrade cython
 RUN /opt/python/cp36-cp36m/bin/pip install --upgrade cython
 RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython

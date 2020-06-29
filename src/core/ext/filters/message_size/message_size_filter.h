@@ -40,6 +40,9 @@ class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
 
   const message_size_limits& limits() const { return limits_; }
 
+  static const MessageSizeParsedConfig* GetFromCallContext(
+      const grpc_call_context_element* context);
+
  private:
   message_size_limits limits_;
 };
@@ -53,6 +56,9 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
 
   static size_t ParserIndex();
 };
+
+int GetMaxRecvSizeFromChannelArgs(const grpc_channel_args* args);
+int GetMaxSendSizeFromChannelArgs(const grpc_channel_args* args);
 
 }  // namespace grpc_core
 
