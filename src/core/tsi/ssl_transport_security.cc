@@ -1887,7 +1887,11 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     return TSI_INVALID_ARGUMENT;
   }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
+#else
+  ssl_context = SSL_CTX_new(TLSv1_2_method());
+#endif
   result = tsi_set_min_and_max_tls_versions(
       ssl_context, options->min_tls_version, options->max_tls_version);
   if (result != TSI_OK) return result;
@@ -2050,7 +2054,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
   for (i = 0; i < options->num_key_cert_pairs; i++) {
     do {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
       impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
+#else
+      impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
+#endif
       result = tsi_set_min_and_max_tls_versions(impl->ssl_contexts[i],
                                                 options->min_tls_version,
                                                 options->max_tls_version);
