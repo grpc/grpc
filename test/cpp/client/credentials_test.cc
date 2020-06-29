@@ -34,8 +34,7 @@
 
 namespace {
 
-typedef class ::grpc::experimental::TlsKeyMaterialsConfig
-    TlsKeyMaterialsConfig;
+typedef class ::grpc::experimental::TlsKeyMaterialsConfig TlsKeyMaterialsConfig;
 typedef class ::grpc::experimental::TlsCredentialReloadArg
     TlsCredentialReloadArg;
 typedef struct ::grpc::experimental::TlsCredentialReloadInterface
@@ -271,8 +270,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsFromEnv) {
   gpr_unsetenv("STS_CREDENTIALS");
 }
 
-typedef class ::grpc::experimental::TlsKeyMaterialsConfig
-    TlsKeyMaterialsConfig;
+typedef class ::grpc::experimental::TlsKeyMaterialsConfig TlsKeyMaterialsConfig;
 
 TEST_F(CredentialsTest, TlsKeyMaterialsConfigCppToC) {
   std::shared_ptr<TlsKeyMaterialsConfig> config(new TlsKeyMaterialsConfig());
@@ -550,8 +548,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   delete config.c_config();
 }
 
-typedef class ::grpc::experimental::TlsCredentialsOptions
-    TlsCredentialsOptions;
+typedef class ::grpc::experimental::TlsCredentialsOptions TlsCredentialsOptions;
 
 TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config(
