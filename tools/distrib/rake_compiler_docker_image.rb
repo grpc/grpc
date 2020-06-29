@@ -46,13 +46,14 @@ def run_rake_compiler(platform, args)
 
   args = 'bash -l' if args.empty?
 
-  ENV['RCD_RUBYVM'] = 'mri'
-  ENV['RCD_PLATFORM'] = platform
+  options = { :rubyvm => 'mri', :platform => platform }
+  options[:runas] = false if platform =~ /linux/
+
   ENV['RCD_IMAGE'] = docker_image_for_rake_compiler(platform)
 
-  RakeCompilerDock.sh args
+  RakeCompilerDock.sh args, options
 end
 
 if __FILE__ == $0
-  docker_for_windows 'x86_64-linux', $*.join(' ')
+  run_rake_compiler 'x86_64-linux', $*.join(' ')
 end
