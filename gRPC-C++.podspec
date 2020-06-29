@@ -172,7 +172,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/security/tls_credentials_options.h',
                       'include/grpcpp/server.h',
                       'include/grpcpp/server_builder.h',
-                      'include/grpcpp/server_builder_impl.h',
                       'include/grpcpp/server_context.h',
                       'include/grpcpp/server_impl.h',
                       'include/grpcpp/server_posix.h',
