@@ -861,6 +861,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config.cc
+  - src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   - src/core/ext/filters/client_channel/service_config_parser.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
@@ -1296,6 +1297,7 @@ libs:
   - absl/strings:strings
   - absl/container:inlined_vector
   baselib: true
+  deps_linkage: static
   dll: true
   generate_plugin_registry: true
   secure: true
@@ -1311,6 +1313,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  deps_linkage: static
   dll: only
 - name: grpc_test_util
   build: private
@@ -1854,6 +1857,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config.cc
+  - src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   - src/core/ext/filters/client_channel/service_config_parser.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
@@ -2214,6 +2218,7 @@ libs:
   - absl/strings:strings
   - absl/container:inlined_vector
   baselib: true
+  deps_linkage: static
   dll: true
   generate_plugin_registry: true
   secure: false
