@@ -1297,6 +1297,7 @@ libs:
   - absl/strings:strings
   - absl/container:inlined_vector
   baselib: true
+  deps_linkage: static
   dll: true
   generate_plugin_registry: true
   secure: true
@@ -1312,6 +1313,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  deps_linkage: static
   dll: only
 - name: grpc_test_util
   build: private
@@ -2216,6 +2218,7 @@ libs:
   - absl/strings:strings
   - absl/container:inlined_vector
   baselib: true
+  deps_linkage: static
   dll: true
   generate_plugin_registry: true
   secure: false
