@@ -83,7 +83,7 @@ ServerBuilder& ServerBuilder::RegisterService(Service* service) {
   return *this;
 }
 
-ServerBuilder& ServerBuilder::RegisterService(const grpc::string& addr,
+ServerBuilder& ServerBuilder::RegisterService(const std::string& addr,
                                               Service* service) {
   services_.emplace_back(new NamedService(addr, service));
   return *this;
@@ -134,7 +134,7 @@ std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
 ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
     experimental_type::ExternalConnectionType type,
     std::shared_ptr<ServerCredentials> creds) {
-  grpc::string name_prefix("external:");
+  std::string name_prefix("external:");
   char count_str[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(static_cast<long>(builder_->acceptors_.size()), count_str);
   builder_->acceptors_.emplace_back(
@@ -203,10 +203,10 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
 }
 
 ServerBuilder& ServerBuilder::AddListeningPort(
-    const grpc::string& addr_uri, std::shared_ptr<ServerCredentials> creds,
+    const std::string& addr_uri, std::shared_ptr<ServerCredentials> creds,
     int* selected_port) {
-  const grpc::string uri_scheme = "dns:";
-  grpc::string addr = addr_uri;
+  const std::string uri_scheme = "dns:";
+  std::string addr = addr_uri;
   if (addr_uri.compare(0, uri_scheme.size(), uri_scheme) == 0) {
     size_t pos = uri_scheme.size();
     while (addr_uri[pos] == '/') ++pos;  // Skip slashes.

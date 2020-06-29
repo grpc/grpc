@@ -37,36 +37,36 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 
   bool Generate(const grpc::protobuf::FileDescriptor* file,
-                const grpc::string& parameter,
+                const std::string& parameter,
                 grpc::protobuf::compiler::GeneratorContext* context,
-                grpc::string* error) const override {
+                std::string* error) const override {
     grpc_node_generator::Parameters generator_parameters;
     generator_parameters.minimum_node_version = 4;
 
     if (!parameter.empty()) {
-      std::vector<grpc::string> parameters_list =
+      std::vector<std::string> parameters_list =
           grpc_generator::tokenize(parameter, ",");
       for (auto parameter_string = parameters_list.begin();
            parameter_string != parameters_list.end(); parameter_string++) {
-        std::vector<grpc::string> param =
+        std::vector<std::string> param =
             grpc_generator::tokenize(*parameter_string, "=");
         if (param[0] == "minimum_node_version") {
           sscanf(param[1].c_str(), "%d",
                  &generator_parameters.minimum_node_version);
         } else {
-          *error = grpc::string("Unknown parameter: ") + *parameter_string;
+          *error = std::string("Unknown parameter: ") + *parameter_string;
           return false;
         }
       }
     }
 
-    grpc::string code = GenerateFile(file, generator_parameters);
+    std::string code = GenerateFile(file, generator_parameters);
     if (code.size() == 0) {
       return true;
     }
 
     // Get output file name
-    grpc::string file_name = GetJSServiceFilename(file->name());
+    std::string file_name = GetJSServiceFilename(file->name());
 
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
         context->Open(file_name));

@@ -38,7 +38,7 @@ class ServerBuilder;
 class ServerBuilderPlugin {
  public:
   virtual ~ServerBuilderPlugin() {}
-  virtual grpc::string name() = 0;
+  virtual std::string name() = 0;
 
   /// UpdateServerBuilder will be called at an early stage in
   /// ServerBuilder::BuildAndStart(), right after the ServerBuilderOptions have
@@ -54,7 +54,7 @@ class ServerBuilderPlugin {
 
   /// ChangeArguments is an interface that can be used in
   /// ServerBuilderOption::UpdatePlugins
-  virtual void ChangeArguments(const grpc::string& name, void* value) = 0;
+  virtual void ChangeArguments(const std::string& name, void* value) = 0;
 
   /// UpdateChannelArguments will be called in ServerBuilder::BuildAndStart(),
   /// before the Server instance is created.

@@ -89,7 +89,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
     /// Called before server is started.
     virtual void PreServerStart(Server* /*server*/) {}
     /// Called after a server port is added.
-    virtual void AddPort(Server* /*server*/, const grpc::string& /*addr*/,
+    virtual void AddPort(Server* /*server*/, const std::string& /*addr*/,
                          grpc::ServerCredentials* /*creds*/, int /*port*/) {}
   };
   /// Set the global callback object. Can only be called once per application.
@@ -138,7 +138,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
  protected:
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
-  bool RegisterService(const grpc::string* host,
+  bool RegisterService(const std::string* host,
                        grpc::Service* service) override;
 
   /// Try binding the server to the given \a addr endpoint
@@ -154,7 +154,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   /// \return bound port number on success, 0 on failure.
   ///
   /// \warning It is an error to call this method on an already started server.
-  int AddListeningPort(const grpc::string& addr,
+  int AddListeningPort(const std::string& addr,
                        grpc::ServerCredentials* creds) override;
 
   /// NOTE: This is *NOT* a public API. The server constructors are supposed to
@@ -341,7 +341,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 
-  std::vector<grpc::string> services_;
+  std::vector<std::string> services_;
   bool has_async_generic_service_ = false;
   bool has_callback_generic_service_ = false;
   bool has_callback_methods_ = false;

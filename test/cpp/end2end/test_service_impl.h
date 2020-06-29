@@ -63,16 +63,15 @@ namespace internal {
 void MaybeEchoDeadline(experimental::ServerContextBase* context,
                        const EchoRequest* request, EchoResponse* response);
 
-void CheckServerAuthContext(
-    const experimental::ServerContextBase* context,
-    const grpc::string& expected_transport_security_type,
-    const grpc::string& expected_client_identity);
+void CheckServerAuthContext(const experimental::ServerContextBase* context,
+                            const std::string& expected_transport_security_type,
+                            const std::string& expected_client_identity);
 
 // Returns the number of pairs in metadata that exactly match the given
 // key-value pair. Returns -1 if the pair wasn't found.
 int MetadataMatchCount(
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    const grpc::string& key, const grpc::string& value);
+    const std::string& key, const std::string& value);
 
 int GetIntValueFromMetadataHelper(
     const char* key,
@@ -120,8 +119,8 @@ template <typename RpcService>
 class TestMultipleServiceImpl : public RpcService {
  public:
   TestMultipleServiceImpl() : signal_client_(false), host_() {}
-  explicit TestMultipleServiceImpl(const grpc::string& host)
-      : signal_client_(false), host_(new grpc::string(host)) {}
+  explicit TestMultipleServiceImpl(const std::string& host)
+      : signal_client_(false), host_(new std::string(host)) {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) {
@@ -207,7 +206,7 @@ class TestMultipleServiceImpl : public RpcService {
       // Terminate rpc with error and debug info in trailer.
       if (request->param().debug_info().stack_entries_size() ||
           !request->param().debug_info().detail().empty()) {
-        grpc::string serialized_debug_info =
+        std::string serialized_debug_info =
             request->param().debug_info().SerializeAsString();
         context->AddTrailingMetadata(kDebugInfoTrailerKey,
                                      serialized_debug_info);
@@ -224,7 +223,7 @@ class TestMultipleServiceImpl : public RpcService {
     if (request->has_param() &&
         request->param().response_message_length() > 0) {
       response->set_message(
-          grpc::string(request->param().response_message_length(), '\0'));
+          std::string(request->param().response_message_length(), '\0'));
     }
     if (request->has_param() && request->param().echo_peer()) {
       response->mutable_param()->set_peer(context->peer());
@@ -339,7 +338,7 @@ class TestMultipleServiceImpl : public RpcService {
     }
 
     for (int i = 0; i < server_responses_to_send; i++) {
-      response.set_message(request->message() + grpc::to_string(i));
+      response.set_message(request->message() + std::to_string(i));
       if (i == server_responses_to_send - 1 && server_coalescing_api != 0) {
         writer->WriteLast(response, WriteOptions());
       } else {
@@ -431,15 +430,15 @@ class TestMultipleServiceImpl : public RpcService {
   bool signal_client_;
   std::mutex mu_;
   TestServiceSignaller signaller_;
-  std::unique_ptr<grpc::string> host_;
+  std::unique_ptr<std::string> host_;
 };
 
 class CallbackTestServiceImpl
     : public ::grpc::testing::EchoTestService::ExperimentalCallbackService {
  public:
   CallbackTestServiceImpl() : signal_client_(false), host_() {}
-  explicit CallbackTestServiceImpl(const grpc::string& host)
-      : signal_client_(false), host_(new grpc::string(host)) {}
+  explicit CallbackTestServiceImpl(const std::string& host)
+      : signal_client_(false), host_(new std::string(host)) {}
 
   experimental::ServerUnaryReactor* Echo(
       experimental::CallbackServerContext* context, const EchoRequest* request,
@@ -472,7 +471,7 @@ class CallbackTestServiceImpl
   bool signal_client_;
   std::mutex mu_;
   TestServiceSignaller signaller_;
-  std::unique_ptr<grpc::string> host_;
+  std::unique_ptr<std::string> host_;
 };
 
 using TestServiceImpl =

@@ -94,13 +94,13 @@ class MyTestServiceImpl : public TestServiceImpl {
     request_count_ = 0;
   }
 
-  std::set<grpc::string> clients() {
+  std::set<std::string> clients() {
     grpc::internal::MutexLock lock(&clients_mu_);
     return clients_;
   }
 
  private:
-  void AddClient(const grpc::string& client) {
+  void AddClient(const std::string& client) {
     grpc::internal::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
@@ -108,7 +108,7 @@ class MyTestServiceImpl : public TestServiceImpl {
   grpc::internal::Mutex mu_;
   int request_count_;
   grpc::internal::Mutex clients_mu_;
-  std::set<grpc::string> clients_;
+  std::set<std::string> clients_;
 };
 
 class ServiceConfigEnd2endTest : public ::testing::Test {
@@ -305,7 +305,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       port_ = port > 0 ? port : grpc_pick_unused_port_or_die();
     }
 
-    void Start(const grpc::string& server_host) {
+    void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       started_ = true;
       grpc::internal::Mutex mu;
@@ -318,7 +318,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       gpr_log(GPR_INFO, "server startup complete");
     }
 
-    void Serve(const grpc::string& server_host, grpc::internal::Mutex* mu,
+    void Serve(const std::string& server_host, grpc::internal::Mutex* mu,
                grpc::internal::CondVar* cond) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
@@ -340,7 +340,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       started_ = false;
     }
 
-    void SetServingStatus(const grpc::string& service, bool serving) {
+    void SetServingStatus(const std::string& service, bool serving) {
       server_->GetHealthCheckService()->SetServingStatus(service, serving);
     }
   };
@@ -422,12 +422,12 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     return "{\"version\": \"invalid_default\"";
   }
 
-  const grpc::string server_host_;
+  const std::string server_host_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerData>> servers_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator_;
-  const grpc::string kRequestMessage_;
+  const std::string kRequestMessage_;
   std::shared_ptr<ChannelCredentials> creds_;
 };
 

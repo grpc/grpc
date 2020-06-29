@@ -1028,7 +1028,7 @@ static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
   GPR_UNREACHABLE_CODE(return GRPC_SRM_PAYLOAD_NONE;);
 }
 
-bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
+bool Server::RegisterService(const std::string* host, grpc::Service* service) {
   bool has_async_methods = service->has_async_methods();
   if (has_async_methods) {
     GPR_ASSERT(service->server_ == nullptr &&
@@ -1078,7 +1078,7 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
   // Parse service name.
   if (method_name != nullptr) {
     std::stringstream ss(method_name);
-    grpc::string service_name;
+    std::string service_name;
     if (std::getline(ss, service_name, '/') &&
         std::getline(ss, service_name, '/')) {
       services_.push_back(service_name);
@@ -1111,7 +1111,7 @@ void Server::RegisterCallbackGenericService(
   });
 }
 
-int Server::AddListeningPort(const grpc::string& addr,
+int Server::AddListeningPort(const std::string& addr,
                              grpc::ServerCredentials* creds) {
   GPR_ASSERT(!started_);
   int port = creds->AddPortToServer(addr, server_);
