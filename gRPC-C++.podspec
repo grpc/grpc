@@ -86,7 +86,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/create_channel.h',
                       'include/grpcpp/create_channel_impl.h',
                       'include/grpcpp/create_channel_posix.h',
-                      'include/grpcpp/create_channel_posix_impl.h',
                       'include/grpcpp/ext/health_check_service_server_builder_option.h',
                       'include/grpcpp/generic/async_generic_service.h',
                       'include/grpcpp/generic/generic_stub.h',
