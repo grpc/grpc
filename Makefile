@@ -1244,6 +1244,7 @@ large_metadata_bad_client_test: $(BINDIR)/$(CONFIG)/large_metadata_bad_client_te
 lb_get_cpu_stats_test: $(BINDIR)/$(CONFIG)/lb_get_cpu_stats_test
 lb_load_data_store_test: $(BINDIR)/$(CONFIG)/lb_load_data_store_test
 linux_system_roots_test: $(BINDIR)/$(CONFIG)/linux_system_roots_test
+mesh_ca_provider_test: $(BINDIR)/$(CONFIG)/mesh_ca_provider_test
 message_allocator_end2end_test: $(BINDIR)/$(CONFIG)/message_allocator_end2end_test
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
 nanopb_fuzzer_response_test: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test
@@ -1610,6 +1611,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/lb_get_cpu_stats_test \
   $(BINDIR)/$(CONFIG)/lb_load_data_store_test \
   $(BINDIR)/$(CONFIG)/linux_system_roots_test \
+  $(BINDIR)/$(CONFIG)/mesh_ca_provider_test \
   $(BINDIR)/$(CONFIG)/message_allocator_end2end_test \
   $(BINDIR)/$(CONFIG)/mock_test \
   $(BINDIR)/$(CONFIG)/nonblocking_test \
@@ -1768,6 +1770,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/lb_get_cpu_stats_test \
   $(BINDIR)/$(CONFIG)/lb_load_data_store_test \
   $(BINDIR)/$(CONFIG)/linux_system_roots_test \
+  $(BINDIR)/$(CONFIG)/mesh_ca_provider_test \
   $(BINDIR)/$(CONFIG)/message_allocator_end2end_test \
   $(BINDIR)/$(CONFIG)/mock_test \
   $(BINDIR)/$(CONFIG)/nonblocking_test \
@@ -2262,6 +2265,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/lb_load_data_store_test || ( echo test lb_load_data_store_test failed ; exit 1 )
 	$(E) "[RUN]     Testing linux_system_roots_test"
 	$(Q) $(BINDIR)/$(CONFIG)/linux_system_roots_test || ( echo test linux_system_roots_test failed ; exit 1 )
+	$(E) "[RUN]     Testing mesh_ca_provider_test"
+	$(Q) $(BINDIR)/$(CONFIG)/mesh_ca_provider_test || ( echo test mesh_ca_provider_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_allocator_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_allocator_end2end_test || ( echo test message_allocator_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mock_test"
@@ -2548,6 +2553,22 @@ $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc: src/proto/grpc/lb/v1/load_ba
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
 $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc: src/proto/grpc/lb/v1/load_balancer.proto $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/meshca/v1/ca.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/meshca/v1/ca.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/meshca/v1/ca.pb.cc: src/proto/grpc/meshca/v1/ca.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/meshca/v1/ca.grpc.pb.cc: src/proto/grpc/meshca/v1/ca.proto $(GENDIR)/src/proto/grpc/meshca/v1/ca.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -3865,6 +3886,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/meshca/v1/ca.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
@@ -3997,6 +4019,9 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_writer.cc \
+    src/core/lib/security/certificate_provider/google_mesh_ca.cc \
+    src/core/lib/security/certificate_provider/registry.cc \
+    src/core/lib/security/certificate_provider/store.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -16015,6 +16040,53 @@ endif
 endif
 
 
+MESH_CA_PROVIDER_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/meshca/v1/ca.pb.cc $(GENDIR)/src/proto/grpc/meshca/v1/ca.grpc.pb.cc \
+    test/core/security/mesh_ca_provider_test.cc \
+
+MESH_CA_PROVIDER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MESH_CA_PROVIDER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/mesh_ca_provider_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
+
+$(BINDIR)/$(CONFIG)/mesh_ca_provider_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/mesh_ca_provider_test: $(PROTOBUF_DEP) $(MESH_CA_PROVIDER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(MESH_CA_PROVIDER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/mesh_ca_provider_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/meshca/v1/ca.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/core/security/mesh_ca_provider_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_mesh_ca_provider_test: $(MESH_CA_PROVIDER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(MESH_CA_PROVIDER_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/core/security/mesh_ca_provider_test.o: $(GENDIR)/src/proto/grpc/meshca/v1/ca.pb.cc $(GENDIR)/src/proto/grpc/meshca/v1/ca.grpc.pb.cc
+
+
 MESSAGE_ALLOCATOR_END2END_TEST_SRC = \
     $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc \
@@ -20175,7 +20247,11 @@ src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc: $(OPENSSL_D
 src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/src/proto/grpc/meshca/v1/ca.upb.c: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
+src/core/lib/security/certificate_provider/google_mesh_ca.cc: $(OPENSSL_DEP)
+src/core/lib/security/certificate_provider/registry.cc: $(OPENSSL_DEP)
+src/core/lib/security/certificate_provider/store.cc: $(OPENSSL_DEP)
 src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)

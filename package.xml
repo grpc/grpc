@@ -545,6 +545,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/meshca/v1/ca.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/meshca/v1/ca.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/migrate.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/migrate.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/migrate.upbdefs.c" role="src" />
@@ -865,6 +867,15 @@
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/google_mesh_ca.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/google_mesh_ca.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/provider.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/store.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/store.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/alts_credentials.cc" role="src" />

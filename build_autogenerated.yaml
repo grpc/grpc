@@ -589,6 +589,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/meshca/v1/ca.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upbdefs.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
@@ -708,6 +709,12 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
+  - src/core/lib/security/certificate_provider/config.h
+  - src/core/lib/security/certificate_provider/factory.h
+  - src/core/lib/security/certificate_provider/google_mesh_ca.h
+  - src/core/lib/security/certificate_provider/provider.h
+  - src/core/lib/security/certificate_provider/registry.h
+  - src/core/lib/security/certificate_provider/store.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -1047,6 +1054,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/meshca/v1/ca.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upbdefs.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -1179,6 +1187,9 @@ libs:
   - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_writer.cc
+  - src/core/lib/security/certificate_provider/google_mesh_ca.cc
+  - src/core/lib/security/certificate_provider/registry.cc
+  - src/core/lib/security/certificate_provider/store.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -6704,6 +6715,21 @@ targets:
   - test/core/security/linux_system_roots_test.cc
   deps:
   - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: mesh_ca_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/meshca/v1/ca.proto
+  - test/core/security/mesh_ca_provider_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
   - grpc
   - gpr
   - address_sorting
