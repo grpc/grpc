@@ -40,36 +40,35 @@ namespace testing {
 // and thread-unsafe methods should not be used together.
 class CliCall final {
  public:
-  typedef std::multimap<grpc::string, grpc::string> OutgoingMetadataContainer;
+  typedef std::multimap<std::string, std::string> OutgoingMetadataContainer;
   typedef std::multimap<grpc::string_ref, grpc::string_ref>
       IncomingMetadataContainer;
 
   CliCall(const std::shared_ptr<grpc::Channel>& channel,
-          const grpc::string& method,
-          const OutgoingMetadataContainer& metadata);
+          const std::string& method, const OutgoingMetadataContainer& metadata);
   ~CliCall();
 
   // Perform an unary generic RPC.
   static Status Call(const std::shared_ptr<grpc::Channel>& channel,
-                     const grpc::string& method, const grpc::string& request,
-                     grpc::string* response,
+                     const std::string& method, const std::string& request,
+                     std::string* response,
                      const OutgoingMetadataContainer& metadata,
                      IncomingMetadataContainer* server_initial_metadata,
                      IncomingMetadataContainer* server_trailing_metadata);
 
   // Send a generic request message in a synchronous manner. NOT thread-safe.
-  void Write(const grpc::string& request);
+  void Write(const std::string& request);
 
   // Send a generic request message in a synchronous manner. NOT thread-safe.
   void WritesDone();
 
   // Receive a generic response message in a synchronous manner.NOT thread-safe.
-  bool Read(grpc::string* response,
+  bool Read(std::string* response,
             IncomingMetadataContainer* server_initial_metadata);
 
   // Thread-safe write. Must be used with ReadAndMaybeNotifyWrite. Send out a
   // generic request message and wait for ReadAndMaybeNotifyWrite to finish it.
-  void WriteAndWait(const grpc::string& request);
+  void WriteAndWait(const std::string& request);
 
   // Thread-safe WritesDone. Must be used with ReadAndMaybeNotifyWrite. Send out
   // WritesDone for gereneric request messages and wait for
@@ -79,7 +78,7 @@ class CliCall final {
   // Thread-safe Read. Blockingly receive a generic response message. Notify
   // writes if they are finished when this read is waiting for a resposne.
   bool ReadAndMaybeNotifyWrite(
-      grpc::string* response,
+      std::string* response,
       IncomingMetadataContainer* server_initial_metadata);
 
   // Finish the RPC.

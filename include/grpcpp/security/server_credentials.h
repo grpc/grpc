@@ -40,10 +40,10 @@ struct SslServerCredentialsOptions {
       : force_client_auth(false), client_certificate_request(request_type) {}
 
   struct PemKeyCertPair {
-    grpc::string private_key;
-    grpc::string cert_chain;
+    std::string private_key;
+    std::string cert_chain;
   };
-  grpc::string pem_root_certs;
+  std::string pem_root_certs;
   std::vector<PemKeyCertPair> pem_key_cert_pairs;
   /// \warning Deprecated
   bool force_client_auth;

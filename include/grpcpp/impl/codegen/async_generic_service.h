@@ -40,8 +40,8 @@ typedef ::grpc_impl::ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
 
 class GenericServerContext final : public ::grpc_impl::ServerContext {
  public:
-  const grpc::string& method() const { return method_; }
-  const grpc::string& host() const { return host_; }
+  const std::string& method() const { return method_; }
+  const std::string& host() const { return host_; }
 
  private:
   friend class grpc_impl::Server;
@@ -53,8 +53,8 @@ class GenericServerContext final : public ::grpc_impl::ServerContext {
     ::grpc_impl::ServerContext::Clear();
   }
 
-  grpc::string method_;
-  grpc::string host_;
+  std::string method_;
+  std::string host_;
 };
 
 // A generic service at the server side accepts all RPC methods and hosts. It is
@@ -102,8 +102,8 @@ using ServerGenericBidiReactor =
 class GenericCallbackServerContext final
     : public ::grpc_impl::CallbackServerContext {
  public:
-  const grpc::string& method() const { return method_; }
-  const grpc::string& host() const { return host_; }
+  const std::string& method() const { return method_; }
+  const std::string& host() const { return host_; }
 
  private:
   friend class ::grpc_impl::Server;
@@ -115,8 +115,8 @@ class GenericCallbackServerContext final
     ::grpc_impl::CallbackServerContext::Clear();
   }
 
-  grpc::string method_;
-  grpc::string host_;
+  std::string method_;
+  std::string host_;
 };
 
 /// \a CallbackGenericService is the base class for generic services implemented

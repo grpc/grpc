@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPCPP_SERVER_BUILDER_H
-#define GRPCPP_SERVER_BUILDER_H
+#ifndef GRPCPP_SERVER_BUILDER_IMPL_H
+#define GRPCPP_SERVER_BUILDER_IMPL_H
 
 #include <climits>
 #include <map>
@@ -49,6 +49,7 @@ class ServerCredentials;
 namespace grpc {
 
 class AsyncGenericService;
+class ResourceQuota;
 class Service;
 namespace testing {
 class ServerBuilderPluginTest;
@@ -85,6 +86,9 @@ class ExternalConnectionAcceptor {
 };
 
 }  // namespace experimental
+}  // namespace grpc
+
+namespace grpc_impl {
 
 /// A builder class for the creation and startup of \a grpc::Server instances.
 class ServerBuilder {
@@ -260,7 +264,8 @@ class ServerBuilder {
   /// experimental.
   class experimental_type {
    public:
-    explicit experimental_type(ServerBuilder* builder) : builder_(builder) {}
+    explicit experimental_type(grpc_impl::ServerBuilder* builder)
+        : builder_(builder) {}
 
     void SetInterceptorCreators(
         std::vector<std::unique_ptr<
@@ -407,6 +412,6 @@ class ServerBuilder {
       acceptors_;
 };
 
-}  // namespace grpc
+}  // namespace grpc_impl
 
-#endif  // GRPCPP_SERVER_BUILDER_H
+#endif  // GRPCPP_SERVER_BUILDER_IMPL_H

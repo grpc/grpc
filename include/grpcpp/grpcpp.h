@@ -63,7 +63,7 @@
 
 namespace grpc {
 /// Return gRPC library version.
-grpc::string Version();
+std::string Version();
 }  // namespace grpc
 
 #endif  // GRPCPP_GRPCPP_H

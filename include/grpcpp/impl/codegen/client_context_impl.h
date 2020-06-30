@@ -220,8 +220,7 @@ class ClientContext {
   /// ASCII-Header -> Header-Name ASCII-Value
   /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
   /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
-  void AddMetadata(const grpc::string& meta_key,
-                   const grpc::string& meta_value);
+  void AddMetadata(const std::string& meta_key, const std::string& meta_value);
 
   /// Return a collection of initial metadata key-value pairs. Note that keys
   /// may happen more than once (ie, a \a std::multimap is returned).
@@ -297,7 +296,7 @@ class ClientContext {
 
   /// Set the per call authority header (see
   /// https://tools.ietf.org/html/rfc7540#section-8.1.2.3).
-  void set_authority(const grpc::string& authority) { authority_ = authority; }
+  void set_authority(const std::string& authority) { authority_ = authority; }
 
   /// Return the authentication context for the associated client call.
   /// It is only valid to call this during the lifetime of the client call.
@@ -364,7 +363,7 @@ class ClientContext {
   /// functionality. Instead, use auth_context.
   ///
   /// \return The call's peer URI.
-  grpc::string peer() const;
+  std::string peer() const;
 
   /// Sets the census context.
   /// It is only valid to call this before the client call is created. A common
@@ -409,7 +408,7 @@ class ClientContext {
   /// if status is not ok() for an RPC, this will return a detailed string
   /// of the gRPC Core error that led to the failure. It should not be relied
   /// upon for anything other than gaining more debug data in failure cases.
-  grpc::string debug_error_string() const { return debug_error_string_; }
+  std::string debug_error_string() const { return debug_error_string_; }
 
  private:
   // Disallow copy and assign.
@@ -448,7 +447,7 @@ class ClientContext {
   friend class ::grpc_impl::internal::ClientContextAccessor;
 
   // Used by friend class CallOpClientRecvStatus
-  void set_debug_error_string(const grpc::string& debug_error_string) {
+  void set_debug_error_string(const std::string& debug_error_string) {
     debug_error_string_ = debug_error_string;
   }
 
@@ -477,7 +476,7 @@ class ClientContext {
            (initial_metadata_corked_ ? GRPC_INITIAL_METADATA_CORKED : 0);
   }
 
-  grpc::string authority() { return authority_; }
+  std::string authority() { return authority_; }
 
   void SendCancelToInterceptors();
 
@@ -495,11 +494,11 @@ class ClientContext {
   grpc_call* call_;
   bool call_canceled_;
   gpr_timespec deadline_;
-  grpc::string authority_;
+  std::string authority_;
   std::shared_ptr<grpc_impl::CallCredentials> creds_;
   mutable std::shared_ptr<const grpc::AuthContext> auth_context_;
   struct census_context* census_context_;
-  std::multimap<grpc::string, grpc::string> send_initial_metadata_;
+  std::multimap<std::string, std::string> send_initial_metadata_;
   mutable grpc::internal::MetadataMap recv_initial_metadata_;
   mutable grpc::internal::MetadataMap trailing_metadata_;
 
@@ -509,7 +508,7 @@ class ClientContext {
   grpc_compression_algorithm compression_algorithm_;
   bool initial_metadata_corked_;
 
-  grpc::string debug_error_string_;
+  std::string debug_error_string_;
 
   grpc::experimental::ClientRpcInfo rpc_info_;
 };
