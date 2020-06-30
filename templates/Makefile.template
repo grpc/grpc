@@ -1491,6 +1491,7 @@
       "name": "grpc_abseil",
       "build": "private",
       "language": "c",
+      "defaults": "abseil",
       "src": sorted(used_abseil_srcs),
       "hdr": sorted(used_abseil_hdrs),
       "secure": False,
