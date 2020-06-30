@@ -445,7 +445,7 @@
   ifeq ($(HAS_PKG_CONFIG),true)
   OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
   ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
-  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.5.0 protobuf
+  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.12.0 protobuf
   CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
   else # HAS_PKG_CONFIG
 
@@ -874,7 +874,7 @@
   	@echo
   	@echo "DEPENDENCY ERROR"
   	@echo
-  	@echo "The target you are trying to run requires protobuf 3.5.0+"
+  	@echo "The target you are trying to run requires protobuf 3.12.0+"
   	@echo "Your system doesn't have it, and neither does the third_party directory."
   	@echo
   	@echo "Please consult INSTALL to get more information."
@@ -888,7 +888,7 @@
   	@echo
   	@echo "DEPENDENCY ERROR"
   	@echo
-  	@echo "The target you are trying to run requires protobuf-compiler 3.5.0+"
+  	@echo "The target you are trying to run requires protobuf-compiler 3.12.0+"
   	@echo "Your system doesn't have it, and neither does the third_party directory."
   	@echo
   	@echo "Please consult INSTALL to get more information."
@@ -1717,7 +1717,7 @@
   % endif
   % if lib.language == 'c++':
   ## If the lib was C++, we have to close the Makefile's if that tested
-  ## the presence of protobuf 3.5.0+
+  ## the presence of protobuf 3.12.0+
 
   endif
   % endif
@@ -1783,7 +1783,7 @@
 
   ifeq ($(NO_PROTOBUF),true)
 
-  # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+  # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
   $(BINDIR)/$(CONFIG)/${tgt.name}: protobuf_dep_error
 

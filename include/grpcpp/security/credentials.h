@@ -280,44 +280,11 @@ struct StsCredentialsOptions {
   grpc::string actor_token_type;            // Optional.
 };
 
-/// Creates STS Options from a JSON string. The JSON schema is as follows:
-/// {
-///   "title": "STS Credentials Config",
-///   "type": "object",
-///   "required": ["token_exchange_service_uri", "subject_token_path",
-///                "subject_token_type"],
-///    "properties": {
-///      "token_exchange_service_uri": {
-///        "type": "string"
-///     },
-///     "resource": {
-///       "type": "string"
-///     },
-///     "audience": {
-///       "type": "string"
-///     },
-///     "scope": {
-///       "type": "string"
-///     },
-///     "requested_token_type": {
-///       "type": "string"
-///     },
-///     "subject_token_path": {
-///       "type": "string"
-///     },
-///     "subject_token_type": {
-///     "type": "string"
-///     },
-///     "actor_token_path" : {
-///       "type": "string"
-///     },
-///     "actor_token_type": {
-///       "type": "string"
-///     }
-///   }
-/// }
-grpc::Status StsCredentialsOptionsFromJson(const grpc::string& json_string,
-                                           StsCredentialsOptions* options);
+static inline grpc::Status StsCredentialsOptionsFromJson(
+    const std::string& json_string, StsCredentialsOptions* options) {
+  return ::grpc::experimental::StsCredentialsOptionsFromJson(json_string,
+                                                                  options);
+}
 
 /// Creates STS credentials options from the $STS_CREDENTIALS environment
 /// variable. This environment variable points to the path of a JSON file

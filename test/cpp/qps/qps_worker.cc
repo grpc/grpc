@@ -275,7 +275,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 };
 
 QpsWorker::QpsWorker(int driver_port, int server_port,
-                     const grpc::string& credential_type) {
+                     const std::string& credential_type) {
   impl_.reset(new WorkerServiceImpl(server_port, this));
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 

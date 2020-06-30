@@ -158,26 +158,26 @@ class BackendServiceImpl : public BackendService {
 
   void Shutdown() {}
 
-  std::set<grpc::string> clients() {
+  std::set<std::string> clients() {
     grpc::internal::MutexLock lock(&clients_mu_);
     return clients_;
   }
 
  private:
-  void AddClient(const grpc::string& client) {
+  void AddClient(const std::string& client) {
     grpc::internal::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
 
   grpc::internal::Mutex mu_;
   grpc::internal::Mutex clients_mu_;
-  std::set<grpc::string> clients_;
+  std::set<std::string> clients_;
 };
 
-grpc::string Ip4ToPackedString(const char* ip_str) {
+std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
   GPR_ASSERT(inet_pton(AF_INET, ip_str, &ip4) == 1);
-  return grpc::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
+  return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
 struct ClientStats {
@@ -185,7 +185,7 @@ struct ClientStats {
   size_t num_calls_finished = 0;
   size_t num_calls_finished_with_client_failed_to_send = 0;
   size_t num_calls_finished_known_received = 0;
-  std::map<grpc::string, size_t> drop_token_counts;
+  std::map<std::string, size_t> drop_token_counts;
 
   ClientStats& operator+=(const ClientStats& other) {
     num_calls_started += other.num_calls_started;
@@ -314,7 +314,7 @@ class BalancerServiceImpl : public BalancerService {
 
   static LoadBalanceResponse BuildResponseForBackends(
       const std::vector<int>& backend_ports,
-      const std::map<grpc::string, size_t>& drop_token_counts) {
+      const std::map<std::string, size_t>& drop_token_counts) {
     LoadBalanceResponse response;
     for (const auto& drop_token_count : drop_token_counts) {
       for (size_t i = 0; i < drop_token_count.second; ++i) {
@@ -439,7 +439,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int fallback_timeout = 0,
-                 const grpc::string& expected_targets = "") {
+                 const std::string& expected_targets = "") {
     ChannelArguments args;
     if (fallback_timeout > 0) args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
@@ -530,7 +530,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
   struct AddressData {
     int port;
-    grpc::string balancer_name;
+    std::string balancer_name;
   };
 
   static grpc_core::ServerAddressList CreateLbAddressesFromAddressDataList(
@@ -656,12 +656,12 @@ class GrpclbEnd2endTest : public ::testing::Test {
   template <typename T>
   struct ServerThread {
     template <typename... Args>
-    explicit ServerThread(const grpc::string& type, Args&&... args)
+    explicit ServerThread(const std::string& type, Args&&... args)
         : port_(grpc_pick_unused_port_or_die()),
           type_(type),
           service_(std::forward<Args>(args)...) {}
 
-    void Start(const grpc::string& server_host) {
+    void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
       GPR_ASSERT(!running_);
       running_ = true;
@@ -677,7 +677,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
     }
 
-    void Serve(const grpc::string& server_host, grpc::internal::Mutex* mu,
+    void Serve(const std::string& server_host, grpc::internal::Mutex* mu,
                grpc::internal::CondVar* cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
@@ -704,14 +704,14 @@ class GrpclbEnd2endTest : public ::testing::Test {
     }
 
     const int port_;
-    grpc::string type_;
+    std::string type_;
     T service_;
     std::unique_ptr<Server> server_;
     std::unique_ptr<std::thread> thread_;
     bool running_ = false;
   };
 
-  const grpc::string server_host_;
+  const std::string server_host_;
   const size_t num_backends_;
   const size_t num_balancers_;
   const int client_load_reporting_interval_seconds_;
@@ -721,8 +721,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
   std::vector<std::unique_ptr<ServerThread<BalancerServiceImpl>>> balancers_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator_;
-  const grpc::string kRequestMessage_ = "Live long and prosper.";
-  const grpc::string kApplicationTargetName_ = "application_target_name";
+  const std::string kRequestMessage_ = "Live long and prosper.";
+  const std::string kApplicationTargetName_ = "application_target_name";
 };
 
 class SingleBalancerTest : public GrpclbEnd2endTest {

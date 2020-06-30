@@ -79,10 +79,10 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   const std::shared_ptr<AuthContext> auth_context(
       new SecureAuthContext(ctx.get()));
   ctx.reset();
-  grpc::string expected_ap("application protocol");
-  grpc::string expected_rp("record protocol");
-  grpc::string expected_peer("peer");
-  grpc::string expected_local("local");
+  std::string expected_ap("application protocol");
+  std::string expected_rp("record protocol");
+  std::string expected_peer("peer");
+  std::string expected_local("local");
   grpc_security_level expected_sl = GRPC_INTEGRITY_ONLY;
   upb::Arena context_arena;
   grpc_gcp_AltsContext* context = grpc_gcp_AltsContext_new(context_arena.ptr());
@@ -174,7 +174,7 @@ TEST(AltsUtilTest, AltsClientAuthzCheck) {
   const std::shared_ptr<AuthContext> auth_context(
       new SecureAuthContext(ctx.get()));
   ctx.reset();
-  grpc::string peer("good_client");
+  std::string peer("good_client");
   std::vector<std::string> good_service_accounts{"good_client",
                                                  "good_client_1"};
   std::vector<std::string> bad_service_accounts{"bad_client", "bad_client_1"};

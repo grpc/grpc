@@ -63,7 +63,7 @@ namespace experimental {
 /// fail) is returned.
 /// \param args Options for channel creation.
 std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
-    const grpc::string& target,
+    const std::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds,
     const grpc::ChannelArguments& args,
     std::vector<
