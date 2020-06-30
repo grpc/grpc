@@ -535,9 +535,9 @@ GRPCAPI char* grpc_channelz_get_socket(intptr_t socket_id);
 
 /************* Shutdown support. *************/
 /* Register a function to be called at the end of the last grpc_shutdown() call. */
-GRPCAPI void grpc_on_shutdown(void (*func)());
+GRPCAPI void grpc_on_shutdown_callback(void (*func)());
 /* Run an arbitrary function on an arg */
-GRPCAPI void grpc_on_shutdown_run(void (*f)(const void*), const void* arg);
+GRPCAPI void grpc_on_shutdown_callback_with_arg(void (*f)(const void*), const void* arg);
 
 #ifdef __cplusplus
 }
@@ -548,7 +548,7 @@ GRPCAPI void grpc_on_shutdown_run(void (*f)(const void*), const void* arg);
 namespace grpc_core {
 template <typename T>
 T* OnShutdownDelete(T* p) {
-  grpc_on_shutdown_run([](const void* pp) { delete static_cast<const T*>(pp); },
+  grpc_on_shutdown_callback_with_arg([](const void* pp) { delete static_cast<const T*>(pp); },
                        p);
   return p;
 }

@@ -180,16 +180,16 @@ struct ShutdownData {
   grpc_core::Mutex mutex;
 };
 
-static void RunZeroArgFunc(const void* arg) {
+static void ZeroArgFuncWrapper(const void* arg) {
   void (*func)() = reinterpret_cast<void (*)()>(const_cast<void*>(arg));
   func();
 }
 
-void grpc_on_shutdown(void (*func)()) {
-  grpc_on_shutdown_run(RunZeroArgFunc, reinterpret_cast<void*>(func));
+void grpc_on_shutdown_callback(void (*func)()) {
+  grpc_on_shutdown_callback_with_arg(ZeroArgFuncWrapper, reinterpret_cast<void*>(func));
 }
 
-void grpc_on_shutdown_run(void (*f)(const void*), const void* arg) {
+void grpc_on_shutdown_callback_with_arg(void (*f)(const void*), const void* arg) {
   auto shutdown_data = ShutdownData::get();
   grpc_core::MutexLock lock(&shutdown_data->mutex);
   shutdown_data->functions.push_back(std::make_pair(f, arg));
@@ -227,6 +227,8 @@ void grpc_shutdown_internal_locked(void) {
   // Absolute last action will be to delete static metadata context.
   grpc_destroy_static_metadata_ctx();
 
+  // Executes all custom cleanup functions, which were registered via
+  // grpc_on_shutdown_callback() and grpc_on_shutdown_callback_with_arg()
   delete ShutdownData::get();
 }
 
