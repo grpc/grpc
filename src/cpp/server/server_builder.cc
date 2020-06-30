@@ -39,8 +39,8 @@ static std::vector<std::unique_ptr<grpc::ServerBuilderPlugin> (*)()>*
 static gpr_once once_init_plugin_list = GPR_ONCE_INIT;
 
 static void do_plugin_list_init(void) {
-  g_plugin_factory_list =
-      new std::vector<std::unique_ptr<grpc::ServerBuilderPlugin> (*)()>();
+  g_plugin_factory_list = grpc_core::OnShutdownDelete(
+      new std::vector<std::unique_ptr<grpc::ServerBuilderPlugin> (*)()>());
 }
 
 ServerBuilder::ServerBuilder()

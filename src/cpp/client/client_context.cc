@@ -45,7 +45,7 @@ class DefaultGlobalClientCallbacks final
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 static DefaultGlobalClientCallbacks* g_default_client_callbacks =
-    new DefaultGlobalClientCallbacks();
+    grpc_core::OnShutdownDelete(new DefaultGlobalClientCallbacks());
 static ClientContext::GlobalCallbacks* g_client_callbacks =
     g_default_client_callbacks;
 

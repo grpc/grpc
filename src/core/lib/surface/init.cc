@@ -165,6 +165,36 @@ void grpc_init(void) {
   GRPC_API_TRACE("grpc_init(void)", 0, ());
 }
 
+struct ShutdownData {
+  ~ShutdownData() {
+    std::reverse(functions.begin(), functions.end());
+    for (auto pair : functions) pair.first(pair.second);
+  }
+
+  static ShutdownData* get() {
+    static auto* data = new ShutdownData;
+    return data;
+  }
+
+  std::vector<std::pair<void (*)(const void*), const void*>> functions;
+  grpc_core::Mutex mutex;
+};
+
+static void RunZeroArgFunc(const void* arg) {
+  void (*func)() = reinterpret_cast<void (*)()>(const_cast<void*>(arg));
+  func();
+}
+
+void grpc_on_shutdown(void (*func)()) {
+  grpc_on_shutdown_run(RunZeroArgFunc, reinterpret_cast<void*>(func));
+}
+
+void grpc_on_shutdown_run(void (*f)(const void*), const void* arg) {
+  auto shutdown_data = ShutdownData::get();
+  grpc_core::MutexLock lock(&shutdown_data->mutex);
+  shutdown_data->functions.push_back(std::make_pair(f, arg));
+}
+
 void grpc_shutdown_internal_locked(void) {
   int i;
   {
@@ -193,8 +223,11 @@ void grpc_shutdown_internal_locked(void) {
   grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   g_shutting_down = false;
   gpr_cv_broadcast(g_shutting_down_cv);
+  free(g_shutting_down_cv);
   // Absolute last action will be to delete static metadata context.
   grpc_destroy_static_metadata_ctx();
+
+  delete ShutdownData::get();
 }
 
 void grpc_shutdown_internal(void* /*ignored*/) {
