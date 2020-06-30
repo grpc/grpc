@@ -38,8 +38,7 @@
 static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
   grpc::experimental::StsCredentialsOptions options;
   if (strlen(json_file_path) == 0) {
-    auto status =
-        grpc::experimental::StsCredentialsOptionsFromEnv(&options);
+    auto status = grpc::experimental::StsCredentialsOptionsFromEnv(&options);
     if (!status.ok()) {
       gpr_log(GPR_ERROR, "%s", status.error_message().c_str());
       return nullptr;
