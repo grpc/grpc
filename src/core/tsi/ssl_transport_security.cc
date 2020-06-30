@@ -33,6 +33,8 @@
 #include <sys/socket.h>
 #endif
 
+#include <string>
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
