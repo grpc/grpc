@@ -14,14 +14,19 @@
 
 #include "src/core/lib/security/authorization/cel_evaluation_engine.h"
 
-static void test_empty_engine(void) {
+#include <gtest/gtest.h>
+
+TEST(CelEngineTest, CreateEmptyEngine) {
   upb::Arena arena;
   envoy_config_rbac_v2_RBAC* rbac_policy =
       envoy_config_rbac_v2_RBAC_new(arena.ptr());
-  CelEvaluationEngine cel_engine(*rbac_policy);
+  CelEvaluationEngine* cel_engine = new CelEvaluationEngine(*rbac_policy);
+  EXPECT_NE(cel_engine, nullptr)
+      << "Failed to create an empty CelEvaluationEngine.";
+  delete cel_engine;
 }
 
 int main(int argc, char** argv) {
-  test_empty_engine();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

@@ -75,6 +75,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "cel_engine_test",
     srcs = ["cel_engine_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
