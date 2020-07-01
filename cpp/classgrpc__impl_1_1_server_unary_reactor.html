@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.28.0</span>
+   &#160;<span id="projectnumber">1.30.0</span>
    </div>
   </td>
  </tr>
@@ -84,9 +84,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a1e63242b4c98f650c641aea20ee641d7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_unary_reactor.html#a1e63242b4c98f650c641aea20ee641d7">~ServerUnaryReactor</a> ()=default</td></tr>
 <tr class="separator:a1e63242b4c98f650c641aea20ee641d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a929ffa7bfd2ebb00f4e08b9b5888f9c8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_unary_reactor.html#a929ffa7bfd2ebb00f4e08b9b5888f9c8">StartSendInitialMetadata</a> ()</td></tr>
-<tr class="memdesc:a929ffa7bfd2ebb00f4e08b9b5888f9c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following operation initiations are exactly like <a class="el" href="classgrpc__impl_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc__impl_1_1_server_unary_reactor.html#a929ffa7bfd2ebb00f4e08b9b5888f9c8">More...</a><br /></td></tr>
+<tr class="memdesc:a929ffa7bfd2ebb00f4e08b9b5888f9c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">StartSendInitialMetadata is exactly like <a class="el" href="classgrpc__impl_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc__impl_1_1_server_unary_reactor.html#a929ffa7bfd2ebb00f4e08b9b5888f9c8">More...</a><br /></td></tr>
 <tr class="separator:a929ffa7bfd2ebb00f4e08b9b5888f9c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9f13f03cf7bf36974a025f806f5534b4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_unary_reactor.html#a9f13f03cf7bf36974a025f806f5534b4">Finish</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s)</td></tr>
+<tr class="memdesc:a9f13f03cf7bf36974a025f806f5534b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finish is similar to <a class="el" href="classgrpc__impl_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a> except for one detail.  <a href="classgrpc__impl_1_1_server_unary_reactor.html#a9f13f03cf7bf36974a025f806f5534b4">More...</a><br /></td></tr>
 <tr class="separator:a9f13f03cf7bf36974a025f806f5534b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acbf45e38d8edda4befc08ed22ea7f18a"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_unary_reactor.html#acbf45e38d8edda4befc08ed22ea7f18a">OnSendInitialMetadataDone</a> (bool)</td></tr>
 <tr class="memdesc:acbf45e38d8edda4befc08ed22ea7f18a"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following notifications are exactly like <a class="el" href="classgrpc__impl_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc__impl_1_1_server_unary_reactor.html#acbf45e38d8edda4befc08ed22ea7f18a">More...</a><br /></td></tr>
@@ -181,6 +182,9 @@ Friends</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Finish is similar to <a class="el" href="classgrpc__impl_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a> except for one detail. </p>
+<p>If the status is non-OK, any message will not be sent. Instead, the client will only receive the status and any trailing metadata. </p>
 
 </div>
 </div>
@@ -289,7 +293,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>The following operation initiations are exactly like <a class="el" href="classgrpc__impl_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>. </p>
+<p>StartSendInitialMetadata is exactly like <a class="el" href="classgrpc__impl_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>. </p>
 
 </div>
 </div>
@@ -322,7 +326,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

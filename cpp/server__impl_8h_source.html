@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.28.0</span>
+   &#160;<span id="projectnumber">1.30.0</span>
    </div>
   </td>
  </tr>
@@ -265,105 +265,94 @@ $(function() {
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160; </div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;  <a class="code" href="classgrpc__impl_1_1_server_initializer.html">grpc_impl::ServerInitializer</a>* initializer();</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160; </div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;  std::vector&lt;std::shared_ptr&lt;grpc::internal::ExternalConnectionAcceptorImpl&gt;&gt;</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;      acceptors_;</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160; </div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;  <span class="comment">// A vector of interceptor factory objects.</span></div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;  <span class="comment">// This should be destroyed after health_check_service_ and this requirement</span></div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;  <span class="comment">// is satisfied by declaring interceptor_creators_ before</span></div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;  <span class="comment">// health_check_service_. (C++ mandates that member objects be destroyed in</span></div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;  <span class="comment">// the reverse order of initialization.)</span></div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;  std::vector&lt;</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;      std::unique_ptr&lt;grpc::experimental::ServerInterceptorFactoryInterface&gt;&gt;</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;      interceptor_creators_;</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160; </div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;  <span class="keywordtype">int</span> max_receive_message_size_;</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160; </div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;  std::shared_ptr&lt;std::vector&lt;std::unique_ptr&lt;ServerCompletionQueue&gt;&gt;&gt;</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;      sync_server_cqs_;</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160; </div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;  std::vector&lt;std::unique_ptr&lt;SyncRequestThreadManager&gt;&gt; sync_req_mgrs_;</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160; </div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;  <span class="comment">// Outstanding unmatched callback requests, indexed by method.</span></div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;  <span class="comment">// NOTE: Using a gpr_atm rather than atomic_int because atomic_int isn&#39;t</span></div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;  <span class="comment">//       copyable or movable and thus will cause compilation errors. We</span></div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;  <span class="comment">//       actually only want to extend the vector before the threaded use</span></div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;  <span class="comment">//       starts, but this is still a limitation.</span></div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;  std::vector&lt;gpr_atm&gt; callback_unmatched_reqs_count_;</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;  <span class="comment">// Functions to manage the server shutdown ref count. Things that increase</span></div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;  <span class="comment">// the ref count are the running state of the server (take a ref at start and</span></div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;  <span class="comment">// drop it at shutdown) and each running callback RPC.</span></div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;  <span class="keywordtype">void</span> Ref();</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;  <span class="keywordtype">void</span> UnrefWithPossibleNotify() <span class="comment">/* LOCKS_EXCLUDED(mu_) */</span>;</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;  <span class="keywordtype">void</span> UnrefAndWaitLocked() <span class="comment">/* EXCLUSIVE_LOCKS_REQUIRED(mu_) */</span>;</div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160; </div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;  std::vector&lt;std::shared_ptr&lt;grpc::internal::ExternalConnectionAcceptorImpl&gt;&gt;</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;      acceptors_;</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160; </div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;  <span class="comment">// A vector of interceptor factory objects.</span></div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;  <span class="comment">// This should be destroyed after health_check_service_ and this requirement</span></div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;  <span class="comment">// is satisfied by declaring interceptor_creators_ before</span></div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;  <span class="comment">// health_check_service_. (C++ mandates that member objects be destroyed in</span></div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;  <span class="comment">// the reverse order of initialization.)</span></div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;  std::vector&lt;</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;      std::unique_ptr&lt;grpc::experimental::ServerInterceptorFactoryInterface&gt;&gt;</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;      interceptor_creators_;</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160; </div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;  <span class="keywordtype">int</span> max_receive_message_size_;</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160; </div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;  std::shared_ptr&lt;std::vector&lt;std::unique_ptr&lt;ServerCompletionQueue&gt;&gt;&gt;</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;      sync_server_cqs_;</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160; </div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;  std::vector&lt;std::unique_ptr&lt;SyncRequestThreadManager&gt;&gt; sync_req_mgrs_;</div>
 <div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160; </div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;  <span class="comment">// List of callback requests to start when server actually starts.</span></div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;  std::list&lt;CallbackRequestBase*&gt; callback_reqs_to_start_;</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160; </div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;<span class="preprocessor">#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL</span></div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;  <span class="comment">// For registering experimental callback generic service; remove when that</span></div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;  <span class="comment">// method longer experimental</span></div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;  experimental_registration_type experimental_registration_{<span class="keyword">this</span>};</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160; </div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;  <span class="comment">// Server status</span></div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_mutex.html">grpc::internal::Mutex</a> mu_;</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;  <span class="keywordtype">bool</span> started_;</div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;  <span class="keywordtype">bool</span> shutdown_;</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;  <span class="keywordtype">bool</span> shutdown_notified_;  <span class="comment">// Was notify called on the shutdown_cv_</span></div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;<span class="preprocessor">#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL</span></div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;  <span class="comment">// For registering experimental callback generic service; remove when that</span></div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;  <span class="comment">// method longer experimental</span></div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;  experimental_registration_type experimental_registration_{<span class="keyword">this</span>};</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160; </div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;  <span class="comment">// Server status</span></div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_mutex.html">grpc::internal::Mutex</a> mu_;</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;  <span class="keywordtype">bool</span> started_;</div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;  <span class="keywordtype">bool</span> shutdown_;</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;  <span class="keywordtype">bool</span> shutdown_notified_;  <span class="comment">// Was notify called on the shutdown_cv_</span></div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_cond_var.html">grpc::internal::CondVar</a> shutdown_done_cv_;</div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;  <span class="keywordtype">bool</span> shutdown_done_ = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;  std::atomic_int shutdown_refs_outstanding_{1};</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160; </div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_cond_var.html">grpc::internal::CondVar</a> shutdown_cv_;</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160; </div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;  <span class="comment">// It is ok (but not required) to nest callback_reqs_mu_ under mu_ .</span></div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;  <span class="comment">// Incrementing callback_reqs_outstanding_ is ok without a lock but it must be</span></div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;  <span class="comment">// decremented under the lock in case it is the last request and enables the</span></div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;  <span class="comment">// server shutdown. The increment is performance-critical since it happens</span></div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;  <span class="comment">// during periods of increasing load; the decrement happens only when memory</span></div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;  <span class="comment">// is maxed out, during server shutdown, or (possibly in a future version)</span></div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;  <span class="comment">// during decreasing load, so it is less performance-critical.</span></div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_mutex.html">grpc::internal::Mutex</a> callback_reqs_mu_;</div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_cond_var.html">grpc::internal::CondVar</a> callback_reqs_done_cv_;</div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;  std::atomic&lt;intptr_t&gt; callback_reqs_outstanding_{0};</div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160; </div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;  std::shared_ptr&lt;GlobalCallbacks&gt; global_callbacks_;</div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160; </div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;  std::vector&lt;grpc::string&gt; services_;</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;  <span class="keywordtype">bool</span> has_async_generic_service_{<span class="keyword">false</span>};</div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;  <span class="keywordtype">bool</span> has_callback_generic_service_{<span class="keyword">false</span>};</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160; </div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;  <span class="comment">// Pointer to the wrapped grpc_server.</span></div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;  <a class="code" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a>* server_;</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160; </div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;  std::unique_ptr&lt;grpc_impl::ServerInitializer&gt; server_initializer_;</div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160; </div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;  std::unique_ptr&lt;grpc::HealthCheckServiceInterface&gt; health_check_service_;</div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;  <span class="keywordtype">bool</span> health_check_service_disabled_;</div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160; </div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;  <span class="comment">// When appropriate, use a default callback generic service to handle</span></div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;  <span class="comment">// unimplemented methods</span></div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;<span class="preprocessor">#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL</span></div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;  std::unique_ptr&lt;grpc::CallbackGenericService&gt; unimplemented_service_;</div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;  std::unique_ptr&lt;grpc::experimental::CallbackGenericService&gt;</div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;      unimplemented_service_;</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160; </div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;  <span class="comment">// A special handler for resource exhausted in sync case</span></div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;  std::unique_ptr&lt;grpc::internal::MethodHandler&gt; resource_exhausted_handler_;</div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160; </div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;  <span class="comment">// Handler for callback generic service, if any</span></div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;  std::unique_ptr&lt;grpc::internal::MethodHandler&gt; generic_handler_;</div>
-<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160; </div>
-<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;  <span class="comment">// callback_cq_ references the callbackable completion queue associated</span></div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;  <span class="comment">// with this server (if any). It is set on the first call to CallbackCQ().</span></div>
-<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;  <span class="comment">// It is _not owned_ by the server; ownership belongs with its internal</span></div>
-<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;  <span class="comment">// shutdown callback tag (invoked when the CQ is fully shutdown).</span></div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;  <span class="comment">// It is protected by mu_</span></div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;  <a class="code" href="namespacegrpc.html#a9b59ae504113bf341ba9d1ae404b0cda">CompletionQueue</a>* callback_cq_ = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160; </div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;  <span class="comment">// List of CQs passed in by user that must be Shutdown only after Server is</span></div>
-<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;  <span class="comment">// Shutdown.  Even though this is only used with NDEBUG, instantiate it in all</span></div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;  <span class="comment">// cases since otherwise the size will be inconsistent.</span></div>
-<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;  std::vector&lt;CompletionQueue*&gt; cq_list_;</div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;};</div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160; </div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;}  <span class="comment">// namespace grpc_impl</span></div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160; </div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;<span class="preprocessor">#endif  // GRPCPP_SERVER_IMPL_H</span></div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;  std::shared_ptr&lt;GlobalCallbacks&gt; global_callbacks_;</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160; </div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;  std::vector&lt;grpc::string&gt; services_;</div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;  <span class="keywordtype">bool</span> has_async_generic_service_ = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;  <span class="keywordtype">bool</span> has_callback_generic_service_ = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;  <span class="keywordtype">bool</span> has_callback_methods_ = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160; </div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;  <span class="comment">// Pointer to the wrapped grpc_server.</span></div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;  <a class="code" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a>* server_;</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160; </div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;  std::unique_ptr&lt;grpc_impl::ServerInitializer&gt; server_initializer_;</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160; </div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;  std::unique_ptr&lt;grpc::HealthCheckServiceInterface&gt; health_check_service_;</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;  <span class="keywordtype">bool</span> health_check_service_disabled_;</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160; </div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;  <span class="comment">// When appropriate, use a default callback generic service to handle</span></div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;  <span class="comment">// unimplemented methods</span></div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;<span class="preprocessor">#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL</span></div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;  std::unique_ptr&lt;grpc::CallbackGenericService&gt; unimplemented_service_;</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;  std::unique_ptr&lt;grpc::experimental::CallbackGenericService&gt;</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;      unimplemented_service_;</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160; </div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;  <span class="comment">// A special handler for resource exhausted in sync case</span></div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;  std::unique_ptr&lt;grpc::internal::MethodHandler&gt; resource_exhausted_handler_;</div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160; </div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;  <span class="comment">// Handler for callback generic service, if any</span></div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;  std::unique_ptr&lt;grpc::internal::MethodHandler&gt; generic_handler_;</div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160; </div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;  <span class="comment">// callback_cq_ references the callbackable completion queue associated</span></div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;  <span class="comment">// with this server (if any). It is set on the first call to CallbackCQ().</span></div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;  <span class="comment">// It is _not owned_ by the server; ownership belongs with its internal</span></div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;  <span class="comment">// shutdown callback tag (invoked when the CQ is fully shutdown).</span></div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;  <a class="code" href="namespacegrpc.html#a9b59ae504113bf341ba9d1ae404b0cda">CompletionQueue</a>* callback_cq_ <span class="comment">/* GUARDED_BY(mu_) */</span> = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160; </div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;  <span class="comment">// List of CQs passed in by user that must be Shutdown only after Server is</span></div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;  <span class="comment">// Shutdown.  Even though this is only used with NDEBUG, instantiate it in all</span></div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;  <span class="comment">// cases since otherwise the size will be inconsistent.</span></div>
+<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;  std::vector&lt;CompletionQueue*&gt; cq_list_;</div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;};</div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160; </div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;}  <span class="comment">// namespace grpc_impl</span></div>
+<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160; </div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;<span class="preprocessor">#endif  // GRPCPP_SERVER_IMPL_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc_1_1_grpc_library_codegen_html"><div class="ttname"><a href="classgrpc_1_1_grpc_library_codegen.html">grpc::GrpcLibraryCodegen</a></div><div class="ttdoc">Classes that require gRPC to be initialized should inherit from this class.</div><div class="ttdef"><b>Definition:</b> grpc_library.h:38</div></div>
 <div class="ttc" id="acompression_8h_html"><div class="ttname"><a href="compression_8h.html">compression.h</a></div></div>
@@ -372,7 +361,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc__impl_1_1_server_html_ab2c3843e0f3ce782fb02931d30920aa8"><div class="ttname"><a href="classgrpc__impl_1_1_server.html#ab2c3843e0f3ce782fb02931d30920aa8">grpc_impl::Server::GetHealthCheckService</a></div><div class="ttdeci">grpc::HealthCheckServiceInterface * GetHealthCheckService() const</div><div class="ttdoc">Returns the health check service.</div><div class="ttdef"><b>Definition:</b> server_impl.h:107</div></div>
 <div class="ttc" id="aclassgrpc__impl_1_1_server_1_1_global_callbacks_html_a4b8e77bfae7312ffbcc66c4115e58e8c"><div class="ttname"><a href="classgrpc__impl_1_1_server_1_1_global_callbacks.html#a4b8e77bfae7312ffbcc66c4115e58e8c">grpc_impl::Server::GlobalCallbacks::~GlobalCallbacks</a></div><div class="ttdeci">virtual ~GlobalCallbacks()</div><div class="ttdef"><b>Definition:</b> server_impl.h:82</div></div>
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">This header provides an object that reads bytes directly from a grpc::ByteBuffer, via the ZeroCopyInp...</div><div class="ttdef"><b>Definition:</b> alarm.h:24</div></div>
-<div class="ttc" id="agrpc__types_8h_html_a16d58b8d7c93609d01311b869f4a8d05"><div class="ttname"><a href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a></div><div class="ttdeci">struct grpc_resource_quota grpc_resource_quota</div><div class="ttdef"><b>Definition:</b> grpc_types.h:696</div></div>
+<div class="ttc" id="agrpc__types_8h_html_a16d58b8d7c93609d01311b869f4a8d05"><div class="ttname"><a href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a></div><div class="ttdeci">struct grpc_resource_quota grpc_resource_quota</div><div class="ttdef"><b>Definition:</b> grpc_types.h:694</div></div>
 <div class="ttc" id="anamespacegrpc_html_a7dad7f8e27d95459a7f538356ef2aecb"><div class="ttname"><a href="namespacegrpc.html#a7dad7f8e27d95459a7f538356ef2aecb">grpc::HealthCheckServiceInterface</a></div><div class="ttdeci">::grpc_impl::HealthCheckServiceInterface HealthCheckServiceInterface</div><div class="ttdef"><b>Definition:</b> health_check_service_interface.h:29</div></div>
 <div class="ttc" id="achannel__impl_8h_html"><div class="ttname"><a href="channel__impl_8h.html">channel_impl.h</a></div></div>
 <div class="ttc" id="aclassgrpc__impl_1_1_server_initializer_html"><div class="ttname"><a href="classgrpc__impl_1_1_server_initializer.html">grpc_impl::ServerInitializer</a></div><div class="ttdef"><b>Definition:</b> server_initializer_impl.h:34</div></div>
@@ -437,7 +426,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc__impl_1_1_server_html_aa9689c77feab97a862edac219fc7f562"><div class="ttname"><a href="classgrpc__impl_1_1_server.html#aa9689c77feab97a862edac219fc7f562">grpc_impl::Server::server</a></div><div class="ttdeci">grpc_server * server() override</div><div class="ttdef"><b>Definition:</b> server_impl.h:203</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

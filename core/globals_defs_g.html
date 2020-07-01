@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">9.0.0</span>
+   &#160;<span id="projectnumber">10.0.0</span>
    </div>
   </td>
  </tr>
@@ -372,6 +372,9 @@ $(function() {
 <li>GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION
 : <a class="el" href="group__grpc__arg__keys.html#gab195665836ae27c45748f5c4e5dc4057">grpc_types.h</a>
 </li>
+<li>GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION
+: <a class="el" href="group__grpc__arg__keys.html#gaccb671d1056c84381ac5ebbd710b70f9">grpc_types.h</a>
+</li>
 <li>GRPC_ARG_ENABLE_RETRIES
 : <a class="el" href="group__grpc__arg__keys.html#ga212f667ecbcee3b100898ba7e88454df">grpc_types.h</a>
 </li>
@@ -423,6 +426,9 @@ $(function() {
 <li>GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE
 : <a class="el" href="group__grpc__arg__keys.html#ga8ee81850446e587a7410df5ab640c565">grpc_types.h</a>
 </li>
+<li>GRPC_ARG_HTTP_PROXY
+: <a class="el" href="group__grpc__arg__keys.html#ga218fd6d2995e1c13213ed6be653cd500">grpc_types.h</a>
+</li>
 <li>GRPC_ARG_INHIBIT_HEALTH_CHECKING
 : <a class="el" href="group__grpc__arg__keys.html#ga523b3b4f16b1016108cbeee9ef81fd50">grpc_types.h</a>
 </li>
@@ -440,9 +446,6 @@ $(function() {
 </li>
 <li>GRPC_ARG_LB_POLICY_NAME
 : <a class="el" href="group__grpc__arg__keys.html#ga72c2b475e218ecfd36bb7d3551d0295b">grpc_types.h</a>
-</li>
-<li>GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS
-: <a class="el" href="group__grpc__arg__keys.html#ga4c78436839c4f7398a38fb0732435b66">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE
 : <a class="el" href="group__grpc__arg__keys.html#gad20a36039729599902ba6ce82882da2c">grpc_types.h</a>
@@ -491,6 +494,9 @@ $(function() {
 </li>
 <li>GRPC_ARG_PRIMARY_USER_AGENT_STRING
 : <a class="el" href="group__grpc__arg__keys.html#ga0732df2d9003e9ee1c01e50e41b5a8e2">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS
+: <a class="el" href="group__grpc__arg__keys.html#ga3ab27425a4afa2866ae2876ae0b735e3">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_RESOURCE_QUOTA
 : <a class="el" href="group__grpc__arg__keys.html#gaa8bb5c65808f9c340ba7e4dd4f9f0f39">grpc_types.h</a>
@@ -545,12 +551,6 @@ $(function() {
 </li>
 <li>GRPC_ARG_WORKAROUND_CRONET_COMPRESSION
 : <a class="el" href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">grpc_types.h</a>
-</li>
-<li>GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS
-: <a class="el" href="group__grpc__arg__keys.html#ga1e04374ed3531bdda5ccd6260a75840f">grpc_types.h</a>
-</li>
-<li>GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS
-: <a class="el" href="group__grpc__arg__keys.html#gabe5b41f89f0017e0f89c5945fe1e0470">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS
 : <a class="el" href="group__grpc__arg__keys.html#gac7f84e7e3a576d1efc7c5f5a3ff5632a">grpc_types.h</a>
@@ -620,6 +620,9 @@ $(function() {
 </li>
 <li>GRPC_MUST_USE_RESULT
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#aef49047a3be38448a61332117b306686">port_platform.h</a>
+</li>
+<li>GRPC_PEER_SPIFFE_ID_PROPERTY_NAME
+: <a class="el" href="grpc__security__constants_8h.html#abb77790260f0d5b9ffb8d8095bbbe044">grpc_security_constants.h</a>
 </li>
 <li>GRPC_PROPAGATE_CANCELLATION
 : <a class="el" href="propagation__bits_8h.html#aa87041a20c89c31d27217b22ef79d066">propagation_bits.h</a>
@@ -721,7 +724,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

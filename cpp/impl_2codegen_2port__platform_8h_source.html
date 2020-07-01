@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.28.0</span>
+   &#160;<span id="projectnumber">1.30.0</span>
    </div>
   </td>
  </tr>
@@ -125,17 +125,17 @@ $(function() {
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="preprocessor">#define NOMINMAX</span></div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* NOMINMAX */</span><span class="preprocessor"></span></div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="preprocessor">#ifndef _WIN32_WINNT</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="preprocessor">#error \</span></div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="preprocessor">    &quot;Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)&quot;</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* !defined(_WIN32_WINNT) */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor">#if (_WIN32_WINNT &lt; 0x0600)</span></div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="preprocessor">#error \</span></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="preprocessor">    &quot;Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)&quot;</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* _WIN32_WINNT &lt; 0x0600 */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* defined(_WIN32_WINNT) */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="preprocessor">#include &lt;windows.h&gt;</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="preprocessor">#include &lt;windows.h&gt;</span></div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="preprocessor">#ifndef _WIN32_WINNT</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="preprocessor">#error \</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor">    &quot;Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)&quot;</span></div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* !defined(_WIN32_WINNT) */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="preprocessor">#if (_WIN32_WINNT &lt; 0x0600)</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="preprocessor">#error \</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="preprocessor">    &quot;Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)&quot;</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* _WIN32_WINNT &lt; 0x0600 */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* defined(_WIN32_WINNT) */</span><span class="preprocessor"></span></div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="preprocessor">#ifdef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED</span></div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor">#undef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED</span></div>
@@ -738,58 +738,62 @@ $(function() {
 <div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_ATTRIBUTE_NO_TSAN (1) */</span><span class="preprocessor"></span></div>
 <div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160; </div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;<span class="comment">/* GRPC_TSAN_ENABLED will be defined, when compiled with thread sanitizer. */</span></div>
-<div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;<span class="preprocessor">#if defined(__SANITIZE_THREAD__)</span></div>
-<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;<span class="preprocessor">#define GRPC_TSAN_ENABLED</span></div>
-<div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;<span class="preprocessor">#elif GPR_HAS_FEATURE(thread_sanitizer)</span></div>
-<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;<span class="preprocessor">#define GRPC_TSAN_ENABLED</span></div>
-<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160; </div>
-<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;<span class="comment">/* GRPC_ASAN_ENABLED will be defined, when compiled with address sanitizer. */</span></div>
-<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;<span class="preprocessor">#if defined(__SANITIZE_ADDRESS__)</span></div>
-<div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;<span class="preprocessor">#define GRPC_ASAN_ENABLED</span></div>
-<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;<span class="preprocessor">#elif GPR_HAS_FEATURE(address_sanitizer)</span></div>
-<div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;<span class="preprocessor">#define GRPC_ASAN_ENABLED</span></div>
-<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160; </div>
-<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;<span class="comment">/* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */</span></div>
-<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;<span class="preprocessor">#ifndef GRPC_ALLOW_EXCEPTIONS</span></div>
-<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;<span class="preprocessor">#ifdef GPR_WINDOWS</span></div>
-<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;<span class="preprocessor">#if defined(_MSC_VER) &amp;&amp; defined(_CPPUNWIND)</span></div>
-<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 1</span></div>
-<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;<span class="preprocessor">#elif defined(__EXCEPTIONS)</span></div>
-<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 1</span></div>
-<div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 0</span></div>
-<div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* GPR_WINDOWS */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;<span class="preprocessor">#ifdef __EXCEPTIONS</span></div>
-<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 1</span></div>
-<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* __EXCEPTIONS */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00696"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a30c4ae5cdf0ec0d72fd9e08e0d06370a">  696</a></span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 0</span></div>
-<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __EXCEPTIONS */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __GPR_WINDOWS */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_ALLOW_EXCEPTIONS */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160; </div>
-<div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;<span class="comment">/* Use GPR_LIKELY only in cases where you are sure that a certain outcome is the</span></div>
-<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;<span class="comment"> * most likely. Ideally, also collect performance numbers to justify the claim.</span></div>
-<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;<span class="comment"> */</span></div>
-<div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;<span class="preprocessor">#ifdef __GNUC__</span></div>
-<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;<span class="preprocessor">#define GPR_LIKELY(x) __builtin_expect((x), 1)</span></div>
-<div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;<span class="preprocessor">#define GPR_UNLIKELY(x) __builtin_expect((x), 0)</span></div>
-<div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* __GNUC__ */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00708"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a518d2d0a7ae17a01e2fa2dee0e2f84df">  708</a></span>&#160;<span class="preprocessor">#define GPR_LIKELY(x) (x)</span></div>
-<div class="line"><a name="l00709"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">  709</a></span>&#160;<span class="preprocessor">#define GPR_UNLIKELY(x) (x)</span></div>
-<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __GNUC__ */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160; </div>
-<div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;<span class="preprocessor">#ifndef __STDC_FORMAT_MACROS</span></div>
-<div class="line"><a name="l00713"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#aacbb9e1f38be71e22df1584a37c56693">  713</a></span>&#160;<span class="preprocessor">#define __STDC_FORMAT_MACROS</span></div>
-<div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;<span class="preprocessor">#ifndef GRPC_TSAN_SUPPRESSED</span></div>
+<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;<span class="preprocessor">#if defined(__SANITIZE_THREAD__)</span></div>
+<div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;<span class="preprocessor">#define GRPC_TSAN_ENABLED</span></div>
+<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;<span class="preprocessor">#elif GPR_HAS_FEATURE(thread_sanitizer)</span></div>
+<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;<span class="preprocessor">#define GRPC_TSAN_ENABLED</span></div>
+<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160; </div>
+<div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;<span class="comment">/* GRPC_ASAN_ENABLED will be defined, when compiled with address sanitizer. */</span></div>
+<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;<span class="preprocessor">#ifndef GRPC_ASAN_SUPPRESSED</span></div>
+<div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;<span class="preprocessor">#if defined(__SANITIZE_ADDRESS__)</span></div>
+<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;<span class="preprocessor">#define GRPC_ASAN_ENABLED</span></div>
+<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;<span class="preprocessor">#elif GPR_HAS_FEATURE(address_sanitizer)</span></div>
+<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;<span class="preprocessor">#define GRPC_ASAN_ENABLED</span></div>
+<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160; </div>
+<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;<span class="comment">/* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */</span></div>
+<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;<span class="preprocessor">#ifndef GRPC_ALLOW_EXCEPTIONS</span></div>
+<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;<span class="preprocessor">#ifdef GPR_WINDOWS</span></div>
+<div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;<span class="preprocessor">#if defined(_MSC_VER) &amp;&amp; defined(_CPPUNWIND)</span></div>
+<div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 1</span></div>
+<div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;<span class="preprocessor">#elif defined(__EXCEPTIONS)</span></div>
+<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 1</span></div>
+<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 0</span></div>
+<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* GPR_WINDOWS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;<span class="preprocessor">#ifdef __EXCEPTIONS</span></div>
+<div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 1</span></div>
+<div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* __EXCEPTIONS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00700"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a30c4ae5cdf0ec0d72fd9e08e0d06370a">  700</a></span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 0</span></div>
+<div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __EXCEPTIONS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __GPR_WINDOWS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_ALLOW_EXCEPTIONS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160; </div>
+<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;<span class="comment">/* Use GPR_LIKELY only in cases where you are sure that a certain outcome is the</span></div>
+<div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;<span class="comment"> * most likely. Ideally, also collect performance numbers to justify the claim.</span></div>
+<div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;<span class="comment"> */</span></div>
+<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;<span class="preprocessor">#ifdef __GNUC__</span></div>
+<div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;<span class="preprocessor">#define GPR_LIKELY(x) __builtin_expect((x), 1)</span></div>
+<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;<span class="preprocessor">#define GPR_UNLIKELY(x) __builtin_expect((x), 0)</span></div>
+<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* __GNUC__ */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00712"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a518d2d0a7ae17a01e2fa2dee0e2f84df">  712</a></span>&#160;<span class="preprocessor">#define GPR_LIKELY(x) (x)</span></div>
+<div class="line"><a name="l00713"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">  713</a></span>&#160;<span class="preprocessor">#define GPR_UNLIKELY(x) (x)</span></div>
+<div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __GNUC__ */</span><span class="preprocessor"></span></div>
 <div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160; </div>
-<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;<span class="preprocessor">#ifndef __STDC_FORMAT_MACROS</span></div>
+<div class="line"><a name="l00717"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#aacbb9e1f38be71e22df1584a37c56693">  717</a></span>&#160;<span class="preprocessor">#define __STDC_FORMAT_MACROS</span></div>
+<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160; </div>
+<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

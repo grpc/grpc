@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.28.0</span>
+   &#160;<span id="projectnumber">1.30.0</span>
    </div>
   </td>
  </tr>
@@ -86,15 +86,15 @@ $(function() {
 </ul>
 </li>
 <li><b>GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA</b><ul>
-<li>This channel argument controls the maximum number of pings that can be sent when there is no other data (data frame or header frame) to be sent. GRPC Core will not continue sending pings if we run over the limit. Setting it to 0 allows sending pings without sending data.</li>
+<li>This channel argument controls the maximum number of pings that can be sent when there is no data/header/window_update frame to be sent. GRPC Core will not continue sending pings if we run over the limit. Setting it to 0 allows sending pings without such a restriction.</li>
 </ul>
 </li>
 <li><b>GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS</b><ul>
-<li>If there are no data frames being received on the transport, this channel argument controls the minimum time (in milliseconds) gRPC Core will wait between successive pings.</li>
+<li>If there are no data/header/window_update frames being received on the transport, this channel argument controls the minimum time (in milliseconds) gRPC Core will wait between successive pings.</li>
 </ul>
 </li>
 <li><b>GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS</b><ul>
-<li>If there are no data frames being sent on the transport, this channel argument on the server side controls the minimum time (in milliseconds) that gRPC Core would expect between receiving successive pings. If the time between successive pings is less that than this time, then the ping will be considered a bad ping from the peer. Such a ping counts as a ‘ping strike’. On the client side, this does not have any effect.</li>
+<li>If there are no data/header/window_update frames being sent on the transport, this channel argument on the server side controls the minimum time (in milliseconds) that gRPC Core would expect between receiving successive pings. If the time between successive pings is less that than this time, then the ping will be considered a bad ping from the peer. Such a ping counts as a ‘ping strike’. On the client side, this does not have any effect.</li>
 </ul>
 </li>
 <li><b>GRPC_ARG_HTTP2_MAX_PING_STRIKES</b><ul>
@@ -152,7 +152,7 @@ FAQ</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>
