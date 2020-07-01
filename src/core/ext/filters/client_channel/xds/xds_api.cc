@@ -139,39 +139,38 @@ bool XdsApi::DropConfig::ShouldDrop(const std::string** category_name) const {
 // XdsApi
 //
 
-// FIXME: use v3 as public types and v2 internally only
-const char* XdsApi::kLdsTypeUrl = "type.googleapis.com/envoy.api.v2.Listener";
+const char* XdsApi::kLdsTypeUrl =
+    "type.googleapis.com/envoy.config.listener.v3.Listener";
 const char* XdsApi::kRdsTypeUrl =
-    "type.googleapis.com/envoy.api.v2.RouteConfiguration";
-const char* XdsApi::kCdsTypeUrl = "type.googleapis.com/envoy.api.v2.Cluster";
+    "type.googleapis.com/envoy.config.route.v3.RouteConfiguration";
+const char* XdsApi::kCdsTypeUrl =
+    "type.googleapis.com/envoy.config.cluster.v3.Cluster";
 const char* XdsApi::kEdsTypeUrl =
-    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
+    "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment";
 
 namespace {
 
-const char* kLdsV3TypeUrl =
-    "type.googleapis.com/envoy.config.listener.v3.Listener";
-const char* kRdsV3TypeUrl =
-    "type.googleapis.com/envoy.config.route.v3.RouteConfiguration";
-const char* kCdsV3TypeUrl =
-    "type.googleapis.com/envoy.config.cluster.v3.Cluster";
-const char* kEdsV3TypeUrl =
-    "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment";
+const char* kLdsV2TypeUrl = "type.googleapis.com/envoy.api.v2.Listener";
+const char* kRdsV2TypeUrl =
+    "type.googleapis.com/envoy.api.v2.RouteConfiguration";
+const char* kCdsV2TypeUrl = "type.googleapis.com/envoy.api.v2.Cluster";
+const char* kEdsV2TypeUrl =
+    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 
 bool IsLds(absl::string_view type_url) {
-  return type_url == XdsApi::kLdsTypeUrl || type_url == kLdsV3TypeUrl;
+  return type_url == XdsApi::kLdsTypeUrl || type_url == kLdsV2TypeUrl;
 }
 
 bool IsRds(absl::string_view type_url) {
-  return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV3TypeUrl;
+  return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV2TypeUrl;
 }
 
 bool IsCds(absl::string_view type_url) {
-  return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV3TypeUrl;
+  return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV2TypeUrl;
 }
 
 bool IsEds(absl::string_view type_url) {
-  return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV3TypeUrl;
+  return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl;
 }
 
 bool XdsRoutingEnabled() {
@@ -378,18 +377,18 @@ grpc_slice SerializeDiscoveryRequest(
 
 absl::string_view TypeUrlExternalToInternal(bool use_v3,
                                             const std::string& type_url) {
-  if (use_v3) {
+  if (!use_v3) {
     if (type_url == XdsApi::kLdsTypeUrl) {
-      return kLdsV3TypeUrl;
+      return kLdsV2TypeUrl;
     }
     if (type_url == XdsApi::kRdsTypeUrl) {
-      return kRdsV3TypeUrl;
+      return kRdsV2TypeUrl;
     }
     if (type_url == XdsApi::kCdsTypeUrl) {
-      return kCdsV3TypeUrl;
+      return kCdsV2TypeUrl;
     }
     if (type_url == XdsApi::kEdsTypeUrl) {
-      return kEdsV3TypeUrl;
+      return kEdsV2TypeUrl;
     }
   }
   return type_url;
@@ -1215,13 +1214,13 @@ grpc_error* EdsResponseParse(
 }
 
 std::string TypeUrlInternalToExternal(absl::string_view type_url) {
-  if (type_url == kLdsV3TypeUrl) {
+  if (type_url == kLdsV2TypeUrl) {
     return XdsApi::kLdsTypeUrl;
-  } else if (type_url == kRdsV3TypeUrl) {
+  } else if (type_url == kRdsV2TypeUrl) {
     return XdsApi::kRdsTypeUrl;
-  } else if (type_url == kCdsV3TypeUrl) {
+  } else if (type_url == kCdsV2TypeUrl) {
     return XdsApi::kCdsTypeUrl;
-  } else if (type_url == kEdsV3TypeUrl) {
+  } else if (type_url == kEdsV2TypeUrl) {
     return XdsApi::kEdsTypeUrl;
   }
   return std::string(type_url);
