@@ -273,19 +273,19 @@ class BackendServiceImpl
   void Start() {}
   void Shutdown() {}
 
-  std::set<grpc::string> clients() {
+  std::set<std::string> clients() {
     grpc_core::MutexLock lock(&clients_mu_);
     return clients_;
   }
 
  private:
-  void AddClient(const grpc::string& client) {
+  void AddClient(const std::string& client) {
     grpc_core::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
 
   grpc_core::Mutex clients_mu_;
-  std::set<grpc::string> clients_;
+  std::set<std::string> clients_;
 };
 
 class ClientStats {
@@ -325,7 +325,7 @@ class ClientStats {
 
   const std::string& cluster_name() const { return cluster_name_; }
 
-  const std::map<grpc::string, LocalityStats>& locality_stats() const {
+  const std::map<std::string, LocalityStats>& locality_stats() const {
     return locality_stats_;
   }
   uint64_t total_successful_requests() const {
@@ -359,7 +359,7 @@ class ClientStats {
 
   uint64_t total_dropped_requests() const { return total_dropped_requests_; }
 
-  uint64_t dropped_requests(const grpc::string& category) const {
+  uint64_t dropped_requests(const std::string& category) const {
     auto iter = dropped_requests_.find(category);
     GPR_ASSERT(iter != dropped_requests_.end());
     return iter->second;
@@ -367,9 +367,9 @@ class ClientStats {
 
  private:
   std::string cluster_name_;
-  std::map<grpc::string, LocalityStats> locality_stats_;
+  std::map<std::string, LocalityStats> locality_stats_;
   uint64_t total_dropped_requests_;
-  std::map<grpc::string, uint64_t> dropped_requests_;
+  std::map<std::string, uint64_t> dropped_requests_;
 };
 
 class AdsServiceImpl : public AggregatedDiscoveryService::Service,
@@ -383,7 +383,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
 
   struct EdsResourceArgs {
     struct Locality {
-      Locality(const grpc::string& sub_zone, std::vector<int> ports,
+      Locality(const std::string& sub_zone, std::vector<int> ports,
                int lb_weight = kDefaultLocalityWeight,
                int priority = kDefaultLocalityPriority,
                std::vector<envoy::api::v2::HealthStatus> health_statuses = {})
@@ -393,7 +393,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
             priority(priority),
             health_statuses(std::move(health_statuses)) {}
 
-      const grpc::string sub_zone;
+      const std::string sub_zone;
       std::vector<int> ports;
       int lb_weight;
       int priority;
@@ -405,7 +405,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
         : locality_list(std::move(locality_list)) {}
 
     std::vector<Locality> locality_list;
-    std::map<grpc::string, uint32_t> drop_categories;
+    std::map<std::string, uint32_t> drop_categories;
     FractionalPercent::DenominatorType drop_denominator =
         FractionalPercent::MILLION;
   };
@@ -773,7 +773,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
     if (!args.drop_categories.empty()) {
       auto* policy = assignment.mutable_policy();
       for (const auto& p : args.drop_categories) {
-        const grpc::string& name = p.first;
+        const std::string& name = p.first;
         const uint32_t parts_per_million = p.second;
         auto* drop_overload = policy->add_drop_overloads();
         drop_overload->set_category(name);
@@ -1100,8 +1100,8 @@ class TestType {
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
 
-  grpc::string AsString() const {
-    grpc::string retval = (use_xds_resolver_ ? "XdsResolver" : "FakeResolver");
+  std::string AsString() const {
+    std::string retval = (use_xds_resolver_ ? "XdsResolver" : "FakeResolver");
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
     return retval;
@@ -1179,7 +1179,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int failover_timeout = 0,
-                 const grpc::string& expected_targets = "",
+                 const std::string& expected_targets = "",
                  int xds_resource_does_not_exist_timeout = 0) {
     ChannelArguments args;
     if (failover_timeout > 0) {
@@ -1204,7 +1204,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (!expected_targets.empty()) {
       args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
     }
-    grpc::string scheme = GetParam().use_xds_resolver() ? "xds" : "fake";
+    std::string scheme = GetParam().use_xds_resolver() ? "xds" : "fake";
     std::ostringstream uri;
     uri << scheme << ":///" << kApplicationTargetName_;
     // TODO(dgq): templatize tests to run everything using both secure and
@@ -1686,8 +1686,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       response_generator_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       lb_channel_response_generator_;
-  const grpc::string kRequestMessage_ = "Live long and prosper.";
-  const grpc::string kApplicationTargetName_ = kDefaultResourceName;
+  const std::string kRequestMessage_ = "Live long and prosper.";
+  const std::string kApplicationTargetName_ = kDefaultResourceName;
   const char* kDefaultServiceConfig_ =
       "{\n"
       "  \"loadBalancingConfig\":[\n"
@@ -4709,7 +4709,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
                                 kDropRateForThrottle * (1 + kErrorTolerance))));
 }
 
-grpc::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
+std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
 

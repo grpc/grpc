@@ -359,8 +359,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
     const ServerConfig& initial_server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
-    const grpc::string& qps_server_target_override,
-    const grpc::string& credential_type,
+    const std::string& qps_server_target_override,
+    const std::string& credential_type,
     const std::map<std::string, std::string>& per_worker_credential_types,
     bool run_inproc, int32_t median_latency_collection_interval_millis) {
   if (run_inproc) {
@@ -650,7 +650,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
 }
 
 bool RunQuit(
-    const grpc::string& credential_type,
+    const std::string& credential_type,
     const std::map<std::string, std::string>& per_worker_credential_types) {
   // Get client, server lists
   bool result = true;

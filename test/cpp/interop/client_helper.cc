@@ -50,8 +50,8 @@ DECLARE_string(oauth_scope);
 namespace grpc {
 namespace testing {
 
-grpc::string GetServiceAccountJsonKey() {
-  static grpc::string json_key;
+std::string GetServiceAccountJsonKey() {
+  static std::string json_key;
   if (json_key.empty()) {
     std::ifstream json_key_file(FLAGS_service_account_key_file);
     std::stringstream key_stream;
@@ -61,7 +61,7 @@ grpc::string GetServiceAccountJsonKey() {
   return json_key;
 }
 
-grpc::string GetOauth2AccessToken() {
+std::string GetOauth2AccessToken() {
   std::shared_ptr<CallCredentials> creds = GoogleComputeEngineCredentials();
   SecureCallCredentials* secure_creds =
       dynamic_cast<SecureCallCredentials*>(creds.get());
@@ -70,16 +70,16 @@ grpc::string GetOauth2AccessToken() {
   char* token = grpc_test_fetch_oauth2_token_with_credentials(c_creds);
   GPR_ASSERT(token != nullptr);
   gpr_log(GPR_INFO, "Get raw oauth2 access token: %s", token);
-  grpc::string access_token(token + sizeof("Bearer ") - 1);
+  std::string access_token(token + sizeof("Bearer ") - 1);
   gpr_free(token);
   return access_token;
 }
 
 void UpdateActions(
-    std::unordered_map<grpc::string, std::function<bool()>>* /*actions*/) {}
+    std::unordered_map<std::string, std::function<bool()>>* /*actions*/) {}
 
 std::shared_ptr<Channel> CreateChannelForTestCase(
-    const grpc::string& test_case,
+    const std::string& test_case,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
@@ -95,7 +95,7 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
                 ? nullptr
                 : GoogleComputeEngineCredentials();
   } else if (test_case == "jwt_token_creds") {
-    grpc::string json_key = GetServiceAccountJsonKey();
+    std::string json_key = GetServiceAccountJsonKey();
     std::chrono::seconds token_lifetime = std::chrono::hours(1);
     creds = FLAGS_custom_credentials_type == "google_default_credentials"
                 ? nullptr

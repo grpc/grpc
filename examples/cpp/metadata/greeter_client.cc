@@ -60,7 +60,7 @@ class CustomHeaderClient {
     // Setting custom binary metadata 
     char bytes[8] = {'\0', '\1', '\2', '\3',
                      '\4', '\5', '\6', '\7'};
-    context.AddMetadata("custom-bin", grpc::string(bytes, 8));
+    context.AddMetadata("custom-bin", std::string(bytes, 8));
 
     // The actual RPC.
     Status status = stub_->SayHello(&context, request, &reply);

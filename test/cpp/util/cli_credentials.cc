@@ -69,21 +69,21 @@ const char ACCESS_TOKEN_PREFIX[] = "access_token=";
 constexpr int ACCESS_TOKEN_PREFIX_LEN =
     sizeof(ACCESS_TOKEN_PREFIX) / sizeof(*ACCESS_TOKEN_PREFIX) - 1;
 
-bool IsAccessToken(const grpc::string& auth) {
+bool IsAccessToken(const std::string& auth) {
   return auth.length() > ACCESS_TOKEN_PREFIX_LEN &&
          auth.compare(0, ACCESS_TOKEN_PREFIX_LEN, ACCESS_TOKEN_PREFIX) == 0;
 }
 
-grpc::string AccessToken(const grpc::string& auth) {
+std::string AccessToken(const std::string& auth) {
   if (!IsAccessToken(auth)) {
     return "";
   }
-  return grpc::string(auth, ACCESS_TOKEN_PREFIX_LEN);
+  return std::string(auth, ACCESS_TOKEN_PREFIX_LEN);
 }
 
 }  // namespace
 
-grpc::string CliCredentials::GetDefaultChannelCredsType() const {
+std::string CliCredentials::GetDefaultChannelCredsType() const {
   // Compatibility logic for --enable_ssl.
   if (FLAGS_enable_ssl) {
     fprintf(stderr,
@@ -101,12 +101,12 @@ grpc::string CliCredentials::GetDefaultChannelCredsType() const {
   return "insecure";
 }
 
-grpc::string CliCredentials::GetDefaultCallCreds() const {
+std::string CliCredentials::GetDefaultCallCreds() const {
   if (!FLAGS_access_token.empty()) {
     fprintf(stderr,
             "warning: --access_token is deprecated. Use "
             "--call_creds=access_token=<token>.\n");
-    return grpc::string("access_token=") + FLAGS_access_token;
+    return std::string("access_token=") + FLAGS_access_token;
   }
   return "none";
 }
@@ -216,7 +216,7 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
              : grpc::CompositeChannelCredentials(channel_creds, call_creds);
 }
 
-const grpc::string CliCredentials::GetCredentialUsage() const {
+const std::string CliCredentials::GetCredentialUsage() const {
   return "    --enable_ssl             ; Set whether to use ssl "
          "(deprecated)\n"
          "    --use_auth               ; Set whether to create default google"
@@ -235,7 +235,7 @@ const grpc::string CliCredentials::GetCredentialUsage() const {
          " access_token=<token>\n";
 }
 
-const grpc::string CliCredentials::GetSslTargetNameOverride() const {
+const std::string CliCredentials::GetSslTargetNameOverride() const {
   bool use_ssl = FLAGS_channel_creds_type.compare("ssl") == 0 ||
                  FLAGS_channel_creds_type.compare("gdc") == 0;
   return use_ssl ? FLAGS_ssl_target : "";

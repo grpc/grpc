@@ -413,6 +413,7 @@ TestEnvironment::~TestEnvironment() {
       break;
     }
   }
+  gpr_log(GPR_INFO, "TestEnvironment ends");
 }
 
 }  // namespace testing

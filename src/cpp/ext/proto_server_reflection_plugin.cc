@@ -29,7 +29,7 @@ namespace reflection {
 ProtoServerReflectionPlugin::ProtoServerReflectionPlugin()
     : reflection_service_(new grpc::ProtoServerReflection()) {}
 
-grpc::string ProtoServerReflectionPlugin::name() {
+std::string ProtoServerReflectionPlugin::name() {
   return "proto_server_reflection";
 }
 
@@ -41,7 +41,7 @@ void ProtoServerReflectionPlugin::Finish(grpc::ServerInitializer* si) {
   reflection_service_->SetServiceList(si->GetServiceList());
 }
 
-void ProtoServerReflectionPlugin::ChangeArguments(const grpc::string& /*name*/,
+void ProtoServerReflectionPlugin::ChangeArguments(const std::string& /*name*/,
                                                   void* /*value*/) {}
 
 bool ProtoServerReflectionPlugin::has_sync_methods() const {
