@@ -159,9 +159,10 @@ static grpc_byte_buffer* generate_handshaker_response(
       gpr_log(GPR_ERROR, "Setting Peer Identity in generate handshaker response client next");
 
        // doggo this set of code gets it to not fail once but creates the same error later on
-      test_peer_attributes_entry = grpc_gcp_Identity_add_attributes(peer_identity, arena.ptr());
-      grpc_gcp_Identity_AttributesEntry_set_key(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY));
-      grpc_gcp_Identity_AttributesEntry_set_value(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE));
+      grpc_gcp_Identity_attributes_set(peer_identity, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY), upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE), arena.ptr());
+      // test_peer_attributes_entry = grpc_gcp_Identity_add_attributes(peer_identity, arena.ptr());
+      // grpc_gcp_Identity_AttributesEntry_set_key(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY));
+      // grpc_gcp_Identity_AttributesEntry_set_value(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE));
       gpr_log(GPR_ERROR, "DEFINED PEER ATTRIBUTES ENTRY AND VALUES");
 
 
@@ -202,10 +203,10 @@ static grpc_byte_buffer* generate_handshaker_response(
           grpc_gcp_HandshakerResult_mutable_peer_identity(result, arena.ptr());
 
         // doggo this set of code gets it to not fail once but creates the same error later on
-      test_peer_attributes_entry = grpc_gcp_Identity_add_attributes(peer_identity, arena.ptr());
-      grpc_gcp_Identity_AttributesEntry_set_key(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY));
-      grpc_gcp_Identity_AttributesEntry_set_value(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE));
-      gpr_log(GPR_ERROR, "DEFINED PEER ATTRIBUTES ENTRY AND VALUES");
+      // test_peer_attributes_entry = grpc_gcp_Identity_add_attributes(peer_identity, arena.ptr());
+      // grpc_gcp_Identity_AttributesEntry_set_key(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY));
+      // grpc_gcp_Identity_AttributesEntry_set_value(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE));
+      // gpr_log(GPR_ERROR, "DEFINED PEER ATTRIBUTES ENTRY AND VALUES");
 
       
       grpc_gcp_Identity_set_service_account(
