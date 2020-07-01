@@ -49,6 +49,12 @@ cdef class BaseCompletionQueue:
 
     cdef grpc_completion_queue* c_ptr(self)
 
+
+cdef class _EventLoopBound:
+    cdef readonly object loop
+    cdef readonly object read_socket
+
+
 cdef class PollerCompletionQueue(BaseCompletionQueue):
     cdef bint _shutdown
     cdef cpp_event_queue _queue
@@ -57,7 +63,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
     cdef int _write_fd
     cdef object _read_socket
     cdef object _write_socket
-    cdef object _loop
+    cdef dict _loops
 
     cdef void _poll(self) nogil
     cdef shutdown(self)

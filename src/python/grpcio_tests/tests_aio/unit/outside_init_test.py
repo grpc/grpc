@@ -19,6 +19,11 @@ import unittest
 from grpc.experimental import aio
 import grpc
 
+from tests_aio.unit._test_server import start_test_server
+from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
+
+_NUM_OF_LOOPS = 50
+
 
 class TestOutsideInit(unittest.TestCase):
 
@@ -26,19 +31,42 @@ class TestOutsideInit(unittest.TestCase):
         # Ensures non-AsyncIO object can be initiated
         channel_creds = grpc.ssl_channel_credentials()
 
-        # Ensures AsyncIO API NOT working outside of AsyncIO
-        with self.assertRaises(RuntimeError):
-            aio.insecure_channel('')
+        # Ensures AsyncIO API not raising outside of AsyncIO.
+        # NOTE(lidiz) This behavior is bound with GAPIC generator, and required
+        # by test frameworks like pytest. In test frameworks, objects shared
+        # across cases need to be created outside of AsyncIO coroutines.
+        aio.insecure_channel('')
+        aio.secure_channel('', channel_creds)
+        aio.server()
+        aio.init_grpc_aio()
+        aio.shutdown_grpc_aio()
 
-        with self.assertRaises(RuntimeError):
-            aio.secure_channel('', channel_creds)
+    def test_multi_ephemeral_loops(self):
+        # Initializes AIO module outside. It's part of the test. We especially
+        # want to ensure the closing of the default loop won't cause deadlocks.
+        aio.init_grpc_aio()
 
-        with self.assertRaises(RuntimeError):
-            aio.server()
+        async def ping_pong():
+            address, server = await start_test_server()
+            channel = aio.insecure_channel(address)
+            stub = test_pb2_grpc.TestServiceStub(channel)
 
-        # Ensures init_grpc_aio fail outside of AsyncIO
-        with self.assertRaises(RuntimeError):
-            aio.init_grpc_aio()
+            await stub.UnaryCall(messages_pb2.SimpleRequest())
+
+            await channel.close()
+            await server.stop(None)
+
+        for i in range(_NUM_OF_LOOPS):
+            old_loop = asyncio.get_event_loop()
+            old_loop.close()
+
+            loop = asyncio.new_event_loop()
+            loop.set_debug(True)
+            asyncio.set_event_loop(loop)
+
+            loop.run_until_complete(ping_pong())
+
+        aio.shutdown_grpc_aio()
 
 
 if __name__ == "__main__":
