@@ -109,17 +109,6 @@ using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager;
 using ::envoy::type::v3::FractionalPercent;
 
-using ::envoy::api::v2::DiscoveryRequest;
-using ::envoy::api::v2::DiscoveryResponse;
-using ::envoy::service::discovery::v2::AggregatedDiscoveryService;
-
-using ::envoy::config::endpoint::v3::ClusterStats;
-using ::envoy::config::endpoint::v3::UpstreamLocalityStats;
-
-using ::envoy::service::load_stats::v2::LoadReportingService;
-using ::envoy::service::load_stats::v2::LoadStatsRequest;
-using ::envoy::service::load_stats::v2::LoadStatsResponse;
-
 constexpr char kLdsTypeUrl[] =
     "type.googleapis.com/envoy.config.listener.v3.Listener";
 constexpr char kRdsTypeUrl[] =
@@ -254,8 +243,6 @@ class CountedService : public ServiceType {
   size_t response_count_ = 0;
 };
 
-using LrsService = CountedService<LoadReportingService::Service>;
-
 const char g_kCallCredsMdKey[] = "Balancer should not ...";
 const char g_kCallCredsMdValue[] = "... receive me";
 
@@ -315,6 +302,7 @@ class ClientStats {
  public:
   struct LocalityStats {
     // Converts from proto message class.
+    template <class UpstreamLocalityStats>
     LocalityStats(const UpstreamLocalityStats& upstream_locality_stats)
         : total_successful_requests(
               upstream_locality_stats.total_successful_requests()),
@@ -331,6 +319,7 @@ class ClientStats {
   };
 
   // Converts from proto message class.
+  template <class ClusterStats>
   explicit ClientStats(const ClusterStats& cluster_stats)
       : cluster_name_(cluster_stats.cluster_name()),
         total_dropped_requests_(cluster_stats.total_dropped_requests()) {
@@ -395,8 +384,7 @@ class ClientStats {
   std::map<std::string, uint64_t> dropped_requests_;
 };
 
-class AdsServiceImpl : public AggregatedDiscoveryService::Service,
-                       public std::enable_shared_from_this<AdsServiceImpl> {
+class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
  public:
   struct ResponseState {
     enum State { NOT_SENT, SENT, ACKED, NACKED };
@@ -433,9 +421,9 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
         FractionalPercent::MILLION;
   };
 
-  using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
-
-  AdsServiceImpl(bool enable_load_reporting) {
+  explicit AdsServiceImpl(bool enable_load_reporting)
+      : v2_rpc_service_(this, /*is_v2=*/true),
+        v3_rpc_service_(this, /*is_v2=*/false) {
     // Construct RDS response data.
     default_route_config_.set_name(kDefaultResourceName);
     auto* virtual_host = default_route_config_.add_virtual_hosts();
@@ -460,201 +448,17 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
     SetCdsResource(default_cluster_);
   }
 
-  Status StreamAggregatedResources(ServerContext* context,
-                                   Stream* stream) override {
-    gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
-    // Resources (type/name pairs) that have changed since the client
-    // subscribed to them.
-    UpdateQueue update_queue;
-    // Resources that the client will be subscribed to keyed by resource type
-    // url.
-    SubscriptionMap subscription_map;
-    [&]() {
-      {
-        grpc_core::MutexLock lock(&ads_mu_);
-        if (ads_done_) return;
-      }
-      // Balancer shouldn't receive the call credentials metadata.
-      EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
-                context->client_metadata().end());
-      // Current Version map keyed by resource type url.
-      std::map<std::string, int> resource_type_version;
-      // Creating blocking thread to read from stream.
-      std::deque<DiscoveryRequest> requests;
-      bool stream_closed = false;
-      // Take a reference of the AdsServiceImpl object, reference will go
-      // out of scope after the reader thread is joined.
-      std::shared_ptr<AdsServiceImpl> ads_service_impl = shared_from_this();
-      std::thread reader(std::bind(&AdsServiceImpl::BlockingRead, this, stream,
-                                   &requests, &stream_closed));
-      // Main loop to look for requests and updates.
-      while (true) {
-        // Look for new requests and and decide what to handle.
-        absl::optional<DiscoveryResponse> response;
-        // Boolean to keep track if the loop received any work to do: a request
-        // or an update; regardless whether a response was actually sent out.
-        bool did_work = false;
-        {
-          grpc_core::MutexLock lock(&ads_mu_);
-          if (stream_closed) break;
-          if (!requests.empty()) {
-            DiscoveryRequest request = std::move(requests.front());
-            requests.pop_front();
-            did_work = true;
-            gpr_log(GPR_INFO,
-                    "ADS[%p]: Received request for type %s with content %s",
-                    this, request.type_url().c_str(),
-                    request.DebugString().c_str());
-            const std::string v3_resource_type =
-                TypeUrlToV3(request.type_url());
-            // Identify ACK and NACK by looking for version information and
-            // comparing it to nonce (this server ensures they are always set to
-            // the same in a response.)
-            if (!request.response_nonce().empty()) {
-              resource_type_response_state_[v3_resource_type].state =
-                  (!request.version_info().empty() &&
-                   request.version_info() == request.response_nonce())
-                      ? ResponseState::ACKED
-                      : ResponseState::NACKED;
-            }
-            if (request.has_error_detail()) {
-              resource_type_response_state_[v3_resource_type].error_message =
-                  request.error_detail().message();
-            }
-            // As long as the test did not tell us to ignore this type of
-            // request, we will loop through all resources to:
-            // 1. subscribe if necessary
-            // 2. update if necessary
-            // 3. unsubscribe if necessary
-            if (resource_types_to_ignore_.find(v3_resource_type) ==
-                resource_types_to_ignore_.end()) {
-              auto& subscription_name_map =
-                  subscription_map[v3_resource_type];
-              auto& resource_name_map = resource_map_[v3_resource_type];
-              std::set<std::string> resources_in_current_request;
-              std::set<std::string> resources_added_to_response;
-              for (const std::string& resource_name :
-                   request.resource_names()) {
-                resources_in_current_request.emplace(resource_name);
-                auto& subscription_state = subscription_name_map[resource_name];
-                auto& resource_state = resource_name_map[resource_name];
-                MaybeSubscribe(v3_resource_type, resource_name,
-                               &subscription_state, &resource_state,
-                               &update_queue);
-                if (ClientNeedsResourceUpdate(resource_state,
-                                              &subscription_state)) {
-                  gpr_log(
-                      GPR_INFO,
-                      "ADS[%p]: Sending update for type=%s name=%s version=%d",
-                      this, request.type_url().c_str(), resource_name.c_str(),
-                      resource_state.version);
-                  resources_added_to_response.emplace(resource_name);
-                  if (!response.has_value()) response.emplace();
-                  if (resource_state.resource.has_value()) {
-                    auto* resource = response->add_resources();
-                    resource->CopyFrom(resource_state.resource.value());
-                    resource->set_type_url(request.type_url());
-                  }
-                }
-              }
-              // Process unsubscriptions for any resource no longer
-              // present in the request's resource list.
-              ProcessUnsubscriptions(
-                  v3_resource_type, resources_in_current_request,
-                  &subscription_name_map, &resource_name_map);
-              // Send response if needed.
-              if (!resources_added_to_response.empty()) {
-                CompleteBuildingDiscoveryResponse(
-                    v3_resource_type, request.type_url(),
-                    ++resource_type_version[v3_resource_type],
-                    subscription_name_map, resources_added_to_response,
-                    &response.value());
-              }
-            }
-          }
-        }
-        if (response.has_value()) {
-          gpr_log(GPR_INFO, "ADS[%p]: Sending response: %s", this,
-                  response->DebugString().c_str());
-          stream->Write(response.value());
-        }
-        response.reset();
-        // Look for updates and decide what to handle.
-        {
-          grpc_core::MutexLock lock(&ads_mu_);
-          if (!update_queue.empty()) {
-            const std::string resource_type =
-                std::move(update_queue.front().first);
-            const std::string resource_name =
-                std::move(update_queue.front().second);
-            update_queue.pop_front();
-            const std::string v2_resource_type = TypeUrlToV2(resource_type);
-            did_work = true;
-            gpr_log(GPR_INFO, "ADS[%p]: Received update for type=%s name=%s",
-                    this, resource_type.c_str(), resource_name.c_str());
-            auto& subscription_name_map = subscription_map[resource_type];
-            auto& resource_name_map = resource_map_[resource_type];
-            auto it = subscription_name_map.find(resource_name);
-            if (it != subscription_name_map.end()) {
-              SubscriptionState& subscription_state = it->second;
-              ResourceState& resource_state = resource_name_map[resource_name];
-              if (ClientNeedsResourceUpdate(resource_state,
-                                            &subscription_state)) {
-                gpr_log(
-                    GPR_INFO,
-                    "ADS[%p]: Sending update for type=%s name=%s version=%d",
-                    this, resource_type.c_str(), resource_name.c_str(),
-                    resource_state.version);
-                response.emplace();
-                if (resource_state.resource.has_value()) {
-                  auto* resource = response->add_resources();
-                  resource->CopyFrom(resource_state.resource.value());
-                  resource->set_type_url(v2_resource_type);
-                }
-                CompleteBuildingDiscoveryResponse(
-                    resource_type, v2_resource_type,
-                    ++resource_type_version[resource_type],
-                    subscription_name_map, {resource_name}, &response.value());
-              }
-            }
-          }
-        }
-        if (response.has_value()) {
-          gpr_log(GPR_INFO, "ADS[%p]: Sending update response: %s", this,
-                  response->DebugString().c_str());
-          stream->Write(response.value());
-        }
-        // If we didn't find anything to do, delay before the next loop
-        // iteration; otherwise, check whether we should exit and then
-        // immediately continue.
-        gpr_timespec deadline =
-            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10);
-        {
-          grpc_core::MutexLock lock(&ads_mu_);
-          if (!ads_cond_.WaitUntil(&ads_mu_, [this] { return ads_done_; },
-                                   deadline))
-            break;
-        }
-      }
-      reader.join();
-    }();
-    // Clean up any subscriptions that were still active when the call finished.
-    {
-      grpc_core::MutexLock lock(&ads_mu_);
-      for (auto& p : subscription_map) {
-        const std::string& type_url = p.first;
-        SubscriptionNameMap& subscription_name_map = p.second;
-        for (auto& q : subscription_name_map) {
-          const std::string& resource_name = q.first;
-          SubscriptionState& subscription_state = q.second;
-          ResourceState& resource_state =
-              resource_map_[type_url][resource_name];
-          resource_state.subscriptions.erase(&subscription_state);
-        }
-      }
-    }
-    gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources done", this);
-    return Status::OK;
+  bool seen_v2_client() const { return seen_v2_client_; }
+  bool seen_v3_client() const { return seen_v3_client_; }
+
+  ::envoy::service::discovery::v2::AggregatedDiscoveryService::Service*
+  v2_rpc_service() {
+    return &v2_rpc_service_;
+  }
+
+  ::envoy::service::discovery::v3::AggregatedDiscoveryService::Service*
+  v3_rpc_service() {
+    return &v3_rpc_service_;
   }
 
   Listener default_listener() const { return default_listener_; }
@@ -860,51 +664,325 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       std::map<std::string /* resource_name */, ResourceState>;
   using ResourceMap = std::map<std::string /* type_url */, ResourceNameMap>;
 
-  // Starting a thread to do blocking read on the stream until cancel.
-  void BlockingRead(Stream* stream, std::deque<DiscoveryRequest>* requests,
-                    bool* stream_closed) {
-    DiscoveryRequest request;
-    bool seen_first_request = false;
-    while (stream->Read(&request)) {
-      if (!seen_first_request) {
-        EXPECT_TRUE(request.has_node());
-        ASSERT_FALSE(request.node().client_features().empty());
-        EXPECT_EQ(request.node().client_features(0),
-                  "envoy.lb.does_not_support_overprovisioning");
-        EXPECT_FALSE(request.node().build_version().empty());
-        seen_first_request = true;
+  template <class RpcApi, class DiscoveryRequest, class DiscoveryResponse>
+  class RpcService : public RpcApi::Service {
+   public:
+    using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
+
+    RpcService(AdsServiceImpl* parent, bool is_v2)
+        : parent_(parent), is_v2_(is_v2) {}
+
+    Status StreamAggregatedResources(ServerContext* context,
+                                     Stream* stream) override {
+      gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
+      if (is_v2_) {
+        parent_->seen_v2_client_ = true;
+      } else {
+        parent_->seen_v3_client_ = true;
       }
+      // Resources (type/name pairs) that have changed since the client
+      // subscribed to them.
+      UpdateQueue update_queue;
+      // Resources that the client will be subscribed to keyed by resource type
+      // url.
+      SubscriptionMap subscription_map;
+      [&]() {
+        {
+          grpc_core::MutexLock lock(&parent_->ads_mu_);
+          if (parent_->ads_done_) return;
+        }
+        // Balancer shouldn't receive the call credentials metadata.
+        EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
+                  context->client_metadata().end());
+        // Current Version map keyed by resource type url.
+        std::map<std::string, int> resource_type_version;
+        // Creating blocking thread to read from stream.
+        std::deque<DiscoveryRequest> requests;
+        bool stream_closed = false;
+        // Take a reference of the AdsServiceImpl object, reference will go
+        // out of scope after the reader thread is joined.
+        std::shared_ptr<AdsServiceImpl> ads_service_impl =
+            parent_->shared_from_this();
+        std::thread reader(std::bind(&RpcService::BlockingRead, this, stream,
+                                     &requests, &stream_closed));
+        // Main loop to look for requests and updates.
+        while (true) {
+          // Look for new requests and and decide what to handle.
+          absl::optional<DiscoveryResponse> response;
+          // Boolean to keep track if the loop received any work to do: a
+          // request or an update; regardless whether a response was actually
+          // sent out.
+          bool did_work = false;
+          {
+            grpc_core::MutexLock lock(&parent_->ads_mu_);
+            if (stream_closed) break;
+            if (!requests.empty()) {
+              DiscoveryRequest request = std::move(requests.front());
+              requests.pop_front();
+              did_work = true;
+              gpr_log(GPR_INFO,
+                      "ADS[%p]: Received request for type %s with content %s",
+                      this, request.type_url().c_str(),
+                      request.DebugString().c_str());
+              const std::string v3_resource_type =
+                  TypeUrlToV3(request.type_url());
+              // Identify ACK and NACK by looking for version information and
+              // comparing it to nonce (this server ensures they are always set
+              // to the same in a response.)
+              if (!request.response_nonce().empty()) {
+                parent_->resource_type_response_state_[v3_resource_type].state =
+                    (!request.version_info().empty() &&
+                     request.version_info() == request.response_nonce())
+                        ? ResponseState::ACKED
+                        : ResponseState::NACKED;
+              }
+              if (request.has_error_detail()) {
+                parent_->resource_type_response_state_[v3_resource_type]
+                    .error_message =
+                        request.error_detail().message();
+              }
+              // As long as the test did not tell us to ignore this type of
+              // request, we will loop through all resources to:
+              // 1. subscribe if necessary
+              // 2. update if necessary
+              // 3. unsubscribe if necessary
+              if (parent_->resource_types_to_ignore_.find(v3_resource_type) ==
+                  parent_->resource_types_to_ignore_.end()) {
+                auto& subscription_name_map =
+                    subscription_map[v3_resource_type];
+                auto& resource_name_map =
+                    parent_->resource_map_[v3_resource_type];
+                std::set<std::string> resources_in_current_request;
+                std::set<std::string> resources_added_to_response;
+                for (const std::string& resource_name :
+                     request.resource_names()) {
+                  resources_in_current_request.emplace(resource_name);
+                  auto& subscription_state =
+                      subscription_name_map[resource_name];
+                  auto& resource_state = resource_name_map[resource_name];
+                  parent_->MaybeSubscribe(v3_resource_type, resource_name,
+                                          &subscription_state, &resource_state,
+                                          &update_queue);
+                  if (ClientNeedsResourceUpdate(resource_state,
+                                                &subscription_state)) {
+                    gpr_log(
+                        GPR_INFO,
+                        "ADS[%p]: Sending update for type=%s name=%s "
+                        "version=%d",
+                        this, request.type_url().c_str(), resource_name.c_str(),
+                        resource_state.version);
+                    resources_added_to_response.emplace(resource_name);
+                    if (!response.has_value()) response.emplace();
+                    if (resource_state.resource.has_value()) {
+                      auto* resource = response->add_resources();
+                      resource->CopyFrom(resource_state.resource.value());
+                      if (is_v2_) {
+                        resource->set_type_url(request.type_url());
+                      }
+                    }
+                  }
+                }
+                // Process unsubscriptions for any resource no longer
+                // present in the request's resource list.
+                parent_->ProcessUnsubscriptions(
+                    v3_resource_type, resources_in_current_request,
+                    &subscription_name_map, &resource_name_map);
+                // Send response if needed.
+                if (!resources_added_to_response.empty()) {
+                  CompleteBuildingDiscoveryResponse(
+                      v3_resource_type, request.type_url(),
+                      ++resource_type_version[v3_resource_type],
+                      subscription_name_map, resources_added_to_response,
+                      &response.value());
+                }
+              }
+            }
+          }
+          if (response.has_value()) {
+            gpr_log(GPR_INFO, "ADS[%p]: Sending response: %s", this,
+                    response->DebugString().c_str());
+            stream->Write(response.value());
+          }
+          response.reset();
+          // Look for updates and decide what to handle.
+          {
+            grpc_core::MutexLock lock(&parent_->ads_mu_);
+            if (!update_queue.empty()) {
+              const std::string resource_type =
+                  std::move(update_queue.front().first);
+              const std::string resource_name =
+                  std::move(update_queue.front().second);
+              update_queue.pop_front();
+              const std::string v2_resource_type = TypeUrlToV2(resource_type);
+              did_work = true;
+              gpr_log(GPR_INFO, "ADS[%p]: Received update for type=%s name=%s",
+                      this, resource_type.c_str(), resource_name.c_str());
+              auto& subscription_name_map = subscription_map[resource_type];
+              auto& resource_name_map = parent_->resource_map_[resource_type];
+              auto it = subscription_name_map.find(resource_name);
+              if (it != subscription_name_map.end()) {
+                SubscriptionState& subscription_state = it->second;
+                ResourceState& resource_state =
+                    resource_name_map[resource_name];
+                if (ClientNeedsResourceUpdate(resource_state,
+                                              &subscription_state)) {
+                  gpr_log(
+                      GPR_INFO,
+                      "ADS[%p]: Sending update for type=%s name=%s version=%d",
+                      this, resource_type.c_str(), resource_name.c_str(),
+                      resource_state.version);
+                  response.emplace();
+                  if (resource_state.resource.has_value()) {
+                    auto* resource = response->add_resources();
+                    resource->CopyFrom(resource_state.resource.value());
+                    if (is_v2_) {
+                      resource->set_type_url(v2_resource_type);
+                    }
+                  }
+                  CompleteBuildingDiscoveryResponse(
+                      resource_type, v2_resource_type,
+                      ++resource_type_version[resource_type],
+                      subscription_name_map, {resource_name},
+                      &response.value());
+                }
+              }
+            }
+          }
+          if (response.has_value()) {
+            gpr_log(GPR_INFO, "ADS[%p]: Sending update response: %s", this,
+                    response->DebugString().c_str());
+            stream->Write(response.value());
+          }
+          // If we didn't find anything to do, delay before the next loop
+          // iteration; otherwise, check whether we should exit and then
+          // immediately continue.
+          gpr_timespec deadline =
+              grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10);
+          {
+            grpc_core::MutexLock lock(&parent_->ads_mu_);
+            if (!parent_->ads_cond_.WaitUntil(
+                    &parent_->ads_mu_, [this] { return parent_->ads_done_; },
+                    deadline)) {
+              break;
+            }
+          }
+        }
+        reader.join();
+      }();
+      // Clean up any subscriptions that were still active when the call
+      // finished.
       {
-        grpc_core::MutexLock lock(&ads_mu_);
-        requests->emplace_back(std::move(request));
+        grpc_core::MutexLock lock(&parent_->ads_mu_);
+        for (auto& p : subscription_map) {
+          const std::string& type_url = p.first;
+          SubscriptionNameMap& subscription_name_map = p.second;
+          for (auto& q : subscription_name_map) {
+            const std::string& resource_name = q.first;
+            SubscriptionState& subscription_state = q.second;
+            ResourceState& resource_state =
+                parent_->resource_map_[type_url][resource_name];
+            resource_state.subscriptions.erase(&subscription_state);
+          }
+        }
+      }
+      gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources done", this);
+      return Status::OK;
+    }
+
+   private:
+    static std::string TypeUrlToV2(const std::string& resource_type) {
+      if (resource_type == kLdsTypeUrl) return kLdsV2TypeUrl;
+      if (resource_type == kRdsTypeUrl) return kRdsV2TypeUrl;
+      if (resource_type == kCdsTypeUrl) return kCdsV2TypeUrl;
+      if (resource_type == kEdsTypeUrl) return kEdsV2TypeUrl;
+      return resource_type;
+    }
+
+    static std::string TypeUrlToV3(const std::string& resource_type) {
+      if (resource_type == kLdsV2TypeUrl) return kLdsTypeUrl;
+      if (resource_type == kRdsV2TypeUrl) return kRdsTypeUrl;
+      if (resource_type == kCdsV2TypeUrl) return kCdsTypeUrl;
+      if (resource_type == kEdsV2TypeUrl) return kEdsTypeUrl;
+      return resource_type;
+    }
+
+    // Starting a thread to do blocking read on the stream until cancel.
+    void BlockingRead(Stream* stream, std::deque<DiscoveryRequest>* requests,
+                      bool* stream_closed) {
+      DiscoveryRequest request;
+      bool seen_first_request = false;
+      while (stream->Read(&request)) {
+        if (!seen_first_request) {
+          EXPECT_TRUE(request.has_node());
+          ASSERT_FALSE(request.node().client_features().empty());
+          EXPECT_EQ(request.node().client_features(0),
+                    "envoy.lb.does_not_support_overprovisioning");
+          CheckBuildVersion(request);
+          seen_first_request = true;
+        }
+        {
+          grpc_core::MutexLock lock(&parent_->ads_mu_);
+          requests->emplace_back(std::move(request));
+        }
+      }
+      gpr_log(GPR_INFO, "ADS[%p]: Null read, stream closed", this);
+      grpc_core::MutexLock lock(&parent_->ads_mu_);
+      *stream_closed = true;
+    }
+
+    static void CheckBuildVersion(
+        const ::envoy::api::v2::DiscoveryRequest& request) {
+      EXPECT_FALSE(request.node().build_version().empty());
+    }
+
+    static void CheckBuildVersion(
+        const ::envoy::service::discovery::v3::DiscoveryRequest& request) {}
+
+    // Completing the building a DiscoveryResponse by adding common information
+    // for all resources and by adding all subscribed resources for LDS and CDS.
+    void CompleteBuildingDiscoveryResponse(
+        const std::string& resource_type, const std::string& v2_resource_type,
+        const int version, const SubscriptionNameMap& subscription_name_map,
+        const std::set<std::string>& resources_added_to_response,
+        DiscoveryResponse* response) {
+      auto& response_state =
+          parent_->resource_type_response_state_[resource_type];
+      if (response_state.state == ResponseState::NOT_SENT) {
+        response_state.state = ResponseState::SENT;
+      }
+      response->set_type_url(is_v2_ ? v2_resource_type : resource_type);
+      response->set_version_info(absl::StrCat(version));
+      response->set_nonce(absl::StrCat(version));
+      if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
+        // For LDS and CDS we must send back all subscribed resources
+        // (even the unchanged ones)
+        for (const auto& p : subscription_name_map) {
+          const std::string& resource_name = p.first;
+          if (resources_added_to_response.find(resource_type) ==
+              resources_added_to_response.end()) {
+            const ResourceState& resource_state =
+                parent_->resource_map_[resource_type][resource_name];
+            if (resource_state.resource.has_value()) {
+              auto* resource = response->add_resources();
+              resource->CopyFrom(resource_state.resource.value());
+              if (is_v2_) {
+                resource->set_type_url(v2_resource_type);
+              }
+            }
+          }
+        }
       }
     }
-    gpr_log(GPR_INFO, "ADS[%p]: Null read, stream closed", this);
-    grpc_core::MutexLock lock(&ads_mu_);
-    *stream_closed = true;
-  }
 
-  static std::string TypeUrlToV2(const std::string& resource_type) {
-    if (resource_type == kLdsTypeUrl) return kLdsV2TypeUrl;
-    if (resource_type == kRdsTypeUrl) return kRdsV2TypeUrl;
-    if (resource_type == kCdsTypeUrl) return kCdsV2TypeUrl;
-    if (resource_type == kEdsTypeUrl) return kEdsV2TypeUrl;
-    return resource_type;
-  }
-
-  static std::string TypeUrlToV3(const std::string& resource_type) {
-    if (resource_type == kLdsV2TypeUrl) return kLdsTypeUrl;
-    if (resource_type == kRdsV2TypeUrl) return kRdsTypeUrl;
-    if (resource_type == kCdsV2TypeUrl) return kCdsTypeUrl;
-    if (resource_type == kEdsV2TypeUrl) return kEdsTypeUrl;
-    return resource_type;
-  }
+    AdsServiceImpl* parent_;
+    const bool is_v2_;
+  };
 
   // Checks whether the client needs to receive a newer version of
   // the resource.  If so, updates subscription_state->current_version and
   // returns true.
-  bool ClientNeedsResourceUpdate(const ResourceState& resource_state,
-                                 SubscriptionState* subscription_state) {
+  static bool ClientNeedsResourceUpdate(const ResourceState& resource_state,
+                                        SubscriptionState* subscription_state) {
     if (subscription_state->current_version < resource_state.version) {
       subscription_state->current_version = resource_state.version;
       return true;
@@ -960,38 +1038,16 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
     }
   }
 
-  // Completing the building a DiscoveryResponse by adding common information
-  // for all resources and by adding all subscribed resources for LDS and CDS.
-  void CompleteBuildingDiscoveryResponse(
-      const std::string& resource_type, const std::string& v2_resource_type,
-      const int version, const SubscriptionNameMap& subscription_name_map,
-      const std::set<std::string>& resources_added_to_response,
-      DiscoveryResponse* response) {
-    auto& response_state = resource_type_response_state_[resource_type];
-    if (response_state.state == ResponseState::NOT_SENT) {
-      response_state.state = ResponseState::SENT;
-    }
-    response->set_type_url(v2_resource_type);
-    response->set_version_info(absl::StrCat(version));
-    response->set_nonce(absl::StrCat(version));
-    if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
-      // For LDS and CDS we must send back all subscribed resources
-      // (even the unchanged ones)
-      for (const auto& p : subscription_name_map) {
-        const std::string& resource_name = p.first;
-        if (resources_added_to_response.find(resource_type) ==
-            resources_added_to_response.end()) {
-          const ResourceState& resource_state =
-              resource_map_[resource_type][resource_name];
-          if (resource_state.resource.has_value()) {
-            auto* resource = response->add_resources();
-            resource->CopyFrom(resource_state.resource.value());
-            resource->set_type_url(v2_resource_type);
-          }
-        }
-      }
-    }
-  }
+  RpcService<::envoy::service::discovery::v2::AggregatedDiscoveryService,
+             ::envoy::api::v2::DiscoveryRequest,
+             ::envoy::api::v2::DiscoveryResponse> v2_rpc_service_;
+  RpcService<::envoy::service::discovery::v3::AggregatedDiscoveryService,
+             ::envoy::service::discovery::v3::DiscoveryRequest,
+             ::envoy::service::discovery::v3::DiscoveryResponse>
+      v3_rpc_service_;
+
+  std::atomic_bool seen_v2_client_{false};
+  std::atomic_bool seen_v3_client_{false};
 
   grpc_core::CondVar ads_cond_;
   // Protect the members below.
@@ -1011,69 +1067,31 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
   ResourceMap resource_map_;
 };
 
-class LrsServiceImpl : public LrsService,
-                       public std::enable_shared_from_this<LrsServiceImpl> {
+class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
  public:
-  using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
-
   explicit LrsServiceImpl(int client_load_reporting_interval_seconds)
-      : client_load_reporting_interval_seconds_(
+      : v2_rpc_service_(this),
+        v3_rpc_service_(this),
+        client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
         cluster_names_({kDefaultResourceName}) {}
 
-  Status StreamLoadStats(ServerContext* /*context*/, Stream* stream) override {
-    gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
-    GPR_ASSERT(client_load_reporting_interval_seconds_ > 0);
-    // Take a reference of the LrsServiceImpl object, reference will go
-    // out of scope after this method exits.
-    std::shared_ptr<LrsServiceImpl> lrs_service_impl = shared_from_this();
-    // Read initial request.
-    LoadStatsRequest request;
-    if (stream->Read(&request)) {
-      IncreaseRequestCount();  // Only for initial request.
-      // Verify server name set in metadata.
-      auto it =
-          request.node().metadata().fields().find("PROXYLESS_CLIENT_HOSTNAME");
-      GPR_ASSERT(it != request.node().metadata().fields().end());
-      EXPECT_EQ(it->second.string_value(), kDefaultResourceName);
-      // Verify client features.
-      EXPECT_THAT(request.node().client_features(),
-                  ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
-      // Send initial response.
-      LoadStatsResponse response;
-      if (send_all_clusters_) {
-        response.set_send_all_clusters(true);
-      } else {
-        for (const std::string& cluster_name : cluster_names_) {
-          response.add_clusters(cluster_name);
-        }
-      }
-      response.mutable_load_reporting_interval()->set_seconds(
-          client_load_reporting_interval_seconds_);
-      stream->Write(response);
-      IncreaseResponseCount();
-      // Wait for report.
-      request.Clear();
-      while (stream->Read(&request)) {
-        gpr_log(GPR_INFO, "LRS[%p]: received client load report message: %s",
-                this, request.DebugString().c_str());
-        std::vector<ClientStats> stats;
-        for (const auto& cluster_stats : request.cluster_stats()) {
-          std::string serialized = cluster_stats.SerializeAsString();
-          ClusterStats v3stats;
-          GPR_ASSERT(v3stats.ParseFromString(serialized));
-          stats.emplace_back(v3stats);
-        }
-        grpc_core::MutexLock lock(&load_report_mu_);
-        result_queue_.emplace_back(std::move(stats));
-        if (load_report_cond_ != nullptr) load_report_cond_->Signal();
-      }
-      // Wait until notified done.
-      grpc_core::MutexLock lock(&lrs_mu_);
-      lrs_cv_.WaitUntil(&lrs_mu_, [this] { return lrs_done_; });
-    }
-    gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats done", this);
-    return Status::OK;
+  ::envoy::service::load_stats::v2::LoadReportingService::Service*
+  v2_rpc_service() {
+    return &v2_rpc_service_;
+  }
+
+  ::envoy::service::load_stats::v3::LoadReportingService::Service*
+  v3_rpc_service() {
+    return &v3_rpc_service_;
+  }
+
+  size_t request_count() {
+    return v2_rpc_service_.request_count() + v3_rpc_service_.request_count();
+  }
+
+  size_t response_count() {
+    return v2_rpc_service_.response_count() + v3_rpc_service_.response_count();
   }
 
   // Must be called before the LRS call is started.
@@ -1117,12 +1135,90 @@ class LrsServiceImpl : public LrsService,
   }
 
  private:
+  template <class RpcApi, class LoadStatsRequest, class LoadStatsResponse>
+  class RpcService : public CountedService<typename RpcApi::Service> {
+   public:
+    using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
+
+    explicit RpcService(LrsServiceImpl* parent) : parent_(parent) {}
+
+    Status StreamLoadStats(ServerContext* /*context*/, Stream* stream)
+        override {
+      gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
+      GPR_ASSERT(parent_->client_load_reporting_interval_seconds_ > 0);
+      // Take a reference of the LrsServiceImpl object, reference will go
+      // out of scope after this method exits.
+      std::shared_ptr<LrsServiceImpl> lrs_service_impl =
+          parent_->shared_from_this();
+      // Read initial request.
+      LoadStatsRequest request;
+      if (stream->Read(&request)) {
+        CountedService<typename RpcApi::Service>::IncreaseRequestCount();
+        // Verify server name set in metadata.
+        auto it = request.node().metadata().fields().find(
+            "PROXYLESS_CLIENT_HOSTNAME");
+        GPR_ASSERT(it != request.node().metadata().fields().end());
+        EXPECT_EQ(it->second.string_value(), kDefaultResourceName);
+        // Verify client features.
+        EXPECT_THAT(
+            request.node().client_features(),
+            ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
+        // Send initial response.
+        LoadStatsResponse response;
+        if (parent_->send_all_clusters_) {
+          response.set_send_all_clusters(true);
+        } else {
+          for (const std::string& cluster_name : parent_->cluster_names_) {
+            response.add_clusters(cluster_name);
+          }
+        }
+        response.mutable_load_reporting_interval()->set_seconds(
+            parent_->client_load_reporting_interval_seconds_);
+        stream->Write(response);
+        CountedService<typename RpcApi::Service>::IncreaseResponseCount();
+        // Wait for report.
+        request.Clear();
+        while (stream->Read(&request)) {
+          gpr_log(GPR_INFO, "LRS[%p]: received client load report message: %s",
+                  this, request.DebugString().c_str());
+          std::vector<ClientStats> stats;
+          for (const auto& cluster_stats : request.cluster_stats()) {
+            stats.emplace_back(cluster_stats);
+          }
+          grpc_core::MutexLock lock(&parent_->load_report_mu_);
+          parent_->result_queue_.emplace_back(std::move(stats));
+          if (parent_->load_report_cond_ != nullptr) {
+            parent_->load_report_cond_->Signal();
+          }
+        }
+        // Wait until notified done.
+        grpc_core::MutexLock lock(&parent_->lrs_mu_);
+        parent_->lrs_cv_.WaitUntil(&parent_->lrs_mu_,
+                                   [this] { return parent_->lrs_done_; });
+      }
+      gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats done", this);
+      return Status::OK;
+    }
+
+   private:
+    LrsServiceImpl* parent_;
+  };
+
   void NotifyDoneWithLrsCallLocked() {
     if (!lrs_done_) {
       lrs_done_ = true;
       lrs_cv_.Broadcast();
     }
   }
+
+  RpcService<::envoy::service::load_stats::v2::LoadReportingService,
+             ::envoy::service::load_stats::v2::LoadStatsRequest,
+             ::envoy::service::load_stats::v2::LoadStatsResponse>
+      v2_rpc_service_;
+  RpcService<::envoy::service::load_stats::v3::LoadReportingService,
+             ::envoy::service::load_stats::v3::LoadStatsRequest,
+             ::envoy::service::load_stats::v3::LoadStatsResponse>
+      v3_rpc_service_;
 
   const int client_load_reporting_interval_seconds_;
   bool send_all_clusters_ = false;
@@ -1702,8 +1798,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
    private:
     void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(ads_service_.get());
-      builder->RegisterService(lrs_service_.get());
+      builder->RegisterService(ads_service_->v2_rpc_service());
+      builder->RegisterService(ads_service_->v3_rpc_service());
+      builder->RegisterService(lrs_service_->v2_rpc_service());
+      builder->RegisterService(lrs_service_->v3_rpc_service());
     }
 
     void StartAllServices() override {
