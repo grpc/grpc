@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">9.0.0</span>
+   &#160;<span id="projectnumber">10.0.0</span>
    </div>
   </td>
  </tr>
@@ -95,7 +95,7 @@ Specific Disabling of Compression</h2>
 <h2><a class="anchor" id="autotoc_md56"></a>
 Compression Levels and Algorithms</h2>
 <p>The set of supported algorithm is implementation dependent. In order to simplify the public API and to operate seamlessly across implementations (both in terms of languages but also different version of the same one), we introduce the idea of <em>compression levels</em> (such as "low", "medium", "high").</p>
-<p>Levels map to concrete algorithms and/or their settings (such as "low" mapping to "gzip -3" and "high" mapping to "gzip -9") automatically depending on what a peer is known to support. A server is always aware of what its clients support, as clients disclose it in their Message-Accept-Encoding header as part of their initial call. A client doesn't a priori (presently) know which algorithms a server supports. This issue can be addressed with an initial negotiation of capabilities or an automatic retry mechanism. These features will be implemented in the future. Currently however, compression levels are only supported at the server side, which is aware of the client's capabilities through the incoming Message-Accept-Encoding header.</p>
+<p>Levels map to concrete algorithms and/or their settings (such as "low" mapping to "gzip -3" and "high" mapping to "gzip -9") automatically depending on what a peer is known to support. A server is always aware of what its clients support, as clients disclose it in the Message-Accept-Encoding header as part of the RPC. A client doesn't a priori (presently) know which algorithms a server supports. This issue can be addressed with an initial negotiation of capabilities or an automatic retry mechanism. These features will be implemented in the future. Currently however, compression levels are only supported at the server side, which is aware of the client's capabilities through the incoming Message-Accept-Encoding header.</p>
 <h2><a class="anchor" id="autotoc_md57"></a>
 Propagation to child RPCs</h2>
 <p>The inheritance of the compression configuration by child RPCs is left up to the implementation. Note that in the absence of changes to the parent channel, its configuration will be used.</p>
@@ -123,7 +123,7 @@ Test cases</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

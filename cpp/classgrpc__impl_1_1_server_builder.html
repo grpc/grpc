@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.28.0</span>
+   &#160;<span id="projectnumber">1.30.0</span>
    </div>
   </td>
  </tr>
@@ -434,8 +434,9 @@ template&lt;class T &gt; </div>
 <p>Before calling, one typically needs to ensure that:</p><ol type="1">
 <li>a service is registered - so that the server knows what to serve (via RegisterService, or RegisterAsyncGenericService)</li>
 <li>a listening port has been added - so the server knows where to receive traffic (via AddListeningPort)</li>
-<li>[for async api only] completion queues have been added via AddCompletionQueue </li>
+<li>[for async api only] completion queues have been added via AddCompletionQueue</li>
 </ol>
+<p>Will return a nullptr on errors. </p>
 
 </div>
 </div>
@@ -968,7 +969,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

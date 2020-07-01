@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.28.0</span>
+   &#160;<span id="projectnumber">1.30.0</span>
    </div>
   </td>
  </tr>
@@ -171,7 +171,7 @@ $(function() {
 <div class="fragment"><div class="line">MockEchoTestServiceStub stub;</div>
 <div class="line">EchoResponse resp;</div>
 <div class="line">resp.set_message(<span class="stringliteral">&quot;hello world&quot;</span>);</div>
-<div class="line">Expect_CALL(stub, Echo(_,_,_)).Times(Atleast(1)).WillOnce(DoAll(SetArgPointee&lt;2&gt;(resp), Return(<a class="code" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43baf6f3078af147d683afc70e09695c7a65">Status::OK</a>)));</div>
+<div class="line">EXPECT_CALL(stub, Echo(_,_,_)).Times(AtLeast(1)).WillOnce(DoAll(SetArgPointee&lt;2&gt;(resp), Return(<a class="code" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43baf6f3078af147d683afc70e09695c7a65">Status::OK</a>)));</div>
 <div class="line">FakeClient client(stub);</div>
 <div class="line">client.DoEcho();</div>
 </div><!-- fragment --><p>Streaming RPC:</p>
@@ -205,7 +205,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc__impl_1_1_client_reader_writer_interface_html"><div class="ttname"><a href="classgrpc__impl_1_1_client_reader_writer_interface.html">grpc_impl::ClientReaderWriterInterface</a></div><div class="ttdoc">Client-side interface for bi-directional streaming with client-to-server stream messages of type W an...</div><div class="ttdef"><b>Definition:</b> sync_stream_impl.h:411</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

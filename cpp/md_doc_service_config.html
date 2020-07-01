@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.28.0</span>
+   &#160;<span id="projectnumber">1.30.0</span>
    </div>
   </td>
  </tr>
@@ -71,138 +71,61 @@ Objective</h1>
 <p>The service config is a mechanism that allows service owners to publish parameters to be automatically used by all clients of their service.</p>
 <h1><a class="anchor" id="autotoc_md220"></a>
 Format</h1>
-<p>The service config is a JSON string of the following form:</p>
+<p>The format of the service config is defined by the <a href="https://github.com/grpc/grpc-proto/blob/master/grpc/service_config/service_config.proto"><code>grpc.service_config.ServiceConfig</code> protocol buffer message</a>. Note that new fields may be added in the future as new functionality is introduced.</p>
+<h1><a class="anchor" id="autotoc_md221"></a>
+Architecture</h1>
+<p>A service config is associated with a server name. The <a class="el" href="naming_8md.html">name</a>resolver" plugin, when asked to resolve a particular server name, will return both the resolved addresses and the service config.</p>
+<p>The name resolver returns the service config to the gRPC client in JSON form. Individual resolver implementations determine where and in what format the service config is stored. If the resolver implemention obtains the service config in protobuf form, it must convert it to JSON using the normal <a href="https://developers.google.com/protocol-buffers/docs/proto3#json">protobuf to JSON translation rules</a>. Alternatively, a resolver implementation may obtain the service config already in JSON form, in which case it may return it directly.</p>
+<p>For details of how the DNS resolver plugin supports service configs, see <a href="https://github.com/grpc/proposal/blob/master/A2-service-configs-in-dns.md">gRFC A2: Service Config via DNS</a>.</p>
+<h1><a class="anchor" id="autotoc_md222"></a>
+Example</h1>
+<p>Here is an example service config in protobuf form:</p>
 <div class="fragment"><div class="line">{</div>
-<div class="line">  // [deprecated] Load balancing policy name (case insensitive).</div>
-<div class="line">  // Currently, the only selectable client-side policy provided with gRPC</div>
-<div class="line">  // is &#39;round_robin&#39;, but third parties may add their own policies.</div>
-<div class="line">  // This field is optional; if unset, the default behavior is to pick</div>
-<div class="line">  // the first available backend. If set, the load balancing policy should be</div>
-<div class="line">  // supported by the client, otherwise the service config is considered</div>
-<div class="line">  // invalid.</div>
-<div class="line">  // If the policy name is set via the client API, that value overrides</div>
-<div class="line">  // the value specified here.</div>
-<div class="line">  //</div>
-<div class="line">  // Note that if the resolver returns at least one balancer address (as</div>
-<div class="line">  // opposed to backend addresses), gRPC will use grpclb (see</div>
-<div class="line">  // https://github.com/grpc/grpc/blob/master/doc/load-balancing.md),</div>
-<div class="line">  // regardless of what LB policy is requested either here or via the</div>
-<div class="line">  // client API.</div>
-<div class="line">  &#39;loadBalancingPolicy&#39;: string,</div>
-<div class="line"> </div>
-<div class="line">  // Per-method configuration.  Optional.</div>
-<div class="line">  &#39;methodConfig&#39;: [</div>
+<div class="line">  // Use round_robin LB policy.</div>
+<div class="line">  load_balancing_config: { round_robin: {} }</div>
+<div class="line">  // This method config applies to method &quot;foo/bar&quot; and to all methods</div>
+<div class="line">  // of service &quot;baz&quot;.</div>
+<div class="line">  method_config: {</div>
+<div class="line">    name: {</div>
+<div class="line">      service: &quot;foo&quot;</div>
+<div class="line">      method: &quot;bar&quot;</div>
+<div class="line">    }</div>
+<div class="line">    name: {</div>
+<div class="line">      service: &quot;baz&quot;</div>
+<div class="line">    }</div>
+<div class="line">    // Default timeout for matching methods.</div>
+<div class="line">    timeout: {</div>
+<div class="line">      seconds: 1</div>
+<div class="line">      nanos: 1</div>
+<div class="line">    }</div>
+<div class="line">  }</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>Here is the same example service config in JSON form:</p>
+<div class="fragment"><div class="line">{</div>
+<div class="line">  &quot;loadBalancingConfig&quot;: [ { &quot;round_robin&quot;: {} } ],</div>
+<div class="line">  &quot;methodConfig&quot;: [</div>
 <div class="line">    {</div>
-<div class="line">      // The names of the methods to which this method config applies. There</div>
-<div class="line">      // must be at least one name. Each name entry must be unique across the</div>
-<div class="line">      // entire service config. If the &#39;method&#39; field is empty, then this</div>
-<div class="line">      // method config specifies the defaults for all methods for the specified</div>
-<div class="line">      // service.</div>
-<div class="line">      //</div>
-<div class="line">      // For example, let&#39;s say that the service config contains the following</div>
-<div class="line">      // method config entries:</div>
-<div class="line">      //</div>
-<div class="line">      // &#39;methodConfig&#39;: [</div>
-<div class="line">      //   { &#39;name&#39;: [ { &#39;service&#39;: &#39;MyService&#39; } ] ... },</div>
-<div class="line">      //   { &#39;name&#39;: [ { &#39;service&#39;: &#39;MyService&#39;, &#39;method&#39;: &#39;Foo&#39; } ] ... }</div>
-<div class="line">      // ]</div>
-<div class="line">      //</div>
-<div class="line">      // For a request for MyService/Foo, we will use the second entry, because</div>
-<div class="line">      // it exactly matches the service and method name.</div>
-<div class="line">      // For a request for MyService/Bar, we will use the first entry, because</div>
-<div class="line">      // it provides the default for all methods of MyService.</div>
-<div class="line">      &#39;name&#39;: [</div>
-<div class="line">        {</div>
-<div class="line">          // RPC service name.  Required.</div>
-<div class="line">          // If using gRPC with protobuf as the IDL, then this will be of</div>
-<div class="line">          // the form &quot;pkg.service_name&quot;, where &quot;pkg&quot; is the package name</div>
-<div class="line">          // defined in the proto file.</div>
-<div class="line">          &#39;service&#39;: string,</div>
-<div class="line"> </div>
-<div class="line">          // RPC method name.  Optional (see above).</div>
-<div class="line">          &#39;method&#39;: string,</div>
-<div class="line">        }</div>
+<div class="line">      &quot;name&quot;: [</div>
+<div class="line">        { &quot;service&quot;: &quot;foo&quot;, &quot;method&quot;: &quot;bar&quot; },</div>
+<div class="line">        { &quot;service&quot;: &quot;baz&quot; }</div>
 <div class="line">      ],</div>
-<div class="line"> </div>
-<div class="line">      // Optional. Whether RPCs sent to this method should wait until the</div>
-<div class="line">      // connection is ready by default. If false, the RPC will abort</div>
-<div class="line">      // immediately if there is a transient failure connecting to the server.</div>
-<div class="line">      // Otherwise, gRPC will attempt to connect until the deadline is</div>
-<div class="line">      // exceeded.</div>
-<div class="line">      //</div>
-<div class="line">      // The value specified via the gRPC client API will override the value</div>
-<div class="line">      // set here. However, note that setting the value in the client API will</div>
-<div class="line">      // also affect transient errors encountered during name resolution,</div>
-<div class="line">      // which cannot be caught by the value here, since the service config</div>
-<div class="line">      // is obtained by the gRPC client via name resolution.</div>
-<div class="line">      &#39;waitForReady&#39;: bool,</div>
-<div class="line"> </div>
-<div class="line">      // Optional. The default timeout in seconds for RPCs sent to this method.</div>
-<div class="line">      // This can be overridden in code. If no reply is received in the</div>
-<div class="line">      // specified amount of time, the request is aborted and a</div>
-<div class="line">      // deadline-exceeded error status is returned to the caller.</div>
-<div class="line">      //</div>
-<div class="line">      // The actual deadline used will be the minimum of the value specified</div>
-<div class="line">      // here and the value set by the application via the gRPC client API.</div>
-<div class="line">      // If either one is not set, then the other will be used.</div>
-<div class="line">      // If neither is set, then the request has no deadline.</div>
-<div class="line">      //</div>
-<div class="line">      // The format of the value is that of the &#39;Duration&#39; type defined here:</div>
-<div class="line">      // https://developers.google.com/protocol-buffers/docs/proto3#json</div>
-<div class="line">      &#39;timeout&#39;: string,</div>
-<div class="line"> </div>
-<div class="line">      // Optional. The maximum allowed payload size for an individual request</div>
-<div class="line">      // or object in a stream (client-&gt;server) in bytes. The size which is</div>
-<div class="line">      // measured is the serialized, uncompressed payload in bytes. This</div>
-<div class="line">      // applies both to streaming and non-streaming requests.</div>
-<div class="line">      //</div>
-<div class="line">      // The actual value used is the minimum of the value specified here and</div>
-<div class="line">      // the value set by the application via the gRPC client API.</div>
-<div class="line">      // If either one is not set, then the other will be used.</div>
-<div class="line">      // If neither is set, then the built-in default is used.</div>
-<div class="line">      //</div>
-<div class="line">      // If a client attempts to send an object larger than this value, it</div>
-<div class="line">      // will not be sent and the client will see an error.</div>
-<div class="line">      // Note that 0 is a valid value, meaning that the request message must</div>
-<div class="line">      // be empty.</div>
-<div class="line">      &#39;maxRequestMessageBytes&#39;: number,</div>
-<div class="line"> </div>
-<div class="line">      // Optional. The maximum allowed payload size for an individual response</div>
-<div class="line">      // or object in a stream (server-&gt;client) in bytes. The size which is</div>
-<div class="line">      // measured is the serialized, uncompressed payload in bytes. This</div>
-<div class="line">      // applies both to streaming and non-streaming requests.</div>
-<div class="line">      //</div>
-<div class="line">      // The actual value used is the minimum of the value specified here and</div>
-<div class="line">      // the value set by the application via the gRPC client API.</div>
-<div class="line">      // If either one is not set, then the other will be used.</div>
-<div class="line">      // If neither is set, then the built-in default is used.</div>
-<div class="line">      //</div>
-<div class="line">      // If a server attempts to send an object larger than this value, it</div>
-<div class="line">      // will not be sent, and the client will see an error.</div>
-<div class="line">      // Note that 0 is a valid value, meaning that the response message must</div>
-<div class="line">      // be empty.</div>
-<div class="line">      &#39;maxResponseMessageBytes&#39;: number</div>
+<div class="line">      &quot;timeout&quot;: &quot;1.0000000001s&quot;</div>
 <div class="line">    }</div>
 <div class="line">  ]</div>
 <div class="line">}</div>
-</div><!-- fragment --><p>Note that new per-method parameters may be added in the future as new functionality is introduced.</p>
-<h1><a class="anchor" id="autotoc_md221"></a>
-Architecture</h1>
-<p>A service config is associated with a server name. The <a class="el" href="naming_8md.html">name resolver</a> plugin, when asked to resolve a particular server name, will return both the resolved addresses and the service config.</p>
-<p>TODO(roth): Design how the service config will be encoded in DNS.</p>
-<h1><a class="anchor" id="autotoc_md222"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md223"></a>
 APIs</h1>
 <p>The service config is used in the following APIs:</p>
 <ul>
 <li>In the resolver API, used by resolver plugins to return the service config to the gRPC client.</li>
 <li>In the gRPC client API, where users can query the channel to obtain the service config associated with the channel (for debugging purposes).</li>
-<li>In the gRPC client API, where users can set the service config explicitly. This is intended for use in unit tests. </li>
+<li>In the gRPC client API, where users can set the service config explicitly. This can be used to set the config in unit tests. It can also be used to set the default config that will be used if the resolver plugin does not return a service config. </li>
 </ul>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

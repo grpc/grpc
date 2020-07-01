@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.28.0</span>
+   &#160;<span id="projectnumber">1.30.0</span>
    </div>
   </td>
  </tr>
@@ -109,7 +109,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a19f38bfd21b8056b8d945a303849183f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_bidi_reactor.html#a19f38bfd21b8056b8d945a303849183f">RemoveHold</a> ()</td></tr>
 <tr class="separator:a19f38bfd21b8056b8d945a303849183f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae4d5fd6867febb4a625de08d85c4e1af"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_bidi_reactor.html#ae4d5fd6867febb4a625de08d85c4e1af">OnDone</a> (const ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;)</td></tr>
-<tr class="memdesc:ae4d5fd6867febb4a625de08d85c4e1af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that all operations associated with this RPC have completed and provides the RPC status outcome.  <a href="classgrpc__impl_1_1_client_bidi_reactor.html#ae4d5fd6867febb4a625de08d85c4e1af">More...</a><br /></td></tr>
+<tr class="memdesc:ae4d5fd6867febb4a625de08d85c4e1af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that all operations associated with this RPC have completed and all Holds have been removed.  <a href="classgrpc__impl_1_1_client_bidi_reactor.html#ae4d5fd6867febb4a625de08d85c4e1af">More...</a><br /></td></tr>
 <tr class="separator:ae4d5fd6867febb4a625de08d85c4e1af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af3c06b463d6eafd3e15acee6bbf0f71f"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_bidi_reactor.html#af3c06b463d6eafd3e15acee6bbf0f71f">OnReadInitialMetadataDone</a> (bool)</td></tr>
 <tr class="memdesc:af3c06b463d6eafd3e15acee6bbf0f71f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a read of initial metadata from the server is done.  <a href="classgrpc__impl_1_1_client_bidi_reactor.html#af3c06b463d6eafd3e15acee6bbf0f71f">More...</a><br /></td></tr>
@@ -118,7 +118,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a377b7c1a3bb17fb753086b84e0bd7c83"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartRead operation completed.  <a href="classgrpc__impl_1_1_client_bidi_reactor.html#a377b7c1a3bb17fb753086b84e0bd7c83">More...</a><br /></td></tr>
 <tr class="separator:a377b7c1a3bb17fb753086b84e0bd7c83"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a726aaf9791c31b92cd64185ae2e7f56a"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_bidi_reactor.html#a726aaf9791c31b92cd64185ae2e7f56a">OnWriteDone</a> (bool)</td></tr>
-<tr class="memdesc:a726aaf9791c31b92cd64185ae2e7f56a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartWrite operation completed.  <a href="classgrpc__impl_1_1_client_bidi_reactor.html#a726aaf9791c31b92cd64185ae2e7f56a">More...</a><br /></td></tr>
+<tr class="memdesc:a726aaf9791c31b92cd64185ae2e7f56a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartWrite or StartWriteLast operation completed.  <a href="classgrpc__impl_1_1_client_bidi_reactor.html#a726aaf9791c31b92cd64185ae2e7f56a">More...</a><br /></td></tr>
 <tr class="separator:a726aaf9791c31b92cd64185ae2e7f56a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afc8bcc64fb81829b4c4aa9b8f196cdbf"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_bidi_reactor.html#afc8bcc64fb81829b4c4aa9b8f196cdbf">OnWritesDoneDone</a> (bool)</td></tr>
 <tr class="memdesc:afc8bcc64fb81829b4c4aa9b8f196cdbf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartWritesDone operation completed.  <a href="classgrpc__impl_1_1_client_bidi_reactor.html#afc8bcc64fb81829b4c4aa9b8f196cdbf">More...</a><br /></td></tr>
@@ -191,7 +191,7 @@ template&lt;class Request, class Response&gt; </div>
 <p>Holds are needed if (and only if) this stream has operations that take place on it after StartCall but from outside one of the reactions (OnReadDone, etc). </p>
 <p>This is <em>not</em> a common use of the streaming API.</p>
 <p>Holds must be added before calling StartCall. If a stream still has a hold in place, its resources will not be destroyed even if the status has already come in from the wire and there are currently no active callbacks outstanding. Similarly, the stream will not call OnDone if there are still holds on it.</p>
-<p>For example, if a StartRead or StartWrite operation is going to be initiated from elsewhere in the application, the application should call AddHold or AddMultipleHolds before StartCall. If there is going to be, for example, a read-flow and a write-flow taking place outside the reactions, then call AddMultipleHolds(2) before StartCall. When the application knows that it won't issue any more read operations (such as when a read comes back as not ok), it should issue a <a class="el" href="classgrpc__impl_1_1_client_bidi_reactor.html#a19f38bfd21b8056b8d945a303849183f">RemoveHold()</a>. It should also call <a class="el" href="classgrpc__impl_1_1_client_bidi_reactor.html#a19f38bfd21b8056b8d945a303849183f">RemoveHold()</a> again after it does StartWriteLast or StartWritesDone that indicates that there will be no more write ops. The number of RemoveHold calls must match the total number of AddHold calls plus the number of holds added by AddMultipleHolds. </p>
+<p>For example, if a StartRead or StartWrite operation is going to be initiated from elsewhere in the application, the application should call AddHold or AddMultipleHolds before StartCall. If there is going to be, for example, a read-flow and a write-flow taking place outside the reactions, then call AddMultipleHolds(2) before StartCall. When the application knows that it won't issue any more read operations (such as when a read comes back as not ok), it should issue a <a class="el" href="classgrpc__impl_1_1_client_bidi_reactor.html#a19f38bfd21b8056b8d945a303849183f">RemoveHold()</a>. It should also call <a class="el" href="classgrpc__impl_1_1_client_bidi_reactor.html#a19f38bfd21b8056b8d945a303849183f">RemoveHold()</a> again after it does StartWriteLast or StartWritesDone that indicates that there will be no more write ops. The number of RemoveHold calls must match the total number of AddHold calls plus the number of holds added by AddMultipleHolds. The argument to AddMultipleHolds must be positive. </p>
 
 </div>
 </div>
@@ -249,7 +249,8 @@ template&lt;class Request, class Response&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Notifies the application that all operations associated with this RPC have completed and provides the RPC status outcome. </p>
+<p>Notifies the application that all operations associated with this RPC have completed and all Holds have been removed. </p>
+<p>OnDone provides the RPC status outcome for both successful and failed RPCs and will be called in all cases. If it is not called, it indicates an application-level problem (like failure to remove a hold).</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">s</td><td>The status outcome of this RPC </td></tr>
@@ -288,7 +289,7 @@ template&lt;class Request, class Response&gt; </div>
 <p>Notifies the application that a StartRead operation completed. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, no new read/write operation will succeed. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, no new read/write operation will succeed, and any further Start* should not be called. </td></tr>
   </table>
   </dd>
 </dl>
@@ -325,7 +326,7 @@ template&lt;class Request, class Response&gt; </div>
 <p>If the application chooses not to implement this method, it can assume that the initial metadata has been read before the first call of OnReadDone or OnDone.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was the initial metadata read successfully? If false, no new read/write operation will succeed. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was the initial metadata read successfully? If false, no new read/write operation will succeed, and any further Start* operations should not be called. </td></tr>
   </table>
   </dd>
 </dl>
@@ -358,10 +359,10 @@ template&lt;class Request, class Response&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Notifies the application that a StartWrite operation completed. </p>
+<p>Notifies the application that a StartWrite or StartWriteLast operation completed. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, no new read/write operation will succeed. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, no new read/write operation will succeed, and any further Start* should not be called. </td></tr>
   </table>
   </dd>
 </dl>
@@ -398,7 +399,7 @@ template&lt;class Request, class Response&gt; </div>
 <p>Note that this is only used on explicit StartWritesDone operations and not for those that are implicitly invoked as part of a StartWriteLast.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, the application will later see the failure reflected as a bad status in OnDone. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, the application will later see the failure reflected as a bad status in OnDone and no further Start* should be called. </td></tr>
   </table>
   </dd>
 </dl>
@@ -690,7 +691,7 @@ template&lt;class Request, class Response&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

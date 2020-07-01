@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.28.0</span>
+   &#160;<span id="projectnumber">1.30.0</span>
    </div>
   </td>
  </tr>
@@ -139,8 +139,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a503d0dd5237da0db8eff500ad2b839b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8d61a422582b03e66ac009b354d05f89"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a8d61a422582b03e66ac009b354d05f89">SetSendTrailingMetadata</a> (std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; *metadata)</td></tr>
 <tr class="separator:a8d61a422582b03e66ac009b354d05f89"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeedcb9154f4ff041f43e202631d22f6b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#aeedcb9154f4ff041f43e202631d22f6b">SetRecvMessage</a> (void *message, bool *got_message)</td></tr>
-<tr class="separator:aeedcb9154f4ff041f43e202631d22f6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae7dfa6a9ee98dc63229f5299602f6861"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#ae7dfa6a9ee98dc63229f5299602f6861">SetRecvMessage</a> (void *message, bool *hijacked_recv_message_failed)</td></tr>
+<tr class="separator:ae7dfa6a9ee98dc63229f5299602f6861"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abb08150248632e05ee06ad1895dbe820"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#abb08150248632e05ee06ad1895dbe820">SetRecvInitialMetadata</a> (<a class="el" href="classgrpc_1_1internal_1_1_metadata_map.html">MetadataMap</a> *map)</td></tr>
 <tr class="separator:abb08150248632e05ee06ad1895dbe820"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aec1e6573512e16533d1647b4d1535d6b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#aec1e6573512e16533d1647b4d1535d6b">SetRecvStatus</a> (<a class="el" href="classgrpc_1_1_status.html">Status</a> *status)</td></tr>
@@ -966,8 +966,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="aeedcb9154f4ff041f43e202631d22f6b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aeedcb9154f4ff041f43e202631d22f6b">&#9670;&nbsp;</a></span>SetRecvMessage()</h2>
+<a id="ae7dfa6a9ee98dc63229f5299602f6861"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7dfa6a9ee98dc63229f5299602f6861">&#9670;&nbsp;</a></span>SetRecvMessage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -985,7 +985,7 @@ Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool *&#160;</td>
-          <td class="paramname"><em>got_message</em>&#160;</td>
+          <td class="paramname"><em>hijacked_recv_message_failed</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -1227,7 +1227,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.28.0</span>
+   &#160;<span id="projectnumber">1.30.0</span>
    </div>
   </td>
  </tr>
@@ -79,8 +79,6 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a12f43791d95f4e024bc30506b8b63d99"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_recv_message.html#a12f43791d95f4e024bc30506b8b63d99">CallOpRecvMessage</a> ()</td></tr>
-<tr class="separator:a12f43791d95f4e024bc30506b8b63d99"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a645064efa6ca17b194438b3b5f3a36c5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_recv_message.html#a645064efa6ca17b194438b3b5f3a36c5">RecvMessage</a> (R *message)</td></tr>
 <tr class="separator:a645064efa6ca17b194438b3b5f3a36c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aed566bc88f16e154afd47ef473b7a4bf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_recv_message.html#aed566bc88f16e154afd47ef473b7a4bf">AllowNoMessage</a> ()</td></tr>
@@ -88,7 +86,7 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
-<tr class="memitem:abb8c75330aff1efa712d4648f6cd4739"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_recv_message.html#abb8c75330aff1efa712d4648f6cd4739">got_message</a></td></tr>
+<tr class="memitem:abb8c75330aff1efa712d4648f6cd4739"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_recv_message.html#abb8c75330aff1efa712d4648f6cd4739">got_message</a> = false</td></tr>
 <tr class="separator:abb8c75330aff1efa712d4648f6cd4739"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
@@ -104,34 +102,6 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a14fd4a1244867ca8a52b4d274331bfe7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_recv_message.html#a14fd4a1244867ca8a52b4d274331bfe7">SetHijackingState</a> (<a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *interceptor_methods)</td></tr>
 <tr class="separator:a14fd4a1244867ca8a52b4d274331bfe7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a12f43791d95f4e024bc30506b8b63d99"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a12f43791d95f4e024bc30506b8b63d99">&#9670;&nbsp;</a></span>CallOpRecvMessage()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class R &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1internal_1_1_call_op_recv_message.html">grpc::internal::CallOpRecvMessage</a>&lt; R &gt;::<a class="el" href="classgrpc_1_1internal_1_1_call_op_recv_message.html">CallOpRecvMessage</a> </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a517b65b88fe1961aa5ab5d5e9ad6626c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a517b65b88fe1961aa5ab5d5e9ad6626c">&#9670;&nbsp;</a></span>AddOp()</h2>
@@ -348,7 +318,7 @@ template&lt;class R &gt; </div>
 template&lt;class R &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">bool <a class="el" href="classgrpc_1_1internal_1_1_call_op_recv_message.html">grpc::internal::CallOpRecvMessage</a>&lt; R &gt;::got_message</td>
+          <td class="memname">bool <a class="el" href="classgrpc_1_1internal_1_1_call_op_recv_message.html">grpc::internal::CallOpRecvMessage</a>&lt; R &gt;::got_message = false</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -362,7 +332,7 @@ template&lt;class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.28.0</span>
+   &#160;<span id="projectnumber">1.30.0</span>
    </div>
   </td>
  </tr>
@@ -86,22 +86,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a7b70b6c9d8f5dc9ce95e18e95b9fb861"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a7b70b6c9d8f5dc9ce95e18e95b9fb861">AddTrailingMetadata</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;key, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;value)</td></tr>
 <tr class="memdesc:a7b70b6c9d8f5dc9ce95e18e95b9fb861"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the (<em>key</em>, <em>value</em>) pair to the initial metadata associated with a server call.  <a href="classgrpc__impl_1_1_callback_server_context.html#a7b70b6c9d8f5dc9ce95e18e95b9fb861">More...</a><br /></td></tr>
 <tr class="separator:a7b70b6c9d8f5dc9ce95e18e95b9fb861"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8cddeac523cbcfb67113bfd39b70c148"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a8cddeac523cbcfb67113bfd39b70c148">IsCancelled</a> () const</td></tr>
-<tr class="memdesc:a8cddeac523cbcfb67113bfd39b70c148"><td class="mdescLeft">&#160;</td><td class="mdescRight">IsCancelled is always safe to call when using sync or callback API.  <a href="classgrpc__impl_1_1_callback_server_context.html#a8cddeac523cbcfb67113bfd39b70c148">More...</a><br /></td></tr>
-<tr class="separator:a8cddeac523cbcfb67113bfd39b70c148"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9780f1190bab12697d72eb44be722df9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a9780f1190bab12697d72eb44be722df9">SetLoadReportingCosts</a> (const std::vector&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; &amp;cost_data)</td></tr>
-<tr class="memdesc:a9780f1190bab12697d72eb44be722df9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the serialized load reporting costs in <em>cost_data</em> for the call.  <a href="classgrpc__impl_1_1_callback_server_context.html#a9780f1190bab12697d72eb44be722df9">More...</a><br /></td></tr>
-<tr class="separator:a9780f1190bab12697d72eb44be722df9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6a7eb157b51f12e9b36c2ebf4849d8b8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a6a7eb157b51f12e9b36c2ebf4849d8b8">TryCancel</a> () const</td></tr>
-<tr class="memdesc:a6a7eb157b51f12e9b36c2ebf4849d8b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cancel the Call from the server.  <a href="classgrpc__impl_1_1_callback_server_context.html#a6a7eb157b51f12e9b36c2ebf4849d8b8">More...</a><br /></td></tr>
-<tr class="separator:a6a7eb157b51f12e9b36c2ebf4849d8b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab5d856fd54c832abb4b0e80858be55eb"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; const ::<a class="el" href="classgrpc_1_1_auth_context.html">grpc::AuthContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#ab5d856fd54c832abb4b0e80858be55eb">auth_context</a> () const</td></tr>
 <tr class="memdesc:ab5d856fd54c832abb4b0e80858be55eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the authentication context for this server call.  <a href="classgrpc__impl_1_1_callback_server_context.html#ab5d856fd54c832abb4b0e80858be55eb">More...</a><br /></td></tr>
 <tr class="separator:ab5d856fd54c832abb4b0e80858be55eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4c0a9b6de6e9fa91577f8c30720100be"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a4c0a9b6de6e9fa91577f8c30720100be">c_call</a> ()</td></tr>
 <tr class="memdesc:a4c0a9b6de6e9fa91577f8c30720100be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Should be used for framework-level extensions only.  <a href="classgrpc__impl_1_1_callback_server_context.html#a4c0a9b6de6e9fa91577f8c30720100be">More...</a><br /></td></tr>
 <tr class="separator:a4c0a9b6de6e9fa91577f8c30720100be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a13b08964c84f404198361cf0f2df6a44"><td class="memItemLeft" align="right" valign="top">const struct census_context *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a13b08964c84f404198361cf0f2df6a44">census_context</a> () const</td></tr>
+<tr class="memitem:a13b08964c84f404198361cf0f2df6a44"><td class="memItemLeft" align="right" valign="top">const struct <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a13b08964c84f404198361cf0f2df6a44">census_context</a> () const</td></tr>
 <tr class="memdesc:a13b08964c84f404198361cf0f2df6a44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the census context associated with this server call.  <a href="classgrpc__impl_1_1_callback_server_context.html#a13b08964c84f404198361cf0f2df6a44">More...</a><br /></td></tr>
 <tr class="separator:a13b08964c84f404198361cf0f2df6a44"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adf56f90c19120ce0885bc97348a6e604"><td class="memItemLeft" align="right" valign="top">const std::multimap&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#adf56f90c19120ce0885bc97348a6e604">client_metadata</a> () const</td></tr>
@@ -119,6 +110,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a744be5eb26c86367a7b1b992a80c1c8c"><td class="memItemLeft" align="right" valign="top">std::chrono::system_clock::time_point&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a744be5eb26c86367a7b1b992a80c1c8c">deadline</a> () const</td></tr>
 <tr class="memdesc:a744be5eb26c86367a7b1b992a80c1c8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the deadline for the server call.  <a href="classgrpc__impl_1_1_callback_server_context.html#a744be5eb26c86367a7b1b992a80c1c8c">More...</a><br /></td></tr>
 <tr class="separator:a744be5eb26c86367a7b1b992a80c1c8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8cddeac523cbcfb67113bfd39b70c148"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a8cddeac523cbcfb67113bfd39b70c148">IsCancelled</a> () const</td></tr>
+<tr class="memdesc:a8cddeac523cbcfb67113bfd39b70c148"><td class="mdescLeft">&#160;</td><td class="mdescRight">IsCancelled is always safe to call when using sync or callback API.  <a href="classgrpc__impl_1_1_callback_server_context.html#a8cddeac523cbcfb67113bfd39b70c148">More...</a><br /></td></tr>
+<tr class="separator:a8cddeac523cbcfb67113bfd39b70c148"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4818906c2d69c386160d04300dbe10d1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a4818906c2d69c386160d04300dbe10d1">peer</a> () const</td></tr>
 <tr class="memdesc:a4818906c2d69c386160d04300dbe10d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the peer uri in a string.  <a href="classgrpc__impl_1_1_callback_server_context.html#a4818906c2d69c386160d04300dbe10d1">More...</a><br /></td></tr>
 <tr class="separator:a4818906c2d69c386160d04300dbe10d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -131,6 +125,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa029ac26886b5f2c2171fc94a6be43d2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#aa029ac26886b5f2c2171fc94a6be43d2">set_compression_level</a> (<a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> level)</td></tr>
 <tr class="memdesc:aa029ac26886b5f2c2171fc94a6be43d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set <em>level</em> to be the compression level used for the server call.  <a href="classgrpc__impl_1_1_callback_server_context.html#aa029ac26886b5f2c2171fc94a6be43d2">More...</a><br /></td></tr>
 <tr class="separator:aa029ac26886b5f2c2171fc94a6be43d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9780f1190bab12697d72eb44be722df9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a9780f1190bab12697d72eb44be722df9">SetLoadReportingCosts</a> (const std::vector&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; &amp;cost_data)</td></tr>
+<tr class="memdesc:a9780f1190bab12697d72eb44be722df9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the serialized load reporting costs in <em>cost_data</em> for the call.  <a href="classgrpc__impl_1_1_callback_server_context.html#a9780f1190bab12697d72eb44be722df9">More...</a><br /></td></tr>
+<tr class="separator:a9780f1190bab12697d72eb44be722df9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a7eb157b51f12e9b36c2ebf4849d8b8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a6a7eb157b51f12e9b36c2ebf4849d8b8">TryCancel</a> () const</td></tr>
+<tr class="memdesc:a6a7eb157b51f12e9b36c2ebf4849d8b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cancel the Call from the server.  <a href="classgrpc__impl_1_1_callback_server_context.html#a6a7eb157b51f12e9b36c2ebf4849d8b8">More...</a><br /></td></tr>
+<tr class="separator:a6a7eb157b51f12e9b36c2ebf4849d8b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a90dedbcb860ba09533908bf69e3700f8"><td class="memItemLeft" align="right" valign="top">::<a class="el" href="classgrpc__impl_1_1_server_unary_reactor.html">grpc_impl::ServerUnaryReactor</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_callback_server_context.html#a90dedbcb860ba09533908bf69e3700f8">DefaultReactor</a> ()</td></tr>
 <tr class="memdesc:a90dedbcb860ba09533908bf69e3700f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a library-owned default unary reactor for use in minimal reaction cases.  <a href="classgrpc__impl_1_1_callback_server_context.html#a90dedbcb860ba09533908bf69e3700f8">More...</a><br /></td></tr>
 <tr class="separator:a90dedbcb860ba09533908bf69e3700f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -185,7 +185,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a4818906c2d69c386160d04300dbe10d1 inherit pub_methods_classgrpc__impl_1_1_server_context_base"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_context_base.html#a4818906c2d69c386160d04300dbe10d1">peer</a> () const</td></tr>
 <tr class="memdesc:a4818906c2d69c386160d04300dbe10d1 inherit pub_methods_classgrpc__impl_1_1_server_context_base"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the peer uri in a string.  <a href="classgrpc__impl_1_1_server_context_base.html#a4818906c2d69c386160d04300dbe10d1">More...</a><br /></td></tr>
 <tr class="separator:a4818906c2d69c386160d04300dbe10d1 inherit pub_methods_classgrpc__impl_1_1_server_context_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a13b08964c84f404198361cf0f2df6a44 inherit pub_methods_classgrpc__impl_1_1_server_context_base"><td class="memItemLeft" align="right" valign="top">const struct census_context *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_context_base.html#a13b08964c84f404198361cf0f2df6a44">census_context</a> () const</td></tr>
+<tr class="memitem:a13b08964c84f404198361cf0f2df6a44 inherit pub_methods_classgrpc__impl_1_1_server_context_base"><td class="memItemLeft" align="right" valign="top">const struct <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_context_base.html#a13b08964c84f404198361cf0f2df6a44">census_context</a> () const</td></tr>
 <tr class="memdesc:a13b08964c84f404198361cf0f2df6a44 inherit pub_methods_classgrpc__impl_1_1_server_context_base"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the census context associated with this server call.  <a href="classgrpc__impl_1_1_server_context_base.html#a13b08964c84f404198361cf0f2df6a44">More...</a><br /></td></tr>
 <tr class="separator:a13b08964c84f404198361cf0f2df6a44 inherit pub_methods_classgrpc__impl_1_1_server_context_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4c0a9b6de6e9fa91577f8c30720100be inherit pub_methods_classgrpc__impl_1_1_server_context_base"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_context_base.html#a4c0a9b6de6e9fa91577f8c30720100be">c_call</a> ()</td></tr>
@@ -349,7 +349,7 @@ Additional Inherited Members</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">const struct census_context* grpc_impl::ServerContextBase::census_context</td>
+          <td class="memname">const struct <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a>* grpc_impl::ServerContextBase::census_context</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -685,7 +685,7 @@ Additional Inherited Members</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 7 2020 11:33:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 30 2020 18:16:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>
