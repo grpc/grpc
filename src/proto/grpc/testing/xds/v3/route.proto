@@ -67,6 +67,9 @@ message Route {
   oneof action {
     // Route request to some upstream cluster.
     RouteAction route = 2;
+
+    // Return a redirect.
+    RedirectAction redirect = 3;
   }
 }
 
@@ -290,4 +293,7 @@ message RouteConfiguration {
 
   // An array of virtual hosts that make up the route table.
   repeated VirtualHost virtual_hosts = 2;
+}
+
+message RedirectAction {
 }

@@ -529,6 +529,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
+        "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
         "//src/proto/grpc/testing/xds/v3:listener_proto",
         "//src/proto/grpc/testing/xds/v3:lrs_proto",
         "//src/proto/grpc/testing/xds/v3:route_proto",

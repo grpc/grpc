@@ -175,3 +175,14 @@ grpc_proto_library(
     ],
     well_known_protos = True,
 )
+
+grpc_proto_library(
+    name = "http_connection_manager_proto",
+    srcs = [
+        "http_connection_manager.proto",
+    ],
+    deps = [
+        ":config_source_proto",
+        ":route_proto",
+    ],
+)

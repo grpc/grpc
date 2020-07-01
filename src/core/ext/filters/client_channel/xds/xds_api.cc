@@ -139,6 +139,7 @@ bool XdsApi::DropConfig::ShouldDrop(const std::string** category_name) const {
 // XdsApi
 //
 
+// FIXME: use v3 as public types and v2 internally only
 const char* XdsApi::kLdsTypeUrl = "type.googleapis.com/envoy.api.v2.Listener";
 const char* XdsApi::kRdsTypeUrl =
     "type.googleapis.com/envoy.api.v2.RouteConfiguration";

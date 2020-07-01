@@ -70,6 +70,7 @@
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
@@ -100,27 +101,41 @@ namespace {
 
 using std::chrono::system_clock;
 
-using ::envoy::api::v2::Cluster;
-using ::envoy::api::v2::ClusterLoadAssignment;
+using ::envoy::config::cluster::v3::Cluster;
+using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
+using ::envoy::config::endpoint::v3::HealthStatus;
+using ::envoy::config::listener::v3::Listener;
+using ::envoy::config::route::v3::RouteConfiguration;
+using ::envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager;
+using ::envoy::type::v3::FractionalPercent;
+
 using ::envoy::api::v2::DiscoveryRequest;
 using ::envoy::api::v2::DiscoveryResponse;
-using ::envoy::api::v2::FractionalPercent;
-using ::envoy::api::v2::HttpConnectionManager;
-using ::envoy::api::v2::Listener;
-using ::envoy::api::v2::RouteConfiguration;
 using ::envoy::service::discovery::v2::AggregatedDiscoveryService;
-using ::envoy::service::load_stats::v2::ClusterStats;
+
+using ::envoy::config::endpoint::v3::ClusterStats;
+using ::envoy::config::endpoint::v3::UpstreamLocalityStats;
+
 using ::envoy::service::load_stats::v2::LoadReportingService;
 using ::envoy::service::load_stats::v2::LoadStatsRequest;
 using ::envoy::service::load_stats::v2::LoadStatsResponse;
-using ::envoy::service::load_stats::v2::UpstreamLocalityStats;
 
-constexpr char kLdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Listener";
+constexpr char kLdsTypeUrl[] =
+    "type.googleapis.com/envoy.config.listener.v3.Listener";
 constexpr char kRdsTypeUrl[] =
-    "type.googleapis.com/envoy.api.v2.RouteConfiguration";
-constexpr char kCdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
+    "type.googleapis.com/envoy.config.route.v3.RouteConfiguration";
+constexpr char kCdsTypeUrl[] =
+    "type.googleapis.com/envoy.config.cluster.v3.Cluster";
 constexpr char kEdsTypeUrl[] =
+    "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment";
+
+constexpr char kLdsV2TypeUrl[] = "type.googleapis.com/envoy.api.v2.Listener";
+constexpr char kRdsV2TypeUrl[] =
+    "type.googleapis.com/envoy.api.v2.RouteConfiguration";
+constexpr char kCdsV2TypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
+constexpr char kEdsV2TypeUrl[] =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
+
 constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
 constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
 constexpr char kLbDropType[] = "lb";
@@ -394,7 +409,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       Locality(const std::string& sub_zone, std::vector<int> ports,
                int lb_weight = kDefaultLocalityWeight,
                int priority = kDefaultLocalityPriority,
-               std::vector<envoy::api::v2::HealthStatus> health_statuses = {})
+               std::vector<HealthStatus> health_statuses = {})
           : sub_zone(std::move(sub_zone)),
             ports(std::move(ports)),
             lb_weight(lb_weight),
@@ -405,7 +420,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       std::vector<int> ports;
       int lb_weight;
       int priority;
-      std::vector<envoy::api::v2::HealthStatus> health_statuses;
+      std::vector<HealthStatus> health_statuses;
     };
 
     EdsResourceArgs() = default;
@@ -434,11 +449,11 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
     SetLdsResource(default_listener_);
     // Construct CDS response data.
     default_cluster_.set_name(kDefaultResourceName);
-    default_cluster_.set_type(envoy::api::v2::Cluster::EDS);
+    default_cluster_.set_type(Cluster::EDS);
     default_cluster_.mutable_eds_cluster_config()
         ->mutable_eds_config()
         ->mutable_ads();
-    default_cluster_.set_lb_policy(envoy::api::v2::Cluster::ROUND_ROBIN);
+    default_cluster_.set_lb_policy(Cluster::ROUND_ROBIN);
     if (enable_load_reporting) {
       default_cluster_.mutable_lrs_server()->mutable_self();
     }
@@ -490,18 +505,20 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
                     "ADS[%p]: Received request for type %s with content %s",
                     this, request.type_url().c_str(),
                     request.DebugString().c_str());
+            const std::string v3_resource_type =
+                TypeUrlToV3(request.type_url());
             // Identify ACK and NACK by looking for version information and
             // comparing it to nonce (this server ensures they are always set to
             // the same in a response.)
             if (!request.response_nonce().empty()) {
-              resource_type_response_state_[request.type_url()].state =
+              resource_type_response_state_[v3_resource_type].state =
                   (!request.version_info().empty() &&
                    request.version_info() == request.response_nonce())
                       ? ResponseState::ACKED
                       : ResponseState::NACKED;
             }
             if (request.has_error_detail()) {
-              resource_type_response_state_[request.type_url()].error_message =
+              resource_type_response_state_[v3_resource_type].error_message =
                   request.error_detail().message();
             }
             // As long as the test did not tell us to ignore this type of
@@ -509,11 +526,11 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
             // 1. subscribe if necessary
             // 2. update if necessary
             // 3. unsubscribe if necessary
-            if (resource_types_to_ignore_.find(request.type_url()) ==
+            if (resource_types_to_ignore_.find(v3_resource_type) ==
                 resource_types_to_ignore_.end()) {
               auto& subscription_name_map =
-                  subscription_map[request.type_url()];
-              auto& resource_name_map = resource_map_[request.type_url()];
+                  subscription_map[v3_resource_type];
+              auto& resource_name_map = resource_map_[v3_resource_type];
               std::set<std::string> resources_in_current_request;
               std::set<std::string> resources_added_to_response;
               for (const std::string& resource_name :
@@ -521,7 +538,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
                 resources_in_current_request.emplace(resource_name);
                 auto& subscription_state = subscription_name_map[resource_name];
                 auto& resource_state = resource_name_map[resource_name];
-                MaybeSubscribe(request.type_url(), resource_name,
+                MaybeSubscribe(v3_resource_type, resource_name,
                                &subscription_state, &resource_state,
                                &update_queue);
                 if (ClientNeedsResourceUpdate(resource_state,
@@ -534,21 +551,22 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
                   resources_added_to_response.emplace(resource_name);
                   if (!response.has_value()) response.emplace();
                   if (resource_state.resource.has_value()) {
-                    response->add_resources()->CopyFrom(
-                        resource_state.resource.value());
+                    auto* resource = response->add_resources();
+                    resource->CopyFrom(resource_state.resource.value());
+                    resource->set_type_url(request.type_url());
                   }
                 }
               }
               // Process unsubscriptions for any resource no longer
               // present in the request's resource list.
               ProcessUnsubscriptions(
-                  request.type_url(), resources_in_current_request,
+                  v3_resource_type, resources_in_current_request,
                   &subscription_name_map, &resource_name_map);
               // Send response if needed.
               if (!resources_added_to_response.empty()) {
                 CompleteBuildingDiscoveryResponse(
-                    request.type_url(),
-                    ++resource_type_version[request.type_url()],
+                    v3_resource_type, request.type_url(),
+                    ++resource_type_version[v3_resource_type],
                     subscription_name_map, resources_added_to_response,
                     &response.value());
               }
@@ -570,6 +588,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
             const std::string resource_name =
                 std::move(update_queue.front().second);
             update_queue.pop_front();
+            const std::string v2_resource_type = TypeUrlToV2(resource_type);
             did_work = true;
             gpr_log(GPR_INFO, "ADS[%p]: Received update for type=%s name=%s",
                     this, resource_type.c_str(), resource_name.c_str());
@@ -588,11 +607,13 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
                     resource_state.version);
                 response.emplace();
                 if (resource_state.resource.has_value()) {
-                  response->add_resources()->CopyFrom(
-                      resource_state.resource.value());
+                  auto* resource = response->add_resources();
+                  resource->CopyFrom(resource_state.resource.value());
+                  resource->set_type_url(v2_resource_type);
                 }
                 CompleteBuildingDiscoveryResponse(
-                    resource_type, ++resource_type_version[resource_type],
+                    resource_type, v2_resource_type,
+                    ++resource_type_version[resource_type],
                     subscription_name_map, {resource_name}, &response.value());
               }
             }
@@ -767,8 +788,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
         const int& port = locality.ports[i];
         auto* lb_endpoints = endpoints->add_lb_endpoints();
         if (locality.health_statuses.size() > i &&
-            locality.health_statuses[i] !=
-                envoy::api::v2::HealthStatus::UNKNOWN) {
+            locality.health_statuses[i] != HealthStatus::UNKNOWN) {
           lb_endpoints->set_health_status(locality.health_statuses[i]);
         }
         auto* endpoint = lb_endpoints->mutable_endpoint();
@@ -864,6 +884,22 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
     *stream_closed = true;
   }
 
+  static std::string TypeUrlToV2(const std::string& resource_type) {
+    if (resource_type == kLdsTypeUrl) return kLdsV2TypeUrl;
+    if (resource_type == kRdsTypeUrl) return kRdsV2TypeUrl;
+    if (resource_type == kCdsTypeUrl) return kCdsV2TypeUrl;
+    if (resource_type == kEdsTypeUrl) return kEdsV2TypeUrl;
+    return resource_type;
+  }
+
+  static std::string TypeUrlToV3(const std::string& resource_type) {
+    if (resource_type == kLdsV2TypeUrl) return kLdsTypeUrl;
+    if (resource_type == kRdsV2TypeUrl) return kRdsTypeUrl;
+    if (resource_type == kCdsV2TypeUrl) return kCdsTypeUrl;
+    if (resource_type == kEdsV2TypeUrl) return kEdsTypeUrl;
+    return resource_type;
+  }
+
   // Checks whether the client needs to receive a newer version of
   // the resource.  If so, updates subscription_state->current_version and
   // returns true.
@@ -927,15 +963,15 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
   // Completing the building a DiscoveryResponse by adding common information
   // for all resources and by adding all subscribed resources for LDS and CDS.
   void CompleteBuildingDiscoveryResponse(
-      const std::string& resource_type, const int version,
-      const SubscriptionNameMap& subscription_name_map,
+      const std::string& resource_type, const std::string& v2_resource_type,
+      const int version, const SubscriptionNameMap& subscription_name_map,
       const std::set<std::string>& resources_added_to_response,
       DiscoveryResponse* response) {
     auto& response_state = resource_type_response_state_[resource_type];
     if (response_state.state == ResponseState::NOT_SENT) {
       response_state.state = ResponseState::SENT;
     }
-    response->set_type_url(resource_type);
+    response->set_type_url(v2_resource_type);
     response->set_version_info(absl::StrCat(version));
     response->set_nonce(absl::StrCat(version));
     if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
@@ -943,13 +979,14 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       // (even the unchanged ones)
       for (const auto& p : subscription_name_map) {
         const std::string& resource_name = p.first;
-        if (resources_added_to_response.find(resource_name) ==
+        if (resources_added_to_response.find(resource_type) ==
             resources_added_to_response.end()) {
           const ResourceState& resource_state =
               resource_map_[resource_type][resource_name];
           if (resource_state.resource.has_value()) {
-            response->add_resources()->CopyFrom(
-                resource_state.resource.value());
+            auto* resource = response->add_resources();
+            resource->CopyFrom(resource_state.resource.value());
+            resource->set_type_url(v2_resource_type);
           }
         }
       }
@@ -1022,7 +1059,10 @@ class LrsServiceImpl : public LrsService,
                 this, request.DebugString().c_str());
         std::vector<ClientStats> stats;
         for (const auto& cluster_stats : request.cluster_stats()) {
-          stats.emplace_back(cluster_stats);
+          std::string serialized = cluster_stats.SerializeAsString();
+          ClusterStats v3stats;
+          GPR_ASSERT(v3stats.ParseFromString(serialized));
+          stats.emplace_back(v3stats);
         }
         grpc_core::MutexLock lock(&load_report_mu_);
         result_queue_.emplace_back(std::move(stats));
@@ -1760,7 +1800,7 @@ TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
        GetBackendPorts(),
        kDefaultLocalityWeight,
        kDefaultLocalityPriority,
-       {envoy::api::v2::HealthStatus::DRAINING}},
+       {HealthStatus::DRAINING}},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args));
@@ -3434,7 +3474,7 @@ TEST_P(CdsTest, Vanilla) {
 // is other than EDS.
 TEST_P(CdsTest, WrongClusterType) {
   auto cluster = balancers_[0]->ads_service()->default_cluster();
-  cluster.set_type(envoy::api::v2::Cluster::STATIC);
+  cluster.set_type(Cluster::STATIC);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -3464,7 +3504,7 @@ TEST_P(CdsTest, WrongEdsConfig) {
 // other than ROUND_ROBIN.
 TEST_P(CdsTest, WrongLbPolicy) {
   auto cluster = balancers_[0]->ads_service()->default_cluster();
-  cluster.set_lb_policy(envoy::api::v2::Cluster::LEAST_REQUEST);
+  cluster.set_lb_policy(Cluster::LEAST_REQUEST);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
