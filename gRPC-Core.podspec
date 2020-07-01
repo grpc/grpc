@@ -279,6 +279,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/service_config.cc',
                       'src/core/ext/filters/client_channel/service_config.h',
                       'src/core/ext/filters/client_channel/service_config_call_data.h',
+                      'src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc',
                       'src/core/ext/filters/client_channel/service_config_parser.cc',
                       'src/core/ext/filters/client_channel/service_config_parser.h',
                       'src/core/ext/filters/client_channel/subchannel.cc',

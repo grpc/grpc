@@ -390,6 +390,14 @@ typedef struct {
   void* reserved;
 } grpc_auth_metadata_context;
 
+/** Performs a deep copy from \a from to \a to. **/
+GRPCAPI void grpc_auth_metadata_context_copy(grpc_auth_metadata_context* from,
+                                             grpc_auth_metadata_context* to);
+
+/** Releases internal resources held by \a context. **/
+GRPCAPI void grpc_auth_metadata_context_reset(
+    grpc_auth_metadata_context* context);
+
 /** Maximum number of metadata entries returnable by a credentials plugin via
     a synchronous return. */
 #define GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX 4

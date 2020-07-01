@@ -508,7 +508,15 @@ void filter_call_init_fails(grpc_end2end_test_config config) {
   g_enable_client_channel_filter = true;
   test_client_channel_filter(config);
   g_enable_client_channel_filter = false;
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL) {
+  // If the client handshake completes before the server handshake and the
+  // client is able to send application data before the server handshake
+  // completes, then testing the CLIENT_SUBCHANNEL filter will cause the server
+  // to hang waiting for the final handshake message from the client. This
+  // handshake message will never arrive because it would have been sent with
+  // the first application data message, which failed because of the filter.
+  if ((config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL) &&
+      !(config.feature_mask &
+        FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST)) {
     gpr_log(GPR_INFO, "Testing CLIENT_SUBCHANNEL filter.");
     g_enable_client_subchannel_filter = true;
     test_client_subchannel_filter(config);

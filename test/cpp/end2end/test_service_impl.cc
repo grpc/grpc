@@ -49,10 +49,9 @@ void MaybeEchoDeadline(experimental::ServerContextBase* context,
   }
 }
 
-void CheckServerAuthContext(
-    const experimental::ServerContextBase* context,
-    const grpc::string& expected_transport_security_type,
-    const grpc::string& expected_client_identity) {
+void CheckServerAuthContext(const experimental::ServerContextBase* context,
+                            const std::string& expected_transport_security_type,
+                            const std::string& expected_client_identity) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
@@ -74,7 +73,7 @@ void CheckServerAuthContext(
 // key-value pair. Returns -1 if the pair wasn't found.
 int MetadataMatchCount(
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    const grpc::string& key, const grpc::string& value) {
+    const std::string& key, const std::string& value) {
   int count = 0;
   for (const auto& metadatum : metadata) {
     if (ToString(metadatum.first) == key &&
@@ -273,7 +272,7 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         // Terminate rpc with error and debug info in trailer.
         if (req_->param().debug_info().stack_entries_size() ||
             !req_->param().debug_info().detail().empty()) {
-          grpc::string serialized_debug_info =
+          std::string serialized_debug_info =
               req_->param().debug_info().SerializeAsString();
           ctx_->AddTrailingMetadata(kDebugInfoTrailerKey,
                                     serialized_debug_info);
@@ -290,7 +289,7 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
       if (req_->has_param() && req_->param().response_message_length() > 0) {
         resp_->set_message(
-            grpc::string(req_->param().response_message_length(), '\0'));
+            std::string(req_->param().response_message_length(), '\0'));
       }
       if (req_->has_param() && req_->param().echo_peer()) {
         resp_->mutable_param()->set_peer(ctx_->peer());
@@ -499,7 +498,7 @@ CallbackTestServiceImpl::ResponseStream(
 
     void NextWrite() {
       response_.set_message(request_->message() +
-                            grpc::to_string(num_msgs_sent_));
+                            std::to_string(num_msgs_sent_));
       if (num_msgs_sent_ == server_responses_to_send_ - 1 &&
           server_coalescing_api_ != 0) {
         num_msgs_sent_++;

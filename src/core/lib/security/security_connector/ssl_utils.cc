@@ -67,6 +67,9 @@ static const char* cipher_suites = nullptr;
 // All cipher suites for default are compliant with HTTP2.
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
     grpc_ssl_cipher_suites,
+    "TLS_AES_128_GCM_SHA256:"
+    "TLS_AES_256_GCM_SHA384:"
+    "TLS_CHACHA20_POLY1305_SHA256:"
     "ECDHE-ECDSA-AES128-GCM-SHA256:"
     "ECDHE-ECDSA-AES256-GCM-SHA384:"
     "ECDHE-RSA-AES128-GCM-SHA256:"
@@ -131,6 +134,18 @@ grpc_get_tsi_client_certificate_request_type(
 
     default:
       return TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
+  }
+}
+
+tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version) {
+  switch (tls_version) {
+    case grpc_tls_version::TLS1_2:
+      return tsi_tls_version::TSI_TLS1_2;
+    case grpc_tls_version::TLS1_3:
+      return tsi_tls_version::TSI_TLS1_3;
+    default:
+      gpr_log(GPR_INFO, "Falling back to TLS 1.2.");
+      return tsi_tls_version::TSI_TLS1_2;
   }
 }
 

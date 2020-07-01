@@ -33,7 +33,7 @@ class HealthCheckServiceInterface {
   virtual ~HealthCheckServiceInterface() {}
 
   /// Set or change the serving status of the given \a service_name.
-  virtual void SetServingStatus(const grpc::string& service_name,
+  virtual void SetServingStatus(const std::string& service_name,
                                 bool serving) = 0;
   /// Apply to all registered service names.
   virtual void SetServingStatus(bool serving) = 0;

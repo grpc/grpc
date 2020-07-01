@@ -34,7 +34,7 @@ namespace grpc {
 class ResourceQuota final : private ::grpc::GrpcLibraryCodegen {
  public:
   /// \param name - a unique name for this ResourceQuota.
-  explicit ResourceQuota(const grpc::string& name);
+  explicit ResourceQuota(const std::string& name);
   ResourceQuota();
   ~ResourceQuota();
 
