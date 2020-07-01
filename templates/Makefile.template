@@ -155,26 +155,28 @@
   LD = $(LD_$(CONFIG))
   endif
   LDXX ?= $(LDXX_$(CONFIG))
+  ARFLAGS ?= rcs
   ifeq ($(SYSTEM),Linux)
   ifeq ($(origin AR), default)
-  AR = ar rcs
+  AR = ar
   endif
   STRIP ?= strip --strip-unneeded
   else
   ifeq ($(SYSTEM),Darwin)
   ifeq ($(origin AR), default)
-  AR = libtool -no_warning_for_no_symbols -o
+  AR = libtool
+  ARFLAGS = -no_warning_for_no_symbols -o
   endif
   STRIP ?= strip -x
   else
   ifeq ($(SYSTEM),MINGW32)
   ifeq ($(origin AR), default)
-  AR = ar rcs
+  AR = ar
   endif
   STRIP ?= strip --strip-unneeded
   else
   ifeq ($(origin AR), default)
-  AR = ar rcs
+  AR = ar
   endif
   STRIP ?= strip
   endif
@@ -319,7 +321,7 @@
   #
   ifeq ($(GRPC_CROSS_COMPILE),true)
   LDFLAGS += $(GRPC_CROSS_LDOPTS) # e.g. -L/usr/local/lib -L/usr/local/cross/lib
-  AROPTS = $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
+  ARFLAGS += $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
   USE_BUILT_PROTOC = false
   endif
 
@@ -1491,6 +1493,7 @@
       "name": "grpc_abseil",
       "build": "private",
       "language": "c",
+      "defaults": "abseil",
       "src": sorted(used_abseil_srcs),
       "hdr": sorted(used_abseil_hdrs),
       "secure": False,
@@ -1607,7 +1610,7 @@
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-  	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
+  	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(LIBGRPC_ABSEIL_OBJS) \

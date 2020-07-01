@@ -33,6 +33,8 @@
 #include <sys/socket.h>
 #endif
 
+#include <string>
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -49,6 +51,7 @@ extern "C" {
 #include <openssl/engine.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <openssl/tls1.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 }
@@ -888,6 +891,50 @@ static int NullVerifyCallback(int /*preverify_ok*/, X509_STORE_CTX* /*ctx*/) {
   return 1;
 }
 
+// Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
+// |max_tls_version|, respectively. Calling this method is a no-op when using
+// OpenSSL versions < 1.1.
+static tsi_result tsi_set_min_and_max_tls_versions(
+    SSL_CTX* ssl_context, tsi_tls_version min_tls_version,
+    tsi_tls_version max_tls_version) {
+  if (ssl_context == nullptr) {
+    gpr_log(GPR_INFO,
+            "Invalid nullptr argument to |tsi_set_min_and_max_tls_versions|.");
+    return TSI_INVALID_ARGUMENT;
+  }
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  // Set the min TLS version of the SSL context.
+  switch (min_tls_version) {
+    case tsi_tls_version::TSI_TLS1_2:
+      SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
+      break;
+#if defined(TLS1_3_VERSION)
+    case tsi_tls_version::TSI_TLS1_3:
+      SSL_CTX_set_min_proto_version(ssl_context, TLS1_3_VERSION);
+      break;
+#endif
+    default:
+      gpr_log(GPR_INFO, "TLS version is not supported.");
+      return TSI_FAILED_PRECONDITION;
+  }
+  // Set the max TLS version of the SSL context.
+  switch (max_tls_version) {
+    case tsi_tls_version::TSI_TLS1_2:
+      SSL_CTX_set_max_proto_version(ssl_context, TLS1_2_VERSION);
+      break;
+#if defined(TLS1_3_VERSION)
+    case tsi_tls_version::TSI_TLS1_3:
+      SSL_CTX_set_max_proto_version(ssl_context, TLS1_3_VERSION);
+      break;
+#endif
+    default:
+      gpr_log(GPR_INFO, "TLS version is not supported.");
+      return TSI_FAILED_PRECONDITION;
+  }
+#endif
+  return TSI_OK;
+}
+
 /* --- tsi_ssl_root_certs_store methods implementation. ---*/
 
 tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
@@ -1299,7 +1346,7 @@ static const tsi_handshaker_result_vtable handshaker_result_vtable = {
 };
 
 static tsi_result ssl_handshaker_result_create(
-    tsi_ssl_handshaker* handshaker, const unsigned char* unused_bytes,
+    tsi_ssl_handshaker* handshaker, unsigned char* unused_bytes,
     size_t unused_bytes_size, tsi_handshaker_result** handshaker_result) {
   if (handshaker == nullptr || handshaker_result == nullptr ||
       (unused_bytes_size > 0 && unused_bytes == nullptr)) {
@@ -1313,11 +1360,8 @@ static tsi_result ssl_handshaker_result_create(
   handshaker->ssl = nullptr;
   result->network_io = handshaker->network_io;
   handshaker->network_io = nullptr;
-  if (unused_bytes_size > 0) {
-    result->unused_bytes =
-        static_cast<unsigned char*>(gpr_malloc(unused_bytes_size));
-    memcpy(result->unused_bytes, unused_bytes, unused_bytes_size);
-  }
+  /* Transfer ownership of |unused_bytes| to the handshaker result. */
+  result->unused_bytes = unused_bytes;
   result->unused_bytes_size = unused_bytes_size;
   *handshaker_result = &result->base;
   return TSI_OK;
@@ -1410,6 +1454,36 @@ static void ssl_handshaker_destroy(tsi_handshaker* self) {
   gpr_free(impl);
 }
 
+// Removes the bytes remaining in |impl->SSL|'s read BIO and writes them to
+// |bytes_remaining|.
+static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
+                                      unsigned char** bytes_remaining,
+                                      size_t* bytes_remaining_size) {
+  if (impl == nullptr || bytes_remaining == nullptr ||
+      bytes_remaining_size == nullptr) {
+    return TSI_INVALID_ARGUMENT;
+  }
+  // Atempt to read all of the bytes in SSL's read BIO. These bytes should
+  // contain application data records that were appended to a handshake record
+  // containing the ClientFinished or ServerFinished message.
+  size_t bytes_in_ssl = BIO_pending(SSL_get_rbio(impl->ssl));
+  if (bytes_in_ssl == 0) return TSI_OK;
+  *bytes_remaining = static_cast<uint8_t*>(gpr_malloc(bytes_in_ssl));
+  int bytes_read = BIO_read(SSL_get_rbio(impl->ssl), *bytes_remaining,
+                            static_cast<int>(bytes_in_ssl));
+  // If an unexpected number of bytes were read, return an error status and free
+  // all of the bytes that were read.
+  if (bytes_read < 0 || static_cast<size_t>(bytes_read) != bytes_in_ssl) {
+    gpr_log(GPR_ERROR,
+            "Failed to read the expected number of bytes from SSL object.");
+    gpr_free(*bytes_remaining);
+    *bytes_remaining = nullptr;
+    return TSI_INTERNAL_ERROR;
+  }
+  *bytes_remaining_size = static_cast<size_t>(bytes_read);
+  return TSI_OK;
+}
+
 static tsi_result ssl_handshaker_next(
     tsi_handshaker* self, const unsigned char* received_bytes,
     size_t received_bytes_size, const unsigned char** bytes_to_send,
@@ -1450,9 +1524,19 @@ static tsi_result ssl_handshaker_next(
   if (ssl_handshaker_get_result(impl) == TSI_HANDSHAKE_IN_PROGRESS) {
     *handshaker_result = nullptr;
   } else {
-    size_t unused_bytes_size = received_bytes_size - bytes_consumed;
-    const unsigned char* unused_bytes =
-        unused_bytes_size == 0 ? nullptr : received_bytes + bytes_consumed;
+    // Any bytes that remain in |impl->ssl|'s read BIO after the handshake is
+    // complete must be extracted and set to the unused bytes of the handshaker
+    // result. This indicates to the gRPC stack that there are bytes from the
+    // peer that must be processed.
+    unsigned char* unused_bytes = nullptr;
+    size_t unused_bytes_size = 0;
+    status = ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size);
+    if (status != TSI_OK) return status;
+    if (unused_bytes_size > received_bytes_size) {
+      gpr_log(GPR_ERROR, "More unused bytes than received bytes.");
+      gpr_free(unused_bytes);
+      return TSI_INTERNAL_ERROR;
+    }
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result);
     if (status == TSI_OK) {
@@ -1805,11 +1889,14 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     return TSI_INVALID_ARGUMENT;
   }
 
-#if defined(OPENSSL_NO_TLS1_2_METHOD) || OPENSSL_API_COMPAT >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
+  result = tsi_set_min_and_max_tls_versions(
+      ssl_context, options->min_tls_version, options->max_tls_version);
+  if (result != TSI_OK) return result;
   if (ssl_context == nullptr) {
     gpr_log(GPR_ERROR, "Could not create ssl context.");
     return TSI_INVALID_ARGUMENT;
@@ -1969,11 +2056,15 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
   for (i = 0; i < options->num_key_cert_pairs; i++) {
     do {
-#if defined(OPENSSL_NO_TLS1_2_METHOD) || OPENSSL_API_COMPAT >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
       impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
 #else
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif
+      result = tsi_set_min_and_max_tls_versions(impl->ssl_contexts[i],
+                                                options->min_tls_version,
+                                                options->max_tls_version);
+      if (result != TSI_OK) return result;
       if (impl->ssl_contexts[i] == nullptr) {
         gpr_log(GPR_ERROR, "Could not create ssl context.");
         result = TSI_OUT_OF_RESOURCES;

@@ -39,7 +39,8 @@ namespace {
 
 inline ::std::string ImportProtoHeaders(
     const grpc::protobuf::FileDescriptor* dep, const char* indent,
-    const ::std::string& framework) {
+    const ::std::string& framework,
+    const ::std::string& pb_runtime_import_prefix) {
   ::std::string header = grpc_objective_c_generator::MessageHeaderName(dep);
 
   if (!IsProtobufLibraryBundledProtoFile(dep)) {
@@ -56,12 +57,16 @@ inline ::std::string ImportProtoHeaders(
   // create the import code snippet
   ::std::string framework_header =
       ::std::string(ProtobufLibraryFrameworkName) + "/" + file_name;
+  ::std::string local_header = file_name;
+  if (!pb_runtime_import_prefix.empty()) {
+    local_header = pb_runtime_import_prefix + "/" + file_name;
+  }
 
   static const ::std::string kFrameworkImportsCondition =
       "GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS";
   return PreprocIfElse(kFrameworkImportsCondition,
                        indent + SystemImport(framework_header),
-                       indent + LocalImport(file_name));
+                       indent + LocalImport(local_header));
 }
 
 }  // namespace
@@ -86,6 +91,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     }
 
     ::std::string framework;
+    ::std::string pb_runtime_import_prefix;
     std::vector<::std::string> params_list =
         grpc_generator::tokenize(parameter, ",");
     for (auto param_str = params_list.begin(); param_str != params_list.end();
@@ -104,6 +110,13 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
           return false;
         }
         framework = param[1];
+      } else if (param[0] == "runtime_import_prefix") {
+        if (param.size() != 2) {
+          *error = grpc::string("Format: runtime_import_prefix=dir/");
+          return false;
+        }
+        pb_runtime_import_prefix = param[1];
+        grpc_generator::StripSuffix(&pb_runtime_import_prefix, "/");
       }
     }
 
@@ -173,8 +186,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       ::std::string class_imports;
       for (int i = 0; i < file->dependency_count(); i++) {
-        class_imports +=
-            ImportProtoHeaders(file->dependency(i), "  ", framework);
+        class_imports += ImportProtoHeaders(
+            file->dependency(i), "  ", framework, pb_runtime_import_prefix);
       }
 
       ::std::string ng_protocols;
@@ -228,7 +241,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       ::std::string class_imports;
       for (int i = 0; i < file->dependency_count(); i++) {
-        class_imports += ImportProtoHeaders(file->dependency(i), "", framework);
+        class_imports += ImportProtoHeaders(file->dependency(i), "", framework,
+                                            pb_runtime_import_prefix);
       }
 
       ::std::string definitions;
