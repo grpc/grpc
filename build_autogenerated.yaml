@@ -349,9 +349,11 @@ libs:
   - src/core/lib/profiling/stap_timers.cc
   deps:
   - absl/time:time
+  - absl/synchronization:synchronization
   - absl/strings:strings
   - absl/strings:str_format
   - absl/memory:memory
+  - absl/base:base
   secure: false
 - name: grpc
   build: all

@@ -1106,6 +1106,24 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/strip.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/substitute.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/substitute.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/barrier.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/barrier.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/blocking_counter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/blocking_counter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/graphcycles.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/mutex_nonprod.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/mutex.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/mutex.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/notification.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/notification.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/civil_time.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/civil_time.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/clock.cc" role="src" />
