@@ -309,14 +309,6 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   }
 
 
-  const grpc_gcp_Identity* cpeer_identity =
-      grpc_gcp_HandshakerResult_peer_identity(hresult);
-  if (cpeer_identity == nullptr) {
-    gpr_log(GPR_ERROR, "Invalid peer identity");
-    return TSI_FAILED_PRECONDITION;
-  }
-  // client next side add teh map key value
-  // let ashitha know what the issue was
 
 
 
@@ -356,25 +348,37 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
       context, const_cast<grpc_gcp_RpcProtocolVersions*>(peer_rpc_version));
 
 
-  grpc_gcp_HandshakerResult* ncresult = grpc_gcp_HandshakerResp_mutable_result(resp, context_arena.ptr());
-  grpc_gcp_Identity* peer_identity = grpc_gcp_HandshakerResult_mutable_peer_identity(ncresult, context_arena.ptr());
+  grpc_gcp_HandshakerResult* ncresult = const_cast<grpc_gcp_HandshakerResult*>(hresult);
+  grpc_gcp_Identity* peer_identity = const_cast<grpc_gcp_Identity*>(identity);
   if(peer_identity == nullptr ) { //|| *peer_attributes_counter == nullptr) {
     gpr_log(GPR_ERROR, "Null Peer Identity.");
     return TSI_FAILED_PRECONDITION;
   }
+  
+  size_t iter;
+  grpc_gcp_Identity_AttributesEntry* peer_attributes_entry = grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
+
+   while ( peer_attributes_entry != nullptr) {
+    upb_strview key = grpc_gcp_Identity_AttributesEntry_key(const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(peer_attributes_entry));
+    upb_strview val = grpc_gcp_Identity_AttributesEntry_value(const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(peer_attributes_entry));
+    grpc_gcp_AltsContext_peer_attributes_set(context, key, val, context_arena.ptr());
+    peer_attributes_entry = grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
+  }
+ 
+
+
   // need to searilze before storing
 
-  size_t sample = 2048; // removing this line removes errors messages e0612
-  size_t* lenz = &sample;
-  grpc_gcp_Identity_AttributesEntry** peer_attributes = grpc_gcp_Identity_mutable_attributes(peer_identity, lenz); // need size_t *len)
-  // where do these labeled functions come from --> upb genreated files
-  // grpc_gcp_Identity_AttributesEntry** peer_attributes_counter = peer_attributes;
-  if(peer_attributes == nullptr ) { //|| *peer_attributes_counter == nullptr) {
-    gpr_log(GPR_ERROR, "Null PEER ATTRIBUTES.");
-    // GPR_ASSERT(0);
-    return TSI_FAILED_PRECONDITION; //This is triggering
-  }
-  gpr_log(GPR_ERROR, "NON NULL PEER ATTRIBUTES");
+
+  // grpc_gcp_Identity_AttributesEntry** peer_attributes = grpc_gcp_Identity_mutable_attributes(peer_identity, lenz); // need size_t *len)
+  // // where do these labeled functions come from --> upb genreated files
+  // // grpc_gcp_Identity_AttributesEntry** peer_attributes_counter = peer_attributes;
+  // if(peer_attributes == nullptr ) { //|| *peer_attributes_counter == nullptr) {
+  //   gpr_log(GPR_ERROR, "Null PEER ATTRIBUTES.");
+  //   // GPR_ASSERT(0);
+  //   return TSI_FAILED_PRECONDITION; //This is triggering
+  // }
+  // gpr_log(GPR_ERROR, "NON NULL PEER ATTRIBUTES");
   // // while(*peer_attributes_counter != nullptr) {//map<string, string>::iterator it = peer_attributes.begin(); it != peer_attributes.end(); it++ ) {
   // //   grpc_gcp_AltsContext_PeerAttributesEntry* peer_entry = grpc_gcp_AltsContext_add_peer_attributes(context, context_arena.ptr());
   // //   upb_strview key = grpc_gcp_Identity_AttributesEntry_key(*peer_attributes_counter); USE CONST_CAST
