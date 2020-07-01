@@ -55,7 +55,7 @@ enum TestCaseType {
   CUSTOM_METADATA
 };
 
-const vector<pair<TestCaseType, grpc::string>> kTestCaseList = {
+const vector<pair<TestCaseType, std::string>> kTestCaseList = {
     {EMPTY_UNARY, "empty_unary"},
     {LARGE_UNARY, "large_unary"},
     {CLIENT_COMPRESSED_UNARY, "client_compressed_unary"},
@@ -90,7 +90,7 @@ class WeightedRandomTestSelector {
 
 class StressTestInteropClient {
  public:
-  StressTestInteropClient(int test_id, const grpc::string& server_address,
+  StressTestInteropClient(int test_id, const std::string& server_address,
                           ChannelCreationFunc channel_creation_func,
                           const WeightedRandomTestSelector& test_selector,
                           long test_duration_secs, long sleep_duration_ms,
@@ -104,7 +104,7 @@ class StressTestInteropClient {
   bool RunTest(TestCaseType test_case);
 
   int test_id_;
-  const grpc::string& server_address_;
+  const std::string& server_address_;
   ChannelCreationFunc channel_creation_func_;
   std::unique_ptr<InteropClient> interop_client_;
   const WeightedRandomTestSelector& test_selector_;

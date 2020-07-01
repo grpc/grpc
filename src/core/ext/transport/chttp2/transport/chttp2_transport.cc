@@ -2890,7 +2890,7 @@ static void keepalive_watchdog_fired_locked(void* arg, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
     if (error == GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "%s: Keepalive watchdog fired. Closing transport.",
+      gpr_log(GPR_INFO, "%s: Keepalive watchdog fired. Closing transport.",
               t->peer_string);
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
       close_transport_locked(

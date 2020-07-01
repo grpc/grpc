@@ -270,26 +270,28 @@ ifeq ($(origin LD), default)
 LD = $(LD_$(CONFIG))
 endif
 LDXX ?= $(LDXX_$(CONFIG))
+ARFLAGS ?= rcs
 ifeq ($(SYSTEM),Linux)
 ifeq ($(origin AR), default)
-AR = ar rcs
+AR = ar
 endif
 STRIP ?= strip --strip-unneeded
 else
 ifeq ($(SYSTEM),Darwin)
 ifeq ($(origin AR), default)
-AR = libtool -no_warning_for_no_symbols -o
+AR = libtool
+ARFLAGS = -no_warning_for_no_symbols -o
 endif
 STRIP ?= strip -x
 else
 ifeq ($(SYSTEM),MINGW32)
 ifeq ($(origin AR), default)
-AR = ar rcs
+AR = ar
 endif
 STRIP ?= strip --strip-unneeded
 else
 ifeq ($(origin AR), default)
-AR = ar rcs
+AR = ar
 endif
 STRIP ?= strip
 endif
@@ -455,7 +457,7 @@ endif
 #
 ifeq ($(GRPC_CROSS_COMPILE),true)
 LDFLAGS += $(GRPC_CROSS_LDOPTS) # e.g. -L/usr/local/lib -L/usr/local/cross/lib
-AROPTS = $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
+ARFLAGS += $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
 USE_BUILT_PROTOC = false
 endif
 
@@ -551,7 +553,7 @@ endif
 ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
 ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
-PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.5.0 protobuf
+PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.12.0 protobuf
 CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
 else # HAS_PKG_CONFIG
 
@@ -968,7 +970,7 @@ protobuf_dep_message:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
-	@echo "The target you are trying to run requires protobuf 3.5.0+"
+	@echo "The target you are trying to run requires protobuf 3.12.0+"
 	@echo "Your system doesn't have it, and neither does the third_party directory."
 	@echo
 	@echo "Please consult INSTALL to get more information."
@@ -982,7 +984,7 @@ protoc_dep_message:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
-	@echo "The target you are trying to run requires protobuf-compiler 3.5.0+"
+	@echo "The target you are trying to run requires protobuf-compiler 3.12.0+"
 	@echo "Your system doesn't have it, and neither does the third_party directory."
 	@echo
 	@echo "Please consult INSTALL to get more information."
@@ -3230,7 +3232,7 @@ $(LIBDIR)/$(CONFIG)/libaddress_sorting.a:  $(LIBADDRESS_SORTING_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBADDRESS_SORTING_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBADDRESS_SORTING_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
 endif
@@ -3359,7 +3361,7 @@ $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBEND2END_NOSEC_TESTS_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBEND2END_NOSEC_TESTS_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 endif
@@ -3482,7 +3484,7 @@ $(LIBDIR)/$(CONFIG)/libend2end_tests.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_tests.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBEND2END_TESTS_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBEND2END_TESTS_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libend2end_tests.a
 endif
@@ -3592,7 +3594,7 @@ $(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBGPR_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBGPR_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgpr.a
 endif
@@ -4142,7 +4144,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc.a
 endif
@@ -4150,18 +4152,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.11 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.11 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.11
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
@@ -4199,7 +4201,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBGRPC_CSHARP_EXT_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBGRPC_CSHARP_EXT_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
 endif
@@ -4207,18 +4209,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgrpc -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.11 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgrpc -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.11 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).so.11
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).so
 endif
@@ -4274,7 +4276,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBGRPC_TEST_UTIL_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBGRPC_TEST_UTIL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a
 endif
@@ -4322,7 +4324,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADD
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
 endif
@@ -4768,7 +4770,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTI
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 endif
@@ -4776,18 +4778,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.11 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS) -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.11 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.11
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so
 endif
@@ -4832,7 +4834,7 @@ $(LIBDIR)/$(CONFIG)/libbenchmark_helpers.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_D
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbenchmark_helpers.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libbenchmark_helpers.a $(LIBBENCHMARK_HELPERS_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libbenchmark_helpers.a $(LIBBENCHMARK_HELPERS_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libbenchmark_helpers.a
 endif
@@ -4989,7 +4991,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
-    include/grpcpp/create_channel_posix_impl.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
     include/grpcpp/generic/generic_stub.h \
@@ -5080,11 +5081,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
-    include/grpcpp/server_builder_impl.h \
     include/grpcpp/server_context.h \
     include/grpcpp/server_impl.h \
     include/grpcpp/server_posix.h \
-    include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
     include/grpcpp/support/async_stream_impl.h \
     include/grpcpp/support/async_unary_call.h \
@@ -5141,7 +5140,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRE
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++.a
 endif
@@ -5212,7 +5211,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBGRPC++_ALTS_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBGRPC++_ALTS_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a
 endif
@@ -5284,7 +5283,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARE
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(LIBGRPC++_ERROR_DETAILS_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(LIBGRPC++_ERROR_DETAILS_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a
 endif
@@ -5358,7 +5357,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_D
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(LIBGRPC++_REFLECTION_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(LIBGRPC++_REFLECTION_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a
 endif
@@ -5432,7 +5431,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_test.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBGRPC++_TEST_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBGRPC++_TEST_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_test.a
 endif
@@ -5481,7 +5480,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBGRPC++_TEST_CONFIG_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBGRPC++_TEST_CONFIG_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 endif
@@ -5538,7 +5537,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DE
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a
 endif
@@ -5687,7 +5686,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
-    include/grpcpp/create_channel_posix_impl.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
     include/grpcpp/generic/generic_stub.h \
@@ -5778,11 +5776,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
-    include/grpcpp/server_builder_impl.h \
     include/grpcpp/server_context.h \
     include/grpcpp/server_impl.h \
     include/grpcpp/server_posix.h \
-    include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
     include/grpcpp/support/async_stream_impl.h \
     include/grpcpp/support/async_unary_call.h \
@@ -5829,7 +5825,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SOR
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 endif
@@ -5890,7 +5886,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
 endif
@@ -5941,7 +5937,7 @@ $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a $(LIBGRPCPP_CHANNELZ_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a $(LIBGRPCPP_CHANNELZ_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a
 endif
@@ -6260,7 +6256,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_D
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl.a $(LIBBORINGSSL_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libboringssl.a $(LIBBORINGSSL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl.a
 endif
@@ -6300,7 +6296,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBBORINGSSL_TEST_UTIL_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBBORINGSSL_TEST_UTIL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
 endif
@@ -6355,7 +6351,7 @@ $(LIBDIR)/$(CONFIG)/libbenchmark.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_D
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbenchmark.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBBENCHMARK_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBBENCHMARK_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libbenchmark.a
 endif
@@ -6404,7 +6400,7 @@ $(LIBDIR)/$(CONFIG)/libupb.a:  $(LIBUPB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libupb.a $(LIBUPB_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libupb.a $(LIBUPB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libupb.a
 endif
@@ -6461,7 +6457,7 @@ $(LIBDIR)/$(CONFIG)/libz.a:  $(LIBZ_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libz.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libz.a $(LIBZ_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libz.a $(LIBZ_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libz.a
 endif
@@ -6537,7 +6533,7 @@ $(LIBDIR)/$(CONFIG)/libares.a:  $(LIBARES_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libares.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libares.a $(LIBARES_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libares.a $(LIBARES_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libares.a
 endif
@@ -6607,12 +6603,13 @@ LIBGRPC_ABSEIL_SRC = \
 
 LIBGRPC_ABSEIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ABSEIL_SRC))))
 
+$(LIBGRPC_ABSEIL_OBJS): CPPFLAGS += -g -maes -msse4 -Ithird_party/abseil-cpp
 
 $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a:  $(LIBGRPC_ABSEIL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a $(LIBGRPC_ABSEIL_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a $(LIBGRPC_ABSEIL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
 endif
@@ -6677,7 +6674,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/gen_hpack_tables: protobuf_dep_error
 
@@ -6720,7 +6717,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: protobuf_dep_error
 
@@ -6763,7 +6760,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: protobuf_dep_error
 
@@ -11352,7 +11349,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/address_sorting_test: protobuf_dep_error
 
@@ -11398,7 +11395,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure: protobuf_dep_error
 
@@ -11447,7 +11444,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/alarm_test: protobuf_dep_error
 
@@ -11494,7 +11491,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/alts_concurrent_connectivity_test: protobuf_dep_error
 
@@ -11549,7 +11546,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer: protobuf_dep_error
 
@@ -11594,7 +11591,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/alts_util_test: protobuf_dep_error
 
@@ -11642,7 +11639,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/async_end2end_test: protobuf_dep_error
 
@@ -11696,7 +11693,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/auth_property_iterator_test: protobuf_dep_error
 
@@ -11739,7 +11736,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/backoff_test: protobuf_dep_error
 
@@ -11784,7 +11781,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test: protobuf_dep_error
 
@@ -11833,7 +11830,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/badreq_bad_client_test: protobuf_dep_error
 
@@ -11880,7 +11877,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bdp_estimator_test: protobuf_dep_error
 
@@ -11923,7 +11920,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_alarm: protobuf_dep_error
 
@@ -11967,7 +11964,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_arena: protobuf_dep_error
 
@@ -12011,7 +12008,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_byte_buffer: protobuf_dep_error
 
@@ -12055,7 +12052,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_call_create: protobuf_dep_error
 
@@ -12103,7 +12100,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_callback_streaming_ping_pong: protobuf_dep_error
 
@@ -12159,7 +12156,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_callback_unary_ping_pong: protobuf_dep_error
 
@@ -12211,7 +12208,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_channel: protobuf_dep_error
 
@@ -12255,7 +12252,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_chttp2_hpack: protobuf_dep_error
 
@@ -12299,7 +12296,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_chttp2_transport: protobuf_dep_error
 
@@ -12343,7 +12340,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_closure: protobuf_dep_error
 
@@ -12387,7 +12384,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_cq: protobuf_dep_error
 
@@ -12431,7 +12428,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads: protobuf_dep_error
 
@@ -12475,7 +12472,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_error: protobuf_dep_error
 
@@ -12519,7 +12516,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong: protobuf_dep_error
 
@@ -12563,7 +12560,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump: protobuf_dep_error
 
@@ -12607,7 +12604,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_fullstack_trickle: protobuf_dep_error
 
@@ -12651,7 +12648,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong: protobuf_dep_error
 
@@ -12695,7 +12692,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_metadata: protobuf_dep_error
 
@@ -12739,7 +12736,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_pollset: protobuf_dep_error
 
@@ -12783,7 +12780,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_threadpool: protobuf_dep_error
 
@@ -12827,7 +12824,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_timer: protobuf_dep_error
 
@@ -12871,7 +12868,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/byte_buffer_test: protobuf_dep_error
 
@@ -12914,7 +12911,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/byte_stream_test: protobuf_dep_error
 
@@ -12959,7 +12956,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/cancel_ares_query_test: protobuf_dep_error
 
@@ -13010,7 +13007,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/cfstream_test: protobuf_dep_error
 
@@ -13063,7 +13060,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/channel_arguments_test: protobuf_dep_error
 
@@ -13106,7 +13103,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/channel_filter_test: protobuf_dep_error
 
@@ -13151,7 +13148,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/channel_trace_test: protobuf_dep_error
 
@@ -13200,7 +13197,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/channelz_registry_test: protobuf_dep_error
 
@@ -13247,7 +13244,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/channelz_service_test: protobuf_dep_error
 
@@ -13302,7 +13299,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/channelz_test: protobuf_dep_error
 
@@ -13361,7 +13358,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/cli_call_test: protobuf_dep_error
 
@@ -13436,7 +13433,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/client_callback_end2end_test: protobuf_dep_error
 
@@ -13498,7 +13495,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/client_channel_stress_test: protobuf_dep_error
 
@@ -13556,7 +13553,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/client_fuzzer: protobuf_dep_error
 
@@ -13606,7 +13603,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test: protobuf_dep_error
 
@@ -13669,7 +13666,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/client_lb_end2end_test: protobuf_dep_error
 
@@ -13729,7 +13726,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/codegen_test_full: protobuf_dep_error
 
@@ -13772,7 +13769,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/codegen_test_minimal: protobuf_dep_error
 
@@ -13817,7 +13814,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test: protobuf_dep_error
 
@@ -13864,7 +13861,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/connectivity_state_test: protobuf_dep_error
 
@@ -13907,7 +13904,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/context_list_test: protobuf_dep_error
 
@@ -13954,7 +13951,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/delegating_channel_test: protobuf_dep_error
 
@@ -14007,7 +14004,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/destroy_grpclb_channel_with_active_connect_stress_test: protobuf_dep_error
 
@@ -14052,7 +14049,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test: protobuf_dep_error
 
@@ -14105,7 +14102,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/end2end_test: protobuf_dep_error
 
@@ -14164,7 +14161,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/error_details_test: protobuf_dep_error
 
@@ -14210,7 +14207,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/eventmanager_libuv_test: protobuf_dep_error
 
@@ -14256,7 +14253,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/exception_test: protobuf_dep_error
 
@@ -14310,7 +14307,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/filter_end2end_test: protobuf_dep_error
 
@@ -14366,7 +14363,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/flaky_network_test: protobuf_dep_error
 
@@ -14423,7 +14420,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/generic_end2end_test: protobuf_dep_error
 
@@ -14475,7 +14472,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/global_config_env_test: protobuf_dep_error
 
@@ -14518,7 +14515,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/global_config_test: protobuf_dep_error
 
@@ -14568,7 +14565,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_cli: protobuf_dep_error
 
@@ -14624,7 +14621,7 @@ GRPC_CPP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basen
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_cpp_plugin: protobuf_dep_error
 
@@ -14655,7 +14652,7 @@ GRPC_CSHARP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_csharp_plugin: protobuf_dep_error
 
@@ -14686,7 +14683,7 @@ GRPC_NODE_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(base
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_node_plugin: protobuf_dep_error
 
@@ -14717,7 +14714,7 @@ GRPC_OBJECTIVE_C_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o,
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin: protobuf_dep_error
 
@@ -14748,7 +14745,7 @@ GRPC_PHP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basen
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_php_plugin: protobuf_dep_error
 
@@ -14779,7 +14776,7 @@ GRPC_PYTHON_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_python_plugin: protobuf_dep_error
 
@@ -14810,7 +14807,7 @@ GRPC_RUBY_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(base
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_ruby_plugin: protobuf_dep_error
 
@@ -14849,7 +14846,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_tls_credentials_options_test: protobuf_dep_error
 
@@ -14901,7 +14898,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_tool_test: protobuf_dep_error
 
@@ -14970,7 +14967,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpclb_api_test: protobuf_dep_error
 
@@ -15022,7 +15019,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpclb_end2end_test: protobuf_dep_error
 
@@ -15079,7 +15076,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test: protobuf_dep_error
 
@@ -15124,7 +15121,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test: protobuf_dep_error
 
@@ -15173,7 +15170,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/headers_bad_client_test: protobuf_dep_error
 
@@ -15227,7 +15224,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/health_service_end2end_test: protobuf_dep_error
 
@@ -15288,7 +15285,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test: protobuf_dep_error
 
@@ -15336,7 +15333,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/http2_client: protobuf_dep_error
 
@@ -15387,7 +15384,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/http_request_fuzzer_test: protobuf_dep_error
 
@@ -15433,7 +15430,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/http_response_fuzzer_test: protobuf_dep_error
 
@@ -15483,7 +15480,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/hybrid_end2end_test: protobuf_dep_error
 
@@ -15540,7 +15537,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test: protobuf_dep_error
 
@@ -15593,7 +15590,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/interop_client: protobuf_dep_error
 
@@ -15657,7 +15654,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/interop_server: protobuf_dep_error
 
@@ -15713,7 +15710,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/interop_test: protobuf_dep_error
 
@@ -15757,7 +15754,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/json_fuzzer_test: protobuf_dep_error
 
@@ -15802,7 +15799,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/json_test: protobuf_dep_error
 
@@ -15847,7 +15844,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test: protobuf_dep_error
 
@@ -15898,7 +15895,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/lb_get_cpu_stats_test: protobuf_dep_error
 
@@ -15950,7 +15947,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/lb_load_data_store_test: protobuf_dep_error
 
@@ -15995,7 +15992,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/linux_system_roots_test: protobuf_dep_error
 
@@ -16042,7 +16039,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/message_allocator_end2end_test: protobuf_dep_error
 
@@ -16099,7 +16096,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/mock_test: protobuf_dep_error
 
@@ -16152,7 +16149,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test: protobuf_dep_error
 
@@ -16198,7 +16195,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test: protobuf_dep_error
 
@@ -16246,7 +16243,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/nonblocking_test: protobuf_dep_error
 
@@ -16296,7 +16293,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/noop-benchmark: protobuf_dep_error
 
@@ -16340,7 +16337,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/orphanable_test: protobuf_dep_error
 
@@ -16385,7 +16382,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/out_of_bounds_bad_client_test: protobuf_dep_error
 
@@ -16433,7 +16430,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/percent_decode_fuzzer: protobuf_dep_error
 
@@ -16479,7 +16476,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/percent_encode_fuzzer: protobuf_dep_error
 
@@ -16524,7 +16521,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/pid_controller_test: protobuf_dep_error
 
@@ -16571,7 +16568,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/port_sharing_end2end_test: protobuf_dep_error
 
@@ -16630,7 +16627,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/proto_server_reflection_test: protobuf_dep_error
 
@@ -16688,7 +16685,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/proto_utils_test: protobuf_dep_error
 
@@ -16753,7 +16750,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/qps_json_driver: protobuf_dep_error
 
@@ -16872,7 +16869,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/qps_worker: protobuf_dep_error
 
@@ -16965,7 +16962,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/raw_end2end_test: protobuf_dep_error
 
@@ -17020,7 +17017,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/ref_counted_ptr_test: protobuf_dep_error
 
@@ -17063,7 +17060,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/ref_counted_test: protobuf_dep_error
 
@@ -17106,7 +17103,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/retry_throttle_test: protobuf_dep_error
 
@@ -17149,7 +17146,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/secure_auth_context_test: protobuf_dep_error
 
@@ -17197,7 +17194,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_builder_plugin_test: protobuf_dep_error
 
@@ -17255,7 +17252,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_builder_test: protobuf_dep_error
 
@@ -17308,7 +17305,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_builder_with_socket_mutator_test: protobuf_dep_error
 
@@ -17358,7 +17355,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_chttp2_test: protobuf_dep_error
 
@@ -17401,7 +17398,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_context_test_spouse_test: protobuf_dep_error
 
@@ -17447,7 +17444,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_early_return_test: protobuf_dep_error
 
@@ -17498,7 +17495,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_fuzzer: protobuf_dep_error
 
@@ -17548,7 +17545,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test: protobuf_dep_error
 
@@ -17606,7 +17603,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test: protobuf_dep_error
 
@@ -17656,7 +17653,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_request_call_test: protobuf_dep_error
 
@@ -17711,7 +17708,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/service_config_end2end_test: protobuf_dep_error
 
@@ -17766,7 +17763,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/service_config_test: protobuf_dep_error
 
@@ -17809,7 +17806,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/settings_timeout_test: protobuf_dep_error
 
@@ -17856,7 +17853,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/shutdown_test: protobuf_dep_error
 
@@ -17910,7 +17907,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/simple_request_bad_client_test: protobuf_dep_error
 
@@ -17957,7 +17954,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/slice_hash_table_test: protobuf_dep_error
 
@@ -18000,7 +17997,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: protobuf_dep_error
 
@@ -18044,7 +18041,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/ssl_server_fuzzer: protobuf_dep_error
 
@@ -18089,7 +18086,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/static_metadata_test: protobuf_dep_error
 
@@ -18132,7 +18129,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/stats_test: protobuf_dep_error
 
@@ -18175,7 +18172,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/status_metadata_test: protobuf_dep_error
 
@@ -18218,7 +18215,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/status_util_test: protobuf_dep_error
 
@@ -18265,7 +18262,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/streaming_throughput_test: protobuf_dep_error
 
@@ -18317,7 +18314,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/string_ref_test: protobuf_dep_error
 
@@ -18360,7 +18357,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/test_cpp_client_credentials_test: protobuf_dep_error
 
@@ -18403,7 +18400,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/test_cpp_util_slice_test: protobuf_dep_error
 
@@ -18446,7 +18443,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/test_cpp_util_time_test: protobuf_dep_error
 
@@ -18489,7 +18486,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/thread_manager_test: protobuf_dep_error
 
@@ -18536,7 +18533,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/thread_stress_test: protobuf_dep_error
 
@@ -18588,7 +18585,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/time_jump_test: protobuf_dep_error
 
@@ -18631,7 +18628,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/timer_test: protobuf_dep_error
 
@@ -18674,7 +18671,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/tls_security_connector_test: protobuf_dep_error
 
@@ -18718,7 +18715,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/too_many_pings_test: protobuf_dep_error
 
@@ -18765,7 +18762,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test: protobuf_dep_error
 
@@ -18813,7 +18810,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/uri_fuzzer_test: protobuf_dep_error
 
@@ -18860,7 +18857,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test: protobuf_dep_error
 
@@ -18907,7 +18904,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/work_serializer_test: protobuf_dep_error
 
@@ -18973,7 +18970,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/writes_per_rpc_test: protobuf_dep_error
 
@@ -19083,7 +19080,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/xds_bootstrap_test: protobuf_dep_error
 
@@ -19136,7 +19133,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/xds_end2end_test: protobuf_dep_error
 
@@ -19204,7 +19201,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/xds_interop_client: protobuf_dep_error
 
@@ -19257,7 +19254,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/xds_interop_server: protobuf_dep_error
 
@@ -19309,7 +19306,7 @@ $(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_ssl_test: protobuf_dep_error
 
@@ -19419,7 +19416,7 @@ $(BORINGSSL_CRYPTO_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_crypto_test: protobuf_dep_error
 
@@ -19586,7 +19583,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry: protobuf_dep_error
 
@@ -19632,7 +19629,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry: protobuf_dep_error
 
@@ -19678,7 +19675,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry: protobuf_dep_error
 
@@ -19724,7 +19721,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/http_request_fuzzer_test_one_entry: protobuf_dep_error
 
@@ -19770,7 +19767,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/http_response_fuzzer_test_one_entry: protobuf_dep_error
 
@@ -19816,7 +19813,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/json_fuzzer_test_one_entry: protobuf_dep_error
 
@@ -19862,7 +19859,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test_one_entry: protobuf_dep_error
 
@@ -19908,7 +19905,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test_one_entry: protobuf_dep_error
 
@@ -19954,7 +19951,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/percent_decode_fuzzer_one_entry: protobuf_dep_error
 
@@ -20000,7 +19997,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/percent_encode_fuzzer_one_entry: protobuf_dep_error
 
@@ -20046,7 +20043,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_fuzzer_one_entry: protobuf_dep_error
 
@@ -20092,7 +20089,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/ssl_server_fuzzer_one_entry: protobuf_dep_error
 
@@ -20138,7 +20135,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/uri_fuzzer_test_one_entry: protobuf_dep_error
 
