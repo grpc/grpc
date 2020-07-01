@@ -12,7 +12,7 @@
 #include "src/core/lib/security/certificate_provider/registry.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-#include "upb/upb.h"
+#include "upb/upb.hpp"
 
 #include <fstream>
 #include <random>
