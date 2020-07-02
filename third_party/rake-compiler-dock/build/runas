@@ -2,13 +2,11 @@
 
 groupadd -o -g "$GID" "$GROUP"
 mkdir -p /tmp/home
-useradd -o -g "$GID" -u "$UID" -G rvm,sudo -p "" -b /tmp/home -m "$USER"
+useradd -o -g "$GID" -u "$UID" -G rvm,wheel -p "" -b /tmp/home -m "$USER"
 
 HOME=$(bash <<< "echo ~$USER")
 ln -s /usr/local/rake-compiler "$HOME"/.rake-compiler
 mkdir -p "$HOME"/.gem
 chown "$USER" "$HOME"/.gem
 
-sudo -u "$USER" --set-home \
-    BASH_ENV=/etc/rubybashrc \
-    -- "$@"
+BASH_ENV=/etc/rubybashrc && sudo -u "$USER" -g "$GROUP" -- "$@"
