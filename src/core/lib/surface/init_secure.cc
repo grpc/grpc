@@ -85,6 +85,10 @@ void grpc_security_init() {
   grpc_core::CertificateProviderRegistry::InitRegistry();
 }
 
+void grpc_security_shutdown(void) {
+  grpc_core::CertificateProviderRegistry::ShutdownRegistry();
+}
+
 void grpc_register_certificate_providers(void) {
   grpc_core::RegisterGoogleMeshCaProvider();
 }

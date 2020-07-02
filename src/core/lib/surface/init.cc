@@ -180,6 +180,7 @@ void grpc_shutdown_internal_locked(void) {
         }
       }
     }
+    grpc_security_shutdown();
     grpc_iomgr_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();

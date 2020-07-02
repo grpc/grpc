@@ -26,4 +26,6 @@ void grpc_register_security_filters(void) {}
 
 void grpc_security_init(void) {}
 
+void grpc_security_shutdown(void) {}
+
 void grpc_register_certificate_providers(void) {}
