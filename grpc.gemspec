@@ -746,7 +746,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/tmpfile_posix.cc )
   s.files += %w( src/core/lib/gpr/tmpfile_windows.cc )
   s.files += %w( src/core/lib/gpr/useful.h )
-  s.files += %w( src/core/lib/gpr/wrap_memcpy.cc )
   s.files += %w( src/core/lib/gprpp/arena.cc )
   s.files += %w( src/core/lib/gprpp/arena.h )
   s.files += %w( src/core/lib/gprpp/atomic.h )

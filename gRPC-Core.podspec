@@ -831,7 +831,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/tmpfile_posix.cc',
                       'src/core/lib/gpr/tmpfile_windows.cc',
                       'src/core/lib/gpr/useful.h',
-                      'src/core/lib/gpr/wrap_memcpy.cc',
                       'src/core/lib/gprpp/arena.cc',
                       'src/core/lib/gprpp/arena.h',
                       'src/core/lib/gprpp/atomic.h',

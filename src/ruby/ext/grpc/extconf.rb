@@ -78,7 +78,6 @@ if grpc_config == 'dbg'
   $CFLAGS << ' -O0 -ggdb3'
 end
 
-$LDFLAGS << ' -Wl,-wrap,memcpy' if RUBY_PLATFORM =~ /linux/
 $LDFLAGS << ' -static-libgcc -static-libstdc++' if RUBY_PLATFORM =~ /linux/
 $LDFLAGS << ' -static' if windows
 
