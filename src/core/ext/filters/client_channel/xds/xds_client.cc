@@ -894,14 +894,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
                  ? lds_update->route_config_name.c_str()
                  : "<inlined>"));
     if (lds_update->rds_update.has_value()) {
-      gpr_log(GPR_INFO, "  RouteConfiguration contains %" PRIuPTR " routes",
+      gpr_log(GPR_INFO, "RouteConfiguration contains %" PRIuPTR " routes",
               lds_update->rds_update.value().routes.size());
-      for (const auto& route : lds_update->rds_update.value().routes) {
-        gpr_log(GPR_INFO,
-                "  route: { service=\"%s\", "
-                "method=\"%s\" }, cluster=\"%s\" }",
-                route.service.c_str(), route.method.c_str(),
-                route.cluster_name.c_str());
+      for (size_t i = 0; i < lds_update->rds_update.value().routes.size();
+           ++i) {
+        gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
+                lds_update->rds_update.value().routes[i].ToString().c_str());
       }
     }
   }
@@ -959,12 +957,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
             "[xds_client %p] RDS update received;  RouteConfiguration contains "
             "%" PRIuPTR " routes",
             this, rds_update.value().routes.size());
-    for (const auto& route : rds_update.value().routes) {
-      gpr_log(GPR_INFO,
-              "  route: { service=\"%s\", "
-              "method=\"%s\" }, cluster=\"%s\" }",
-              route.service.c_str(), route.method.c_str(),
-              route.cluster_name.c_str());
+    for (size_t i = 0; i < rds_update.value().routes.size(); ++i) {
+      gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
+              rds_update.value().routes[i].ToString().c_str());
     }
   }
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
@@ -2024,17 +2019,92 @@ std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
 }
 
 std::string CreateServiceConfigRoute(const std::string& action_name,
-                                     const std::string& service,
-                                     const std::string& method) {
+                                     const XdsApi::RdsUpdate::RdsRoute& route) {
+  std::vector<std::string> headers;
+  for (const auto& header : route.matchers.header_matchers) {
+    std::string header_matcher;
+    switch (header.type) {
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::EXACT:
+        header_matcher = absl::StrFormat("             \"exact_match\": \"%s\"",
+                                         header.string_matcher);
+        break;
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::RANGE:
+        header_matcher = absl::StrFormat(
+            "             \"range_match\":{\n"
+            "              \"start\":%d,\n"
+            "              \"end\":%d\n"
+            "             }",
+            header.range_start, header.range_end);
+        break;
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::PRESENT:
+        header_matcher =
+            absl::StrFormat("             \"present_match\": %s",
+                            header.present_match ? "true" : "false");
+        break;
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::PREFIX:
+        header_matcher = absl::StrFormat(
+            "             \"prefix_match\": \"%s\"", header.string_matcher);
+        break;
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::SUFFIX:
+        header_matcher = absl::StrFormat(
+            "             \"suffix_match\": \"%s\"", header.string_matcher);
+        break;
+      default:
+        break;
+    }
+    std::vector<std::string> header_parts;
+    header_parts.push_back(
+        absl::StrFormat("           { \n"
+                        "             \"name\": \"%s\",\n",
+                        header.name));
+    header_parts.push_back(header_matcher);
+    if (header.invert_match) {
+      header_parts.push_back(
+          absl::StrFormat(",\n"
+                          "             \"invert_match\": true"));
+    }
+    header_parts.push_back(
+        absl::StrFormat("\n"
+                        "           }"));
+    headers.push_back(absl::StrJoin(header_parts, ""));
+  }
+  std::vector<std::string> headers_service_config;
+  if (!headers.empty()) {
+    headers_service_config.push_back("\"headers\":[\n");
+    headers_service_config.push_back(absl::StrJoin(headers, ","));
+    headers_service_config.push_back("           ],\n");
+  }
+  std::string path_match_str;
+  switch (route.matchers.path_matcher.type) {
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        PREFIX:
+      path_match_str = absl::StrFormat(
+          "\"prefix\": \"%s\",\n", route.matchers.path_matcher.string_matcher);
+      break;
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        PATH:
+      path_match_str = absl::StrFormat(
+          "\"path\": \"%s\",\n", route.matchers.path_matcher.string_matcher);
+      break;
+  }
   return absl::StrFormat(
       "      { \n"
-      "         \"methodName\": {\n"
-      "           \"service\": \"%s\",\n"
-      "           \"method\": \"%s\"\n"
-      "        },\n"
-      "        \"action\": \"%s\"\n"
+      "           %s"
+      "           %s"
+      "           %s"
+      "           \"action\": \"%s\"\n"
       "      }",
-      service, method, action_name);
+      path_match_str, absl::StrJoin(headers_service_config, ""),
+      route.matchers.fraction_per_million.has_value()
+          ? absl::StrFormat("\"match_fraction\":%d,\n",
+                            route.matchers.fraction_per_million.value())
+          : "",
+      action_name);
 }
 
 // Create the service config for one weighted cluster.
@@ -2216,7 +2286,7 @@ grpc_error* XdsClient::CreateServiceConfig(
         absl::StrFormat("%s:%s",
                         route.weighted_clusters.empty() ? "cds" : "weighted",
                         action_name),
-        route.service, route.method));
+        route));
   }
   std::vector<std::string> config_parts;
   config_parts.push_back(

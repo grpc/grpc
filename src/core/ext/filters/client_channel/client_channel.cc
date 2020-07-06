@@ -184,12 +184,18 @@ class ChannelData {
 
   void RemoveExternalConnectivityWatcher(grpc_closure* on_complete,
                                          bool cancel) {
-    MutexLock lock(&external_watchers_mu_);
-    auto it = external_watchers_.find(on_complete);
-    if (it != external_watchers_.end()) {
-      if (cancel) it->second->Cancel();
-      external_watchers_.erase(it);
+    ExternalConnectivityWatcher* watcher = nullptr;
+    {
+      MutexLock lock(&external_watchers_mu_);
+      auto it = external_watchers_.find(on_complete);
+      if (it != external_watchers_.end()) {
+        watcher = it->second;
+        external_watchers_.erase(it);
+      }
     }
+    // watcher->Cancel() will hop into the WorkSerializer, so we have to unlock
+    // the mutex before calling it.
+    if (watcher != nullptr && cancel) watcher->Cancel();
   }
 
   int NumExternalConnectivityWatchers() const {

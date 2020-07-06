@@ -111,7 +111,7 @@ class Client {
     EventState state;
     grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set,
                             nullptr /* channel_args */, server_addresses->addrs,
-                            1000);
+                            grpc_core::ExecCtx::Get()->Now() + 1000);
     ASSERT_TRUE(PollUntilDone(
         &state,
         grpc_timespec_to_millis_round_up(gpr_inf_future(GPR_CLOCK_MONOTONIC))));

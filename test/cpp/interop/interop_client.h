@@ -87,16 +87,16 @@ class InteropClient {
 
   // Auth tests.
   // username is a string containing the user email
-  bool DoJwtTokenCreds(const grpc::string& username);
-  bool DoComputeEngineCreds(const grpc::string& default_service_account,
-                            const grpc::string& oauth_scope);
+  bool DoJwtTokenCreds(const std::string& username);
+  bool DoComputeEngineCreds(const std::string& default_service_account,
+                            const std::string& oauth_scope);
   // username the GCE default service account email
-  bool DoOauth2AuthToken(const grpc::string& username,
-                         const grpc::string& oauth_scope);
+  bool DoOauth2AuthToken(const std::string& username,
+                         const std::string& oauth_scope);
   // username is a string containing the user email
-  bool DoPerRpcCreds(const grpc::string& json_key);
+  bool DoPerRpcCreds(const std::string& json_key);
   // default_service_account is the GCE default service account email
-  bool DoGoogleDefaultCredentials(const grpc::string& default_service_account);
+  bool DoGoogleDefaultCredentials(const std::string& default_service_account);
 
  private:
   class ServiceStub {
@@ -127,9 +127,9 @@ class InteropClient {
   bool PerformLargeUnary(SimpleRequest* request, SimpleResponse* response,
                          const CheckerFn& custom_checks_fn);
   bool AssertStatusOk(const Status& s,
-                      const grpc::string& optional_debug_string);
+                      const std::string& optional_debug_string);
   bool AssertStatusCode(const Status& s, StatusCode expected_code,
-                        const grpc::string& optional_debug_string);
+                        const std::string& optional_debug_string);
   bool TransientFailureOrAbort();
 
   std::tuple<bool, int32_t, std::string> PerformOneSoakTestIteration(

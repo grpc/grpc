@@ -422,7 +422,9 @@ namespace Grpc.Tools
             if (ProtoPath != null)
             {
                 foreach (string path in ProtoPath)
+                {
                     cmd.AddSwitchMaybe("proto_path", TrimEndSlash(path));
+                }
             }
             cmd.AddSwitchMaybe("dependency_out", DependencyOut);
             cmd.AddSwitchMaybe("error_format", "msvs");

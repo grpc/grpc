@@ -155,26 +155,28 @@
   LD = $(LD_$(CONFIG))
   endif
   LDXX ?= $(LDXX_$(CONFIG))
+  ARFLAGS ?= rcs
   ifeq ($(SYSTEM),Linux)
   ifeq ($(origin AR), default)
-  AR = ar rcs
+  AR = ar
   endif
   STRIP ?= strip --strip-unneeded
   else
   ifeq ($(SYSTEM),Darwin)
   ifeq ($(origin AR), default)
-  AR = libtool -no_warning_for_no_symbols -o
+  AR = libtool
+  ARFLAGS = -no_warning_for_no_symbols -o
   endif
   STRIP ?= strip -x
   else
   ifeq ($(SYSTEM),MINGW32)
   ifeq ($(origin AR), default)
-  AR = ar rcs
+  AR = ar
   endif
   STRIP ?= strip --strip-unneeded
   else
   ifeq ($(origin AR), default)
-  AR = ar rcs
+  AR = ar
   endif
   STRIP ?= strip
   endif
@@ -319,7 +321,7 @@
   #
   ifeq ($(GRPC_CROSS_COMPILE),true)
   LDFLAGS += $(GRPC_CROSS_LDOPTS) # e.g. -L/usr/local/lib -L/usr/local/cross/lib
-  AROPTS = $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
+  ARFLAGS += $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
   USE_BUILT_PROTOC = false
   endif
 
@@ -445,7 +447,7 @@
   ifeq ($(HAS_PKG_CONFIG),true)
   OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
   ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
-  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.5.0 protobuf
+  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.12.0 protobuf
   CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
   else # HAS_PKG_CONFIG
 
@@ -878,7 +880,7 @@
   	@echo
   	@echo "DEPENDENCY ERROR"
   	@echo
-  	@echo "The target you are trying to run requires protobuf 3.5.0+"
+  	@echo "The target you are trying to run requires protobuf 3.12.0+"
   	@echo "Your system doesn't have it, and neither does the third_party directory."
   	@echo
   	@echo "Please consult INSTALL to get more information."
@@ -892,7 +894,7 @@
   	@echo
   	@echo "DEPENDENCY ERROR"
   	@echo
-  	@echo "The target you are trying to run requires protobuf-compiler 3.5.0+"
+  	@echo "The target you are trying to run requires protobuf-compiler 3.12.0+"
   	@echo "Your system doesn't have it, and neither does the third_party directory."
   	@echo
   	@echo "Please consult INSTALL to get more information."
@@ -1495,6 +1497,7 @@
       "name": "grpc_abseil",
       "build": "private",
       "language": "c",
+      "defaults": "abseil",
       "src": sorted(used_abseil_srcs),
       "hdr": sorted(used_abseil_hdrs),
       "secure": False,
@@ -1613,7 +1616,7 @@
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-  	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
+  	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(LIBGRPC_ABSEIL_OBJS) \
@@ -1724,7 +1727,7 @@
   % endif
   % if lib.language == 'c++':
   ## If the lib was C++, we have to close the Makefile's if that tested
-  ## the presence of protobuf 3.5.0+
+  ## the presence of protobuf 3.12.0+
 
   endif
   % endif
@@ -1790,7 +1793,7 @@
 
   ifeq ($(NO_PROTOBUF),true)
 
-  # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+  # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
   $(BINDIR)/$(CONFIG)/${tgt.name}: protobuf_dep_error
 

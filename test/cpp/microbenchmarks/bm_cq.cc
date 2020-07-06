@@ -24,10 +24,11 @@
 #include <grpc/support/log.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
-#include "test/cpp/microbenchmarks/helpers.h"
-#include "test/cpp/util/test_config.h"
 
 #include "src/core/lib/surface/completion_queue.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/microbenchmarks/helpers.h"
+#include "test/cpp/util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -251,6 +252,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);

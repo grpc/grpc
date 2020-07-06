@@ -125,7 +125,7 @@ class MyTestServiceImpl : public TestServiceImpl {
     request_count_ = 0;
   }
 
-  std::set<grpc::string> clients() {
+  std::set<std::string> clients() {
     grpc::internal::MutexLock lock(&clients_mu_);
     return clients_;
   }
@@ -136,7 +136,7 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 
  private:
-  void AddClient(const grpc::string& client) {
+  void AddClient(const std::string& client) {
     grpc::internal::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
@@ -145,7 +145,7 @@ class MyTestServiceImpl : public TestServiceImpl {
   int request_count_ = 0;
   const udpa::data::orca::v1::OrcaLoadReport* load_report_ = nullptr;
   grpc::internal::Mutex clients_mu_;
-  std::set<grpc::string> clients_;
+  std::set<std::string> clients_;
 };
 
 class FakeResolverResponseGeneratorWrapper {
@@ -276,7 +276,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   std::shared_ptr<Channel> BuildChannel(
-      const grpc::string& lb_policy_name,
+      const std::string& lb_policy_name,
       const FakeResolverResponseGeneratorWrapper& response_generator,
       ChannelArguments args = ChannelArguments()) {
     if (lb_policy_name.size() > 0) {
@@ -338,7 +338,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       port_ = port > 0 ? port : grpc_pick_unused_port_or_die();
     }
 
-    void Start(const grpc::string& server_host) {
+    void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       started_ = true;
       grpc::internal::Mutex mu;
@@ -351,7 +351,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       gpr_log(GPR_INFO, "server startup complete");
     }
 
-    void Serve(const grpc::string& server_host, grpc::internal::Mutex* mu,
+    void Serve(const std::string& server_host, grpc::internal::Mutex* mu,
                grpc::internal::CondVar* cond) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
@@ -373,7 +373,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       started_ = false;
     }
 
-    void SetServingStatus(const grpc::string& service, bool serving) {
+    void SetServingStatus(const std::string& service, bool serving) {
       server_->GetHealthCheckService()->SetServingStatus(service, serving);
     }
   };
@@ -448,9 +448,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   }
 
-  const grpc::string server_host_;
+  const std::string server_host_;
   std::vector<std::unique_ptr<ServerData>> servers_;
-  const grpc::string kRequestMessage_;
+  const std::string kRequestMessage_;
   std::shared_ptr<ChannelCredentials> creds_;
 };
 

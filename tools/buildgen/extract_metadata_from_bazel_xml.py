@@ -589,6 +589,7 @@ _BUILD_EXTRA_METADATA = {
         'build': 'all',
         'baselib': True,
         'secure': True,
+        'deps_linkage': 'static',
         'dll': True,
         'generate_plugin_registry': True
     },
@@ -622,6 +623,7 @@ _BUILD_EXTRA_METADATA = {
     'grpc_csharp_ext': {
         'language': 'c',
         'build': 'all',
+        'deps_linkage': 'static',
         'dll': 'only'
     },
     'grpc_unsecure': {
@@ -629,6 +631,7 @@ _BUILD_EXTRA_METADATA = {
         'build': 'all',
         'baselib': True,
         'secure': False,
+        'deps_linkage': 'static',
         'dll': True,
         'generate_plugin_registry': True
     },

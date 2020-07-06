@@ -34,10 +34,10 @@ namespace reflection {
 class ProtoServerReflectionPlugin : public ::grpc::ServerBuilderPlugin {
  public:
   ProtoServerReflectionPlugin();
-  ::grpc::string name() override;
+  ::std::string name() override;
   void InitServer(::grpc_impl::ServerInitializer* si) override;
   void Finish(::grpc_impl::ServerInitializer* si) override;
-  void ChangeArguments(const ::grpc::string& name, void* value) override;
+  void ChangeArguments(const ::std::string& name, void* value) override;
   bool has_async_methods() const override;
   bool has_sync_methods() const override;
 

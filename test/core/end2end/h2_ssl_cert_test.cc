@@ -42,7 +42,7 @@ extern "C" {
 #include <openssl/crypto.h>
 }
 
-static grpc::string test_server1_key_id;
+static std::string test_server1_key_id;
 
 namespace grpc {
 namespace testing {
