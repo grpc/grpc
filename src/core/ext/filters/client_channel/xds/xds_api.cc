@@ -23,6 +23,7 @@
 #include <cstdlib>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 
@@ -62,7 +63,9 @@
 #include "envoy/config/listener/v2/api_listener.upb.h"
 #include "envoy/service/load_stats/v2/lrs.upb.h"
 #include "envoy/service/load_stats/v2/lrs.upbdefs.h"
+#include "envoy/type/matcher/regex.upb.h"
 #include "envoy/type/percent.upb.h"
+#include "envoy/type/range.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
@@ -151,6 +154,84 @@ bool XdsRoutingEnabled() {
 }
 
 }  // namespace
+
+std::string XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::ToString()
+    const {
+  std::string path_type_string;
+  switch (type) {
+    case PathMatcherType::PATH:
+      path_type_string = "path match";
+      break;
+    case PathMatcherType::PREFIX:
+      path_type_string = "prefix match";
+      break;
+    default:
+      break;
+  }
+  return absl::StrFormat("Path %s:/%s/", path_type_string, string_matcher);
+}
+
+std::string XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::ToString()
+    const {
+  switch (type) {
+    case HeaderMatcherType::EXACT:
+      return absl::StrFormat("Header exact match:%s %s:%s",
+                             invert_match ? " not" : "", name, string_matcher);
+    case HeaderMatcherType::RANGE:
+      return absl::StrFormat("Header range match:%s %s:[%d, %d)",
+                             invert_match ? " not" : "", name, range_start,
+                             range_end);
+    case HeaderMatcherType::PRESENT:
+      return absl::StrFormat("Header present match:%s %s:%s",
+                             invert_match ? " not" : "", name,
+                             present_match ? "true" : "false");
+    case HeaderMatcherType::PREFIX:
+      return absl::StrFormat("Header prefix match:%s %s:%s",
+                             invert_match ? " not" : "", name, string_matcher);
+    case HeaderMatcherType::SUFFIX:
+      return absl::StrFormat("Header suffix match:%s %s:%s",
+                             invert_match ? " not" : "", name, string_matcher);
+    default:
+      return "";
+  }
+}
+
+std::string XdsApi::RdsUpdate::RdsRoute::Matchers::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(path_matcher.ToString());
+  for (const auto& header_it : header_matchers) {
+    contents.push_back(header_it.ToString());
+  }
+  if (fraction_per_million.has_value()) {
+    contents.push_back(absl::StrFormat("Fraction Per Million %d",
+                                       fraction_per_million.value()));
+  }
+  return absl::StrJoin(contents, "\n");
+}
+
+std::string XdsApi::RdsUpdate::RdsRoute::ClusterWeight::ToString() const {
+  return absl::StrFormat("{cluster=%s, weight=%d}", name, weight);
+}
+
+std::string XdsApi::RdsUpdate::RdsRoute::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(matchers.ToString());
+  if (!cluster_name.empty()) {
+    contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
+  }
+  for (const auto& weighted_it : weighted_clusters) {
+    contents.push_back(weighted_it.ToString());
+  }
+  return absl::StrJoin(contents, "\n");
+}
+
+std::string XdsApi::RdsUpdate::ToString() const {
+  std::vector<std::string> contents;
+  for (const auto& route_it : routes) {
+    contents.push_back(route_it.ToString());
+  }
+  return absl::StrJoin(contents, ",\n");
+}
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
                const XdsBootstrap::Node* node)
@@ -465,8 +546,170 @@ MatchType DomainPatternMatchType(const std::string& domain_pattern) {
   return INVALID_MATCH;
 }
 
+grpc_error* RoutePathMatchParse(const envoy_api_v2_route_RouteMatch* match,
+                                XdsApi::RdsUpdate::RdsRoute* rds_route,
+                                bool* ignore_route) {
+  if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
+    upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
+    // Empty prefix "" is accepted.
+    if (prefix.size > 0) {
+      // Prefix "/" is accepted.
+      if (prefix.data[0] != '/') {
+        // Prefix which does not start with a / will never match anything, so
+        // ignore this route.
+        *ignore_route = true;
+        return GRPC_ERROR_NONE;
+      }
+      std::vector<absl::string_view> prefix_elements =
+          absl::StrSplit(absl::string_view(prefix.data, prefix.size).substr(1),
+                         absl::MaxSplits('/', 2));
+      if (prefix_elements.size() > 2) {
+        // Prefix cannot have more than 2 slashes.
+        *ignore_route = true;
+        return GRPC_ERROR_NONE;
+      } else if (prefix_elements.size() == 2 && prefix_elements[0].empty()) {
+        // Prefix contains empty string between the 2 slashes
+        *ignore_route = true;
+        return GRPC_ERROR_NONE;
+      }
+    }
+    rds_route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
+        Matchers::PathMatcher::PathMatcherType::PREFIX;
+    rds_route->matchers.path_matcher.string_matcher =
+        UpbStringToStdString(prefix);
+  } else if (envoy_api_v2_route_RouteMatch_has_path(match)) {
+    upb_strview path = envoy_api_v2_route_RouteMatch_path(match);
+    if (path.size == 0) {
+      // Path that is empty will never match anything, so ignore this route.
+      *ignore_route = true;
+      return GRPC_ERROR_NONE;
+    }
+    if (path.data[0] != '/') {
+      // Path which does not start with a / will never match anything, so
+      // ignore this route.
+      *ignore_route = true;
+      return GRPC_ERROR_NONE;
+    }
+    std::vector<absl::string_view> path_elements =
+        absl::StrSplit(absl::string_view(path.data, path.size).substr(1),
+                       absl::MaxSplits('/', 2));
+    if (path_elements.size() != 2) {
+      // Path not in the required format of /service/method will never match
+      // anything, so ignore this route.
+      *ignore_route = true;
+      return GRPC_ERROR_NONE;
+    } else if (path_elements[0].empty()) {
+      // Path contains empty service name will never match anything, so ignore
+      // this route.
+      *ignore_route = true;
+      return GRPC_ERROR_NONE;
+    } else if (path_elements[1].empty()) {
+      // Path contains empty method name will never match anything, so ignore
+      // this route.
+      *ignore_route = true;
+      return GRPC_ERROR_NONE;
+    }
+    rds_route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
+        Matchers::PathMatcher::PathMatcherType::PATH;
+    rds_route->matchers.path_matcher.string_matcher =
+        UpbStringToStdString(path);
+  } else {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid route path specifier specified.");
+  }
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
+                                     XdsApi::RdsUpdate::RdsRoute* rds_route) {
+  size_t size;
+  const envoy_api_v2_route_HeaderMatcher* const* headers =
+      envoy_api_v2_route_RouteMatch_headers(match, &size);
+  for (size_t i = 0; i < size; ++i) {
+    const envoy_api_v2_route_HeaderMatcher* header = headers[i];
+    XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher header_matcher;
+    header_matcher.name =
+        UpbStringToStdString(envoy_api_v2_route_HeaderMatcher_name(header));
+    if (envoy_api_v2_route_HeaderMatcher_has_exact_match(header)) {
+      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+          HeaderMatcher::HeaderMatcherType::EXACT;
+      header_matcher.string_matcher = UpbStringToStdString(
+          envoy_api_v2_route_HeaderMatcher_exact_match(header));
+    } else if (envoy_api_v2_route_HeaderMatcher_has_range_match(header)) {
+      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+          HeaderMatcher::HeaderMatcherType::RANGE;
+      const envoy_type_Int64Range* range_matcher =
+          envoy_api_v2_route_HeaderMatcher_range_match(header);
+      header_matcher.range_start = envoy_type_Int64Range_start(range_matcher);
+      header_matcher.range_end = envoy_type_Int64Range_end(range_matcher);
+      if (header_matcher.range_end < header_matcher.range_start) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Invalid range header matcher specifier specified: end "
+            "cannot be smaller than start.");
+      }
+    } else if (envoy_api_v2_route_HeaderMatcher_has_present_match(header)) {
+      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+          HeaderMatcher::HeaderMatcherType::PRESENT;
+      header_matcher.present_match =
+          envoy_api_v2_route_HeaderMatcher_present_match(header);
+    } else if (envoy_api_v2_route_HeaderMatcher_has_prefix_match(header)) {
+      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+          HeaderMatcher::HeaderMatcherType::PREFIX;
+      header_matcher.string_matcher = UpbStringToStdString(
+          envoy_api_v2_route_HeaderMatcher_prefix_match(header));
+    } else if (envoy_api_v2_route_HeaderMatcher_has_suffix_match(header)) {
+      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+          HeaderMatcher::HeaderMatcherType::SUFFIX;
+      header_matcher.string_matcher = UpbStringToStdString(
+          envoy_api_v2_route_HeaderMatcher_suffix_match(header));
+    } else {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Invalid route header matcher specified.");
+    }
+    header_matcher.invert_match =
+        envoy_api_v2_route_HeaderMatcher_invert_match(header);
+    rds_route->matchers.header_matchers.emplace_back(std::move(header_matcher));
+  }
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* RouteRuntimeFractionParse(
+    const envoy_api_v2_route_RouteMatch* match,
+    XdsApi::RdsUpdate::RdsRoute* rds_route) {
+  const envoy_api_v2_core_RuntimeFractionalPercent* runtime_fraction =
+      envoy_api_v2_route_RouteMatch_runtime_fraction(match);
+  if (runtime_fraction != nullptr) {
+    const envoy_type_FractionalPercent* fraction =
+        envoy_api_v2_core_RuntimeFractionalPercent_default_value(
+            runtime_fraction);
+    if (fraction != nullptr) {
+      uint32_t numerator = envoy_type_FractionalPercent_numerator(fraction);
+      const auto denominator =
+          static_cast<envoy_type_FractionalPercent_DenominatorType>(
+              envoy_type_FractionalPercent_denominator(fraction));
+      // Normalize to million.
+      switch (denominator) {
+        case envoy_type_FractionalPercent_HUNDRED:
+          numerator *= 10000;
+          break;
+        case envoy_type_FractionalPercent_TEN_THOUSAND:
+          numerator *= 100;
+          break;
+        case envoy_type_FractionalPercent_MILLION:
+          break;
+        default:
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Unknown denominator type");
+      }
+      rds_route->matchers.fraction_per_million = numerator;
+    }
+  }
+  return GRPC_ERROR_NONE;
+}
+
 grpc_error* RouteActionParse(const envoy_api_v2_route_Route* route,
-                             XdsApi::RdsUpdate::RdsRoute* rds_route) {
+                             XdsApi::RdsUpdate::RdsRoute* rds_route,
+                             bool* ignore_route) {
   if (!envoy_api_v2_route_Route_has_route(route)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No RouteAction found in route.");
@@ -529,8 +772,9 @@ grpc_error* RouteActionParse(const envoy_api_v2_route_Route* route,
           "RouteAction weighted_cluster has no valid clusters specified.");
     }
   } else {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No cluster or weighted_clusters found in RouteAction.");
+    // No cluster or weighted_clusters found in RouteAction, ignore this route.
+    *ignore_route = true;
+    return GRPC_ERROR_NONE;
   }
   return GRPC_ERROR_NONE;
 }
@@ -606,6 +850,8 @@ grpc_error* RouteConfigParse(
     const envoy_api_v2_route_RouteMatch* match =
         envoy_api_v2_route_Route_match(route);
     XdsApi::RdsUpdate::RdsRoute rds_route;
+    rds_route.matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
+        Matchers::PathMatcher::PathMatcherType::PREFIX;
     // if xds routing is not enabled, we must be working on the default route;
     // in this case, we must have an empty or single slash prefix.
     if (!envoy_api_v2_route_RouteMatch_has_prefix(match)) {
@@ -618,8 +864,13 @@ grpc_error* RouteConfigParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Default route must have empty prefix.");
     }
-    grpc_error* error = RouteActionParse(route, &rds_route);
+    bool ignore_route = false;
+    grpc_error* error = RouteActionParse(route, &rds_route, &ignore_route);
     if (error != GRPC_ERROR_NONE) return error;
+    if (ignore_route) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Default route action is ignored.");
+    }
     rds_update->routes.emplace_back(std::move(rds_route));
     return GRPC_ERROR_NONE;
   }
@@ -628,6 +879,24 @@ grpc_error* RouteConfigParse(
     const envoy_api_v2_route_Route* route = routes[i];
     const envoy_api_v2_route_RouteMatch* match =
         envoy_api_v2_route_Route_match(route);
+    size_t query_parameters_size;
+    static_cast<void>(envoy_api_v2_route_RouteMatch_query_parameters(
+        match, &query_parameters_size));
+    if (query_parameters_size > 0) {
+      continue;
+    }
+    XdsApi::RdsUpdate::RdsRoute rds_route;
+    bool ignore_route = false;
+    grpc_error* error = RoutePathMatchParse(match, &rds_route, &ignore_route);
+    if (error != GRPC_ERROR_NONE) return error;
+    if (ignore_route) continue;
+    error = RouteHeaderMatchersParse(match, &rds_route);
+    if (error != GRPC_ERROR_NONE) return error;
+    error = RouteRuntimeFractionParse(match, &rds_route);
+    if (error != GRPC_ERROR_NONE) return error;
+    error = RouteActionParse(route, &rds_route, &ignore_route);
+    if (error != GRPC_ERROR_NONE) return error;
+    if (ignore_route) continue;
     const google_protobuf_BoolValue* case_sensitive =
         envoy_api_v2_route_RouteMatch_case_sensitive(match);
     if (case_sensitive != nullptr &&
@@ -635,64 +904,6 @@ grpc_error* RouteConfigParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "case_sensitive if set must be set to true.");
     }
-    XdsApi::RdsUpdate::RdsRoute rds_route;
-    if (envoy_api_v2_route_RouteMatch_has_prefix(match)) {
-      upb_strview prefix = envoy_api_v2_route_RouteMatch_prefix(match);
-      // Empty prefix "" is accepted.
-      if (prefix.size > 0) {
-        // Prefix "/" is accepted.
-        if (prefix.data[0] != '/') {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Prefix does not start with a /");
-        }
-        if (prefix.size > 1) {
-          std::vector<absl::string_view> prefix_elements = absl::StrSplit(
-              absl::string_view(prefix.data, prefix.size).substr(1),
-              absl::MaxSplits('/', 1));
-          if (prefix_elements.size() != 2) {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Prefix not in the required format of /service/");
-          } else if (!prefix_elements[1].empty()) {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Prefix does not end with a /");
-          } else if (prefix_elements[0].empty()) {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Prefix contains empty service name");
-          }
-          rds_route.service = std::string(prefix_elements[0]);
-        }
-      }
-    } else if (envoy_api_v2_route_RouteMatch_has_path(match)) {
-      upb_strview path = envoy_api_v2_route_RouteMatch_path(match);
-      if (path.size == 0) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Path if set cannot be empty");
-      }
-      if (path.data[0] != '/') {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Path does not start with a /");
-      }
-      std::vector<absl::string_view> path_elements = absl::StrSplit(
-          absl::string_view(path.data, path.size).substr(1), '/');
-      if (path_elements.size() != 2) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Path not in the required format of /service/method");
-      } else if (path_elements[0].empty()) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Path contains empty service name");
-      } else if (path_elements[1].empty()) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Path contains empty method name");
-      }
-      rds_route.service = std::string(path_elements[0]);
-      rds_route.method = std::string(path_elements[1]);
-    } else {
-      // Path specifier types will be supported, ignore but not reject until
-      // they are implemented.
-      continue;
-    }
-    grpc_error* error = RouteActionParse(route, &rds_route);
-    if (error != GRPC_ERROR_NONE) return error;
     rds_update->routes.emplace_back(std::move(rds_route));
   }
   if (rds_update->routes.empty()) {
