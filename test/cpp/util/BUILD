@@ -310,3 +310,20 @@ grpc_cc_binary(
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )
+
+grpc_cc_binary(
+		name = "channelz_sampler",
+		srcs = ["channelz_sampler.cc"],
+		external_deps = [
+				"gflags",
+  	],
+		language = "C++",
+		deps = [
+				"//:gpr",
+				"//:grpc++",
+				"//:grpcpp_channelz",
+				"//src/proto/grpc/channelz:channelz_proto",
+				"//test/cpp/util:test_config",
+				"//test/cpp/util:test_util",
+		],
+)
