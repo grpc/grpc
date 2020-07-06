@@ -46,7 +46,8 @@ DEFINE_string(custom_credentials_type, "", "custom credentials type");
 // "INSECURE_CREDENTIALS" - InsecureChannelCredentials
 // "alts" - AltsCredentials
 // "ssl" - SslCredentials
-// "google_default_credentials" - GoogleDefaultCredentials: tls connection + oauth token
+// "google_default_credentials" - GoogleDefaultCredentials: tls connection +
+// oauth token
 
 using grpc::channelz::v1::GetChannelRequest;
 using grpc::channelz::v1::GetChannelResponse;
@@ -80,37 +81,38 @@ int64_t GetSocketID(grpc::channelz::v1::Socket& socket) {
 }
 
 void GetChannelRPC(int64_t channel_id,
-                 grpc::channelz::v1::Channelz::Stub* channelz_stub,
-                 std::queue<grpc::channelz::v1::Channel>& channel_queue) {
+                   grpc::channelz::v1::Channelz::Stub* channelz_stub,
+                   std::queue<grpc::channelz::v1::Channel>& channel_queue) {
   GetChannelRequest get_channel_request;
   get_channel_request.set_channel_id(channel_id);
   GetChannelResponse get_channel_response;
   ClientContext get_channel_context;
   channelz_stub->GetChannel(&get_channel_context, get_channel_request,
-                                &get_channel_response);
+                            &get_channel_response);
   channel_queue.push(get_channel_response.channel());
 }
 
-void GetSubchannelRPC(int64_t subchannel_id,
-                 grpc::channelz::v1::Channelz::Stub* channelz_stub,
-                 std::queue<grpc::channelz::v1::Subchannel>& subchannel_queue) {
+void GetSubchannelRPC(
+    int64_t subchannel_id, grpc::channelz::v1::Channelz::Stub* channelz_stub,
+    std::queue<grpc::channelz::v1::Subchannel>& subchannel_queue) {
   GetSubchannelRequest get_subchannel_request;
   get_subchannel_request.set_subchannel_id(subchannel_id);
   GetSubchannelResponse get_subchannel_response;
   ClientContext get_subchannel_context;
   channelz_stub->GetSubchannel(&get_subchannel_context, get_subchannel_request,
-                                &get_subchannel_response);
+                               &get_subchannel_response);
   subchannel_queue.push(get_subchannel_response.subchannel());
 }
 
-void GetChannelDescedence(grpc::channelz::v1::Channelz::Stub* channelz_stub,
-                    grpc::channelz::v1::Channel& channel,
-                    std::queue<grpc::channelz::v1::Channel>& channel_queue,
-                    std::queue<grpc::channelz::v1::Subchannel>& subchannel_queue) {
+void GetChannelDescedence(
+    grpc::channelz::v1::Channelz::Stub* channelz_stub,
+    grpc::channelz::v1::Channel& channel,
+    std::queue<grpc::channelz::v1::Channel>& channel_queue,
+    std::queue<grpc::channelz::v1::Subchannel>& subchannel_queue) {
   std::cout << "    Channel " << GetChannelID(channel) << " descendence - ";
   if (channel.channel_ref_size() > 0) {
     std::cout << "channel: ";
-    for (auto &i : channel.channel_ref()) {
+    for (auto& i : channel.channel_ref()) {
       int64_t ch_id = i.channel_id();
       std::cout << ch_id << " ";
       GetChannelRPC(ch_id, channelz_stub, channel_queue);
@@ -118,7 +120,7 @@ void GetChannelDescedence(grpc::channelz::v1::Channelz::Stub* channelz_stub,
   }
   if (channel.subchannel_ref_size() > 0) {
     std::cout << "subchannel: ";
-    for (auto &i : channel.subchannel_ref()) {
+    for (auto& i : channel.subchannel_ref()) {
       int64_t subch_id = i.subchannel_id();
       std::cout << subch_id << " ";
       GetSubchannelRPC(subch_id, channelz_stub, subchannel_queue);
@@ -126,7 +128,7 @@ void GetChannelDescedence(grpc::channelz::v1::Channelz::Stub* channelz_stub,
   }
   if (channel.socket_ref_size() > 0) {
     std::cout << "socket: ";
-    for (auto &i : channel.socket_ref()) {
+    for (auto& i : channel.socket_ref()) {
       int64_t so_id = i.socket_id();
       std::cout << so_id << " ";
     }
@@ -134,14 +136,16 @@ void GetChannelDescedence(grpc::channelz::v1::Channelz::Stub* channelz_stub,
   std::cout << std::endl;
 }
 
-void GetSubchannelDescedence(grpc::channelz::v1::Channelz::Stub* channelz_stub,
-                    grpc::channelz::v1::Subchannel& subchannel,
-                    std::queue<grpc::channelz::v1::Channel>& channel_queue,
-                    std::queue<grpc::channelz::v1::Subchannel>& subchannel_queue) {
-  std::cout << "    Subchannel " << GetSubchannelID(subchannel) << " descendence - ";
+void GetSubchannelDescedence(
+    grpc::channelz::v1::Channelz::Stub* channelz_stub,
+    grpc::channelz::v1::Subchannel& subchannel,
+    std::queue<grpc::channelz::v1::Channel>& channel_queue,
+    std::queue<grpc::channelz::v1::Subchannel>& subchannel_queue) {
+  std::cout << "    Subchannel " << GetSubchannelID(subchannel)
+            << " descendence - ";
   if (subchannel.channel_ref_size() > 0) {
     std::cout << "channel: ";
-    for (auto &i : subchannel.channel_ref()) {
+    for (auto& i : subchannel.channel_ref()) {
       int64_t ch_id = i.channel_id();
       std::cout << ch_id << " ";
       GetChannelRPC(ch_id, channelz_stub, channel_queue);
@@ -149,7 +153,7 @@ void GetSubchannelDescedence(grpc::channelz::v1::Channelz::Stub* channelz_stub,
   }
   if (subchannel.subchannel_ref_size() > 0) {
     std::cout << "subchannel: ";
-    for (auto &i : subchannel.subchannel_ref()) {
+    for (auto& i : subchannel.subchannel_ref()) {
       int64_t subch_id = i.subchannel_id();
       std::cout << subch_id << " ";
       GetSubchannelRPC(subch_id, channelz_stub, subchannel_queue);
@@ -157,7 +161,7 @@ void GetSubchannelDescedence(grpc::channelz::v1::Channelz::Stub* channelz_stub,
   }
   if (subchannel.socket_ref_size() > 0) {
     std::cout << "socket: ";
-    for (auto &i : subchannel.socket_ref()) {
+    for (auto& i : subchannel.socket_ref()) {
       int64_t so_id = i.socket_id();
       std::cout << so_id << " ";
     }
@@ -168,8 +172,9 @@ void GetSubchannelDescedence(grpc::channelz::v1::Channelz::Stub* channelz_stub,
 int main(int argc, char** argv) {
   // make sure flags can be used
   grpc::testing::InitTest(&argc, &argv, true);
-  std::cout << "server address: " <<FLAGS_server_address << std::endl;
-  std::cout << "custom credentials type: " <<FLAGS_custom_credentials_type << std::endl;
+  std::cout << "server address: " << FLAGS_server_address << std::endl;
+  std::cout << "custom credentials type: " << FLAGS_custom_credentials_type
+            << std::endl;
 
   // create a channelz client
   ::grpc::channelz::experimental::InitChannelzService();
@@ -191,14 +196,13 @@ int main(int argc, char** argv) {
   int64_t server_start_id = 0;
   while (true) {
     get_server_request.set_start_server_id(server_start_id);
-    Status status = channelz_stub->GetServers(&get_server_context,
-                                              get_server_request,
-                                              &get_server_response);
+    Status status = channelz_stub->GetServers(
+        &get_server_context, get_server_request, &get_server_response);
     if (!status.ok()) {
       std::cout << "Channelz failed: " << status.error_message() << std::endl;
       return 1;
     }
-    for (auto &i : get_server_response.server()) {
+    for (auto& i : get_server_response.server()) {
       top_servers.push_back(i);
     }
     if (!get_server_response.end()) {
@@ -210,9 +214,9 @@ int main(int argc, char** argv) {
   std::cout << "Number of servers = " << top_servers.size() << std::endl;
 
   // print out sockets of each server
-  for (auto &i : top_servers) {
+  for (auto& i : top_servers) {
     std::cout << "Server " << GetServerID(i) << " listen_socket: ";
-    for (auto &j : i.listen_socket()) {
+    for (auto& j : i.listen_socket()) {
       std::cout << j.socket_id() << " ";
     }
     std::cout << std::endl;
@@ -235,7 +239,7 @@ int main(int argc, char** argv) {
       std::cout << "Channelz failed: " << status.error_message() << std::endl;
       return 1;
     }
-    for (auto &i : get_top_channels_response.channel()) {
+    for (auto& i : get_top_channels_response.channel()) {
       top_channels.push_back(i);
     }
     if (!get_top_channels_response.end()) {
@@ -247,12 +251,13 @@ int main(int argc, char** argv) {
   std::cout << "Number of top channels = " << top_channels.size() << std::endl;
 
   // Layer traverse the tree for each top channels
-  for (auto &i : top_channels) {
+  for (auto& i : top_channels) {
     int tree_depth = 0;
     std::queue<grpc::channelz::v1::Channel> channel_queue;
     std::queue<grpc::channelz::v1::Subchannel> subchannel_queue;
     std::cout << "Tree depth = " << tree_depth << std::endl;
-    GetChannelDescedence(channelz_stub.get(), i, channel_queue, subchannel_queue);
+    GetChannelDescedence(channelz_stub.get(), i, channel_queue,
+                         subchannel_queue);
 
     while (!channel_queue.empty() || !subchannel_queue.empty()) {
       ++tree_depth;
@@ -262,22 +267,23 @@ int main(int argc, char** argv) {
       for (int i = 0; i < ch_q_size; ++i) {
         grpc::channelz::v1::Channel ch = channel_queue.front();
         channel_queue.pop();
-        GetChannelDescedence(channelz_stub.get(), ch, channel_queue, subchannel_queue);
+        GetChannelDescedence(channelz_stub.get(), ch, channel_queue,
+                             subchannel_queue);
       }
       for (int i = 0; i < subch_q_size; ++i) {
         grpc::channelz::v1::Subchannel subch = subchannel_queue.front();
         subchannel_queue.pop();
-        GetSubchannelDescedence(channelz_stub.get(), subch, channel_queue, subchannel_queue);
+        GetSubchannelDescedence(channelz_stub.get(), subch, channel_queue,
+                                subchannel_queue);
       }
     }
     std::cout << std::endl;
   }
 
-	// store result
+  // store result
   // std::ofstream output_file("output.txt", std::ios::out);
   // output_file << "test" << std::flush;
   // output_file.close();
 
   return 0;
 }
-
