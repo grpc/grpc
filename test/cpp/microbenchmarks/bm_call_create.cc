@@ -529,9 +529,10 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   grpc_call_final_info final_info;
   TestOp test_op_data;
   const int kArenaSize = 4096;
+  grpc_call_context_element context[GRPC_CONTEXT_COUNT] = {};
   grpc_call_element_args call_args{call_stack,
                                    nullptr,
-                                   nullptr,
+                                   context,
                                    method,
                                    start_time,
                                    deadline,

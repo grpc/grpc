@@ -90,10 +90,10 @@ class BalancerServiceImpl : public LoadBalancer::Service {
   void Shutdown() { shutdown_ = true; }
 
  private:
-  grpc::string Ip4ToPackedString(const char* ip_str) {
+  std::string Ip4ToPackedString(const char* ip_str) {
     struct in_addr ip4;
     GPR_ASSERT(inet_pton(AF_INET, ip_str, &ip4) == 1);
-    return grpc::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
+    return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
   }
 
   LoadBalanceResponse BuildRandomResponseForBackends() {
@@ -167,8 +167,8 @@ class ClientChannelStressTest {
  private:
   template <typename T>
   struct ServerThread {
-    explicit ServerThread(const grpc::string& type,
-                          const grpc::string& server_host, T* service)
+    explicit ServerThread(const std::string& type,
+                          const std::string& server_host, T* service)
         : type_(type), service_(service) {
       grpc::internal::Mutex mu;
       // We need to acquire the lock here in order to prevent the notify_one
@@ -183,7 +183,7 @@ class ClientChannelStressTest {
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
     }
 
-    void Start(const grpc::string& server_host, grpc::internal::Mutex* mu,
+    void Start(const std::string& server_host, grpc::internal::Mutex* mu,
                grpc::internal::CondVar* cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
@@ -206,7 +206,7 @@ class ClientChannelStressTest {
     }
 
     int port_;
-    grpc::string type_;
+    std::string type_;
     std::unique_ptr<Server> server_;
     T* service_;
     std::unique_ptr<std::thread> thread_;
@@ -214,7 +214,7 @@ class ClientChannelStressTest {
 
   struct AddressData {
     int port;
-    grpc::string balancer_name;
+    std::string balancer_name;
   };
 
   static grpc_core::ServerAddressList CreateAddressListFromAddressDataList(
@@ -325,7 +325,7 @@ class ClientChannelStressTest {
   }
 
   std::atomic_bool shutdown_{false};
-  const grpc::string server_host_ = "localhost";
+  const std::string server_host_ = "localhost";
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::mutex stub_mutex_;
