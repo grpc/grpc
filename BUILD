@@ -1300,6 +1300,7 @@ grpc_cc_library(
     external_deps = [
         "upb_lib",
         "upb_textformat_lib",
+        "re2",
     ],
     language = "c++",
     deps = [
@@ -1456,7 +1457,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
-        "re2",
     ],
     language = "c++",
     deps = [
