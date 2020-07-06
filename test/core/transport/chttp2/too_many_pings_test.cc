@@ -189,8 +189,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  constexpr int deadline_time = 30;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(deadline_time);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(30);
   // Start a call
   c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
@@ -226,13 +225,12 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   // take 3 pings to trigger the GOAWAY frame with "too_many_pings" from the
   // server. (The second ping from the client would be the first bad ping sent
   // too quickly leading to a ping strike and the third ping would lead to the
-  // GOAWAY.) The call would not fail until either 1) twice the keepalive time
-  // has expired so that 3 keepalive pings could be sent by the client or 2) the
-  // deadline
-  cq_verify_empty_timeout(
-      cqv, GPR_MIN(2 * expected_keepalive_time, deadline_time) - 1);
-  // The call will end after this
+  // GOAWAY.) If the client settings match with the server's settings, there
+  // won't be a bad ping, and the call will end due to the deadline expiring
+  // instead.
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  cq_verify_custom_timeout(cqv, 60);
+  // The call will end after this
   cq_verify(cqv);
   // cleanup
   grpc_slice_unref(details);
@@ -280,6 +278,8 @@ TEST(TooManyPings, KeepaliveThrottling) {
   grpc_channel* channel = grpc_insecure_channel_create(
       server_address.c_str(), &client_channel_args, nullptr);
   int expected_keepalive_time_sec = 1;
+  // We need 4 GOAWAY frames to throttle the keepalive time from 1 second to 16
+  // seconds (> 10sec).
   for (int i = 0; i < 4; i++) {
     EXPECT_EQ(
         PerformWaitingCall(channel, server, cq, expected_keepalive_time_sec),
