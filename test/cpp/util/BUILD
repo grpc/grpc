@@ -312,18 +312,18 @@ grpc_cc_binary(
 )
 
 grpc_cc_binary(
-		name = "channelz_sampler",
-		srcs = ["channelz_sampler.cc"],
-		external_deps = [
-				"gflags",
-  	],
-		language = "C++",
-		deps = [
-				"//:gpr",
-				"//:grpc++",
-				"//:grpcpp_channelz",
-				"//src/proto/grpc/channelz:channelz_proto",
-				"//test/cpp/util:test_config",
-				"//test/cpp/util:test_util",
-		],
+    name = "channelz_sampler",
+    srcs = ["channelz_sampler.cc"],
+    external_deps = [
+        "gflags",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc++",
+        "//:grpcpp_channelz",
+        "//src/proto/grpc/channelz:channelz_proto",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
 )
