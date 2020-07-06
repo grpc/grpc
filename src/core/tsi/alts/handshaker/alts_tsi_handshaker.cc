@@ -347,51 +347,35 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   grpc_gcp_AltsContext_set_peer_rpc_versions(
       context, const_cast<grpc_gcp_RpcProtocolVersions*>(peer_rpc_version));
 
-
+// START OF PLUMBING
   grpc_gcp_HandshakerResult* ncresult = const_cast<grpc_gcp_HandshakerResult*>(hresult);
   grpc_gcp_Identity* peer_identity = const_cast<grpc_gcp_Identity*>(identity);
   if(peer_identity == nullptr ) { //|| *peer_attributes_counter == nullptr) {
     gpr_log(GPR_ERROR, "Null Peer Identity.");
     return TSI_FAILED_PRECONDITION;
   }
-  
+
+  if ( ! grpc_gcp_Identity_has_attributes(const_cast<grpc_gcp_Identity*>(peer_identity))) {
+        gpr_log(GPR_ERROR, "XOXO  Failed to DEFINE PEER ATTRIBUTES ENTRY AND VALUES");
+      }
+
   size_t iter;
   grpc_gcp_Identity_AttributesEntry* peer_attributes_entry = grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
+  if(peer_attributes_entry == nullptr ) { //|| *peer_attributes_counter == nullptr) {
+    gpr_log(GPR_ERROR, "XXXXXX Null Peer ENTRY.");
+    return TSI_FAILED_PRECONDITION;
+  }
 
-   while ( peer_attributes_entry != nullptr) {
-    upb_strview key = grpc_gcp_Identity_AttributesEntry_key(const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(peer_attributes_entry));
-    upb_strview val = grpc_gcp_Identity_AttributesEntry_value(const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(peer_attributes_entry));
+  while ( peer_attributes_entry != nullptr) {
+    upb_strview key = grpc_gcp_Identity_AttributesEntry_key(const_cast<grpc_gcp_Identity_AttributesEntry*>(peer_attributes_entry));
+    upb_strview val = grpc_gcp_Identity_AttributesEntry_value(const_cast<grpc_gcp_Identity_AttributesEntry*>(peer_attributes_entry));
     grpc_gcp_AltsContext_peer_attributes_set(context, key, val, context_arena.ptr());
     peer_attributes_entry = grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
   }
  
 
 
-  // need to searilze before storing
-
-
-  // grpc_gcp_Identity_AttributesEntry** peer_attributes = grpc_gcp_Identity_mutable_attributes(peer_identity, lenz); // need size_t *len)
-  // // where do these labeled functions come from --> upb genreated files
-  // // grpc_gcp_Identity_AttributesEntry** peer_attributes_counter = peer_attributes;
-  // if(peer_attributes == nullptr ) { //|| *peer_attributes_counter == nullptr) {
-  //   gpr_log(GPR_ERROR, "Null PEER ATTRIBUTES.");
-  //   // GPR_ASSERT(0);
-  //   return TSI_FAILED_PRECONDITION; //This is triggering
-  // }
-  // gpr_log(GPR_ERROR, "NON NULL PEER ATTRIBUTES");
-  // // while(*peer_attributes_counter != nullptr) {//map<string, string>::iterator it = peer_attributes.begin(); it != peer_attributes.end(); it++ ) {
-  // //   grpc_gcp_AltsContext_PeerAttributesEntry* peer_entry = grpc_gcp_AltsContext_add_peer_attributes(context, context_arena.ptr());
-  // //   upb_strview key = grpc_gcp_Identity_AttributesEntry_key(*peer_attributes_counter); USE CONST_CAST
-  // //   upb_strview value = grpc_gcp_Identity_AttributesEntry_value(*peer_attributes_counter);
-  // //   grpc_gcp_AltsContext_PeerAttributesEntry_set_key(peer_entry, key);
-  // //   grpc_gcp_AltsContext_PeerAttributesEntry_set_value(peer_entry, value);
-  //   *peer_attributes_counter++;
-
-  // }
-
-
-
-
+  // serialization below
   size_t serialized_ctx_length;
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
       context, context_arena.ptr(), &serialized_ctx_length);

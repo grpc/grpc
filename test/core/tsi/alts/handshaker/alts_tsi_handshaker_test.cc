@@ -136,6 +136,8 @@ static grpc_byte_buffer* generate_handshaker_response(
       grpc_gcp_HandshakerResp_mutable_status(resp, arena.ptr());
   grpc_gcp_HandshakerStatus_set_code(status, 0);
   grpc_gcp_Identity* local_identity;
+
+  upb_strview val9;
   switch (type) {
     case INVALID:
       break;
@@ -164,6 +166,14 @@ static grpc_byte_buffer* generate_handshaker_response(
       // grpc_gcp_Identity_AttributesEntry_set_key(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY));
       // grpc_gcp_Identity_AttributesEntry_set_value(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE));
       gpr_log(GPR_ERROR, "DEFINED PEER ATTRIBUTES ENTRY AND VALUES");
+      if ( ! grpc_gcp_Identity_has_attributes(const_cast<grpc_gcp_Identity*>(peer_identity))) {
+        gpr_log(GPR_ERROR, "XOXO  Failed to DEFINE PEER ATTRIBUTES ENTRY AND VALUES");
+      }
+
+      val9 = upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE);
+      if (! grpc_gcp_Identity_attributes_get(const_cast<grpc_gcp_Identity*>(peer_identity), upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY), &val9)){
+        gpr_log(GPR_ERROR, "XOXOXO Getting is Failing");
+      }
 
 
 
@@ -192,7 +202,14 @@ static grpc_byte_buffer* generate_handshaker_response(
           result, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
       grpc_gcp_HandshakerResult_set_max_frame_size(
           result, ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE);
-      gpr_log(GPR_ERROR, "start of generate handshaker response finished setting client info");
+
+      // upb_strview val = upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE);
+      // gpr_log(GPR_ERROR, "start of generate handshaker response finished setting client info");
+      // bool getTest = grpc_gcp_Identity_attributes_get(const_cast<grpc_gcp_Identity*>(peer_identity), upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY), &val);
+      // if (! getTest){
+      //   gpr_log(GPR_ERROR, "XOXOXO Getting is Failing");
+      // }
+
       break;
     case SERVER_NEXT:
       gpr_log(GPR_ERROR, "start of generate handshaker response server next");
@@ -203,6 +220,7 @@ static grpc_byte_buffer* generate_handshaker_response(
           grpc_gcp_HandshakerResult_mutable_peer_identity(result, arena.ptr());
 
         // doggo this set of code gets it to not fail once but creates the same error later on
+      grpc_gcp_Identity_attributes_set(peer_identity, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY), upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE), arena.ptr());
       // test_peer_attributes_entry = grpc_gcp_Identity_add_attributes(peer_identity, arena.ptr());
       // grpc_gcp_Identity_AttributesEntry_set_key(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY));
       // grpc_gcp_Identity_AttributesEntry_set_value(test_peer_attributes_entry, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE));
@@ -311,11 +329,12 @@ static void on_server_start_success_cb(tsi_result status, void* user_data,
   signal(&tsi_to_caller_notification);
 }
 
+//doggo
 static void on_client_next_success_cb(tsi_result status, void* user_data,
                                       const unsigned char* bytes_to_send,
                                       size_t bytes_to_send_size,
                                       tsi_handshaker_result* result) {
-  gpr_log(GPR_ERROR, "start of on_client_next_success_cb");
+  gpr_log(GPR_ERROR, "....... TESTING start of on_client_next_success_cb");
   GPR_ASSERT(status == TSI_OK);
   GPR_ASSERT(user_data == nullptr);
   GPR_ASSERT(bytes_to_send_size == strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
@@ -343,6 +362,7 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
                     peer.properties[1].value.data,
                     peer.properties[1].value.length) == 0);
   /* Validate alts context. */
+  //doggo this is where to add the test
   upb::Arena context_arena;
   grpc_gcp_AltsContext* ctx = grpc_gcp_AltsContext_parse(
       peer.properties[3].value.data, peer.properties[3].value.length,
@@ -361,6 +381,24 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
+  
+  // // if ( ! grpc_gcp_Identity_has_attributes(const_cast<grpc_gcp_Identity*>(peer_identity))) {
+  // //       gpr_log(GPR_ERROR, "XOXO  Failed to get PEER IDENTITY ATTRIBUTES");
+  // //     }
+  // if ( ! grpc_gcp_AltsContext_has_peer_attributes(const_cast<grpc_gcp_AltsContext*>(ctx))) {
+  //       gpr_log(GPR_ERROR, "XOXO  Failed to get ALTS CONTEXT ATTRIBUTES");
+  //     }
+  // size_t iter;
+  // grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry = grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
+  // GPR_ASSERT(peer_attributes_entry != nullptr);
+  // while ( peer_attributes_entry != nullptr) {
+  //   upb_strview key = grpc_gcp_AltsContext_PeerAttributesEntry_key(const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(peer_attributes_entry));
+  //   upb_strview val = grpc_gcp_AltsContext_PeerAttributesEntry_value(const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(peer_attributes_entry));
+  //   GPR_ASSERT(upb_strview_eql(key, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+  //   GPR_ASSERT(upb_strview_eql(val, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
+  //   peer_attributes_entry = grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
+  // }
+
   /* Validate security level. */
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
                     peer.properties[4].value.data,
@@ -384,6 +422,7 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   signal(&tsi_to_caller_notification);
 }
 
+//doggo need to test here too
 static void on_server_next_success_cb(tsi_result status, void* user_data,
                                       const unsigned char* bytes_to_send,
                                       size_t bytes_to_send_size,
@@ -435,6 +474,17 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
+
+  // size_t iter;
+  // grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry = grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
+  // while ( peer_attributes_entry != nullptr) {
+  //   upb_strview key = grpc_gcp_AltsContext_PeerAttributesEntry_key(const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(peer_attributes_entry));
+  //   upb_strview val = grpc_gcp_AltsContext_PeerAttributesEntry_value(const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(peer_attributes_entry));
+  //   GPR_ASSERT(upb_strview_eql(key, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+  //   GPR_ASSERT(upb_strview_eql(val, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
+  //   peer_attributes_entry = grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
+  // }
+
   /* Check security level. */
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
                     peer.properties[4].value.data,

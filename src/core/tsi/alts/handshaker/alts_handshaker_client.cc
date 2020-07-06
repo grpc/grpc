@@ -268,23 +268,22 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   }
   tsi_handshaker_result* result = nullptr;
   if (is_handshake_finished_properly(resp)) {
-<<<<<<< HEAD
+
     gpr_log(GPR_ERROR, "alts handshaker client handle response CALL TO RESULT CREATE");
-    alts_tsi_handshaker_result_create(resp, client->is_client, &result);
+    tsi_result status = alts_tsi_handshaker_result_create(resp, client->is_client, &result);
     gpr_log(GPR_ERROR, "RESULT CREATE FINISH");
-=======
-    tsi_result status =
-        alts_tsi_handshaker_result_create(resp, client->is_client, &result);
+
     if (status != TSI_OK) {
       gpr_log(GPR_ERROR, "alts_tsi_handshaker_result_create() failed");
       handle_response_done(client, status, nullptr, 0, nullptr);
       return;
     }
->>>>>>> upstream/master
+
     alts_tsi_handshaker_result_set_unused_bytes(
         result, &client->recv_bytes,
         grpc_gcp_HandshakerResp_bytes_consumed(resp));
   }
+  
   grpc_status_code code = static_cast<grpc_status_code>(
       grpc_gcp_HandshakerStatus_code(resp_status));
   if (code != GRPC_STATUS_OK) {
