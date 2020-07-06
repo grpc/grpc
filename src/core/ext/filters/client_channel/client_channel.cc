@@ -1103,6 +1103,11 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         parent_->chand_->keepalive_time_ =
             std::max(parent_->chand_->keepalive_time_,
                      atoi(std::string(keepalive_throttling.value()).c_str()));
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+          gpr_log(GPR_INFO,
+                  "Throttling keepalive time chand=%p keepalive_time=%d",
+                  parent_->chand_, parent_->chand_->keepalive_time_);
+        }
       }
       // Ignore update if the parent WatcherWrapper has been replaced
       // since this callback was scheduled.

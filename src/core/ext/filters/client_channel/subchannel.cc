@@ -351,6 +351,12 @@ class Subchannel::ConnectedSubchannelStateWatcher
           if (keepalive_throttling.has_value()) {
             int new_keepalive_time =
                 atoi(std::string(keepalive_throttling.value()).c_str());
+            if (grpc_trace_subchannel.enabled()) {
+              gpr_log(
+                  GPR_INFO,
+                  "Throttling keepalive time subchannel=%p keepalive_time=%d",
+                  c, new_keepalive_time);
+            }
             const grpc_arg arg_to_add = grpc_channel_arg_integer_create(
                 const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
                 new_keepalive_time);
