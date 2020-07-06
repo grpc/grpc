@@ -158,31 +158,25 @@ bool XdsRoutingEnabled() {
 std::string XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::ToString()
     const {
   std::string path_type_string;
-  switch (path_type) {
+  switch (type) {
     case PathMatcherType::PATH:
       path_type_string = "path match";
       break;
     case PathMatcherType::PREFIX:
       path_type_string = "prefix match";
       break;
-    case PathMatcherType::REGEX:
-      path_type_string = "regex match";
-      break;
     default:
       break;
   }
-  return absl::StrFormat("Path %s:/%s/", path_type_string, path_matcher);
+  return absl::StrFormat("Path %s:/%s/", path_type_string, string_matcher);
 }
 
 std::string XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::ToString()
     const {
-  switch (header_type) {
+  switch (type) {
     case HeaderMatcherType::EXACT:
       return absl::StrFormat("Header exact match:%s %s:%s",
-                             invert_match ? " not" : "", name, header_matcher);
-    case HeaderMatcherType::REGEX:
-      return absl::StrFormat(
-          "Header regex match:%s %s:", invert_match ? " not" : "", name);
+                             invert_match ? " not" : "", name, string_matcher);
     case HeaderMatcherType::RANGE:
       return absl::StrFormat("Header range match:%s %s:[%d, %d)",
                              invert_match ? " not" : "", name, range_start,
@@ -193,10 +187,10 @@ std::string XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::ToString()
                              present_match ? "true" : "false");
     case HeaderMatcherType::PREFIX:
       return absl::StrFormat("Header prefix match:%s %s:%s",
-                             invert_match ? " not" : "", name, header_matcher);
+                             invert_match ? " not" : "", name, string_matcher);
     case HeaderMatcherType::SUFFIX:
       return absl::StrFormat("Header suffix match:%s %s:%s",
-                             invert_match ? " not" : "", name, header_matcher);
+                             invert_match ? " not" : "", name, string_matcher);
     default:
       return "";
   }
@@ -579,9 +573,9 @@ grpc_error* RoutePathMatchParse(const envoy_api_v2_route_RouteMatch* match,
         return GRPC_ERROR_NONE;
       }
     }
-    rds_route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
+    rds_route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
         Matchers::PathMatcher::PathMatcherType::PREFIX;
-    rds_route->matchers.path_matcher.path_matcher =
+    rds_route->matchers.path_matcher.string_matcher =
         UpbStringToStdString(prefix);
   } else if (envoy_api_v2_route_RouteMatch_has_path(match)) {
     upb_strview path = envoy_api_v2_route_RouteMatch_path(match);
@@ -615,17 +609,10 @@ grpc_error* RoutePathMatchParse(const envoy_api_v2_route_RouteMatch* match,
       *ignore_route = true;
       return GRPC_ERROR_NONE;
     }
-    rds_route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
+    rds_route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
         Matchers::PathMatcher::PathMatcherType::PATH;
-    rds_route->matchers.path_matcher.path_matcher = UpbStringToStdString(path);
-  } else if (envoy_api_v2_route_RouteMatch_has_safe_regex(match)) {
-    const envoy_type_matcher_RegexMatcher* regex_matcher =
-        envoy_api_v2_route_RouteMatch_safe_regex(match);
-    GPR_ASSERT(regex_matcher != nullptr);
-    const std::string matcher = UpbStringToStdString(
-        envoy_type_matcher_RegexMatcher_regex(regex_matcher));
-    rds_route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
-        Matchers::PathMatcher::PathMatcherType::REGEX;
+    rds_route->matchers.path_matcher.string_matcher =
+        UpbStringToStdString(path);
   } else {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid route path specifier specified.");
@@ -644,20 +631,12 @@ grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
     header_matcher.name =
         UpbStringToStdString(envoy_api_v2_route_HeaderMatcher_name(header));
     if (envoy_api_v2_route_HeaderMatcher_has_exact_match(header)) {
-      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
           HeaderMatcher::HeaderMatcherType::EXACT;
-      header_matcher.header_matcher = UpbStringToStdString(
+      header_matcher.string_matcher = UpbStringToStdString(
           envoy_api_v2_route_HeaderMatcher_exact_match(header));
-    } else if (envoy_api_v2_route_HeaderMatcher_has_safe_regex_match(header)) {
-      const envoy_type_matcher_RegexMatcher* regex_matcher =
-          envoy_api_v2_route_HeaderMatcher_safe_regex_match(header);
-      GPR_ASSERT(regex_matcher != nullptr);
-      const std::string matcher = UpbStringToStdString(
-          envoy_type_matcher_RegexMatcher_regex(regex_matcher));
-      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
-          HeaderMatcher::HeaderMatcherType::REGEX;
     } else if (envoy_api_v2_route_HeaderMatcher_has_range_match(header)) {
-      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
           HeaderMatcher::HeaderMatcherType::RANGE;
       const envoy_type_Int64Range* range_matcher =
           envoy_api_v2_route_HeaderMatcher_range_match(header);
@@ -669,19 +648,19 @@ grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
             "cannot be smaller than start.");
       }
     } else if (envoy_api_v2_route_HeaderMatcher_has_present_match(header)) {
-      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
           HeaderMatcher::HeaderMatcherType::PRESENT;
       header_matcher.present_match =
           envoy_api_v2_route_HeaderMatcher_present_match(header);
     } else if (envoy_api_v2_route_HeaderMatcher_has_prefix_match(header)) {
-      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
           HeaderMatcher::HeaderMatcherType::PREFIX;
-      header_matcher.header_matcher = UpbStringToStdString(
+      header_matcher.string_matcher = UpbStringToStdString(
           envoy_api_v2_route_HeaderMatcher_prefix_match(header));
     } else if (envoy_api_v2_route_HeaderMatcher_has_suffix_match(header)) {
-      header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
           HeaderMatcher::HeaderMatcherType::SUFFIX;
-      header_matcher.header_matcher = UpbStringToStdString(
+      header_matcher.string_matcher = UpbStringToStdString(
           envoy_api_v2_route_HeaderMatcher_suffix_match(header));
     } else {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -871,7 +850,7 @@ grpc_error* RouteConfigParse(
     const envoy_api_v2_route_RouteMatch* match =
         envoy_api_v2_route_Route_match(route);
     XdsApi::RdsUpdate::RdsRoute rds_route;
-    rds_route.matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
+    rds_route.matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
         Matchers::PathMatcher::PathMatcherType::PREFIX;
     // if xds routing is not enabled, we must be working on the default route;
     // in this case, we must have an empty or single slash prefix.

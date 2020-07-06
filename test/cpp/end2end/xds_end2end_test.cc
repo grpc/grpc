@@ -3447,9 +3447,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   auto* header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("header1");
   header_matcher1->set_exact_match("POST");
-  auto* header_matcher2 = route1->mutable_match()->add_headers();
-  header_matcher2->set_name("header2");
-  header_matcher2->mutable_safe_regex_match()->set_regex("[a-z]*");
   auto* header_matcher3 = route1->mutable_match()->add_headers();
   header_matcher3->set_name("header3");
   header_matcher3->mutable_range_match()->set_start(1);

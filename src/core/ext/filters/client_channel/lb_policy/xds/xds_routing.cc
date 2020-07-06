@@ -235,17 +235,14 @@ absl::optional<absl::string_view> GetMetadataValue(
 bool PathMatch(
     const absl::string_view& path,
     const XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher& path_matcher) {
-  if (path_matcher.path_matcher.empty()) return true;
-  switch (path_matcher.path_type) {
+  if (path_matcher.string_matcher.empty()) return true;
+  switch (path_matcher.type) {
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         PREFIX:
-      return absl::StartsWith(path, path_matcher.path_matcher);
+      return absl::StartsWith(path, path_matcher.string_matcher);
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         PATH:
-      return path == path_matcher.path_matcher;
-    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
-        REGEX:
-      return true;
+      return path == path_matcher.string_matcher;
     default:
       return false;
   }
@@ -256,9 +253,8 @@ bool HeaderMatchHelper(
     LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   auto value = GetMetadataValue(header_matcher.name, initial_metadata);
   if (!value.has_value()) {
-    if (header_matcher.header_type ==
-        XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
-            HeaderMatcherType::PRESENT) {
+    if (header_matcher.type == XdsApi::RdsUpdate::RdsRoute::Matchers::
+                                   HeaderMatcher::HeaderMatcherType::PRESENT) {
       return !header_matcher.present_match;
     } else {
       // For all other header matcher types, we need the header value to
@@ -266,13 +262,10 @@ bool HeaderMatchHelper(
       return false;
     }
   }
-  switch (header_matcher.header_type) {
+  switch (header_matcher.type) {
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::EXACT:
-      return value.value() == header_matcher.header_matcher;
-    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
-        HeaderMatcherType::REGEX:
-      return true;
+      return value.value() == header_matcher.string_matcher;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::RANGE:
       int64_t int_value;
@@ -283,10 +276,10 @@ bool HeaderMatchHelper(
              int_value < header_matcher.range_end;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::PREFIX:
-      return absl::StartsWith(value.value(), header_matcher.header_matcher);
+      return absl::StartsWith(value.value(), header_matcher.string_matcher);
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::SUFFIX:
-      return absl::EndsWith(value.value(), header_matcher.header_matcher);
+      return absl::EndsWith(value.value(), header_matcher.string_matcher);
     default:
       return false;
   }
@@ -835,9 +828,9 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
             "field:prefix error: should be string"));
       } else {
         path_matcher_seen = true;
-        route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
+        route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
             Matchers::PathMatcher::PathMatcherType::PREFIX;
-        route->matchers.path_matcher.path_matcher = it->second.string_value();
+        route->matchers.path_matcher.string_matcher = it->second.string_value();
       }
     }
     it = json.object_value().find("path");
@@ -851,25 +844,10 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:path error: should be string"));
         } else {
-          route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
+          route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
               Matchers::PathMatcher::PathMatcherType::PATH;
-          route->matchers.path_matcher.path_matcher = it->second.string_value();
-        }
-      }
-    }
-    it = json.object_value().find("regex");
-    if (it != json.object_value().end()) {
-      if (path_matcher_seen) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:regex error: other path matcher already specified"));
-      } else {
-        path_matcher_seen = true;
-        if (it->second.type() != Json::Type::STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:regex error: should be string"));
-        } else {
-          route->matchers.path_matcher.path_type = XdsApi::RdsUpdate::RdsRoute::
-              Matchers::PathMatcher::PathMatcherType::REGEX;
+          route->matchers.path_matcher.string_matcher =
+              it->second.string_value();
         }
       }
     }
@@ -891,7 +869,9 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
             error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "value should be of type object"));
           } else {
-            XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher header_matcher;
+            route->matchers.header_matchers.emplace_back();
+            XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher&
+                header_matcher = route->matchers.header_matchers.back();
             auto header_it = header_json.object_value().find("name");
             if (header_it == header_json.object_value().end()) {
               error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -925,29 +905,10 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                 error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "field:exact_match error: should be string"));
               } else {
-                header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
-                    Matchers::HeaderMatcher::HeaderMatcherType::EXACT;
-                header_matcher.header_matcher =
+                header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+                    HeaderMatcher::HeaderMatcherType::EXACT;
+                header_matcher.string_matcher =
                     header_it->second.string_value();
-                route->matchers.header_matchers.emplace_back(header_matcher);
-              }
-            }
-            header_it = header_json.object_value().find("regex_match");
-            if (header_it != header_json.object_value().end()) {
-              if (header_matcher_seen) {
-                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                    "field:regex_match error: other header matcher already "
-                    "specified"));
-              } else {
-                header_matcher_seen = true;
-                if (header_it->second.type() != Json::Type::STRING) {
-                  error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                      "field:regex_match error: should be string"));
-                } else {
-                  header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
-                      Matchers::HeaderMatcher::HeaderMatcherType::REGEX;
-                  route->matchers.header_matchers.emplace_back(header_matcher);
-                }
               }
             }
             header_it = header_json.object_value().find("range_match");
@@ -990,7 +951,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                         "field:end missing"));
                   }
                   if (header_matcher.range_end > header_matcher.range_start) {
-                    header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
+                    header_matcher.type = XdsApi::RdsUpdate::RdsRoute::
                         Matchers::HeaderMatcher::HeaderMatcherType::RANGE;
                     route->matchers.header_matchers.emplace_back(
                         header_matcher);
@@ -1007,15 +968,13 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
               } else {
                 header_matcher_seen = true;
                 if (header_it->second.type() == Json::Type::JSON_TRUE) {
-                  header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
-                      Matchers::HeaderMatcher::HeaderMatcherType::PRESENT;
+                  header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+                      HeaderMatcher::HeaderMatcherType::PRESENT;
                   header_matcher.present_match = true;
-                  route->matchers.header_matchers.emplace_back(header_matcher);
                 } else if (header_it->second.type() == Json::Type::JSON_FALSE) {
-                  header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
-                      Matchers::HeaderMatcher::HeaderMatcherType::PRESENT;
+                  header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+                      HeaderMatcher::HeaderMatcherType::PRESENT;
                   header_matcher.present_match = false;
-                  route->matchers.header_matchers.emplace_back(header_matcher);
                 } else {
                   error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "field:present_match error: should be boolean"));
@@ -1034,11 +993,10 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                   error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "field:prefix_match error: should be string"));
                 } else {
-                  header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
-                      Matchers::HeaderMatcher::HeaderMatcherType::PREFIX;
-                  header_matcher.header_matcher =
+                  header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+                      HeaderMatcher::HeaderMatcherType::PREFIX;
+                  header_matcher.string_matcher =
                       header_it->second.string_value();
-                  route->matchers.header_matchers.emplace_back(header_matcher);
                 }
               }
             }
@@ -1054,11 +1012,10 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                   error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "field:suffix_match error: should be string"));
                 } else {
-                  header_matcher.header_type = XdsApi::RdsUpdate::RdsRoute::
-                      Matchers::HeaderMatcher::HeaderMatcherType::SUFFIX;
-                  header_matcher.header_matcher =
+                  header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+                      HeaderMatcher::HeaderMatcherType::SUFFIX;
+                  header_matcher.string_matcher =
                       header_it->second.string_value();
-                  route->matchers.header_matchers.emplace_back(header_matcher);
                 }
               }
             }

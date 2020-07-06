@@ -2023,15 +2023,11 @@ std::string CreateServiceConfigRoute(const std::string& action_name,
   std::vector<std::string> headers;
   for (const auto& header : route.matchers.header_matchers) {
     std::string header_matcher;
-    switch (header.header_type) {
+    switch (header.type) {
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::EXACT:
         header_matcher = absl::StrFormat("             \"exact_match\": \"%s\"",
-                                         header.header_matcher);
-        break;
-      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
-          HeaderMatcherType::REGEX:
-        header_matcher = absl::StrFormat("             \"regex_match\": \"\"");
+                                         header.string_matcher);
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::RANGE:
@@ -2051,12 +2047,12 @@ std::string CreateServiceConfigRoute(const std::string& action_name,
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::PREFIX:
         header_matcher = absl::StrFormat(
-            "             \"prefix_match\": \"%s\"", header.header_matcher);
+            "             \"prefix_match\": \"%s\"", header.string_matcher);
         break;
       case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
           HeaderMatcherType::SUFFIX:
         header_matcher = absl::StrFormat(
-            "             \"suffix_match\": \"%s\"", header.header_matcher);
+            "             \"suffix_match\": \"%s\"", header.string_matcher);
         break;
       default:
         break;
@@ -2084,20 +2080,16 @@ std::string CreateServiceConfigRoute(const std::string& action_name,
     headers_service_config.push_back("           ],\n");
   }
   std::string path_match_str;
-  switch (route.matchers.path_matcher.path_type) {
+  switch (route.matchers.path_matcher.type) {
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         PREFIX:
       path_match_str = absl::StrFormat(
-          "\"prefix\": \"%s\",\n", route.matchers.path_matcher.path_matcher);
+          "\"prefix\": \"%s\",\n", route.matchers.path_matcher.string_matcher);
       break;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         PATH:
       path_match_str = absl::StrFormat(
-          "\"path\": \"%s\",\n", route.matchers.path_matcher.path_matcher);
-      break;
-    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
-        REGEX:
-      path_match_str = absl::StrFormat("\"regex\": \"\",\n");
+          "\"path\": \"%s\",\n", route.matchers.path_matcher.string_matcher);
       break;
   }
   return absl::StrFormat(

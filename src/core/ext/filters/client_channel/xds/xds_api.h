@@ -55,46 +55,40 @@ class XdsApi {
       struct Matchers {
         struct PathMatcher {
           enum class PathMatcherType {
-            PATH,
-            PREFIX,
-            REGEX,
+            PATH,    // path stored in string_matcher field
+            PREFIX,  // prefix stored in string_matcher field
           };
-          PathMatcherType path_type;
-          // path_matcher field is used when PathMatcherType is PATH or PREFIX.
-          std::string path_matcher;
+          PathMatcherType type;
+          std::string string_matcher;
           bool operator==(const PathMatcher& other) const {
-            return (path_type == other.path_type &&
-                    path_matcher == other.path_matcher);
+            return (type == other.type &&
+                    string_matcher == other.string_matcher);
           }
           std::string ToString() const;
         };
         struct HeaderMatcher {
           enum class HeaderMatcherType {
-            EXACT,
-            REGEX,
-            RANGE,
-            PRESENT,
-            PREFIX,
-            SUFFIX,
+            EXACT,    // value stored in string_matcher field
+            RANGE,    // uses range_start and range_end fields
+            PRESENT,  // uses present_match field
+            PREFIX,   // prefix stored in string_matcher field
+            SUFFIX,   // suffix stored in string_matcher field
           };
           std::string name;
-          HeaderMatcherType header_type;
-          // range_start and range_end fields are used when HeaderMatcherType is
-          // RANGE.
+          HeaderMatcherType type;
           int64_t range_start;
           int64_t range_end;
-          // header_matcher field is used when HeaderMatcherType is EXACT,
-          // PREFIX, or SUFFIX.
-          std::string header_matcher;
+          std::string string_matcher;
           // present_match field is used when HeaderMatcherType is PRESENT.
           bool present_match;
-          // invert_match field may or may not exisit, so initialize it to 0.
+          // invert_match field may or may not exisit, so initialize it to
+          // false.
           bool invert_match = false;
           bool operator==(const HeaderMatcher& other) const {
-            return (name == other.name && header_type == other.header_type &&
+            return (name == other.name && type == other.type &&
                     range_start == other.range_start &&
                     range_end == other.range_end &&
-                    header_matcher == other.header_matcher &&
+                    string_matcher == other.string_matcher &&
                     present_match == other.present_match &&
                     invert_match == other.invert_match);
           }

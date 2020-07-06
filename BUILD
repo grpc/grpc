@@ -1342,12 +1342,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/xds/xds_api.h",
-        "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
         "src/core/ext/filters/client_channel/xds/xds_channel.h",
         "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
         "src/core/ext/filters/client_channel/xds/xds_client.h",
-        "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
     ],
     language = "c++",
     deps = [
