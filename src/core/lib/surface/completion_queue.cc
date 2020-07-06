@@ -327,10 +327,6 @@ struct cq_callback_data {
       Initial count is dropped by grpc_completion_queue_shutdown. */
   grpc_core::Atomic<intptr_t> pending_events{1};
 
-  /** Counter of how many things have ever been queued on this completion queue
-      useful for avoiding locks to check the queue */
-  grpc_core::Atomic<intptr_t> things_queued_ever{0};
-
   /** 0 initially. 1 once we initiated shutdown */
   bool shutdown_called = false;
 
@@ -870,7 +866,6 @@ static void cq_end_op_for_callback(
 
   cq_check_tag(cq, tag, true); /* Used in debug builds only */
 
-  cqd->things_queued_ever.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
   if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
     cq_finish_shutdown_callback(cq);
   }

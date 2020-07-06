@@ -26,21 +26,22 @@
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc {
 namespace {
 
 testing::EchoTestService::Service g_service;
 
-grpc::string MakePort() {
+std::string MakePort() {
   std::ostringstream s;
   int p = grpc_pick_unused_port_or_die();
   s << "localhost:" << p;
   return s.str();
 }
 
-const grpc::string& GetPort() {
-  static grpc::string g_port = MakePort();
+const std::string& GetPort() {
+  static std::string g_port = MakePort();
   return g_port;
 }
 
@@ -87,6 +88,7 @@ TEST_F(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

@@ -33,7 +33,7 @@ namespace grpc_impl {
 class AuthMetadataProcessor {
  public:
   typedef std::multimap<grpc::string_ref, grpc::string_ref> InputMetadata;
-  typedef std::multimap<grpc::string, grpc::string> OutputMetadata;
+  typedef std::multimap<std::string, std::string> OutputMetadata;
 
   virtual ~AuthMetadataProcessor() {}
 

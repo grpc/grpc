@@ -65,7 +65,7 @@ enum class Protocol { INPROC, TCP };
 class TestScenario {
  public:
   TestScenario(bool serve_callback, Protocol protocol, bool intercept,
-               const grpc::string& creds_type)
+               const std::string& creds_type)
       : callback_server(serve_callback),
         protocol(protocol),
         use_interceptors(intercept),
@@ -74,7 +74,7 @@ class TestScenario {
   bool callback_server;
   Protocol protocol;
   bool use_interceptors;
-  const grpc::string credentials_type;
+  const std::string credentials_type;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -180,7 +180,7 @@ class ClientCallbackEnd2endTest
   }
 
   void SendRpcs(int num_rpcs, bool with_binary_metadata) {
-    grpc::string test_string("");
+    std::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest request;
       EchoResponse response;
@@ -188,12 +188,12 @@ class ClientCallbackEnd2endTest
 
       test_string += "Hello world. ";
       request.set_message(test_string);
-      grpc::string val;
+      std::string val;
       if (with_binary_metadata) {
         request.mutable_param()->set_echo_metadata(true);
         char bytes[8] = {'\0', '\1', '\2', '\3',
                          '\4', '\5', '\6', static_cast<char>(i)};
-        val = grpc::string(bytes, 8);
+        val = std::string(bytes, 8);
         cli_ctx.AddMetadata("custom-bin", val);
       }
 
@@ -228,7 +228,7 @@ class ClientCallbackEnd2endTest
   }
 
   void SendRpcsRawReq(int num_rpcs) {
-    grpc::string test_string("Hello raw world.");
+    std::string test_string("Hello raw world.");
     EchoRequest request;
     request.set_message(test_string);
     std::unique_ptr<ByteBuffer> send_buf = SerializeToByteBuffer(&request);
@@ -258,8 +258,8 @@ class ClientCallbackEnd2endTest
   }
 
   void SendRpcsGeneric(int num_rpcs, bool maybe_except) {
-    const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
-    grpc::string test_string("");
+    const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
+    std::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest request;
       std::unique_ptr<ByteBuffer> send_buf;
@@ -300,15 +300,15 @@ class ClientCallbackEnd2endTest
   }
 
   void SendGenericEchoAsBidi(int num_rpcs, int reuses, bool do_writes_done) {
-    const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
-    grpc::string test_string("");
+    const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
+    std::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
       test_string += "Hello world. ";
       class Client : public grpc::experimental::ClientBidiReactor<ByteBuffer,
                                                                   ByteBuffer> {
        public:
-        Client(ClientCallbackEnd2endTest* test, const grpc::string& method_name,
-               const grpc::string& test_str, int reuses, bool do_writes_done)
+        Client(ClientCallbackEnd2endTest* test, const std::string& method_name,
+               const std::string& test_str, int reuses, bool do_writes_done)
             : reuses_remaining_(reuses), do_writes_done_(do_writes_done) {
           activate_ = [this, test, method_name, test_str] {
             if (reuses_remaining_ > 0) {
@@ -645,7 +645,7 @@ TEST_P(ClientCallbackEnd2endTest, RequestEchoServerCancel) {
   ClientContext context;
   request.set_message("hello");
   context.AddMetadata(kServerTryCancelRequest,
-                      grpc::to_string(CANCEL_BEFORE_PROCESSING));
+                      std::to_string(CANCEL_BEFORE_PROCESSING));
 
   std::mutex mu;
   std::condition_variable cv;
@@ -680,14 +680,14 @@ class WriteClient : public grpc::experimental::ClientWriteReactor<EchoRequest> {
       : server_try_cancel_(server_try_cancel),
         num_msgs_to_send_(num_msgs_to_send),
         client_cancel_{client_cancel} {
-    grpc::string msg{"Hello server."};
+    std::string msg{"Hello server."};
     for (int i = 0; i < num_msgs_to_send; i++) {
       desired_ += msg;
     }
     if (server_try_cancel != DO_NOT_CANCEL) {
       // Send server_try_cancel value in the client metadata
       context_.AddMetadata(kServerTryCancelRequest,
-                           grpc::to_string(server_try_cancel));
+                           std::to_string(server_try_cancel));
     }
     context_.set_initial_metadata_corked(true);
     stub->experimental_async()->RequestStream(&context_, &response_, this);
@@ -761,7 +761,7 @@ class WriteClient : public grpc::experimental::ClientWriteReactor<EchoRequest> {
   const ServerTryCancelRequestPhase server_try_cancel_;
   int num_msgs_sent_{0};
   const int num_msgs_to_send_;
-  grpc::string desired_;
+  std::string desired_;
   const ClientCancelInfo client_cancel_;
   std::mutex mu_;
   std::condition_variable cv_;
@@ -889,10 +889,10 @@ TEST_P(ClientCallbackEnd2endTest, UnaryReactor) {
 TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
+  const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
   class UnaryClient : public grpc::experimental::ClientUnaryReactor {
    public:
-    UnaryClient(grpc::GenericStub* stub, const grpc::string& method_name) {
+    UnaryClient(grpc::GenericStub* stub, const std::string& method_name) {
       cli_ctx_.AddMetadata("key1", "val1");
       cli_ctx_.AddMetadata("key2", "val2");
       request_.mutable_param()->set_echo_metadata_initially(true);
@@ -961,7 +961,7 @@ class ReadClient : public grpc::experimental::ClientReadReactor<EchoResponse> {
     if (server_try_cancel_ != DO_NOT_CANCEL) {
       // Send server_try_cancel value in the client metadata
       context_.AddMetadata(kServerTryCancelRequest,
-                           grpc::to_string(server_try_cancel));
+                           std::to_string(server_try_cancel));
     }
     request_.set_message("Hello client ");
     stub->experimental_async()->ResponseStream(&context_, &request_, this);
@@ -982,7 +982,7 @@ class ReadClient : public grpc::experimental::ClientReadReactor<EchoResponse> {
     } else {
       EXPECT_LE(reads_complete_, kServerDefaultResponseStreamsToSend);
       EXPECT_EQ(response_.message(),
-                request_.message() + grpc::to_string(reads_complete_));
+                request_.message() + std::to_string(reads_complete_));
       reads_complete_++;
       if (client_cancel_.cancel &&
           reads_complete_ == client_cancel_.ops_before_cancel) {
@@ -1122,7 +1122,7 @@ class BidiClient
     if (server_try_cancel_ != DO_NOT_CANCEL) {
       // Send server_try_cancel value in the client metadata
       context_.AddMetadata(kServerTryCancelRequest,
-                           grpc::to_string(server_try_cancel));
+                           std::to_string(server_try_cancel));
     }
     request_.set_message("Hello fren ");
     context_.set_initial_metadata_corked(cork_metadata);
@@ -1542,7 +1542,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
 #endif
 
   std::vector<TestScenario> scenarios;
-  std::vector<grpc::string> credentials_types{
+  std::vector<std::string> credentials_types{
       GetCredentialsProvider()->GetSecureCredentialsTypeList()};
   auto insec_ok = [] {
     // Only allow insecure credentials type when it is registered with the

@@ -28,7 +28,7 @@ namespace experimental {
 
 /** TLS key materials config API implementation **/
 void TlsKeyMaterialsConfig::set_pem_root_certs(
-    const grpc::string& pem_root_certs) {
+    const std::string& pem_root_certs) {
   pem_root_certs_ = pem_root_certs;
 }
 
@@ -38,7 +38,7 @@ void TlsKeyMaterialsConfig::add_pem_key_cert_pair(
 }
 
 void TlsKeyMaterialsConfig::set_key_materials(
-    const grpc::string& pem_root_certs,
+    const std::string& pem_root_certs,
     const std::vector<PemKeyCertPair>& pem_key_cert_pair_list) {
   pem_key_cert_pair_list_ = pem_key_cert_pair_list;
   pem_root_certs_ = pem_root_certs;
@@ -69,7 +69,7 @@ grpc_ssl_certificate_config_reload_status TlsCredentialReloadArg::status()
   return c_arg_->status;
 }
 
-grpc::string TlsCredentialReloadArg::error_details() const {
+std::string TlsCredentialReloadArg::error_details() const {
   return c_arg_->error_details->error_details();
 }
 
@@ -78,7 +78,7 @@ void TlsCredentialReloadArg::set_cb_user_data(void* cb_user_data) {
 }
 
 void TlsCredentialReloadArg::set_pem_root_certs(
-    const grpc::string& pem_root_certs) {
+    const std::string& pem_root_certs) {
   ::grpc_core::UniquePtr<char> c_pem_root_certs(
       gpr_strdup(pem_root_certs.c_str()));
   c_arg_->key_materials_config->set_pem_root_certs(std::move(c_pem_root_certs));
@@ -105,7 +105,7 @@ void TlsCredentialReloadArg::add_pem_key_cert_pair(
 }
 
 void TlsCredentialReloadArg::set_key_materials(
-    const grpc::string& pem_root_certs,
+    const std::string& pem_root_certs,
     std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pem_key_cert_pair_list) {
   /** Initialize the |key_materials_config| field of |c_arg_|, if it has not
    *  already been done. **/
@@ -159,7 +159,7 @@ void TlsCredentialReloadArg::set_status(
 }
 
 void TlsCredentialReloadArg::set_error_details(
-    const grpc::string& error_details) {
+    const std::string& error_details) {
   c_arg_->error_details->set_error_details(error_details.c_str());
 }
 
@@ -202,18 +202,18 @@ void* TlsServerAuthorizationCheckArg::cb_user_data() const {
 
 int TlsServerAuthorizationCheckArg::success() const { return c_arg_->success; }
 
-grpc::string TlsServerAuthorizationCheckArg::target_name() const {
-  grpc::string cpp_target_name(c_arg_->target_name);
+std::string TlsServerAuthorizationCheckArg::target_name() const {
+  std::string cpp_target_name(c_arg_->target_name);
   return cpp_target_name;
 }
 
-grpc::string TlsServerAuthorizationCheckArg::peer_cert() const {
-  grpc::string cpp_peer_cert(c_arg_->peer_cert);
+std::string TlsServerAuthorizationCheckArg::peer_cert() const {
+  std::string cpp_peer_cert(c_arg_->peer_cert);
   return cpp_peer_cert;
 }
 
-grpc::string TlsServerAuthorizationCheckArg::peer_cert_full_chain() const {
-  grpc::string cpp_peer_cert_full_chain(c_arg_->peer_cert_full_chain);
+std::string TlsServerAuthorizationCheckArg::peer_cert_full_chain() const {
+  std::string cpp_peer_cert_full_chain(c_arg_->peer_cert_full_chain);
   return cpp_peer_cert_full_chain;
 }
 
@@ -221,7 +221,7 @@ grpc_status_code TlsServerAuthorizationCheckArg::status() const {
   return c_arg_->status;
 }
 
-grpc::string TlsServerAuthorizationCheckArg::error_details() const {
+std::string TlsServerAuthorizationCheckArg::error_details() const {
   return c_arg_->error_details->error_details();
 }
 
@@ -234,17 +234,17 @@ void TlsServerAuthorizationCheckArg::set_success(int success) {
 }
 
 void TlsServerAuthorizationCheckArg::set_target_name(
-    const grpc::string& target_name) {
+    const std::string& target_name) {
   c_arg_->target_name = gpr_strdup(target_name.c_str());
 }
 
 void TlsServerAuthorizationCheckArg::set_peer_cert(
-    const grpc::string& peer_cert) {
+    const std::string& peer_cert) {
   c_arg_->peer_cert = gpr_strdup(peer_cert.c_str());
 }
 
 void TlsServerAuthorizationCheckArg::set_peer_cert_full_chain(
-    const grpc::string& peer_cert_full_chain) {
+    const std::string& peer_cert_full_chain) {
   c_arg_->peer_cert_full_chain = gpr_strdup(peer_cert_full_chain.c_str());
 }
 
@@ -253,7 +253,7 @@ void TlsServerAuthorizationCheckArg::set_status(grpc_status_code status) {
 }
 
 void TlsServerAuthorizationCheckArg::set_error_details(
-    const grpc::string& error_details) {
+    const std::string& error_details) {
   c_arg_->error_details->set_error_details(error_details.c_str());
 }
 

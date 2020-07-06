@@ -51,25 +51,25 @@ constexpr long kMaxAuthTokenLifetimeSecs =
 
 static inline std::shared_ptr<grpc_impl::CallCredentials>
 ServiceAccountJWTAccessCredentials(
-    const grpc::string& json_key,
+    const std::string& json_key,
     long token_lifetime_seconds = grpc::kMaxAuthTokenLifetimeSecs) {
   return ::grpc_impl::ServiceAccountJWTAccessCredentials(
       json_key, token_lifetime_seconds);
 }
 
 static inline std::shared_ptr<grpc_impl::CallCredentials>
-GoogleRefreshTokenCredentials(const grpc::string& json_refresh_token) {
+GoogleRefreshTokenCredentials(const std::string& json_refresh_token) {
   return ::grpc_impl::GoogleRefreshTokenCredentials(json_refresh_token);
 }
 
 static inline std::shared_ptr<grpc_impl::CallCredentials>
-AccessTokenCredentials(const grpc::string& access_token) {
+AccessTokenCredentials(const std::string& access_token) {
   return ::grpc_impl::AccessTokenCredentials(access_token);
 }
 
 static inline std::shared_ptr<grpc_impl::CallCredentials> GoogleIAMCredentials(
-    const grpc::string& authorization_token,
-    const grpc::string& authority_selector) {
+    const std::string& authorization_token,
+    const std::string& authority_selector) {
   return ::grpc_impl::GoogleIAMCredentials(authorization_token,
                                            authority_selector);
 }
@@ -104,7 +104,7 @@ namespace experimental {
 typedef ::grpc_impl::experimental::StsCredentialsOptions StsCredentialsOptions;
 
 static inline grpc::Status StsCredentialsOptionsFromJson(
-    const grpc::string& json_string, StsCredentialsOptions* options) {
+    const std::string& json_string, StsCredentialsOptions* options) {
   return ::grpc_impl::experimental::StsCredentialsOptionsFromJson(json_string,
                                                                   options);
 }
