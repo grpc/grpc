@@ -2639,6 +2639,26 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
+// Test that LDS client should reject route which has invalid path regex.
+TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
+  const char* kNewCluster1Name = "new_cluster_1";
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->mutable_safe_regex()->set_regex("a[z-a]");
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "Invalid regex string specified in path matcher.");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
+}
+
 // Tests that LDS client should send a NACK if route has an action other than
 // RouteAction in the LDS response.
 TEST_P(LdsRdsTest, RouteHasNoRouteAction) {
@@ -2780,6 +2800,28 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "RouteAction weighted_cluster cluster missing weight");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
+}
+
+TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
+  const char* kNewCluster1Name = "new_cluster_1";
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* header_matcher1 = route1->mutable_match()->add_headers();
+  header_matcher1->set_name("header1");
+  header_matcher1->mutable_safe_regex_match()->set_regex("a[z-a]");
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "Invalid regex string specified in header matcher.");
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
@@ -2936,6 +2978,77 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service/");
+  route2->mutable_route()->set_cluster(kNewCluster2Name);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  SetRouteConfiguration(0, new_route_config);
+  WaitForAllBackends(0, 2);
+  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
+  CheckRpcSendOk(
+      kNumEcho1Rpcs,
+      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
+  CheckRpcSendOk(
+      kNumEcho2Rpcs,
+      RpcOptions().set_rpc_service(SERVICE_ECHO2).set_wait_for_ready(true));
+  // Make sure RPCs all go to the correct backend.
+  for (size_t i = 0; i < 2; ++i) {
+    EXPECT_EQ(kNumEchoRpcs / 2,
+              backends_[i]->backend_service()->request_count());
+    EXPECT_EQ(0, backends_[i]->backend_service1()->request_count());
+    EXPECT_EQ(0, backends_[i]->backend_service2()->request_count());
+  }
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  EXPECT_EQ(kNumEcho1Rpcs, backends_[2]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
+  EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
+  EXPECT_EQ(kNumEcho2Rpcs, backends_[3]->backend_service2()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
+}
+
+TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const size_t kNumEcho1Rpcs = 10;
+  const size_t kNumEcho2Rpcs = 20;
+  const size_t kNumEchoRpcs = 30;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(3, 4)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster2.set_name(kNewCluster2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Populating Route Configurations for LDS.
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  // Will match "/grpc.testing.EchoTest1Service/"
+  route1->mutable_match()->mutable_safe_regex()->set_regex(".*1.*");
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  // Will match "/grpc.testing.EchoTest2Service/"
+  route2->mutable_match()->mutable_safe_regex()->set_regex(".*2.*");
   route2->mutable_route()->set_cluster(kNewCluster2Name);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
@@ -3447,6 +3560,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   auto* header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("header1");
   header_matcher1->set_exact_match("POST");
+  auto* header_matcher2 = route1->mutable_match()->add_headers();
+  header_matcher2->set_name("header2");
+  header_matcher2->mutable_safe_regex_match()->set_regex("[a-z]*");
   auto* header_matcher3 = route1->mutable_match()->add_headers();
   header_matcher3->set_name("header3");
   header_matcher3->mutable_range_match()->set_start(1);
@@ -3606,7 +3722,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   route3->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   auto* header_matcher3 = route3->mutable_match()->add_headers();
   header_matcher3->set_name("header3");
-  header_matcher3->set_suffix_match(".java");
+  header_matcher3->mutable_safe_regex_match()->set_regex("[a-z]*");
   route3->mutable_route()->set_cluster(kNewCluster3Name);
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
@@ -3616,7 +3732,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"header1", "POST1"},
       {"header2", "1000"},
-      {"header3", "grpc.cpp"},
+      {"header3", "123"},
   };
   WaitForAllBackends(0, 1);
   CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_metadata(metadata));

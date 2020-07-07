@@ -32,6 +32,7 @@
 
 #include <grpc/slice_buffer.h>
 
+#include "re2/re2.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
@@ -57,18 +58,28 @@ class XdsApi {
           enum class PathMatcherType {
             PATH,    // path stored in string_matcher field
             PREFIX,  // prefix stored in string_matcher field
+            REGEX,   // regex stored in regex_matcher field
           };
           PathMatcherType type;
           std::string string_matcher;
+          std::unique_ptr<RE2> regex_matcher;
           bool operator==(const PathMatcher& other) const {
-            return (type == other.type &&
-                    string_matcher == other.string_matcher);
+            if (type != other.type) return false;
+            if (type == PathMatcherType::REGEX) {
+              // Should never be null.
+              if (regex_matcher == nullptr || other.regex_matcher == nullptr) {
+                return false;
+              }
+              return regex_matcher->pattern() == other.regex_matcher->pattern();
+            }
+            return string_matcher == other.string_matcher;
           }
           std::string ToString() const;
         };
         struct HeaderMatcher {
           enum class HeaderMatcherType {
             EXACT,    // value stored in string_matcher field
+            REGEX,    // uses regex_match field
             RANGE,    // uses range_start and range_end fields
             PRESENT,  // uses present_match field
             PREFIX,   // prefix stored in string_matcher field
@@ -79,6 +90,7 @@ class XdsApi {
           int64_t range_start;
           int64_t range_end;
           std::string string_matcher;
+          std::unique_ptr<RE2> regex_match;
           bool present_match;
           // invert_match field may or may not exisit, so initialize it to
           // false.
