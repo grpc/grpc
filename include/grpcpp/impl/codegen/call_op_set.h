@@ -548,7 +548,7 @@ class CallOpGenericRecvMessage {
   }
 
   void FinishOp(bool* status) {
-    if (!deserialize_ || hijacked_) return;
+    if (!deserialize_) return;
     if (recv_buf_.Valid()) {
       if (*status) {
         got_message = true;
