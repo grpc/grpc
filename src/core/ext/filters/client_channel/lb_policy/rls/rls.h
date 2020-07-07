@@ -32,6 +32,8 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
@@ -196,7 +198,7 @@ class RlsLb : public LoadBalancingPolicy {
       void UpdateState(grpc_connectivity_state state,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
-      void AddTraceEvent(TraceSeverity severity, StringView message) override;
+      void AddTraceEvent(TraceSeverity severity, absl::string_view message) override;
 
      private:
       RefCountedPtr<ChildPolicyWrapper> wrapper_;
@@ -251,7 +253,7 @@ class RlsLb : public LoadBalancingPolicy {
       Cache::Iterator iterator() const;
 
      private:
-      static void OnBackoffTimerLocked(void* args, grpc_error* error);
+      void OnBackoffTimerLocked(grpc_error* error);
 
       // Callback when the backoff timer is fired.
       static void OnBackoffTimer(void* args, grpc_error* error);
@@ -267,7 +269,6 @@ class RlsLb : public LoadBalancingPolicy {
       grpc_timer backoff_timer_;
       bool timer_pending_ = false;
       grpc_closure backoff_timer_callback_;
-      grpc_closure backoff_timer_combiner_callback_;
       grpc_millis backoff_time_ = GRPC_MILLIS_INF_PAST;
       grpc_millis backoff_expiration_time_ = GRPC_MILLIS_INF_PAST;
 
@@ -374,12 +375,11 @@ class RlsLb : public LoadBalancingPolicy {
       void OnConnectivityStateChange(
           grpc_connectivity_state new_state) override;
 
-      static void OnReadyLocked(void* arg, grpc_error* error);
+      void OnReadyLocked(grpc_error* error);
 
       RefCountedPtr<ControlChannel> channel_;
 
       bool was_transient_failure_ = false;
-      grpc_closure on_ready_locked_cb_;
     };
 
     RefCountedPtr<RlsLb> lb_policy_;
@@ -419,7 +419,7 @@ class RlsLb : public LoadBalancingPolicy {
     static void OnRlsCallComplete(void* arg, grpc_error* error);
 
     /// Call completion callback running on lb policy combiner.
-    static void OnRlsCallCompleteLocked(void* arg, grpc_error* error);
+    void OnRlsCallCompleteLocked(grpc_error* error);
 
     void MakeRequestProto();
 
@@ -436,7 +436,6 @@ class RlsLb : public LoadBalancingPolicy {
 
     grpc_closure call_start_cb_;
     grpc_closure call_complete_cb_;
-    grpc_closure call_complete_locked_cb_;
     grpc_call* call_ = nullptr;
     grpc_byte_buffer* message_send_ = nullptr;
     grpc_metadata_array initial_metadata_recv_;

@@ -1314,10 +1314,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "rls_upb",
     srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lookup/rls.upb.c",
+        "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c",
     ],
     hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lookup/rls.upb.h",
+        "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h",
     ],
     language = "c++",
     external_deps = [

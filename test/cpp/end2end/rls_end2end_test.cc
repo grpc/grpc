@@ -459,8 +459,6 @@ class FakeResolverResponseGeneratorWrapper {
     grpc_core::Resolver::Result result;
     GPR_ASSERT(balancer_port != 0);
 
-    grpc_arg arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_ADDRESS_IS_BALANCER), 1);
     grpc_resolved_address addr;
     sockaddr_in* addr_in = reinterpret_cast<sockaddr_in*>(&addr.addr);
     addr.len = sizeof(sockaddr_in);
@@ -468,8 +466,7 @@ class FakeResolverResponseGeneratorWrapper {
     addr_in->sin_port = htons(balancer_port);
     addr_in->sin_addr.s_addr = htonl(0x7F000001);  // localhost
 
-    result.addresses.emplace_back(
-        addr, grpc_channel_args_copy_and_add(nullptr, &arg, 1));
+    result.addresses.emplace_back(addr, nullptr);
     if (service_config_json != nullptr) {
       result.service_config_error = GRPC_ERROR_NONE;
       result.service_config = grpc_core::ServiceConfig::Create(

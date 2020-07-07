@@ -31,20 +31,22 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "upb/upb.hpp"
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/rls/rls.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/upb-generated/src/proto/grpc/lookup/rls.upb.h"
+#include "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/random.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
@@ -193,7 +195,7 @@ static grpc_error* InsertOrUpdateChildPolicyField(Json* config,
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "child policy configuration is not an array");
   }
-  InlinedVector<grpc_error*, 1> error_list;
+  absl::InlinedVector<grpc_error*, 1> error_list;
   for (auto& child_json : *config->mutable_array()) {
     if (child_json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -235,7 +237,7 @@ RlsLb::KeyMapBuilderMap RlsCreateKeyMapBuilderMap(const Json& config,
         "malformed RLS JSON configuration");
     return RlsLb::KeyMapBuilderMap();
   }
-  InlinedVector<grpc_error*, 1> error_list;
+  absl::InlinedVector<grpc_error*, 1> error_list;
   if (config.array_value().empty()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "\"grpc_keybuilders\" field is empty"));
@@ -485,8 +487,6 @@ RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy)
       .set_max_backoff(kCacheBackoffMax);
   backoff_state_ = std::unique_ptr<BackOff>(new BackOff(backoff_options));
   GRPC_CLOSURE_INIT(&backoff_timer_callback_, OnBackoffTimer,
-                    reinterpret_cast<void*>(this), nullptr);
-  GRPC_CLOSURE_INIT(&backoff_timer_combiner_callback_, OnBackoffTimerLocked,
                     reinterpret_cast<void*>(this), nullptr);
 }
 
@@ -779,13 +779,12 @@ RlsLb::Cache::Iterator RlsLb::Cache::Entry::iterator() const {
   return lru_iterator_;
 }
 
-void RlsLb::Cache::Entry::OnBackoffTimerLocked(void* arg, grpc_error* error) {
+void RlsLb::Cache::Entry::OnBackoffTimerLocked(grpc_error* error) {
   (void)error;
-  RefCountedPtr<Entry> entry(reinterpret_cast<Entry*>(arg));
-  std::lock_guard<std::recursive_mutex> lock(entry->lb_policy_->mu_);
-  entry->timer_pending_ = false;
-  if (entry->is_shutdown_) return;
-  entry->lb_policy_->UpdatePickerLocked();
+  std::lock_guard<std::recursive_mutex> lock(lb_policy_->mu_);
+  timer_pending_ = false;
+  if (is_shutdown_) return;
+  lb_policy_->UpdatePickerLocked();
 }
 
 void RlsLb::Cache::Entry::OnBackoffTimer(void* arg, grpc_error* error) {
@@ -802,8 +801,9 @@ void RlsLb::Cache::Entry::OnBackoffTimer(void* arg, grpc_error* error) {
     entry->lb_policy_->mu_.unlock();
     entry->Unref();
   } else {
-    entry->lb_policy_->combiner()->Run(&entry->backoff_timer_combiner_callback_,
-                                       GRPC_ERROR_REF(error));
+    entry->lb_policy_->work_serializer()->Run([entry, error]() {
+      entry->OnBackoffTimerLocked(error); },
+                                       DEBUG_LOCATION);
   }
 }
 
@@ -939,8 +939,6 @@ RlsLb::RequestMapEntry::RequestMapEntry(RefCountedPtr<RlsLb> lb_policy, Key key,
   }
   GRPC_CLOSURE_INIT(&call_complete_cb_, OnRlsCallComplete,
                     reinterpret_cast<void*>(this), nullptr);
-  GRPC_CLOSURE_INIT(&call_complete_locked_cb_, OnRlsCallCompleteLocked,
-                    reinterpret_cast<void*>(this), nullptr);
   ExecCtx::Run(
       DEBUG_LOCATION,
       GRPC_CLOSURE_INIT(&call_start_cb_, StartCall,
@@ -1035,53 +1033,52 @@ void RlsLb::RequestMapEntry::StartCall(void* arg, grpc_error* error) {
 
 void RlsLb::RequestMapEntry::OnRlsCallComplete(void* arg, grpc_error* error) {
   RequestMapEntry* entry = reinterpret_cast<RequestMapEntry*>(arg);
-  entry->lb_policy_->combiner()->Run(&entry->call_complete_locked_cb_,
-                                     GRPC_ERROR_REF(error));
+  entry->lb_policy_->work_serializer()->Run([entry, error]() {
+    entry->OnRlsCallCompleteLocked(error); },
+                                     DEBUG_LOCATION);
 }
 
-void RlsLb::RequestMapEntry::OnRlsCallCompleteLocked(void* arg,
-                                                     grpc_error* error) {
-  RefCountedPtr<RequestMapEntry> entry(reinterpret_cast<RequestMapEntry*>(arg));
-  std::lock_guard<std::recursive_mutex> lock(entry->lb_policy_->mu_);
-  if (entry->lb_policy_->is_shutdown_) return;
+void RlsLb::RequestMapEntry::OnRlsCallCompleteLocked(grpc_error* error) {
+  std::lock_guard<std::recursive_mutex> lock(lb_policy_->mu_);
+  if (lb_policy_->is_shutdown_) return;
   bool call_failed =
-      (error != GRPC_ERROR_NONE || entry->status_recv_ != GRPC_STATUS_OK);
+      (error != GRPC_ERROR_NONE || status_recv_ != GRPC_STATUS_OK);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_DEBUG,
             "[rlslb %p] request_map_entry=%p, error=%p, status=%d: RLS call "
             "response received",
-            entry->lb_policy_.get(), arg, error, entry->status_recv_);
+            lb_policy_.get(), this, error, status_recv_);
   }
 
-  entry->channel_->ReportResponseLocked(call_failed);
+  channel_->ReportResponseLocked(call_failed);
   ResponseInfo res;
   if (call_failed) {
     if (error == GRPC_ERROR_NONE) {
       res.error = grpc_error_set_str(
           grpc_error_set_int(
               GRPC_ERROR_CREATE_FROM_STATIC_STRING("received error status"),
-              GRPC_ERROR_INT_GRPC_STATUS, entry->status_recv_),
-          GRPC_ERROR_STR_GRPC_MESSAGE, entry->status_details_recv_);
+              GRPC_ERROR_INT_GRPC_STATUS, status_recv_),
+          GRPC_ERROR_STR_GRPC_MESSAGE, status_details_recv_);
     } else {
       res.error = error;
     }
   } else {
-    res.error = entry->ParseResponseProto(&res.target, &res.header_data);
+    res.error = ParseResponseProto(&res.target, &res.header_data);
     if (res.error == GRPC_ERROR_NONE && res.target.length() == 0) {
       res.error =
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("server returned empty target");
     }
   }
-  auto cache_entry = entry->lb_policy_->cache_.Find(entry->key_);
+  auto cache_entry = lb_policy_->cache_.Find(key_);
   if (cache_entry == nullptr) {
-    cache_entry = new Cache::Entry(entry->lb_policy_);
-    entry->lb_policy_->cache_.Add(entry->key_,
+    cache_entry = new Cache::Entry(lb_policy_);
+    lb_policy_->cache_.Add(key_,
                                   OrphanablePtr<Cache::Entry>(cache_entry));
   }
   cache_entry->OnRlsResponseLocked(std::move(res),
-                                   std::move(entry->backoff_state_));
-  entry->lb_policy_->request_map_.erase(entry->key_);
+                                   std::move(backoff_state_));
+  lb_policy_->request_map_.erase(key_);
 }
 
 void RlsLb::RequestMapEntry::MakeRequestProto() {
@@ -1096,12 +1093,9 @@ void RlsLb::RequestMapEntry::MakeRequestProto() {
   grpc_lookup_v1_RouteLookupRequest_set_target_type(
       req, upb_strview_make(kGrpc, strlen(kGrpc)));
   for (auto& kv : key_.key_map) {
-    grpc_lookup_v1_RouteLookupRequest_KeyMapEntry* key_map =
-        grpc_lookup_v1_RouteLookupRequest_add_key_map(req, arena.ptr());
-    grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_set_key(
-        key_map, upb_strview_make(kv.first.c_str(), kv.first.length()));
-    grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_set_value(
-        key_map, upb_strview_make(kv.second.c_str(), kv.second.length()));
+    grpc_lookup_v1_RouteLookupRequest_key_map_set(
+        req, upb_strview_make(kv.first.c_str(), kv.first.length()),
+        upb_strview_make(kv.second.c_str(), kv.second.length()), arena.ptr());
   }
   size_t len;
   char* buf =
@@ -1233,8 +1227,6 @@ void RlsLb::ControlChannel::Throttle::RegisterResponse(bool success) {
 RlsLb::ControlChannel::StateWatcher::StateWatcher(
     RefCountedPtr<ControlChannel> channel)
     : channel_(std::move(channel)) {
-  GRPC_CLOSURE_INIT(&on_ready_locked_cb_, OnReadyLocked,
-                    reinterpret_cast<void*>(this), nullptr);
 }
 
 void RlsLb::ControlChannel::StateWatcher::OnConnectivityStateChange(
@@ -1248,33 +1240,30 @@ void RlsLb::ControlChannel::StateWatcher::OnConnectivityStateChange(
   if (new_state == GRPC_CHANNEL_READY && was_transient_failure_) {
     was_transient_failure_ = false;
     Ref().release();
-    channel_->lb_policy_->combiner()->Run(&on_ready_locked_cb_,
-                                          GRPC_ERROR_NONE);
+    channel_->lb_policy_->work_serializer()->Run(
+        [this]() { OnReadyLocked(GRPC_ERROR_NONE); },
+        DEBUG_LOCATION);
   } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     was_transient_failure_ = true;
   }
 }
 
-void RlsLb::ControlChannel::StateWatcher::OnReadyLocked(void* arg,
-                                                        grpc_error* error) {
+void RlsLb::ControlChannel::StateWatcher::OnReadyLocked(grpc_error* error) {
   (void)error;
-  RefCountedPtr<StateWatcher> watcher =
-      RefCountedPtr<StateWatcher>(reinterpret_cast<StateWatcher*>(arg));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_DEBUG,
             "[RlsLb %p] ControlChannel=%p, StateWatcher=%p: channel transits "
             "to READY",
-            watcher->channel_->lb_policy_.get(), watcher->channel_.get(),
-            watcher.get());
+            channel_->lb_policy_.get(), channel_.get(), this);
   }
   std::lock_guard<std::recursive_mutex> lock(
-      watcher->channel_->lb_policy_->mu_);
-  if (watcher->channel_->is_shutdown_) return;
-  watcher->channel_->lb_policy_->cache_.ResetAllBackoff();
-  if (watcher->channel_->lb_policy_->current_config_
+      channel_->lb_policy_->mu_);
+  if (channel_->is_shutdown_) return;
+  channel_->lb_policy_->cache_.ResetAllBackoff();
+  if (channel_->lb_policy_->current_config_
           ->request_processing_strategy() ==
       RequestProcessingStrategy::SYNC_LOOKUP_CLIENT_SEES_ERROR) {
-    watcher->channel_->lb_policy_->UpdatePickerLocked();
+    channel_->lb_policy_->UpdatePickerLocked();
   }
 }
 
@@ -1345,7 +1334,7 @@ void RlsLb::ChildPolicyWrapper::UpdateLocked(
   }
 
   Args create_args;
-  create_args.combiner = lb_policy_->combiner();
+  create_args.work_serializer = lb_policy_->work_serializer();
   create_args.channel_control_helper.reset(new ChildPolicyHelper(Ref()));
   create_args.args = channel_args;
 
@@ -1445,7 +1434,7 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::RequestReresolution() {
 }
 
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::AddTraceEvent(
-    TraceSeverity severity, StringView message) {
+    TraceSeverity severity, absl::string_view message) {
   std::lock_guard<std::recursive_mutex> lock(wrapper_->lb_policy_->mu_);
   if (wrapper_->is_shutdown_) return;
 
@@ -1616,7 +1605,7 @@ RlsLb::KeyMapBuilder::KeyMapBuilder(const Json& config, grpc_error** error) {
         "\"headers\" field is not an array");
     return;
   }
-  InlinedVector<grpc_error*, 1> error_list;
+  absl::InlinedVector<grpc_error*, 1> error_list;
   grpc_error* internal_error = GRPC_ERROR_NONE;
   auto headers = config.array_value();
   pattern_.reserve(headers.size());
@@ -1731,7 +1720,7 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("RLS config is not object");
     return nullptr;
   }
-  InlinedVector<grpc_error*, 1> error_list;
+  absl::InlinedVector<grpc_error*, 1> error_list;
   RefCountedPtr<RlsLbConfig> result;
   result.reset(new RlsLbConfig());
   grpc_error* internal_error = GRPC_ERROR_NONE;
