@@ -16,14 +16,57 @@
 
 #include <gtest/gtest.h>
 
-TEST(CelEngineTest, CreateEmptyEngine) {
+class CelEngineTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    deny_policy = envoy_config_rbac_v2_RBAC_new(arena.ptr());
+    envoy_config_rbac_v2_RBAC_set_action(deny_policy, 1);
+    allow_policy = envoy_config_rbac_v2_RBAC_new(arena.ptr());
+    envoy_config_rbac_v2_RBAC_set_action(allow_policy, 0);
+  }
+
   upb::Arena arena;
-  envoy_config_rbac_v2_RBAC* rbac_policy =
-      envoy_config_rbac_v2_RBAC_new(arena.ptr());
-  CelEvaluationEngine* cel_engine = new CelEvaluationEngine(*rbac_policy);
-  EXPECT_NE(cel_engine, nullptr)
-      << "Failed to create an empty CelEvaluationEngine.";
-  delete cel_engine;
+  envoy_config_rbac_v2_RBAC* deny_policy;
+  envoy_config_rbac_v2_RBAC* allow_policy;
+};
+
+TEST_F(CelEngineTest, CreateEngineSuccess) {
+  std::vector<envoy_config_rbac_v2_RBAC*> policies{deny_policy, allow_policy};
+  std::unique_ptr<CelEvaluationEngine> engine =
+      CelEvaluationEngine::CreateCelEvaluationEngine(policies);
+  EXPECT_NE(engine, nullptr) << "Failed to create a CelEvaluationEngine.";
+}
+
+TEST_F(CelEngineTest, CreateEngineFailNoPolicies) {
+  std::vector<envoy_config_rbac_v2_RBAC*> policies{};
+  std::unique_ptr<CelEvaluationEngine> engine =
+      CelEvaluationEngine::CreateCelEvaluationEngine(policies);
+  EXPECT_EQ(engine, nullptr)
+      << "Created a CelEvaluationEngine without policies.";
+}
+
+TEST_F(CelEngineTest, CreateEngineFailWrongPolicyOrder) {
+  std::vector<envoy_config_rbac_v2_RBAC*> policies{allow_policy, deny_policy};
+  std::unique_ptr<CelEvaluationEngine> engine =
+      CelEvaluationEngine::CreateCelEvaluationEngine(policies);
+  EXPECT_EQ(engine, nullptr)
+      << "Created a CelEvaluationEngine with policies in the wrong order.";
+}
+
+TEST_F(CelEngineTest, CreateEngineFailMissingPolicyType) {
+  std::vector<envoy_config_rbac_v2_RBAC*> policies{allow_policy, allow_policy};
+  std::unique_ptr<CelEvaluationEngine> engine =
+      CelEvaluationEngine::CreateCelEvaluationEngine(policies);
+  EXPECT_EQ(engine, nullptr)
+      << "Created a CelEvaluationEngine with only one policy type.";
+}
+
+TEST_F(CelEngineTest, CreateEngineFailWrongNumberPolicies) {
+  std::vector<envoy_config_rbac_v2_RBAC*> policies{allow_policy};
+  std::unique_ptr<CelEvaluationEngine> engine =
+      CelEvaluationEngine::CreateCelEvaluationEngine(policies);
+  EXPECT_EQ(engine, nullptr)
+      << "Created a CelEvaluationEngine with only one policy.";
 }
 
 int main(int argc, char** argv) {

@@ -21,33 +21,44 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "src/core/ext/upb-generated/envoy/config/rbac/v2/rbac.upb.h"
 #include "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h"
 #include "upb/upb.hpp"
 
 // CelEvaluationEngine makes an AuthorizationDecision to ALLOW or DENY the
-// current action based on the condition fields in the provided RBAC policy.
-// The engine returns UNDECIDED decision if it fails to find a match in RBAC
+// current action based on the condition fields in two provided RBAC policies.
+// The first policy is deny-if-matched and the second is allow-if-matched.
+// The engine returns UNDECIDED decision if it fails to find a match in either
 // policy. This engine ignores the principal and permission fields in RBAC
-// policy. It is the caller's responsibility to provide an RBAC policy that
-// is compatible with this engine.
+// policies. It is the caller's responsibility to provide RBAC policies that
+// are compatible with this engine.
 //
 // Example:
-// CelEvaluationEngine* cel_engine = new CelEvaluationEngine(rbac_policy);
+// CelEvaluationEngine* cel_engine = CelEvaluationEngineFactory(rbac_policies);
 // cel_engine->Evaluate(evaluate_args); // returns authorization decision.
 class CelEvaluationEngine {
  public:
-  explicit CelEvaluationEngine(const envoy_config_rbac_v2_RBAC& rbac_policy);
+  // rbac_policies must be a vector containing a deny policy and an allow
+  // policy, in that order.
+  static std::unique_ptr<CelEvaluationEngine> CreateCelEvaluationEngine(
+      const std::vector<envoy_config_rbac_v2_RBAC*>& rbac_policies);
   // TODO(mywang@google.com): add an Evaluate member function.
-  // TODO(mywang@google.com): change the engine to take two policies, one for
-  // ALLOW and the other for DENY.
 
  private:
-  // Set allowed_if_matched_ to true if the RBAC policy is an ALLOW policy,
-  // and false if it is a DENY policy.
-  const bool allowed_if_matched_;
-  std::map<const std::string, const google_api_expr_v1alpha1_Expr*> policies_;
+  enum Action {
+    ALLOW,
+    DENY,
+  };
+  static const size_t NumPolicies = 2;
+
+  explicit CelEvaluationEngine(
+      const std::vector<envoy_config_rbac_v2_RBAC*>& rbac_policies);
+  std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
+      deny_if_matched_;
+  std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
+      allow_if_matched_;
   upb::Arena arena_;
 };
 
