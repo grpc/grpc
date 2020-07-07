@@ -214,8 +214,8 @@ defaults:
   global:
     CFLAGS: -g
     COREFLAGS: -fno-exceptions
-    CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/upb
-      -Isrc/core/ext/upb-generated
+    CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2
+      -Ithird_party/upb -Isrc/core/ext/upb-generated
     LDFLAGS: -g
   zlib:
     CFLAGS: -fvisibility=hidden
@@ -255,6 +255,7 @@ python_dependencies:
   - address_sorting
   - ares
   - boringssl
+  - re2
   - z
 ruby_gem:
   deps:
