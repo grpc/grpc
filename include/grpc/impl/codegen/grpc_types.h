@@ -360,6 +360,10 @@ typedef struct {
  * The default is 15 seconds. */
 #define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
   "grpc.xds_resource_does_not_exist_timeout_ms"
+/* The contents of the XDS bootstrap. This will be used instead of the
+ * file at the environment variable GRPC_XDS_BOOTSTRAP if present. */
+#define GRPC_ARG_XDS_BOOTSTRAP \
+  "grpc.xds_bootstrap"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"

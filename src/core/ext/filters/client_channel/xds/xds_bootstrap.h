@@ -58,7 +58,14 @@ class XdsBootstrap {
   };
 
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
-  // error reading the file.
+  // error parsing the string.
+  static std::unique_ptr<XdsBootstrap> ReadFromString(absl::string_view contents_str_view, 
+                                                      XdsClient* client,
+                                                      TraceFlag* tracer,
+                                                      grpc_error** error);
+
+  // If *error is not GRPC_ERROR_NONE after returning, then there was an
+  // error reading/parsing the file.
   static std::unique_ptr<XdsBootstrap> ReadFromFile(XdsClient* client,
                                                     TraceFlag* tracer,
                                                     grpc_error** error);

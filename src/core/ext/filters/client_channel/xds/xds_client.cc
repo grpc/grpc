@@ -1768,6 +1768,19 @@ grpc_millis GetRequestTimeout(const grpc_channel_args& args) {
       {15000, 0, INT_MAX});
 }
 
+std::unique_ptr<XdsBootstrap> ReadBootstrap(const grpc_channel_args& args,
+                                           XdsClient* client,
+                                           TraceFlag* tracer,
+                                           grpc_error** error) {
+  const char* bootstrap_arg =
+      grpc_channel_args_find_string(&args, GRPC_ARG_XDS_BOOTSTRAP);
+
+  if (bootstrap_arg != nullptr) {
+    return XdsBootstrap::ReadFromString(bootstrap_arg, client, tracer, error);
+  }
+  return XdsBootstrap::ReadFromFile(client, tracer, error);
+}
+
 }  // namespace
 
 XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
@@ -1780,7 +1793,7 @@ XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
       work_serializer_(std::move(work_serializer)),
       interested_parties_(interested_parties),
       bootstrap_(
-          XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
+          ReadBootstrap(channel_args, this, &grpc_xds_client_trace, error)),
       api_(this, &grpc_xds_client_trace,
            bootstrap_ == nullptr ? nullptr : bootstrap_->node()),
       server_name_(server_name),
