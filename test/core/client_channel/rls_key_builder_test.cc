@@ -89,7 +89,7 @@ const char* default_build_map_config =
 
 class TestMetadata : public LoadBalancingPolicy::MetadataInterface {
  public:
-  void Add(StringView key, StringView value) override {
+  void Add(absl::string_view key, absl::string_view value) override {
     metadata_.push_back({std::string(key), std::string(value)});
   }
 
@@ -107,7 +107,7 @@ class TestMetadata : public LoadBalancingPolicy::MetadataInterface {
     return handle + 1;
   }
 
-  std::pair<StringView, StringView> IteratorHandleGet(
+  std::pair<absl::string_view, absl::string_view> IteratorHandleGet(
       intptr_t handle) const override {
     return metadata_[handle];
   }
