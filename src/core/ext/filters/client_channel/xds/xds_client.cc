@@ -30,7 +30,6 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -180,13 +179,11 @@ class XdsClient::ChannelState::AdsCallState
     void OnTimerLocked(grpc_error* error) {
       if (error == GRPC_ERROR_NONE && timer_pending_) {
         timer_pending_ = false;
-        char* msg;
-        gpr_asprintf(
-            &msg,
-            "timeout obtaining resource {type=%s name=%s} from xds server",
-            type_url_.c_str(), name_.c_str());
-        grpc_error* watcher_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-        gpr_free(msg);
+        grpc_error* watcher_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrFormat(
+                "timeout obtaining resource {type=%s name=%s} from xds server",
+                type_url_, name_)
+                .c_str());
         if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
           gpr_log(GPR_INFO, "[xds_client %p] %s", ads_calld_->xds_client(),
                   grpc_error_string(watcher_error));
@@ -1092,8 +1089,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
                   "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
                   " %s has weight %d, contains %" PRIuPTR " server addresses",
                   xds_client(), priority, locality_count,
-                  locality.name->AsHumanReadableString(), locality.lb_weight,
-                  locality.serverlist.size());
+                  locality.name->AsHumanReadableString().c_str(),
+                  locality.lb_weight, locality.serverlist.size());
           for (size_t i = 0; i < locality.serverlist.size(); ++i) {
             std::string ipport = grpc_sockaddr_to_string(
                 &locality.serverlist[i].address(), false);
@@ -1101,7 +1098,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
                     "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
                     " %s, server address %" PRIuPTR ": %s",
                     xds_client(), priority, locality_count,
-                    locality.name->AsHumanReadableString(), i, ipport.c_str());
+                    locality.name->AsHumanReadableString().c_str(), i,
+                    ipport.c_str());
           }
           ++locality_count;
         }

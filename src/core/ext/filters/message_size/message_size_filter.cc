@@ -21,10 +21,11 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_call_data.h"
@@ -198,17 +199,16 @@ static void recv_message_ready(void* user_data, grpc_error* error) {
   if (*calld->recv_message != nullptr && calld->limits.max_recv_size >= 0 &&
       (*calld->recv_message)->length() >
           static_cast<size_t>(calld->limits.max_recv_size)) {
-    char* message_string;
-    gpr_asprintf(&message_string,
-                 "Received message larger than max (%u vs. %d)",
-                 (*calld->recv_message)->length(), calld->limits.max_recv_size);
     grpc_error* new_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrFormat("Received message larger than max (%u vs. %d)",
+                            (*calld->recv_message)->length(),
+                            calld->limits.max_recv_size)
+                .c_str()),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
     error = grpc_error_add_child(GRPC_ERROR_REF(error), new_error);
     GRPC_ERROR_UNREF(calld->error);
     calld->error = GRPC_ERROR_REF(error);
-    gpr_free(message_string);
   } else {
     GRPC_ERROR_REF(error);
   }
@@ -258,17 +258,17 @@ static void message_size_start_transport_stream_op_batch(
   if (op->send_message && calld->limits.max_send_size >= 0 &&
       op->payload->send_message.send_message->length() >
           static_cast<size_t>(calld->limits.max_send_size)) {
-    char* message_string;
-    gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %d)",
-                 op->payload->send_message.send_message->length(),
-                 calld->limits.max_send_size);
     grpc_transport_stream_op_batch_finish_with_failure(
         op,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
-                           GRPC_ERROR_INT_GRPC_STATUS,
-                           GRPC_STATUS_RESOURCE_EXHAUSTED),
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrFormat(
+                    "Sent message larger than max (%u vs. %d)",
+                    op->payload->send_message.send_message->length(),
+                    calld->limits.max_send_size)
+                    .c_str()),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED),
         calld->call_combiner);
-    gpr_free(message_string);
     return;
   }
   // Inject callback for receiving a message.

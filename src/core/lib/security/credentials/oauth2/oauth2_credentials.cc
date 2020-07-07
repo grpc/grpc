@@ -24,6 +24,8 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/grpc_security.h>
@@ -33,7 +35,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "absl/strings/str_format.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
@@ -136,7 +137,6 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const grpc_http_response* response, grpc_mdelem* token_md,
     grpc_millis* token_lifetime) {
   char* null_terminated_body = nullptr;
-  char* new_access_token = nullptr;
   grpc_credentials_status status = GRPC_CREDENTIALS_OK;
   Json json;
 
@@ -202,12 +202,12 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
       goto end;
     }
     expires_in = it->second.string_value().c_str();
-    gpr_asprintf(&new_access_token, "%s %s", token_type, access_token);
     *token_lifetime = strtol(expires_in, nullptr, 10) * GPR_MS_PER_SEC;
     if (!GRPC_MDISNULL(*token_md)) GRPC_MDELEM_UNREF(*token_md);
     *token_md = grpc_mdelem_from_slices(
         grpc_core::ExternallyManagedSlice(GRPC_AUTHORIZATION_METADATA_KEY),
-        grpc_core::UnmanagedMemorySlice(new_access_token));
+        grpc_slice_from_cpp_string(
+            absl::StrCat(token_type, " ", access_token)));
     status = GRPC_CREDENTIALS_OK;
   }
 
@@ -216,8 +216,7 @@ end:
     GRPC_MDELEM_UNREF(*token_md);
     *token_md = GRPC_MDNULL;
   }
-  if (null_terminated_body != nullptr) gpr_free(null_terminated_body);
-  if (new_access_token != nullptr) gpr_free(new_access_token);
+  gpr_free(null_terminated_body);
   return status;
 }
 
@@ -442,10 +441,9 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
       const_cast<char*>("Content-Type"),
       const_cast<char*>("application/x-www-form-urlencoded")};
   grpc_httpcli_request request;
-  char* body = nullptr;
-  gpr_asprintf(&body, GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
-               refresh_token_.client_id, refresh_token_.client_secret,
-               refresh_token_.refresh_token);
+  std::string body = absl::StrFormat(
+      GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING, refresh_token_.client_id,
+      refresh_token_.client_secret, refresh_token_.refresh_token);
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = (char*)GRPC_GOOGLE_OAUTH2_SERVICE_HOST;
   request.http.path = (char*)GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH;
@@ -457,13 +455,12 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
      extreme memory pressure. */
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("oauth2_credentials_refresh");
-  grpc_httpcli_post(httpcli_context, pollent, resource_quota, &request, body,
-                    strlen(body), deadline,
+  grpc_httpcli_post(httpcli_context, pollent, resource_quota, &request,
+                    body.c_str(), body.size(), deadline,
                     GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb,
                                       metadata_req, grpc_schedule_on_exec_ctx),
                     &metadata_req->response);
   grpc_resource_quota_unref_internal(resource_quota);
-  gpr_free(body);
 }
 
 grpc_google_refresh_token_credentials::grpc_google_refresh_token_credentials(
@@ -487,16 +484,15 @@ std::string grpc_google_refresh_token_credentials::debug_string() {
                          grpc_oauth2_token_fetcher_credentials::debug_string());
 }
 
-static char* create_loggable_refresh_token(grpc_auth_refresh_token* token) {
+static std::string create_loggable_refresh_token(
+    grpc_auth_refresh_token* token) {
   if (strcmp(token->type, GRPC_AUTH_JSON_TYPE_INVALID) == 0) {
-    return gpr_strdup("<Invalid json token>");
+    return "<Invalid json token>";
   }
-  char* loggable_token = nullptr;
-  gpr_asprintf(&loggable_token,
-               "{\n type: %s\n client_id: %s\n client_secret: "
-               "<redacted>\n refresh_token: <redacted>\n}",
-               token->type, token->client_id);
-  return loggable_token;
+  return absl::StrFormat(
+      "{\n type: %s\n client_id: %s\n client_secret: "
+      "<redacted>\n refresh_token: <redacted>\n}",
+      token->type, token->client_id);
 }
 
 grpc_call_credentials* grpc_google_refresh_token_credentials_create(
@@ -504,12 +500,10 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
   grpc_auth_refresh_token token =
       grpc_auth_refresh_token_create_from_string(json_refresh_token);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace)) {
-    char* loggable_token = create_loggable_refresh_token(&token);
     gpr_log(GPR_INFO,
             "grpc_refresh_token_credentials_create(json_refresh_token=%s, "
             "reserved=%p)",
-            loggable_token, reserved);
-    gpr_free(loggable_token);
+            create_loggable_refresh_token(&token).c_str(), reserved);
   }
   GPR_ASSERT(reserved == nullptr);
   return grpc_refresh_token_credentials_create_from_auth_refresh_token(token)
@@ -744,13 +738,10 @@ void grpc_access_token_credentials::cancel_get_request_metadata(
 grpc_access_token_credentials::grpc_access_token_credentials(
     const char* access_token)
     : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) {
-  char* token_md_value;
-  gpr_asprintf(&token_md_value, "Bearer %s", access_token);
   grpc_core::ExecCtx exec_ctx;
   access_token_md_ = grpc_mdelem_from_slices(
       grpc_core::ExternallyManagedSlice(GRPC_AUTHORIZATION_METADATA_KEY),
-      grpc_core::UnmanagedMemorySlice(token_md_value));
-  gpr_free(token_md_value);
+      grpc_slice_from_cpp_string(absl::StrCat("Bearer ", access_token)));
 }
 
 std::string grpc_access_token_credentials::debug_string() {

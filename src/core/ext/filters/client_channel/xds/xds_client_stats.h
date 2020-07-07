@@ -24,9 +24,9 @@
 #include <map>
 #include <string>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -80,21 +80,20 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   const std::string& zone() const { return zone_; }
   const std::string& sub_zone() const { return sub_zone_; }
 
-  const char* AsHumanReadableString() {
-    if (human_readable_string_ == nullptr) {
-      char* tmp;
-      gpr_asprintf(&tmp, "{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                   region_.c_str(), zone_.c_str(), sub_zone_.c_str());
-      human_readable_string_.reset(tmp);
+  const std::string& AsHumanReadableString() {
+    if (human_readable_string_.empty()) {
+      human_readable_string_ =
+          absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                          region_, zone_, sub_zone_);
     }
-    return human_readable_string_.get();
+    return human_readable_string_;
   }
 
  private:
   std::string region_;
   std::string zone_;
   std::string sub_zone_;
-  UniquePtr<char> human_readable_string_;
+  std::string human_readable_string_;
 };
 
 // Drop stats for an xds cluster.

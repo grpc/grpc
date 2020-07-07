@@ -156,7 +156,7 @@ class NewWithLenSliceRefcount {
 /** grpc_slice_from_moved_(string|buffer) ref count .*/
 class MovedStringSliceRefCount {
  public:
-  MovedStringSliceRefCount(grpc_core::UniquePtr<char>&& str)
+  explicit MovedStringSliceRefCount(grpc_core::UniquePtr<char>&& str)
       : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
               &base_),
         str_(std::move(str)) {}
@@ -171,6 +171,26 @@ class MovedStringSliceRefCount {
   grpc_slice_refcount base_;
   grpc_core::RefCount refs_;
   grpc_core::UniquePtr<char> str_;
+};
+
+// grpc_slice_from_cpp_string() ref count.
+class MovedCppStringSliceRefCount {
+ public:
+  explicit MovedCppStringSliceRefCount(std::string&& str)
+      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
+              &base_),
+        str_(std::move(str)) {}
+
+  grpc_slice_refcount* base_refcount() { return &base_; }
+
+ private:
+  static void Destroy(void* arg) {
+    delete static_cast<MovedCppStringSliceRefCount*>(arg);
+  }
+
+  grpc_slice_refcount base_;
+  grpc_core::RefCount refs_;
+  std::string str_;
 };
 
 }  // namespace grpc_core
@@ -230,6 +250,23 @@ grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
 grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p) {
   const size_t len = strlen(p.get());
   return grpc_slice_from_moved_buffer(std::move(p), len);
+}
+
+grpc_slice grpc_slice_from_cpp_string(std::string str) {
+  grpc_slice slice;
+  if (str.size() <= sizeof(slice.data.inlined.bytes)) {
+    slice.refcount = nullptr;
+    slice.data.inlined.length = str.size();
+    memcpy(GRPC_SLICE_START_PTR(slice), str.data(), str.size());
+  } else {
+    slice.data.refcounted.bytes =
+        reinterpret_cast<uint8_t*>(const_cast<char*>(str.data()));
+    slice.data.refcounted.length = str.size();
+    slice.refcount =
+        (new grpc_core::MovedCppStringSliceRefCount(std::move(str)))
+            ->base_refcount();
+  }
+  return slice;
 }
 
 namespace {

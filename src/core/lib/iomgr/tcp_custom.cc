@@ -345,7 +345,7 @@ static grpc_endpoint_vtable vtable = {endpoint_read,
 
 grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
                                           grpc_resource_quota* resource_quota,
-                                          char* peer_string) {
+                                          const char* peer_string) {
   custom_tcp_endpoint* tcp =
       (custom_tcp_endpoint*)gpr_malloc(sizeof(custom_tcp_endpoint));
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;

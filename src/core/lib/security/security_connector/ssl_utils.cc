@@ -20,12 +20,13 @@
 
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
+#include <vector>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
-#include <vector>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -170,12 +171,9 @@ grpc_error* grpc_ssl_check_peer_name(absl::string_view peer_name,
                                      const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    char* msg;
-    gpr_asprintf(&msg, "Peer name %s is not in peer certificate",
-                 peer_name.data());
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return error;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
+            .c_str());
   }
   return GRPC_ERROR_NONE;
 }
