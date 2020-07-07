@@ -194,11 +194,9 @@ static void handle_response_done(alts_grpc_handshaker_client* client,
 
 void alts_handshaker_client_handle_response(alts_handshaker_client* c,
                                             bool is_ok) {
-  gpr_log(GPR_ERROR, "alts handshaker client handle response");
   GPR_ASSERT(c != nullptr);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
-  gpr_log(GPR_ERROR,"recv_buffer pulled from given client");
   grpc_byte_buffer* recv_buffer = client->recv_buffer;
   grpc_status_code status = client->status;
   alts_tsi_handshaker* handshaker = client->handshaker;
@@ -232,9 +230,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
     handle_response_done(client, TSI_INTERNAL_ERROR, nullptr, 0, nullptr);
     return;
   }
-  gpr_log(GPR_ERROR, "set up of alts handshaker client handle response arena");
   upb::Arena arena;
-  gpr_log(GPR_ERROR, "HandshakerResp created from recv buffer");
   grpc_gcp_HandshakerResp* resp =
       alts_tsi_utils_deserialize_response(recv_buffer, arena.ptr());
   grpc_byte_buffer_destroy(client->recv_buffer);
@@ -252,7 +248,6 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
     handle_response_done(client, TSI_DATA_CORRUPTED, nullptr, 0, nullptr);
     return;
   }
-  gpr_log(GPR_ERROR, "alts handshaker client handle get bytes");
   upb_strview out_frames = grpc_gcp_HandshakerResp_out_frames(resp);
   unsigned char* bytes_to_send = nullptr;
   size_t bytes_to_send_size = 0;
@@ -268,11 +263,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   }
   tsi_handshaker_result* result = nullptr;
   if (is_handshake_finished_properly(resp)) {
-
-    gpr_log(GPR_ERROR, "alts handshaker client handle response CALL TO RESULT CREATE");
     tsi_result status = alts_tsi_handshaker_result_create(resp, client->is_client, &result);
-    gpr_log(GPR_ERROR, "RESULT CREATE FINISH");
-
     if (status != TSI_OK) {
       gpr_log(GPR_ERROR, "alts_tsi_handshaker_result_create() failed");
       handle_response_done(client, status, nullptr, 0, nullptr);
@@ -283,11 +274,10 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
         result, &client->recv_bytes,
         grpc_gcp_HandshakerResp_bytes_consumed(resp));
   }
-  
+
   grpc_status_code code = static_cast<grpc_status_code>(
       grpc_gcp_HandshakerStatus_code(resp_status));
   if (code != GRPC_STATUS_OK) {
-    gpr_log(GPR_ERROR, "alts handshaker client handle status code");
     upb_strview details = grpc_gcp_HandshakerStatus_details(resp_status);
     if (details.size > 0) {
       char* error_details = (char*)gpr_zalloc(details.size + 1);
@@ -300,7 +290,6 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   // invoking the TSI callback directly if we aren't done yet, if
   // handle_response_done's allocation per message received causes
   // a performance issue.
-  gpr_log(GPR_ERROR, "alts handshaker client handle response handle response done");
   handle_response_done(client, alts_tsi_utils_convert_to_tsi_result(code),
                        bytes_to_send, bytes_to_send_size, result);
 }
@@ -703,7 +692,6 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
     grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
     void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
     bool is_client, size_t max_frame_size) {
-  gpr_log(GPR_ERROR, "alts_grpc_handshaker_client_create");
   if (channel == nullptr || handshaker_service_url == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to alts_handshaker_client_create()");
     return nullptr;
