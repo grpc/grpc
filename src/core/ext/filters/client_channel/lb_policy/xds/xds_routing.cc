@@ -25,6 +25,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "re2/re2.h"
 
 #include <grpc/grpc.h>
 
@@ -242,6 +243,9 @@ bool PathMatch(
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         PATH:
       return path == path_matcher.string_matcher;
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        REGEX:
+      return RE2::FullMatch(path.data(), *path_matcher.regex_matcher);
     default:
       return false;
   }
@@ -265,6 +269,9 @@ bool HeaderMatchHelper(
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::EXACT:
       return value.value() == header_matcher.string_matcher;
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+        HeaderMatcherType::REGEX:
+      return RE2::FullMatch(value.value().data(), *header_matcher.regex_match);
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::RANGE:
       int64_t int_value;
@@ -850,6 +857,24 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
         }
       }
     }
+    it = json.object_value().find("regex");
+    if (it != json.object_value().end()) {
+      if (path_matcher_seen) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:regex error: other path matcher already specified"));
+      } else {
+        path_matcher_seen = true;
+        if (it->second.type() != Json::Type::STRING) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:regex error: should be string"));
+        } else {
+          route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
+              Matchers::PathMatcher::PathMatcherType::REGEX;
+          route->matchers.path_matcher.regex_matcher =
+              absl::make_unique<RE2>(it->second.string_value());
+        }
+      }
+    }
     if (!path_matcher_seen) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "one path matcher: prefix, path, or regex is required"));
@@ -910,6 +935,25 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                     header_it->second.string_value();
               }
             }
+            header_it = header_json.object_value().find("regex_match");
+            if (header_it != header_json.object_value().end()) {
+              if (header_matcher_seen) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:regex_match error: other header matcher already "
+                    "specified"));
+              } else {
+                header_matcher_seen = true;
+                if (header_it->second.type() != Json::Type::STRING) {
+                  error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "field:regex_match error: should be string"));
+                } else {
+                  header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+                      HeaderMatcher::HeaderMatcherType::REGEX;
+                  header_matcher.regex_match =
+                      absl::make_unique<RE2>(header_it->second.string_value());
+                }
+              }
+            }
             header_it = header_json.object_value().find("range_match");
             if (header_it != header_json.object_value().end()) {
               if (header_matcher_seen) {
@@ -952,8 +996,6 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
                   if (header_matcher.range_end > header_matcher.range_start) {
                     header_matcher.type = XdsApi::RdsUpdate::RdsRoute::
                         Matchers::HeaderMatcher::HeaderMatcherType::RANGE;
-                    route->matchers.header_matchers.emplace_back(
-                        header_matcher);
                   }
                 }
               }
