@@ -172,7 +172,7 @@ std::string XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::ToString()
       break;
   }
   return absl::StrFormat("Path %s:/%s/", path_type_string,
-                         (type == PathMatcherType::REGEX)
+                         type == PathMatcherType::REGEX
                              ? regex_matcher->pattern()
                              : string_matcher);
 }
@@ -632,7 +632,7 @@ grpc_error* RoutePathMatchParse(const envoy_api_v2_route_RouteMatch* match,
     std::unique_ptr<RE2> regex = absl::make_unique<RE2>(matcher);
     if (!regex->ok()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Invalid regex string specified.");
+          "Invalid regex string specified in path matcher.");
     }
     rds_route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
         Matchers::PathMatcher::PathMatcherType::REGEX;
@@ -668,7 +668,7 @@ grpc_error* RouteHeaderMatchersParse(const envoy_api_v2_route_RouteMatch* match,
       std::unique_ptr<RE2> regex = absl::make_unique<RE2>(matcher);
       if (!regex->ok()) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Invalid regex string specified.");
+            "Invalid regex string specified in header matcher.");
       }
       header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
           HeaderMatcher::HeaderMatcherType::REGEX;

@@ -64,11 +64,14 @@ class XdsApi {
           std::string string_matcher;
           std::unique_ptr<RE2> regex_matcher;
           bool operator==(const PathMatcher& other) const {
-            return (type == other.type && (type == PathMatcherType::REGEX)
-                        ? (regex_matcher.get() && other.regex_matcher.get() &&
-                           regex_matcher->pattern() ==
-                               other.regex_matcher->pattern())
-                        : string_matcher == other.string_matcher);
+            if (type != other.type) return false;
+            if (type == PathMatcherType::REGEX) {
+              // Should never be null.
+              if (regex_matcher == nullptr || other.regex_matcher == nullptr)
+                return false;
+              return regex_matcher->pattern() == other.regex_matcher->pattern();
+            }
+            return string_matcher == other.string_matcher;
           }
           std::string ToString() const;
         };
