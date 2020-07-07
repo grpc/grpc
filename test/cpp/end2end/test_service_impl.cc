@@ -502,12 +502,20 @@ CallbackTestServiceImpl::ResponseStream(
       if (num_msgs_sent_ == server_responses_to_send_ - 1 &&
           server_coalescing_api_ != 0) {
         num_msgs_sent_++;
-        StartWriteLast(&response_, WriteOptions());
+        {
+          std::lock_guard<std::mutex> l(finish_mu_);
+          if (!finished_) {
+            StartWriteLast(&response_, WriteOptions());
+          }
+        }
         // If we use WriteLast, we shouldn't wait before attempting Finish
         FinishOnce(Status::OK);
       } else {
         num_msgs_sent_++;
-        StartWrite(&response_);
+        std::lock_guard<std::mutex> l(finish_mu_);
+        if (!finished_) {
+          StartWrite(&response_);
+        }
       }
     }
     experimental::CallbackServerContext* const ctx_;
@@ -571,12 +579,15 @@ CallbackTestServiceImpl::BidiStream(
       if (ok) {
         num_msgs_read_++;
         response_.set_message(request_.message());
-        if (num_msgs_read_ == server_write_last_) {
-          StartWriteLast(&response_, WriteOptions());
-          // If we use WriteLast, we shouldn't wait before attempting Finish
-        } else {
-          StartWrite(&response_);
-          return;
+        std::lock_guard<std::mutex> l(finish_mu_);
+        if (!finished_) {
+          if (num_msgs_read_ == server_write_last_) {
+            StartWriteLast(&response_, WriteOptions());
+            // If we use WriteLast, we shouldn't wait before attempting Finish
+          } else {
+            StartWrite(&response_);
+            return;
+          }
         }
       }
 
