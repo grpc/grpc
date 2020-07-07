@@ -391,8 +391,8 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
-    bool skip_server_certificate_verification,
-    tsi_ssl_session_cache* ssl_session_cache,
+    bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
+    tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs;
   const tsi_ssl_root_certs_store* root_store;
@@ -424,6 +424,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.session_cache = ssl_session_cache;
   options.skip_server_certificate_verification =
       skip_server_certificate_verification;
+  options.min_tls_version = min_tls_version;
+  options.max_tls_version = max_tls_version;
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
@@ -440,6 +442,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
     const char* pem_root_certs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
+    tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi_ssl_server_handshaker_factory** handshaker_factory) {
   size_t num_alpn_protocols = 0;
   const char** alpn_protocol_strings =
@@ -453,6 +456,8 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.cipher_suites = grpc_get_ssl_cipher_suites();
   options.alpn_protocols = alpn_protocol_strings;
   options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
+  options.min_tls_version = min_tls_version;
+  options.max_tls_version = max_tls_version;
   const tsi_result result =
       tsi_create_ssl_server_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
