@@ -1356,7 +1356,7 @@ static void test_google_default_creds_auth_key(void) {
       "json_key_google_default_creds", json_key);
   gpr_free(json_key);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create());
+      grpc_google_default_credentials_create(nullptr));
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
@@ -1379,7 +1379,7 @@ static void test_google_default_creds_refresh_token(void) {
   set_google_default_creds_env_var_with_file_contents(
       "refresh_token_google_default_creds", test_refresh_token_str);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create());
+      grpc_google_default_credentials_create(nullptr));
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
@@ -1435,7 +1435,7 @@ static void test_google_default_creds_gce(void) {
   /* Simulate a successful detection of GCE. */
   grpc_composite_channel_credentials* creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create());
+          grpc_google_default_credentials_create(nullptr));
 
   /* Verify that the default creds actually embeds a GCE creds. */
   GPR_ASSERT(creds != nullptr);
@@ -1474,7 +1474,7 @@ static void test_google_default_creds_non_gce(void) {
       httpcli_post_should_not_be_called);
   grpc_composite_channel_credentials* creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create());
+          grpc_google_default_credentials_create(nullptr));
   /* Verify that the default creds actually embeds a GCE creds. */
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(creds->call_creds() != nullptr);
@@ -1512,32 +1512,14 @@ static void test_no_google_default_creds(void) {
       default_creds_gce_detection_httpcli_get_failure_override,
       httpcli_post_should_not_be_called);
   /* Simulate a successful detection of GCE. */
-  GPR_ASSERT(grpc_google_default_credentials_create() == nullptr);
+  GPR_ASSERT(grpc_google_default_credentials_create(nullptr) == nullptr);
   /* Try a second one. GCE detection should occur again. */
   g_test_gce_tenancy_checker_called = false;
-  GPR_ASSERT(grpc_google_default_credentials_create() == nullptr);
+  GPR_ASSERT(grpc_google_default_credentials_create(nullptr) == nullptr);
   GPR_ASSERT(g_test_gce_tenancy_checker_called == true);
   /* Cleanup. */
   grpc_override_well_known_credentials_path_getter(nullptr);
   grpc_httpcli_set_override(nullptr, nullptr);
-}
-
-static void test_compute_engine_channel_creds(void) {
-  set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
-  g_test_gce_tenancy_checker_called = false;
-  g_test_is_on_gce = true;
-
-  auto creds = reinterpret_cast<grpc_google_default_channel_credentials*>(
-      grpc_compute_engine_channel_credentials_create(nullptr));
-
-  GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(
-      strcmp(creds->type(), GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT) == 0);
-
-  auto* ssl_creds = creds->ssl_creds();
-  GPR_ASSERT(ssl_creds != nullptr);
-  GPR_ASSERT(strcmp(ssl_creds->type(), GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) == 0);
-  creds->Unref();
 }
 
 typedef enum {
@@ -1849,7 +1831,6 @@ int main(int argc, char** argv) {
   test_google_default_creds_gce();
   test_google_default_creds_non_gce();
   test_no_google_default_creds();
-  test_compute_engine_channel_creds();
   test_metadata_plugin_success();
   test_metadata_plugin_failure();
   test_get_well_known_google_credentials_file_path();

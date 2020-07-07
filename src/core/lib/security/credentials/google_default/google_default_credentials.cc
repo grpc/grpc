@@ -57,6 +57,7 @@ using grpc_core::Json;
  * means the detection is done via network test that is unreliable and the
  * unreliable result should not be referred by successive calls. */
 static int g_metadata_server_available = 0;
+static int g_is_on_gce = 0;
 static gpr_mu g_state_mu;
 /* Protect a metadata_server_detector instance that can be modified by more than
  * one gRPC threads */
@@ -88,7 +89,7 @@ grpc_google_default_channel_credentials::create_security_connector(
   bool use_alts =
       is_grpclb_load_balancer || is_backend_from_grpclb_load_balancer;
   /* Return failure if ALTS is selected but not running on GCE. */
-  if (use_alts && !grpc_core::internal::running_on_gce()) {
+  if (use_alts && !g_is_on_gce) {
     gpr_log(GPR_ERROR, "ALTS is selected, but not running on GCE.");
     return nullptr;
   }
@@ -272,35 +273,30 @@ end:
   return error;
 }
 
-grpc_channel_credentials* grpc_google_default_credentials_create() {
-  grpc_channel_credentials* result = nullptr;
-  grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Failed to create Google credentials");
+static void default_call_creds(grpc_core::RefCountedPtr<grpc_call_credentials>* call_creds,
+                               grpc_error* error)
+{
   grpc_error* err;
-  grpc_core::ExecCtx exec_ctx;
-
-  GRPC_API_TRACE("grpc_google_default_credentials_create(void)", 0, ());
-
   gpr_once_init(&g_once, init_default_credentials);
 
   /* First, try the environment variable. */
   err = create_default_creds_from_path(
-      gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR), &call_creds);
-  if (err == GRPC_ERROR_NONE) goto end;
+      gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR), call_creds);
+  if (err == GRPC_ERROR_NONE) return;
   error = grpc_error_add_child(error, err);
 
   /* Then the well-known file. */
   err = create_default_creds_from_path(
-      grpc_get_well_known_google_credentials_file_path(), &call_creds);
-  if (err == GRPC_ERROR_NONE) goto end;
+      grpc_get_well_known_google_credentials_file_path(), call_creds);
+  if (err == GRPC_ERROR_NONE) return;
   error = grpc_error_add_child(error, err);
 
   gpr_mu_lock(&g_state_mu);
 
   /* Try a platform-provided hint for GCE. */
   if (!g_metadata_server_available) {
-    g_metadata_server_available = grpc_core::internal::running_on_gce();
+    g_is_on_gce = g_gce_tenancy_checker();
+    g_metadata_server_available = g_is_on_gce;
   }
   /* TODO: Add a platform-provided hint for GAE. */
 
@@ -311,16 +307,29 @@ grpc_channel_credentials* grpc_google_default_credentials_create() {
   gpr_mu_unlock(&g_state_mu);
 
   if (g_metadata_server_available) {
-    call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
+    *call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
         grpc_google_compute_engine_credentials_create(nullptr));
-    if (call_creds == nullptr) {
+    if (*call_creds == nullptr) {
       error = grpc_error_add_child(
           error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                      "Failed to get credentials from network"));
     }
   }
+}
 
-end:
+grpc_channel_credentials* grpc_google_default_credentials_create(grpc_call_credentials* call_credentials) {
+  grpc_channel_credentials* result = nullptr;
+  grpc_core::RefCountedPtr<grpc_call_credentials> call_creds(call_credentials);
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Failed to create Google credentials");
+  grpc_core::ExecCtx exec_ctx;
+
+  GRPC_API_TRACE("grpc_google_default_credentials_create(%p)", 1, (call_credentials));
+
+  if (call_credentials == nullptr) {
+    default_call_creds(&call_creds, error);
+  }
+
   if (call_creds != nullptr) {
     /* Create google default credentials. */
     grpc_channel_credentials* ssl_creds =
@@ -360,8 +369,6 @@ void grpc_flush_cached_google_default_credentials(void) {
   g_metadata_server_available = 0;
   gpr_mu_unlock(&g_state_mu);
 }
-
-bool running_on_gce(void) { return g_gce_tenancy_checker(); }
 
 }  // namespace internal
 }  // namespace grpc_core

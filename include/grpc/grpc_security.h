@@ -29,6 +29,14 @@
 extern "C" {
 #endif
 
+/** --- grpc_call_credentials object.
+
+   A call credentials object represents a way to authenticate on a particular
+   call. These credentials can be composed with a channel credentials object
+   so that they are sent with every call on this channel.  */
+
+typedef struct grpc_call_credentials grpc_call_credentials;
+
 /** --- Authentication Context. --- */
 
 typedef struct grpc_auth_context grpc_auth_context;
@@ -133,8 +141,16 @@ GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials* creds);
 /** Creates default credentials to connect to a google gRPC service.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. The security level of the
-   resulting connection is GRPC_PRIVACY_AND_INTEGRITY. */
-GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(void);
+   resulting connection is GRPC_PRIVACY_AND_INTEGRITY.
+   
+   If specified, the supplied call credentials object will be attached to the
+   returned channel credentials object. The call_credentials object must remain
+   valid throughout the lifetime of the returned grpc_channel_credentials object.
+
+   If nullptr is supplied, the returned call credentials object will use a call
+   credentials object based on the default service account of the VM.
+*/
+GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(grpc_call_credentials* call_credentials);
 
 /** Callback for getting the SSL roots override from the application.
    In case of success, *pem_roots_certs must be set to a NULL terminated string
@@ -272,14 +288,6 @@ GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options, void* reserved);
 
-/** --- grpc_call_credentials object.
-
-   A call credentials object represents a way to authenticate on a particular
-   call. These credentials can be composed with a channel credentials object
-   so that they are sent with every call on this channel.  */
-
-typedef struct grpc_call_credentials grpc_call_credentials;
-
 /** Releases a call credentials object.
    The creator of the credentials object is responsible for its release. */
 GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
@@ -300,24 +308,6 @@ GRPCAPI grpc_call_credentials* grpc_composite_call_credentials_create(
    this could result in an oauth2 token leak. */
 GRPCAPI grpc_call_credentials* grpc_google_compute_engine_credentials_create(
     void* reserved);
-
-/** Creates compute engine channel credentials to connect to a google gRPC
-   service.
-
-   This channel credential is expected to be used within a composite credential
-   alongside a compute_engine_credential. If used in conjunction with any call
-   credential besides a compute_engine_credential, the connection may suddenly
-   and unexpectedly begin to fail RPCs.
-
-   WARNING: Do NOT use this credentials to connect to a non-google service as
-   this could result in an oauth2 token leak. The security level of the
-   resulting connection is GRPC_PRIVACY_AND_INTEGRITY.
-
-   This API is used for experimental purposes for now and may change in the
-   future.
-   */
-GRPCAPI grpc_channel_credentials*
-grpc_compute_engine_channel_credentials_create(void* reserved);
 
 GRPCAPI gpr_timespec grpc_max_auth_token_lifetime(void);
 

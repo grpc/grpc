@@ -3941,7 +3941,6 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/credentials.cc \
     src/core/lib/security/credentials/credentials_metadata.cc \
     src/core/lib/security/credentials/fake/fake_credentials.cc \
-    src/core/lib/security/credentials/google_default/compute_engine_channel_credentials.cc \
     src/core/lib/security/credentials/google_default/credentials_generic.cc \
     src/core/lib/security/credentials/google_default/google_default_credentials.cc \
     src/core/lib/security/credentials/iam/iam_credentials.cc \
@@ -20033,7 +20032,6 @@ src/core/lib/security/credentials/composite/composite_credentials.cc: $(OPENSSL_
 src/core/lib/security/credentials/credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/credentials_metadata.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/fake/fake_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/google_default/compute_engine_channel_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/google_default/credentials_generic.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/google_default/google_default_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/iam/iam_credentials.cc: $(OPENSSL_DEP)
