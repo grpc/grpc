@@ -19,7 +19,7 @@ void CertificateProviderRegistry::ShutdownRegistry() {
 void CertificateProviderRegistry::RegisterProvider(
     std::unique_ptr<CertificateProviderFactory> factory) {
   auto result =
-      g_registry->registry_.insert({factory->name(), std::move(factory)});
+      g_registry->registry_.emplace(std::string(factory->name()), std::move(factory));
   // If the result's second element is false, it means there exists a factory of
   // the name name in the registry already.
   GPR_ASSERT(result.second);
