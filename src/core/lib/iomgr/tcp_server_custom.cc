@@ -219,7 +219,6 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
   std::string peer_name_string;
   grpc_error* err;
 
-  peer_name_string = nullptr;
   memset(&peer_name, 0, sizeof(grpc_resolved_address));
   peer_name.len = GRPC_MAX_SOCKADDR_SIZE;
   err = grpc_custom_socket_vtable->getpeername(
