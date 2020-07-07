@@ -1,6 +1,10 @@
 #include <memory>
+#include <chrono>
+#include <deque>
+#include <fstream>
+#include <thread>
 
-#include <gtest/gtest.h>
+
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -19,10 +23,7 @@
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-
-#include <deque>
-#include <fstream>
-#include <thread>
+#include <gtest/gtest.h>
 
 namespace grpc {
 namespace testing {
@@ -403,6 +404,7 @@ TEST_F(GoogleMeshCaProviderTest, Vanilla) {
 // Test whether the provider renews the certificate when entering the grace
 // period.
 TEST_F(GoogleMeshCaProviderTest, RefreshCertificate) {
+  const int kErrorMarginMs = 1000;
   grpc_core::ExecCtx exec_ctx;
   RefCountedPtr<MockDistributor> mock_distributor =
       MakeRefCounted<MockDistributor>();
@@ -412,7 +414,7 @@ TEST_F(GoogleMeshCaProviderTest, RefreshCertificate) {
   std::string expected_root_certs_2_str = expected_cert_chain_2_str;
   SetNextCaResponse({expected_cert_chain_str});
   SetNextCaResponse({expected_cert_chain_2_str});
-  Json config_json = BuildJsonConfig(3000 /* certificate lifetime */,
+  Json config_json = BuildJsonConfig(4000 /* certificate lifetime */,
                                      2000 /* renewal grace period */);
   CertificateProviderFactory* factory =
       CertificateProviderRegistry::GetFactory("google_mesh_ca");
@@ -430,7 +432,9 @@ TEST_F(GoogleMeshCaProviderTest, RefreshCertificate) {
   poller.AddInterestedParties(provider->interested_parties());
   poller.Start();
   // Wait until the certificate is refreshed.
-  sleep(2);
+  EXPECT_TRUE(mock_distributor->WaitForResponse(expected_root_certs_str,
+                                                expected_cert_chain_str));
+  mock_distributor->Reset();
   EXPECT_TRUE(mock_distributor->WaitForResponse(expected_root_certs_2_str,
                                                 expected_cert_chain_2_str));
   poller.RemoveInterestedParties(provider->interested_parties());
