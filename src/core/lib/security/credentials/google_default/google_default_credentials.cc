@@ -273,24 +273,8 @@ end:
   return error;
 }
 
-static void default_call_creds(grpc_core::RefCountedPtr<grpc_call_credentials>* call_creds,
-                               grpc_error* error)
-{
-  grpc_error* err;
+static void update_tenancy() {
   gpr_once_init(&g_once, init_default_credentials);
-
-  /* First, try the environment variable. */
-  err = create_default_creds_from_path(
-      gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR), call_creds);
-  if (err == GRPC_ERROR_NONE) return;
-  error = grpc_error_add_child(error, err);
-
-  /* Then the well-known file. */
-  err = create_default_creds_from_path(
-      grpc_get_well_known_google_credentials_file_path(), call_creds);
-  if (err == GRPC_ERROR_NONE) return;
-  error = grpc_error_add_child(error, err);
-
   gpr_mu_lock(&g_state_mu);
 
   /* Try a platform-provided hint for GCE. */
@@ -305,6 +289,25 @@ static void default_call_creds(grpc_core::RefCountedPtr<grpc_call_credentials>* 
     g_metadata_server_available = is_metadata_server_reachable();
   }
   gpr_mu_unlock(&g_state_mu);
+
+}
+
+static void default_call_creds(grpc_core::RefCountedPtr<grpc_call_credentials>* call_creds,
+                               grpc_error* error)
+{
+  grpc_error* err;
+
+  /* First, try the environment variable. */
+  err = create_default_creds_from_path(
+      gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR), call_creds);
+  if (err == GRPC_ERROR_NONE) return;
+  error = grpc_error_add_child(error, err);
+
+  /* Then the well-known file. */
+  err = create_default_creds_from_path(
+      grpc_get_well_known_google_credentials_file_path(), call_creds);
+  if (err == GRPC_ERROR_NONE) return;
+  error = grpc_error_add_child(error, err);
 
   if (g_metadata_server_available) {
     *call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
@@ -325,6 +328,8 @@ grpc_channel_credentials* grpc_google_default_credentials_create(grpc_call_crede
   grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_google_default_credentials_create(%p)", 1, (call_credentials));
+
+  update_tenancy();
 
   if (call_credentials == nullptr) {
     default_call_creds(&call_creds, error);

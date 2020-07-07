@@ -109,19 +109,21 @@ def get_secure_channel_parameters(args):
             % args.grpc_test_use_grpclb_with_child_policy),)
     if args.custom_credentials_type is not None:
         if args.custom_credentials_type == "compute_engine_channel_creds":
+            # channel_credentials = grpc.google_default_channel_credentials()
             if call_credentials is not None:
-                raise ValueError(
-                    "Cannot use both compute_engine_creds " +
-                    "and {} as call creds.".format(call_credentials))
+                raise ValueError("What? That's not true! That's impossible!")
             google_credentials, unused_project_id = google_auth.default(
                 scopes=[args.oauth_scope])
             call_creds = grpc.metadata_call_credentials(
                 google_auth.transport.grpc.AuthMetadataPlugin(
                     credentials=google_credentials,
                     request=google_auth.transport.requests.Request()))
-            channel_credentials = grpc.compute_engine_channel_credentials()
-            channel_credentials = grpc.composite_channel_credentials(
-                channel_credentials, call_creds)
+            # TODO: Is there any reason why it actually had to take this argument?
+            # Couldn't we just as easily have created a composite channel credential?
+            channel_credentials = grpc.compute_engine_channel_credentials(call_creds)
+            # channel_credentials = grpc.composite_channel_credentials(channel_credent)
+            #     channel_credentials = grpc.composite_channel_credentials(
+            #         channel_credentials, call_credentials)
         else:
             raise ValueError("Unknown credentials type '{}'".format(
                 args.custom_credentials_type))
