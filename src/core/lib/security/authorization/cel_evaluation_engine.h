@@ -29,7 +29,8 @@
 
 // CelEvaluationEngine makes an AuthorizationDecision to ALLOW or DENY the
 // current action based on the condition fields in two provided RBAC policies.
-// The first policy is deny-if-matched and the second is allow-if-matched.
+// The engine may be constructed with one or two policies. If two polcies,
+// the first policy is deny-if-matched and the second is allow-if-matched.
 // The engine returns UNDECIDED decision if it fails to find a match in either
 // policy. This engine ignores the principal and permission fields in RBAC
 // policies. It is the caller's responsibility to provide RBAC policies that
@@ -40,8 +41,8 @@
 // cel_engine->Evaluate(evaluate_args); // returns authorization decision.
 class CelEvaluationEngine {
  public:
-  // rbac_policies must be a vector containing a deny policy and an allow
-  // policy, in that order.
+  // rbac_policies must be a vector containing either a single policy of any
+  // kind, or one deny policy and one allow policy, in that order.
   static std::unique_ptr<CelEvaluationEngine> CreateCelEvaluationEngine(
       const std::vector<envoy_config_rbac_v2_RBAC*>& rbac_policies);
   // TODO(mywang@google.com): add an Evaluate member function.

@@ -24,6 +24,9 @@ CelEvaluationEngine::CreateCelEvaluationEngine(
       envoy_config_rbac_v2_RBAC_action(rbac_policies[1]) == ALLOW) {
     return std::unique_ptr<CelEvaluationEngine>(
         new CelEvaluationEngine(rbac_policies));
+  } else if (rbac_policies.size() == 1 and rbac_policies[0] != nullptr) {
+    return std::unique_ptr<CelEvaluationEngine>(
+        new CelEvaluationEngine(rbac_policies));
   } else {
     return nullptr;
   }
