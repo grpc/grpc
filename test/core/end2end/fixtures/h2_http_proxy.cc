@@ -20,9 +20,12 @@
 
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -66,21 +69,19 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
                                   grpc_channel_args* client_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
-  char* proxy_uri;
-
   /* If testing for proxy auth, add credentials to proxy uri */
-  const grpc_arg* proxy_auth_arg =
-      grpc_channel_args_find(client_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
-  const char* proxy_auth_str = grpc_channel_arg_get_string(proxy_auth_arg);
+  const char* proxy_auth_str = grpc_channel_args_find_string(
+      client_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
+  std::string proxy_uri;
   if (proxy_auth_str == nullptr) {
-    gpr_asprintf(&proxy_uri, "http://%s",
-                 grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
+    proxy_uri = absl::StrFormat(
+        "http://%s", grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
   } else {
-    gpr_asprintf(&proxy_uri, "http://%s@%s", proxy_auth_str,
-                 grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
+    proxy_uri =
+        absl::StrFormat("http://%s@%s", proxy_auth_str,
+                        grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
   }
-  gpr_setenv("http_proxy", proxy_uri);
-  gpr_free(proxy_uri);
+  gpr_setenv("http_proxy", proxy_uri.c_str());
   f->client = grpc_insecure_channel_create(ffd->server_addr.c_str(),
                                            client_args, nullptr);
   GPR_ASSERT(f->client);

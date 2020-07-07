@@ -18,13 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/util/json_util.h"
-
 #include <string.h>
+
+#include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/security/util/json_util.h"
 
 const char* grpc_json_get_string_property(const grpc_core::Json& json,
                                           const char* prop_name,
@@ -39,21 +41,18 @@ const char* grpc_json_get_string_property(const grpc_core::Json& json,
   auto it = json.object_value().find(prop_name);
   if (it == json.object_value().end()) {
     if (error != nullptr) {
-      char* error_msg;
-      gpr_asprintf(&error_msg, "Property %s not found in JSON object.",
-                   prop_name);
-      *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-      gpr_free(error_msg);
+      *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Property ", prop_name, " not found in JSON object.")
+              .c_str());
     }
     return nullptr;
   }
   if (it->second.type() != grpc_core::Json::Type::STRING) {
     if (error != nullptr) {
-      char* error_msg;
-      gpr_asprintf(&error_msg, "Property %s in JSON object is not a string.",
-                   prop_name);
-      *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-      gpr_free(error_msg);
+      *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Property ", prop_name,
+                       " n JSON object is not a string.")
+              .c_str());
     }
     return nullptr;
   }

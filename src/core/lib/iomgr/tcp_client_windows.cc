@@ -39,6 +39,7 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 struct async_connect {
   grpc_closure* on_done;
@@ -46,12 +47,13 @@ struct async_connect {
   grpc_winsocket* socket;
   grpc_timer alarm;
   grpc_closure on_alarm;
-  char* addr_name;
+  std::string addr_name;
   int refs;
   grpc_closure on_connect;
   grpc_endpoint** endpoint;
   grpc_channel_args* channel_args;
 };
+
 static void async_connect_unlock_and_cleanup(async_connect* ac,
                                              grpc_winsocket* socket) {
   int done = (--ac->refs == 0);
@@ -59,8 +61,7 @@ static void async_connect_unlock_and_cleanup(async_connect* ac,
   if (done) {
     grpc_channel_args_destroy(ac->channel_args);
     gpr_mu_destroy(&ac->mu);
-    gpr_free(ac->addr_name);
-    gpr_free(ac);
+    delete ac;
   }
   if (socket != NULL) grpc_winsocket_destroy(socket);
 }
@@ -105,7 +106,7 @@ static void on_connect(void* acp, grpc_error* error) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
         closesocket(socket->socket);
       } else {
-        *ep = grpc_tcp_create(socket, ac->channel_args, ac->addr_name);
+        *ep = grpc_tcp_create(socket, ac->channel_args, ac->addr_name.c_str());
         socket = NULL;
       }
     } else {
@@ -131,13 +132,13 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   int status;
   grpc_resolved_address addr6_v4mapped;
   grpc_resolved_address local_address;
-  async_connect* ac;
   grpc_winsocket* socket = NULL;
   LPFN_CONNECTEX ConnectEx;
   GUID guid = WSAID_CONNECTEX;
   DWORD ioctl_num_bytes;
   grpc_winsocket_callback_info* info;
   grpc_error* error = GRPC_ERROR_NONE;
+  async_connect* ac = NULL;
 
   *endpoint = NULL;
 
@@ -194,7 +195,7 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
     }
   }
 
-  ac = (async_connect*)gpr_malloc(sizeof(async_connect));
+  ac = new async_connect();
   ac->on_done = on_done;
   ac->socket = socket;
   gpr_mu_init(&ac->mu);
@@ -211,13 +212,12 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  char* target_uri = grpc_sockaddr_to_uri(addr);
+  std::string target_uri = grpc_sockaddr_to_uri(addr);
   grpc_error* final_error =
       grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failed to connect", &error, 1),
                          GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_slice_from_copied_string(
-                             target_uri == nullptr ? "NULL" : target_uri));
+                         grpc_slice_from_cpp_string(std::move(target_uri)));
   GRPC_ERROR_UNREF(error);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);

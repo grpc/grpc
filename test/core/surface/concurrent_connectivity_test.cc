@@ -25,10 +25,13 @@
 #include <memory.h>
 #include <stdio.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -91,13 +94,13 @@ void create_loop_destroy(void* addr) {
 }
 
 struct server_thread_args {
-  char* addr;
-  grpc_server* server;
-  grpc_completion_queue* cq;
-  grpc_pollset* pollset;
-  gpr_mu* mu;
+  std::string addr;
+  grpc_server* server = nullptr;
+  grpc_completion_queue* cq = nullptr;
+  grpc_pollset* pollset = nullptr;
+  gpr_mu* mu = nullptr;
   gpr_event ready;
-  gpr_atm stop;
+  gpr_atm stop = 0;
 };
 
 void server_thread(void* vargs) {
@@ -141,7 +144,7 @@ void bad_server_thread(void* vargs) {
   error = grpc_tcp_server_add_port(s, &resolved_addr, &port);
   GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_tcp_server_add_port", error));
   GPR_ASSERT(port > 0);
-  gpr_asprintf(&args->addr, "localhost:%d", port);
+  args->addr = absl::StrCat("localhost:", port);
 
   grpc_tcp_server_start(s, &args->pollset, 1, on_connect, args);
   gpr_event_set(&args->ready, (void*)1);
@@ -163,8 +166,6 @@ void bad_server_thread(void* vargs) {
   gpr_mu_unlock(args->mu);
 
   grpc_tcp_server_unref(s);
-
-  gpr_free(args->addr);
 }
 
 static void done_pollset_shutdown(void* pollset, grpc_error* /*error*/) {
@@ -174,32 +175,31 @@ static void done_pollset_shutdown(void* pollset, grpc_error* /*error*/) {
 
 int run_concurrent_connectivity_test() {
   struct server_thread_args args;
-  memset(&args, 0, sizeof(args));
 
   grpc_init();
 
   /* First round, no server */
   {
     gpr_log(GPR_DEBUG, "Wave 1");
-    char* localhost = gpr_strdup("localhost:54321");
     grpc_core::Thread threads[NUM_THREADS];
+    args.addr = "localhost:54321";
     for (auto& th : threads) {
-      th = grpc_core::Thread("grpc_wave_1", create_loop_destroy, localhost);
+      th = grpc_core::Thread("grpc_wave_1", create_loop_destroy,
+                             const_cast<char*>(args.addr.c_str()));
       th.Start();
     }
     for (auto& th : threads) {
       th.Join();
     }
-    gpr_free(localhost);
   }
 
   {
     /* Second round, actual grpc server */
     gpr_log(GPR_DEBUG, "Wave 2");
     int port = grpc_pick_unused_port_or_die();
-    gpr_asprintf(&args.addr, "localhost:%d", port);
+    args.addr = absl::StrCat("localhost:", port);
     args.server = grpc_server_create(nullptr, nullptr);
-    grpc_server_add_insecure_http2_port(args.server, args.addr);
+    grpc_server_add_insecure_http2_port(args.server, args.addr.c_str());
     args.cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(args.server, args.cq, nullptr);
     grpc_server_start(args.server);
@@ -208,7 +208,8 @@ int run_concurrent_connectivity_test() {
 
     grpc_core::Thread threads[NUM_THREADS];
     for (auto& th : threads) {
-      th = grpc_core::Thread("grpc_wave_2", create_loop_destroy, args.addr);
+      th = grpc_core::Thread("grpc_wave_2", create_loop_destroy,
+                             const_cast<char*>(args.addr.c_str()));
       th.Start();
     }
     for (auto& th : threads) {
@@ -219,7 +220,6 @@ int run_concurrent_connectivity_test() {
     server2.Join();
     grpc_server_destroy(args.server);
     grpc_completion_queue_destroy(args.cq);
-    gpr_free(args.addr);
   }
 
   {
@@ -234,7 +234,8 @@ int run_concurrent_connectivity_test() {
 
     grpc_core::Thread threads[NUM_THREADS];
     for (auto& th : threads) {
-      th = grpc_core::Thread("grpc_wave_3", create_loop_destroy, args.addr);
+      th = grpc_core::Thread("grpc_wave_3", create_loop_destroy,
+                             const_cast<char*>(args.addr.c_str()));
       th.Start();
     }
     for (auto& th : threads) {
@@ -290,17 +291,14 @@ int run_concurrent_watches_with_short_timeouts_test() {
 
   grpc_core::Thread threads[NUM_THREADS];
 
-  char* localhost = gpr_strdup("localhost:54321");
-
   for (auto& th : threads) {
     th = grpc_core::Thread("grpc_short_watches", watches_with_short_timeouts,
-                           localhost);
+                           const_cast<char*>("localhost:54321"));
     th.Start();
   }
   for (auto& th : threads) {
     th.Join();
   }
-  gpr_free(localhost);
 
   grpc_shutdown();
   return 0;

@@ -25,11 +25,14 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/sync.h"
@@ -117,11 +120,10 @@ void server_thread(void* arg) {
       ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
 
   // Start server listening on local port.
-  char* addr;
-  gpr_asprintf(&addr, "127.0.0.1:%d", port);
+  std::string addr = absl::StrCat("127.0.0.1:", port);
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
-  free(addr);
+  GPR_ASSERT(
+      grpc_server_add_secure_http2_port(server, addr.c_str(), ssl_creds));
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
