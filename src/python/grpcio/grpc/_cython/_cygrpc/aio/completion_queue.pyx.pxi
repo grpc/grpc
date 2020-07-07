@@ -38,7 +38,7 @@ cdef class BaseCompletionQueue:
         return self._cq
 
 
-cdef class _EventLoopBound:
+cdef class _BoundEventLoop:
 
     def __cinit__(self, object loop, object read_socket, object handler):
         self.loop = loop
@@ -73,11 +73,11 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
 
         self._queue = cpp_event_queue()
 
-    def bound_loop(self, object loop):
+    def bind_loop(self, object loop):
         if loop in self._loops:
             return
         else:
-            self._loops[loop] = _EventLoopBound(loop, self._read_socket, self._handle_events)
+            self._loops[loop] = _BoundEventLoop(loop, self._read_socket, self._handle_events)
 
     cdef void _poll(self) nogil:
         cdef grpc_event event

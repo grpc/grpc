@@ -50,7 +50,7 @@ cdef class BaseCompletionQueue:
     cdef grpc_completion_queue* c_ptr(self)
 
 
-cdef class _EventLoopBound:
+cdef class _BoundEventLoop:
     cdef readonly object loop
     cdef readonly object read_socket
 
