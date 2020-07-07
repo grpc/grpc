@@ -65,7 +65,7 @@ git commit -m "update submodule boringssl-with-bazel with origin/master-with-baz
 
 - Update boringssl dependency in `bazel/grpc_deps.bzl` to the same commit SHA as master-with-bazel branch
     - Update `http_archive(name = "boringssl",` section by updating the sha in `strip_prefix` and `urls` fields.
-    - Also, set `sha256` field to “” as the existing value is not valid. This will be added later once we know what that value is.
+    - Also, set `sha256` field to "" as the existing value is not valid. This will be added later once we know what that value is.
 
 - Update `tools/run_tests/sanity/check_submodules.sh` with the same commit
 
