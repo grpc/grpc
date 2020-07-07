@@ -118,12 +118,12 @@ class MessageAllocatorEnd2endTestBase
  protected:
   MessageAllocatorEnd2endTestBase() {
     GetParam().Log();
-    if (GetParam().protocol == Protocol::TCP) {
-      if (!grpc_iomgr_run_in_background()) {
-        do_not_test_ = true;
-        return;
-      }
-    }
+    // if (GetParam().protocol == Protocol::TCP) {
+    //   if (!grpc_iomgr_run_in_background()) {
+    //     do_not_test_ = true;
+    //     return;
+    //   }
+    // }
   }
 
   ~MessageAllocatorEnd2endTestBase() = default;

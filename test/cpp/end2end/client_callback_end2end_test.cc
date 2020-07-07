@@ -130,10 +130,10 @@ class ClientCallbackEnd2endTest
 
     server_ = builder.BuildAndStart();
     is_server_started_ = true;
-    if (GetParam().protocol == Protocol::TCP &&
-        !grpc_iomgr_run_in_background()) {
-      do_not_test_ = true;
-    }
+    // if (GetParam().protocol == Protocol::TCP &&
+    //     !grpc_iomgr_run_in_background()) {
+    //   do_not_test_ = true;
+    // }
   }
 
   void ResetStub() {
