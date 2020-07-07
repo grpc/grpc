@@ -171,12 +171,13 @@ class ChannelData {
                                       grpc_connectivity_state* state,
                                       grpc_closure* on_complete,
                                       grpc_closure* watcher_timer_init) {
-    auto* watcher = new ExternalConnectivityWatcher(
+    auto watcher = MakeRefCounted<ExternalConnectivityWatcher>(
         this, pollent, state, on_complete, watcher_timer_init);
     {
       MutexLock lock(&external_watchers_mu_);
       // Will be deleted when the watch is complete.
       GPR_ASSERT(external_watchers_[on_complete] == nullptr);
+      // Pass a ref to the external_watchers_ map.
       external_watchers_[on_complete] = watcher;
     }
     watcher->Start();
@@ -184,12 +185,12 @@ class ChannelData {
 
   void RemoveExternalConnectivityWatcher(grpc_closure* on_complete,
                                          bool cancel) {
-    ExternalConnectivityWatcher* watcher = nullptr;
+    RefCountedPtr<ExternalConnectivityWatcher> watcher;
     {
       MutexLock lock(&external_watchers_mu_);
       auto it = external_watchers_.find(on_complete);
       if (it != external_watchers_.end()) {
-        watcher = it->second;
+        watcher = std::move(it->second);
         external_watchers_.erase(it);
       }
     }
@@ -360,7 +361,8 @@ class ChannelData {
   // synchronously via grpc_channel_num_external_connectivity_watchers().
   //
   mutable Mutex external_watchers_mu_;
-  std::map<grpc_closure*, ExternalConnectivityWatcher*> external_watchers_;
+  std::map<grpc_closure*, RefCountedPtr<ExternalConnectivityWatcher>>
+      external_watchers_;
 };
 
 //
@@ -1181,8 +1183,14 @@ ChannelData::ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
 }
 
 void ChannelData::ExternalConnectivityWatcher::Start() {
-  chand_->work_serializer_->Run([this]() { AddWatcherLocked(); },
-                                DEBUG_LOCATION);
+  // Ref owned by the lambda
+  Ref(DEBUG_LOCATION, "Start").release();
+  chand_->work_serializer_->Run(
+      [this]() {
+        AddWatcherLocked();
+        Unref(DEBUG_LOCATION, "Start");
+      },
+      DEBUG_LOCATION);
 }
 
 void ChannelData::ExternalConnectivityWatcher::Notify(
@@ -1222,7 +1230,8 @@ void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked() {
   Closure::Run(DEBUG_LOCATION, watcher_timer_init_, GRPC_ERROR_NONE);
   // Add new watcher.
   chand_->state_tracker_.AddWatcher(
-      initial_state_, OrphanablePtr<ConnectivityStateWatcherInterface>(this));
+      initial_state_,
+      OrphanablePtr<ConnectivityStateWatcherInterface>(Ref().release()));
 }
 
 void ChannelData::ExternalConnectivityWatcher::RemoveWatcherLocked() {
