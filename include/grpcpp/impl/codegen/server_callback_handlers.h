@@ -325,13 +325,8 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
         }
         ctx_->sent_initial_metadata_ = true;
       }
-      // The response is dropped if the status is not OK.
-      if (s.ok()) {
-        finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                     finish_ops_.SendMessagePtr(&resp_));
-      } else {
-        finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
-      }
+      finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
+                                   finish_ops_.SendMessagePtr(&resp_));
       finish_ops_.set_core_cq_tag(&finish_tag_);
       call_.PerformOps(&finish_ops_);
     }
@@ -579,11 +574,8 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
     void WriteAndFinish(const ResponseType* resp, ::grpc::WriteOptions options,
                         ::grpc::Status s) override {
       // This combines the write into the finish callback
-      // Don't send any message if the status is bad
-      if (s.ok()) {
-        // TODO(vjpai): don't assert
-        GPR_CODEGEN_ASSERT(finish_ops_.SendMessagePtr(resp, options).ok());
-      }
+      // TODO(vjpai): don't assert
+      GPR_CODEGEN_ASSERT(finish_ops_.SendMessagePtr(resp, options).ok());
       Finish(std::move(s));
     }
 
@@ -784,11 +776,8 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
 
     void WriteAndFinish(const ResponseType* resp, ::grpc::WriteOptions options,
                         ::grpc::Status s) override {
-      // Don't send any message if the status is bad
-      if (s.ok()) {
-        // TODO(vjpai): don't assert
-        GPR_CODEGEN_ASSERT(finish_ops_.SendMessagePtr(resp, options).ok());
-      }
+      // TODO(vjpai): don't assert
+      GPR_CODEGEN_ASSERT(finish_ops_.SendMessagePtr(resp, options).ok());
       Finish(std::move(s));
     }
 
