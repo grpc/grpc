@@ -289,7 +289,6 @@ static void update_tenancy() {
     g_metadata_server_available = is_metadata_server_reachable();
   }
   gpr_mu_unlock(&g_state_mu);
-
 }
 
 static void default_call_creds(grpc_core::RefCountedPtr<grpc_call_credentials>* call_creds,

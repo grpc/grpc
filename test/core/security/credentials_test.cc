@@ -1522,6 +1522,10 @@ static void test_no_google_default_creds(void) {
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
+static void test_google_default_creds_call_creds_specified(void) {
+
+}
+
 typedef enum {
   PLUGIN_INITIAL_STATE,
   PLUGIN_GET_METADATA_CALLED_STATE,
@@ -1831,6 +1835,7 @@ int main(int argc, char** argv) {
   test_google_default_creds_gce();
   test_google_default_creds_non_gce();
   test_no_google_default_creds();
+  test_google_default_creds_call_creds_specified();
   test_metadata_plugin_success();
   test_metadata_plugin_failure();
   test_get_well_known_google_credentials_file_path();
