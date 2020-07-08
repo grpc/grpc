@@ -22,12 +22,15 @@
 
 #include <inttypes.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include "src/core/lib/iomgr/timer.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -706,38 +709,36 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
 
   // tracing
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-    char* next_str;
+    std::string next_str;
     if (next == nullptr) {
-      next_str = gpr_strdup("NULL");
+      next_str = "NULL";
     } else {
-      gpr_asprintf(&next_str, "%" PRId64, *next);
+      next_str = absl::StrCat(*next);
     }
 #if GPR_ARCH_64
     gpr_log(GPR_INFO,
             "TIMER CHECK BEGIN: now=%" PRId64 " next=%s tls_min=%" PRId64
             " glob_min=%" PRId64,
-            now, next_str, min_timer,
+            now, next_str.c_str(), min_timer,
             static_cast<grpc_millis>(gpr_atm_no_barrier_load(
                 (gpr_atm*)(&g_shared_mutables.min_timer))));
 #else
     gpr_log(GPR_INFO, "TIMER CHECK BEGIN: now=%" PRId64 " next=%s min=%" PRId64,
-            now, next_str, min_timer);
+            now, next_str.c_str(), min_timer);
 #endif
-    gpr_free(next_str);
   }
   // actual code
   grpc_timer_check_result r =
       run_some_expired_timers(now, next, shutdown_error);
   // tracing
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-    char* next_str;
+    std::string next_str;
     if (next == nullptr) {
-      next_str = gpr_strdup("NULL");
+      next_str = "NULL";
     } else {
-      gpr_asprintf(&next_str, "%" PRId64, *next);
+      next_str = absl::StrCat(*next);
     }
-    gpr_log(GPR_INFO, "TIMER CHECK END: r=%d; next=%s", r, next_str);
-    gpr_free(next_str);
+    gpr_log(GPR_INFO, "TIMER CHECK END: r=%d; next=%s", r, next_str.c_str());
   }
   return r;
 }

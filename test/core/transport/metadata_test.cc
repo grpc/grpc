@@ -21,10 +21,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
@@ -217,7 +220,6 @@ static void test_identity_laws(bool intern_keys, bool intern_values) {
 
 static void test_things_stick_around(void) {
   size_t i, j;
-  char* buffer;
   size_t nstrs = 1000;
   grpc_slice* strs =
       static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * nstrs));
@@ -230,10 +232,10 @@ static void test_things_stick_around(void) {
   grpc_core::ExecCtx exec_ctx;
 
   for (i = 0; i < nstrs; i++) {
-    gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x", i);
-    strs[i] = grpc_slice_intern(grpc_slice_from_static_string(buffer));
+    std::string buffer =
+        absl::StrFormat("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x", i);
+    strs[i] = grpc_slice_intern(grpc_slice_from_static_string(buffer.c_str()));
     shuf[i] = i;
-    gpr_free(buffer);
   }
 
   for (i = 0; i < nstrs; i++) {
@@ -252,12 +254,11 @@ static void test_things_stick_around(void) {
   for (i = 0; i < nstrs; i++) {
     grpc_slice_unref_internal(strs[shuf[i]]);
     for (j = i + 1; j < nstrs; j++) {
-      gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x",
-                   shuf[j]);
-      test = grpc_slice_intern(grpc_slice_from_static_string(buffer));
+      std::string buffer = absl::StrFormat(
+          "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x", shuf[j]);
+      test = grpc_slice_intern(grpc_slice_from_static_string(buffer.c_str()));
       GPR_ASSERT(grpc_slice_is_equivalent(test, strs[shuf[j]]));
       grpc_slice_unref_internal(test);
-      gpr_free(buffer);
     }
   }
 

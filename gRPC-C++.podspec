@@ -64,7 +64,7 @@ Pod::Spec.new do |s|
   }
 
   s.libraries = 'c++'
-  s.compiler_flags = '-Wno-comma'
+  s.compiler_flags = '-Wno-comma -Wno-unreachable-code -Wno-shorten-64-to-32'
 
   s.default_subspecs = 'Interface', 'Implementation'
 
@@ -736,6 +736,32 @@ Pod::Spec.new do |s|
                       'src/cpp/util/status.cc',
                       'src/cpp/util/string_ref.cc',
                       'src/cpp/util/time_cc.cc',
+                      'third_party/re2/re2/bitmap256.h',
+                      'third_party/re2/re2/filtered_re2.h',
+                      'third_party/re2/re2/pod_array.h',
+                      'third_party/re2/re2/prefilter.h',
+                      'third_party/re2/re2/prefilter_tree.h',
+                      'third_party/re2/re2/prog.h',
+                      'third_party/re2/re2/re2.h',
+                      'third_party/re2/re2/regexp.h',
+                      'third_party/re2/re2/set.h',
+                      'third_party/re2/re2/sparse_array.h',
+                      'third_party/re2/re2/sparse_set.h',
+                      'third_party/re2/re2/stringpiece.h',
+                      'third_party/re2/re2/unicode_casefold.h',
+                      'third_party/re2/re2/unicode_groups.h',
+                      'third_party/re2/re2/walker-inl.h',
+                      'third_party/re2/util/benchmark.h',
+                      'third_party/re2/util/flags.h',
+                      'third_party/re2/util/logging.h',
+                      'third_party/re2/util/malloc_counter.h',
+                      'third_party/re2/util/mix.h',
+                      'third_party/re2/util/mutex.h',
+                      'third_party/re2/util/pcre.h',
+                      'third_party/re2/util/strutil.h',
+                      'third_party/re2/util/test.h',
+                      'third_party/re2/util/utf.h',
+                      'third_party/re2/util/util.h',
                       'third_party/upb/upb/decode.h',
                       'third_party/upb/upb/def.h',
                       'third_party/upb/upb/encode.h',
@@ -1220,6 +1246,32 @@ Pod::Spec.new do |s|
                               'src/cpp/server/secure_server_credentials.h',
                               'src/cpp/server/thread_pool_interface.h',
                               'src/cpp/thread_manager/thread_manager.h',
+                              'third_party/re2/re2/bitmap256.h',
+                              'third_party/re2/re2/filtered_re2.h',
+                              'third_party/re2/re2/pod_array.h',
+                              'third_party/re2/re2/prefilter.h',
+                              'third_party/re2/re2/prefilter_tree.h',
+                              'third_party/re2/re2/prog.h',
+                              'third_party/re2/re2/re2.h',
+                              'third_party/re2/re2/regexp.h',
+                              'third_party/re2/re2/set.h',
+                              'third_party/re2/re2/sparse_array.h',
+                              'third_party/re2/re2/sparse_set.h',
+                              'third_party/re2/re2/stringpiece.h',
+                              'third_party/re2/re2/unicode_casefold.h',
+                              'third_party/re2/re2/unicode_groups.h',
+                              'third_party/re2/re2/walker-inl.h',
+                              'third_party/re2/util/benchmark.h',
+                              'third_party/re2/util/flags.h',
+                              'third_party/re2/util/logging.h',
+                              'third_party/re2/util/malloc_counter.h',
+                              'third_party/re2/util/mix.h',
+                              'third_party/re2/util/mutex.h',
+                              'third_party/re2/util/pcre.h',
+                              'third_party/re2/util/strutil.h',
+                              'third_party/re2/util/test.h',
+                              'third_party/re2/util/utf.h',
+                              'third_party/re2/util/util.h',
                               'third_party/upb/upb/decode.h',
                               'third_party/upb/upb/def.h',
                               'third_party/upb/upb/encode.h',
@@ -1267,5 +1319,8 @@ Pod::Spec.new do |s|
     find src/core/ src/cpp/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
     find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
     find src/core/ src/cpp/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find third_party/re2/re2/ third_party/re2/util/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g;s;#include "util/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/util/\\1"\\\n#else\\\n  #include  "util/\\1"\\\n#endif;g'
+    find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g'
+    find src/core/ third_party/re2/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

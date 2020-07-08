@@ -111,6 +111,12 @@ cdef _actual_aio_shutdown():
         raise ValueError('Unsupported engine type [%s]' % _global_aio_state.engine)
 
 
+cdef _initialize_per_loop():
+    cdef object loop = get_working_loop()
+    if _global_aio_state.engine is AsyncIOEngine.POLLER:
+        _global_aio_state.cq.bind_loop(loop)
+
+
 cpdef init_grpc_aio():
     """Initializes the gRPC AsyncIO module.
 
@@ -121,6 +127,7 @@ cpdef init_grpc_aio():
         _global_aio_state.refcount += 1
         if _global_aio_state.refcount == 1:
             _actual_aio_initialization()
+        _initialize_per_loop()
 
 
 cpdef shutdown_grpc_aio():

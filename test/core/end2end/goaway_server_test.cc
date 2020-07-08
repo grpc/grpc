@@ -23,11 +23,16 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
+#include <string.h>
+
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <string.h>
+
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -185,7 +190,7 @@ int main(int argc, char** argv) {
   int port1 = grpc_pick_unused_port_or_die();
   int port2 = grpc_pick_unused_port_or_die();
 
-  char* addr;
+  std::string addr;
 
   grpc_channel_args client_args;
   grpc_arg arg_array[2];
@@ -242,10 +247,9 @@ int main(int argc, char** argv) {
 
   /* bring a server up on the first port */
   grpc_server* server1 = grpc_server_create(nullptr, nullptr);
-  gpr_asprintf(&addr, "127.0.0.1:%d", port1);
-  grpc_server_add_insecure_http2_port(server1, addr);
+  addr = absl::StrCat("127.0.0.1:", port1);
+  grpc_server_add_insecure_http2_port(server1, addr.c_str());
   grpc_server_register_completion_queue(server1, cq, nullptr);
-  gpr_free(addr);
   grpc_server_start(server1);
 
   /* request a call to the server */
@@ -319,10 +323,9 @@ int main(int argc, char** argv) {
   /* and bring up second server */
   set_resolve_port(port2);
   grpc_server* server2 = grpc_server_create(nullptr, nullptr);
-  gpr_asprintf(&addr, "127.0.0.1:%d", port2);
-  grpc_server_add_insecure_http2_port(server2, addr);
+  addr = absl::StrCat("127.0.0.1:", port2);
+  grpc_server_add_insecure_http2_port(server2, addr.c_str());
   grpc_server_register_completion_queue(server2, cq, nullptr);
-  gpr_free(addr);
   grpc_server_start(server2);
 
   /* request a call to the server */
