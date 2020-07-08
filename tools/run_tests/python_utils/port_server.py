@@ -31,7 +31,7 @@ import platform
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
 # note that all changes must be backwards compatible
-_MY_VERSION = 20
+_MY_VERSION = 21
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
     print(_MY_VERSION)
@@ -157,7 +157,7 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             p = allocate_port(self)
             self.log_message('allocated port %d' % p)
-            self.wfile.write('%d' % p)
+            self.wfile.write(bytes('%d' % p, 'utf-8'))
         elif self.path[0:6] == '/drop/':
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain')
@@ -177,7 +177,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain')
             self.end_headers()
-            self.wfile.write(_MY_VERSION)
+            self.wfile.write(bytes('%d' % _MY_VERSION, 'utf-8'))
         elif self.path == '/dump':
             # yaml module is not installed on Macs and Windows machines by default
             # so we import it lazily (/dump action is only used for debugging)
@@ -192,7 +192,7 @@ class Handler(BaseHTTPRequestHandler):
                 'in_use': dict((k, now - v) for k, v in in_use.items())
             })
             mu.release()
-            self.wfile.write(out)
+            self.wfile.write(bytes(out, 'utf-8'))
         elif self.path == '/quitquitquit':
             self.send_response(200)
             self.end_headers()
