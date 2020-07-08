@@ -69,13 +69,7 @@ DEFINE_string(
     "slow_fallback_after_startup : fallback after startup due to LB/backend "
     "addresses becoming blackholed;\n");
 
-#ifdef LINUX_VERSION_CODE
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
-#define SOCKET_SUPPORTS_TCP_USER_TIMEOUT
-#endif
-#endif
-
-#ifdef SOCKET_SUPPORTS_TCP_USER_TIMEOUT
+#ifdef GRPC_HAVE_TCP_USER_TIMEOUT
 using grpc::testing::GrpclbRouteType;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
@@ -287,4 +281,4 @@ int main(int argc, char** argv) {
           "This test requires TCP_USER_TIMEOUT, which isn't available");
   abort();
 }
-#endif  // SOCKET_SUPPORTS_TCP_USER_TIMEOUT
+#endif  // GRPC_HAVE_TCP_USER_TIMEOUT
