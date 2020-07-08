@@ -131,20 +131,20 @@ constexpr char kGrpclb[] = "grpclb";
 class GrpcLbConfig : public LoadBalancingPolicy::Config {
  public:
   GrpcLbConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
-               std::string target_name)
+               std::string service_name)
       : child_policy_(std::move(child_policy)),
-        target_name_(std::move(target_name)) {}
+        service_name_(std::move(service_name)) {}
   const char* name() const override { return kGrpclb; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
     return child_policy_;
   }
 
-  const std::string& target_name() const { return target_name_; }
+  const std::string& service_name() const { return service_name_; }
 
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
-  std::string target_name_;
+  std::string service_name_;
 };
 
 class GrpcLb : public LoadBalancingPolicy {
@@ -374,9 +374,8 @@ class GrpcLb : public LoadBalancingPolicy {
 
   // Who the client is trying to communicate with.
   const char* server_name_ = nullptr;
-  // The target name from configuration; if set, it overrides server_name_ in
-  // the balancer requests.
-  std::string target_name_;
+  // Configurations for the policy.
+  RefCountedPtr<GrpcLbConfig> config_;
 
   // Current channel args from the resolver.
   grpc_channel_args* args_ = nullptr;
@@ -422,8 +421,6 @@ class GrpcLb : public LoadBalancingPolicy {
 
   // The child policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
-  // The child policy config.
-  RefCountedPtr<LoadBalancingPolicy::Config> child_policy_config_;
   // Child policy in state READY.
   bool child_policy_ready_ = false;
 };
@@ -769,11 +766,11 @@ GrpcLb::BalancerCallState::BalancerCallState(
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
   upb::Arena arena;
-  grpc_slice request_payload_slice =
-      GrpcLbRequestCreate(grpclb_policy()->target_name_.empty()
-                              ? grpclb_policy()->server_name_
-                              : grpclb_policy()->target_name_.c_str(),
-                          arena.ptr());
+  grpc_slice request_payload_slice = GrpcLbRequestCreate(
+      grpclb_policy()->config_->service_name().empty()
+          ? grpclb_policy()->server_name_
+          : grpclb_policy()->config_->service_name().c_str(),
+      arena.ptr());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -1399,10 +1396,8 @@ void GrpcLb::ResetBackoffLocked() {
 
 void GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
-  auto* grpclb_config = static_cast<const GrpcLbConfig*>(args.config.get());
-  GPR_ASSERT(grpclb_config != nullptr);
-  child_policy_config_ = grpclb_config->child_policy();
-  target_name_ = grpclb_config->target_name();
+  config_ = args.config;
+  GPR_ASSERT(config_ != nullptr);
   ProcessAddressesAndChannelArgsLocked(args.addresses, *args.args);
   // Update the existing child policy.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
@@ -1657,7 +1652,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   update_args.args =
       CreateChildPolicyArgsLocked(is_backend_from_grpclb_load_balancer);
   GPR_ASSERT(update_args.args != nullptr);
-  update_args.config = child_policy_config_;
+  update_args.config = config_->child_policy();
   // Create child policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(update_args.args);
@@ -1687,20 +1682,20 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
       const Json& json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json.type() == Json::Type::JSON_NULL) {
-      return MakeRefCounted<GrpcLbConfig>(nullptr, nullptr);
+      return MakeRefCounted<GrpcLbConfig>(nullptr, "");
     }
     std::vector<grpc_error*> error_list;
     Json child_policy_config_json_tmp;
     const Json* child_policy_config_json;
-    std::string target_name;
+    std::string service_name;
     auto it = json.object_value().find("serviceName");
     if (it != json.object_value().end()) {
-      const Json& target_name_json = it->second;
-      if (target_name_json.type() != Json::Type::STRING) {
+      const Json& service_name_json = it->second;
+      if (service_name_json.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:serviceName error:type should be string"));
       } else {
-        target_name = target_name_json.string_value();
+        service_name = service_name_json.string_value();
       }
     }
     it = json.object_value().find("childPolicy");
@@ -1724,7 +1719,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     }
     if (error_list.empty()) {
       return MakeRefCounted<GrpcLbConfig>(std::move(child_policy_config),
-                                          target_name);
+                                          std::move(service_name));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("GrpcLb Parser", &error_list);
       return nullptr;
