@@ -267,9 +267,13 @@ static bool g_default_server_tcp_user_timeout_enabled = true;
 #endif
 #define SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT 0
 #else
-// For non-Linux, TCP_USER_TIMEOUT won't be used.
+// For non-Linux, TCP_USER_TIMEOUT will be used if TCP_USER_TIMEOUT is defined.
+#ifdef TCP_USER_TIMEOUT
+#define SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT 0
+#else
 #define TCP_USER_TIMEOUT 0
 #define SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT -1
+#endif  // TCP_USER_TIMEOUT
 #endif  // GPR_LINUX == 1
 
 // Whether the socket supports TCP_USER_TIMEOUT option.
