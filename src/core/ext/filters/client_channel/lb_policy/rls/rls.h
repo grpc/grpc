@@ -198,7 +198,8 @@ class RlsLb : public LoadBalancingPolicy {
       void UpdateState(grpc_connectivity_state state,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
-      void AddTraceEvent(TraceSeverity severity, absl::string_view message) override;
+      void AddTraceEvent(TraceSeverity severity,
+                         absl::string_view message) override;
 
      private:
       RefCountedPtr<ChildPolicyWrapper> wrapper_;
