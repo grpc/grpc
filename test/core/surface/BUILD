@@ -76,6 +76,19 @@ grpc_cc_test(
     ],
 )
 
+filegroup(
+    name='concurrent_connectivity_test_pdb',
+    srcs=[':concurrent_connectivity_test'],
+    output_group = 'pdb_file',
+    testonly = True,
+)
+
+sh_test(
+    name = "concurrent_connectivity_test_shellwrapper",
+    srcs = ["concurrent_connnectivity_test.sh"],
+    data = [":concurrent_connectivity_test" , ":concurrent_connectivity_test_pdb"],
+)
+
 grpc_cc_test(
     name = "init_test",
     srcs = ["init_test.cc"],
