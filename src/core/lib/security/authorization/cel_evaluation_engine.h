@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/log.h>
 #include <map>
 #include <memory>
 #include <string>
@@ -28,16 +29,17 @@
 #include "upb/upb.hpp"
 
 // CelEvaluationEngine makes an AuthorizationDecision to ALLOW or DENY the
-// current action based on the condition fields in two provided RBAC policies.
+// current action based on the condition fields in provided RBAC policies.
 // The engine may be constructed with one or two policies. If two polcies,
 // the first policy is deny-if-matched and the second is allow-if-matched.
-// The engine returns UNDECIDED decision if it fails to find a match in either
+// The engine returns UNDECIDED decision if it fails to find a match in any
 // policy. This engine ignores the principal and permission fields in RBAC
 // policies. It is the caller's responsibility to provide RBAC policies that
 // are compatible with this engine.
 //
 // Example:
-// CelEvaluationEngine* cel_engine = CelEvaluationEngineFactory(rbac_policies);
+// CelEvaluationEngine*
+// cel_engine = CelEvaluationEngine::CreateCelEvaluationEngine(rbac_policies);
 // cel_engine->Evaluate(evaluate_args); // returns authorization decision.
 class CelEvaluationEngine {
  public:
@@ -49,10 +51,9 @@ class CelEvaluationEngine {
 
  private:
   enum Action {
-    ALLOW,
-    DENY,
+    kAllow,
+    kDeny,
   };
-  static const size_t NumPolicies = 2;
 
   explicit CelEvaluationEngine(
       const std::vector<envoy_config_rbac_v2_RBAC*>& rbac_policies);

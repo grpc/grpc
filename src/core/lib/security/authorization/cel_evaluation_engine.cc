@@ -19,16 +19,20 @@
 std::unique_ptr<CelEvaluationEngine>
 CelEvaluationEngine::CreateCelEvaluationEngine(
     const std::vector<envoy_config_rbac_v2_RBAC*>& rbac_policies) {
-  if (rbac_policies.size() == NumPolicies &&
-      envoy_config_rbac_v2_RBAC_action(rbac_policies[0]) == DENY &&
-      envoy_config_rbac_v2_RBAC_action(rbac_policies[1]) == ALLOW) {
-    return std::unique_ptr<CelEvaluationEngine>(
-        new CelEvaluationEngine(rbac_policies));
-  } else if (rbac_policies.size() == 1 and rbac_policies[0] != nullptr) {
-    return std::unique_ptr<CelEvaluationEngine>(
-        new CelEvaluationEngine(rbac_policies));
-  } else {
+  if (rbac_policies.size() < 1 || rbac_policies.size() > 2) {
+    gpr_log(GPR_ERROR,
+            "The rbac_policies vector does not have 1 or 2 policies.");
     return nullptr;
+  } else if (rbac_policies.size() == 2 &&
+             (envoy_config_rbac_v2_RBAC_action(rbac_policies[0]) != kDeny ||
+              envoy_config_rbac_v2_RBAC_action(rbac_policies[1]) != kAllow)) {
+    gpr_log(GPR_ERROR,
+            "The rbac_policies vector does not contain one deny \
+                         policy and one allow policy, in that order.");
+    return nullptr;
+  } else {
+    return std::unique_ptr<CelEvaluationEngine>(
+        new CelEvaluationEngine(rbac_policies));
   }
 }
 
@@ -59,7 +63,7 @@ CelEvaluationEngine::CelEvaluationEngine(
           google_api_expr_v1alpha1_Expr_parse(serialized, serial_len,
                                               arena_.ptr());
 
-      if (envoy_config_rbac_v2_RBAC_action(rbac_policy) == ALLOW) {
+      if (envoy_config_rbac_v2_RBAC_action(rbac_policy) == kAllow) {
         allow_if_matched_.insert(std::make_pair(policy_name, parsed_condition));
       } else {
         deny_if_matched_.insert(std::make_pair(policy_name, parsed_condition));

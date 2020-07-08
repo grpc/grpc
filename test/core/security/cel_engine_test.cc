@@ -51,23 +51,15 @@ TEST_F(CelEngineTest, CreateEngineFailNoPolicies) {
   std::unique_ptr<CelEvaluationEngine> engine =
       CelEvaluationEngine::CreateCelEvaluationEngine(policies);
   EXPECT_EQ(engine, nullptr)
-      << "Created a CelEvaluationEngine without policies.";
+      << "Error: Created a CelEvaluationEngine without policies.";
 }
 
 TEST_F(CelEngineTest, CreateEngineFailWrongPolicyOrder) {
   std::vector<envoy_config_rbac_v2_RBAC*> policies{allow_policy, deny_policy};
   std::unique_ptr<CelEvaluationEngine> engine =
       CelEvaluationEngine::CreateCelEvaluationEngine(policies);
-  EXPECT_EQ(engine, nullptr)
-      << "Created a CelEvaluationEngine with policies in the wrong order.";
-}
-
-TEST_F(CelEngineTest, CreateEngineFailMissingPolicyType) {
-  std::vector<envoy_config_rbac_v2_RBAC*> policies{allow_policy, allow_policy};
-  std::unique_ptr<CelEvaluationEngine> engine =
-      CelEvaluationEngine::CreateCelEvaluationEngine(policies);
-  EXPECT_EQ(engine, nullptr)
-      << "Created a CelEvaluationEngine with only one policy type.";
+  EXPECT_EQ(engine, nullptr) << "Error: Created a CelEvaluationEngine with "
+                                "policies in the wrong order.";
 }
 
 int main(int argc, char** argv) {
