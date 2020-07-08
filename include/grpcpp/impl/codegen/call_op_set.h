@@ -198,9 +198,10 @@ class WriteOptions {
 
 namespace internal {
 
-/// Default argument for CallOpSet. I is unused by the class, but can be
-/// used for generating multiple names for the same thing.
-template <int I>
+/// Default argument for CallOpSet. The Unused parameter is unused by
+/// the class, but can be used for generating multiple names for the
+/// same thing.
+template <int Unused>
 class CallNoOp {
  protected:
   void AddOp(grpc_op* /*ops*/, size_t* /*nops*/) {}
