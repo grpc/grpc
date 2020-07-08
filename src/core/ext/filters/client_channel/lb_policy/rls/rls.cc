@@ -703,7 +703,8 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
       if (it == lb_policy_->child_policy_map_.end()) {
         child_policy_wrapper_ = RefCountedPtr<ChildPolicyWrapper::RefHandler>(
             new ChildPolicyWrapper::RefHandler(
-                new ChildPolicyWrapper(lb_policy_->Ref(), response.target), lb_policy_.get()));
+                new ChildPolicyWrapper(lb_policy_->Ref(), response.target),
+                lb_policy_.get()));
         Json copied_child_policy_config =
             lb_policy_->current_config_->child_policy_config();
         grpc_error* error = InsertOrUpdateChildPolicyField(
@@ -801,9 +802,9 @@ void RlsLb::Cache::Entry::OnBackoffTimer(void* arg, grpc_error* error) {
     entry->lb_policy_->mu_.unlock();
     entry->Unref();
   } else {
-    entry->lb_policy_->work_serializer()->Run([entry, error]() {
-      entry->OnBackoffTimerLocked(error); },
-                                       DEBUG_LOCATION);
+    entry->lb_policy_->work_serializer()->Run(
+        [entry, error]() { entry->OnBackoffTimerLocked(error); },
+        DEBUG_LOCATION);
   }
 }
 
@@ -1033,9 +1034,9 @@ void RlsLb::RequestMapEntry::StartCall(void* arg, grpc_error* error) {
 
 void RlsLb::RequestMapEntry::OnRlsCallComplete(void* arg, grpc_error* error) {
   RequestMapEntry* entry = reinterpret_cast<RequestMapEntry*>(arg);
-  entry->lb_policy_->work_serializer()->Run([entry, error]() {
-    entry->OnRlsCallCompleteLocked(error); },
-                                     DEBUG_LOCATION);
+  entry->lb_policy_->work_serializer()->Run(
+      [entry, error]() { entry->OnRlsCallCompleteLocked(error); },
+      DEBUG_LOCATION);
 }
 
 void RlsLb::RequestMapEntry::OnRlsCallCompleteLocked(grpc_error* error) {
@@ -1073,11 +1074,9 @@ void RlsLb::RequestMapEntry::OnRlsCallCompleteLocked(grpc_error* error) {
   auto cache_entry = lb_policy_->cache_.Find(key_);
   if (cache_entry == nullptr) {
     cache_entry = new Cache::Entry(lb_policy_);
-    lb_policy_->cache_.Add(key_,
-                                  OrphanablePtr<Cache::Entry>(cache_entry));
+    lb_policy_->cache_.Add(key_, OrphanablePtr<Cache::Entry>(cache_entry));
   }
-  cache_entry->OnRlsResponseLocked(std::move(res),
-                                   std::move(backoff_state_));
+  cache_entry->OnRlsResponseLocked(std::move(res), std::move(backoff_state_));
   lb_policy_->request_map_.erase(key_);
 }
 
@@ -1226,8 +1225,7 @@ void RlsLb::ControlChannel::Throttle::RegisterResponse(bool success) {
 // StateWatcher implementation
 RlsLb::ControlChannel::StateWatcher::StateWatcher(
     RefCountedPtr<ControlChannel> channel)
-    : channel_(std::move(channel)) {
-}
+    : channel_(std::move(channel)) {}
 
 void RlsLb::ControlChannel::StateWatcher::OnConnectivityStateChange(
     grpc_connectivity_state new_state) {
@@ -1241,8 +1239,7 @@ void RlsLb::ControlChannel::StateWatcher::OnConnectivityStateChange(
     was_transient_failure_ = false;
     Ref().release();
     channel_->lb_policy_->work_serializer()->Run(
-        [this]() { OnReadyLocked(GRPC_ERROR_NONE); },
-        DEBUG_LOCATION);
+        [this]() { OnReadyLocked(GRPC_ERROR_NONE); }, DEBUG_LOCATION);
   } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     was_transient_failure_ = true;
   }
@@ -1256,18 +1253,18 @@ void RlsLb::ControlChannel::StateWatcher::OnReadyLocked(grpc_error* error) {
             "to READY",
             channel_->lb_policy_.get(), channel_.get(), this);
   }
-  std::lock_guard<std::recursive_mutex> lock(
-      channel_->lb_policy_->mu_);
+  std::lock_guard<std::recursive_mutex> lock(channel_->lb_policy_->mu_);
   if (channel_->is_shutdown_) return;
   channel_->lb_policy_->cache_.ResetAllBackoff();
-  if (channel_->lb_policy_->current_config_
-          ->request_processing_strategy() ==
+  if (channel_->lb_policy_->current_config_->request_processing_strategy() ==
       RequestProcessingStrategy::SYNC_LOOKUP_CLIENT_SEES_ERROR) {
     channel_->lb_policy_->UpdatePickerLocked();
   }
 }
 
-RlsLb::ChildPolicyWrapper::RefHandler::RefHandler(ChildPolicyWrapper* child, RlsLb* parent) : child_(child) {
+RlsLb::ChildPolicyWrapper::RefHandler::RefHandler(ChildPolicyWrapper* child,
+                                                  RlsLb* parent)
+    : child_(child) {
   parent->child_policy_map_.emplace(child->target(), this);
 }
 
@@ -1493,9 +1490,10 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     }
   }
 
-  if (old_config == nullptr || current_config_->default_target() != old_config->default_target()) {
+  if (old_config == nullptr ||
+      current_config_->default_target() != old_config->default_target()) {
     if (current_config_->request_processing_strategy() ==
-          RequestProcessingStrategy::SYNC_LOOKUP_CLIENT_SEES_ERROR) {
+        RequestProcessingStrategy::SYNC_LOOKUP_CLIENT_SEES_ERROR) {
       default_child_policy_.reset();
     } else {
       auto it = child_policy_map_.find(current_config_->default_target());

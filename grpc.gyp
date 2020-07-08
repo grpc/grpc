@@ -676,7 +676,7 @@
         'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c',
         'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
         'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c',
-        'src/core/ext/upb-generated/src/proto/grpc/lookup/rls.upb.c',
+        'src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c',
         'src/core/ext/upb-generated/udpa/annotations/migrate.upb.c',
         'src/core/ext/upb-generated/udpa/annotations/migrate.upbdefs.c',
         'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c',
