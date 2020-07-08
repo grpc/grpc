@@ -312,9 +312,7 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
   for (const Route& route : route_table_) {
     // Path matching.
-    auto path = GetMetadataValue(":path", args.initial_metadata);
-    GPR_DEBUG_ASSERT(path.has_value());
-    if (!PathMatch(path.value(), route.matchers->path_matcher)) continue;
+    if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
     // Header Matching.
     if (!HeadersMatch(args, route.matchers->header_matchers)) continue;
     // Match fraction check
