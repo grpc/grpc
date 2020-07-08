@@ -177,7 +177,9 @@ class ChannelData {
       MutexLock lock(&external_watchers_mu_);
       // Will be deleted when the watch is complete.
       GPR_ASSERT(external_watchers_[on_complete] == nullptr);
-      // Pass a ref to the external_watchers_ map.
+      // Pass a ref to the external_watchers_ map. We are taking an additional
+      // ref on the watcher so that we can maintain lifetime guarantees when
+      // watcher->Start() is called after the critical section.
       external_watchers_[on_complete] = watcher;
     }
     watcher->Start();
