@@ -25,6 +25,7 @@
 
 #include "absl/types/optional.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -36,9 +37,9 @@
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/lb/v1/load_balancer.pb.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -466,7 +467,11 @@ class FakeResolverResponseGeneratorWrapper {
     addr_in->sin_port = htons(balancer_port);
     addr_in->sin_addr.s_addr = htonl(0x7F000001);  // localhost
 
-    result.addresses.emplace_back(addr, nullptr);
+    grpc_arg balancer_address_arg = grpc_core::CreateGrpclbBalancerAddressesArg(
+        new grpc_core::ServerAddressList{
+            grpc_core::ServerAddress(addr, nullptr)});
+    result.args =
+        grpc_channel_args_copy_and_add(nullptr, &balancer_address_arg, 1);
     if (service_config_json != nullptr) {
       result.service_config_error = GRPC_ERROR_NONE;
       result.service_config = grpc_core::ServiceConfig::Create(
@@ -644,7 +649,7 @@ class RlsPolicyEnd2endTest : public ::testing::Test {
     service_config << "        }";
     service_config << "      }],";
     service_config
-        << "      \"childPolicyConfigTargetFieldName\":\"targetName\"";
+        << "      \"childPolicyConfigTargetFieldName\":\"serviceName\"";
     service_config << "    }";
     service_config << "  }]";
     service_config << "}";
