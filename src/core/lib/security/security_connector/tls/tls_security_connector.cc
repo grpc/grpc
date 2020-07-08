@@ -333,8 +333,10 @@ grpc_security_status TlsChannelSecurityConnector::ReplaceHandshakerFactory(
       key_materials_config_->pem_key_cert_pair_list());
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
       pem_key_cert_pair, key_materials_config_->pem_root_certs(),
-      skip_server_certificate_verification, ssl_session_cache,
-      &client_handshaker_factory_);
+      skip_server_certificate_verification,
+      grpc_get_tsi_tls_version(creds->options().min_tls_version()),
+      grpc_get_tsi_tls_version(creds->options().max_tls_version()),
+      ssl_session_cache, &client_handshaker_factory_);
   /* Free memory. */
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
   return status;
@@ -542,7 +544,10 @@ grpc_security_status TlsServerSecurityConnector::ReplaceHandshakerFactory() {
   grpc_security_status status = grpc_ssl_tsi_server_handshaker_factory_init(
       pem_key_cert_pairs, num_key_cert_pairs,
       key_materials_config_->pem_root_certs(),
-      creds->options().cert_request_type(), &server_handshaker_factory_);
+      creds->options().cert_request_type(),
+      grpc_get_tsi_tls_version(creds->options().min_tls_version()),
+      grpc_get_tsi_tls_version(creds->options().max_tls_version()),
+      &server_handshaker_factory_);
   /* Free memory. */
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,
                                           num_key_cert_pairs);
