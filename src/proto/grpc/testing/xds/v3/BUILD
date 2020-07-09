@@ -1,5 +1,5 @@
 # Copyright 2020 gRPC authors.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -40,10 +40,10 @@ grpc_proto_library(
     srcs = [
         "base.proto",
     ],
+    well_known_protos = True,
     deps = [
         ":percent_proto",
     ],
-    well_known_protos = True,
 )
 
 grpc_proto_library(
@@ -59,11 +59,11 @@ grpc_proto_library(
     srcs = [
         "discovery.proto",
     ],
+    well_known_protos = True,
     deps = [
         ":base_proto",
         ":status_proto",
     ],
-    well_known_protos = True,
 )
 
 grpc_proto_library(
@@ -71,11 +71,11 @@ grpc_proto_library(
     srcs = [
         "ads.proto",
     ],
+    has_services = True,
+    well_known_protos = True,
     deps = [
         ":discovery_proto",
     ],
-    has_services = True,
-    well_known_protos = True,
 )
 
 grpc_proto_library(
@@ -100,12 +100,12 @@ grpc_proto_library(
     srcs = [
         "endpoint.proto",
     ],
+    well_known_protos = True,
     deps = [
         ":address_proto",
         ":base_proto",
         ":percent_proto",
     ],
-    well_known_protos = True,
 )
 
 grpc_proto_library(
@@ -121,11 +121,11 @@ grpc_proto_library(
     srcs = [
         "load_report.proto",
     ],
+    well_known_protos = True,
     deps = [
         ":address_proto",
         ":base_proto",
     ],
-    well_known_protos = True,
 )
 
 grpc_proto_library(
@@ -133,12 +133,12 @@ grpc_proto_library(
     srcs = [
         "lrs.proto",
     ],
+    has_services = True,
+    well_known_protos = True,
     deps = [
         ":base_proto",
         ":load_report_proto",
     ],
-    has_services = True,
-    well_known_protos = True,
 )
 
 grpc_proto_library(
@@ -167,13 +167,13 @@ grpc_proto_library(
     srcs = [
         "route.proto",
     ],
+    well_known_protos = True,
     deps = [
         ":base_proto",
-        ":regex_proto",
         ":percent_proto",
         ":range_proto",
+        ":regex_proto",
     ],
-    well_known_protos = True,
 )
 
 grpc_proto_library(
