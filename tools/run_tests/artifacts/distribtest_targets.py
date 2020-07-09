@@ -296,7 +296,6 @@ class CppDistribTest(object):
 def targets():
     """Gets list of supported targets"""
     return [
-        CppDistribTest('linux', 'x64', 'jessie', 'routeguide'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_submodule'),
         CppDistribTest('linux', 'x64', 'stretch', 'cmake'),
         CppDistribTest('linux', 'x64', 'stretch', 'cmake_as_externalproject'),
