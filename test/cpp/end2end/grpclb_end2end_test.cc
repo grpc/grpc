@@ -1413,8 +1413,6 @@ TEST_F(SingleBalancerTest, ServiceNameFromLbPolicyConfig) {
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
   WaitForAllBackends();
-  // Send an RPC to trigger load balancing.
-  CheckRpcSendOk();
   EXPECT_EQ(balancers_[0]->service_.service_names().back(), "test_service");
 }
 
