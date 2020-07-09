@@ -65,16 +65,15 @@ typedef struct grpc_call_element grpc_call_element;
 typedef struct grpc_channel_stack grpc_channel_stack;
 typedef struct grpc_call_stack grpc_call_stack;
 
-typedef struct {
+struct grpc_channel_element_args {
   grpc_channel_stack* channel_stack;
   const grpc_channel_args* channel_args;
   /** Transport, iff it is known */
   grpc_transport* optional_transport;
   int is_first;
   int is_last;
-} grpc_channel_element_args;
-
-typedef struct {
+};
+struct grpc_call_element_args {
   grpc_call_stack* call_stack;
   const void* server_transport_data;
   grpc_call_context_element* context;
@@ -83,13 +82,11 @@ typedef struct {
   grpc_millis deadline;
   grpc_core::Arena* arena;
   grpc_core::CallCombiner* call_combiner;
-} grpc_call_element_args;
-
-typedef struct {
+};
+struct grpc_call_stats {
   grpc_transport_stream_stats transport_stream_stats;
   gpr_timespec latency; /* From call creating to enqueing of received status */
-} grpc_call_stats;
-
+};
 /** Information about the call upon completion. */
 struct grpc_call_final_info {
   grpc_call_stats stats;
@@ -107,7 +104,7 @@ struct grpc_call_final_info {
    4. a name, which is useful when debugging
 
    Members are laid out in approximate frequency of use order. */
-typedef struct {
+struct grpc_channel_filter {
   /* Called to eg. send/receive data on a call.
      See grpc_call_next_op on how to call the next element in the stack */
   void (*start_transport_stream_op_batch)(grpc_call_element* elem,
@@ -163,8 +160,7 @@ typedef struct {
 
   /* The name of this filter */
   const char* name;
-} grpc_channel_filter;
-
+};
 /* A channel_element tracks its filter and the filter requested memory within
    a channel allocation */
 struct grpc_channel_element {

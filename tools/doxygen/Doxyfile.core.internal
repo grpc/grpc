@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 10.0.0
+PROJECT_NUMBER         = 11.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -785,6 +785,7 @@ doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
 doc/grpc_release_schedule.md \
+doc/grpc_xds_features.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \
@@ -877,6 +878,8 @@ src/core/ext/filters/client_channel/client_channel_channelz.h \
 src/core/ext/filters/client_channel/client_channel_factory.cc \
 src/core/ext/filters/client_channel/client_channel_factory.h \
 src/core/ext/filters/client_channel/client_channel_plugin.cc \
+src/core/ext/filters/client_channel/config_selector.cc \
+src/core/ext/filters/client_channel/config_selector.h \
 src/core/ext/filters/client_channel/connector.h \
 src/core/ext/filters/client_channel/global_subchannel_pool.cc \
 src/core/ext/filters/client_channel/global_subchannel_pool.h \
@@ -962,6 +965,7 @@ src/core/ext/filters/client_channel/server_address.h \
 src/core/ext/filters/client_channel/service_config.cc \
 src/core/ext/filters/client_channel/service_config.h \
 src/core/ext/filters/client_channel/service_config_call_data.h \
+src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
 src/core/ext/filters/client_channel/service_config_parser.cc \
 src/core/ext/filters/client_channel/service_config_parser.h \
 src/core/ext/filters/client_channel/subchannel.cc \

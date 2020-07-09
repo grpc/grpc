@@ -122,7 +122,8 @@ def run_test_loop(stub, target_seconds_between_rpcs, fail_on_failed_rpcs)
       sleep(sleep_seconds)
     end
     begin
-      resp = stub.unary_call(req)
+      deadline = GRPC::Core::TimeConsts::from_relative_time(30) # 30 seconds
+      resp = stub.unary_call(req, deadline: deadline)
       remote_peer = resp.hostname
     rescue GRPC::BadStatus => e
       remote_peer = ""

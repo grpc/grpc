@@ -18,9 +18,12 @@
 
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
@@ -85,13 +88,12 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
 static grpc_core::Resolver::Result create_new_resolver_result() {
   static size_t test_counter = 0;
   const size_t num_addresses = 2;
-  char* uri_string;
   // Create address list.
   grpc_core::Resolver::Result result;
   for (size_t i = 0; i < num_addresses; ++i) {
-    gpr_asprintf(&uri_string, "ipv4:127.0.0.1:100%" PRIuPTR,
-                 test_counter * num_addresses + i);
-    grpc_uri* uri = grpc_uri_parse(uri_string, true);
+    std::string uri_string = absl::StrFormat("ipv4:127.0.0.1:100%" PRIuPTR,
+                                             test_counter * num_addresses + i);
+    grpc_uri* uri = grpc_uri_parse(uri_string.c_str(), true);
     grpc_resolved_address address;
     GPR_ASSERT(grpc_parse_uri(uri, &address));
     absl::InlinedVector<grpc_arg, 2> args_to_add;
@@ -99,7 +101,6 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
         address.addr, address.len,
         grpc_channel_args_copy_and_add(nullptr, nullptr, 0));
     grpc_uri_destroy(uri);
-    gpr_free(uri_string);
   }
   ++test_counter;
   return result;

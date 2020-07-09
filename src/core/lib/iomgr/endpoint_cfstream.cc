@@ -39,7 +39,7 @@
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
-typedef struct {
+struct CFStreamEndpoint {
   grpc_endpoint base;
   gpr_refcount refcount;
 
@@ -58,8 +58,7 @@ typedef struct {
   char* peer_string;
   grpc_resource_user* resource_user;
   grpc_resource_user_slice_allocator slice_allocator;
-} CFStreamEndpoint;
-
+};
 static void CFStreamFree(CFStreamEndpoint* ep) {
   grpc_resource_user_unref(ep->resource_user);
   CFRelease(ep->read_stream);

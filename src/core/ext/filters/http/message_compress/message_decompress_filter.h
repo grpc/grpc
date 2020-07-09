@@ -23,7 +23,9 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-extern const grpc_channel_filter grpc_message_decompress_filter;
+namespace grpc_core {
+extern const grpc_channel_filter MessageDecompressFilter;
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_MESSAGE_DECOMPRESS_FILTER_H \
         */

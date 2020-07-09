@@ -1151,6 +1151,13 @@ class ObjCLanguage(object):
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         out.append(
             self.config.job_spec(
+                ['src/objective-c/tests/run_plugin_option_tests.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-plugin-option-test',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(
                 ['test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh'],
                 timeout_seconds=20 * 60,
                 shortname='ios-test-cfstream-tests',

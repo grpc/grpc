@@ -23,6 +23,8 @@
 
 #include <string.h>
 
+#include <string>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
@@ -79,13 +81,13 @@ typedef enum {
 /* --- Google utils --- */
 
 /* It is the caller's responsibility to gpr_free the result if not NULL. */
-char* grpc_get_well_known_google_credentials_file_path(void);
+std::string grpc_get_well_known_google_credentials_file_path(void);
 
 /* Implementation function for the different platforms. */
-char* grpc_get_well_known_google_credentials_file_path_impl(void);
+std::string grpc_get_well_known_google_credentials_file_path_impl(void);
 
 /* Override for testing only. Not thread-safe */
-typedef char* (*grpc_well_known_credentials_path_getter)(void);
+typedef std::string (*grpc_well_known_credentials_path_getter)(void);
 void grpc_override_well_known_credentials_path_getter(
     grpc_well_known_credentials_path_getter getter);
 
@@ -148,11 +150,10 @@ grpc_channel_credentials* grpc_channel_credentials_find_in_args(
 
 /* --- grpc_credentials_mdelem_array. --- */
 
-typedef struct {
+struct grpc_credentials_mdelem_array {
   grpc_mdelem* md = nullptr;
   size_t size = 0;
-} grpc_credentials_mdelem_array;
-
+};
 /// Takes a new ref to \a md.
 void grpc_credentials_mdelem_array_add(grpc_credentials_mdelem_array* list,
                                        grpc_mdelem md);

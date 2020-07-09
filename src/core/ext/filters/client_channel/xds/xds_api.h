@@ -32,6 +32,7 @@
 
 #include <grpc/slice_buffer.h>
 
+#include "re2/re2.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
@@ -48,12 +49,74 @@ class XdsApi {
   static const char* kEdsTypeUrl;
 
   struct RdsUpdate {
+    // TODO(donnadionne): When we can use absl::variant<>, consider using that
+    // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
     struct RdsRoute {
-      std::string service;
-      std::string method;
-      // TODO(donnadionne): When we can use absl::variant<>, consider using that
-      // here, to enforce the fact that only one of cluster_name and
-      // weighted_clusters can be set.
+      // Matchers for this route.
+      struct Matchers {
+        struct PathMatcher {
+          enum class PathMatcherType {
+            PATH,    // path stored in string_matcher field
+            PREFIX,  // prefix stored in string_matcher field
+            REGEX,   // regex stored in regex_matcher field
+          };
+          PathMatcherType type;
+          std::string string_matcher;
+          std::unique_ptr<RE2> regex_matcher;
+          bool operator==(const PathMatcher& other) const {
+            if (type != other.type) return false;
+            if (type == PathMatcherType::REGEX) {
+              // Should never be null.
+              if (regex_matcher == nullptr || other.regex_matcher == nullptr) {
+                return false;
+              }
+              return regex_matcher->pattern() == other.regex_matcher->pattern();
+            }
+            return string_matcher == other.string_matcher;
+          }
+          std::string ToString() const;
+        };
+        struct HeaderMatcher {
+          enum class HeaderMatcherType {
+            EXACT,    // value stored in string_matcher field
+            REGEX,    // uses regex_match field
+            RANGE,    // uses range_start and range_end fields
+            PRESENT,  // uses present_match field
+            PREFIX,   // prefix stored in string_matcher field
+            SUFFIX,   // suffix stored in string_matcher field
+          };
+          std::string name;
+          HeaderMatcherType type;
+          int64_t range_start;
+          int64_t range_end;
+          std::string string_matcher;
+          std::unique_ptr<RE2> regex_match;
+          bool present_match;
+          // invert_match field may or may not exisit, so initialize it to
+          // false.
+          bool invert_match = false;
+          bool operator==(const HeaderMatcher& other) const {
+            return (name == other.name && type == other.type &&
+                    range_start == other.range_start &&
+                    range_end == other.range_end &&
+                    string_matcher == other.string_matcher &&
+                    present_match == other.present_match &&
+                    invert_match == other.invert_match);
+          }
+          std::string ToString() const;
+        };
+        PathMatcher path_matcher;
+        std::vector<HeaderMatcher> header_matchers;
+        absl::optional<uint32_t> fraction_per_million;
+        bool operator==(const Matchers& other) const {
+          return (path_matcher == other.path_matcher &&
+                  header_matchers == other.header_matchers &&
+                  fraction_per_million == other.fraction_per_million);
+        }
+        std::string ToString() const;
+      };
+      Matchers matchers;
+      // Action for this route.
       std::string cluster_name;
       struct ClusterWeight {
         std::string name;
@@ -62,14 +125,16 @@ class XdsApi {
         bool operator==(const ClusterWeight& other) const {
           return (name == other.name && weight == other.weight);
         }
+        std::string ToString() const;
       };
       std::vector<ClusterWeight> weighted_clusters;
 
       bool operator==(const RdsRoute& other) const {
-        return (service == other.service && method == other.method &&
+        return (matchers == other.matchers &&
                 cluster_name == other.cluster_name &&
                 weighted_clusters == other.weighted_clusters);
       }
+      std::string ToString() const;
     };
 
     std::vector<RdsRoute> routes;
@@ -77,6 +142,7 @@ class XdsApi {
     bool operator==(const RdsUpdate& other) const {
       return routes == other.routes;
     }
+    std::string ToString() const;
   };
 
   // TODO(roth): When we can use absl::variant<>, consider using that

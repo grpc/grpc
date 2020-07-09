@@ -23,9 +23,10 @@
 
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -117,7 +118,6 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
       static_cast<grpc_chttp2_settings_parser*>(p);
   const uint8_t* cur = GRPC_SLICE_START_PTR(slice);
   const uint8_t* end = GRPC_SLICE_END_PTR(slice);
-  char* msg;
   grpc_chttp2_setting_id id;
 
   if (parser->is_ack) {
@@ -208,11 +208,10 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
                     t->last_new_stream_id, sp->error_value,
                     grpc_slice_from_static_string("HTTP2 settings error"),
                     &t->qbuf);
-                gpr_asprintf(&msg, "invalid value %u passed for %s",
-                             parser->value, sp->name);
-                grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-                gpr_free(msg);
-                return err;
+                return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                    absl::StrFormat("invalid value %u passed for %s",
+                                    parser->value, sp->name)
+                        .c_str());
             }
           }
           if (id == GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE &&

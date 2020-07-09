@@ -32,7 +32,7 @@ int grpc_server_add_insecure_http2_port(grpc_server* server, const char* addr) {
   int port_num = 0;
   GRPC_API_TRACE("grpc_server_add_insecure_http2_port(server=%p, addr=%s)", 2,
                  (server, addr));
-  grpc_error* err = grpc_chttp2_server_add_port(
+  grpc_error* err = grpc_core::Chttp2ServerAddPort(
       server, addr,
       grpc_channel_args_copy(grpc_server_get_channel_args(server)), &port_num);
   if (err != GRPC_ERROR_NONE) {

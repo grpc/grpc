@@ -29,6 +29,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata.h"
 
 #include "test/core/end2end/cq_verifier.h"
@@ -468,6 +469,328 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
 
   grpc_call_unref(c);
   if (s != nullptr) grpc_call_unref(s);
+  cq_verifier_destroy(cqv);
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
+static grpc_metadata gzip_compression_override() {
+  grpc_metadata gzip_compression_override;
+  gzip_compression_override.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
+  gzip_compression_override.value = grpc_slice_from_static_string("gzip");
+  memset(&gzip_compression_override.internal_data, 0,
+         sizeof(gzip_compression_override.internal_data));
+  return gzip_compression_override;
+}
+
+// Test receive message limit with compressed request larger than the limit
+static void test_max_receive_message_length_on_compressed_request(
+    grpc_end2end_test_config config, bool minimal_stack) {
+  gpr_log(GPR_INFO,
+          "test max receive message length on compressed request with "
+          "minimal_stack=%d",
+          minimal_stack);
+  grpc_end2end_test_fixture f;
+  grpc_call* c = nullptr;
+  grpc_call* s = nullptr;
+  cq_verifier* cqv;
+  grpc_op ops[6];
+  grpc_op* op;
+  grpc_slice request_payload_slice = grpc_slice_malloc(1024);
+  memset(GRPC_SLICE_START_PTR(request_payload_slice), 'a', 1024);
+  grpc_byte_buffer* request_payload =
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_byte_buffer* recv_payload = nullptr;
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array request_metadata_recv;
+  grpc_call_details call_details;
+  grpc_status_code status;
+  grpc_call_error error;
+  grpc_slice details, status_details;
+  int was_cancelled = 2;
+
+  // Set limit via channel args.
+  grpc_arg arg[2];
+  arg[0] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH), 5);
+  arg[1] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_MINIMAL_STACK), minimal_stack);
+  grpc_channel_args* server_args =
+      grpc_channel_args_copy_and_add(nullptr, arg, 2);
+
+  f = begin_test(config, "test_max_request_message_length", nullptr,
+                 server_args);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(server_args);
+  }
+  cqv = cq_verifier_create(f.cq);
+  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/service/method"),
+                               nullptr, gpr_inf_future(GPR_CLOCK_REALTIME),
+                               nullptr);
+  GPR_ASSERT(c);
+
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
+
+  grpc_metadata compression_md = gzip_compression_override();
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 1;
+  op->data.send_initial_metadata.metadata = &compression_md;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message.send_message = request_payload;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  error =
+      grpc_server_request_call(f.server, &s, &call_details,
+                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  cq_verify(cqv);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &recv_payload;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  if (minimal_stack) {
+    /* Expect the RPC to proceed normally for a minimal stack */
+    op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->data.send_initial_metadata.count = 0;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+    op->data.send_status_from_server.trailing_metadata_count = 0;
+    op->data.send_status_from_server.status = GRPC_STATUS_OK;
+    status_details = grpc_slice_from_static_string("xyz");
+    op->data.send_status_from_server.status_details = &status_details;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+  }
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  cq_verify(cqv);
+
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
+  if (minimal_stack) {
+    /* We do not perform message size checks for minimal stack. */
+    GPR_ASSERT(status == GRPC_STATUS_OK);
+  } else {
+    GPR_ASSERT(was_cancelled == 1);
+    GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
+    GPR_ASSERT(grpc_slice_str_cmp(
+                   details, "Received message larger than max (29 vs. 5)") ==
+               0);
+  }
+  grpc_slice_unref(details);
+  grpc_slice_unref(request_payload_slice);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+  grpc_byte_buffer_destroy(request_payload);
+  grpc_byte_buffer_destroy(recv_payload);
+  grpc_call_unref(c);
+  if (s != nullptr) grpc_call_unref(s);
+  cq_verifier_destroy(cqv);
+
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
+// Test receive message limit with compressed response larger than the limit.
+static void test_max_receive_message_length_on_compressed_response(
+    grpc_end2end_test_config config, bool minimal_stack) {
+  gpr_log(GPR_INFO,
+          "testing max receive message length on compressed response with "
+          "minimal_stack=%d",
+          minimal_stack);
+  grpc_end2end_test_fixture f;
+  grpc_call* c = nullptr;
+  grpc_call* s = nullptr;
+  cq_verifier* cqv;
+  grpc_op ops[6];
+  grpc_op* op;
+  grpc_slice response_payload_slice = grpc_slice_malloc(1024);
+  memset(GRPC_SLICE_START_PTR(response_payload_slice), 'a', 1024);
+  grpc_byte_buffer* response_payload =
+      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+  grpc_byte_buffer* recv_payload = nullptr;
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array request_metadata_recv;
+  grpc_call_details call_details;
+  grpc_status_code status;
+  grpc_call_error error;
+  grpc_slice details;
+  int was_cancelled = 2;
+
+  // Set limit via channel args.
+  grpc_arg arg[2];
+  arg[0] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH), 5);
+  arg[1] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_MINIMAL_STACK), minimal_stack);
+  grpc_channel_args* client_args =
+      grpc_channel_args_copy_and_add(nullptr, arg, 2);
+
+  f = begin_test(config, "test_max_response_message_length", client_args,
+                 nullptr);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(client_args);
+  }
+  cqv = cq_verifier_create(f.cq);
+
+  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/service/method"),
+                               nullptr, gpr_inf_future(GPR_CLOCK_REALTIME),
+                               nullptr);
+  GPR_ASSERT(c);
+
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &recv_payload;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  error =
+      grpc_server_request_call(f.server, &s, &call_details,
+                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  cq_verify(cqv);
+
+  grpc_metadata compression_md = gzip_compression_override();
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 1;
+  op->data.send_initial_metadata.metadata = &compression_md;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message.send_message = response_payload;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
+  op->data.send_status_from_server.status = GRPC_STATUS_OK;
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  cq_verify(cqv);
+
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
+  if (minimal_stack) {
+    /* We do not perform message size checks for minimal stack. */
+    GPR_ASSERT(status == GRPC_STATUS_OK);
+  } else {
+    GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
+    GPR_ASSERT(grpc_slice_str_cmp(
+                   details, "Received message larger than max (29 vs. 5)") ==
+               0);
+  }
+  grpc_slice_unref(details);
+  grpc_slice_unref(response_payload_slice);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+  grpc_byte_buffer_destroy(response_payload);
+  grpc_byte_buffer_destroy(recv_payload);
+
+  grpc_call_unref(c);
+  if (s != nullptr) grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 
@@ -500,6 +823,15 @@ void max_message_length(grpc_end2end_test_config config) {
   test_max_message_length_on_response(config, false /* send_limit */,
                                       true /* use_service_config */,
                                       true /* use_string_json_value */);
+  /* The following tests are not useful for inproc transport and do not work
+   * with our simple proxy. */
+  if (strcmp(config.name, "inproc") != 0 &&
+      (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) == 0) {
+    test_max_receive_message_length_on_compressed_request(config, false);
+    test_max_receive_message_length_on_compressed_request(config, true);
+    test_max_receive_message_length_on_compressed_response(config, false);
+    test_max_receive_message_length_on_compressed_response(config, true);
+  }
 }
 
 void max_message_length_pre_init(void) {}

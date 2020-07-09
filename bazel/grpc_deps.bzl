@@ -12,6 +12,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "upb_lib_descriptor",
+        actual = "@upb//:descriptor_upb_proto",
+    )
+
+    native.bind(
         name = "upb_textformat_lib",
         actual = "@upb//:textformat",
     )
@@ -68,12 +73,17 @@ def grpc_deps():
 
     native.bind(
         name = "gtest",
-        actual = "@com_github_google_googletest//:gtest",
+        actual = "@com_google_googletest//:gtest",
     )
 
     native.bind(
         name = "benchmark",
         actual = "@com_github_google_benchmark//:benchmark",
+    )
+
+    native.bind(
+        name = "re2",
+        actual = "@com_github_google_re2//:re2",
     )
 
     native.bind(
@@ -136,11 +146,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "3909329105e28cfeedcd8028865c92f1081ae2524a0ad6c09eba5d91d9ae3869",
-            strip_prefix = "boringssl-3ab047a8e377083a9b38dc908fe1612d5743a021",
+            sha256 = "1ea42456c020daf0a9b0f9e8d8bc3a403c9314f4f54230c617257af996cd5fa6",
+            strip_prefix = "boringssl-597b810379e126ae05d32c1d94b1a9464385acd0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/3ab047a8e377083a9b38dc908fe1612d5743a021.tar.gz",
-                "https://github.com/google/boringssl/archive/3ab047a8e377083a9b38dc908fe1612d5743a021.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/597b810379e126ae05d32c1d94b1a9464385acd0.tar.gz",
+                "https://github.com/google/boringssl/archive/597b810379e126ae05d32c1d94b1a9464385acd0.tar.gz",
             ],
         )
 
@@ -167,9 +177,9 @@ def grpc_deps():
             ],
         )
 
-    if "com_github_google_googletest" not in native.existing_rules():
+    if "com_google_googletest" not in native.existing_rules():
         http_archive(
-            name = "com_github_google_googletest",
+            name = "com_google_googletest",
             sha256 = "443d383db648ebb8e391382c0ab63263b7091d03197f304390baac10f178a468",
             strip_prefix = "googletest-c9ccac7cb7345901884aabf5d1a786cfa6e2f397",
             urls = [
@@ -210,6 +220,17 @@ def grpc_deps():
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/090faecb454fbd6e6e17a75ef8146acb037118d4.tar.gz",
                 "https://github.com/google/benchmark/archive/090faecb454fbd6e6e17a75ef8146acb037118d4.tar.gz",
+            ],
+        )
+
+    if "com_github_google_re2" not in native.existing_rules():
+        http_archive(
+            name = "com_github_google_re2",
+            sha256 = "9f385e146410a8150b6f4cb1a57eab7ec806ced48d427554b1e754877ff26c3e",
+            strip_prefix = "re2-aecba11114cf1fac5497aeb844b6966106de3eb6",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/aecba11114cf1fac5497aeb844b6966106de3eb6.tar.gz",
+                "https://github.com/google/re2/archive/aecba11114cf1fac5497aeb844b6966106de3eb6.tar.gz",
             ],
         )
 

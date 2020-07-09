@@ -118,14 +118,13 @@ static gpr_timespec validate_time_field(const Json& json, const char* key) {
 
 /* --- JOSE header. see http://tools.ietf.org/html/rfc7515#section-4 --- */
 
-typedef struct {
+struct jose_header {
   const char* alg;
   const char* kid;
   const char* typ;
   /* TODO(jboeuf): Add others as needed (jku, jwk, x5u, x5c and so on...). */
   grpc_core::ManualConstructor<Json> json;
-} jose_header;
-
+};
 static void jose_header_destroy(jose_header* h) {
   h->json.Destroy();
   gpr_free(h);
@@ -335,7 +334,7 @@ typedef enum {
   HTTP_RESPONSE_COUNT /* must be last */
 } http_response_index;
 
-typedef struct {
+struct verifier_cb_ctx {
   grpc_jwt_verifier* verifier;
   grpc_polling_entity pollent;
   jose_header* header;
@@ -346,8 +345,7 @@ typedef struct {
   void* user_data;
   grpc_jwt_verification_done_cb user_cb;
   grpc_http_response responses[HTTP_RESPONSE_COUNT];
-} verifier_cb_ctx;
-
+};
 /* Takes ownership of the header, claims and signature. */
 static verifier_cb_ctx* verifier_cb_ctx_create(
     grpc_jwt_verifier* verifier, grpc_pollset* pollset, jose_header* header,
@@ -392,11 +390,10 @@ gpr_timespec grpc_jwt_verifier_clock_skew = {60, 0, GPR_TIMESPAN};
 /* Max delay defaults to one minute. */
 grpc_millis grpc_jwt_verifier_max_delay = 60 * GPR_MS_PER_SEC;
 
-typedef struct {
+struct email_key_mapping {
   char* email_domain;
   char* key_url_prefix;
-} email_key_mapping;
-
+};
 struct grpc_jwt_verifier {
   email_key_mapping* mappings;
   size_t num_mappings; /* Should be very few, linear search ok. */

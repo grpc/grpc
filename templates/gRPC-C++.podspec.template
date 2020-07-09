@@ -66,9 +66,10 @@
   # ObjectiveC doesn't use c-ares so we don't need address_sorting files at all
   address_sorting_unwanted_files = list_lib_files("address_sorting", ("public_headers", "headers", "src"))
 
-  grpc_private_files = list(sorted(set(list_lib_files("grpc", ("headers", "src"))) - set(address_sorting_unwanted_files)))
-  grpc_public_headers = list(sorted(set(list_lib_files("grpc", ("public_headers",))) - set(address_sorting_unwanted_files)))
-  grpc_private_headers = list(sorted(set(list_lib_files("grpc", ("headers",))) - set(address_sorting_unwanted_files)))
+  # ObjectiveC needs to obtain re2 explicitly unlike other languages; TODO @donnadionne make ObjC more consistent with others
+  grpc_private_files = list(sorted((set(list_lib_files("grpc", ("headers", "src"))) - set(address_sorting_unwanted_files)) | set(list_lib_files("re2", ("headers", "src")))))
+  grpc_public_headers = list(sorted((set(list_lib_files("grpc", ("public_headers",))) - set(address_sorting_unwanted_files)) | set(list_lib_files("re2", ("public_headers",)))))
+  grpc_private_headers = list(sorted((set(list_lib_files("grpc", ("headers",))) - set(address_sorting_unwanted_files)) | set(list_lib_files("re2", ("headers",)))))
 
   # TODO(jtattermusch): build.yaml no longer has filegroups, so the files here are just hand-listed
   # This template shouldn't be touching the filegroups anyway, so this is only a bit more fragile.
@@ -145,7 +146,7 @@
     }
 
     s.libraries = 'c++'
-    s.compiler_flags = '-Wno-comma'
+    s.compiler_flags = '-Wno-comma -Wno-unreachable-code -Wno-shorten-64-to-32'
 
     s.default_subspecs = 'Interface', 'Implementation'
 
@@ -205,5 +206,8 @@
       find src/core/ src/cpp/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
       find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
       find src/core/ src/cpp/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+      find third_party/re2/re2/ third_party/re2/util/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g;s;#include "util/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/util/\\1"\\\n#else\\\n  #include  "util/\\1"\\\n#endif;g'
+      find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g'
+      find src/core/ third_party/re2/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
     END_OF_COMMAND
   end

@@ -21,9 +21,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/gpr/string.h"
@@ -305,7 +309,6 @@ static void test_decode_table_overflow() {
   grpc_chttp2_hpack_compressor_set_max_table_size(&g_compressor, 1024);
   int i;
   char key[3], value[3];
-  char* expect;
 
   verify_params params = {
       false,
@@ -318,17 +321,16 @@ static void test_decode_table_overflow() {
     encode_int_to_str(i + 1, value);
     if (i == 0) {
       // 3fe107 corresponds to the table size update.
-      gpr_asprintf(&expect,
-                   "00000a 0104 deadbeef 3fe107 40 02%02x%02x 02%02x%02x",
-                   key[0], key[1], value[0], value[1]);
-      verify(params, expect, 1, key, value);
+      std::string expect = absl::StrFormat(
+          "00000a 0104 deadbeef 3fe107 40 02%02x%02x 02%02x%02x", key[0],
+          key[1], value[0], value[1]);
+      verify(params, expect.c_str(), 1, key, value);
     } else {
-      gpr_asprintf(&expect,
-                   "000008 0104 deadbeef %02x 40 02%02x%02x 02%02x%02x",
-                   0x80 + 61 + i, key[0], key[1], value[0], value[1]);
-      verify(params, expect, 2, "aa", "ba", key, value);
+      std::string expect =
+          absl::StrFormat("000008 0104 deadbeef %02x 40 02%02x%02x 02%02x%02x",
+                          0x80 + 61 + i, key[0], key[1], value[0], value[1]);
+      verify(params, expect.c_str(), 2, "aa", "ba", key, value);
     }
-    gpr_free(expect);
   }
 
   /* if the above passes, then we must have just knocked this pair out of the

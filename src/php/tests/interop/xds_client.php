@@ -98,6 +98,7 @@ class ClientThread extends Thread {
         // Autoloaded classes do not get inherited in threads.
         // Hence we need to do this.
         require_once($this->autoload_path_);
+        $TIMEOUT_US = 30 * 1e6; // 30 seconds
 
         $stub = new Grpc\Testing\TestServiceClient($this->server_address_, [
             'credentials' => Grpc\ChannelCredentials::createInsecure()
@@ -121,7 +122,8 @@ class ClientThread extends Thread {
                 usleep($sleep_us);
             }
             list($response, $status)
-                = $stub->UnaryCall($request)->wait();
+                = $stub->UnaryCall($request, [],
+                                   ['timeout' => $TIMEOUT_US])->wait();
             if ($status->code == Grpc\STATUS_OK) {
                 $this->results[] = $response->getHostname();
             } else {

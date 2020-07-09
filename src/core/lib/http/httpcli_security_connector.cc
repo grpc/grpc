@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
@@ -95,11 +96,10 @@ class grpc_httpcli_ssl_channel_security_connector final
     /* Check the peer name. */
     if (secure_peer_name_ != nullptr &&
         !tsi_ssl_peer_matches_name(&peer, secure_peer_name_)) {
-      char* msg;
-      gpr_asprintf(&msg, "Peer name %s is not in peer certificate",
-                   secure_peer_name_);
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-      gpr_free(msg);
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Peer name ", secure_peer_name_,
+                       " is not in peer certificate")
+              .c_str());
     }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
@@ -155,12 +155,11 @@ httpcli_ssl_channel_security_connector_create(
 
 /* handshaker */
 
-typedef struct {
+struct on_done_closure {
   void (*func)(void* arg, grpc_endpoint* endpoint);
   void* arg;
   grpc_core::RefCountedPtr<grpc_core::HandshakeManager> handshake_mgr;
-} on_done_closure;
-
+};
 static void on_handshake_done(void* arg, grpc_error* error) {
   auto* args = static_cast<grpc_core::HandshakerArgs*>(arg);
   on_done_closure* c = static_cast<on_done_closure*>(args->user_data);

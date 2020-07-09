@@ -185,7 +185,7 @@ bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
   return false;
 }
 
-bool CheckMetadata(const std::multimap<grpc::string, grpc::string>& map,
+bool CheckMetadata(const std::multimap<std::string, std::string>& map,
                    const string& key, const string& value) {
   for (const auto& pair : map) {
     if (pair.first == key && pair.second == value) {

@@ -224,8 +224,8 @@ pip_install_dir "$ROOT/src/python/grpcio_testing"
 
 # Build/install tests
 pip_install coverage==4.4 oauth2client==4.1.0 \
-            google-auth==1.0.0 requests==2.14.2 \
-            googleapis-common-protos==1.5.5
+            google-auth>=1.17.2 requests==2.14.2 \
+            googleapis-common-protos>=1.5.5 rsa==4.0
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_tests"

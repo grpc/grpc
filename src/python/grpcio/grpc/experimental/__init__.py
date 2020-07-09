@@ -41,7 +41,9 @@ class UsageError(Exception):
     """Raised by the gRPC library to indicate usage not allowed by the API."""
 
 
-_insecure_channel_credentials = object()
+_insecure_channel_credentials_sentinel = object()
+_insecure_channel_credentials = grpc.ChannelCredentials(
+    _insecure_channel_credentials_sentinel)
 
 
 def insecure_channel_credentials():
@@ -53,7 +55,7 @@ def insecure_channel_credentials():
     used with grpc.unary_unary, grpc.unary_stream, grpc.stream_unary, or
     grpc.stream_stream.
     """
-    return grpc.ChannelCredentials(_insecure_channel_credentials)
+    return _insecure_channel_credentials
 
 
 class ExperimentalApiWarning(Warning):

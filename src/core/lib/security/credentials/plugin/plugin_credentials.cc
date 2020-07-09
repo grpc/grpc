@@ -22,10 +22,11 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/slice/slice_internal.h"
@@ -86,11 +87,10 @@ static grpc_error* process_plugin_result(
     size_t num_md, grpc_status_code status, const char* error_details) {
   grpc_error* error = GRPC_ERROR_NONE;
   if (status != GRPC_STATUS_OK) {
-    char* msg;
-    gpr_asprintf(&msg, "Getting metadata from plugin failed with error: %s",
-                 error_details);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Getting metadata from plugin failed with error: ",
+                     error_details)
+            .c_str());
   } else {
     bool seen_illegal_header = false;
     for (size_t i = 0; i < num_md; ++i) {
