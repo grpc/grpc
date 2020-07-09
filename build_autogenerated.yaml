@@ -7827,6 +7827,22 @@ targets:
   - src/proto/grpc/testing/xds/eds_for_test.proto
   - src/proto/grpc/testing/xds/lds_rds_for_test.proto
   - src/proto/grpc/testing/xds/lrs_for_test.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/discovery.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  - src/proto/grpc/testing/xds/v3/listener.proto
+  - src/proto/grpc/testing/xds/v3/load_report.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/status.proto
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
