@@ -276,10 +276,8 @@ grpc_error* XdsBootstrap::ParseServerFeaturesArray(Json* json,
   std::vector<grpc_error*> error_list;
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);
-    if (child.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("array element ", i, " is not a string").c_str()));
-    } else if (child.string_value() == "xds_v3") {
+    if (child.type() == Json::Type::STRING &&
+        child.string_value() == "xds_v3") {
       // TODO(roth): Remove env var check once we do interop testing and
       // are sure that the v3 code actually works.
       grpc_core::UniquePtr<char> enable_str(
