@@ -79,23 +79,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-// TODO(dgq): Other scenarios in need of testing:
-// - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).
-// - Test reception of invalid serverlist
-// - Test against a non-LB server.
-// - Random LB server closing the stream unexpectedly.
-//
-// Findings from end to end testing to be covered here:
-// - Handling of LB servers restart, including reconnection after backing-off
-//   retries.
-// - Destruction of load balanced channel (and therefore of xds instance)
-//   while:
-//   1) the internal LB call is still active. This should work by virtue
-//   of the weak reference the LB call holds. The call should be terminated as
-//   part of the xds shutdown process.
-//   2) the retry timer is active. Again, the weak reference it holds should
-//   prevent a premature call to \a glb_destroy.
-
 namespace grpc {
 namespace testing {
 namespace {
@@ -135,7 +118,34 @@ constexpr char kDefaultResourceName[] = "application_target_name";
 constexpr int kDefaultLocalityWeight = 3;
 constexpr int kDefaultLocalityPriority = 0;
 
-constexpr char kBootstrapFile[] =
+constexpr char kBootstrapFileV3[] =
+    "{\n"
+    "  \"xds_servers\": [\n"
+    "    {\n"
+    "      \"server_uri\": \"fake:///lb\",\n"
+    "      \"channel_creds\": [\n"
+    "        {\n"
+    "          \"type\": \"fake\"\n"
+    "        }\n"
+    "      ],\n"
+    "      \"server_features\": [\"xds_v3\"]\n"
+    "    }\n"
+    "  ],\n"
+    "  \"node\": {\n"
+    "    \"id\": \"xds_end2end_test\",\n"
+    "    \"cluster\": \"test\",\n"
+    "    \"metadata\": {\n"
+    "      \"foo\": \"bar\"\n"
+    "    },\n"
+    "    \"locality\": {\n"
+    "      \"region\": \"corp\",\n"
+    "      \"zone\": \"svl\",\n"
+    "      \"subzone\": \"mp3\"\n"
+    "    }\n"
+    "  }\n"
+    "}\n";
+
+constexpr char kBootstrapFileV2[] =
     "{\n"
     "  \"xds_servers\": [\n"
     "    {\n"
@@ -177,15 +187,20 @@ constexpr char kBootstrapFileBad[] =
     "  }\n"
     "}\n";
 
-char* g_bootstrap_file;
+char* g_bootstrap_file_v3;
+char* g_bootstrap_file_v2;
 char* g_bootstrap_file_bad;
 
 void WriteBootstrapFiles() {
   char* bootstrap_file;
-  FILE* out = gpr_tmpfile("xds_bootstrap", &bootstrap_file);
-  fputs(kBootstrapFile, out);
+  FILE* out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file);
+  fputs(kBootstrapFileV3, out);
   fclose(out);
-  g_bootstrap_file = bootstrap_file;
+  g_bootstrap_file_v3 = bootstrap_file;
+  out = gpr_tmpfile("xds_bootstrap_v2", &bootstrap_file);
+  fputs(kBootstrapFileV2, out);
+  fclose(out);
+  g_bootstrap_file_v2 = bootstrap_file;
   out = gpr_tmpfile("xds_bootstrap_bad", &bootstrap_file);
   fputs(kBootstrapFileBad, out);
   fclose(out);
@@ -1237,17 +1252,20 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
 class TestType {
  public:
   TestType(bool use_xds_resolver, bool enable_load_reporting,
-           bool enable_rds_testing = false)
+           bool enable_rds_testing = false, bool use_v2 = false)
       : use_xds_resolver_(use_xds_resolver),
         enable_load_reporting_(enable_load_reporting),
-        enable_rds_testing_(enable_rds_testing) {}
+        enable_rds_testing_(enable_rds_testing),
+        use_v2_(use_v2) {}
 
   bool use_xds_resolver() const { return use_xds_resolver_; }
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
+  bool use_v2() const { return use_v2_; }
 
   std::string AsString() const {
     std::string retval = (use_xds_resolver_ ? "XdsResolver" : "FakeResolver");
+    retval += (use_v2_ ? "V2" : "V3");
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
     return retval;
@@ -1257,6 +1275,7 @@ class TestType {
   const bool use_xds_resolver_;
   const bool enable_load_reporting_;
   const bool enable_rds_testing_;
+  const bool use_v2_;
 };
 
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
@@ -1282,7 +1301,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   static void TearDownTestCase() { grpc_shutdown(); }
 
   void SetUp() override {
-    gpr_setenv("GRPC_XDS_BOOTSTRAP", g_bootstrap_file);
+    gpr_setenv("GRPC_XDS_EXPERIMENTAL_V3_SUPPORT", "true");
+    gpr_setenv("GRPC_XDS_BOOTSTRAP",
+               GetParam().use_v2() ? g_bootstrap_file_v2 : g_bootstrap_file_v3);
     g_port_saver->Reset();
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
@@ -2444,6 +2465,11 @@ TEST_P(LdsRdsTest, Vanilla) {
   (void)SendRpc();
   EXPECT_EQ(RouteConfigurationResponseState(0).state,
             AdsServiceImpl::ResponseState::ACKED);
+  // Make sure we actually used the RPC service for the right version of xDS.
+  EXPECT_EQ(balancers_[0]->ads_service()->seen_v2_client(),
+            GetParam().use_v2());
+  EXPECT_NE(balancers_[0]->ads_service()->seen_v3_client(),
+            GetParam().use_v2());
 }
 
 // Tests that we go into TRANSIENT_FAILURE if the Listener is removed.
@@ -5229,7 +5255,9 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, LdsRdsTest,
                          ::testing::Values(TestType(true, false),
                                            TestType(true, true),
                                            TestType(true, false, true),
-                                           TestType(true, true, true)),
+                                           TestType(true, true, true),
+                                           // Also test with xDS v2.
+                                           TestType(true, true, true, true)),
                          &TestTypeName);
 
 // CDS depends on XdsResolver.
