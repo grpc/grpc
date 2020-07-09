@@ -77,11 +77,6 @@
 #if __GLIBC_PREREQ(2, 10)
 #define GRPC_LINUX_SOCKETUTILS 1
 #endif
-#endif
-#ifdef LINUX_VERSION_CODE
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
-#define GRPC_HAVE_TCP_USER_TIMEOUT
-#ifdef __GLIBC_PREREQ
 #if !(__GLIBC_PREREQ(2, 17))
 /*
  * TCP_USER_TIMEOUT wasn't imported to glibc until 2.17. Use Linux system
@@ -89,9 +84,7 @@
  */
 #define GRPC_LINUX_TCP_H 1
 #endif /* __GLIBC_PREREQ(2, 17) */
-#endif /* ifdef __GLIBC_PREREQ */
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37) */
-#endif /* LINUX_VERSION_CODE */
+#endif
 #ifndef __GLIBC__
 #define GRPC_LINUX_EPOLL 1
 #define GRPC_LINUX_EPOLL_CREATE1 1

@@ -184,12 +184,18 @@ class ChannelData {
 
   void RemoveExternalConnectivityWatcher(grpc_closure* on_complete,
                                          bool cancel) {
-    MutexLock lock(&external_watchers_mu_);
-    auto it = external_watchers_.find(on_complete);
-    if (it != external_watchers_.end()) {
-      if (cancel) it->second->Cancel();
-      external_watchers_.erase(it);
+    ExternalConnectivityWatcher* watcher = nullptr;
+    {
+      MutexLock lock(&external_watchers_mu_);
+      auto it = external_watchers_.find(on_complete);
+      if (it != external_watchers_.end()) {
+        watcher = it->second;
+        external_watchers_.erase(it);
+      }
     }
+    // watcher->Cancel() will hop into the WorkSerializer, so we have to unlock
+    // the mutex before calling it.
+    if (watcher != nullptr && cancel) watcher->Cancel();
   }
 
   int NumExternalConnectivityWatchers() const {
@@ -407,7 +413,8 @@ class CallData {
     iterator begin() const override {
       static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(intptr_t),
                     "iterator size too large");
-      return iterator(this, reinterpret_cast<intptr_t>(batch_->list.head));
+      return iterator(
+          this, reinterpret_cast<intptr_t>(MaybeSkipEntry(batch_->list.head)));
     }
     iterator end() const override {
       static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(intptr_t),
@@ -424,11 +431,19 @@ class CallData {
     }
 
    private:
+    grpc_linked_mdelem* MaybeSkipEntry(grpc_linked_mdelem* entry) const {
+      if (entry != nullptr && batch_->idx.named.path == entry) {
+        return entry->next;
+      }
+      return entry;
+    }
+
     intptr_t IteratorHandleNext(intptr_t handle) const override {
       grpc_linked_mdelem* linked_mdelem =
           reinterpret_cast<grpc_linked_mdelem*>(handle);
-      return reinterpret_cast<intptr_t>(linked_mdelem->next);
+      return reinterpret_cast<intptr_t>(MaybeSkipEntry(linked_mdelem->next));
     }
+
     std::pair<absl::string_view, absl::string_view> IteratorHandleGet(
         intptr_t handle) const override {
       grpc_linked_mdelem* linked_mdelem =
@@ -4018,6 +4033,7 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
   // subchannel's copy of the metadata batch (which is copied for each
   // attempt) to the LB policy instead the one from the parent channel.
   LoadBalancingPolicy::PickArgs pick_args;
+  pick_args.path = StringViewFromSlice(path_);
   pick_args.call_state = &lb_call_state_;
   Metadata initial_metadata(this, initial_metadata_batch);
   pick_args.initial_metadata = &initial_metadata;

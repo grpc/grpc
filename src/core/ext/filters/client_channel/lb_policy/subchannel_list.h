@@ -390,23 +390,21 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     if (subchannel == nullptr) {
       // Subchannel could not be created.
       if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-        char* address_uri = grpc_sockaddr_to_uri(&addresses[i].address());
         gpr_log(GPR_INFO,
                 "[%s %p] could not create subchannel for address uri %s, "
                 "ignoring",
-                tracer_->name(), policy_, address_uri);
-        gpr_free(address_uri);
+                tracer_->name(), policy_,
+                grpc_sockaddr_to_uri(&addresses[i].address()).c_str());
       }
       continue;
     }
     if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-      char* address_uri = grpc_sockaddr_to_uri(&addresses[i].address());
       gpr_log(GPR_INFO,
               "[%s %p] subchannel list %p index %" PRIuPTR
               ": Created subchannel %p for address uri %s",
               tracer_->name(), policy_, this, subchannels_.size(),
-              subchannel.get(), address_uri);
-      gpr_free(address_uri);
+              subchannel.get(),
+              grpc_sockaddr_to_uri(&addresses[i].address()).c_str());
     }
     subchannels_.emplace_back(this, addresses[i], std::move(subchannel));
   }

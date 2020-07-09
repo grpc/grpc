@@ -328,11 +328,11 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void SetUp() override {
-    if (GetParam().callback_server && !GetParam().inproc &&
-        !grpc_iomgr_run_in_background()) {
-      do_not_test_ = true;
-      return;
-    }
+    // if (GetParam().callback_server && !GetParam().inproc &&
+    //     !grpc_iomgr_run_in_background()) {
+    //   do_not_test_ = true;
+    //   return;
+    // }
   }
 
   void TearDown() override {

@@ -39,8 +39,6 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_trace_forwarding_lb(false, "forwarding_lb");
-
 namespace {
 
 //
@@ -81,6 +79,117 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
 };
 
 //
+// CopyMetadataToVector()
+//
+
+MetadataVector CopyMetadataToVector(
+    LoadBalancingPolicy::MetadataInterface* metadata) {
+  MetadataVector result;
+  for (const auto& p : *metadata) {
+    result.push_back({std::string(p.first), std::string(p.second)});
+  }
+  return result;
+}
+
+//
+// TestPickArgsLb
+//
+
+constexpr char kTestPickArgsLbPolicyName[] = "test_pick_args_lb";
+
+class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
+ public:
+  TestPickArgsLb(Args args, TestPickArgsCallback cb)
+      : ForwardingLoadBalancingPolicy(
+            absl::make_unique<Helper>(RefCountedPtr<TestPickArgsLb>(this), cb),
+            std::move(args),
+            /*delegate_lb_policy_name=*/"pick_first",
+            /*initial_refcount=*/2) {}
+
+  ~TestPickArgsLb() override = default;
+
+  const char* name() const override { return kTestPickArgsLbPolicyName; }
+
+ private:
+  class Picker : public SubchannelPicker {
+   public:
+    Picker(std::unique_ptr<SubchannelPicker> delegate_picker,
+           TestPickArgsCallback cb)
+        : delegate_picker_(std::move(delegate_picker)), cb_(std::move(cb)) {}
+
+    PickResult Pick(PickArgs args) override {
+      // Report args seen.
+      PickArgsSeen args_seen;
+      args_seen.path = std::string(args.path);
+      args_seen.metadata = CopyMetadataToVector(args.initial_metadata);
+      cb_(args_seen);
+      // Do pick.
+      return delegate_picker_->Pick(args);
+    }
+
+   private:
+    std::unique_ptr<SubchannelPicker> delegate_picker_;
+    TestPickArgsCallback cb_;
+  };
+
+  class Helper : public ChannelControlHelper {
+   public:
+    Helper(RefCountedPtr<TestPickArgsLb> parent, TestPickArgsCallback cb)
+        : parent_(std::move(parent)), cb_(std::move(cb)) {}
+
+    RefCountedPtr<SubchannelInterface> CreateSubchannel(
+        const grpc_channel_args& args) override {
+      return parent_->channel_control_helper()->CreateSubchannel(args);
+    }
+
+    void UpdateState(grpc_connectivity_state state,
+                     std::unique_ptr<SubchannelPicker> picker) override {
+      parent_->channel_control_helper()->UpdateState(
+          state, absl::make_unique<Picker>(std::move(picker), cb_));
+    }
+
+    void RequestReresolution() override {
+      parent_->channel_control_helper()->RequestReresolution();
+    }
+
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override {
+      parent_->channel_control_helper()->AddTraceEvent(severity, message);
+    }
+
+   private:
+    RefCountedPtr<TestPickArgsLb> parent_;
+    TestPickArgsCallback cb_;
+  };
+};
+
+class TestPickArgsLbConfig : public LoadBalancingPolicy::Config {
+ public:
+  const char* name() const override { return kTestPickArgsLbPolicyName; }
+};
+
+class TestPickArgsLbFactory : public LoadBalancingPolicyFactory {
+ public:
+  explicit TestPickArgsLbFactory(TestPickArgsCallback cb)
+      : cb_(std::move(cb)) {}
+
+  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      LoadBalancingPolicy::Args args) const override {
+    return MakeOrphanable<TestPickArgsLb>(std::move(args), cb_);
+  }
+
+  const char* name() const override { return kTestPickArgsLbPolicyName; }
+
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const Json& /*json*/, grpc_error** /*error*/) const override {
+    return MakeRefCounted<TestPickArgsLbConfig>();
+  }
+
+ private:
+  TestPickArgsCallback cb_;
+};
+
+//
 // InterceptRecvTrailingMetadataLoadBalancingPolicy
 //
 
@@ -91,12 +200,12 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     : public ForwardingLoadBalancingPolicy {
  public:
   InterceptRecvTrailingMetadataLoadBalancingPolicy(
-      Args args, InterceptRecvTrailingMetadataCallback cb, void* user_data)
+      Args args, InterceptRecvTrailingMetadataCallback cb)
       : ForwardingLoadBalancingPolicy(
-            std::unique_ptr<ChannelControlHelper>(new Helper(
+            absl::make_unique<Helper>(
                 RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
                     this),
-                cb, user_data)),
+                std::move(cb)),
             std::move(args),
             /*delegate_lb_policy_name=*/"pick_first",
             /*initial_refcount=*/2) {}
@@ -110,24 +219,18 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
  private:
   class Picker : public SubchannelPicker {
    public:
-    explicit Picker(std::unique_ptr<SubchannelPicker> delegate_picker,
-                    InterceptRecvTrailingMetadataCallback cb, void* user_data)
-        : delegate_picker_(std::move(delegate_picker)),
-          cb_(cb),
-          user_data_(user_data) {}
+    Picker(std::unique_ptr<SubchannelPicker> delegate_picker,
+           InterceptRecvTrailingMetadataCallback cb)
+        : delegate_picker_(std::move(delegate_picker)), cb_(std::move(cb)) {}
 
     PickResult Pick(PickArgs args) override {
-      // Check that we can read initial metadata.
-      gpr_log(GPR_INFO, "initial metadata:");
-      InterceptRecvTrailingMetadataLoadBalancingPolicy::LogMetadata(
-          args.initial_metadata);
       // Do pick.
       PickResult result = delegate_picker_->Pick(args);
       // Intercept trailing metadata.
       if (result.type == PickResult::PICK_COMPLETE &&
           result.subchannel != nullptr) {
         new (args.call_state->Alloc(sizeof(TrailingMetadataHandler)))
-            TrailingMetadataHandler(&result, cb_, user_data_);
+            TrailingMetadataHandler(&result, cb_);
       }
       return result;
     }
@@ -135,15 +238,14 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
    private:
     std::unique_ptr<SubchannelPicker> delegate_picker_;
     InterceptRecvTrailingMetadataCallback cb_;
-    void* user_data_;
   };
 
   class Helper : public ChannelControlHelper {
    public:
     Helper(
         RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy> parent,
-        InterceptRecvTrailingMetadataCallback cb, void* user_data)
-        : parent_(std::move(parent)), cb_(cb), user_data_(user_data) {}
+        InterceptRecvTrailingMetadataCallback cb)
+        : parent_(std::move(parent)), cb_(std::move(cb)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_channel_args& args) override {
@@ -153,8 +255,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     void UpdateState(grpc_connectivity_state state,
                      std::unique_ptr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(
-          state, std::unique_ptr<SubchannelPicker>(
-                     new Picker(std::move(picker), cb_, user_data_)));
+          state, absl::make_unique<Picker>(std::move(picker), cb_));
     }
 
     void RequestReresolution() override {
@@ -169,15 +270,13 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
    private:
     RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy> parent_;
     InterceptRecvTrailingMetadataCallback cb_;
-    void* user_data_;
   };
 
   class TrailingMetadataHandler {
    public:
     TrailingMetadataHandler(PickResult* result,
-                            InterceptRecvTrailingMetadataCallback cb,
-                            void* user_data)
-        : cb_(cb), user_data_(user_data) {
+                            InterceptRecvTrailingMetadataCallback cb)
+        : cb_(std::move(cb)) {
       result->recv_trailing_metadata_ready = [this](grpc_error* error,
                                                     MetadataInterface* metadata,
                                                     CallState* call_state) {
@@ -189,25 +288,16 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     void RecordRecvTrailingMetadata(grpc_error* /*error*/,
                                     MetadataInterface* recv_trailing_metadata,
                                     CallState* call_state) {
+      TrailingMetadataArgsSeen args_seen;
+      args_seen.backend_metric_data = call_state->GetBackendMetricData();
       GPR_ASSERT(recv_trailing_metadata != nullptr);
-      gpr_log(GPR_INFO, "trailing metadata:");
-      InterceptRecvTrailingMetadataLoadBalancingPolicy::LogMetadata(
-          recv_trailing_metadata);
-      cb_(user_data_, call_state->GetBackendMetricData());
+      args_seen.metadata = CopyMetadataToVector(recv_trailing_metadata);
+      cb_(args_seen);
       this->~TrailingMetadataHandler();
     }
 
     InterceptRecvTrailingMetadataCallback cb_;
-    void* user_data_;
   };
-
-  static void LogMetadata(MetadataInterface* metadata) {
-    for (const auto& p : *metadata) {
-      gpr_log(GPR_INFO, "  \"%.*s\"=>\"%.*s\"",
-              static_cast<int>(p.first.size()), p.first.data(),
-              static_cast<int>(p.second.size()), p.second.data());
-    }
-  }
 };
 
 class InterceptTrailingConfig : public LoadBalancingPolicy::Config {
@@ -219,14 +309,13 @@ class InterceptTrailingConfig : public LoadBalancingPolicy::Config {
 
 class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
  public:
-  explicit InterceptTrailingFactory(InterceptRecvTrailingMetadataCallback cb,
-                                    void* user_data)
-      : cb_(cb), user_data_(user_data) {}
+  explicit InterceptTrailingFactory(InterceptRecvTrailingMetadataCallback cb)
+      : cb_(std::move(cb)) {}
 
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
     return MakeOrphanable<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
-        std::move(args), cb_, user_data_);
+        std::move(args), cb_);
   }
 
   const char* name() const override {
@@ -240,16 +329,19 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
 
  private:
   InterceptRecvTrailingMetadataCallback cb_;
-  void* user_data_;
 };
 
 }  // namespace
 
-void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
-    InterceptRecvTrailingMetadataCallback cb, void* user_data) {
+void RegisterTestPickArgsLoadBalancingPolicy(TestPickArgsCallback cb) {
   LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
-      std::unique_ptr<LoadBalancingPolicyFactory>(
-          new InterceptTrailingFactory(cb, user_data)));
+      absl::make_unique<TestPickArgsLbFactory>(std::move(cb)));
+}
+
+void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
+    InterceptRecvTrailingMetadataCallback cb) {
+  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<InterceptTrailingFactory>(std::move(cb)));
 }
 
 }  // namespace grpc_core

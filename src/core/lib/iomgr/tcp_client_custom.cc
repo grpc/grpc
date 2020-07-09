@@ -42,15 +42,14 @@ struct grpc_custom_tcp_connect {
   grpc_closure* closure;
   grpc_endpoint** endpoint;
   int refs;
-  char* addr_name;
+  std::string addr_name;
   grpc_resource_quota* resource_quota;
 };
 
 static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect* connect) {
   grpc_custom_socket* socket = connect->socket;
   grpc_resource_quota_unref_internal(connect->resource_quota);
-  gpr_free(connect->addr_name);
-  gpr_free(connect);
+  delete connect;
   socket->refs--;
   if (socket->refs == 0) {
     grpc_custom_socket_vtable->destroy(socket);
@@ -67,7 +66,7 @@ static void on_alarm(void* acp, grpc_error* error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     const char* str = grpc_error_string(error);
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
-            connect->addr_name, str);
+            connect->addr_name.c_str(), str);
   }
   if (error == GRPC_ERROR_NONE) {
     /* error == NONE implies that the timer ran out, and wasn't cancelled. If
@@ -89,7 +88,7 @@ static void custom_connect_callback_internal(grpc_custom_socket* socket,
   grpc_timer_cancel(&connect->alarm);
   if (error == GRPC_ERROR_NONE) {
     *connect->endpoint = custom_tcp_endpoint_create(
-        socket, connect->resource_quota, connect->addr_name);
+        socket, connect->resource_quota, connect->addr_name.c_str());
   }
   done = (--connect->refs == 0);
   if (done) {
@@ -120,7 +119,6 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   (void)channel_args;
   (void)interested_parties;
-  grpc_custom_tcp_connect* connect;
   grpc_resource_quota* resource_quota = grpc_resource_quota_create(nullptr);
   if (channel_args != nullptr) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
@@ -135,8 +133,7 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
       (grpc_custom_socket*)gpr_malloc(sizeof(grpc_custom_socket));
   socket->refs = 2;
   grpc_custom_socket_vtable->init(socket, GRPC_AF_UNSPEC);
-  connect =
-      (grpc_custom_tcp_connect*)gpr_malloc(sizeof(grpc_custom_tcp_connect));
+  grpc_custom_tcp_connect* connect = new grpc_custom_tcp_connect();
   connect->closure = closure;
   connect->endpoint = ep;
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
@@ -149,7 +146,7 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %p %s: asynchronously connecting",
-            socket, connect->addr_name);
+            socket, connect->addr_name.c_str());
   }
 
   GRPC_CLOSURE_INIT(&connect->on_alarm, on_alarm, socket,

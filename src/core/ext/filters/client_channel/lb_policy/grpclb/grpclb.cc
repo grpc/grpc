@@ -65,6 +65,7 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
@@ -547,12 +548,10 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
       memcpy(lb_token, server.load_balance_token, lb_token_length);
       lb_token[lb_token_length] = '\0';
     } else {
-      char* uri = grpc_sockaddr_to_uri(&addr);
       gpr_log(GPR_INFO,
               "Missing LB token for backend address '%s'. The empty token will "
               "be used instead",
-              uri);
-      gpr_free(uri);
+              grpc_sockaddr_to_uri(&addr).c_str());
       lb_token[0] = '\0';
     }
     // Add address.
@@ -1458,11 +1457,10 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
       balancer_addresses, response_generator_.get(), &args);
   // Create balancer channel if needed.
   if (lb_channel_ == nullptr) {
-    char* uri_str;
-    gpr_asprintf(&uri_str, "fake:///%s", server_name_);
-    lb_channel_ = CreateGrpclbBalancerChannel(uri_str, *lb_channel_args);
+    std::string uri_str = absl::StrCat("fake:///", server_name_);
+    lb_channel_ =
+        CreateGrpclbBalancerChannel(uri_str.c_str(), *lb_channel_args);
     GPR_ASSERT(lb_channel_ != nullptr);
-    gpr_free(uri_str);
   }
   // Propagate updates to the LB channel (pick_first) through the fake
   // resolver.

@@ -17,6 +17,7 @@
  */
 
 #include <algorithm>
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <memory>
@@ -118,12 +119,12 @@ class MessageAllocatorEnd2endTestBase
  protected:
   MessageAllocatorEnd2endTestBase() {
     GetParam().Log();
-    if (GetParam().protocol == Protocol::TCP) {
-      if (!grpc_iomgr_run_in_background()) {
-        do_not_test_ = true;
-        return;
-      }
-    }
+    // if (GetParam().protocol == Protocol::TCP) {
+    //   if (!grpc_iomgr_run_in_background()) {
+    //     do_not_test_ = true;
+    //     return;
+    //   }
+    // }
   }
 
   ~MessageAllocatorEnd2endTestBase() = default;
@@ -143,7 +144,13 @@ class MessageAllocatorEnd2endTestBase
     builder.RegisterService(&callback_service_);
 
     server_ = builder.BuildAndStart();
-    is_server_started_ = true;
+  }
+
+  void DestroyServer() {
+    if (server_) {
+      server_->Shutdown();
+      server_.reset();
+    }
   }
 
   void ResetStub() {
@@ -165,9 +172,7 @@ class MessageAllocatorEnd2endTestBase
   }
 
   void TearDown() override {
-    if (is_server_started_) {
-      server_->Shutdown();
-    }
+    DestroyServer();
     if (picked_port_ > 0) {
       grpc_recycle_unused_port(picked_port_);
     }
@@ -206,7 +211,6 @@ class MessageAllocatorEnd2endTestBase
   }
 
   bool do_not_test_{false};
-  bool is_server_started_{false};
   int picked_port_{0};
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<EchoTestService::Stub> stub_;
@@ -232,8 +236,8 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
     class MessageHolderImpl
         : public experimental::MessageHolder<EchoRequest, EchoResponse> {
      public:
-      MessageHolderImpl(int* request_deallocation_count,
-                        int* messages_deallocation_count)
+      MessageHolderImpl(std::atomic_int* request_deallocation_count,
+                        std::atomic_int* messages_deallocation_count)
           : request_deallocation_count_(request_deallocation_count),
             messages_deallocation_count_(messages_deallocation_count) {
         set_request(new EchoRequest);
@@ -258,8 +262,8 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
       }
 
      private:
-      int* request_deallocation_count_;
-      int* messages_deallocation_count_;
+      std::atomic_int* const request_deallocation_count_;
+      std::atomic_int* const messages_deallocation_count_;
     };
     experimental::MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
         override {
@@ -268,8 +272,8 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
                                    &messages_deallocation_count);
     }
     int allocation_count = 0;
-    int request_deallocation_count = 0;
-    int messages_deallocation_count = 0;
+    std::atomic_int request_deallocation_count{0};
+    std::atomic_int messages_deallocation_count{0};
   };
 };
 
@@ -280,6 +284,9 @@ TEST_P(SimpleAllocatorTest, SimpleRpc) {
   CreateServer(allocator.get());
   ResetStub();
   SendRpcs(kRpcCount);
+  // messages_deallocaton_count is updated in Release after server side OnDone.
+  // Destroy server to make sure it has been updated.
+  DestroyServer();
   EXPECT_EQ(kRpcCount, allocator->allocation_count);
   EXPECT_EQ(kRpcCount, allocator->messages_deallocation_count);
   EXPECT_EQ(0, allocator->request_deallocation_count);
@@ -302,6 +309,9 @@ TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
   CreateServer(allocator.get());
   ResetStub();
   SendRpcs(kRpcCount);
+  // messages_deallocaton_count is updated in Release after server side OnDone.
+  // Destroy server to make sure it has been updated.
+  DestroyServer();
   EXPECT_EQ(kRpcCount, allocator->allocation_count);
   EXPECT_EQ(kRpcCount, allocator->messages_deallocation_count);
   EXPECT_EQ(kRpcCount, allocator->request_deallocation_count);
@@ -326,6 +336,9 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
   CreateServer(allocator.get());
   ResetStub();
   SendRpcs(kRpcCount);
+  // messages_deallocaton_count is updated in Release after server side OnDone.
+  // Destroy server to make sure it has been updated.
+  DestroyServer();
   EXPECT_EQ(kRpcCount, allocator->allocation_count);
   EXPECT_EQ(kRpcCount, allocator->messages_deallocation_count);
   EXPECT_EQ(0, allocator->request_deallocation_count);

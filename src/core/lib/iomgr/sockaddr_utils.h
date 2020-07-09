@@ -69,7 +69,7 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* addr,
 void grpc_string_to_sockaddr(grpc_resolved_address* out, char* addr, int port);
 
 /* Returns the URI string corresponding to \a addr */
-char* grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
+std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
 
 /* Returns the URI scheme corresponding to \a addr */
 const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* addr);
