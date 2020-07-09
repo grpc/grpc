@@ -1216,9 +1216,9 @@ void ChannelData::ExternalConnectivityWatcher::
       (*external_watchers).erase(it);
     }
   }
-  if (watcher != nullptr && cancel) {
-    watcher->Cancel();
-  }
+  // watcher->Cancel() will hop into the WorkSerializer, so we have to unlock
+  // the mutex before calling it.
+  if (watcher != nullptr && cancel) watcher->Cancel();
 }
 
 void ChannelData::ExternalConnectivityWatcher::Start() {
