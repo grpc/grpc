@@ -1523,8 +1523,34 @@ static void test_no_google_default_creds(void) {
 }
 
 static void test_google_default_creds_call_creds_specified(void) {
-
+  expected_md emd[] = {
+      {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_core::ExecCtx exec_ctx;
+  grpc_flush_cached_google_default_credentials();
+  grpc_call_credentials* call_creds = grpc_google_compute_engine_credentials_create(nullptr);
+  set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
+  grpc_httpcli_set_override(
+      default_creds_metadata_server_detection_httpcli_get_success_override,
+      httpcli_post_should_not_be_called);
+  g_test_gce_tenancy_checker_called = false;
+  g_test_is_on_gce = true;
+  grpc_composite_channel_credentials* channel_creds = reinterpret_cast<grpc_composite_channel_credentials*>(grpc_google_default_credentials_create(call_creds));
+  GPR_ASSERT(g_test_gce_tenancy_checker_called == true);
+  GPR_ASSERT(channel_creds != nullptr);
+  GPR_ASSERT(channel_creds->call_creds() != nullptr);
+  grpc_httpcli_set_override(compute_engine_httpcli_get_success_override,
+                            httpcli_post_should_not_be_called);
+  run_request_metadata_test(channel_creds->mutable_call_creds(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  channel_creds->Unref();
+  grpc_httpcli_set_override(nullptr, nullptr);
 }
+
+// TODO: Test that we don't go down the nullptr path regardless of env vars.
 
 typedef enum {
   PLUGIN_INITIAL_STATE,
