@@ -16,6 +16,11 @@
  *
  */
 
+/**
+ * class Call
+ * @see https://github.com/grpc/grpc/tree/master/src/php/ext/grpc/call.c
+ */
+
 #include "call.h"
 
 #include <ext/spl/spl_exceptions.h>
@@ -193,7 +198,7 @@ zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC) {
  *                             Must not be closed.
  * @param string $method The method to call
  * @param Timeval $deadline_obj The deadline for completing the call
- * @param string $host_override The host is set by user (optional)
+ * @param string $host_override = "" The host is set by user (optional)
  */
 PHP_METHOD(Call, __construct) {
   zval *channel_obj;

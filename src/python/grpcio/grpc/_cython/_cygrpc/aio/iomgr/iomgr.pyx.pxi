@@ -216,7 +216,7 @@ def _auth_plugin_callback_wrapper(object cb,
                                   str service_url,
                                   str method_name,
                                   object callback):
-    asyncio.get_event_loop().call_soon(cb, service_url, method_name, callback)
+    get_working_loop().call_soon(cb, service_url, method_name, callback)
 
 
 def install_asyncio_iomgr():

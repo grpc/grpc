@@ -74,19 +74,18 @@ class AuthContext {
   /// It is, in general, comprised of one or more properties (in which case they
   /// have the same name).
   virtual std::vector<grpc::string_ref> GetPeerIdentity() const = 0;
-  virtual grpc::string GetPeerIdentityPropertyName() const = 0;
+  virtual std::string GetPeerIdentityPropertyName() const = 0;
 
   /// Returns all the property values with the given name.
   virtual std::vector<grpc::string_ref> FindPropertyValues(
-      const grpc::string& name) const = 0;
+      const std::string& name) const = 0;
 
   /// Iteration over all the properties.
   virtual AuthPropertyIterator begin() const = 0;
   virtual AuthPropertyIterator end() const = 0;
 
   /// Mutation functions: should only be used by an AuthMetadataProcessor.
-  virtual void AddProperty(const grpc::string& key,
-                           const string_ref& value) = 0;
+  virtual void AddProperty(const std::string& key, const string_ref& value) = 0;
   virtual bool SetPeerIdentityPropertyName(const string& name) = 0;
 };
 

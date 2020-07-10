@@ -43,14 +43,17 @@ end
 
 # ServerRunner starts an "echo server" that test clients can make calls to
 class ServerRunner
+  attr_accessor :server_creds
+
   def initialize(service_impl, rpc_server_args: {})
     @service_impl = service_impl
     @rpc_server_args = rpc_server_args
+    @server_creds = :this_port_is_insecure
   end
 
   def run
     @srv = new_rpc_server_for_testing(@rpc_server_args)
-    port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
+    port = @srv.add_http2_port('0.0.0.0:0', @server_creds)
     @srv.handle(@service_impl)
 
     @thd = Thread.new do

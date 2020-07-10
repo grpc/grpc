@@ -54,9 +54,9 @@ namespace {
 // TODO(jtattermusch): reuse the functionality from google/protobuf.
 bool GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer* printer,
                                 grpc::protobuf::SourceLocation location) {
-  grpc::string comments = location.leading_comments.empty()
-                              ? location.trailing_comments
-                              : location.leading_comments;
+  std::string comments = location.leading_comments.empty()
+                             ? location.trailing_comments
+                             : location.leading_comments;
   if (comments.empty()) {
     return false;
   }
@@ -66,7 +66,7 @@ bool GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer* printer,
   comments = grpc_generator::StringReplace(comments, "&", "&amp;", true);
   comments = grpc_generator::StringReplace(comments, "<", "&lt;", true);
 
-  std::vector<grpc::string> lines;
+  std::vector<std::string> lines;
   grpc_generator::Split(comments, '\n', &lines);
   // TODO: We really should work out which part to put in the summary and which
   // to put in the remarks...
@@ -81,9 +81,9 @@ bool GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer* printer,
   // Note that we can't remove leading or trailing whitespace as *that's*
   // relevant in markdown too.
   // (We don't skip "just whitespace" lines, either.)
-  for (std::vector<grpc::string>::iterator it = lines.begin();
-       it != lines.end(); ++it) {
-    grpc::string line = *it;
+  for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end();
+       ++it) {
+    std::string line = *it;
     if (line.empty()) {
       last_was_empty = true;
     } else {
@@ -706,9 +706,9 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
 
 }  // anonymous namespace
 
-grpc::string GetServices(const FileDescriptor* file, bool generate_client,
-                         bool generate_server, bool internal_access) {
-  grpc::string output;
+std::string GetServices(const FileDescriptor* file, bool generate_client,
+                        bool generate_server, bool internal_access) {
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
 
@@ -729,7 +729,7 @@ grpc::string GetServices(const FileDescriptor* file, bool generate_client,
     out.Print("// </auto-generated>\n");
 
     // use C++ style as there are no file-level XML comments in .NET
-    grpc::string leading_comments = GetCsharpComments(file, true);
+    std::string leading_comments = GetCsharpComments(file, true);
     if (!leading_comments.empty()) {
       out.Print("// Original file comments:\n");
       out.PrintRaw(leading_comments.c_str());
@@ -742,7 +742,7 @@ grpc::string GetServices(const FileDescriptor* file, bool generate_client,
     out.Print("using grpc = global::Grpc.Core;\n");
     out.Print("\n");
 
-    grpc::string file_namespace = GetFileNamespace(file);
+    std::string file_namespace = GetFileNamespace(file);
     if (file_namespace != "") {
       out.Print("namespace $namespace$ {\n", "namespace", file_namespace);
       out.Indent();

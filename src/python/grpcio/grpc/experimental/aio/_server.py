@@ -13,7 +13,6 @@
 # limitations under the License.
 """Server-side implementation of gRPC Asyncio Python."""
 
-import asyncio
 from concurrent.futures import Executor
 from typing import Any, Optional, Sequence
 
@@ -41,7 +40,7 @@ class Server(_base_server.Server):
                  options: ChannelArgumentType,
                  maximum_concurrent_rpcs: Optional[int],
                  compression: Optional[grpc.Compression]):
-        self._loop = asyncio.get_event_loop()
+        self._loop = cygrpc.get_working_loop()
         if interceptors:
             invalid_interceptors = [
                 interceptor for interceptor in interceptors
@@ -163,10 +162,11 @@ class Server(_base_server.Server):
         be safe to slightly extend the underlying Cython object's life span.
         """
         if hasattr(self, '_server'):
-            cygrpc.schedule_coro_threadsafe(
-                self._server.shutdown(None),
-                self._loop,
-            )
+            if self._server.is_running():
+                cygrpc.schedule_coro_threadsafe(
+                    self._server.shutdown(None),
+                    self._loop,
+                )
 
 
 def server(migration_thread_pool: Optional[Executor] = None,

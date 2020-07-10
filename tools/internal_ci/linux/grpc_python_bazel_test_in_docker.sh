@@ -24,8 +24,8 @@ git clone /var/local/jenkins/grpc /var/local/git/grpc
 && git submodule update --init --reference /var/local/jenkins/grpc/${name} \
 ${name}')
 cd /var/local/git/grpc/test
-TEST_TARGETS="//src/python/... //tools/distrib/python/grpcio_tools/... //examples/python/..."
-BAZEL_FLAGS="--spawn_strategy=standalone --genrule_strategy=standalone --test_output=errors"
+TEST_TARGETS="//src/python/... //tools/distrib/python/grpcio_tols/... //examples/python/..."
+BAZEL_FLAGS="--test_output=errors"
 bazel test ${BAZEL_FLAGS} ${TEST_TARGETS}
 bazel test --config=python_single_threaded_unary_stream ${BAZEL_FLAGS} ${TEST_TARGETS}
 bazel test --config=python_poller_engine ${BAZEL_FLAGS} ${TEST_TARGETS}

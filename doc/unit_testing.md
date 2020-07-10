@@ -75,7 +75,7 @@ grpc_proto_library(
 ```
 
 
-By adding such a flag now a header file `echo_mock.grpc.pb.h` containing the mocked stub will also be generated. 
+By adding such a flag now a header file `echo_mock.grpc.pb.h` containing the mocked stub will also be generated.
 
 This header file can then be included in test files along with a gmock dependency.
 
@@ -102,7 +102,7 @@ class FakeClient {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
-    grpc::string msg("hello");
+    std::string msg("hello");
 
     std::unique_ptr<ClientReaderWriterInterface<EchoRequest, EchoResponse>>
         stream = stub_->BidiStream(&context);

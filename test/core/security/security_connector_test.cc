@@ -472,16 +472,13 @@ static void test_spiffe_id_peer_to_auth_context(void) {
   GPR_ASSERT(check_spiffe_id(invalid_ctx.get(), nullptr, false));
   tsi_peer_destruct(&invalid_peer);
   invalid_ctx.reset(DEBUG_LOCATION, "test");
-  // A valid SPIFFE ID with other URI fields should be plumbed.
+  // A valid SPIFFE ID should be plumbed.
   tsi_peer valid_peer;
-  std::vector<std::string> valid_spiffe_id = {"spiffe://foo.bar.com/wl",
-                                              "https://xyz"};
-  GPR_ASSERT(tsi_construct_peer(valid_spiffe_id.size(), &valid_peer) == TSI_OK);
-  for (i = 0; i < valid_spiffe_id.size(); i++) {
-    GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                   TSI_X509_URI_PEER_PROPERTY, valid_spiffe_id[i].c_str(),
-                   &valid_peer.properties[i]) == TSI_OK);
-  }
+  std::string valid_spiffe_id = "spiffe://foo.bar.com/wl";
+  GPR_ASSERT(tsi_construct_peer(1, &valid_peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_URI_PEER_PROPERTY, valid_spiffe_id.c_str(),
+                 &valid_peer.properties[0]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> valid_ctx =
       grpc_ssl_peer_to_auth_context(&valid_peer,
                                     GRPC_SSL_TRANSPORT_SECURITY_TYPE);
@@ -507,6 +504,25 @@ static void test_spiffe_id_peer_to_auth_context(void) {
   GPR_ASSERT(check_spiffe_id(multiple_ctx.get(), nullptr, false));
   tsi_peer_destruct(&multiple_peer);
   multiple_ctx.reset(DEBUG_LOCATION, "test");
+  // A valid SPIFFE certificate should only has one URI SAN field.
+  // SPIFFE ID should not be plumbed if there are multiple URIs.
+  tsi_peer multiple_uri_peer;
+  std::vector<std::string> multiple_uri = {"spiffe://foo.bar.com/wl",
+                                           "https://xyz", "ssh://foo.bar.com/"};
+  GPR_ASSERT(tsi_construct_peer(multiple_uri.size(), &multiple_uri_peer) ==
+             TSI_OK);
+  for (i = 0; i < multiple_spiffe_id.size(); i++) {
+    GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                   TSI_X509_URI_PEER_PROPERTY, multiple_uri[i].c_str(),
+                   &multiple_uri_peer.properties[i]) == TSI_OK);
+  }
+  grpc_core::RefCountedPtr<grpc_auth_context> multiple_uri_ctx =
+      grpc_ssl_peer_to_auth_context(&multiple_uri_peer,
+                                    GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  GPR_ASSERT(multiple_uri_ctx != nullptr);
+  GPR_ASSERT(check_spiffe_id(multiple_uri_ctx.get(), nullptr, false));
+  tsi_peer_destruct(&multiple_uri_peer);
+  multiple_uri_ctx.reset(DEBUG_LOCATION, "test");
 }
 
 static const char* roots_for_override_api = "roots for override api";
