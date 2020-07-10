@@ -148,11 +148,11 @@ GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials* creds);
    valid throughout the lifetime of the returned grpc_channel_credentials
    object. It is expected that the call credentials object was generated
    according to the Application Default Credentials mechanism and asserts the
-   identity of default service account of the machine. Supplying any other sort
-   of call credential may result in RPCs suddenly and unexpectedly failing.
+   identity of the default service account of the machine. Supplying any other
+   sort of call credential may result in RPCs suddenly and unexpectedly failing.
 
    If nullptr is supplied, the returned call credentials object will use a call
-   credentials object based on the default service account of the VM.
+   credentials object based on the Application Default Credentials mechanism.
 */
 GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(
     grpc_call_credentials* call_credentials);
