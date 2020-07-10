@@ -73,16 +73,9 @@ class XdsRoutingLbConfig : public LoadBalancingPolicy::Config {
 
   const RouteTable& route_table() const { return route_table_; }
 
-  void SetUserAgent(std::string user_agent) {
-    user_agent_ = std::move(user_agent);
-  }
-  const std::string& UserAgent() const { return user_agent_; }
-
  private:
   ActionMap action_map_;
   RouteTable route_table_;
-  std::string
-      user_agent_;  // Storing user_agent generated from args from http layer.
 };
 
 // xds_routing LB policy.
@@ -95,9 +88,6 @@ class XdsRoutingLb : public LoadBalancingPolicy {
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
-  void SetUserAgent(std::string user_agent) {
-    config_->SetUserAgent(user_agent);
-  }
 
  private:
   // A simple wrapper for ref-counting a picker from the child policy.
@@ -127,14 +117,18 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     // Maintains an ordered xds route table as provided by RDS response.
     using RouteTable = std::vector<Route>;
 
-    explicit RoutePicker(RouteTable route_table,
+    explicit RoutePicker(RouteTable route_table, std::string user_agent,
                          RefCountedPtr<XdsRoutingLbConfig> config)
-        : route_table_(std::move(route_table)), config_(std::move(config)) {}
+        : route_table_(std::move(route_table)),
+          user_agent_(std::move(user_agent)),
+          config_(std::move(config)) {}
 
     PickResult Pick(PickArgs args) override;
 
    private:
     RouteTable route_table_;
+    // Storing user_agent generated from args from http layer.
+    std::string user_agent_;
     // Take a reference to config so that we can use
     // XdsApi::RdsUpdate::RdsRoute::Matchers from it.
     RefCountedPtr<XdsRoutingLbConfig> config_;
@@ -223,6 +217,9 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 
   // Children.
   std::map<std::string, OrphanablePtr<XdsRoutingChild>> actions_;
+
+  // Storing user_agent generated from args from http layer.
+  std::string user_agent_;
 };
 
 //
@@ -336,7 +333,7 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 
 XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
   // Set user_agent string to the stored string constrcuted from args.
-  args.user_agent = config_->UserAgent();
+  args.user_agent = user_agent_;
   for (const Route& route : route_table_) {
     // Path matching.
     if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
@@ -362,7 +359,9 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
 // XdsRoutingLb
 //
 
-XdsRoutingLb::XdsRoutingLb(Args args) : LoadBalancingPolicy(std::move(args)) {}
+XdsRoutingLb::XdsRoutingLb(Args args)
+    : user_agent_(user_agent_string_from_args(args.args, "chttp2")),
+      LoadBalancingPolicy(std::move(args)) {}
 
 XdsRoutingLb::~XdsRoutingLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
@@ -487,7 +486,8 @@ void XdsRoutingLb::UpdateStateLocked() {
         }
         route_table.push_back(std::move(route));
       }
-      picker = absl::make_unique<RoutePicker>(std::move(route_table), config_);
+      picker = absl::make_unique<RoutePicker>(std::move(route_table),
+                                              user_agent_, config_);
       break;
     }
     case GRPC_CHANNEL_CONNECTING:
@@ -602,9 +602,6 @@ void XdsRoutingLb::XdsRoutingChild::UpdateLocked(
             child_policy_.get());
   }
   child_policy_->UpdateLocked(std::move(update_args));
-  // Store user agent string constructed from args.
-  xds_routing_policy_->SetUserAgent(
-      user_agent_string_from_args(args, "chttp2"));
 }
 
 void XdsRoutingLb::XdsRoutingChild::ExitIdleLocked() {
