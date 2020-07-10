@@ -102,11 +102,11 @@ class GrpcPolledFdWindows {
   GrpcPolledFdWindows(ares_socket_t as,
                       std::shared_ptr<WorkSerializer> work_serializer,
                       int address_family, int socket_type)
-      : name_(absl::StrFormat("c-ares socket: %" PRIdPTR, as)),
-        work_serializer_(std::move(work_serializer)),
+      : work_serializer_(std::move(work_serializer)),
         read_buf_(grpc_empty_slice()),
         write_buf_(grpc_empty_slice()),
         tcp_write_state_(WRITE_IDLE),
+        name_(absl::StrFormat("c-ares socket: %" PRIdPTR, as)),
         gotten_into_driver_list_(false),
         address_family_(address_family),
         socket_type_(socket_type) {
