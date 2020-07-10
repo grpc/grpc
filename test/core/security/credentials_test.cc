@@ -1572,7 +1572,7 @@ struct fake_call_creds : public grpc_call_credentials {
                             grpc_closure* on_request_metadata,
                             grpc_error** error) {
     grpc_credentials_mdelem_array_add(md_array, dummy_md_);
-    return false;
+    return true;
   }
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
