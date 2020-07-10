@@ -1404,7 +1404,6 @@ TEST_F(SingleBalancerTest, ServiceNameFromLbPolicyConfig) {
       "}";
 
   SetNextResolutionAllBalancers(kServiceConfigWithTarget);
-  const size_t kNumRpcsPerAddress = 1;
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       0);
