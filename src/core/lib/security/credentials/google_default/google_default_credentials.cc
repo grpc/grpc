@@ -291,9 +291,9 @@ static void update_tenancy() {
   gpr_mu_unlock(&g_state_mu);
 }
 
-static void default_call_creds(grpc_core::RefCountedPtr<grpc_call_credentials>* call_creds,
-                               grpc_error* error)
-{
+static void default_call_creds(
+    grpc_core::RefCountedPtr<grpc_call_credentials>* call_creds,
+    grpc_error* error) {
   grpc_error* err;
 
   /* First, try the environment variable. */
@@ -319,14 +319,16 @@ static void default_call_creds(grpc_core::RefCountedPtr<grpc_call_credentials>* 
   }
 }
 
-grpc_channel_credentials* grpc_google_default_credentials_create(grpc_call_credentials* call_credentials) {
+grpc_channel_credentials* grpc_google_default_credentials_create(
+    grpc_call_credentials* call_credentials) {
   grpc_channel_credentials* result = nullptr;
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds(call_credentials);
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Failed to create Google credentials");
   grpc_core::ExecCtx exec_ctx;
 
-  GRPC_API_TRACE("grpc_google_default_credentials_create(%p)", 1, (call_credentials));
+  GRPC_API_TRACE("grpc_google_default_credentials_create(%p)", 1,
+                 (call_credentials));
 
   update_tenancy();
 
