@@ -29,32 +29,29 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include <stdlib.h>
+#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <thread>
-#include <unistd.h>
-#include <stdlib.h>
 
-#include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "include/grpcpp/ext/proto_server_reflection_plugin_impl.h"
 #include "src/cpp/server/channelz/channelz_service.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/test_credentials_provider.h"
 #include "test/cpp/util/subprocess.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
-
+using grpc::Channel;
+using grpc::ClientContext;
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using grpc::Channel;
-using grpc::ClientContext;
-
 
 #include <gtest/gtest.h>
-
 
 // Test variables
 std::string server_address("0.0.0.0:10000");
@@ -63,8 +60,8 @@ std::string custom_credentials_type("INSECURE_CREDENTIALS");
 // Creata an echo server - randomly delay 0.1 to 0.2 s
 class EchoServerImpl final : public grpc::testing::TestService::Service {
   Status EmptyCall(::grpc::ServerContext* context,
-              const grpc::testing::Empty* request,
-              grpc::testing::Empty* response) {
+                   const grpc::testing::Empty* request,
+                   grpc::testing::Empty* response) {
     srand(unsigned(time(0)));
     unsigned int server_delay_microseconds = 100000;
     server_delay_microseconds += rand() % server_delay_microseconds;
@@ -82,8 +79,9 @@ void RunServer() {
   grpc::EnableDefaultHealthCheckService(true);
   grpc_impl::reflection::InitProtoReflectionServerBuilderPlugin();
   grpc::ServerBuilder builder;
-  auto server_creds = grpc::testing::GetCredentialsProvider()->
-      GetServerCredentials(custom_credentials_type);
+  auto server_creds =
+      grpc::testing::GetCredentialsProvider()->GetServerCredentials(
+          custom_credentials_type);
   builder.AddListeningPort(server_address, server_creds);
 
   // forces channelz and channel tracing to be enabled.
@@ -112,6 +110,7 @@ class EchoClientImpl {
     Status status = stub_->EmptyCall(&context, request, &response);
     return status;
   }
+
  private:
   std::unique_ptr<grpc::testing::TestService::Stub> stub_;
 };
@@ -121,10 +120,9 @@ void RunClient(std::string client_id) {
   // std::string target_str = "localhost:10000";
   grpc::ChannelArguments channel_args;
   std::shared_ptr<grpc::ChannelCredentials> channel_creds =
-    grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
-      custom_credentials_type, &channel_args);
-  EchoClientImpl echoer(
-      grpc::CreateChannel(server_address, channel_creds));
+      grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
+          custom_credentials_type, &channel_args);
+  EchoClientImpl echoer(grpc::CreateChannel(server_address, channel_creds));
   unsigned int client_echo_sleep_second = 1;
 
   std::cout << "Client " << client_id << " is echoing!" << std::endl;
@@ -146,15 +144,19 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   std::thread client_thread_1(RunClient, "1");
   std::thread client_thread_2(RunClient, "2");
   float run_services_seconds = 5.0;
-  std::cout << "Run echo service for " << run_services_seconds << " seconds." << std::endl;
+  std::cout << "Run echo service for " << run_services_seconds << " seconds."
+            << std::endl;
   sleep(run_services_seconds);
 
   // Run the channelz sampler
-  std::string channelz_sampler_bin_path = "./bazel-bin/test/cpp/util/channelz_sampler";
+  std::string channelz_sampler_bin_path =
+      "./bazel-bin/test/cpp/util/channelz_sampler";
   grpc::SubProcess* test_driver = new grpc::SubProcess(
-      {std::move(channelz_sampler_bin_path), "--server_address=" + server_address,
+      {std::move(channelz_sampler_bin_path),
+       "--server_address=" + server_address,
        "--custom_credentials_type=" + custom_credentials_type});
-  while (true);
+  while (true)
+    ;
   EXPECT_TRUE(true);
 }
 
@@ -163,4 +165,3 @@ int main(int argc, char** argv) {
   int ret = RUN_ALL_TESTS();
   return ret;
 }
-
