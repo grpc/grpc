@@ -1,21 +1,29 @@
-# TODO(rbellevi): Fix this wide-open visibility.
-package(default_visibility = ["//visibility:public"])
+# Copyright 2020 The gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package(default_visibility = ["//src/python:__subpackages__"])
 
 load("//bazel:cython_library.bzl", "pyx_library")
 
-# TODO: Move this build file up a directory to ensure that this
-# points to '.', not a directory above the package root.
 NON_BAZEL_ROOT = "../"
 
-# TODO: Move BUILD file up a directory
 cc_library(
-    # TODO: Better name?
     name = "protoc_lib",
     srcs = ["main.cc"],
     hdrs = ["main.h"],
     deps = [
       "@com_google_protobuf//:protoc_lib",
-      # I really wish there were a disaggregated target to use here.
       "//src/compiler:grpc_plugin_support",
     ],
     includes = [NON_BAZEL_ROOT],
@@ -36,7 +44,6 @@ py_library(
       "@com_google_protobuf//:protobuf_python",
       "//src/python/grpcio/grpc:grpcio",
     ],
-    # TODO: Think about whether we should include well-known protos.
     srcs_version = "PY2AND3",
     imports = [NON_BAZEL_ROOT],
 )
