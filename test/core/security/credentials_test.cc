@@ -1556,26 +1556,30 @@ static void test_google_default_creds_call_creds_specified(void) {
 
 struct fake_call_creds : public grpc_call_credentials {
  public:
-  // TODO: Keep a single md_elem?
-  explicit fake_call_creds() : grpc_call_credentials("fake") {}
+  explicit fake_call_creds() : grpc_call_credentials("fake") {
+    grpc_slice key = grpc_slice_from_static_string("foo");
+    grpc_slice value = grpc_slice_from_static_string("oof");
+    dummy_md_ = grpc_mdelem_from_slices(key, value);
+    grpc_slice_unref(key);
+    grpc_slice_unref(value);
+  }
+
+  ~fake_call_creds() { GRPC_MDELEM_UNREF(dummy_md_); }
 
   bool get_request_metadata(grpc_polling_entity* pollent,
                             grpc_auth_metadata_context context,
                             grpc_credentials_mdelem_array* md_array,
                             grpc_closure* on_request_metadata,
                             grpc_error** error) {
-    grpc_slice key = grpc_slice_from_static_string("foo");
-    grpc_slice value = grpc_slice_from_static_string("oof");
-    grpc_mdelem dummy_md = grpc_mdelem_from_slices(key, value);
-    grpc_slice_unref(key);
-    grpc_slice_unref(value);
-    grpc_credentials_mdelem_array_add(md_array, dummy_md);
-    GRPC_MDELEM_UNREF(dummy_md);
+    grpc_credentials_mdelem_array_add(md_array, dummy_md_);
     return false;
   }
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
                                    grpc_error* error) {}
+
+ private:
+  grpc_mdelem dummy_md_;
 };
 
 static void test_google_default_creds_not_default(void) {
