@@ -29,6 +29,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include <google/protobuf/text_format.h>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -40,7 +41,6 @@
 #include "src/proto/grpc/channelz/channelz.pb.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
-#include <google/protobuf/text_format.h>
 
 DEFINE_string(server_address, "", "channelz server address");
 DEFINE_string(custom_credentials_type, "", "custom credentials type");
@@ -66,7 +66,7 @@ using grpc::channelz::v1::GetTopChannelsResponse;
 using grpc::ClientContext;
 using grpc::Status;
 
-class ChannelzSampler final{
+class ChannelzSampler final {
  public:
   // Get server_id of a server
   int64_t GetServerID(const grpc::channelz::v1::Server& server) {
@@ -79,7 +79,8 @@ class ChannelzSampler final{
   }
 
   // Get subchannel_id of a subchannel
-  inline int64_t GetSubchannelID(const grpc::channelz::v1::Subchannel& subchannel) {
+  inline int64_t GetSubchannelID(
+      const grpc::channelz::v1::Subchannel& subchannel) {
     return subchannel.ref().subchannel_id();
   }
 
@@ -99,13 +100,14 @@ class ChannelzSampler final{
     return get_channel_response.channel();
   }
 
-    // Get a subchannel based on subchannel_id
+  // Get a subchannel based on subchannel_id
   grpc::channelz::v1::Subchannel GetSubchannelRPC(int64_t subchannel_id) {
     GetSubchannelRequest get_subchannel_request;
     get_subchannel_request.set_subchannel_id(subchannel_id);
     GetSubchannelResponse get_subchannel_response;
     ClientContext get_subchannel_context;
-    channelz_stub->GetSubchannel(&get_subchannel_context, get_subchannel_request,
+    channelz_stub->GetSubchannel(&get_subchannel_context,
+                                 get_subchannel_request,
                                  &get_subchannel_response);
     return get_subchannel_response.subchannel();
   }
@@ -117,7 +119,7 @@ class ChannelzSampler final{
     GetSocketResponse get_socket_response;
     ClientContext get_socket_context;
     channelz_stub->GetSocket(&get_socket_context, get_socket_request,
-                                 &get_socket_response);
+                             &get_socket_response);
     return get_socket_response.socket();
   }
 
@@ -201,13 +203,13 @@ class ChannelzSampler final{
   }
 
   // Set up the channelz sampler client
-  void Setup(std::string custom_credentials_type, std::string server_address){
+  void Setup(std::string custom_credentials_type, std::string server_address) {
     grpc::ChannelArguments channel_args;
     std::shared_ptr<grpc::ChannelCredentials> channel_creds =
-      grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
-          custom_credentials_type, &channel_args);
+        grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
+            custom_credentials_type, &channel_args);
     std::shared_ptr<grpc::Channel> channel =
-      CreateChannel(server_address, channel_creds);
+        CreateChannel(server_address, channel_creds);
     channelz_stub = grpc::channelz::v1::Channelz::NewStub(channel);
   }
 
@@ -223,7 +225,8 @@ class ChannelzSampler final{
       Status status = channelz_stub->GetServers(
           &get_server_context, get_server_request, &get_server_response);
       if (!status.ok()) {
-        gpr_log(GPR_ERROR, "%s", get_server_context.debug_error_string().c_str());
+        gpr_log(GPR_ERROR, "%s",
+                get_server_context.debug_error_string().c_str());
         return false;
       }
       for (const auto& _server : get_server_response.server()) {
@@ -238,7 +241,6 @@ class ChannelzSampler final{
     std::cout << "Number of servers = " << all_servers.size() << std::endl;
     return true;
   }
-
 
   // Get sockets that belongs to servers
   // Store sockets for dumping data
@@ -267,7 +269,8 @@ class ChannelzSampler final{
                                                     get_top_channels_request,
                                                     &get_top_channels_response);
       if (!status.ok()) {
-        gpr_log(GPR_ERROR, "%s", get_top_channels_context.debug_error_string().c_str());
+        gpr_log(GPR_ERROR, "%s",
+                get_top_channels_context.debug_error_string().c_str());
         return false;
       }
       for (const auto& _topchannel : get_top_channels_response.channel()) {
@@ -280,7 +283,8 @@ class ChannelzSampler final{
         break;
       }
     }
-    std::cout << "Number of top channels = " << top_channels.size() << std::endl;
+    std::cout << "Number of top channels = " << top_channels.size()
+              << std::endl;
     return true;
   }
 
@@ -316,13 +320,16 @@ class ChannelzSampler final{
   void DumpingData() {
     std::string data_str;
     for (const auto& _channel : all_channels) {
-      std::cout << "channel " << GetChannelID(_channel) << " data:" << std::endl;
+      std::cout << "channel " << GetChannelID(_channel)
+                << " data:" << std::endl;
       ::google::protobuf::TextFormat::PrintToString(_channel.data(), &data_str);
       printf("%s", data_str.c_str());
     }
     for (const auto& _subchannel : all_subchannels) {
-      std::cout << "subchannel " << GetSubchannelID(_subchannel) << " data:" << std::endl;
-      ::google::protobuf::TextFormat::PrintToString(_subchannel.data(), &data_str);
+      std::cout << "subchannel " << GetSubchannelID(_subchannel)
+                << " data:" << std::endl;
+      ::google::protobuf::TextFormat::PrintToString(_subchannel.data(),
+                                                    &data_str);
       printf("%s", data_str.c_str());
     }
     for (const auto& _server : all_servers) {
@@ -368,4 +375,3 @@ int main(int argc, char** argv) {
   channelz_sampler.DumpingData();
   return 0;
 }
-

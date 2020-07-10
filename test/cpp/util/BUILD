@@ -303,52 +303,52 @@ grpc_cc_binary(
         "gflags",
     ],
     deps = [
-				":grpc++_proto_reflection_desc_db",
-				":grpc_cli_libs",
-				":test_config",
-				"//:grpc++",
-				"//src/proto/grpc/reflection/v1alpha:reflection_proto",
-				],
-		)
+        ":grpc++_proto_reflection_desc_db",
+        ":grpc_cli_libs",
+        ":test_config",
+        "//:grpc++",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+    ],
+)
 
 grpc_cc_binary(
-		name = "channelz_sampler",
-		srcs = ["channelz_sampler.cc"],
-		external_deps = [
-				"gflags",
-		],
-		language = "C++",
-		deps = [
-				"//:gpr",
-				"//:grpc++",
-				"//:grpcpp_channelz",
-				"//src/proto/grpc/channelz:channelz_proto",
-				"//test/cpp/util:test_config",
-				"//test/cpp/util:test_util",
-		],
+    name = "channelz_sampler",
+    srcs = ["channelz_sampler.cc"],
+    external_deps = [
+        "gflags",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc++",
+        "//:grpcpp_channelz",
+        "//src/proto/grpc/channelz:channelz_proto",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
 )
 
 grpc_cc_test(
-		name = "channelz_sampler_test",
-		srcs = [
-				"channelz_sampler_test.cc",
-		],
-		data = [
-				":channelz_sampler",
-		],
-		external_deps = [
-				"gflags",
-				"gtest",
-		],
-		deps = [
-				"//:gpr",
-				"//:grpc++",
-				"//:grpc++_reflection",
-				"//:grpcpp_channelz",
-				"//src/proto/grpc/channelz:channelz_proto",
-				"//src/proto/grpc/testing:test_proto",
-				"//test/core/util:grpc_test_util_base",
-				"//test/cpp/util:test_config",
-				"//test/cpp/util:test_util",
-		],
+    name = "channelz_sampler_test",
+    srcs = [
+        "channelz_sampler_test.cc",
+    ],
+    data = [
+        ":channelz_sampler",
+    ],
+    external_deps = [
+        "gflags",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//:grpcpp_channelz",
+        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/core/util:grpc_test_util_base",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
 )
