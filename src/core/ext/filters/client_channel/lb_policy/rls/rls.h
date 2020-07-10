@@ -1,20 +1,19 @@
-/*
- *
- * Copyright 2020 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 /// Implementation of the Route Lookup Service (RLS) LB policy
 ///
@@ -49,8 +48,11 @@ class RlsLbFactory;
 
 class RlsLb : public LoadBalancingPolicy {
  public:
+  /// Map of key values extracted by builders from the RPC initial metadata.
   using KeyMap = std::unordered_map<std::string, std::string>;
 
+  /// A KeyMapBuilder accepts a config that specifies how the keys should be
+  /// built, then generate key map for calls based on their initial metadata.
   class KeyMapBuilder {
    public:
     KeyMapBuilder(const Json& config, grpc_error** error);
@@ -58,11 +60,17 @@ class RlsLb : public LoadBalancingPolicy {
     KeyMap BuildKeyMap(const MetadataInterface* initial_metadata) const;
 
    private:
-    std::unordered_map<std::string, std::vector<std::pair<std::string, int>>>
+    std::unordered_map<
+        std::string /*path*/,
+        std::vector<std::pair<std::string /*header_name*/, int /*priority*/>>>
         pattern_;
   };
 
-  using KeyMapBuilderMap = std::unordered_map<std::string, KeyMapBuilder>;
+  /// A map from path name to a KeyMapBuilder instance that corresponds to that
+  /// path. Note that by the design of the RLS system, the method portion of a
+  /// path can be wildcard (*).
+  using KeyMapBuilderMap =
+      std::unordered_map<std::string /*path*/, KeyMapBuilder>;
 
   enum class RequestProcessingStrategy {
     /// Query the RLS and process the request using target returned by the
@@ -96,25 +104,22 @@ class RlsLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  class ChildPolicyWrapper;
-
-  class RequestMapEntry;
+  class RlsRequest;
 
   // Key to access entries in the cache and the request map.
-  struct Key {
+  struct RequestKey {
     std::string path;
     KeyMap key_map;
 
-    bool operator==(const Key& rhs) const;
+    bool operator==(const RequestKey& rhs) const {
+      return (path == rhs.path && key_map == rhs.key_map);
+    }
   };
 
   class KeyHasher {
    public:
-    size_t operator()(const Key& key) const;
+    size_t operator()(const RequestKey& key) const;
   };
-
-  using RequestMap =
-      std::unordered_map<Key, OrphanablePtr<RequestMapEntry>, KeyHasher>;
 
   struct ResponseInfo {
     grpc_error* error;
@@ -144,7 +149,7 @@ class RlsLb : public LoadBalancingPolicy {
      public:
       RefHandler(ChildPolicyWrapper* child, RlsLb* parent);
 
-      ChildPolicyWrapper* child() const;
+      ChildPolicyWrapper* child() const { return child_.get(); }
 
      private:
       OrphanablePtr<ChildPolicyWrapper> child_;
@@ -157,9 +162,9 @@ class RlsLb : public LoadBalancingPolicy {
     /// policy (i.e. picker_ == nullptr), the pick will be failed.
     PickResult Pick(PickArgs args);
 
-    /// Checks if the child policy is ready to process a pick request (i.e. the
-    /// picker is not nullptr).
-    bool IsReady() const;
+    /// Checks if the child policy has provided a picker to process a pick
+    /// request (i.e. the picker_ is not nullptr).
+    bool IsPickerAvailable() const;
 
     /// Validate the configuration of the child policy with the extra target
     /// name field. If the child policy configuration does not validate, a
@@ -218,7 +223,7 @@ class RlsLb : public LoadBalancingPolicy {
   /// An LRU cache with adjustable size.
   class Cache {
    public:
-    using Iterator = std::list<Key>::iterator;
+    using Iterator = std::list<RequestKey>::iterator;
 
     class Entry : public InternallyRefCounted<Entry> {
      public:
@@ -248,13 +253,13 @@ class RlsLb : public LoadBalancingPolicy {
 
       /// Set the iterator to the lru_list element of the cache corresponding to
       /// this entry.
-      void set_iterator(Cache::Iterator iterator);
+      void set_iterator(Cache::Iterator iterator) { lru_iterator_ = iterator; }
       /// Get the iterator to the lru_list element of the cache corresponding to
       /// this entry.
-      Cache::Iterator iterator() const;
+      Cache::Iterator iterator() const { return lru_iterator_; }
 
      private:
-      void OnBackoffTimerLocked(grpc_error* error);
+      void OnBackoffTimerLocked();
 
       // Callback when the backoff timer is fired.
       static void OnBackoffTimer(void* args, grpc_error* error);
@@ -288,12 +293,13 @@ class RlsLb : public LoadBalancingPolicy {
     explicit Cache(RlsLb* lb_policy);
 
     /// Find an entry from the cache that corresponds to a key. If an entry is
-    /// not found, nullptr is returned. Otherwise, the entry's usage is updated.
-    Entry* Find(Key key);
+    /// not found, nullptr is returned. Otherwise, the entry is considered
+    /// recently used and its order in the LRU list of the cache is updated.
+    Entry* Find(RequestKey key);
 
     /// Add an entry to the cache. If an entry with the same key exists, the
     /// method is a no-op.
-    void Add(Key key, OrphanablePtr<Entry> entry);
+    void Add(RequestKey key, OrphanablePtr<Entry> entry);
 
     /// Resize the cache. If the new cache size is greater than the current size
     /// of the cache, do nothing. Otherwise, evict the oldest entries that
@@ -312,15 +318,15 @@ class RlsLb : public LoadBalancingPolicy {
     RlsLb* lb_policy_;
 
     int64_t size_bytes_ = 0;
-    int element_size_ = 0;
+    int size_elements_ = 0;
 
-    std::list<Key> lru_list_;
-    std::unordered_map<Key, OrphanablePtr<Entry>, KeyHasher> map_;
+    std::list<RequestKey> lru_list_;
+    std::unordered_map<RequestKey, OrphanablePtr<Entry>, KeyHasher> map_;
     grpc_timer cleanup_timer_;
     grpc_closure timer_callback_;
 
     const int kCacheEntrySize =
-        (2 * sizeof(Key) + sizeof(Entry) + sizeof(OrphanablePtr<Entry>));
+        (2 * sizeof(RequestKey) + sizeof(Entry) + sizeof(OrphanablePtr<Entry>));
   };
 
   class ControlChannel : public InternallyRefCounted<ControlChannel> {
@@ -335,7 +341,7 @@ class RlsLb : public LoadBalancingPolicy {
     void ReportResponseLocked(bool response_succeeded);
 
     /// Check if a proposed RLS call should be throttled.
-    bool ShouldThrottle();
+    bool ShouldThrottle() { return throttle_.ShouldThrottle(); }
 
     /// Resets the channel's backoff.
     void ResetBackoff();
@@ -393,14 +399,14 @@ class RlsLb : public LoadBalancingPolicy {
 
   /// An entry in the request map that handles the state of an RLS call
   /// corresponding to a particular RLS request.
-  class RequestMapEntry : public InternallyRefCounted<RequestMapEntry> {
+  class RlsRequest : public InternallyRefCounted<RlsRequest> {
    public:
     /// Creates the entry. Make a call on channel with the fields of the request
     /// coming from key.
-    RequestMapEntry(RefCountedPtr<RlsLb> lb_policy, RlsLb::Key key,
-                    RefCountedPtr<ControlChannel> channel,
-                    std::unique_ptr<BackOff> backoff_state);
-    ~RequestMapEntry();
+    RlsRequest(RefCountedPtr<RlsLb> lb_policy, RlsLb::RequestKey key,
+               RefCountedPtr<ControlChannel> channel,
+               std::unique_ptr<BackOff> backoff_state);
+    ~RlsRequest();
 
     /// Shutdown the entry. Cancel the RLS call on the fly if applicable. After
     /// shutdown, further call responses are no longer reported to the lb
@@ -408,12 +414,6 @@ class RlsLb : public LoadBalancingPolicy {
     void Orphan() override;
 
    private:
-    struct Response {
-      grpc_error* error;
-      std::string target;
-      std::string header_data;
-    };
-
     static void StartCall(void* arg, grpc_error* error);
 
     /// Callback to be called by core when the call is completed.
@@ -424,11 +424,10 @@ class RlsLb : public LoadBalancingPolicy {
 
     void MakeRequestProto();
 
-    grpc_error* ParseResponseProto(std::string* target,
-                                   std::string* header_data);
+    ResponseInfo ParseResponseProto();
 
     RefCountedPtr<RlsLb> lb_policy_;
-    RlsLb::Key key_;
+    RlsLb::RequestKey key_;
     RefCountedPtr<ControlChannel> channel_;
 
     std::unique_ptr<BackOff> backoff_state_;
@@ -438,13 +437,18 @@ class RlsLb : public LoadBalancingPolicy {
     grpc_closure call_start_cb_;
     grpc_closure call_complete_cb_;
     grpc_call* call_ = nullptr;
-    grpc_byte_buffer* message_send_ = nullptr;
-    grpc_metadata_array initial_metadata_recv_;
-    grpc_byte_buffer* message_recv_ = nullptr;
-    grpc_metadata_array trailing_metadata_recv_;
+    grpc_byte_buffer* send_message_ = nullptr;
+    grpc_metadata_array recv_initial_metadata_;
+    grpc_byte_buffer* recv_message_ = nullptr;
+    grpc_metadata_array recv_trailing_metadata_;
     grpc_status_code status_recv_;
     grpc_slice status_details_recv_;
   };
+
+  /// Maps an RLS request key to a RequestMap object that represents a pending
+  /// RLS request.
+  using RequestMap =
+      std::unordered_map<RequestKey, OrphanablePtr<RlsRequest>, KeyHasher>;
 
   using ChildPolicyMap =
       std::unordered_map<std::string, ChildPolicyWrapper::RefHandler*>;
@@ -462,7 +466,7 @@ class RlsLb : public LoadBalancingPolicy {
   ///
   /// The method returns false if a new RLS call is throttled; otherwise it
   /// returns true.
-  bool MaybeMakeRlsCall(const Key& key,
+  bool MaybeMakeRlsCall(const RequestKey& key,
                         std::unique_ptr<BackOff>* backoff_state = nullptr);
 
   /// Update picker with the channel to trigger reprocessing of pending picks.
@@ -476,9 +480,9 @@ class RlsLb : public LoadBalancingPolicy {
   std::recursive_mutex mu_;
   bool is_shutdown_ = false;
 
-  RefCountedPtr<RlsLbConfig> current_config_;
-  ServerAddressList current_addresses_;
-  grpc_channel_args* current_channel_args_ = nullptr;
+  RefCountedPtr<RlsLbConfig> config_;
+  ServerAddressList addresses_;
+  grpc_channel_args* channel_args_ = nullptr;
   Cache cache_;
   RequestMap request_map_;
   RefCountedPtr<ControlChannel> channel_;
@@ -524,26 +528,16 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
 
  private:
   RlsLb::KeyMapBuilderMap key_map_builder_map_;
-
   std::string lookup_service_;
-
   grpc_millis lookup_service_timeout_;
-
   grpc_millis max_age_;
-
   grpc_millis stale_age_;
-
   int64_t cache_size_bytes_;
-
   std::string default_target_;
-
   RlsLb::RequestProcessingStrategy request_processing_strategy_;
-
   Json child_policy_config_;
-
   RefCountedPtr<LoadBalancingPolicy::Config>
       default_child_policy_parsed_config_;
-
   std::string child_policy_config_target_field_name_;
 
   friend RlsLbFactory;
