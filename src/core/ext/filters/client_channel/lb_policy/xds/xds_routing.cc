@@ -335,9 +335,8 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 }
 
 XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
+  // Set user_agent string to the stored string constrcuted from args.
   args.user_agent = config_->UserAgent();
-  gpr_log(GPR_INFO, "donna newly set user agent is %s",
-          args.user_agent.c_str());
   for (const Route& route : route_table_) {
     // Path matching.
     if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
