@@ -34,6 +34,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
+#include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -72,9 +73,16 @@ class XdsRoutingLbConfig : public LoadBalancingPolicy::Config {
 
   const RouteTable& route_table() const { return route_table_; }
 
+  void SetUserAgent(std::string user_agent) {
+    user_agent_ = std::move(user_agent);
+  }
+  const std::string& UserAgent() const { return user_agent_; }
+
  private:
   ActionMap action_map_;
   RouteTable route_table_;
+  std::string
+      user_agent_;  // Storing user_agent generated from args from http layer.
 };
 
 // xds_routing LB policy.
@@ -87,6 +95,9 @@ class XdsRoutingLb : public LoadBalancingPolicy {
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
+  void SetUserAgent(std::string user_agent) {
+    config_->SetUserAgent(user_agent);
+  }
 
  private:
   // A simple wrapper for ref-counting a picker from the child policy.
@@ -252,9 +263,23 @@ bool PathMatch(
 }
 
 bool HeaderMatchHelper(
-    const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher& header_matcher,
-    LoadBalancingPolicy::MetadataInterface* initial_metadata) {
-  auto value = GetMetadataValue(header_matcher.name, initial_metadata);
+    LoadBalancingPolicy::PickArgs args,
+    const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher&
+        header_matcher) {
+  absl::optional<absl::string_view> value;
+  if (header_matcher.name == "grpc-tags-bin" ||
+      header_matcher.name == "grpc-trace-bin" ||
+      header_matcher.name == "grpc-previous-rpc-attempts") {
+    value = absl::nullopt;
+  } else if (header_matcher.name == "path") {
+    value = args.path;
+  } else if (header_matcher.name == "content-type") {
+    value = "application/grpc";
+  } else if (header_matcher.name == "user-agent") {
+    value = args.user_agent;
+  } else {
+    value = GetMetadataValue(header_matcher.name, args.initial_metadata);
+  }
   if (!value.has_value()) {
     if (header_matcher.type == XdsApi::RdsUpdate::RdsRoute::Matchers::
                                    HeaderMatcher::HeaderMatcherType::PRESENT) {
@@ -296,7 +321,7 @@ bool HeadersMatch(
     const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
         header_matchers) {
   for (const auto& header_matcher : header_matchers) {
-    bool match = HeaderMatchHelper(header_matcher, args.initial_metadata);
+    bool match = HeaderMatchHelper(args, header_matcher);
     if (header_matcher.invert_match) match = !match;
     if (!match) return false;
   }
@@ -310,6 +335,9 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 }
 
 XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
+  args.user_agent = config_->UserAgent();
+  gpr_log(GPR_INFO, "donna newly set user agent is %s",
+          args.user_agent.c_str());
   for (const Route& route : route_table_) {
     // Path matching.
     if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
@@ -575,6 +603,9 @@ void XdsRoutingLb::XdsRoutingChild::UpdateLocked(
             child_policy_.get());
   }
   child_policy_->UpdateLocked(std::move(update_args));
+  // Store user agent string constructed from args.
+  xds_routing_policy_->SetUserAgent(
+      user_agent_string_from_args(args, "chttp2"));
 }
 
 void XdsRoutingLb::XdsRoutingChild::ExitIdleLocked() {

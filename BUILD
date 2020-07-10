@@ -1463,6 +1463,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_xds_api_header",
+        "grpc_http_filters",
     ],
 )
 

@@ -28,4 +28,6 @@ extern const grpc_channel_filter grpc_http_client_filter;
 /* Channel arg to determine maximum size of payload eligible for GET request */
 #define GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET "grpc.max_payload_size_for_get"
 
+std::string user_agent_string_from_args(const grpc_channel_args* args,
+                                        const char* transport_name);
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_CLIENT_HTTP_CLIENT_FILTER_H */

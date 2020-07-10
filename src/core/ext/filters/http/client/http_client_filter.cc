@@ -526,8 +526,8 @@ static size_t max_payload_size_from_args(const grpc_channel_args* args) {
   return kMaxPayloadSizeForGet;
 }
 
-static grpc_core::ManagedMemorySlice user_agent_from_args(
-    const grpc_channel_args* args, const char* transport_name) {
+std::string user_agent_string_from_args(const grpc_channel_args* args,
+                                        const char* transport_name) {
   std::vector<std::string> user_agent_fields;
 
   for (size_t i = 0; args && i < args->num_args; i++) {
@@ -556,8 +556,13 @@ static grpc_core::ManagedMemorySlice user_agent_from_args(
     }
   }
 
-  std::string user_agent_string = absl::StrJoin(user_agent_fields, " ");
-  return grpc_core::ManagedMemorySlice(user_agent_string.c_str());
+  return absl::StrJoin(user_agent_fields, " ");
+}
+
+static grpc_core::ManagedMemorySlice user_agent_from_args(
+    const grpc_channel_args* args, const char* transport_name) {
+  return grpc_core::ManagedMemorySlice(
+      user_agent_string_from_args(args, transport_name).c_str());
 }
 
 /* Constructor for channel_data */
