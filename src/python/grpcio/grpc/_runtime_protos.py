@@ -58,7 +58,7 @@ else:
         # NOTE: It's possible that we're encountering a transitive ImportError, so
         # we check for that and re-raise if so.
         if "grpc_tools" not in e.args[0]:
-            raise e
+            raise
         protos = _uninstalled_protos
         services = _uninstalled_services
         protos_and_services = _uninstalled_protos_and_services
