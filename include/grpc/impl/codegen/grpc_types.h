@@ -674,8 +674,10 @@ typedef struct grpc_op {
       const char** error_string;
     } recv_status_on_client;
     struct grpc_op_recv_close_on_server {
-      /** out argument, set to 1 if the call failed in any way (seen as a
-          cancellation on the server), or 0 if the call succeeded */
+      /** out argument, set to 1 if the call failed at the server for
+          a reason other than a non-OK status (cancel, deadline
+          exceeded, network failure, etc.), 0 otherwise (RPC processing ran to
+          completion and was able to provide any status from the server) */
       int* cancelled;
     } recv_close_on_server;
   } data;

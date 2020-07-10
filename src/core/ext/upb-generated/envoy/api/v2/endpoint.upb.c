@@ -30,7 +30,7 @@ static const upb_msglayout_field envoy_api_v2_ClusterLoadAssignment__fields[4] =
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
   {2, UPB_SIZE(12, 24), 0, 2, 11, 3},
   {4, UPB_SIZE(8, 16), 0, 1, 11, 1},
-  {5, UPB_SIZE(16, 32), 0, 0, 11, 3},
+  {5, UPB_SIZE(16, 32), 0, 0, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout envoy_api_v2_ClusterLoadAssignment_msginit = {

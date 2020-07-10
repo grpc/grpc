@@ -144,14 +144,8 @@ class PythonArtifact:
             environ['PYTHON'] = '/opt/python/{}/bin/python'.format(
                 self.py_version)
             environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.py_version)
-            # Platform autodetection for the manylinux1 image breaks so we set the
-            # defines ourselves.
-            # TODO(atash) get better platform-detection support in core so we don't
-            # need to do this manually...
-            environ['CFLAGS'] = '-DGPR_MANYLINUX1=1'
             environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
             environ['GRPC_BUILD_MANYLINUX_WHEEL'] = 'TRUE'
-
             return create_docker_jobspec(
                 self.name,
                 # NOTE(rbellevi): Do *not* update this without also ensuring the
@@ -160,9 +154,7 @@ class PythonArtifact:
                 (self.platform, self.arch),
                 'tools/run_tests/artifacts/build_artifact_python.sh',
                 environ=environ,
-                timeout_seconds=60 * 60,
-                docker_base_image='quay.io/pypa/manylinux1_i686'
-                if self.arch == 'x86' else 'quay.io/pypa/manylinux1_x86_64')
+                timeout_seconds=60 * 60)
         elif self.platform == 'windows':
             if 'Python27' in self.py_version:
                 environ['EXT_COMPILER'] = 'mingw32'
@@ -261,7 +253,8 @@ class CSharpExtArtifact:
                     cmake_arch_option = '-DOPENSSL_NO_ASM=ON'
                 return create_docker_jobspec(
                     self.name,
-                    'tools/dockerfile/grpc_artifact_centos6_%s' % self.arch,
+                    'tools/dockerfile/grpc_artifact_centos6_{}'.format(
+                        self.arch),
                     'tools/run_tests/artifacts/build_artifact_csharp.sh',
                     environ={'CMAKE_ARCH_OPTION': cmake_arch_option})
             else:
@@ -324,7 +317,8 @@ class ProtocArtifact:
             if self.platform == 'linux':
                 return create_docker_jobspec(
                     self.name,
-                    'tools/dockerfile/grpc_artifact_protoc',
+                    'tools/dockerfile/grpc_artifact_centos6_{}'.format(
+                        self.arch),
                     'tools/run_tests/artifacts/build_artifact_protoc.sh',
                     environ=environ)
             else:
@@ -358,8 +352,20 @@ def targets():
         CSharpExtArtifact('linux', 'android', arch_abi='armeabi-v7a'),
         CSharpExtArtifact('linux', 'android', arch_abi='x86'),
         CSharpExtArtifact('macos', 'ios'),
-        # TODO(https://github.com/grpc/grpc/issues/20283)
-        # Add manylinux2010_x86 targets once this issue is resolved.
+        PythonArtifact('manylinux2014', 'x64', 'cp35-cp35m'),
+        PythonArtifact('manylinux2014', 'x64', 'cp36-cp36m'),
+        PythonArtifact('manylinux2014', 'x64', 'cp37-cp37m'),
+        PythonArtifact('manylinux2014', 'x64', 'cp38-cp38'),
+        PythonArtifact('manylinux2014', 'x86', 'cp35-cp35m'),
+        PythonArtifact('manylinux2014', 'x86', 'cp36-cp36m'),
+        PythonArtifact('manylinux2014', 'x86', 'cp37-cp37m'),
+        PythonArtifact('manylinux2014', 'x86', 'cp38-cp38'),
+        PythonArtifact('manylinux2010', 'x64', 'cp27-cp27m'),
+        PythonArtifact('manylinux2010', 'x64', 'cp27-cp27mu'),
+        PythonArtifact('manylinux2010', 'x64', 'cp35-cp35m'),
+        PythonArtifact('manylinux2010', 'x64', 'cp36-cp36m'),
+        PythonArtifact('manylinux2010', 'x64', 'cp37-cp37m'),
+        PythonArtifact('manylinux2010', 'x64', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x86', 'cp27-cp27m'),
         PythonArtifact('manylinux2010', 'x86', 'cp27-cp27mu'),
         PythonArtifact('manylinux2010', 'x86', 'cp35-cp35m'),
@@ -372,12 +378,6 @@ def targets():
         PythonArtifact('linux_extra', 'armv6', '2.7'),
         PythonArtifact('linux_extra', 'armv6', '3.5'),
         PythonArtifact('linux_extra', 'armv6', '3.6'),
-        PythonArtifact('manylinux2010', 'x64', 'cp27-cp27m'),
-        PythonArtifact('manylinux2010', 'x64', 'cp27-cp27mu'),
-        PythonArtifact('manylinux2010', 'x64', 'cp35-cp35m'),
-        PythonArtifact('manylinux2010', 'x64', 'cp36-cp36m'),
-        PythonArtifact('manylinux2010', 'x64', 'cp37-cp37m'),
-        PythonArtifact('manylinux2010', 'x64', 'cp38-cp38'),
         PythonArtifact('macos', 'x64', 'python2.7'),
         PythonArtifact('macos', 'x64', 'python3.5'),
         PythonArtifact('macos', 'x64', 'python3.6'),

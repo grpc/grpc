@@ -40,6 +40,11 @@ echo "2) some change that was just merged in the submodule head has caused the f
 echo ""
 echo "submodule '${SUBMODULE_NAME}' is at commit: $(cd third_party/${SUBMODULE_NAME}; git rev-parse --verify HEAD)"
 
+if [ "${SUBMODULE_NAME}" == "abseil-cpp" ]
+then
+  src/abseil-cpp/preprocessed_builds.yaml.gen.py
+fi
+
 tools/buildgen/generate_projects.sh
 
 if [ "${SUBMODULE_NAME}" == "protobuf" ]

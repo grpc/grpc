@@ -19,10 +19,13 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_CFSTREAM
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <CoreFoundation/CoreFoundation.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/iomgr/error.h"
 
@@ -33,7 +36,6 @@ grpc_error* grpc_error_create_from_cferror(const char* file, int line,
   CFErrorRef error = static_cast<CFErrorRef>(arg);
   char buf_domain[MAX_ERROR_DESCRIPTION];
   char buf_desc[MAX_ERROR_DESCRIPTION];
-  char* error_msg;
   CFErrorDomain domain = CFErrorGetDomain((error));
   CFIndex code = CFErrorGetCode((error));
   CFStringRef desc = CFErrorCopyDescription((error));
@@ -41,12 +43,11 @@ grpc_error* grpc_error_create_from_cferror(const char* file, int line,
                      kCFStringEncodingUTF8);
   CFStringGetCString(desc, buf_desc, MAX_ERROR_DESCRIPTION,
                      kCFStringEncodingUTF8);
-  gpr_asprintf(&error_msg, "%s (error domain:%s, code:%ld, description:%s)",
-               custom_desc, buf_domain, code, buf_desc);
+  std::string error_msg =
+      absl::StrFormat("%s (error domain:%s, code:%ld, description:%s)",
+                      custom_desc, buf_domain, code, buf_desc);
   CFRelease(desc);
-  grpc_error* return_error = grpc_error_create(
-      file, line, grpc_slice_from_copied_string(error_msg), NULL, 0);
-  gpr_free(error_msg);
-  return return_error;
+  return grpc_error_create(
+      file, line, grpc_slice_from_copied_string(error_msg.c_str()), NULL, 0);
 }
 #endif /* GRPC_CFSTREAM */

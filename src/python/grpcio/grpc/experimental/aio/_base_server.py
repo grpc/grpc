@@ -14,11 +14,12 @@
 """Abstract base classes for server-side classes."""
 
 import abc
-from typing import Generic, Optional, Sequence
+from typing import Generic, Mapping, Optional, Iterable, Sequence
 
 import grpc
 
-from ._typing import MetadataType, RequestType, ResponseType
+from ._typing import RequestType, ResponseType
+from ._metadata import Metadata
 
 
 class Server(abc.ABC):
@@ -157,8 +158,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    async def send_initial_metadata(self,
-                                    initial_metadata: MetadataType) -> None:
+    async def send_initial_metadata(self, initial_metadata: Metadata) -> None:
         """Sends the initial metadata value to the client.
 
         This method need not be called by implementations if they have no
@@ -170,7 +170,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     async def abort(self, code: grpc.StatusCode, details: str,
-                    trailing_metadata: MetadataType) -> None:
+                    trailing_metadata: Metadata) -> None:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The code and details passed as arguments will supercede any existing
@@ -190,8 +190,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    async def set_trailing_metadata(self,
-                                    trailing_metadata: MetadataType) -> None:
+    async def set_trailing_metadata(self, trailing_metadata: Metadata) -> None:
         """Sends the trailing metadata for the RPC.
 
         This method need not be called by implementations if they have no
@@ -202,7 +201,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    def invocation_metadata(self) -> Optional[MetadataType]:
+    def invocation_metadata(self) -> Optional[Metadata]:
         """Accesses the metadata from the sent by the client.
 
         Returns:
@@ -251,4 +250,45 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         This method will override any compression configuration set during
         server creation or set on the call.
+        """
+
+    @abc.abstractmethod
+    def peer(self) -> str:
+        """Identifies the peer that invoked the RPC being serviced.
+
+        Returns:
+          A string identifying the peer that invoked the RPC being serviced.
+          The string format is determined by gRPC runtime.
+        """
+
+    @abc.abstractmethod
+    def peer_identities(self) -> Optional[Iterable[bytes]]:
+        """Gets one or more peer identity(s).
+
+        Equivalent to
+        servicer_context.auth_context().get(servicer_context.peer_identity_key())
+
+        Returns:
+          An iterable of the identities, or None if the call is not
+          authenticated. Each identity is returned as a raw bytes type.
+        """
+
+    @abc.abstractmethod
+    def peer_identity_key(self) -> Optional[str]:
+        """The auth property used to identify the peer.
+
+        For example, "x509_common_name" or "x509_subject_alternative_name" are
+        used to identify an SSL peer.
+
+        Returns:
+          The auth property (string) that indicates the
+          peer identity, or None if the call is not authenticated.
+        """
+
+    @abc.abstractmethod
+    def auth_context(self) -> Mapping[str, Iterable[bytes]]:
+        """Gets the auth context for the call.
+
+        Returns:
+          A map of strings to an iterable of bytes for each auth property.
         """

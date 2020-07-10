@@ -27,8 +27,9 @@ from ._call import _RPC_ALREADY_FINISHED_DETAILS, _RPC_HALF_CLOSED_DETAILS
 from ._call import _API_STYLE_ERROR
 from ._utils import _timeout_to_deadline
 from ._typing import (RequestType, SerializingFunction, DeserializingFunction,
-                      MetadataType, ResponseType, DoneCallbackType,
-                      RequestIterableType, ResponseIterableType)
+                      ResponseType, DoneCallbackType, RequestIterableType,
+                      ResponseIterableType)
+from ._metadata import Metadata
 
 _LOCAL_CANCELLATION_DETAILS = 'Locally cancelled by application!'
 
@@ -82,7 +83,7 @@ class ClientCallDetails(
 
     method: str
     timeout: Optional[float]
-    metadata: Optional[MetadataType]
+    metadata: Optional[Metadata]
     credentials: Optional[grpc.CallCredentials]
     wait_for_ready: Optional[bool]
 
@@ -248,7 +249,7 @@ class StreamStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
 
 
 class InterceptedCall:
-    """Base implementation for all intecepted call arities.
+    """Base implementation for all intercepted call arities.
 
     Interceptors might have some work to do before the RPC invocation with
     the capacity of changing the invocation parameters, and some work to do
@@ -370,7 +371,7 @@ class InterceptedCall:
     def time_remaining(self) -> Optional[float]:
         raise NotImplementedError()
 
-    async def initial_metadata(self) -> Optional[MetadataType]:
+    async def initial_metadata(self) -> Optional[Metadata]:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
@@ -380,7 +381,7 @@ class InterceptedCall:
 
         return await call.initial_metadata()
 
-    async def trailing_metadata(self) -> Optional[MetadataType]:
+    async def trailing_metadata(self) -> Optional[Metadata]:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
@@ -556,7 +557,7 @@ class InterceptedUnaryUnaryCall(_InterceptedUnaryResponseMixin, InterceptedCall,
     # pylint: disable=too-many-arguments
     def __init__(self, interceptors: Sequence[UnaryUnaryClientInterceptor],
                  request: RequestType, timeout: Optional[float],
-                 metadata: MetadataType,
+                 metadata: Metadata,
                  credentials: Optional[grpc.CallCredentials],
                  wait_for_ready: Optional[bool], channel: cygrpc.AioChannel,
                  method: bytes, request_serializer: SerializingFunction,
@@ -573,7 +574,7 @@ class InterceptedUnaryUnaryCall(_InterceptedUnaryResponseMixin, InterceptedCall,
     # pylint: disable=too-many-arguments
     async def _invoke(self, interceptors: Sequence[UnaryUnaryClientInterceptor],
                       method: bytes, timeout: Optional[float],
-                      metadata: Optional[MetadataType],
+                      metadata: Optional[Metadata],
                       credentials: Optional[grpc.CallCredentials],
                       wait_for_ready: Optional[bool], request: RequestType,
                       request_serializer: SerializingFunction,
@@ -628,7 +629,7 @@ class InterceptedUnaryStreamCall(_InterceptedStreamResponseMixin,
     # pylint: disable=too-many-arguments
     def __init__(self, interceptors: Sequence[UnaryStreamClientInterceptor],
                  request: RequestType, timeout: Optional[float],
-                 metadata: MetadataType,
+                 metadata: Metadata,
                  credentials: Optional[grpc.CallCredentials],
                  wait_for_ready: Optional[bool], channel: cygrpc.AioChannel,
                  method: bytes, request_serializer: SerializingFunction,
@@ -647,7 +648,7 @@ class InterceptedUnaryStreamCall(_InterceptedStreamResponseMixin,
     # pylint: disable=too-many-arguments
     async def _invoke(self, interceptors: Sequence[UnaryUnaryClientInterceptor],
                       method: bytes, timeout: Optional[float],
-                      metadata: Optional[MetadataType],
+                      metadata: Optional[Metadata],
                       credentials: Optional[grpc.CallCredentials],
                       wait_for_ready: Optional[bool], request: RequestType,
                       request_serializer: SerializingFunction,
@@ -712,7 +713,7 @@ class InterceptedStreamUnaryCall(_InterceptedUnaryResponseMixin,
     # pylint: disable=too-many-arguments
     def __init__(self, interceptors: Sequence[StreamUnaryClientInterceptor],
                  request_iterator: Optional[RequestIterableType],
-                 timeout: Optional[float], metadata: MetadataType,
+                 timeout: Optional[float], metadata: Metadata,
                  credentials: Optional[grpc.CallCredentials],
                  wait_for_ready: Optional[bool], channel: cygrpc.AioChannel,
                  method: bytes, request_serializer: SerializingFunction,
@@ -731,7 +732,7 @@ class InterceptedStreamUnaryCall(_InterceptedUnaryResponseMixin,
     async def _invoke(
             self, interceptors: Sequence[StreamUnaryClientInterceptor],
             method: bytes, timeout: Optional[float],
-            metadata: Optional[MetadataType],
+            metadata: Optional[Metadata],
             credentials: Optional[grpc.CallCredentials],
             wait_for_ready: Optional[bool],
             request_iterator: RequestIterableType,
@@ -783,7 +784,7 @@ class InterceptedStreamStreamCall(_InterceptedStreamResponseMixin,
     # pylint: disable=too-many-arguments
     def __init__(self, interceptors: Sequence[StreamStreamClientInterceptor],
                  request_iterator: Optional[RequestIterableType],
-                 timeout: Optional[float], metadata: MetadataType,
+                 timeout: Optional[float], metadata: Metadata,
                  credentials: Optional[grpc.CallCredentials],
                  wait_for_ready: Optional[bool], channel: cygrpc.AioChannel,
                  method: bytes, request_serializer: SerializingFunction,
@@ -804,7 +805,7 @@ class InterceptedStreamStreamCall(_InterceptedStreamResponseMixin,
     async def _invoke(
             self, interceptors: Sequence[StreamStreamClientInterceptor],
             method: bytes, timeout: Optional[float],
-            metadata: Optional[MetadataType],
+            metadata: Optional[Metadata],
             credentials: Optional[grpc.CallCredentials],
             wait_for_ready: Optional[bool],
             request_iterator: RequestIterableType,
@@ -876,10 +877,10 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
     def time_remaining(self) -> Optional[float]:
         raise NotImplementedError()
 
-    async def initial_metadata(self) -> Optional[MetadataType]:
+    async def initial_metadata(self) -> Optional[Metadata]:
         return None
 
-    async def trailing_metadata(self) -> Optional[MetadataType]:
+    async def trailing_metadata(self) -> Optional[Metadata]:
         return None
 
     async def code(self) -> grpc.StatusCode:
@@ -928,10 +929,10 @@ class _StreamCallResponseIterator:
     def time_remaining(self) -> Optional[float]:
         return self._call.time_remaining()
 
-    async def initial_metadata(self) -> Optional[MetadataType]:
+    async def initial_metadata(self) -> Optional[Metadata]:
         return await self._call.initial_metadata()
 
-    async def trailing_metadata(self) -> Optional[MetadataType]:
+    async def trailing_metadata(self) -> Optional[Metadata]:
         return await self._call.trailing_metadata()
 
     async def code(self) -> grpc.StatusCode:

@@ -19,10 +19,9 @@ from typing import Any, Optional
 import grpc
 
 from . import _base_call
-from ._typing import (DeserializingFunction, MetadataType, RequestIterableType,
+from ._typing import (DeserializingFunction, RequestIterableType,
                       SerializingFunction)
-
-_IMMUTABLE_EMPTY_TUPLE = tuple()
+from ._metadata import Metadata
 
 
 class UnaryUnaryMultiCallable(abc.ABC):
@@ -33,7 +32,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
                  request: Any,
                  *,
                  timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = _IMMUTABLE_EMPTY_TUPLE,
+                 metadata: Optional[Metadata] = None,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
                  compression: Optional[grpc.Compression] = None
@@ -71,7 +70,7 @@ class UnaryStreamMultiCallable(abc.ABC):
                  request: Any,
                  *,
                  timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = _IMMUTABLE_EMPTY_TUPLE,
+                 metadata: Optional[Metadata] = None,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
                  compression: Optional[grpc.Compression] = None
@@ -108,7 +107,7 @@ class StreamUnaryMultiCallable(abc.ABC):
     def __call__(self,
                  request_iterator: Optional[RequestIterableType] = None,
                  timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = _IMMUTABLE_EMPTY_TUPLE,
+                 metadata: Optional[Metadata] = None,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
                  compression: Optional[grpc.Compression] = None
@@ -146,7 +145,7 @@ class StreamStreamMultiCallable(abc.ABC):
     def __call__(self,
                  request_iterator: Optional[RequestIterableType] = None,
                  timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = _IMMUTABLE_EMPTY_TUPLE,
+                 metadata: Optional[Metadata] = None,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
                  compression: Optional[grpc.Compression] = None

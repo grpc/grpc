@@ -778,6 +778,7 @@ doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
 doc/grpc_release_schedule.md \
+doc/grpc_xds_features.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \
@@ -941,14 +942,12 @@ include/grpcpp/completion_queue_impl.h \
 include/grpcpp/create_channel.h \
 include/grpcpp/create_channel_impl.h \
 include/grpcpp/create_channel_posix.h \
-include/grpcpp/create_channel_posix_impl.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
 include/grpcpp/generic/async_generic_service.h \
 include/grpcpp/generic/generic_stub.h \
 include/grpcpp/generic/generic_stub_impl.h \
 include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
-include/grpcpp/health_check_service_interface_impl.h \
 include/grpcpp/impl/call.h \
 include/grpcpp/impl/channel_argument_option.h \
 include/grpcpp/impl/client_unary_call.h \
@@ -1023,7 +1022,6 @@ include/grpcpp/impl/server_initializer.h \
 include/grpcpp/impl/server_initializer_impl.h \
 include/grpcpp/impl/service_type.h \
 include/grpcpp/resource_quota.h \
-include/grpcpp/resource_quota_impl.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
 include/grpcpp/security/auth_metadata_processor_impl.h \
@@ -1034,11 +1032,9 @@ include/grpcpp/security/server_credentials_impl.h \
 include/grpcpp/security/tls_credentials_options.h \
 include/grpcpp/server.h \
 include/grpcpp/server_builder.h \
-include/grpcpp/server_builder_impl.h \
 include/grpcpp/server_context.h \
 include/grpcpp/server_impl.h \
 include/grpcpp/server_posix.h \
-include/grpcpp/server_posix_impl.h \
 include/grpcpp/support/async_stream.h \
 include/grpcpp/support/async_stream_impl.h \
 include/grpcpp/support/async_unary_call.h \

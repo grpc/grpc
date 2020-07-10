@@ -144,6 +144,7 @@ void grpc_init(void) {
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_core::ExecCtx::GlobalInit();
     grpc_iomgr_init();
+    grpc_cq_init();
     gpr_timers_global_init();
     grpc_core::HandshakerRegistry::Init();
     grpc_security_init();
@@ -169,6 +170,7 @@ void grpc_shutdown_internal_locked(void) {
   int i;
   {
     grpc_core::ExecCtx exec_ctx(0);
+    grpc_cq_shutdown();
     grpc_iomgr_shutdown_background_closure();
     {
       grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread

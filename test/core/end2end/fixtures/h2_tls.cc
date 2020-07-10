@@ -52,20 +52,35 @@ struct fullstack_secure_fixture_data {
     }
   }
   std::string localaddr;
+  grpc_tls_version tls_version;
   ThreadList thd_list;
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/,
+    grpc_tls_version tls_version) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
+  ffd->tls_version = tls_version;
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   return f;
+}
+
+static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_2(
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  return chttp2_create_fixture_secure_fullstack(client_args, server_args,
+                                                grpc_tls_version::TLS1_2);
+}
+
+static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_3(
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  return chttp2_create_fixture_secure_fullstack(client_args, server_args,
+                                                grpc_tls_version::TLS1_3);
 }
 
 static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
@@ -217,6 +232,8 @@ static grpc_channel_credentials* create_tls_channel_credentials(
     fullstack_secure_fixture_data* ffd) {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
+  options->set_min_tls_version(ffd->tls_version);
+  options->set_max_tls_version(ffd->tls_version);
   /* Set credential reload config. */
   grpc_tls_credential_reload_config* reload_config =
       grpc_tls_credential_reload_config_create(nullptr, client_cred_reload_sync,
@@ -235,8 +252,11 @@ static grpc_channel_credentials* create_tls_channel_credentials(
 }
 
 // Create a TLS server credential.
-static grpc_server_credentials* create_tls_server_credentials() {
+static grpc_server_credentials* create_tls_server_credentials(
+    fullstack_secure_fixture_data* ffd) {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
+  options->set_min_tls_version(ffd->tls_version);
+  options->set_max_tls_version(ffd->tls_version);
   /* Set credential reload config. */
   grpc_tls_credential_reload_config* reload_config =
       grpc_tls_credential_reload_config_create(nullptr, server_cred_reload_sync,
@@ -278,7 +298,8 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
 
 static void chttp2_init_server(grpc_end2end_test_fixture* f,
                                grpc_channel_args* server_args) {
-  grpc_server_credentials* ssl_creds = create_tls_server_credentials();
+  grpc_server_credentials* ssl_creds = create_tls_server_credentials(
+      static_cast<fullstack_secure_fixture_data*>(f->fixture_data));
   if (fail_server_auth_check(server_args)) {
     grpc_auth_metadata_processor processor = {process_auth_failure, nullptr,
                                               nullptr};
@@ -289,12 +310,19 @@ static void chttp2_init_server(grpc_end2end_test_fixture* f,
 
 static grpc_end2end_test_config configs[] = {
     /* client sync reload async authz + server sync reload. */
-    {"chttp2/simple_ssl_fullstack",
+    {"chttp2/simple_ssl_fullstack_tls1_2",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     "foo.test.google.fr", chttp2_create_fixture_secure_fullstack,
+     "foo.test.google.fr", chttp2_create_fixture_secure_fullstack_tls1_2,
+     chttp2_init_client, chttp2_init_server, chttp2_tear_down_secure_fullstack},
+    {"chttp2/simple_ssl_fullstack_tls1_3",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+     "foo.test.google.fr", chttp2_create_fixture_secure_fullstack_tls1_3,
      chttp2_init_client, chttp2_init_server, chttp2_tear_down_secure_fullstack},
 };
 

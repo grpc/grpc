@@ -20,9 +20,12 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "re2/re2.h"
 
 #include <grpc/grpc.h>
 
@@ -30,6 +33,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -50,12 +54,8 @@ constexpr char kXdsRouting[] = "xds_routing_experimental";
 // Config for xds_routing LB policy.
 class XdsRoutingLbConfig : public LoadBalancingPolicy::Config {
  public:
-  struct Matcher {
-    std::string service;
-    std::string method;
-  };
   struct Route {
-    Matcher matcher;
+    XdsApi::RdsUpdate::RdsRoute::Matchers matchers;
     std::string action;
   };
   using RouteTable = std::vector<Route>;
@@ -109,20 +109,24 @@ class XdsRoutingLb : public LoadBalancingPolicy {
   class RoutePicker : public SubchannelPicker {
    public:
     struct Route {
-      XdsRoutingLbConfig::Matcher matcher;
+      const XdsApi::RdsUpdate::RdsRoute::Matchers* matchers;
       RefCountedPtr<ChildPickerWrapper> picker;
     };
 
     // Maintains an ordered xds route table as provided by RDS response.
     using RouteTable = std::vector<Route>;
 
-    explicit RoutePicker(RouteTable route_table)
-        : route_table_(std::move(route_table)) {}
+    explicit RoutePicker(RouteTable route_table,
+                         RefCountedPtr<XdsRoutingLbConfig> config)
+        : route_table_(std::move(route_table)), config_(std::move(config)) {}
 
     PickResult Pick(PickArgs args) override;
 
    private:
     RouteTable route_table_;
+    // Take a reference to config so that we can use
+    // XdsApi::RdsUpdate::RdsRoute::Matchers from it.
+    RefCountedPtr<XdsRoutingLbConfig> config_;
   };
 
   // Each XdsRoutingChild holds a ref to its parent XdsRoutingLb.
@@ -214,26 +218,109 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 // XdsRoutingLb::RoutePicker
 //
 
-XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
-  absl::string_view path;
+absl::optional<absl::string_view> GetMetadataValue(
+    const std::string& key,
+    LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   // TODO(roth): Using const auto& here trigger a warning in a macos or windows
   // build:
   //*(args.initial_metadata) is returning values not references.
-  for (const auto p : *(args.initial_metadata)) {
-    if (p.first == ":path") {
-      path = p.second;
-      break;
+  GPR_DEBUG_ASSERT(initial_metadata != nullptr);
+  for (const auto p : *(initial_metadata)) {
+    if (p.first == key) {
+      return p.second;
     }
   }
-  std::vector<absl::string_view> path_elements =
-      absl::StrSplit(path.substr(1), '/');
-  for (const Route& route : route_table_) {
-    if ((path_elements[0] == route.matcher.service &&
-         (path_elements[1] == route.matcher.method ||
-          route.matcher.method.empty())) ||
-        (route.matcher.service.empty() && route.matcher.method.empty())) {
-      return route.picker->Pick(args);
+  return absl::nullopt;
+}
+
+bool PathMatch(
+    const absl::string_view& path,
+    const XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher& path_matcher) {
+  switch (path_matcher.type) {
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        PREFIX:
+      return absl::StartsWith(path, path_matcher.string_matcher);
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        PATH:
+      return path == path_matcher.string_matcher;
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        REGEX:
+      return RE2::FullMatch(path.data(), *path_matcher.regex_matcher);
+    default:
+      return false;
+  }
+}
+
+bool HeaderMatchHelper(
+    const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher& header_matcher,
+    LoadBalancingPolicy::MetadataInterface* initial_metadata) {
+  auto value = GetMetadataValue(header_matcher.name, initial_metadata);
+  if (!value.has_value()) {
+    if (header_matcher.type == XdsApi::RdsUpdate::RdsRoute::Matchers::
+                                   HeaderMatcher::HeaderMatcherType::PRESENT) {
+      return !header_matcher.present_match;
+    } else {
+      // For all other header matcher types, we need the header value to
+      // exist to consider matches.
+      return false;
     }
+  }
+  switch (header_matcher.type) {
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+        HeaderMatcherType::EXACT:
+      return value.value() == header_matcher.string_matcher;
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+        HeaderMatcherType::REGEX:
+      return RE2::FullMatch(value.value().data(), *header_matcher.regex_match);
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+        HeaderMatcherType::RANGE:
+      int64_t int_value;
+      if (!absl::SimpleAtoi(value.value(), &int_value)) {
+        return false;
+      }
+      return int_value >= header_matcher.range_start &&
+             int_value < header_matcher.range_end;
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+        HeaderMatcherType::PREFIX:
+      return absl::StartsWith(value.value(), header_matcher.string_matcher);
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+        HeaderMatcherType::SUFFIX:
+      return absl::EndsWith(value.value(), header_matcher.string_matcher);
+    default:
+      return false;
+  }
+}
+
+bool HeadersMatch(
+    LoadBalancingPolicy::PickArgs args,
+    const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
+        header_matchers) {
+  for (const auto& header_matcher : header_matchers) {
+    bool match = HeaderMatchHelper(header_matcher, args.initial_metadata);
+    if (header_matcher.invert_match) match = !match;
+    if (!match) return false;
+  }
+  return true;
+}
+
+bool UnderFraction(const uint32_t fraction_per_million) {
+  // Generate a random number in [0, 1000000).
+  const uint32_t random_number = rand() % 1000000;
+  return random_number < fraction_per_million;
+}
+
+XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
+  for (const Route& route : route_table_) {
+    // Path matching.
+    if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
+    // Header Matching.
+    if (!HeadersMatch(args, route.matchers->header_matchers)) continue;
+    // Match fraction check
+    if (route.matchers->fraction_per_million.has_value() &&
+        !UnderFraction(route.matchers->fraction_per_million.value()))
+      continue;
+    // Found a match
+    return route.picker->Pick(args);
   }
   PickResult result;
   result.type = PickResult::PICK_FAILED;
@@ -358,7 +445,7 @@ void XdsRoutingLb::UpdateStateLocked() {
       RoutePicker::RouteTable route_table;
       for (const auto& config_route : config_->route_table()) {
         RoutePicker::Route route;
-        route.matcher = config_route.matcher;
+        route.matchers = &config_route.matchers;
         route.picker = actions_[config_route.action]->picker_wrapper();
         if (route.picker == nullptr) {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
@@ -373,7 +460,7 @@ void XdsRoutingLb::UpdateStateLocked() {
         }
         route_table.push_back(std::move(route));
       }
-      picker = absl::make_unique<RoutePicker>(std::move(route_table));
+      picker = absl::make_unique<RoutePicker>(std::move(route_table), config_);
       break;
     }
     case GRPC_CHANNEL_CONNECTING:
@@ -683,12 +770,6 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no valid routes configured");
       error_list.push_back(error);
     }
-    if (!route_table.back().matcher.service.empty() ||
-        !route_table.back().matcher.method.empty()) {
-      grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "default route must not contain service or method");
-      error_list.push_back(error);
-    }
     if (!actions_to_be_used.empty()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "some actions were not referenced by any route"));
@@ -731,41 +812,6 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     return error_list;
   }
 
-  static std::vector<grpc_error*> ParseMethodName(
-      const Json& json, XdsRoutingLbConfig::Matcher* route_config) {
-    std::vector<grpc_error*> error_list;
-    if (json.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "value should be of type object"));
-      return error_list;
-    }
-    // Parse service
-    auto it = json.object_value().find("service");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:service error: should be string"));
-      } else {
-        route_config->service = it->second.string_value();
-      }
-    }
-    // Parse method
-    it = json.object_value().find("method");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:method error: should be string"));
-      } else {
-        route_config->method = it->second.string_value();
-      }
-    }
-    if (route_config->service.empty() && !route_config->method.empty()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "service is empty when method is not"));
-    }
-    return error_list;
-  }
-
   static std::vector<grpc_error*> ParseRoute(
       const Json& json, const XdsRoutingLbConfig::ActionMap& action_map,
       XdsRoutingLbConfig::Route* route,
@@ -776,17 +822,255 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           "value should be of type object"));
       return error_list;
     }
-    // Parse MethodName.
-    auto it = json.object_value().find("methodName");
-    if (it == json.object_value().end()) {
+    // Parse and ensure one and only one path matcher is set: prefix, path, or
+    // regex.
+    bool path_matcher_seen = false;
+    auto it = json.object_value().find("prefix");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:prefix error: should be string"));
+      } else {
+        path_matcher_seen = true;
+        route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
+            Matchers::PathMatcher::PathMatcherType::PREFIX;
+        route->matchers.path_matcher.string_matcher = it->second.string_value();
+      }
+    }
+    it = json.object_value().find("path");
+    if (it != json.object_value().end()) {
+      if (path_matcher_seen) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:path error: other path matcher already specified"));
+      } else {
+        path_matcher_seen = true;
+        if (it->second.type() != Json::Type::STRING) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:path error: should be string"));
+        } else {
+          route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
+              Matchers::PathMatcher::PathMatcherType::PATH;
+          route->matchers.path_matcher.string_matcher =
+              it->second.string_value();
+        }
+      }
+    }
+    it = json.object_value().find("regex");
+    if (it != json.object_value().end()) {
+      if (path_matcher_seen) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:regex error: other path matcher already specified"));
+      } else {
+        path_matcher_seen = true;
+        if (it->second.type() != Json::Type::STRING) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:regex error: should be string"));
+        } else {
+          route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
+              Matchers::PathMatcher::PathMatcherType::REGEX;
+          route->matchers.path_matcher.regex_matcher =
+              absl::make_unique<RE2>(it->second.string_value());
+        }
+      }
+    }
+    if (!path_matcher_seen) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:methodName error:required field missing"));
-    } else {
-      std::vector<grpc_error*> method_name_errors =
-          ParseMethodName(it->second, &route->matcher);
-      if (!method_name_errors.empty()) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-            "field:methodName", &method_name_errors));
+          "one path matcher: prefix, path, or regex is required"));
+    }
+    // Parse Header Matcher: headers.
+    it = json.object_value().find("headers");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::ARRAY) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:headers error: should be array"));
+      } else {
+        const Json::Array& array = it->second.array_value();
+        for (size_t i = 0; i < array.size(); ++i) {
+          const Json& header_json = array[i];
+          if (header_json.type() != Json::Type::OBJECT) {
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "value should be of type object"));
+          } else {
+            route->matchers.header_matchers.emplace_back();
+            XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher&
+                header_matcher = route->matchers.header_matchers.back();
+            auto header_it = header_json.object_value().find("name");
+            if (header_it == header_json.object_value().end()) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:name error:required field missing"));
+            } else {
+              if (header_it->second.type() != Json::Type::STRING) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:name error: should be string"));
+              } else {
+                header_matcher.name = header_it->second.string_value();
+              }
+            }
+            header_it = header_json.object_value().find("invert_match");
+            if (header_it != header_json.object_value().end()) {
+              if (header_it->second.type() == Json::Type::JSON_TRUE) {
+                header_matcher.invert_match = true;
+              } else if (header_it->second.type() == Json::Type::JSON_FALSE) {
+                header_matcher.invert_match = false;
+              } else {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:present_match error: should be boolean"));
+              }
+            }
+            // Parse and ensure one and only one header matcher is set per
+            // header matcher.
+            bool header_matcher_seen = false;
+            header_it = header_json.object_value().find("exact_match");
+            if (header_it != header_json.object_value().end()) {
+              header_matcher_seen = true;
+              if (header_it->second.type() != Json::Type::STRING) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:exact_match error: should be string"));
+              } else {
+                header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+                    HeaderMatcher::HeaderMatcherType::EXACT;
+                header_matcher.string_matcher =
+                    header_it->second.string_value();
+              }
+            }
+            header_it = header_json.object_value().find("regex_match");
+            if (header_it != header_json.object_value().end()) {
+              if (header_matcher_seen) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:regex_match error: other header matcher already "
+                    "specified"));
+              } else {
+                header_matcher_seen = true;
+                if (header_it->second.type() != Json::Type::STRING) {
+                  error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "field:regex_match error: should be string"));
+                } else {
+                  header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+                      HeaderMatcher::HeaderMatcherType::REGEX;
+                  header_matcher.regex_match =
+                      absl::make_unique<RE2>(header_it->second.string_value());
+                }
+              }
+            }
+            header_it = header_json.object_value().find("range_match");
+            if (header_it != header_json.object_value().end()) {
+              if (header_matcher_seen) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:range_match error: other header matcher already "
+                    "specified"));
+              } else {
+                header_matcher_seen = true;
+                if (header_it->second.type() != Json::Type::OBJECT) {
+                  error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "field:range_match error: should be object"));
+                } else {
+                  auto range_it =
+                      header_it->second.object_value().find("start");
+                  if (range_it != header_it->second.object_value().end()) {
+                    if (range_it->second.type() != Json::Type::NUMBER) {
+                      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                          "field:start error: should be of number"));
+                    } else {
+                      header_matcher.range_start = gpr_parse_nonnegative_int(
+                          range_it->second.string_value().c_str());
+                    }
+                  } else {
+                    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                        "field:start missing"));
+                  }
+                  range_it = header_it->second.object_value().find("end");
+                  if (range_it != header_it->second.object_value().end()) {
+                    if (range_it->second.type() != Json::Type::NUMBER) {
+                      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                          "field:end error: should be of number"));
+                    } else {
+                      header_matcher.range_end = gpr_parse_nonnegative_int(
+                          range_it->second.string_value().c_str());
+                    }
+                  } else {
+                    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                        "field:end missing"));
+                  }
+                  if (header_matcher.range_end > header_matcher.range_start) {
+                    header_matcher.type = XdsApi::RdsUpdate::RdsRoute::
+                        Matchers::HeaderMatcher::HeaderMatcherType::RANGE;
+                  }
+                }
+              }
+            }
+            header_it = header_json.object_value().find("present_match");
+            if (header_it != header_json.object_value().end()) {
+              if (header_matcher_seen) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:present_match error: other header matcher already "
+                    "specified"));
+              } else {
+                header_matcher_seen = true;
+                if (header_it->second.type() == Json::Type::JSON_TRUE) {
+                  header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+                      HeaderMatcher::HeaderMatcherType::PRESENT;
+                  header_matcher.present_match = true;
+                } else if (header_it->second.type() == Json::Type::JSON_FALSE) {
+                  header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+                      HeaderMatcher::HeaderMatcherType::PRESENT;
+                  header_matcher.present_match = false;
+                } else {
+                  error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "field:present_match error: should be boolean"));
+                }
+              }
+            }
+            header_it = header_json.object_value().find("prefix_match");
+            if (header_it != header_json.object_value().end()) {
+              if (header_matcher_seen) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:prefix_match error: other header matcher already "
+                    "specified"));
+              } else {
+                header_matcher_seen = true;
+                if (header_it->second.type() != Json::Type::STRING) {
+                  error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "field:prefix_match error: should be string"));
+                } else {
+                  header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+                      HeaderMatcher::HeaderMatcherType::PREFIX;
+                  header_matcher.string_matcher =
+                      header_it->second.string_value();
+                }
+              }
+            }
+            header_it = header_json.object_value().find("suffix_match");
+            if (header_it != header_json.object_value().end()) {
+              if (header_matcher_seen) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:suffix_match error: other header matcher already "
+                    "specified"));
+              } else {
+                header_matcher_seen = true;
+                if (header_it->second.type() != Json::Type::STRING) {
+                  error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "field:suffix_match error: should be string"));
+                } else {
+                  header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
+                      HeaderMatcher::HeaderMatcherType::SUFFIX;
+                  header_matcher.string_matcher =
+                      header_it->second.string_value();
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    // Parse Fraction numerator.
+    it = json.object_value().find("match_fraction");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::NUMBER) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:match_fraction error:must be of type number"));
+      } else {
+        route->matchers.fraction_per_million =
+            gpr_parse_nonnegative_int(it->second.string_value().c_str());
       }
     }
     // Parse action.

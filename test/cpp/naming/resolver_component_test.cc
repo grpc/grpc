@@ -18,22 +18,26 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+#include <thread>
+#include <vector>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
+
+#include <gflags/gflags.h>
+#include <gmock/gmock.h>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-
-#include <string.h>
-
-#include <errno.h>
-#include <fcntl.h>
-#include <gflags/gflags.h>
-#include <gmock/gmock.h>
-#include <thread>
-#include <vector>
 
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
@@ -578,7 +582,7 @@ void RunResolvesRelevantRecordsTest(
   args.expected_service_config_error = FLAGS_expected_service_config_error;
   args.expected_lb_policy = FLAGS_expected_lb_policy;
   // maybe build the address with an authority
-  char* whole_uri = nullptr;
+  std::string whole_uri;
   gpr_log(GPR_DEBUG,
           "resolver_component_test: --inject_broken_nameserver_list: %s",
           FLAGS_inject_broken_nameserver_list.c_str());
@@ -590,14 +594,12 @@ void RunResolvesRelevantRecordsTest(
         new grpc::testing::FakeNonResponsiveDNSServer(
             g_fake_non_responsive_dns_server_port));
     grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
-    GPR_ASSERT(
-        gpr_asprintf(&whole_uri, "dns:///%s", FLAGS_target_name.c_str()));
+    whole_uri = absl::StrCat("dns:///", FLAGS_target_name);
   } else if (FLAGS_inject_broken_nameserver_list == "False") {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
             FLAGS_local_dns_server_address.c_str());
-    GPR_ASSERT(gpr_asprintf(&whole_uri, "dns://%s/%s",
-                            FLAGS_local_dns_server_address.c_str(),
-                            FLAGS_target_name.c_str()));
+    whole_uri = absl::StrFormat("dns://%s/%s", FLAGS_local_dns_server_address,
+                                FLAGS_target_name);
   } else {
     gpr_log(GPR_DEBUG, "Invalid value for --inject_broken_nameserver_list.");
     abort();
@@ -639,11 +641,10 @@ void RunResolvesRelevantRecordsTest(
   }
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      grpc_core::ResolverRegistry::CreateResolver(whole_uri, resolver_args,
-                                                  args.pollset_set, args.lock,
-                                                  CreateResultHandler(&args));
+      grpc_core::ResolverRegistry::CreateResolver(
+          whole_uri.c_str(), resolver_args, args.pollset_set, args.lock,
+          CreateResultHandler(&args));
   grpc_channel_args_destroy(resolver_args);
-  gpr_free(whole_uri);
   auto* resolver_ptr = resolver.get();
   args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); },
                  DEBUG_LOCATION);

@@ -20,10 +20,13 @@
 
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
@@ -317,6 +320,17 @@ static void maybe_flush_read(stream_obj* s) {
   }
 }
 
+static void read_grpc_header(stream_obj* s) {
+  s->state.rs.read_buffer = s->state.rs.grpc_header_bytes;
+  s->state.rs.remaining_bytes = GRPC_HEADER_SIZE_IN_BYTES;
+  s->state.rs.received_bytes = 0;
+  s->state.rs.compressed = false;
+  CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);
+  bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
+                            s->state.rs.remaining_bytes);
+  s->state.pending_read_from_cronet = true;
+}
+
 static grpc_error* make_error_with_desc(int error_code, const char* desc) {
   grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc);
   error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, error_code);
@@ -555,6 +569,11 @@ static void on_response_headers_received(
   for (size_t i = 0; i < headers->count; i++) {
     if (0 == strcmp("grpc-status", headers->headers[i].key)) {
       on_response_trailers_received(stream, headers);
+      /* Do an extra read for a trailer-only stream with grpc_status = 0
+       to trigger on_succeeded() callback */
+      if (0 == strcmp(headers->headers[i].value, "0")) {
+        read_grpc_header(s);
+      }
       return;
     }
   }
@@ -567,14 +586,7 @@ static void on_response_headers_received(
     /* Do an extra read to trigger on_succeeded() callback in case connection
      is closed */
     GPR_ASSERT(s->state.rs.length_field_received == false);
-    s->state.rs.read_buffer = s->state.rs.grpc_header_bytes;
-    s->state.rs.compressed = false;
-    s->state.rs.received_bytes = 0;
-    s->state.rs.remaining_bytes = GRPC_HEADER_SIZE_IN_BYTES;
-    CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);
-    bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
-                              s->state.rs.remaining_bytes);
-    s->state.pending_read_from_cronet = true;
+    read_grpc_header(s);
   }
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
@@ -719,7 +731,7 @@ static void create_grpc_frame(grpc_slice_buffer* write_slice_buffer,
  Convert metadata in a format that Cronet can consume
 */
 static void convert_metadata_to_cronet_headers(
-    grpc_metadata_batch* metadata, const char* host, char** pp_url,
+    grpc_metadata_batch* metadata, const char* host, std::string* pp_url,
     bidirectional_stream_header** pp_headers, size_t* p_num_headers,
     const char** method) {
   grpc_linked_mdelem* curr = metadata->list.head;
@@ -780,7 +792,7 @@ static void convert_metadata_to_cronet_headers(
     }
     if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_PATH)) {
       /* Create URL by appending :path value to the hostname */
-      gpr_asprintf(pp_url, "https://%s%s", host, value);
+      *pp_url = absl::StrCat("https://", host, value);
       gpr_free(key);
       gpr_free(value);
       continue;
@@ -1042,7 +1054,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       bidirectional_stream_disable_auto_flush(s->cbs, true);
       bidirectional_stream_delay_request_headers_until_flush(s->cbs, true);
     }
-    char* url = nullptr;
+    std::string url;
     const char* method = "POST";
     s->header_array.headers = nullptr;
     convert_metadata_to_cronet_headers(
@@ -1050,11 +1062,10 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
         t->host, &url, &s->header_array.headers, &s->header_array.count,
         &method);
     s->header_array.capacity = s->header_array.count;
-    CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs, url);
-    bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array, false);
-    if (url) {
-      gpr_free(url);
-    }
+    CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs,
+               url.c_str());
+    bidirectional_stream_start(s->cbs, url.c_str(), 0, method, &s->header_array,
+                               false);
     unsigned int header_index;
     for (header_index = 0; header_index < s->header_array.count;
          header_index++) {
@@ -1260,17 +1271,10 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           oas->state.state_op_done[OP_RECV_MESSAGE] = true;
 
           /* Extra read to trigger on_succeed */
-          stream_state->rs.read_buffer = stream_state->rs.grpc_header_bytes;
-          stream_state->rs.remaining_bytes = GRPC_HEADER_SIZE_IN_BYTES;
-          stream_state->rs.received_bytes = 0;
-          stream_state->rs.compressed = false;
           stream_state->rs.length_field_received = false;
-          CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);
           stream_state->state_op_done[OP_READ_REQ_MADE] =
               true; /* Indicates that at least one read request has been made */
-          bidirectional_stream_read(s->cbs, stream_state->rs.read_buffer,
-                                    stream_state->rs.remaining_bytes);
-          stream_state->pending_read_from_cronet = true;
+          read_grpc_header(s);
           result = ACTION_TAKEN_NO_CALLBACK;
         }
       } else if (stream_state->rs.remaining_bytes == 0) {
@@ -1316,15 +1320,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       /* Do an extra read to trigger on_succeeded() callback in case connection
          is closed */
-      stream_state->rs.read_buffer = stream_state->rs.grpc_header_bytes;
-      stream_state->rs.compressed = false;
-      stream_state->rs.received_bytes = 0;
-      stream_state->rs.remaining_bytes = GRPC_HEADER_SIZE_IN_BYTES;
       stream_state->rs.length_field_received = false;
-      CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);
-      bidirectional_stream_read(s->cbs, stream_state->rs.read_buffer,
-                                stream_state->rs.remaining_bytes);
-      stream_state->pending_read_from_cronet = true;
+      read_grpc_header(s);
       result = ACTION_TAKEN_NO_CALLBACK;
     }
   } else if (stream_op->recv_trailing_metadata &&

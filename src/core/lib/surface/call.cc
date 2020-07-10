@@ -24,6 +24,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -225,7 +230,9 @@ struct grpc_call {
   grpc_closure receiving_initial_metadata_ready;
   grpc_closure receiving_trailing_metadata_ready;
   uint32_t test_only_last_message_flags = 0;
-  gpr_atm cancelled = 0;
+  // Status about operation of call
+  bool sent_server_trailing_metadata = false;
+  gpr_atm cancelled_with_error = 0;
 
   grpc_closure release_call;
 
@@ -686,7 +693,7 @@ static void done_termination(void* arg, grpc_error* /*error*/) {
 }
 
 static void cancel_with_error(grpc_call* c, grpc_error* error) {
-  if (!gpr_atm_rel_cas(&c->cancelled, 0, 1)) {
+  if (!gpr_atm_rel_cas(&c->cancelled_with_error, 0, 1)) {
     GRPC_ERROR_UNREF(error);
     return;
   }
@@ -751,13 +758,13 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
     }
   } else {
     *call->final_op.server.cancelled =
-        error != GRPC_ERROR_NONE ||
-        reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&call->status_error)) !=
-            GRPC_ERROR_NONE;
+        error != GRPC_ERROR_NONE || !call->sent_server_trailing_metadata;
     grpc_core::channelz::ServerNode* channelz_server =
         grpc_server_get_channelz_node(call->final_op.server.server);
     if (channelz_server != nullptr) {
-      if (*call->final_op.server.cancelled) {
+      if (*call->final_op.server.cancelled ||
+          reinterpret_cast<grpc_error*>(
+              gpr_atm_acq_load(&call->status_error)) != GRPC_ERROR_NONE) {
         channelz_server->RecordCallFailed();
       } else {
         channelz_server->RecordCallSucceeded();
@@ -1049,14 +1056,12 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
         grpc_get_status_code_from_metadata(b->idx.named.grpc_status->md);
     grpc_error* error = GRPC_ERROR_NONE;
     if (status_code != GRPC_STATUS_OK) {
-      char* peer_msg = nullptr;
       char* peer = grpc_call_get_peer(call);
-      gpr_asprintf(&peer_msg, "Error received from peer %s", peer);
-      error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(peer_msg),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
-                                 static_cast<intptr_t>(status_code));
+      error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("Error received from peer ", peer).c_str()),
+          GRPC_ERROR_INT_GRPC_STATUS, static_cast<intptr_t>(status_code));
       gpr_free(peer);
-      gpr_free(peer_msg);
     }
     if (b->idx.named.grpc_message != nullptr) {
       error = grpc_error_set_str(
@@ -1367,49 +1372,41 @@ static void receiving_stream_ready_in_call_combiner(void* bctlp,
 
 static void GPR_ATTRIBUTE_NOINLINE
 handle_both_stream_and_msg_compression_set(grpc_call* call) {
-  char* error_msg = nullptr;
-  gpr_asprintf(&error_msg,
-               "Incoming stream has both stream compression (%d) and message "
-               "compression (%d).",
-               call->incoming_stream_compression_algorithm,
-               call->incoming_message_compression_algorithm);
-  gpr_log(GPR_ERROR, "%s", error_msg);
-  cancel_with_status(call, GRPC_STATUS_INTERNAL, error_msg);
-  gpr_free(error_msg);
+  std::string error_msg = absl::StrFormat(
+      "Incoming stream has both stream compression (%d) and message "
+      "compression (%d).",
+      call->incoming_stream_compression_algorithm,
+      call->incoming_message_compression_algorithm);
+  gpr_log(GPR_ERROR, "%s", error_msg.c_str());
+  cancel_with_status(call, GRPC_STATUS_INTERNAL, error_msg.c_str());
 }
 
 static void GPR_ATTRIBUTE_NOINLINE
 handle_error_parsing_compression_algorithm(grpc_call* call) {
-  char* error_msg = nullptr;
-  gpr_asprintf(&error_msg,
-               "Error in incoming message compression (%d) or stream "
-               "compression (%d).",
-               call->incoming_stream_compression_algorithm,
-               call->incoming_message_compression_algorithm);
-  cancel_with_status(call, GRPC_STATUS_INTERNAL, error_msg);
-  gpr_free(error_msg);
+  std::string error_msg = absl::StrFormat(
+      "Error in incoming message compression (%d) or stream "
+      "compression (%d).",
+      call->incoming_stream_compression_algorithm,
+      call->incoming_message_compression_algorithm);
+  cancel_with_status(call, GRPC_STATUS_INTERNAL, error_msg.c_str());
 }
 
 static void GPR_ATTRIBUTE_NOINLINE handle_invalid_compression(
     grpc_call* call, grpc_compression_algorithm compression_algorithm) {
-  char* error_msg = nullptr;
-  gpr_asprintf(&error_msg, "Invalid compression algorithm value '%d'.",
-               compression_algorithm);
-  gpr_log(GPR_ERROR, "%s", error_msg);
-  cancel_with_status(call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
-  gpr_free(error_msg);
+  std::string error_msg = absl::StrFormat(
+      "Invalid compression algorithm value '%d'.", compression_algorithm);
+  gpr_log(GPR_ERROR, "%s", error_msg.c_str());
+  cancel_with_status(call, GRPC_STATUS_UNIMPLEMENTED, error_msg.c_str());
 }
 
 static void GPR_ATTRIBUTE_NOINLINE handle_compression_algorithm_disabled(
     grpc_call* call, grpc_compression_algorithm compression_algorithm) {
-  char* error_msg = nullptr;
   const char* algo_name = nullptr;
   grpc_compression_algorithm_name(compression_algorithm, &algo_name);
-  gpr_asprintf(&error_msg, "Compression algorithm '%s' is disabled.",
-               algo_name);
-  gpr_log(GPR_ERROR, "%s", error_msg);
-  cancel_with_status(call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
-  gpr_free(error_msg);
+  std::string error_msg =
+      absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
+  gpr_log(GPR_ERROR, "%s", error_msg.c_str());
+  cancel_with_status(call, GRPC_STATUS_UNIMPLEMENTED, error_msg.c_str());
 }
 
 static void GPR_ATTRIBUTE_NOINLINE handle_compression_algorithm_not_accepted(
@@ -1791,6 +1788,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         }
         stream_op_payload->send_trailing_metadata.send_trailing_metadata =
             &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */];
+        stream_op_payload->send_trailing_metadata.sent =
+            &call->sent_server_trailing_metadata;
         has_send_ops = true;
         break;
       }

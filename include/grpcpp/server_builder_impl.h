@@ -41,7 +41,6 @@ struct grpc_resource_quota;
 namespace grpc_impl {
 
 class CompletionQueue;
-class ResourceQuota;
 class Server;
 class ServerCompletionQueue;
 class ServerCredentials;
@@ -50,6 +49,7 @@ class ServerCredentials;
 namespace grpc {
 
 class AsyncGenericService;
+class ResourceQuota;
 class Service;
 namespace testing {
 class ServerBuilderPluginTest;
@@ -133,7 +133,7 @@ class ServerBuilder {
   /// it is successfully bound by BuildAndStart(), 0 otherwise. AddListeningPort
   /// does not modify this pointer.
   ServerBuilder& AddListeningPort(
-      const grpc::string& addr_uri,
+      const std::string& addr_uri,
       std::shared_ptr<grpc_impl::ServerCredentials> creds,
       int* selected_port = nullptr);
 
@@ -177,7 +177,7 @@ class ServerBuilder {
   /// The service must exist for the lifetime of the \a Server instance
   /// returned by \a BuildAndStart(). Only matches requests with :authority \a
   /// host
-  ServerBuilder& RegisterService(const grpc::string& host,
+  ServerBuilder& RegisterService(const std::string& host,
                                  grpc::Service* service);
 
   /// Register a generic service.
@@ -228,8 +228,7 @@ class ServerBuilder {
       grpc_compression_algorithm algorithm);
 
   /// Set the attached buffer pool for this server
-  ServerBuilder& SetResourceQuota(
-      const grpc_impl::ResourceQuota& resource_quota);
+  ServerBuilder& SetResourceQuota(const grpc::ResourceQuota& resource_quota);
 
   ServerBuilder& SetOption(std::unique_ptr<grpc::ServerBuilderOption> option);
 
@@ -247,7 +246,7 @@ class ServerBuilder {
   /// Add a channel argument (an escape hatch to tuning core library parameters
   /// directly)
   template <class T>
-  ServerBuilder& AddChannelArgument(const grpc::string& arg, const T& value) {
+  ServerBuilder& AddChannelArgument(const std::string& arg, const T& value) {
     return SetOption(grpc::MakeChannelArgumentOption(arg, value));
   }
 
@@ -317,17 +316,17 @@ class ServerBuilder {
  protected:
   /// Experimental, to be deprecated
   struct Port {
-    grpc::string addr;
+    std::string addr;
     std::shared_ptr<grpc_impl::ServerCredentials> creds;
     int* selected_port;
   };
 
   /// Experimental, to be deprecated
-  typedef std::unique_ptr<grpc::string> HostString;
+  typedef std::unique_ptr<std::string> HostString;
   struct NamedService {
     explicit NamedService(grpc::Service* s) : service(s) {}
-    NamedService(const grpc::string& h, grpc::Service* s)
-        : host(new grpc::string(h)), service(s) {}
+    NamedService(const std::string& h, grpc::Service* s)
+        : host(new std::string(h)), service(s) {}
     HostString host;
     grpc::Service* service;
   };

@@ -1525,6 +1525,7 @@ static void perform_stream_op_locked(void* stream_op,
     s->send_trailing_metadata_finished = add_closure_barrier(on_complete);
     s->send_trailing_metadata =
         op_payload->send_trailing_metadata.send_trailing_metadata;
+    s->sent_trailing_metadata_op = op_payload->send_trailing_metadata.sent;
     s->write_buffering = false;
     const size_t metadata_size =
         grpc_metadata_batch_size(s->send_trailing_metadata);
@@ -1550,6 +1551,7 @@ static void perform_stream_op_locked(void* stream_op,
       }
       if (s->write_closed) {
         s->send_trailing_metadata = nullptr;
+        s->sent_trailing_metadata_op = nullptr;
         grpc_chttp2_complete_closure_step(
             t, s, &s->send_trailing_metadata_finished,
             grpc_metadata_batch_is_empty(
@@ -2185,6 +2187,7 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
                                     "send_initial_metadata_finished");
 
   s->send_trailing_metadata = nullptr;
+  s->sent_trailing_metadata_op = nullptr;
   grpc_chttp2_complete_closure_step(t, s, &s->send_trailing_metadata_finished,
                                     GRPC_ERROR_REF(error),
                                     "send_trailing_metadata_finished");
@@ -2887,7 +2890,7 @@ static void keepalive_watchdog_fired_locked(void* arg, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
     if (error == GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "%s: Keepalive watchdog fired. Closing transport.",
+      gpr_log(GPR_INFO, "%s: Keepalive watchdog fired. Closing transport.",
               t->peer_string);
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
       close_transport_locked(

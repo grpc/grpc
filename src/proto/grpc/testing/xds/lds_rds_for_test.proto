@@ -28,7 +28,51 @@ package envoy.api.v2;
 import "google/protobuf/any.proto";
 import "google/protobuf/wrappers.proto";
 import "src/proto/grpc/testing/xds/cds_for_test.proto";
+import "src/proto/grpc/testing/xds/eds_for_test.proto";
 
+message RegexMatcher {
+  message GoogleRE2 {
+    google.protobuf.UInt32Value max_program_size = 1;
+  }
+  oneof engine_type {
+    GoogleRE2 google_re2 = 1;
+  }
+  string regex = 2;
+}
+
+message Int64Range {
+  // start of the range (inclusive)
+  int64 start = 1;
+
+  // end of the range (exclusive)
+  int64 end = 2;
+}
+
+message BoolValue {
+  // The bool value.
+  bool value = 1;
+}
+
+message HeaderMatcher {
+  string name = 1;
+  oneof header_match_specifier {
+    string exact_match = 4;
+    RegexMatcher safe_regex_match = 11;
+    Int64Range range_match = 6;
+    bool present_match = 7;
+    string prefix_match = 9;
+    string suffix_match = 10;
+  }
+  bool invert_match = 8;
+}
+
+message QueryParameterMatcher {
+  string name = 1;
+}
+
+message RuntimeFractionalPercent {
+  FractionalPercent default_value = 1;
+}
 
 message RouteMatch {
   oneof path_specifier {
@@ -36,7 +80,12 @@ message RouteMatch {
     // match the beginning of the *:path* header.
     string prefix = 1;
     string path = 2;
+    RegexMatcher safe_regex = 10;
   }
+  BoolValue case_sensitive = 4;
+  repeated QueryParameterMatcher query_parameters = 7;
+  RuntimeFractionalPercent runtime_fraction = 9;
+  repeated HeaderMatcher headers = 6;
 }
 
 message WeightedCluster {

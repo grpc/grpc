@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
@@ -95,11 +96,10 @@ class grpc_httpcli_ssl_channel_security_connector final
     /* Check the peer name. */
     if (secure_peer_name_ != nullptr &&
         !tsi_ssl_peer_matches_name(&peer, secure_peer_name_)) {
-      char* msg;
-      gpr_asprintf(&msg, "Peer name %s is not in peer certificate",
-                   secure_peer_name_);
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-      gpr_free(msg);
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Peer name ", secure_peer_name_,
+                       " is not in peer certificate")
+              .c_str());
     }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);

@@ -21,9 +21,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gpr/string.h"
@@ -84,24 +87,18 @@ void decode_suite(char ext, grpc_millis (*answer)(int64_t x)) {
   long test_vals[] = {1,       12,       123,       1234,     12345,   123456,
                       1234567, 12345678, 123456789, 98765432, 9876543, 987654,
                       98765,   9876,     987,       98,       9};
-  unsigned i;
-  char* input;
-  for (i = 0; i < GPR_ARRAY_SIZE(test_vals); i++) {
-    gpr_asprintf(&input, "%ld%c", test_vals[i], ext);
-    assert_decodes_as(input, answer(test_vals[i]));
-    gpr_free(input);
+  for (unsigned i = 0; i < GPR_ARRAY_SIZE(test_vals); i++) {
+    std::string input = absl::StrFormat("%ld%c", test_vals[i], ext);
+    assert_decodes_as(input.c_str(), answer(test_vals[i]));
 
-    gpr_asprintf(&input, "   %ld%c", test_vals[i], ext);
-    assert_decodes_as(input, answer(test_vals[i]));
-    gpr_free(input);
+    input = absl::StrFormat("   %ld%c", test_vals[i], ext);
+    assert_decodes_as(input.c_str(), answer(test_vals[i]));
 
-    gpr_asprintf(&input, "%ld %c", test_vals[i], ext);
-    assert_decodes_as(input, answer(test_vals[i]));
-    gpr_free(input);
+    input = absl::StrFormat("%ld %c", test_vals[i], ext);
+    assert_decodes_as(input.c_str(), answer(test_vals[i]));
 
-    gpr_asprintf(&input, "%ld %c  ", test_vals[i], ext);
-    assert_decodes_as(input, answer(test_vals[i]));
-    gpr_free(input);
+    input = absl::StrFormat("%ld %c  ", test_vals[i], ext);
+    assert_decodes_as(input.c_str(), answer(test_vals[i]));
   }
 }
 

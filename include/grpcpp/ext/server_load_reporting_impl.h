@@ -45,7 +45,7 @@ class LoadReportingServiceServerBuilderOption
 // Adds the load reporting cost with \a cost_name and \a cost_value in the
 // trailing metadata of the server context.
 void AddLoadReportingCost(grpc::ServerContext* ctx,
-                          const grpc::string& cost_name, double cost_value);
+                          const std::string& cost_name, double cost_value);
 
 }  // namespace experimental
 }  // namespace load_reporter

@@ -24,6 +24,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -670,16 +675,14 @@ static void test_compute_engine_creds_failure(void) {
 static void validate_refresh_token_http_request(
     const grpc_httpcli_request* request, const char* body, size_t body_size) {
   /* The content of the assertion is tested extensively in json_token_test. */
-  char* expected_body = nullptr;
   GPR_ASSERT(body != nullptr);
   GPR_ASSERT(body_size != 0);
-  gpr_asprintf(&expected_body, GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
-               "32555999999.apps.googleusercontent.com",
-               "EmssLNjJy1332hD4KFsecret",
-               "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42");
-  GPR_ASSERT(strlen(expected_body) == body_size);
-  GPR_ASSERT(memcmp(expected_body, body, body_size) == 0);
-  gpr_free(expected_body);
+  std::string expected_body = absl::StrFormat(
+      GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
+      "32555999999.apps.googleusercontent.com", "EmssLNjJy1332hD4KFsecret",
+      "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42");
+  GPR_ASSERT(expected_body.size() == body_size);
+  GPR_ASSERT(memcmp(expected_body.data(), body, body_size) == 0);
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, GRPC_GOOGLE_OAUTH2_SERVICE_HOST) == 0);
   GPR_ASSERT(
@@ -891,9 +894,9 @@ static void validate_sts_token_http_request(const grpc_httpcli_request* request,
   GPR_ASSERT(body != nullptr);
   GPR_ASSERT(body_size != 0);
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
-  char* get_url_equivalent;
-  gpr_asprintf(&get_url_equivalent, "%s?%s", test_sts_endpoint_url, body);
-  grpc_uri* url = grpc_uri_parse(get_url_equivalent, false);
+  std::string get_url_equivalent =
+      absl::StrFormat("%s?%s", test_sts_endpoint_url, body);
+  grpc_uri* url = grpc_uri_parse(get_url_equivalent.c_str(), false);
   GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "resource"), "resource") == 0);
   GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "audience"), "audience") == 0);
   GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "scope"), "scope") == 0);
@@ -913,7 +916,6 @@ static void validate_sts_token_http_request(const grpc_httpcli_request* request,
     GPR_ASSERT(grpc_uri_get_query_arg(url, "actor_token_type") == nullptr);
   }
   grpc_uri_destroy(url);
-  gpr_free(get_url_equivalent);
 
   // Check the rest of the request.
   GPR_ASSERT(strcmp(request->host, "foo.com:5555") == 0);
@@ -1268,9 +1270,8 @@ static void test_jwt_creds_success(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
-  char* expected_md_value;
-  gpr_asprintf(&expected_md_value, "Bearer %s", test_signed_jwt);
-  expected_md emd[] = {{"authorization", expected_md_value}};
+  std::string expected_md_value = absl::StrCat("Bearer ", test_signed_jwt);
+  expected_md emd[] = {{"authorization", expected_md_value.c_str()}};
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
@@ -1304,7 +1305,6 @@ static void test_jwt_creds_success(void) {
 
   creds->Unref();
   gpr_free(json_key_string);
-  gpr_free(expected_md_value);
   grpc_jwt_encode_and_sign_set_override(nullptr);
 }
 
@@ -1409,7 +1409,7 @@ static int default_creds_metadata_server_detection_httpcli_get_success_override(
   return 1;
 }
 
-static char* null_well_known_creds_path_getter(void) { return nullptr; }
+static std::string null_well_known_creds_path_getter(void) { return ""; }
 
 static bool test_gce_tenancy_checker(void) {
   g_test_gce_tenancy_checker_called = true;
@@ -1725,13 +1725,10 @@ static void test_metadata_plugin_failure(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
-  char* expected_error;
-  gpr_asprintf(&expected_error,
-               "Getting metadata from plugin failed with error: %s",
-               plugin_error_details);
+  std::string expected_error = absl::StrCat(
+      "Getting metadata from plugin failed with error: ", plugin_error_details);
   request_metadata_state* md_state = make_request_metadata_state(
-      GRPC_ERROR_CREATE_FROM_COPIED_STRING(expected_error), nullptr, 0);
-  gpr_free(expected_error);
+      GRPC_ERROR_CREATE_FROM_COPIED_STRING(expected_error.c_str()), nullptr, 0);
 
   plugin.state = &state;
   plugin.get_metadata = plugin_get_metadata_failure;
@@ -1751,7 +1748,6 @@ static void test_metadata_plugin_failure(void) {
 }
 
 static void test_get_well_known_google_credentials_file_path(void) {
-  char* path;
   char* home = gpr_getenv("HOME");
   bool restore_home_env = false;
 #if defined(GRPC_BAZEL_BUILD) && \
@@ -1762,15 +1758,13 @@ static void test_get_well_known_google_credentials_file_path(void) {
   gpr_setenv("HOME", "/fake/home/for/bazel");
 #endif /* defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) || \
           defined(GPR_LINUX_ENV)) */
-  path = grpc_get_well_known_google_credentials_file_path();
-  GPR_ASSERT(path != nullptr);
-  gpr_free(path);
+  std::string path = grpc_get_well_known_google_credentials_file_path();
+  GPR_ASSERT(!path.empty());
 #if defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)
   restore_home_env = true;
   gpr_unsetenv("HOME");
   path = grpc_get_well_known_google_credentials_file_path();
-  GPR_ASSERT(path == nullptr);
-  gpr_free(path);
+  GPR_ASSERT(path.empty());
 #endif /* GPR_POSIX_ENV || GPR_LINUX_ENV */
   if (restore_home_env) {
     if (home) {
