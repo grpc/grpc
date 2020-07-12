@@ -260,22 +260,21 @@ bool PathMatch(
 }
 
 bool HeaderMatchHelper(
-    LoadBalancingPolicy::PickArgs args,
+    const std::string& user_agent,
     const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher&
-        header_matcher) {
+        header_matcher,
+        LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   absl::optional<absl::string_view> value;
   if (header_matcher.name == "grpc-tags-bin" ||
       header_matcher.name == "grpc-trace-bin" ||
       header_matcher.name == "grpc-previous-rpc-attempts") {
     value = absl::nullopt;
-  } else if (header_matcher.name == "path") {
-    value = args.path;
   } else if (header_matcher.name == "content-type") {
     value = "application/grpc";
   } else if (header_matcher.name == "user-agent") {
-    value = args.user_agent;
+    value = user_agent;
   } else {
-    value = GetMetadataValue(header_matcher.name, args.initial_metadata);
+    value = GetMetadataValue(header_matcher.name, initial_metadata);
   }
   if (!value.has_value()) {
     if (header_matcher.type == XdsApi::RdsUpdate::RdsRoute::Matchers::
@@ -314,11 +313,12 @@ bool HeaderMatchHelper(
 }
 
 bool HeadersMatch(
-    LoadBalancingPolicy::PickArgs args,
+    const std::string& user_agent,
     const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
-        header_matchers) {
+        header_matchers,
+        LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   for (const auto& header_matcher : header_matchers) {
-    bool match = HeaderMatchHelper(args, header_matcher);
+    bool match = HeaderMatchHelper(user_agent, header_matcher, initial_metadata);
     if (header_matcher.invert_match) match = !match;
     if (!match) return false;
   }
@@ -333,12 +333,11 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 
 XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
   // Set user_agent string to the stored string constrcuted from args.
-  args.user_agent = user_agent_;
   for (const Route& route : route_table_) {
     // Path matching.
     if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
     // Header Matching.
-    if (!HeadersMatch(args, route.matchers->header_matchers)) continue;
+    if (!HeadersMatch(user_agent_, route.matchers->header_matchers, args.initial_metadata)) continue;
     // Match fraction check
     if (route.matchers->fraction_per_million.has_value() &&
         !UnderFraction(route.matchers->fraction_per_million.value()))
