@@ -260,7 +260,7 @@ bool PathMatch(
 }
 
 bool HeaderMatchHelper(
-    const std::string& user_agent,
+    const std::string& user_agent, const grpc_millis deadline,
     const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher& header_matcher,
     LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   absl::optional<absl::string_view> value;
@@ -272,6 +272,8 @@ bool HeaderMatchHelper(
     value = "application/grpc";
   } else if (header_matcher.name == "user-agent") {
     value = user_agent;
+  } else if (header_matcher.name == "grpc-timeout") {
+    value = absl::StrFormat("%ld", deadline - grpc_core::ExecCtx::Get()->Now());
   } else {
     value = GetMetadataValue(header_matcher.name, initial_metadata);
   }
@@ -312,13 +314,13 @@ bool HeaderMatchHelper(
 }
 
 bool HeadersMatch(
-    const std::string& user_agent,
+    const std::string& user_agent, const grpc_millis deadline,
     const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
         header_matchers,
     LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   for (const auto& header_matcher : header_matchers) {
-    bool match =
-        HeaderMatchHelper(user_agent, header_matcher, initial_metadata);
+    bool match = HeaderMatchHelper(user_agent, deadline, header_matcher,
+                                   initial_metadata);
     if (header_matcher.invert_match) match = !match;
     if (!match) return false;
   }
@@ -337,8 +339,8 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
     // Path matching.
     if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
     // Header Matching.
-    if (!HeadersMatch(user_agent_, route.matchers->header_matchers,
-                      args.initial_metadata))
+    if (!HeadersMatch(user_agent_, args.deadline,
+                      route.matchers->header_matchers, args.initial_metadata))
       continue;
     // Match fraction check
     if (route.matchers->fraction_per_million.has_value() &&

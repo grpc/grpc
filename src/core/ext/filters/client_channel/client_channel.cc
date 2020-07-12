@@ -388,7 +388,6 @@ class CallData {
    public:
     Metadata(CallData* calld, grpc_metadata_batch* batch)
         : calld_(calld), batch_(batch) {}
-
     void Add(absl::string_view key, absl::string_view value) override {
       grpc_linked_mdelem* linked_mdelem = static_cast<grpc_linked_mdelem*>(
           calld_->arena_->Alloc(sizeof(grpc_linked_mdelem)));
@@ -4052,6 +4051,7 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
   LoadBalancingPolicy::PickArgs pick_args;
   pick_args.path = StringViewFromSlice(path_);
   pick_args.call_state = &lb_call_state_;
+  pick_args.deadline = initial_metadata_batch->deadline;
   Metadata initial_metadata(this, initial_metadata_batch);
   pick_args.initial_metadata = &initial_metadata;
   // Attempt pick.
