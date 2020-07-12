@@ -56,7 +56,7 @@ namespace testing {
 namespace {
 
 #define SECONDS(x) (int(x))
-#define NANOSECONDS(x) (int(((x)-SECONDS(x)) * 1e9))
+#define NANOSECONDS(x) (int(((x)-SECONDS(x)) * GPR_NS_PER_SEC))
 
 const grpc::string kTestKey = "testKey";
 const char* kTestUrl = "test.google.fr";
@@ -329,11 +329,8 @@ class RlsServiceImpl : public RlsService {
 
   struct Response {
     grpc_status_code status;
-
     grpc::lookup::v1::RouteLookupResponse response;
-
     grpc_millis response_delay;
-
     absl::optional<Request> request_match;
   };
 
@@ -378,7 +375,7 @@ class RlsServiceImpl : public RlsService {
                 std::string("predefined response error code")};
       }
     } else {
-      return {UNIMPLEMENTED, std::string("unmatched request key")};
+      return {FAILED_PRECONDITION, std::string("unmatched request key")};
     }
   }
 
@@ -657,18 +654,6 @@ class RlsPolicyEnd2endTest : public ::testing::Test {
     return service_config.str();
   }
 
-  // TODO: remove
-  /*
-  grpc::lookup::v1::RouteLookupResponse BuildLookupResponse(int port,
-  grpc::string header_data = {}) { grpc::lookup::v1::RouteLookupResponse
-  response;
-
-    response.set_target(absl::StrCat(kServerHost, port));
-    response.set_header_data(header_data);
-
-    return response;
-  }*/
-
   void SetNextResolution(const char* service_config_json = nullptr) {
     resolver_response_generator_->SetNextResolution(balancer_->port_,
                                                     service_config_json);
@@ -941,7 +926,7 @@ TEST_F(RlsPolicyEnd2endTest, StaleRlsResponse) {
 TEST_F(RlsPolicyEnd2endTest, ExpiredRlsResponse) {
   const std::string kAlternativeTarget = "test_target_2";
   StartBackends(3);
-  auto service_config = BuildServiceConfig(1, 1);
+  auto service_config = BuildServiceConfig(1 /* max_age */, 1 /* stale_age */);
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_OK);
   SetNextLbResponse(
@@ -981,7 +966,9 @@ TEST_F(RlsPolicyEnd2endTest, CacheEviction) {
   EXPECT_EQ(backends_[0]->service_.request_count(), 2);
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
   EXPECT_EQ(backends_[2]->service_.request_count(), 0);
-  EXPECT_EQ(rls_server_->service_.request_count(), 3);
+  // The first element is held by min_eviction_time so only 2 RLS requests are
+  // sent.
+  EXPECT_EQ(rls_server_->service_.request_count(), 2);
 }
 
 }  // namespace
