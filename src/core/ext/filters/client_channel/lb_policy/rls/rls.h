@@ -49,7 +49,7 @@ class RlsLbFactory;
 class RlsLb : public LoadBalancingPolicy {
  public:
   /// Map of key values extracted by builders from the RPC initial metadata.
-  using KeyMap = std::unordered_map<std::string, std::string>;
+  using KeyMap = std::map<std::string, std::string>;
 
   /// A KeyMapBuilder accepts a config that specifies how the keys should be
   /// built, then generate key map for calls based on their initial metadata.
@@ -69,8 +69,7 @@ class RlsLb : public LoadBalancingPolicy {
   /// A map from path name to a KeyMapBuilder instance that corresponds to that
   /// path. Note that by the design of the RLS system, the method portion of a
   /// path can be wildcard (*).
-  using KeyMapBuilderMap =
-      std::unordered_map<std::string /*path*/, KeyMapBuilder>;
+  using KeyMapBuilderMap = std::map<std::string /*path*/, KeyMapBuilder>;
 
   enum class RequestProcessingStrategy {
     /// Query the RLS and process the request using target returned by the
@@ -422,7 +421,7 @@ class RlsLb : public LoadBalancingPolicy {
     /// Call completion callback running on lb policy combiner.
     void OnRlsCallCompleteLocked(grpc_error* error);
 
-    void MakeRequestProto();
+    grpc_byte_buffer* MakeRequestProto();
 
     ResponseInfo ParseResponseProto();
 
@@ -470,10 +469,11 @@ class RlsLb : public LoadBalancingPolicy {
                         std::unique_ptr<BackOff>* backoff_state = nullptr);
 
   /// Update picker with the channel to trigger reprocessing of pending picks.
-  /// The method must be invoked on the control plane combiner.
+  /// The method must be invoked on the control plane work serializer.
   void UpdatePickerLocked();
 
-  std::string server_uri_;
+  /// The name of the server for the channel.
+  std::string server_name_;
 
   /// Mutex that protects the entire state of the LB policy, which includes all
   /// the states below.

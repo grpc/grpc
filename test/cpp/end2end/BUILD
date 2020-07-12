@@ -463,7 +463,6 @@ grpc_cc_test(
         "gtest",
         "absl/types:optional",
     ],
-    tags = ["no_windows"],
     deps = [
         ":test_service_impl",
         "//:gpr",
