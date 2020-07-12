@@ -34,7 +34,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
-#include "src/core/ext/filters/http/client/http_client_filter.h"
+#include "src/core/ext/filters/http/client/util.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -117,8 +117,8 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     // Maintains an ordered xds route table as provided by RDS response.
     using RouteTable = std::vector<Route>;
 
-    explicit RoutePicker(RouteTable route_table, std::string user_agent,
-                         RefCountedPtr<XdsRoutingLbConfig> config)
+    RoutePicker(RouteTable route_table, std::string user_agent,
+                RefCountedPtr<XdsRoutingLbConfig> config)
         : route_table_(std::move(route_table)),
           user_agent_(std::move(user_agent)),
           config_(std::move(config)) {}
@@ -261,9 +261,8 @@ bool PathMatch(
 
 bool HeaderMatchHelper(
     const std::string& user_agent,
-    const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher&
-        header_matcher,
-        LoadBalancingPolicy::MetadataInterface* initial_metadata) {
+    const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher& header_matcher,
+    LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   absl::optional<absl::string_view> value;
   if (header_matcher.name == "grpc-tags-bin" ||
       header_matcher.name == "grpc-trace-bin" ||
@@ -316,9 +315,10 @@ bool HeadersMatch(
     const std::string& user_agent,
     const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
         header_matchers,
-        LoadBalancingPolicy::MetadataInterface* initial_metadata) {
+    LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   for (const auto& header_matcher : header_matchers) {
-    bool match = HeaderMatchHelper(user_agent, header_matcher, initial_metadata);
+    bool match =
+        HeaderMatchHelper(user_agent, header_matcher, initial_metadata);
     if (header_matcher.invert_match) match = !match;
     if (!match) return false;
   }
@@ -337,11 +337,14 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
     // Path matching.
     if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
     // Header Matching.
-    if (!HeadersMatch(user_agent_, route.matchers->header_matchers, args.initial_metadata)) continue;
+    if (!HeadersMatch(user_agent_, route.matchers->header_matchers,
+                      args.initial_metadata))
+      continue;
     // Match fraction check
     if (route.matchers->fraction_per_million.has_value() &&
-        !UnderFraction(route.matchers->fraction_per_million.value()))
+        !UnderFraction(route.matchers->fraction_per_million.value())) {
       continue;
+    }
     // Found a match
     return route.picker->Pick(args);
   }
@@ -359,7 +362,7 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
 //
 
 XdsRoutingLb::XdsRoutingLb(Args args)
-    : user_agent_(user_agent_string_from_args(args.args, "chttp2")),
+    : user_agent_(GenerateUserAgentFromArgs(args.args, "chttp2")),
       LoadBalancingPolicy(std::move(args)) {}
 
 XdsRoutingLb::~XdsRoutingLb() {

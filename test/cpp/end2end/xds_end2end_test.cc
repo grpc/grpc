@@ -3610,9 +3610,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const size_t kNumEcho1Rpcs = 100;
-  const size_t kNumEchoRpcs = 5;
+  const size_t kNumEchoRpcs = 100;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -3622,58 +3620,40 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
   AdsServiceImpl::EdsResourceArgs args1({
       {"locality0", GetBackendPorts(1, 2)},
   });
-  AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
-  });
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
   // Populate new CDS resources.
   Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
   new_cluster1.set_name(kNewCluster1Name);
   balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
-  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
-  new_cluster2.set_name(kNewCluster2Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Populating Route Configurations for LDS.
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  route1->mutable_match()->set_prefix("");
   auto* header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("content-type");
   header_matcher1->set_exact_match("notapplication/grpc");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* route2 = route_config.mutable_virtual_hosts(0)->add_routes();
-  route2->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* header_matcher2 = route2->mutable_match()->add_headers();
-  header_matcher2->set_name("content-type");
-  header_matcher2->set_exact_match("application/grpc");
-  route2->mutable_route()->set_cluster(kNewCluster2Name);
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
+  auto* header_matcher2 = default_route->mutable_match()->add_headers();
+  header_matcher2->set_name("content-type");
+  header_matcher2->set_exact_match("application/grpc");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
-  const auto header_match_rpc_options =
-      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_rpc_method(METHOD_ECHO1);
-  // Make sure all backends are up.
+  // Make sure the backend is up.
   WaitForAllBackends(0, 1);
-  WaitForAllBackends(2, 3, true, header_match_rpc_options);
   // Send RPCs.
   CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs, header_match_rpc_options);
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
-  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  EXPECT_EQ(kNumEcho1Rpcs, backends_[2]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
@@ -3682,9 +3662,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderUserAgent) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const size_t kNumEcho1Rpcs = 100;
-  const size_t kNumEchoRpcs = 5;
+  const size_t kNumEchoRpcs = 100;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -3694,60 +3672,40 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderUserAgent) {
   AdsServiceImpl::EdsResourceArgs args1({
       {"locality0", GetBackendPorts(1, 2)},
   });
-  AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
-  });
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
   // Populate new CDS resources.
   Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
   new_cluster1.set_name(kNewCluster1Name);
   balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
-  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
-  new_cluster2.set_name(kNewCluster2Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Populating Route Configurations for LDS.
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  route1->mutable_match()->set_prefix("");
   auto* header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("user-agent");
-  header_matcher1->set_exact_match(
-      "grpc-c++/1.31.0-dev grpc-c/11.0.0 (linux; chttp)");
+  header_matcher1->set_prefix_match("not-grpc-c++/1.31.0-dev grpc-c/11.0.0");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* route2 = route_config.mutable_virtual_hosts(0)->add_routes();
-  route2->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* header_matcher2 = route2->mutable_match()->add_headers();
-  header_matcher2->set_name("user-agent");
-  header_matcher2->set_exact_match(
-      "grpc-c++/1.31.0-dev grpc-c/11.0.0 (linux; chttp2)");
-  route2->mutable_route()->set_cluster(kNewCluster2Name);
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
+  auto* header_matcher2 = default_route->mutable_match()->add_headers();
+  header_matcher2->set_name("user-agent");
+  header_matcher2->set_prefix_match("grpc-c++/1.31.0-dev grpc-c/11.0.0");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
-  const auto header_match_rpc_options =
-      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_rpc_method(METHOD_ECHO1);
-  // Make sure all backends are up.
+  // Make sure backend is up.
   WaitForAllBackends(0, 1);
-  WaitForAllBackends(2, 3, true, header_match_rpc_options);
   // Send RPCs.
   CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs, header_match_rpc_options);
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
-  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  EXPECT_EQ(kNumEcho1Rpcs, backends_[2]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[2]->backend_service2()->request_count());
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
