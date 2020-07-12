@@ -7138,10 +7138,6 @@ targets:
   - address_sorting
   - upb
   - absl/types:optional
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: rls_key_builder_test
   gtest: true
   build: test
