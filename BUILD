@@ -497,7 +497,6 @@ grpc_cc_library(
         "src/core/lib/gpr/log_posix.cc",
         "src/core/lib/gpr/log_windows.cc",
         "src/core/lib/gpr/murmur_hash.cc",
-        "src/core/lib/gpr/random.cc",
         "src/core/lib/gpr/string.cc",
         "src/core/lib/gpr/string_posix.cc",
         "src/core/lib/gpr/string_util_windows.cc",
@@ -530,7 +529,6 @@ grpc_cc_library(
         "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/murmur_hash.h",
-        "src/core/lib/gpr/random.h",
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
@@ -1333,6 +1331,11 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/rls/rls.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/memory",
+        "absl/hash",
     ],
     language = "c++",
     deps = [

@@ -132,6 +132,7 @@ void grpc_init(void) {
       g_shutting_down = false;
       gpr_cv_broadcast(g_shutting_down_cv);
     }
+    srand(time(nullptr));
     grpc_core::Fork::GlobalInit();
     grpc_fork_handlers_auto_register();
     grpc_stats_init();

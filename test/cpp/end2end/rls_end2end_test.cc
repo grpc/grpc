@@ -23,6 +23,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 
+#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
@@ -58,13 +59,13 @@ namespace {
 #define SECONDS(x) (int(x))
 #define NANOSECONDS(x) (int(((x)-SECONDS(x)) * GPR_NS_PER_SEC))
 
-const grpc::string kTestKey = "testKey";
+const char* kTestKey = "testKey";
 const char* kTestUrl = "test.google.fr";
 const char* kTestRequestPath = "/grpc.testing.EchoTestService/Echo";
 const grpc::string kServerHost = "localhost";
 const grpc::string kRequestMessage = "Live long and prosper.";
 const grpc::string kTarget = "test_target";
-const grpc::string kDefaultTarget = "test_default_target";
+const char* kDefaultTarget = "test_default_target";
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
@@ -594,64 +595,61 @@ class RlsPolicyEnd2endTest : public ::testing::Test {
     EXPECT_FALSE(success);
   }
 
-  std::string BuildServiceConfig(
-      double max_age = 10, double stale_age = 5,
-      const std::string& default_target = kDefaultTarget,
-      int request_processing_strategy = 0, double lookup_service_timeout = 10,
-      int64_t cache_size_bytes = 10 * 1024 * 1024) {
+  std::string BuildServiceConfig(double max_age = 10, double stale_age = 5,
+                                 const char* default_target = kDefaultTarget,
+                                 double lookup_service_timeout = 10,
+                                 int64_t cache_size_bytes = 10 * 1024 * 1024) {
     int lookup_service_port = rls_server_->port_;
     std::stringstream service_config;
-    service_config << "{";
-    service_config << "  \"loadBalancingConfig\":[{";
-    service_config << "    \"rls\":{";
-    service_config << "      \"routeLookupConfig\":{";
-    service_config << "        \"grpcKeybuilders\":[{";
-    service_config << "          \"names\":[{";
-    service_config
-        << "            \"service\":\"grpc.testing.EchoTestService\",";
-    service_config << "            \"method\":\"Echo\"";
-    service_config << "          }],";
-    service_config << "          \"headers\":[";
-    service_config << "            {";
-    service_config << "              \"key\":\"" << kTestKey << "\",";
-    service_config << "              \"names\":[";
-    service_config << "                \"key1\",\"key2\",\"key3\"";
-    service_config << "              ]";
-    service_config << "            }";
-    service_config << "          ]";
-    service_config << "        }],";
-    service_config << "        \"lookupService\":\"localhost:"
-                   << lookup_service_port << "\",";
-    service_config << "        \"lookupServiceTimeout\":{";
-    service_config << "          \"seconds\":"
-                   << SECONDS(lookup_service_timeout) << ",";
-    service_config << "          \"nanoseconds\":"
-                   << NANOSECONDS(lookup_service_timeout);
-    service_config << "        },";
-    service_config << "        \"maxAge\":{";
-    service_config << "          \"seconds\":" << SECONDS(max_age) << ",";
-    service_config << "          \"nanoseconds\":" << NANOSECONDS(max_age);
-    service_config << "        },";
-    service_config << "        \"staleAge\":{";
-    service_config << "          \"seconds\":" << SECONDS(stale_age) << ",";
-    service_config << "          \"nanoseconds\":" << NANOSECONDS(stale_age);
-    service_config << "        },";
-    service_config << "        \"cacheSizeBytes\":" << cache_size_bytes << ",";
-    service_config << "        \"defaultTarget\":\"" << default_target << "\",";
-    service_config << "        \"requestProcessingStrategy\":"
-                   << request_processing_strategy;
-    service_config << "      },";
-    service_config << "      \"childPolicy\":[{";
-    service_config << "        \"grpclb\":{";
-    service_config << "        }";
-    service_config << "      }],";
-    service_config
-        << "      \"childPolicyConfigTargetFieldName\":\"serviceName\"";
-    service_config << "    }";
-    service_config << "  }]";
-    service_config << "}";
 
-    return service_config.str();
+    return absl::StrFormat(
+        "{"
+        "  \"loadBalancingConfig\":[{"
+        "    \"rls\":{"
+        "      \"routeLookupConfig\":{"
+        "        \"grpcKeybuilders\":[{"
+        "          \"names\":[{"
+        "            \"service\":\"grpc.testing.EchoTestService\","
+        "            \"method\":\"Echo\""
+        "          }],"
+        "          \"headers\":["
+        "            {"
+        "              \"key\":\"%s\","
+        "              \"names\":["
+        "                \"key1\",\"key2\",\"key3\""
+        "              ]"
+        "            }"
+        "          ]"
+        "        }],"
+        "        \"lookupService\":\"localhost:%d\","
+        "        \"lookupServiceTimeout\":{"
+        "          \"seconds\":%d,"
+        "          \"nanoseconds\":%d"
+        "        },"
+        "        \"maxAge\":{"
+        "          \"seconds\":%d,"
+        "          \"nanoseconds\":%d"
+        "        },"
+        "        \"staleAge\":{"
+        "          \"seconds\":%d,"
+        "          \"nanoseconds\":%d"
+        "        },"
+        "        \"cacheSizeBytes\":%" PRId64
+        ","
+        "        \"defaultTarget\":\"%s\""
+        "      },"
+        "      \"childPolicy\":[{"
+        "        \"grpclb\":{"
+        "        }"
+        "      }],"
+        "      \"childPolicyConfigTargetFieldName\":\"serviceName\""
+        "    }"
+        "  }]"
+        "}",
+        kTestKey, lookup_service_port, SECONDS(lookup_service_timeout),
+        NANOSECONDS(lookup_service_timeout), SECONDS(max_age),
+        NANOSECONDS(max_age), SECONDS(stale_age), NANOSECONDS(stale_age),
+        cache_size_bytes, default_target);
   }
 
   void SetNextResolution(const char* service_config_json = nullptr) {
@@ -821,7 +819,7 @@ TEST_F(RlsPolicyEnd2endTest, RlsGrpcLbWithKeyMapMatch) {
 }
 
 TEST_F(RlsPolicyEnd2endTest, UpdateRlsConfig) {
-  const std::string kAlternativeDefaultTarget = "test_default_target_2";
+  const char* kAlternativeDefaultTarget = "test_default_target_2";
   StartBackends(2);
   auto service_config = BuildServiceConfig();
   SetNextResolution(service_config.c_str());
@@ -843,7 +841,7 @@ TEST_F(RlsPolicyEnd2endTest, UpdateRlsConfig) {
 
 TEST_F(RlsPolicyEnd2endTest, FailedRlsRequestError) {
   StartBackends(2);
-  auto service_config = BuildServiceConfig(10, 5, kDefaultTarget, 1);
+  auto service_config = BuildServiceConfig(10, 5, "");
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_INTERNAL);
   SetNextLbResponse({{kTarget, 0}, {kDefaultTarget, 1}});
@@ -856,7 +854,7 @@ TEST_F(RlsPolicyEnd2endTest, FailedRlsRequestError) {
 
 TEST_F(RlsPolicyEnd2endTest, RlsRequestTimeout) {
   StartBackends(2);
-  auto service_config = BuildServiceConfig(10, 5, kDefaultTarget, 0, 2);
+  auto service_config = BuildServiceConfig(10, 5, kDefaultTarget, 2);
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_OK, nullptr, 4000);
   SetNextLbResponse({{kTarget, 0}, {kDefaultTarget, 1}});
@@ -864,25 +862,6 @@ TEST_F(RlsPolicyEnd2endTest, RlsRequestTimeout) {
   auto stub = BuildStub();
   CheckRpcSendOk(stub, DEBUG_LOCATION, false, 4000);
   EXPECT_EQ(backends_[0]->service_.request_count(), 0);
-  EXPECT_EQ(backends_[1]->service_.request_count(), 1);
-}
-
-TEST_F(RlsPolicyEnd2endTest, AsyncRlsRequest) {
-  StartBackends(2);
-  auto service_config = BuildServiceConfig(10, 5, kDefaultTarget, 2);
-  SetNextResolution(service_config.c_str());
-  SetNextRlsResponse(GRPC_STATUS_OK, nullptr, 1000);
-  SetNextLbResponse({{kTarget, 0}, {kDefaultTarget, 1}});
-
-  auto stub = BuildStub();
-  CheckRpcSendOk(stub, DEBUG_LOCATION);
-  EXPECT_EQ(backends_[0]->service_.request_count(), 0);
-  EXPECT_EQ(backends_[1]->service_.request_count(), 1);
-
-  // wait for RLS response to reach RLS lb policy
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
-  CheckRpcSendOk(stub, DEBUG_LOCATION);
-  EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
 }
 
@@ -947,7 +926,7 @@ TEST_F(RlsPolicyEnd2endTest, CacheEviction) {
   const std::string kAlternativeTarget = "test_target_2";
   StartBackends(3);
   // set cache bytes to 1 byte
-  auto service_config = BuildServiceConfig(10, 5, kDefaultTarget, 0, 10, 1);
+  auto service_config = BuildServiceConfig(10, 5, kDefaultTarget, 10, 1);
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_OK);
   SetNextLbResponse(

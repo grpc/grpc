@@ -28,9 +28,11 @@
 
 #include <deque>
 #include <list>
+#include <map>
 #include <mutex>
 #include <unordered_map>
 
+#include "absl/hash/hash.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
@@ -60,7 +62,7 @@ class RlsLb : public LoadBalancingPolicy {
     KeyMap BuildKeyMap(const MetadataInterface* initial_metadata) const;
 
    private:
-    std::unordered_map<
+    std::map<
         std::string /*path*/,
         std::vector<std::pair<std::string /*header_name*/, int /*priority*/>>>
         pattern_;
@@ -70,29 +72,6 @@ class RlsLb : public LoadBalancingPolicy {
   /// path. Note that by the design of the RLS system, the method portion of a
   /// path can be wildcard (*).
   using KeyMapBuilderMap = std::map<std::string /*path*/, KeyMapBuilder>;
-
-  enum class RequestProcessingStrategy {
-    /// Query the RLS and process the request using target returned by the
-    /// lookup. The target will then be cached and used for processing
-    /// subsequent requests for the same key. Any errors during lookup service
-    /// processing will fall back to default target for request processing.
-    SYNC_LOOKUP_DEFAULT_TARGET_ON_ERROR = 0,
-
-    /// Query the RLS and process the request using target returned by the
-    /// lookup. The target will then be cached and used for processing
-    /// subsequent requests for the same key. Any errors during lookup service
-    /// processing will return an error back to the client.  Services with
-    /// strict regional routing requirements should use this strategy.
-    SYNC_LOOKUP_CLIENT_SEES_ERROR = 1,
-
-    /// Query the RLS asynchronously but respond with the default target.  The
-    /// target in the lookup response will then be cached and used for
-    /// subsequent requests.  Services with strict latency requirements (but not
-    /// strict regional routing requirements) should use this strategy.
-    ASYNC_LOOKUP_DEFAULT_TARGET_ON_MISS = 2,
-
-    STRATEGY_UNSPECIFIED = 3,
-  };
 
   explicit RlsLb(Args args);
 
@@ -113,11 +92,16 @@ class RlsLb : public LoadBalancingPolicy {
     bool operator==(const RequestKey& rhs) const {
       return (path == rhs.path && key_map == rhs.key_map);
     }
-  };
 
-  class KeyHasher {
-   public:
-    size_t operator()(const RequestKey& key) const;
+    template <typename H>
+    friend H AbslHashValue(H h, const RequestKey& key) {
+      std::hash<std::string> string_hasher;
+      for (const std::pair<std::string, std::string>& kv : key.key_map) {
+        h = H::combine(std::move(h), string_hasher(kv.first),
+                       string_hasher(kv.second));
+      }
+      return H::combine(std::move(h), string_hasher(key.path));
+    }
   };
 
   struct ResponseInfo {
@@ -141,29 +125,14 @@ class RlsLb : public LoadBalancingPolicy {
 
   class ChildPolicyWrapper : public InternallyRefCounted<ChildPolicyWrapper> {
    public:
-    /// Handler class that allows multiple owners of the child policy
-    /// wrapper object and shutdown of the child policy wrapper object at the
-    /// same time.
-    class RefHandler : public RefCounted<RefHandler> {
-     public:
-      RefHandler(ChildPolicyWrapper* child, RlsLb* parent);
-
-      ChildPolicyWrapper* child() const { return child_.get(); }
-
-     private:
-      OrphanablePtr<ChildPolicyWrapper> child_;
-    };
-
     ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy, std::string target)
-        : lb_policy_(std::move(lb_policy)), target_(std::move(target)) {}
+        : lb_policy_(lb_policy),
+          target_(std::move(target)),
+          picker_(absl::make_unique<QueuePicker>(std::move(lb_policy))) {}
 
     /// Pick subchannel for call. If the picker is not reported by the child
     /// policy (i.e. picker_ == nullptr), the pick will be failed.
     PickResult Pick(PickArgs args);
-
-    /// Checks if the child policy has provided a picker to process a pick
-    /// request (i.e. the picker_ is not nullptr).
-    bool IsPickerAvailable() const;
 
     /// Validate the configuration of the child policy with the extra target
     /// name field. If the child policy configuration does not validate, a
@@ -217,6 +186,19 @@ class RlsLb : public LoadBalancingPolicy {
     OrphanablePtr<ChildPolicyHandler> child_policy_;
     grpc_connectivity_state connectivity_state_;
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_;
+  };
+
+  /// Class that allows multiple ownership of the child policy wrapper object.
+  /// The child policy wrapper is orphaned when all the owners remove their
+  /// references.
+  class ChildPolicyOwner : public RefCounted<ChildPolicyOwner> {
+   public:
+    ChildPolicyOwner(ChildPolicyWrapper* child, RlsLb* parent);
+
+    ChildPolicyWrapper* child() const { return child_.get(); }
+
+   private:
+    OrphanablePtr<ChildPolicyWrapper> child_;
   };
 
   /// An LRU cache with adjustable size.
@@ -279,8 +261,7 @@ class RlsLb : public LoadBalancingPolicy {
 
       // RLS response states
 
-      RefCountedPtr<ChildPolicyWrapper::RefHandler> child_policy_wrapper_ =
-          nullptr;
+      RefCountedPtr<ChildPolicyOwner> child_policy_wrapper_ = nullptr;
       std::string header_data_;
       grpc_millis data_expiration_time_ = GRPC_MILLIS_INF_PAST;
       grpc_millis stale_time_ = GRPC_MILLIS_INF_PAST;
@@ -320,7 +301,8 @@ class RlsLb : public LoadBalancingPolicy {
     int size_elements_ = 0;
 
     std::list<RequestKey> lru_list_;
-    std::unordered_map<RequestKey, OrphanablePtr<Entry>, KeyHasher> map_;
+    std::unordered_map<RequestKey, OrphanablePtr<Entry>, absl::Hash<RequestKey>>
+        map_;
     grpc_timer cleanup_timer_;
     grpc_closure timer_callback_;
 
@@ -361,7 +343,6 @@ class RlsLb : public LoadBalancingPolicy {
       grpc_millis window_size_;
       double ratio_for_successes_;
       int paddings_;
-      uint32_t rng_state_;
 
       // Logged timestamp of requests
       std::deque<grpc_millis> requests_;
@@ -446,11 +427,10 @@ class RlsLb : public LoadBalancingPolicy {
 
   /// Maps an RLS request key to a RequestMap object that represents a pending
   /// RLS request.
-  using RequestMap =
-      std::unordered_map<RequestKey, OrphanablePtr<RlsRequest>, KeyHasher>;
+  using RequestMap = std::unordered_map<RequestKey, OrphanablePtr<RlsRequest>,
+                                        absl::Hash<RequestKey>>;
 
-  using ChildPolicyMap =
-      std::unordered_map<std::string, ChildPolicyWrapper::RefHandler*>;
+  using ChildPolicyMap = std::map<std::string, ChildPolicyOwner*>;
 
   void ShutdownLocked() override;
 
@@ -487,7 +467,7 @@ class RlsLb : public LoadBalancingPolicy {
   RequestMap request_map_;
   RefCountedPtr<ControlChannel> channel_;
   ChildPolicyMap child_policy_map_;
-  RefCountedPtr<ChildPolicyWrapper::RefHandler> default_child_policy_;
+  RefCountedPtr<ChildPolicyOwner> default_child_policy_;
 };
 
 /// Parsed RLS LB policy configuration.
@@ -511,10 +491,6 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
 
   const std::string& default_target() const { return default_target_; }
 
-  RlsLb::RequestProcessingStrategy request_processing_strategy() const {
-    return request_processing_strategy_;
-  }
-
   const Json& child_policy_config() const { return child_policy_config_; }
 
   RefCountedPtr<LoadBalancingPolicy::Config>
@@ -534,7 +510,6 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   grpc_millis stale_age_;
   int64_t cache_size_bytes_;
   std::string default_target_;
-  RlsLb::RequestProcessingStrategy request_processing_strategy_;
   Json child_policy_config_;
   RefCountedPtr<LoadBalancingPolicy::Config>
       default_child_policy_parsed_config_;
