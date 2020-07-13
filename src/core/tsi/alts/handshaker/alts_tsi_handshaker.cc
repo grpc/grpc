@@ -23,7 +23,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <iostream>
 
 #include "upb/upb.hpp"
 
@@ -252,8 +251,6 @@ static const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_create_frame_protector,
     handshaker_result_get_unused_bytes, handshaker_result_destroy};
 
-
-// LINE OF INTEREST
 tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                              bool is_client,
                                              tsi_handshaker_result** self) {
@@ -339,11 +336,9 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   grpc_gcp_AltsContext_set_peer_rpc_versions(
       context, const_cast<grpc_gcp_RpcProtocolVersions*>(peer_rpc_version));
 
-// START OF PLUMBING
-  // grpc_gcp_HandshakerResult* ncresult = const_cast<grpc_gcp_HandshakerResult*>(hresult);
   grpc_gcp_Identity* peer_identity = const_cast<grpc_gcp_Identity*>(identity);
-  if(peer_identity == nullptr ) {
-    gpr_log(GPR_ERROR, "Null Peer Identity.");
+  if(peer_identity == nullptr) {
+    gpr_log(GPR_ERROR, "Null peer identity in ALTS context.");
     return TSI_FAILED_PRECONDITION;
   }
 
@@ -696,5 +691,5 @@ alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(
   return handshaker->client;
 }
 
-}
-}
+} // namespace internal
+} // namespace grpc_core
