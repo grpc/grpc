@@ -24,35 +24,14 @@ def docker_image_for_rake_compiler(platform)
   dockerpath = File.dirname(dockerfile)
   version = Digest::SHA1.file(dockerfile).hexdigest
   image_name = 'rake_' + platform + '_' + version
-  # if "DOCKERHUB_ORGANIZATION" env is set, we try to pull the pre-built
-  # rake-compiler-dock image from dockerhub rather then building from scratch.
-  if ENV.has_key?('DOCKERHUB_ORGANIZATION')
-    image_name = ENV['DOCKERHUB_ORGANIZATION'] + '/' + image_name
-    cmd = "docker pull #{image_name}"
-    puts cmd
-    system cmd
-    raise "Failed to pull the docker image." unless $? == 0
-  else
-    cmd = "docker build -t #{image_name} --file #{dockerfile} #{dockerpath}"
-    puts cmd
-    system cmd
-    raise "Failed to build the docker image." unless $? == 0
-  end
-  image_name
+  ENV.fetch('DOCKERHUB_ORGANIZATION', 'grpctesting') + '/' + image_name
 end
 
 def run_rake_compiler(platform, args)
   require 'rake_compiler_dock'
 
-  args = 'bash -l' if args.empty?
-
   ENV['RCD_RUBYVM'] = 'mri'
   ENV['RCD_PLATFORM'] = platform
   ENV['RCD_IMAGE'] = docker_image_for_rake_compiler(platform)
-
   RakeCompilerDock.sh args
-end
-
-if __FILE__ == $0
-  docker_for_windows 'x86_64-linux', $*.join(' ')
 end
