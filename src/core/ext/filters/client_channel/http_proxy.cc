@@ -23,6 +23,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -176,13 +178,13 @@ class HttpProxyMapper : public ProxyMapperInterface {
       /* Use base64 encoding for user credentials as stated in RFC 7617 */
       char* encoded_user_cred =
           grpc_base64_encode(user_cred, strlen(user_cred), 0, 0);
-      char* header;
-      gpr_asprintf(&header, "Proxy-Authorization:Basic %s", encoded_user_cred);
+      std::string header =
+          absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred);
       gpr_free(encoded_user_cred);
       args_to_add[1] = grpc_channel_arg_string_create(
-          (char*)GRPC_ARG_HTTP_CONNECT_HEADERS, header);
+          const_cast<char*>(GRPC_ARG_HTTP_CONNECT_HEADERS),
+          const_cast<char*>(header.c_str()));
       *new_args = grpc_channel_args_copy_and_add(args, args_to_add, 2);
-      gpr_free(header);
     } else {
       *new_args = grpc_channel_args_copy_and_add(args, args_to_add, 1);
     }

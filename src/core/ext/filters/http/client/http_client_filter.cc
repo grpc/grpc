@@ -23,12 +23,12 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/gpr/string.h"
@@ -121,8 +121,8 @@ static grpc_error* client_filter_incoming_metadata(grpc_metadata_batch* b) {
     } else {
       char* val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.status->md),
                                   GPR_DUMP_ASCII);
-      char* msg;
-      gpr_asprintf(&msg, "Received http2 header with status: %s", val);
+      std::string msg =
+          absl::StrCat("Received http2 header with status: ", val);
       grpc_error* e = grpc_error_set_str(
           grpc_error_set_int(
               grpc_error_set_str(
@@ -131,9 +131,9 @@ static grpc_error* client_filter_incoming_metadata(grpc_metadata_batch* b) {
                   GRPC_ERROR_STR_VALUE, grpc_slice_from_copied_string(val)),
               GRPC_ERROR_INT_GRPC_STATUS,
               grpc_http2_status_to_grpc_status(atoi(val))),
-          GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_copied_string(msg));
+          GRPC_ERROR_STR_GRPC_MESSAGE,
+          grpc_slice_from_cpp_string(std::move(msg)));
       gpr_free(val);
-      gpr_free(msg);
       return e;
     }
   }

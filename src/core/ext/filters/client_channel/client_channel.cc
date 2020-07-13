@@ -171,25 +171,14 @@ class ChannelData {
                                       grpc_connectivity_state* state,
                                       grpc_closure* on_complete,
                                       grpc_closure* watcher_timer_init) {
-    auto* watcher = new ExternalConnectivityWatcher(
-        this, pollent, state, on_complete, watcher_timer_init);
-    {
-      MutexLock lock(&external_watchers_mu_);
-      // Will be deleted when the watch is complete.
-      GPR_ASSERT(external_watchers_[on_complete] == nullptr);
-      external_watchers_[on_complete] = watcher;
-    }
-    watcher->Start();
+    new ExternalConnectivityWatcher(this, pollent, state, on_complete,
+                                    watcher_timer_init);
   }
 
   void RemoveExternalConnectivityWatcher(grpc_closure* on_complete,
                                          bool cancel) {
-    MutexLock lock(&external_watchers_mu_);
-    auto it = external_watchers_.find(on_complete);
-    if (it != external_watchers_.end()) {
-      if (cancel) it->second->Cancel();
-      external_watchers_.erase(it);
-    }
+    ExternalConnectivityWatcher::RemoveWatcherFromExternalWatchersMap(
+        this, on_complete, cancel);
   }
 
   int NumExternalConnectivityWatchers() const {
@@ -220,13 +209,18 @@ class ChannelData {
 
     ~ExternalConnectivityWatcher();
 
-    void Start();
+    // Removes the watcher from the external_watchers_ map.
+    static void RemoveWatcherFromExternalWatchersMap(ChannelData* chand,
+                                                     grpc_closure* on_complete,
+                                                     bool cancel);
 
     void Notify(grpc_connectivity_state state) override;
 
     void Cancel();
 
    private:
+    // Adds the watcher to state_tracker_. Consumes the ref that is passed to it
+    // from Start().
     void AddWatcherLocked();
     void RemoveWatcherLocked();
 
@@ -354,7 +348,8 @@ class ChannelData {
   // synchronously via grpc_channel_num_external_connectivity_watchers().
   //
   mutable Mutex external_watchers_mu_;
-  std::map<grpc_closure*, ExternalConnectivityWatcher*> external_watchers_;
+  std::map<grpc_closure*, RefCountedPtr<ExternalConnectivityWatcher>>
+      external_watchers_;
 };
 
 //
@@ -407,7 +402,8 @@ class CallData {
     iterator begin() const override {
       static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(intptr_t),
                     "iterator size too large");
-      return iterator(this, reinterpret_cast<intptr_t>(batch_->list.head));
+      return iterator(
+          this, reinterpret_cast<intptr_t>(MaybeSkipEntry(batch_->list.head)));
     }
     iterator end() const override {
       static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(intptr_t),
@@ -424,11 +420,19 @@ class CallData {
     }
 
    private:
+    grpc_linked_mdelem* MaybeSkipEntry(grpc_linked_mdelem* entry) const {
+      if (entry != nullptr && batch_->idx.named.path == entry) {
+        return entry->next;
+      }
+      return entry;
+    }
+
     intptr_t IteratorHandleNext(intptr_t handle) const override {
       grpc_linked_mdelem* linked_mdelem =
           reinterpret_cast<grpc_linked_mdelem*>(handle);
-      return reinterpret_cast<intptr_t>(linked_mdelem->next);
+      return reinterpret_cast<intptr_t>(MaybeSkipEntry(linked_mdelem->next));
     }
+
     std::pair<absl::string_view, absl::string_view> IteratorHandleGet(
         intptr_t handle) const override {
       grpc_linked_mdelem* linked_mdelem =
@@ -1165,6 +1169,21 @@ ChannelData::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
   grpc_polling_entity_add_to_pollset_set(&pollent_,
                                          chand_->interested_parties_);
   GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExternalConnectivityWatcher");
+  {
+    MutexLock lock(&chand_->external_watchers_mu_);
+    // Will be deleted when the watch is complete.
+    GPR_ASSERT(chand->external_watchers_[on_complete] == nullptr);
+    // Store a ref to the watcher in the external_watchers_ map.
+    chand->external_watchers_[on_complete] =
+        Ref(DEBUG_LOCATION, "AddWatcherToExternalWatchersMapLocked");
+  }
+  // Pass the ref from creating the object to Start().
+  chand_->work_serializer_->Run(
+      [this]() {
+        // The ref is passed to AddWatcherLocked().
+        AddWatcherLocked();
+      },
+      DEBUG_LOCATION);
 }
 
 ChannelData::ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
@@ -1174,9 +1193,22 @@ ChannelData::ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
                            "ExternalConnectivityWatcher");
 }
 
-void ChannelData::ExternalConnectivityWatcher::Start() {
-  chand_->work_serializer_->Run([this]() { AddWatcherLocked(); },
-                                DEBUG_LOCATION);
+void ChannelData::ExternalConnectivityWatcher::
+    RemoveWatcherFromExternalWatchersMap(ChannelData* chand,
+                                         grpc_closure* on_complete,
+                                         bool cancel) {
+  RefCountedPtr<ExternalConnectivityWatcher> watcher;
+  {
+    MutexLock lock(&chand->external_watchers_mu_);
+    auto it = chand->external_watchers_.find(on_complete);
+    if (it != chand->external_watchers_.end()) {
+      watcher = std::move(it->second);
+      chand->external_watchers_.erase(it);
+    }
+  }
+  // watcher->Cancel() will hop into the WorkSerializer, so we have to unlock
+  // the mutex before calling it.
+  if (watcher != nullptr && cancel) watcher->Cancel();
 }
 
 void ChannelData::ExternalConnectivityWatcher::Notify(
@@ -1214,7 +1246,7 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
 
 void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked() {
   Closure::Run(DEBUG_LOCATION, watcher_timer_init_, GRPC_ERROR_NONE);
-  // Add new watcher.
+  // Add new watcher. Pass the ref of the object from creation to OrphanablePtr.
   chand_->state_tracker_.AddWatcher(
       initial_state_, OrphanablePtr<ConnectivityStateWatcherInterface>(this));
 }
@@ -4018,6 +4050,7 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
   // subchannel's copy of the metadata batch (which is copied for each
   // attempt) to the LB policy instead the one from the parent channel.
   LoadBalancingPolicy::PickArgs pick_args;
+  pick_args.path = StringViewFromSlice(path_);
   pick_args.call_state = &lb_call_state_;
   Metadata initial_metadata(this, initial_metadata_batch);
   pick_args.initial_metadata = &initial_metadata;

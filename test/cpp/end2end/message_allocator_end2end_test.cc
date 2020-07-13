@@ -17,6 +17,7 @@
  */
 
 #include <algorithm>
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <memory>
@@ -43,17 +44,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
-
-// MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
-// should be skipped based on a decision made at SetUp time. In particular, any
-// callback tests can only be run if the iomgr can run in the background or if
-// the transport is in-process.
-#define MAYBE_SKIP_TEST \
-  do {                  \
-    if (do_not_test_) { \
-      return;           \
-    }                   \
-  } while (0)
 
 namespace grpc {
 namespace testing {
@@ -116,15 +106,7 @@ void TestScenario::Log() const {
 class MessageAllocatorEnd2endTestBase
     : public ::testing::TestWithParam<TestScenario> {
  protected:
-  MessageAllocatorEnd2endTestBase() {
-    GetParam().Log();
-    if (GetParam().protocol == Protocol::TCP) {
-      if (!grpc_iomgr_run_in_background()) {
-        do_not_test_ = true;
-        return;
-      }
-    }
-  }
+  MessageAllocatorEnd2endTestBase() { GetParam().Log(); }
 
   ~MessageAllocatorEnd2endTestBase() = default;
 
@@ -209,7 +191,6 @@ class MessageAllocatorEnd2endTestBase
     }
   }
 
-  bool do_not_test_{false};
   int picked_port_{0};
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<EchoTestService::Stub> stub_;
@@ -221,7 +202,6 @@ class MessageAllocatorEnd2endTestBase
 class NullAllocatorTest : public MessageAllocatorEnd2endTestBase {};
 
 TEST_P(NullAllocatorTest, SimpleRpc) {
-  MAYBE_SKIP_TEST;
   CreateServer(nullptr);
   ResetStub();
   SendRpcs(1);
@@ -235,8 +215,8 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
     class MessageHolderImpl
         : public experimental::MessageHolder<EchoRequest, EchoResponse> {
      public:
-      MessageHolderImpl(int* request_deallocation_count,
-                        int* messages_deallocation_count)
+      MessageHolderImpl(std::atomic_int* request_deallocation_count,
+                        std::atomic_int* messages_deallocation_count)
           : request_deallocation_count_(request_deallocation_count),
             messages_deallocation_count_(messages_deallocation_count) {
         set_request(new EchoRequest);
@@ -261,8 +241,8 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
       }
 
      private:
-      int* request_deallocation_count_;
-      int* messages_deallocation_count_;
+      std::atomic_int* const request_deallocation_count_;
+      std::atomic_int* const messages_deallocation_count_;
     };
     experimental::MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
         override {
@@ -271,13 +251,12 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
                                    &messages_deallocation_count);
     }
     int allocation_count = 0;
-    int request_deallocation_count = 0;
-    int messages_deallocation_count = 0;
+    std::atomic_int request_deallocation_count{0};
+    std::atomic_int messages_deallocation_count{0};
   };
 };
 
 TEST_P(SimpleAllocatorTest, SimpleRpc) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
   CreateServer(allocator.get());
@@ -292,7 +271,6 @@ TEST_P(SimpleAllocatorTest, SimpleRpc) {
 }
 
 TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
   auto mutator = [](experimental::RpcAllocatorState* allocator_state,
@@ -317,7 +295,6 @@ TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
 }
 
 TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
   std::vector<EchoRequest*> released_requests;
@@ -377,7 +354,6 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
 };
 
 TEST_P(ArenaAllocatorTest, SimpleRpc) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::unique_ptr<ArenaAllocator> allocator(new ArenaAllocator);
   CreateServer(allocator.get());
@@ -428,10 +404,6 @@ INSTANTIATE_TEST_SUITE_P(ArenaAllocatorTest, ArenaAllocatorTest,
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
-  // The grpc_init is to cover the MAYBE_SKIP_TEST.
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

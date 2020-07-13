@@ -19,8 +19,11 @@
 #include <cinttypes>
 #include <fstream>
 #include <memory>
+#include <string>
 #include <type_traits>
 #include <utility>
+
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -350,22 +353,22 @@ bool InteropClient::DoClientCompressedUnary() {
 
   const std::vector<bool> compressions = {true, false};
   for (size_t i = 0; i < compressions.size(); i++) {
-    char* log_suffix;
-    gpr_asprintf(&log_suffix, "(compression=%s)",
-                 compressions[i] ? "true" : "false");
+    std::string log_suffix =
+        absl::StrFormat("(compression=%s)", compressions[i] ? "true" : "false");
 
-    gpr_log(GPR_DEBUG, "Sending compressed unary request %s.", log_suffix);
+    gpr_log(GPR_DEBUG, "Sending compressed unary request %s.",
+            log_suffix.c_str());
     SimpleRequest request;
     SimpleResponse response;
     request.mutable_expect_compressed()->set_value(compressions[i]);
     if (!PerformLargeUnary(&request, &response, UnaryCompressionChecks)) {
-      gpr_log(GPR_ERROR, "Compressed unary request failed %s", log_suffix);
-      gpr_free(log_suffix);
+      gpr_log(GPR_ERROR, "Compressed unary request failed %s",
+              log_suffix.c_str());
       return false;
     }
 
-    gpr_log(GPR_DEBUG, "Compressed unary request failed %s", log_suffix);
-    gpr_free(log_suffix);
+    gpr_log(GPR_DEBUG, "Compressed unary request failed %s",
+            log_suffix.c_str());
   }
 
   return true;
@@ -374,24 +377,23 @@ bool InteropClient::DoClientCompressedUnary() {
 bool InteropClient::DoServerCompressedUnary() {
   const std::vector<bool> compressions = {true, false};
   for (size_t i = 0; i < compressions.size(); i++) {
-    char* log_suffix;
-    gpr_asprintf(&log_suffix, "(compression=%s)",
-                 compressions[i] ? "true" : "false");
+    std::string log_suffix =
+        absl::StrFormat("(compression=%s)", compressions[i] ? "true" : "false");
 
     gpr_log(GPR_DEBUG, "Sending unary request for compressed response %s.",
-            log_suffix);
+            log_suffix.c_str());
     SimpleRequest request;
     SimpleResponse response;
     request.mutable_response_compressed()->set_value(compressions[i]);
 
     if (!PerformLargeUnary(&request, &response, UnaryCompressionChecks)) {
-      gpr_log(GPR_ERROR, "Request for compressed unary failed %s", log_suffix);
-      gpr_free(log_suffix);
+      gpr_log(GPR_ERROR, "Request for compressed unary failed %s",
+              log_suffix.c_str());
       return false;
     }
 
-    gpr_log(GPR_DEBUG, "Request for compressed unary failed %s", log_suffix);
-    gpr_free(log_suffix);
+    gpr_log(GPR_DEBUG, "Request for compressed unary failed %s",
+            log_suffix.c_str());
   }
 
   return true;
@@ -551,12 +553,11 @@ bool InteropClient::DoServerCompressedStreaming() {
 
   GPR_ASSERT(compressions.size() == sizes.size());
   for (size_t i = 0; i < sizes.size(); i++) {
-    char* log_suffix;
-    gpr_asprintf(&log_suffix, "(compression=%s; size=%d)",
-                 compressions[i] ? "true" : "false", sizes[i]);
+    std::string log_suffix =
+        absl::StrFormat("(compression=%s; size=%d)",
+                        compressions[i] ? "true" : "false", sizes[i]);
 
-    gpr_log(GPR_DEBUG, "Sending request streaming rpc %s.", log_suffix);
-    gpr_free(log_suffix);
+    gpr_log(GPR_DEBUG, "Sending request streaming rpc %s.", log_suffix.c_str());
 
     ResponseParameters* const response_parameter =
         request.add_response_parameters();
@@ -1090,13 +1091,10 @@ InteropClient::PerformOneSoakTestIteration(
   if (!s.ok()) {
     return std::make_tuple(false, elapsed_ms, context.debug_error_string());
   } else if (elapsed_ms > max_acceptable_per_iteration_latency_ms) {
-    char* out;
-    GPR_ASSERT(gpr_asprintf(
-                   &out, "%d ms exceeds max acceptable latency: %d ms.",
-                   elapsed_ms, max_acceptable_per_iteration_latency_ms) != -1);
-    std::string debug_string(out);
-    gpr_free(out);
-    return std::make_tuple(false, elapsed_ms, debug_string);
+    std::string debug_string =
+        absl::StrFormat("%d ms exceeds max acceptable latency: %d ms.",
+                        elapsed_ms, max_acceptable_per_iteration_latency_ms);
+    return std::make_tuple(false, elapsed_ms, std::move(debug_string));
   } else {
     return std::make_tuple(true, elapsed_ms, "");
   }

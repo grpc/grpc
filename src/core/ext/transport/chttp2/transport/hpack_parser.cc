@@ -25,9 +25,11 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/debug/stats.h"
@@ -1087,10 +1089,8 @@ static grpc_error* still_parse_error(grpc_chttp2_hpack_parser* p,
 static grpc_error* parse_illegal_op(grpc_chttp2_hpack_parser* p,
                                     const uint8_t* cur, const uint8_t* end) {
   GPR_ASSERT(cur != end);
-  char* msg;
-  gpr_asprintf(&msg, "Illegal hpack op code %d", *cur);
-  grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-  gpr_free(msg);
+  grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      absl::StrCat("Illegal hpack op code ", *cur).c_str());
   return parse_error(p, cur, end, err);
 }
 
@@ -1173,7 +1173,6 @@ static grpc_error* parse_value4(grpc_chttp2_hpack_parser* p, const uint8_t* cur,
   uint8_t c;
   uint32_t cur_value;
   uint32_t add_value;
-  char* msg;
 
   if (cur == end) {
     p->state = parse_value4;
@@ -1200,12 +1199,12 @@ static grpc_error* parse_value4(grpc_chttp2_hpack_parser* p, const uint8_t* cur,
   }
 
 error:
-  gpr_asprintf(&msg,
-               "integer overflow in hpack integer decoding: have 0x%08x, "
-               "got byte 0x%02x on byte 5",
-               *p->parsing.value, *cur);
-  grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-  gpr_free(msg);
+  grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      absl::StrFormat(
+          "integer overflow in hpack integer decoding: have 0x%08x, "
+          "got byte 0x%02x on byte 5",
+          *p->parsing.value, *cur)
+          .c_str());
   return parse_error(p, cur, end, err);
 }
 
@@ -1227,13 +1226,12 @@ static grpc_error* parse_value5up(grpc_chttp2_hpack_parser* p,
     return parse_next(p, cur + 1, end);
   }
 
-  char* msg;
-  gpr_asprintf(&msg,
-               "integer overflow in hpack integer decoding: have 0x%08x, "
-               "got byte 0x%02x sometime after byte 5",
-               *p->parsing.value, *cur);
-  grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-  gpr_free(msg);
+  grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      absl::StrFormat(
+          "integer overflow in hpack integer decoding: have 0x%08x, "
+          "got byte 0x%02x sometime after byte 5",
+          *p->parsing.value, *cur)
+          .c_str());
   return parse_error(p, cur, end, err);
 }
 
@@ -1389,11 +1387,10 @@ static grpc_error* finish_str(grpc_chttp2_hpack_parser* p, const uint8_t* cur,
     case B64_BYTE2:
       bits = p->base64_buffer;
       if (bits & 0xffff) {
-        char* msg;
-        gpr_asprintf(&msg, "trailing bits in base64 encoding: 0x%04x",
-                     bits & 0xffff);
-        grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-        gpr_free(msg);
+        grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrFormat("trailing bits in base64 encoding: 0x%04x",
+                            bits & 0xffff)
+                .c_str());
         return parse_error(p, cur, end, err);
       }
       decoded[0] = static_cast<uint8_t>(bits >> 16);
@@ -1402,11 +1399,10 @@ static grpc_error* finish_str(grpc_chttp2_hpack_parser* p, const uint8_t* cur,
     case B64_BYTE3:
       bits = p->base64_buffer;
       if (bits & 0xff) {
-        char* msg;
-        gpr_asprintf(&msg, "trailing bits in base64 encoding: 0x%02x",
-                     bits & 0xff);
-        grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-        gpr_free(msg);
+        grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrFormat("trailing bits in base64 encoding: 0x%02x",
+                            bits & 0xff)
+                .c_str());
         return parse_error(p, cur, end, err);
       }
       decoded[0] = static_cast<uint8_t>(bits >> 16);

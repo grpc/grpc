@@ -22,11 +22,12 @@
 
 #include <stdbool.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/handshaker.h"
@@ -53,11 +54,9 @@ grpc_error* ssl_check_peer(
   }
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    char* msg;
-    gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return error;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
+            .c_str());
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
@@ -163,11 +162,10 @@ class grpc_ssl_channel_security_connector final
             verify_options_->verify_peer_callback_userdata);
         gpr_free(peer_pem);
         if (callback_status) {
-          char* msg;
-          gpr_asprintf(&msg, "Verify peer callback returned a failure (%d)",
-                       callback_status);
-          error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-          gpr_free(msg);
+          error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrFormat("Verify peer callback returned a failure (%d)",
+                              callback_status)
+                  .c_str());
         }
       }
     }

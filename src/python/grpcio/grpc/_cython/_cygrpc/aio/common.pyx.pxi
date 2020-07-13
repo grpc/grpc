@@ -171,19 +171,16 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
 
 if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 7:
     def get_working_loop():
-        """Returns a running event loop."""
-        return asyncio.get_running_loop()
+        """Returns a running event loop.
+
+        Due to a defect of asyncio.get_event_loop, its returned event loop might
+        not be set as the default event loop for the main thread.
+        """
+        try:
+            return asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.get_event_loop()
 else:
     def get_working_loop():
-        """Returns a running event loop.
-        
-        Due to a defect of asyncio.get_event_loop, its returned event loop might
-        not be set as the default event loop for the main thread. So, we will
-        raise RuntimeError if the returned event loop is not running.
-        """
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            return loop
-        else:
-            raise RuntimeError('No running event loop detected. This function '
-                             + 'must be called from inside of a running event loop.')
+        """Returns a running event loop."""
+        return asyncio.get_event_loop()

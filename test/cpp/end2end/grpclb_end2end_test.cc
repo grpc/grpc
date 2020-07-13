@@ -21,12 +21,15 @@
 #include <mutex>
 #include <set>
 #include <sstream>
+#include <string>
 #include <thread>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -233,6 +236,11 @@ class BalancerServiceImpl : public BalancerService {
 
       if (!stream->Read(&request)) {
         goto done;
+      } else {
+        if (request.has_initial_request()) {
+          grpc::internal::MutexLock lock(&mu_);
+          service_names_.push_back(request.initial_request().name());
+        }
       }
       IncreaseRequestCount();
       gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
@@ -328,10 +336,8 @@ class BalancerServiceImpl : public BalancerService {
       server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
       server->set_port(backend_port);
       static int token_count = 0;
-      char* token;
-      gpr_asprintf(&token, "token%03d", ++token_count);
-      server->set_load_balance_token(token);
-      gpr_free(token);
+      server->set_load_balance_token(
+          absl::StrFormat("token%03d", ++token_count));
     }
     return response;
   }
@@ -358,6 +364,11 @@ class BalancerServiceImpl : public BalancerService {
     }
   }
 
+  std::vector<std::string> service_names() {
+    grpc::internal::MutexLock lock(&mu_);
+    return service_names_;
+  }
+
  private:
   void SendResponse(Stream* stream, const LoadBalanceResponse& response,
                     int delay_ms) {
@@ -373,6 +384,7 @@ class BalancerServiceImpl : public BalancerService {
 
   const int client_load_reporting_interval_seconds_;
   std::vector<ResponseDelayPair> responses_and_delays_;
+  std::vector<std::string> service_names_;
 
   grpc::internal::Mutex mu_;
   grpc::internal::CondVar serverlist_cond_;
@@ -537,9 +549,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
       const std::vector<AddressData>& address_data) {
     grpc_core::ServerAddressList addresses;
     for (const auto& addr : address_data) {
-      char* lb_uri_str;
-      gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", addr.port);
-      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str, true);
+      std::string lb_uri_str = absl::StrCat("ipv4:127.0.0.1:", addr.port);
+      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str.c_str(), true);
       GPR_ASSERT(lb_uri != nullptr);
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
@@ -549,7 +560,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
           grpc_channel_args_copy_and_add(nullptr, &arg, 1);
       addresses.emplace_back(address.addr, address.len, args);
       grpc_uri_destroy(lb_uri);
-      gpr_free(lb_uri_str);
     }
     return addresses;
   }
@@ -1381,6 +1391,27 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   // and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->service_.response_count());
+}
+
+TEST_F(SingleBalancerTest, ServiceNameFromLbPolicyConfig) {
+  constexpr char kServiceConfigWithTarget[] =
+      "{\n"
+      "  \"loadBalancingConfig\":[\n"
+      "    { \"grpclb\":{\n"
+      "      \"serviceName\":\"test_service\"\n"
+      "    }}\n"
+      "  ]\n"
+      "}";
+
+  SetNextResolutionAllBalancers(kServiceConfigWithTarget);
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
+      0);
+  // Make sure that trying to connect works without a call.
+  channel_->GetState(true /* try_to_connect */);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  EXPECT_EQ(balancers_[0]->service_.service_names().back(), "test_service");
 }
 
 class UpdatesTest : public GrpclbEnd2endTest {

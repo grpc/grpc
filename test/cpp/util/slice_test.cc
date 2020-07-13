@@ -23,6 +23,8 @@
 #include <grpc/slice.h>
 #include <gtest/gtest.h>
 
+#include "test/core/util/test_config.h"
+
 namespace grpc {
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
@@ -135,6 +137,7 @@ TEST_F(SliceTest, Cslice) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

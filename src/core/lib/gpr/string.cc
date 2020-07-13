@@ -28,6 +28,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -50,12 +52,7 @@ char* gpr_strdup(const char* src) {
   return dst;
 }
 
-struct dump_out {
-  size_t capacity;
-  size_t length;
-  char* data;
-};
-char* gpr_format_timespec(gpr_timespec tm) {
+std::string gpr_format_timespec(gpr_timespec tm) {
   char time_buffer[35];
   char ns_buffer[11];  // '.' + 9 digits of precision
   struct tm* tm_info = localtime((const time_t*)&tm.tv_sec);
@@ -76,10 +73,14 @@ char* gpr_format_timespec(gpr_timespec tm) {
       break;
     }
   }
-  char* full_time_str;
-  gpr_asprintf(&full_time_str, "%s%sZ", time_buffer, ns_buffer);
-  return full_time_str;
+  return absl::StrCat(time_buffer, ns_buffer, "Z");
 }
+
+struct dump_out {
+  size_t capacity;
+  size_t length;
+  char* data;
+};
 
 static dump_out dump_out_create(void) {
   dump_out r = {0, 0, nullptr};

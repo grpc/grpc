@@ -1289,6 +1289,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_xds_api_header",
+    hdrs = [
+        "src/core/ext/filters/client_channel/xds/xds_api.h",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
+    ],
+    external_deps = [
+        "upb_lib",
+        "upb_textformat_lib",
+        "re2",
+    ],
+    language = "c++",
+    deps = [
+        "envoy_ads_upbdefs",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
         "src/core/ext/filters/client_channel/xds/xds_api.cc",
@@ -1298,16 +1317,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/xds/xds_api.h",
-        "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
         "src/core/ext/filters/client_channel/xds/xds_channel.h",
         "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
         "src/core/ext/filters/client_channel/xds/xds_client.h",
-        "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_textformat_lib",
     ],
     language = "c++",
     deps = [
@@ -1315,6 +1327,7 @@ grpc_cc_library(
         "envoy_ads_upbdefs",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_xds_api_header",
     ],
 )
 
@@ -1328,16 +1341,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/xds/xds_api.h",
-        "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
         "src/core/ext/filters/client_channel/xds/xds_channel.h",
         "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
         "src/core/ext/filters/client_channel/xds/xds_client.h",
-        "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_textformat_lib",
     ],
     language = "c++",
     deps = [
@@ -1346,6 +1352,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_secure",
+        "grpc_xds_api_header",
     ],
 )
 
@@ -1446,10 +1453,14 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_xds_api_header",
     ],
 )
 

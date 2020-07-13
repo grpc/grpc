@@ -1000,3 +1000,6 @@ cdef class AioServer:
     cdef thread_pool(self):
         """Access the thread pool instance."""
         return self._thread_pool
+
+    def is_running(self):
+        return self._status == AIO_SERVER_STATUS_RUNNING
