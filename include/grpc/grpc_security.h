@@ -29,14 +29,6 @@
 extern "C" {
 #endif
 
-/** --- grpc_call_credentials object.
-
-   A call credentials object represents a way to authenticate on a particular
-   call. These credentials can be composed with a channel credentials object
-   so that they are sent with every call on this channel.  */
-
-typedef struct grpc_call_credentials grpc_call_credentials;
-
 /** --- Authentication Context. --- */
 
 typedef struct grpc_auth_context grpc_auth_context;
@@ -126,6 +118,18 @@ GRPCAPI void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache);
 /** Create a channel arg with the given cache object. */
 GRPCAPI grpc_arg
 grpc_ssl_session_cache_create_channel_arg(grpc_ssl_session_cache* cache);
+
+/** --- grpc_call_credentials object.
+
+   A call credentials object represents a way to authenticate on a particular
+   call. These credentials can be composed with a channel credentials object
+   so that they are sent with every call on this channel.  */
+
+typedef struct grpc_call_credentials grpc_call_credentials;
+
+/** Releases a call credentials object.
+   The creator of the credentials object is responsible for its release. */
+GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
 
 /** --- grpc_channel_credentials object. ---
 
@@ -293,15 +297,13 @@ GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options, void* reserved);
 
-/** Releases a call credentials object.
-   The creator of the credentials object is responsible for its release. */
-GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
-
 /** Creates a composite channel credentials object. The security level of
  * resulting connection is determined by channel_creds. */
 GRPCAPI grpc_channel_credentials* grpc_composite_channel_credentials_create(
     grpc_channel_credentials* channel_creds, grpc_call_credentials* call_creds,
     void* reserved);
+
+/** --- composite credentials. */
 
 /** Creates a composite call credentials object. */
 GRPCAPI grpc_call_credentials* grpc_composite_call_credentials_create(
