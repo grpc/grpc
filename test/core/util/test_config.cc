@@ -103,24 +103,28 @@ static void print_stack_from_context(HANDLE thread, CONTEXT c) {
   symbol->MaxNameLen = 255;
   symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
 
-  const unsigned short MAX_CALLERS_SHOWN = 32;
+  const unsigned short MAX_CALLERS_SHOWN = 8192;  // avoid flooding the stderr if stacktrace is way too long
   for (int frame = 0; frame < MAX_CALLERS_SHOWN && StackWalk(imageType, process, thread, &s, &c, 0,
                    SymFunctionTableAccess, SymGetModuleBase, 0); frame++) {
-    SymFromAddrW(process, (DWORD64)(s.AddrPC.Offset), 0, symbol);
+    PWSTR symbol_name = L"<<no symbol>>";
+    DWORD64 symbol_address = 0;
+    if (SymFromAddrW(process, (DWORD64)(s.AddrPC.Offset), 0, symbol)) {
+      symbol_name = symbol->Name;
+      symbol_address = (DWORD64)symbol->Address;
+    }
 
     PWSTR file_name = L"<<no line info>>";
     int line_number = 0;
     IMAGEHLP_LINE line;
     line.SizeOfStruct = sizeof(IMAGEHLP_LINE);
     DWORD displacement = 0;
-    if (SymGetLineFromAddrW(process, (DWORD64)(s.AddrPC.Offset), &displacement, &line))
-    {
+    if (SymGetLineFromAddrW(process, (DWORD64)(s.AddrPC.Offset), &displacement, &line)) {
         file_name = line.FileName;
         line_number = (int)line.LineNumber;
     }
 
     fwprintf(stderr, L"*** %d: %016I64X %ls - %016I64X (%ls:%d)\n", frame,
-             (DWORD64)(s.AddrPC.Offset), symbol->Name, (DWORD64)symbol->Address, file_name, line_number);
+             (DWORD64)(s.AddrPC.Offset), symbol_name, symbol_address, file_name, line_number);
     fflush(stderr);
   }
 
