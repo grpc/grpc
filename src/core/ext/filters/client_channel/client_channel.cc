@@ -3881,7 +3881,7 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
   if (service_config != nullptr) {
     // Use the ConfigSelector to determine the config for the call.
     ConfigSelector::CallConfig call_config =
-        config_selector->GetCallConfig({&path_, initial_metadata});
+        config_selector->GetCallConfig({&path_, initial_metadata, arena_});
     if (call_config.error != GRPC_ERROR_NONE) return call_config.error;
     call_attributes_ = std::move(call_config.call_attributes);
     on_call_committed_ = std::move(call_config.on_call_committed);

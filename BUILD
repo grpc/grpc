@@ -1462,6 +1462,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver_xds_header",
         "grpc_xds_api_header",
     ],
 )
@@ -1749,6 +1750,14 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
     ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_xds_header",
+    hdrs = [
+        "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h",
+    ],
+    language = "c++",
 )
 
 grpc_cc_library(

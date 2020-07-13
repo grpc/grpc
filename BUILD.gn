@@ -281,6 +281,7 @@ config("grpc_config") {
         "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h",
         "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
+        "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h",
         "src/core/ext/filters/client_channel/resolver_factory.h",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
         "src/core/ext/filters/client_channel/resolver_registry.h",
