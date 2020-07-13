@@ -1871,14 +1871,14 @@ def alts_server_credentials():
 def compute_engine_channel_credentials(call_credentials):
     """Creates a compute engine channel credential.
 
-    This credential can only be used in a GCP environment as ir relies on
-    a handshaker service. For more infor about ALTS, see
+    This credential can only be used in a GCP environment as it relies on
+    a handshaker service. For more info about ALTS, see
     https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security
 
     This channel credential is expected to be used as part of a composite
-    credential in conjunction with a compute_engine_call_credential. if used
-    with any other call credential, the connection may suddenly and unexpectedly
-    begin failing RPCs.
+    credential in conjunction with a call credential following the Application
+    Default Credentials strategy. If used with any other sort of call
+    credential, the connection may suddenly and unexpectedly begin failing RPCs.
     """
     return ChannelCredentials(
         _cygrpc.channel_credentials_compute_engine(

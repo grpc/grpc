@@ -291,7 +291,7 @@ static void update_tenancy() {
   gpr_mu_unlock(&g_state_mu);
 }
 
-static grpc_core::RefCountedPtr<grpc_call_credentials>make_default_call_creds(
+static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
     grpc_error** error) {
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
   grpc_error* err;
@@ -317,7 +317,7 @@ static grpc_core::RefCountedPtr<grpc_call_credentials>make_default_call_creds(
     if (call_creds == nullptr) {
       *error = grpc_error_add_child(
           *error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                     "Failed to get credentials from network"));
+                      "Failed to get credentials from network"));
     }
   }
 
