@@ -280,11 +280,8 @@ struct StsCredentialsOptions {
   grpc::string actor_token_type;            // Optional.
 };
 
-static inline grpc::Status StsCredentialsOptionsFromJson(
-    const std::string& json_string, StsCredentialsOptions* options) {
-  return ::grpc::experimental::StsCredentialsOptionsFromJson(json_string,
-                                                                  options);
-}
+grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
+                                           StsCredentialsOptions* options);
 
 /// Creates STS credentials options from the $STS_CREDENTIALS environment
 /// variable. This environment variable points to the path of a JSON file
