@@ -291,7 +291,7 @@ static void update_tenancy() {
   gpr_mu_unlock(&g_state_mu);
 }
 
-static grpc_core::RefCountedPtr<grpc_call_credentials>default_call_creds(
+static grpc_core::RefCountedPtr<grpc_call_credentials>make_default_call_creds(
     grpc_error** error) {
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
   grpc_error* err;
@@ -337,8 +337,8 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
 
   update_tenancy();
 
-  if (call_credentials == nullptr) {
-    call_creds = default_call_creds(&error);
+  if (call_creds == nullptr) {
+    call_creds = make_default_call_creds(&error);
   }
 
   if (call_creds != nullptr) {
