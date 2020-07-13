@@ -144,8 +144,6 @@ void XdsResolver::StartLocked() {
 
 class XdsResolverFactory : public ResolverFactory {
  public:
-  explicit XdsResolverFactory(const char* scheme) : scheme_(scheme) {}
-
   bool IsValidUri(const grpc_uri* uri) const override {
     if (GPR_UNLIKELY(0 != strcmp(uri->authority, ""))) {
       gpr_log(GPR_ERROR, "URI authority not supported");
@@ -159,14 +157,8 @@ class XdsResolverFactory : public ResolverFactory {
     return MakeOrphanable<XdsResolver>(std::move(args));
   }
 
-  const char* scheme() const override { return scheme_; }
-
- private:
-  const char* scheme_;
+  const char* scheme() const override { return "xds"; }
 };
-
-constexpr char kXdsScheme[] = "xds";
-constexpr char kXdsExperimentalScheme[] = "xds-experimental";
 
 }  // namespace
 
@@ -174,11 +166,7 @@ constexpr char kXdsExperimentalScheme[] = "xds-experimental";
 
 void grpc_resolver_xds_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::XdsResolverFactory>(grpc_core::kXdsScheme));
-  // TODO(roth): Remov this in the 1.31 release.
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::XdsResolverFactory>(
-          grpc_core::kXdsExperimentalScheme));
+      absl::make_unique<grpc_core::XdsResolverFactory>());
 }
 
 void grpc_resolver_xds_shutdown() {}
