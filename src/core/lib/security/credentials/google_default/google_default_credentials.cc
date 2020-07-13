@@ -49,6 +49,8 @@ using grpc_core::Json;
 /* -- Constants. -- */
 
 #define GRPC_COMPUTE_ENGINE_DETECTION_HOST "metadata.google.internal."
+#define GRPC_GOOGLE_CREDENTIAL_CREATION_ERROR \
+  "Failed to create Google credentials"
 
 /* -- Default credentials. -- */
 
@@ -315,6 +317,8 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
     call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
         grpc_google_compute_engine_credentials_create(nullptr));
     if (call_creds == nullptr) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          GRPC_GOOGLE_CREDENTIAL_CREATION_ERROR);
       *error = grpc_error_add_child(
           *error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "Failed to get credentials from network"));
@@ -328,8 +332,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     grpc_call_credentials* call_credentials) {
   grpc_channel_credentials* result = nullptr;
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds(call_credentials);
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Failed to create Google credentials");
+  grpc_error* error = nullptr;
   grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_google_default_credentials_create(%p)", 1,
