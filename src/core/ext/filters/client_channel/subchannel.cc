@@ -1096,6 +1096,10 @@ bool Subchannel::PublishTransportLocked() {
 }
 
 void Subchannel::Disconnect() {
+  // The delay makes concurrent_connectivity_test flake on windows much more likely.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_millis(2, GPR_TIMESPAN)));
+
   // The subchannel_pool is only used once here in this subchannel, so the
   // access can be outside of the lock.
   if (subchannel_pool_ != nullptr) {
