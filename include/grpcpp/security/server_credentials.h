@@ -55,7 +55,8 @@ struct SslServerCredentialsOptions {
   grpc_ssl_client_certificate_request_type client_certificate_request;
 };
 
-std::shared_ptr<ServerCredentials> SslServerCredentials(const SslServerCredentialsOptions& options);
+std::shared_ptr<ServerCredentials> SslServerCredentials(
+    const SslServerCredentialsOptions& options);
 
 std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
@@ -64,12 +65,15 @@ namespace experimental {
 typedef ::grpc_impl::experimental::AltsServerCredentialsOptions
     AltsServerCredentialsOptions;
 
-std::shared_ptr<ServerCredentials> AltsServerCredentials(const AltsServerCredentialsOptions& options);
+std::shared_ptr<ServerCredentials> AltsServerCredentials(
+    const AltsServerCredentialsOptions& options);
 
-std::shared_ptr<ServerCredentials> LocalServerCredentials(grpc_local_connect_type type);
+std::shared_ptr<ServerCredentials> LocalServerCredentials(
+    grpc_local_connect_type type);
 
 /// Builds TLS ServerCredentials given TLS options.
-std::shared_ptr<ServerCredentials> TlsServerCredentials(const ::grpc::experimental::TlsCredentialsOptions& options);
+std::shared_ptr<ServerCredentials> TlsServerCredentials(
+    const ::grpc::experimental::TlsCredentialsOptions& options);
 
 }  // namespace experimental
 }  // namespace grpc
