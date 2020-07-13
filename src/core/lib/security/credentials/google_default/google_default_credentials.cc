@@ -291,35 +291,37 @@ static void update_tenancy() {
   gpr_mu_unlock(&g_state_mu);
 }
 
-static void default_call_creds(
-    grpc_core::RefCountedPtr<grpc_call_credentials>* call_creds,
-    grpc_error* error) {
+static grpc_core::RefCountedPtr<grpc_call_credentials>default_call_creds(
+    grpc_error** error) {
+  grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
   grpc_error* err;
 
   /* First, try the environment variable. */
   char* path_from_env = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
   if (path_from_env != nullptr) {
-    err = create_default_creds_from_path(path_from_env, call_creds);
+    err = create_default_creds_from_path(path_from_env, &call_creds);
     gpr_free(path_from_env);
-    if (err == GRPC_ERROR_NONE) return;
-    error = grpc_error_add_child(error, err);
+    if (err == GRPC_ERROR_NONE) return call_creds;
+    *error = grpc_error_add_child(*error, err);
   }
 
   /* Then the well-known file. */
   err = create_default_creds_from_path(
-      grpc_get_well_known_google_credentials_file_path(), call_creds);
-  if (err == GRPC_ERROR_NONE) return;
-  error = grpc_error_add_child(error, err);
+      grpc_get_well_known_google_credentials_file_path(), &call_creds);
+  if (err == GRPC_ERROR_NONE) return call_creds;
+  *error = grpc_error_add_child(*error, err);
 
   if (g_metadata_server_available) {
-    *call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
+    call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
         grpc_google_compute_engine_credentials_create(nullptr));
-    if (*call_creds == nullptr) {
-      error = grpc_error_add_child(
-          error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    if (call_creds == nullptr) {
+      *error = grpc_error_add_child(
+          *error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                      "Failed to get credentials from network"));
     }
   }
+
+  return call_creds;
 }
 
 grpc_channel_credentials* grpc_google_default_credentials_create(
@@ -336,7 +338,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
   update_tenancy();
 
   if (call_credentials == nullptr) {
-    default_call_creds(&call_creds, error);
+    call_creds = default_call_creds(&error);
   }
 
   if (call_creds != nullptr) {
