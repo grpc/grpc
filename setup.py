@@ -17,6 +17,13 @@
 # undesirable behaviors or errors.
 import setuptools
 
+# Monkey Patch the unix compiler to accept ASM
+# files used by boring SSL.
+from distutils.unixccompiler import UnixCCompiler
+UnixCCompiler.src_extensions.append('.S')
+del UnixCCompiler
+
+from distutils import ccompiler
 from distutils import cygwinccompiler
 from distutils import extension as _extension
 from distutils import util
@@ -96,6 +103,8 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.8',
     'License :: OSI Approved :: Apache Software License',
 ]
+
+BUILD_WITH_BORING_SSL_ASM = os.environ.get('GRPC_BUILD_WITH_BORING_SSL_ASM', False)
 
 # Environment variable to determine whether or not the Cython extension should
 # *use* Cython or use the generated C files. Note that this requires the C files
@@ -261,9 +270,26 @@ if BUILD_WITH_SYSTEM_ZLIB:
 if BUILD_WITH_SYSTEM_CARES:
     EXTENSION_LIBRARIES += ('cares',)
 
-DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600))
+DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
+asm_files = []
+NO_BORING_ASM = True
+if BUILD_WITH_BORING_SSL_ASM:
+   LINUX_X86_64 = "linux-x86_64"
+   if LINUX_X86_64 == util.get_platform():
+      asm_files = [f for f in grpc_core_dependencies.ASM_SOURCE_FILES
+                   if (LINUX_X86_64 in f or "hrss/asm" in f)
+                   and "test" not in f]
+      print(asm_files)
+      NO_BORING_ASM = False
+   else:
+       print("ASM Builds for BoringSSL currently only supported "
+             "on linux-x86-64. Found:", util.get_platform())
+if NO_BORING_ASM:
+   DEFINE_MACROS += (('OPENSSL_NO_ASM', 1),)
+
 if not DISABLE_LIBC_COMPATIBILITY:
     DEFINE_MACROS += (('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
+
 if "win32" in sys.platform:
     # TODO(zyc): Re-enable c-ares on x64 and x86 windows after fixing the
     # ares_library_init compilation issue
@@ -328,7 +354,8 @@ def cython_extensions_and_necessity():
     extensions = [
         _extension.Extension(
             name=module_name,
-            sources=[module_file] + list(CYTHON_HELPER_C_FILES) + core_c_files,
+            sources=([module_file] + list(CYTHON_HELPER_C_FILES) +
+                     core_c_files + asm_files),
             include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
             libraries=list(EXTENSION_LIBRARIES),
             define_macros=list(DEFINE_MACROS),

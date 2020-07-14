@@ -65,6 +65,9 @@ class Grpc(object):
                     'src':
                         sorted(
                             map_dir(f) for f in files['ssl'] + files['crypto']),
+                    'asm_src':
+                        sorted(map_dir(f)
+                               for _, srcs in asm_outputs for f in srcs),
                     'headers':
                         sorted(
                             map_dir(f)
