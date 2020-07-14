@@ -19,7 +19,6 @@ package io.grpc.helloworldexample.cpp;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
 import android.view.View;
@@ -29,8 +28,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.lang.ref.WeakReference;
+import androidx.appcompat.app.AppCompatActivity;
 
-public class HelloworldActivity extends AppCompatActivity {
+public class HelloWorldActivity extends AppCompatActivity {
 
   static {
     System.loadLibrary("grpc-helloworld");
@@ -104,16 +104,16 @@ public class HelloworldActivity extends AppCompatActivity {
   }
 
   private static class RunServerTask extends AsyncTask<Integer, Void, Void> {
-    private final WeakReference<HelloworldActivity> activityReference;
+    private final WeakReference<HelloWorldActivity> activityReference;
 
-    private RunServerTask(HelloworldActivity activity) {
-      this.activityReference = new WeakReference<HelloworldActivity>(activity);
+    private RunServerTask(HelloWorldActivity activity) {
+      this.activityReference = new WeakReference<HelloWorldActivity>(activity);
     }
 
     @Override
     protected Void doInBackground(Integer... params) {
       int port = params[0];
-      HelloworldActivity activity = activityReference.get();
+      HelloWorldActivity activity = activityReference.get();
       if (activity != null) {
         activity.startServer(port);
       }
@@ -122,10 +122,10 @@ public class HelloworldActivity extends AppCompatActivity {
   }
 
   private static class GrpcTask extends AsyncTask<String, Void, String> {
-    private final WeakReference<HelloworldActivity> activityReference;
+    private final WeakReference<HelloWorldActivity> activityReference;
 
-    private GrpcTask(HelloworldActivity activity) {
-      this.activityReference = new WeakReference<HelloworldActivity>(activity);
+    private GrpcTask(HelloWorldActivity activity) {
+      this.activityReference = new WeakReference<HelloWorldActivity>(activity);
     }
 
     @Override
@@ -139,7 +139,7 @@ public class HelloworldActivity extends AppCompatActivity {
 
     @Override
     protected void onPostExecute(String result) {
-      HelloworldActivity activity = activityReference.get();
+      HelloWorldActivity activity = activityReference.get();
       if (activity == null || isCancelled()) {
         return;
       }

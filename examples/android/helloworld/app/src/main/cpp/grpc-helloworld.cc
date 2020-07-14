@@ -104,7 +104,7 @@ class GreeterClient {
 
 // Send an RPC and return the response. Invoked from Java code.
 extern "C" JNIEXPORT jstring JNICALL
-Java_io_grpc_helloworldexample_cpp_HelloworldActivity_sayHello(
+Java_io_grpc_helloworldexample_cpp_HelloWorldActivity_sayHello(
     JNIEnv* env, jobject obj_unused, jstring host_raw, jint port_raw,
     jstring message_raw) {
   const char* host_chars = env->GetStringUTFChars(host_raw, (jboolean*)0);
@@ -128,7 +128,7 @@ Java_io_grpc_helloworldexample_cpp_HelloworldActivity_sayHello(
 
 // Start the server. Invoked from Java code.
 extern "C" JNIEXPORT void JNICALL
-Java_io_grpc_helloworldexample_cpp_HelloworldActivity_startServer(
+Java_io_grpc_helloworldexample_cpp_HelloWorldActivity_startServer(
     JNIEnv* env, jobject obj_this, jint port_raw) {
   int port = static_cast<int>(port_raw);
 
