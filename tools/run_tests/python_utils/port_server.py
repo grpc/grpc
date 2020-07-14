@@ -157,7 +157,7 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             p = allocate_port(self)
             self.log_message('allocated port %d' % p)
-            self.wfile.write(bytes('%d' % p, 'utf-8'))
+            self.wfile.write(bytes('%d' % p))
         elif self.path[0:6] == '/drop/':
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain')
@@ -177,7 +177,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain')
             self.end_headers()
-            self.wfile.write(bytes('%d' % _MY_VERSION, 'utf-8'))
+            self.wfile.write(bytes('%d' % _MY_VERSION))
         elif self.path == '/dump':
             # yaml module is not installed on Macs and Windows machines by default
             # so we import it lazily (/dump action is only used for debugging)
@@ -192,7 +192,7 @@ class Handler(BaseHTTPRequestHandler):
                 'in_use': dict((k, now - v) for k, v in in_use.items())
             })
             mu.release()
-            self.wfile.write(bytes(out, 'utf-8'))
+            self.wfile.write(bytes(out))
         elif self.path == '/quitquitquit':
             self.send_response(200)
             self.end_headers()
