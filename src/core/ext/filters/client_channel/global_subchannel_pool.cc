@@ -84,9 +84,11 @@ Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
           // from the AVL tree soon. Spinning here excesively here can actually
           // prevent another thread from removing the subchannel, basically
           // resulting in a live lock. See b/157516542 for more details.
-
-          // gpr does not support thread yield operation, this is the best we
-          // can do.
+          // TODO(jtattermusch): the entire ref-counting mechanism for
+          // subchannels should be overhaulded, but the current workaround
+          // is fine for short-term.
+          // TODO(jtattermusch): gpr does not support thread yield operation,
+          // so a very short wait is the best we can do.
           gpr_sleep_until(gpr_time_add(
               gpr_now(GPR_CLOCK_REALTIME),
               gpr_time_from_micros(GRPC_REGISTER_SUBCHANNEL_CALM_DOWN_MICROS,
