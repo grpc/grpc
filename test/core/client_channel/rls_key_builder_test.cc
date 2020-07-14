@@ -217,7 +217,8 @@ TEST_F(RlsKeyBuilderTest, WildcardMatch) {
       "  }"
       "]");
   grpc_error* error = GRPC_ERROR_NONE;
-  auto key_builder_map = RlsCreateKeyMapBuilderMap(config_json, &error);
+  RlsLb::KeyMapBuilderMap key_builder_map =
+      RlsCreateKeyMapBuilderMap(config_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   TestMetadata metadata;
   metadata.Add(":path", "/test_service1/some_random_method");

@@ -175,7 +175,7 @@ class BalancerServiceImpl : public BalancerService {
       IncreaseRequestCount();
       gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
               request.DebugString().c_str());
-      auto& name = request.initial_request().name();
+      const std::string& name = request.initial_request().name();
 
       // TODO(juanlishen): Initial response should always be the first response.
       if (client_load_reporting_interval_seconds_ > 0) {
@@ -190,7 +190,7 @@ class BalancerServiceImpl : public BalancerService {
         grpc::internal::MutexLock lock(&mu_);
         responses_and_delays = responses_and_delays_;
       }
-      for (const auto& response_and_delay : responses_and_delays) {
+      for (const ResponseDelayPair& response_and_delay : responses_and_delays) {
         auto it = response_and_delay.first.find(name);
         if (it != response_and_delay.first.end()) {
           SendResponse(stream, it->second, response_and_delay.second);
@@ -356,10 +356,11 @@ class RlsServiceImpl : public RlsService {
     }
     bool make_response = true;
     if (res.request_match.has_value()) {
-      auto& server = request->server();
-      auto& path = request->path();
-      auto key_map = std::map<std::string, std::string>(
-          request->key_map().begin(), request->key_map().end());
+      const std::string& server = request->server();
+      const std::string& path = request->path();
+      std::map<std::string, std::string> key_map =
+          std::map<std::string, std::string>(request->key_map().begin(),
+                                             request->key_map().end());
       if (server != res.request_match->server ||
           path != res.request_match->path ||
           key_map != res.request_match->key_map) {
@@ -600,8 +601,6 @@ class RlsPolicyEnd2endTest : public ::testing::Test {
                                  double lookup_service_timeout = 10,
                                  int64_t cache_size_bytes = 10 * 1024 * 1024) {
     int lookup_service_port = rls_server_->port_;
-    std::stringstream service_config;
-
     return absl::StrFormat(
         "{"
         "  \"loadBalancingConfig\":[{"
@@ -759,7 +758,7 @@ class RlsPolicyEnd2endTest : public ::testing::Test {
 
 TEST_F(RlsPolicyEnd2endTest, RlsGrpcLb) {
   StartBackends(2);
-  auto service_config = BuildServiceConfig();
+  std::string service_config = BuildServiceConfig();
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_OK, "TestHeaderData");
   SetNextLbResponse({{kTarget, 0}, {kDefaultTarget, 1}});
@@ -768,14 +767,14 @@ TEST_F(RlsPolicyEnd2endTest, RlsGrpcLb) {
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   EXPECT_EQ(backends_[1]->service_.request_count(), 0);
-  auto rls_data = backends_[0]->service_.rls_data();
+  std::set<grpc::string> rls_data = backends_[0]->service_.rls_data();
   EXPECT_EQ(rls_data.size(), 1);
   EXPECT_NE(rls_data.find("TestHeaderData"), rls_data.end());
 }
 
 TEST_F(RlsPolicyEnd2endTest, FailedRlsRequestFallback) {
   StartBackends(2);
-  auto service_config = BuildServiceConfig();
+  std::string service_config = BuildServiceConfig();
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_INTERNAL);
   SetNextLbResponse({{kTarget, 0}, {kDefaultTarget, 1}});
@@ -788,7 +787,7 @@ TEST_F(RlsPolicyEnd2endTest, FailedRlsRequestFallback) {
 
 TEST_F(RlsPolicyEnd2endTest, RlsGrpcLbWithoutKeyMapMatch) {
   StartBackends(2);
-  auto service_config = BuildServiceConfig();
+  std::string service_config = BuildServiceConfig();
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(
       GRPC_STATUS_OK, "", 0,
@@ -804,7 +803,7 @@ TEST_F(RlsPolicyEnd2endTest, RlsGrpcLbWithoutKeyMapMatch) {
 
 TEST_F(RlsPolicyEnd2endTest, RlsGrpcLbWithKeyMapMatch) {
   StartBackends(2);
-  auto service_config = BuildServiceConfig();
+  std::string service_config = BuildServiceConfig();
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(
       GRPC_STATUS_OK, "", 0,
@@ -821,7 +820,7 @@ TEST_F(RlsPolicyEnd2endTest, RlsGrpcLbWithKeyMapMatch) {
 TEST_F(RlsPolicyEnd2endTest, UpdateRlsConfig) {
   const char* kAlternativeDefaultTarget = "test_default_target_2";
   StartBackends(2);
-  auto service_config = BuildServiceConfig();
+  std::string service_config = BuildServiceConfig();
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_INTERNAL);
   SetNextLbResponse({{kDefaultTarget, 0}, {kAlternativeDefaultTarget, 1}});
@@ -841,7 +840,7 @@ TEST_F(RlsPolicyEnd2endTest, UpdateRlsConfig) {
 
 TEST_F(RlsPolicyEnd2endTest, FailedRlsRequestError) {
   StartBackends(2);
-  auto service_config = BuildServiceConfig(10, 5, "");
+  std::string service_config = BuildServiceConfig(10, 5, "");
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_INTERNAL);
   SetNextLbResponse({{kTarget, 0}, {kDefaultTarget, 1}});
@@ -854,7 +853,7 @@ TEST_F(RlsPolicyEnd2endTest, FailedRlsRequestError) {
 
 TEST_F(RlsPolicyEnd2endTest, RlsRequestTimeout) {
   StartBackends(2);
-  auto service_config = BuildServiceConfig(10, 5, kDefaultTarget, 2);
+  std::string service_config = BuildServiceConfig(10, 5, kDefaultTarget, 2);
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_OK, nullptr, 4000);
   SetNextLbResponse({{kTarget, 0}, {kDefaultTarget, 1}});
@@ -867,7 +866,7 @@ TEST_F(RlsPolicyEnd2endTest, RlsRequestTimeout) {
 
 TEST_F(RlsPolicyEnd2endTest, CachedRlsResponse) {
   StartBackends(2);
-  auto service_config = BuildServiceConfig();
+  std::string service_config = BuildServiceConfig();
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_OK);
   SetNextLbResponse({{kTarget, 0}, {kDefaultTarget, 1}});
@@ -883,7 +882,7 @@ TEST_F(RlsPolicyEnd2endTest, CachedRlsResponse) {
 TEST_F(RlsPolicyEnd2endTest, StaleRlsResponse) {
   const std::string kAlternativeTarget = "test_target_2";
   StartBackends(3);
-  auto service_config = BuildServiceConfig(10, 1);
+  std::string service_config = BuildServiceConfig(10, 1);
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_OK);
   SetNextLbResponse(
@@ -905,7 +904,8 @@ TEST_F(RlsPolicyEnd2endTest, StaleRlsResponse) {
 TEST_F(RlsPolicyEnd2endTest, ExpiredRlsResponse) {
   const std::string kAlternativeTarget = "test_target_2";
   StartBackends(3);
-  auto service_config = BuildServiceConfig(1 /* max_age */, 1 /* stale_age */);
+  std::string service_config =
+      BuildServiceConfig(1 /* max_age */, 1 /* stale_age */);
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_OK);
   SetNextLbResponse(
@@ -926,7 +926,7 @@ TEST_F(RlsPolicyEnd2endTest, CacheEviction) {
   const std::string kAlternativeTarget = "test_target_2";
   StartBackends(3);
   // set cache bytes to 1 byte
-  auto service_config = BuildServiceConfig(10, 5, kDefaultTarget, 10, 1);
+  std::string service_config = BuildServiceConfig(10, 5, kDefaultTarget, 10, 1);
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_OK);
   SetNextLbResponse(
@@ -957,6 +957,5 @@ TEST_F(RlsPolicyEnd2endTest, CacheEviction) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
-  const auto result = RUN_ALL_TESTS();
-  return result;
+  return RUN_ALL_TESTS();
 }

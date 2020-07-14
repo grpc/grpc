@@ -62,15 +62,15 @@ class RlsLb : public LoadBalancingPolicy {
     KeyMap BuildKeyMap(const MetadataInterface* initial_metadata) const;
 
    private:
-    std::map<
-        std::string /*path*/,
-        std::vector<std::pair<std::string /*header_name*/, int /*priority*/>>>
+    std::map<std::string /*header_name*/,
+             std::vector<std::pair<std::string /*key_name*/, int /*priority*/>>>
         pattern_;
   };
 
   /// A map from path name to a KeyMapBuilder instance that corresponds to that
   /// path. Note that by the design of the RLS system, the method portion of a
-  /// path can be wildcard (*).
+  /// path can be empty, which is considered to be a wildcard and matches any
+  /// method in a service.
   using KeyMapBuilderMap = std::map<std::string /*path*/, KeyMapBuilder>;
 
   explicit RlsLb(Args args);
@@ -194,10 +194,12 @@ class RlsLb : public LoadBalancingPolicy {
   class ChildPolicyOwner : public RefCounted<ChildPolicyOwner> {
    public:
     ChildPolicyOwner(ChildPolicyWrapper* child, RlsLb* parent);
+    ~ChildPolicyOwner();
 
     ChildPolicyWrapper* child() const { return child_.get(); }
 
    private:
+    RlsLb* parent_;
     OrphanablePtr<ChildPolicyWrapper> child_;
   };
 
