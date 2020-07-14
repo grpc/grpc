@@ -33,6 +33,7 @@
 #include <grpcpp/server_context.h>
 
 #include "absl/strings/str_split.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -110,12 +111,19 @@ class XdsStatsWatcher {
                    [this] { return rpcs_needed_ == 0; });
       response->mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(),
                                                rpcs_by_peer_.end());
-      auto rpcs_by_type = response->mutable_rpcs_by_type();
+      auto& response_rpcs_by_type = *response->mutable_rpcs_by_type();
       for (auto rpc_by_type : rpcs_by_type_) {
-        (*rpcs_by_type)[rpc_by_type.first].mutable_rpcs_by_peer()->insert(
-            rpc_by_type.second.begin(), rpc_by_type.second.end());
+        auto& response_rpc_by_type = response_rpcs_by_type[rpc_by_type.first];
+        auto& response_rpcs_by_peer = *response_rpc_by_type.mutable_rpcs_by_peer();
+        for (auto rpc_by_peer : rpc_by_type.second) {
+          auto& response_rpc_by_peer = response_rpcs_by_peer[rpc_by_peer.first];
+          response_rpc_by_peer = rpc_by_peer.second;
+          gpr_log(GPR_INFO, "donna spot stats %s %s %d", std::string(rpc_by_type.first).c_str(),
+                  std::string(rpc_by_peer.first).c_str(), rpc_by_peer.second);
+        }
       }
       response->set_num_failures(no_remote_peer_ + rpcs_needed_);
+      gpr_log(GPR_INFO, "donna see response %s", response->DebugString().c_str());
     }
   }
 
@@ -312,6 +320,7 @@ void RunServer(const int port) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
 
   std::chrono::duration<double> duration_per_query =
       std::chrono::nanoseconds(std::chrono::seconds(1)) / FLAGS_qps;
