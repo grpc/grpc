@@ -175,6 +175,7 @@ Pod::Spec.new do |s|
     ss.dependency 'BoringSSL-GRPC', '0.0.10'
     abseil_version = '1.20200225.0'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
@@ -730,8 +731,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/log_windows.cc',
                       'src/core/lib/gpr/murmur_hash.cc',
                       'src/core/lib/gpr/murmur_hash.h',
-                      'src/core/lib/gpr/random.cc',
-                      'src/core/lib/gpr/random.h',
                       'src/core/lib/gpr/spinlock.h',
                       'src/core/lib/gpr/string.cc',
                       'src/core/lib/gpr/string.h',
@@ -1501,7 +1500,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/murmur_hash.h',
-                              'src/core/lib/gpr/random.h',
                               'src/core/lib/gpr/spinlock.h',
                               'src/core/lib/gpr/string.h',
                               'src/core/lib/gpr/string_windows.h',

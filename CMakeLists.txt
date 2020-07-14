@@ -105,9 +105,11 @@ set(gRPC_ABSL_USED_TARGETS
   absl_algorithm
   absl_atomic_hook
   absl_bad_optional_access
+  absl_bad_variant_access
   absl_base
   absl_base_internal
   absl_bits
+  absl_city
   absl_civil_time
   absl_compressed_tuple
   absl_config
@@ -115,6 +117,8 @@ set(gRPC_ABSL_USED_TARGETS
   absl_dynamic_annotations
   absl_endian
   absl_errno_saver
+  absl_fixed_array
+  absl_hash
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
@@ -133,6 +137,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_time_zone
   absl_type_traits
   absl_utility
+  absl_variant
   absl_meta
 )
 
@@ -1205,7 +1210,6 @@ add_library(gpr
   src/core/lib/gpr/log_posix.cc
   src/core/lib/gpr/log_windows.cc
   src/core/lib/gpr/murmur_hash.cc
-  src/core/lib/gpr/random.cc
   src/core/lib/gpr/string.cc
   src/core/lib/gpr/string_posix.cc
   src/core/lib/gpr/string_util_windows.cc
@@ -1867,6 +1871,8 @@ target_link_libraries(grpc
   upb
   absl::optional
   absl::strings
+  absl::memory
+  absl::hash
   absl::inlined_vector
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -13242,6 +13248,7 @@ target_include_directories(rls_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
@@ -13283,6 +13290,7 @@ target_include_directories(rls_key_builder_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
@@ -15775,7 +15783,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc.pc")
 
@@ -15795,7 +15803,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
   "grpc"
-  "-lgrpc++ -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++ -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++.pc")
 
