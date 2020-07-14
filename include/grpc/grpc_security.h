@@ -153,7 +153,8 @@ GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials* creds);
    object. It is expected that the call credentials object was generated
    according to the Application Default Credentials mechanism and asserts the
    identity of the default service account of the machine. Supplying any other
-   sort of call credential may result in RPCs suddenly and unexpectedly failing.
+   sort of call credential will result in undefined behavior, up to and
+   including the sudden and unexpected failure of RPCs.
 
    If nullptr is supplied, the returned channel credentials object will use a
    call credentials object based on the Application Default Credentials
