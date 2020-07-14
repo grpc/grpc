@@ -21,6 +21,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <string.h>
@@ -64,7 +65,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
   reconnect_server* server = static_cast<reconnect_server*>(arg);
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   timestamp_list* new_tail;
-  peer = grpc_endpoint_get_peer(tcp);
+  peer = gpr_strdup(grpc_endpoint_get_peer(tcp).c_str());
   grpc_endpoint_shutdown(tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(tcp);

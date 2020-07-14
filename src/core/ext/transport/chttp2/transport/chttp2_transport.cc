@@ -440,7 +440,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     grpc_resource_user* resource_user)
     : refs(1, &grpc_trace_chttp2_refcount),
       ep(ep),
-      peer_string(grpc_endpoint_get_peer(ep)),
+      peer_string(gpr_strdup(grpc_endpoint_get_peer(ep).c_str())),
       resource_user(resource_user),
       combiner(grpc_combiner_create()),
       state_tracker(is_client ? "client_transport" : "server_transport",
@@ -1752,9 +1752,9 @@ static void retry_initiate_ping_locked(void* tp, grpc_error* error) {
 void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
   if (pq->inflight_id != id) {
-    char* from = grpc_endpoint_get_peer(t->ep);
-    gpr_log(GPR_DEBUG, "Unknown ping response from %s: %" PRIx64, from, id);
-    gpr_free(from);
+    std::string from = grpc_endpoint_get_peer(t->ep);
+    gpr_log(GPR_DEBUG, "Unknown ping response from %s: %" PRIx64, from.c_str(),
+            id);
     return;
   }
   grpc_core::ExecCtx::RunList(DEBUG_LOCATION,

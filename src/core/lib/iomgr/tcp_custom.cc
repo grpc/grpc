@@ -32,6 +32,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/resource_quota.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -68,12 +69,12 @@ struct custom_tcp_endpoint {
 
   bool shutting_down;
 
-  char* peer_string;
+  std::string peer_string;
+  std::string local_address;
 };
 static void tcp_free(grpc_custom_socket* s) {
   custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)s->endpoint;
   grpc_resource_user_unref(tcp->resource_user);
-  gpr_free(tcp->peer_string);
   gpr_free(tcp);
   s->refs--;
   if (s->refs == 0) {
@@ -132,7 +133,8 @@ static void call_read_cb(custom_tcp_endpoint* tcp, grpc_error* error) {
     for (i = 0; i < tcp->read_slices->count; i++) {
       char* dump = grpc_dump_slice(tcp->read_slices->slices[i],
                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_INFO, "READ %p (peer=%s): %s", tcp, tcp->peer_string, dump);
+      gpr_log(GPR_INFO, "READ %p (peer=%s): %s", tcp, tcp->peer_string.c_str(),
+              dump);
       gpr_free(dump);
     }
   }
@@ -233,8 +235,8 @@ static void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* write_slices,
     for (j = 0; j < write_slices->count; j++) {
       char* data = grpc_dump_slice(write_slices->slices[j],
                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_INFO, "WRITE %p (peer=%s): %s", tcp->socket, tcp->peer_string,
-              data);
+      gpr_log(GPR_INFO, "WRITE %p (peer=%s): %s", tcp->socket,
+              tcp->peer_string.c_str(), data);
       gpr_free(data);
     }
   }
@@ -317,9 +319,14 @@ static void endpoint_destroy(grpc_endpoint* ep) {
   grpc_custom_socket_vtable->close(tcp->socket, custom_close_callback);
 }
 
-static char* endpoint_get_peer(grpc_endpoint* ep) {
+static std::string endpoint_get_peer(grpc_endpoint* ep) {
   custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
-  return gpr_strdup(tcp->peer_string);
+  return tcp->peer_string;
+}
+
+static std::string endpoint_get_local_address(grpc_endpoint* ep) {
+  custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
+  return tcp->local_address;
 }
 
 static grpc_resource_user* endpoint_get_resource_user(grpc_endpoint* ep) {
@@ -340,6 +347,7 @@ static grpc_endpoint_vtable vtable = {endpoint_read,
                                       endpoint_destroy,
                                       endpoint_get_resource_user,
                                       endpoint_get_peer,
+                                      endpoint_get_local_address,
                                       endpoint_get_fd,
                                       endpoint_can_track_err};
 
@@ -354,13 +362,27 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "Creating TCP endpoint %p", socket);
   }
-  memset(tcp, 0, sizeof(custom_tcp_endpoint));
+  tcp->read_cb = nullptr;
+  tcp->write_cb = nullptr;
+  tcp->read_slices = nullptr;
+  tcp->write_slices = nullptr;
   socket->refs++;
   socket->endpoint = (grpc_endpoint*)tcp;
   tcp->socket = socket;
   tcp->base.vtable = &vtable;
   gpr_ref_init(&tcp->refcount, 1);
-  tcp->peer_string = gpr_strdup(peer_string);
+  tcp->peer_string = peer_string;
+  struct sockaddr local_addr;
+  int local_addrlen;
+  if (grpc_custom_socket_vtable->getsockname(socket, &local_addr,
+                                             &local_addrlen) != nullptr) {
+    tcp->local_address = "";
+  } else {
+    grpc_resolved_address resolved_local_addr;
+    memcpy(resolved_local_addr.addr, &local_addr, local_addrlen);
+    resolved_local_addr.len = local_addrlen;
+    tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
+  }
   tcp->shutting_down = false;
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
   grpc_resource_user_slice_allocator_init(
