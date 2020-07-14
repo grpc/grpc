@@ -120,14 +120,9 @@ class XdsStatsWatcher {
         for (auto rpc_by_peer : rpc_by_type.second) {
           auto& response_rpc_by_peer = response_rpcs_by_peer[rpc_by_peer.first];
           response_rpc_by_peer = rpc_by_peer.second;
-          gpr_log(GPR_INFO, "donna spot stats %s %s %d",
-                  std::string(rpc_by_type.first).c_str(),
-                  std::string(rpc_by_peer.first).c_str(), rpc_by_peer.second);
         }
       }
       response->set_num_failures(no_remote_peer_ + rpcs_needed_);
-      gpr_log(GPR_INFO, "donna see response %s",
-              response->DebugString().c_str());
     }
   }
 
@@ -164,11 +159,7 @@ class TestClient {
     if (metadata.has_value()) {
       for (auto data : metadata.value()) {
         call->context.AddMetadata(data.first, data.second);
-        gpr_log(GPR_INFO, "donna check metadata method: Unary: %s and %s",
-                data.first.c_str(), data.second.c_str());
       }
-    } else {
-      gpr_log(GPR_INFO, "donna saw no metadata for this method: Unary");
     }
     call->saved_request_id = saved_request_id;
     call->rpc_type = "UnaryCall";
@@ -196,11 +187,7 @@ class TestClient {
     if (metadata.has_value()) {
       for (auto data : metadata.value()) {
         call->context.AddMetadata(data.first, data.second);
-        gpr_log(GPR_INFO, "donna check metadata method: Empty: %s and %s",
-                data.first.c_str(), data.second.c_str());
       }
-    } else {
-      gpr_log(GPR_INFO, "donna saw no metadata for this method: Empty");
     }
     // call->context.AddMetadata("xds_md", "exact_match");
     call->saved_request_id = saved_request_id;
@@ -221,15 +208,16 @@ class TestClient {
       {
         std::lock_guard<std::mutex> lk(mu);
         auto server_initial_metadata = call->context.GetServerInitialMetadata();
-        auto hostname =
+        auto metadata_hostname =
             call->context.GetServerInitialMetadata().find("hostname");
+        std::string hostname =
+            metadata_hostname != call->context.GetServerInitialMetadata().end()
+                ? std::string(metadata_hostname->second.data(),
+                              metadata_hostname->second.length())
+                : call->simple_response.hostname();
         for (auto watcher : watchers) {
-          watcher->RpcCompleted(
-              call->saved_request_id, call->rpc_type,
-              hostname != call->context.GetServerInitialMetadata().end()
-                  ? std::string(hostname->second.data(),
-                                hostname->second.length())
-                  : call->simple_response.hostname());
+          watcher->RpcCompleted(call->saved_request_id, call->rpc_type,
+                                std::move(hostname));
         }
       }
 
@@ -243,9 +231,16 @@ class TestClient {
         }
       } else {
         if (FLAGS_print_response) {
-          std::cout << "Greeting: Hello world, this is "
-                    << call->simple_response.hostname() << ", from "
-                    << call->context.peer() << std::endl;
+          auto metadata_hostname =
+              call->context.GetServerInitialMetadata().find("hostname");
+          std::string hostname =
+              metadata_hostname !=
+                      call->context.GetServerInitialMetadata().end()
+                  ? std::string(metadata_hostname->second.data(),
+                                metadata_hostname->second.length())
+                  : call->simple_response.hostname();
+          std::cout << "Greeting: Hello world, this is " << hostname
+                    << ", from " << call->context.peer() << std::endl;
         }
       }
 
@@ -295,8 +290,7 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
   }
 };
 
-void RunTestLoop(const std::string& server,
-                 std::chrono::duration<double> duration_per_query) {
+void RunTestLoop(std::chrono::duration<double> duration_per_query) {
   std::vector<std::string> rpc_types = absl::StrSplit(FLAGS_rpc, ',');
   // Store Metadata like
   // "EmptyCall:key1:value1,UnaryCall:key1:value1,UnaryCall:key2:value2" into a
@@ -313,7 +307,7 @@ void RunTestLoop(const std::string& server,
         std::move(metadata[1]), std::move(metadata[2])));
   }
   TestClient client(
-      grpc::CreateChannel(server, grpc::InsecureChannelCredentials()));
+      grpc::CreateChannel(FLAGS_server, grpc::InsecureChannelCredentials()));
   std::chrono::time_point<std::chrono::system_clock> start =
       std::chrono::system_clock::now();
   std::chrono::duration<double> elapsed;
@@ -367,15 +361,12 @@ int main(int argc, char** argv) {
 
   std::chrono::duration<double> duration_per_query =
       std::chrono::nanoseconds(std::chrono::seconds(1)) / FLAGS_qps;
-  // todo: metadata
-  std::vector<std::string> metadata = absl::StrSplit(FLAGS_metadata, ',');
 
   std::vector<std::thread> test_threads;
 
   test_threads.reserve(FLAGS_num_channels);
   for (int i = 0; i < FLAGS_num_channels; i++) {
-    test_threads.emplace_back(
-        std::thread(&RunTestLoop, FLAGS_server, duration_per_query));
+    test_threads.emplace_back(std::thread(&RunTestLoop, duration_per_query));
   }
 
   RunServer(FLAGS_stats_port);
