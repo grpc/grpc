@@ -74,7 +74,7 @@ class EchoServerImpl final : public grpc::testing::TestService::Service {
 };
 
 // Run server in a thread
-void RunServer() {
+void RunServer(gpr_event* done_ev) {
   // register channelz service
   ::grpc::channelz::experimental::InitChannelzService();
 
@@ -94,57 +94,65 @@ void RunServer() {
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
-  server->Wait();
+  while (true) {
+    if (gpr_event_get(done_ev)) {
+      return;
+    }
+  }
 }
 
-// Creata an echo client - set timeout as 0.15s
-class EchoClientImpl {
- public:
-  EchoClientImpl(std::shared_ptr<Channel> channel)
-      : stub_(grpc::testing::TestService::NewStub(channel)) {}
-  Status EmptyCall() {
+// Run client in a thread - - set timeout as 0.15s
+void RunClient(std::string client_id, gpr_event* done_ev) {
+  grpc::ChannelArguments channel_args;
+  std::shared_ptr<grpc::ChannelCredentials> channel_creds =
+      grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
+          custom_credentials_type, &channel_args);
+  std::unique_ptr<grpc::testing::TestService::Stub> stub
+      = grpc::testing::TestService::NewStub(
+          grpc::CreateChannel(server_address, channel_creds));
+  unsigned int client_echo_sleep_second = 1;
+
+  gpr_log(GPR_INFO, "Client %s is echoing!", client_id.c_str());
+  while (true) {
+    if (gpr_event_get(done_ev)) {
+      return;
+    }
+    sleep(client_echo_sleep_second);
+    // Rcho RPC
     grpc::testing::Empty request;
     grpc::testing::Empty response;
     ClientContext context;
     int64_t timeout_microseconds = 150;
     context.set_deadline(
         grpc_timeout_milliseconds_to_deadline(timeout_microseconds));
-    Status status = stub_->EmptyCall(&context, request, &response);
-    return status;
+    stub->EmptyCall(&context, request, &response);
   }
+}
 
- private:
-  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
-};
-
-// Run client in a thread
-void RunClient(std::string client_id) {
-  // std::string target_str = "localhost:10000";
+// Create the channelz to test the connection to the server
+void WaitForConnection() {
   grpc::ChannelArguments channel_args;
   std::shared_ptr<grpc::ChannelCredentials> channel_creds =
       grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
           custom_credentials_type, &channel_args);
-  EchoClientImpl echoer(grpc::CreateChannel(server_address, channel_creds));
-  unsigned int client_echo_sleep_second = 1;
-
-  gpr_log(GPR_INFO, "Client %s is echoing!", client_id.c_str());
-  while (true) {
-    Status status = echoer.EmptyCall();
-    sleep(client_echo_sleep_second);
-  }
+  auto channel = grpc::CreateChannel(server_address, channel_creds);
+  channel->WaitForConnected(grpc_timeout_seconds_to_deadline(3));
 }
 
 // Test the channelz sampler
 TEST(ChannelzSamplerTest, SimpleTest) {
   // server thread
-  std::thread server_thread(RunServer);
-  gpr_log(GPR_INFO, "Wait 3 seconds to make sure server is started...");
-  float server_start_seconds = 3.0;
-  sleep(server_start_seconds);
+  gpr_event done_ev0;
+  gpr_event_init(&done_ev0);
+  std::thread server_thread(RunServer, &done_ev0);
+  WaitForConnection();
 
-  // client thread
-  std::thread client_thread_1(RunClient, "1");
-  std::thread client_thread_2(RunClient, "2");
+  // client threads
+  gpr_event done_ev1, done_ev2;
+  gpr_event_init(&done_ev1);
+  gpr_event_init(&done_ev2);
+  std::thread client_thread_1(RunClient, "1", &done_ev1);
+  std::thread client_thread_2(RunClient, "2", &done_ev2);
 
   // Run the channelz sampler
   std::string channelz_sampler_bin_path =
@@ -158,11 +166,12 @@ TEST(ChannelzSamplerTest, SimpleTest) {
        "--output_json=" + output_json});
 
   test_driver->Join();
-  server_thread.join();
+  gpr_event_set(&done_ev1, (void*)1);
+  gpr_event_set(&done_ev2, (void*)1);
   client_thread_1.join();
   client_thread_2.join();
-
-  EXPECT_TRUE(true);
+  gpr_event_set(&done_ev0, (void*)1);
+  server_thread.join();
 }
 
 int main(int argc, char** argv) {
