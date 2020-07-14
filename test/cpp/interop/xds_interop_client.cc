@@ -33,6 +33,7 @@
 #include <grpcpp/server_context.h>
 
 #include "absl/strings/str_split.h"
+#include "absl/types/optional.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -114,16 +115,19 @@ class XdsStatsWatcher {
       auto& response_rpcs_by_type = *response->mutable_rpcs_by_type();
       for (auto rpc_by_type : rpcs_by_type_) {
         auto& response_rpc_by_type = response_rpcs_by_type[rpc_by_type.first];
-        auto& response_rpcs_by_peer = *response_rpc_by_type.mutable_rpcs_by_peer();
+        auto& response_rpcs_by_peer =
+            *response_rpc_by_type.mutable_rpcs_by_peer();
         for (auto rpc_by_peer : rpc_by_type.second) {
           auto& response_rpc_by_peer = response_rpcs_by_peer[rpc_by_peer.first];
           response_rpc_by_peer = rpc_by_peer.second;
-          gpr_log(GPR_INFO, "donna spot stats %s %s %d", std::string(rpc_by_type.first).c_str(),
+          gpr_log(GPR_INFO, "donna spot stats %s %s %d",
+                  std::string(rpc_by_type.first).c_str(),
                   std::string(rpc_by_peer.first).c_str(), rpc_by_peer.second);
         }
       }
       response->set_num_failures(no_remote_peer_ + rpcs_needed_);
-      gpr_log(GPR_INFO, "donna see response %s", response->DebugString().c_str());
+      gpr_log(GPR_INFO, "donna see response %s",
+              response->DebugString().c_str());
     }
   }
 
@@ -143,7 +147,9 @@ class TestClient {
   TestClient(const std::shared_ptr<Channel>& channel)
       : stub_(TestService::NewStub(channel)) {}
 
-  void AsyncUnaryCall() {
+  void AsyncUnaryCall(
+      absl::optional<std::vector<std::pair<std::string, std::string>>>
+          metadata) {
     SimpleResponse response;
     int saved_request_id;
     {
@@ -155,6 +161,15 @@ class TestClient {
         std::chrono::seconds(FLAGS_rpc_timeout_sec);
     AsyncClientCall* call = new AsyncClientCall;
     call->context.set_deadline(deadline);
+    if (metadata.has_value()) {
+      for (auto data : metadata.value()) {
+        call->context.AddMetadata(data.first, data.second);
+        gpr_log(GPR_INFO, "donna check metadata method: Unary: %s and %s",
+                data.first.c_str(), data.second.c_str());
+      }
+    } else {
+      gpr_log(GPR_INFO, "donna saw no metadata for this method: Unary");
+    }
     call->saved_request_id = saved_request_id;
     call->rpc_type = "UnaryCall";
     call->simple_response_reader = stub_->PrepareAsyncUnaryCall(
@@ -164,7 +179,9 @@ class TestClient {
                                          (void*)call);
   }
 
-  void AsyncEmptyCall() {
+  void AsyncEmptyCall(
+      absl::optional<std::vector<std::pair<std::string, std::string>>>
+          metadata) {
     Empty response;
     int saved_request_id;
     {
@@ -176,6 +193,16 @@ class TestClient {
         std::chrono::seconds(FLAGS_rpc_timeout_sec);
     AsyncClientCall* call = new AsyncClientCall;
     call->context.set_deadline(deadline);
+    if (metadata.has_value()) {
+      for (auto data : metadata.value()) {
+        call->context.AddMetadata(data.first, data.second);
+        gpr_log(GPR_INFO, "donna check metadata method: Empty: %s and %s",
+                data.first.c_str(), data.second.c_str());
+      }
+    } else {
+      gpr_log(GPR_INFO, "donna saw no metadata for this method: Empty");
+    }
+    // call->context.AddMetadata("xds_md", "exact_match");
     call->saved_request_id = saved_request_id;
     call->rpc_type = "EmptyCall";
     call->empty_response_reader = stub_->PrepareAsyncEmptyCall(
@@ -203,10 +230,6 @@ class TestClient {
                   ? std::string(hostname->second.data(),
                                 hostname->second.length())
                   : call->simple_response.hostname());
-          // watcher->RpcCompleted(call->saved_request_id, call->rpc_type,
-          //                      call->rpc_type == "UnaryCall"
-          //                          ? call->simple_response.hostname()
-          //                          : "todo-get-hostname-from-header");
         }
       }
 
@@ -272,9 +295,23 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
   }
 };
 
-void RunTestLoop(const std::string& server, const std::string& rpcs,
+void RunTestLoop(const std::string& server,
                  std::chrono::duration<double> duration_per_query) {
   std::vector<std::string> rpc_types = absl::StrSplit(FLAGS_rpc, ',');
+  // Store Metadata like
+  // "EmptyCall:key1:value1,UnaryCall:key1:value1,UnaryCall:key2:value2" into a
+  // map where the key is the RPC type and value is a vector of key:value pairs.
+  // {EmptyCall, [{key1,value1}],
+  //  UnaryCall, [{key1,value1}, {key2,value2}]}
+  std::vector<std::string> rpc_metadata = absl::StrSplit(FLAGS_metadata, ',');
+  std::map<std::string, std::vector<std::pair<std::string, std::string>>>
+      metadata_map;
+  for (auto& data : rpc_metadata) {
+    std::vector<std::string> metadata = absl::StrSplit(data, ':');
+    GPR_ASSERT(metadata.size() == 3);
+    metadata_map[metadata[0]].push_back(std::pair<std::string, std::string>(
+        std::move(metadata[1]), std::move(metadata[2])));
+  }
   TestClient client(
       grpc::CreateChannel(server, grpc::InsecureChannelCredentials()));
   std::chrono::time_point<std::chrono::system_clock> start =
@@ -288,10 +325,16 @@ void RunTestLoop(const std::string& server, const std::string& rpcs,
       elapsed = std::chrono::system_clock::now() - start;
       if (elapsed > duration_per_query) {
         start = std::chrono::system_clock::now();
+        absl::optional<std::vector<std::pair<std::string, std::string>>>
+            metadata;
+        auto metadata_iter = metadata_map.find(rpc_type);
+        if (metadata_iter != metadata_map.end()) {
+          metadata = metadata_iter->second;
+        }
         if (rpc_type == "EmptyCall") {
-          client.AsyncEmptyCall();
+          client.AsyncEmptyCall(metadata);
         } else {
-          client.AsyncUnaryCall();
+          client.AsyncUnaryCall(metadata);
         }
       }
     }
@@ -332,7 +375,7 @@ int main(int argc, char** argv) {
   test_threads.reserve(FLAGS_num_channels);
   for (int i = 0; i < FLAGS_num_channels; i++) {
     test_threads.emplace_back(
-        std::thread(&RunTestLoop, FLAGS_server, FLAGS_rpc, duration_per_query));
+        std::thread(&RunTestLoop, FLAGS_server, duration_per_query));
   }
 
   RunServer(FLAGS_stats_port);
