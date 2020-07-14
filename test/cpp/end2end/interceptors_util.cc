@@ -114,7 +114,8 @@ void MakeAsyncCQCall(const std::shared_ptr<Channel>& channel) {
   EXPECT_TRUE(recv_status.ok());
 }
 
-void MakeAsyncCQClientStreamingCall(const std::shared_ptr<Channel>& /*channel*/) {
+void MakeAsyncCQClientStreamingCall(
+    const std::shared_ptr<Channel>& /*channel*/) {
   // TODO(yashykt) : Fill this out
 }
 
@@ -146,8 +147,7 @@ void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel>& channel) {
   EXPECT_TRUE(recv_status.ok());
 }
 
-void MakeAsyncCQBidiStreamingCall(
-    const std::shared_ptr<Channel>& /*channel*/) {
+void MakeAsyncCQBidiStreamingCall(const std::shared_ptr<Channel>& /*channel*/) {
   // TODO(yashykt) : Fill this out
 }
 
