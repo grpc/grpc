@@ -37,15 +37,14 @@ typedef enum {
   GRPC_CHTTP2_GOAWAY_DEBUG
 } grpc_chttp2_goaway_parse_state;
 
-typedef struct {
+struct grpc_chttp2_goaway_parser {
   grpc_chttp2_goaway_parse_state state;
   uint32_t last_stream_id;
   uint32_t error_code;
   char* debug_data;
   uint32_t debug_length;
   uint32_t debug_pos;
-} grpc_chttp2_goaway_parser;
-
+};
 void grpc_chttp2_goaway_parser_init(grpc_chttp2_goaway_parser* p);
 void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser* p);
 grpc_error* grpc_chttp2_goaway_parser_begin_frame(

@@ -22,13 +22,14 @@
 #include <grpc/support/port_platform.h>
 
 #include <map>
+#include <string>
 
-#include <grpc/support/string_util.h>
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -78,21 +79,20 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   const std::string& zone() const { return zone_; }
   const std::string& sub_zone() const { return sub_zone_; }
 
-  const char* AsHumanReadableString() {
-    if (human_readable_string_ == nullptr) {
-      char* tmp;
-      gpr_asprintf(&tmp, "{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                   region_.c_str(), zone_.c_str(), sub_zone_.c_str());
-      human_readable_string_.reset(tmp);
+  const std::string& AsHumanReadableString() {
+    if (human_readable_string_.empty()) {
+      human_readable_string_ =
+          absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                          region_, zone_, sub_zone_);
     }
-    return human_readable_string_.get();
+    return human_readable_string_;
   }
 
  private:
   std::string region_;
   std::string zone_;
   std::string sub_zone_;
-  UniquePtr<char> human_readable_string_;
+  std::string human_readable_string_;
 };
 
 // Drop stats for an xds cluster.
@@ -101,8 +101,9 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
   using DroppedRequestsMap = std::map<std::string /* category */, uint64_t>;
 
   XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
-                      StringView lrs_server_name, StringView cluster_name,
-                      StringView eds_service_name);
+                      absl::string_view lrs_server_name,
+                      absl::string_view cluster_name,
+                      absl::string_view eds_service_name);
   ~XdsClusterDropStats();
 
   // Returns a snapshot of this instance and resets all the counters.
@@ -112,9 +113,9 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
 
  private:
   RefCountedPtr<XdsClient> xds_client_;
-  StringView lrs_server_name_;
-  StringView cluster_name_;
-  StringView eds_service_name_;
+  absl::string_view lrs_server_name_;
+  absl::string_view cluster_name_;
+  absl::string_view eds_service_name_;
   // Protects dropped_requests_. A mutex is necessary because the length of
   // dropped_requests_ can be accessed by both the picker (from data plane
   // mutex) and the load reporting thread (from the control plane combiner).
@@ -172,8 +173,9 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   };
 
   XdsClusterLocalityStats(RefCountedPtr<XdsClient> xds_client,
-                          StringView lrs_server_name, StringView cluster_name,
-                          StringView eds_service_name,
+                          absl::string_view lrs_server_name,
+                          absl::string_view cluster_name,
+                          absl::string_view eds_service_name,
                           RefCountedPtr<XdsLocalityName> name);
   ~XdsClusterLocalityStats();
 
@@ -185,9 +187,9 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
 
  private:
   RefCountedPtr<XdsClient> xds_client_;
-  StringView lrs_server_name_;
-  StringView cluster_name_;
-  StringView eds_service_name_;
+  absl::string_view lrs_server_name_;
+  absl::string_view cluster_name_;
+  absl::string_view eds_service_name_;
   RefCountedPtr<XdsLocalityName> name_;
 
   Atomic<uint64_t> total_successful_requests_{0};

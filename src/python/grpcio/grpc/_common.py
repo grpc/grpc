@@ -14,7 +14,6 @@
 """Shared implementation."""
 
 import logging
-
 import time
 import six
 

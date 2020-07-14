@@ -25,7 +25,7 @@
 /// platforms), the users can disable CFStream with environment variable
 /// "grpc_cfstream=0". This will let gRPC to fallback to use POSIX sockets. In
 /// addition, the users may choose to use an alternative CFRunLoop based pollset
-/// "ev_apple" by setting environment variable "grpc_cfstream_run_loop=1". This
+/// "ev_apple" by setting environment variable "GRPC_CFSTREAM_RUN_LOOP=1". This
 /// pollset resolves a bug from Apple when CFStream streams dispatch events to
 /// dispatch queues. The caveat of this pollset is that users may not be able to
 /// run a gRPC server in the same process.

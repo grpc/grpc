@@ -27,11 +27,11 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -180,13 +180,11 @@ class XdsClient::ChannelState::AdsCallState
     void OnTimerLocked(grpc_error* error) {
       if (error == GRPC_ERROR_NONE && timer_pending_) {
         timer_pending_ = false;
-        char* msg;
-        gpr_asprintf(
-            &msg,
-            "timeout obtaining resource {type=%s name=%s} from xds server",
-            type_url_.c_str(), name_.c_str());
-        grpc_error* watcher_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-        gpr_free(msg);
+        grpc_error* watcher_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrFormat(
+                "timeout obtaining resource {type=%s name=%s} from xds server",
+                type_url_, name_)
+                .c_str());
         if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
           gpr_log(GPR_INFO, "[xds_client %p] %s", ads_calld_->xds_client(),
                   grpc_error_string(watcher_error));
@@ -255,8 +253,8 @@ class XdsClient::ChannelState::AdsCallState
 
   bool IsCurrentCallOnChannel() const;
 
-  std::set<StringView> ClusterNamesForRequest();
-  std::set<StringView> EdsServiceNamesForRequest();
+  std::set<absl::string_view> ResourceNamesForRequest(
+      const std::string& type_url);
 
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCallState>> parent_;
@@ -382,6 +380,7 @@ class XdsClient::ChannelState::LrsCallState
   grpc_closure on_status_received_;
 
   // Load reporting state.
+  bool send_all_clusters_ = false;
   std::set<std::string> cluster_names_;  // Asked for by the LRS server.
   grpc_millis load_reporting_interval_ = 0;
   OrphanablePtr<Reporter> reporter_;
@@ -803,33 +802,13 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   }
   auto& state = state_map_[type_url];
   grpc_slice request_payload_slice;
-  std::set<StringView> resource_names;
-  if (type_url == XdsApi::kLdsTypeUrl) {
-    resource_names.insert(xds_client()->server_name_);
-    request_payload_slice = xds_client()->api_.CreateLdsRequest(
-        xds_client()->server_name_, state.version, state.nonce,
-        GRPC_ERROR_REF(state.error), !sent_initial_message_);
-    state.subscribed_resources[xds_client()->server_name_]->Start(Ref());
-  } else if (type_url == XdsApi::kRdsTypeUrl) {
-    resource_names.insert(xds_client()->lds_result_->route_config_name);
-    request_payload_slice = xds_client()->api_.CreateRdsRequest(
-        xds_client()->lds_result_->route_config_name, state.version,
-        state.nonce, GRPC_ERROR_REF(state.error), !sent_initial_message_);
-    state.subscribed_resources[xds_client()->lds_result_->route_config_name]
-        ->Start(Ref());
-  } else if (type_url == XdsApi::kCdsTypeUrl) {
-    resource_names = ClusterNamesForRequest();
-    request_payload_slice = xds_client()->api_.CreateCdsRequest(
-        resource_names, state.version, state.nonce, GRPC_ERROR_REF(state.error),
-        !sent_initial_message_);
-  } else if (type_url == XdsApi::kEdsTypeUrl) {
-    resource_names = EdsServiceNamesForRequest();
-    request_payload_slice = xds_client()->api_.CreateEdsRequest(
-        resource_names, state.version, state.nonce, GRPC_ERROR_REF(state.error),
-        !sent_initial_message_);
-  } else {
-    request_payload_slice = xds_client()->api_.CreateUnsupportedTypeNackRequest(
-        type_url, state.nonce, GRPC_ERROR_REF(state.error));
+  std::set<absl::string_view> resource_names =
+      ResourceNamesForRequest(type_url);
+  request_payload_slice = xds_client()->api_.CreateAdsRequest(
+      type_url, resource_names, state.version, state.nonce,
+      GRPC_ERROR_REF(state.error), !sent_initial_message_);
+  if (type_url != XdsApi::kLdsTypeUrl && type_url != XdsApi::kRdsTypeUrl &&
+      type_url != XdsApi::kCdsTypeUrl && type_url != XdsApi::kEdsTypeUrl) {
     state_map_.erase(type_url);
   }
   sent_initial_message_ = true;
@@ -894,9 +873,15 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     gpr_log(GPR_INFO,
             "[xds_client %p] LDS update does not include requested resource",
             xds_client());
-    xds_client()->service_config_watcher_->OnError(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "LDS update does not include requested resource"));
+    if (xds_client()->lds_result_.has_value() &&
+        !xds_client()->lds_result_->route_config_name.empty()) {
+      Unsubscribe(XdsApi::kRdsTypeUrl,
+                  xds_client()->lds_result_->route_config_name,
+                  /*delay_unsubscription=*/false);
+      xds_client()->rds_result_.reset();
+    }
+    xds_client()->lds_result_.reset();
+    xds_client()->service_config_watcher_->OnResourceDoesNotExist();
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -907,14 +892,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
                  ? lds_update->route_config_name.c_str()
                  : "<inlined>"));
     if (lds_update->rds_update.has_value()) {
-      gpr_log(GPR_INFO, "  RouteConfiguration contains %" PRIuPTR " routes",
+      gpr_log(GPR_INFO, "RouteConfiguration contains %" PRIuPTR " routes",
               lds_update->rds_update.value().routes.size());
-      for (const auto& route : lds_update->rds_update.value().routes) {
-        gpr_log(GPR_INFO,
-                "  route: { service=\"%s\", "
-                "method=\"%s\" }, cluster=\"%s\" }",
-                route.service.c_str(), route.method.c_str(),
-                route.cluster_name.c_str());
+      for (size_t i = 0; i < lds_update->rds_update.value().routes.size();
+           ++i) {
+        gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
+                lds_update->rds_update.value().routes[i].ToString().c_str());
       }
     }
   }
@@ -935,6 +918,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     Unsubscribe(
         XdsApi::kRdsTypeUrl, xds_client()->lds_result_->route_config_name,
         /*delay_unsubscription=*/!lds_update->route_config_name.empty());
+    xds_client()->rds_result_.reset();
   }
   xds_client()->lds_result_ = std::move(lds_update);
   if (xds_client()->lds_result_->rds_update.has_value()) {
@@ -962,9 +946,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
     gpr_log(GPR_INFO,
             "[xds_client %p] RDS update does not include requested resource",
             xds_client());
-    xds_client()->service_config_watcher_->OnError(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "RDS update does not include requested resource"));
+    xds_client()->rds_result_.reset();
+    xds_client()->service_config_watcher_->OnResourceDoesNotExist();
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -972,12 +955,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
             "[xds_client %p] RDS update received;  RouteConfiguration contains "
             "%" PRIuPTR " routes",
             this, rds_update.value().routes.size());
-    for (const auto& route : rds_update.value().routes) {
-      gpr_log(GPR_INFO,
-              "  route: { service=\"%s\", "
-              "method=\"%s\" }, cluster=\"%s\" }",
-              route.service.c_str(), route.method.c_str(),
-              route.cluster_name.c_str());
+    for (size_t i = 0; i < rds_update.value().routes.size(); ++i) {
+      gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
+              rds_update.value().routes[i].ToString().c_str());
     }
   }
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
@@ -1050,20 +1030,20 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     }
   }
   // For any subscribed resource that is not present in the update,
-  // remove it from the cache and notify watchers of the error.
+  // remove it from the cache and notify watchers that it does not exist.
   for (const auto& p : cds_state.subscribed_resources) {
     const std::string& cluster_name = p.first;
     if (cds_update_map.find(cluster_name) == cds_update_map.end()) {
       ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
       cluster_state.update.reset();
       for (const auto& p : cluster_state.watchers) {
-        p.first->OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Cluster not present in CDS update"));
+        p.first->OnResourceDoesNotExist();
       }
     }
   }
-  // Also remove any EDS resources that are no longer referred to by any CDS
-  // resources.
+  // For any EDS resource that is no longer referred to by any CDS
+  // resources, remove it from the cache and notify watchers that it
+  // does not exist.
   auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
   for (const auto& p : eds_state.subscribed_resources) {
     const std::string& eds_resource_name = p.first;
@@ -1073,8 +1053,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
           xds_client()->endpoint_map_[eds_resource_name];
       endpoint_state.update.reset();
       for (const auto& p : endpoint_state.watchers) {
-        p.first->OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "ClusterLoadAssignment resource removed due to CDS update"));
+        p.first->OnResourceDoesNotExist();
       }
     }
   }
@@ -1111,18 +1090,17 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
                   "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
                   " %s has weight %d, contains %" PRIuPTR " server addresses",
                   xds_client(), priority, locality_count,
-                  locality.name->AsHumanReadableString(), locality.lb_weight,
-                  locality.serverlist.size());
+                  locality.name->AsHumanReadableString().c_str(),
+                  locality.lb_weight, locality.serverlist.size());
           for (size_t i = 0; i < locality.serverlist.size(); ++i) {
-            char* ipport;
-            grpc_sockaddr_to_string(&ipport, &locality.serverlist[i].address(),
-                                    false);
+            std::string ipport = grpc_sockaddr_to_string(
+                &locality.serverlist[i].address(), false);
             gpr_log(GPR_INFO,
                     "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
                     " %s, server address %" PRIuPTR ": %s",
                     xds_client(), priority, locality_count,
-                    locality.name->AsHumanReadableString(), i, ipport);
-            gpr_free(ipport);
+                    locality.name->AsHumanReadableString().c_str(), i,
+                    ipport.c_str());
           }
           ++locality_count;
         }
@@ -1238,12 +1216,10 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
   // Note that ParseAdsResponse() also validates the response.
   grpc_error* parse_error = xds_client()->api_.ParseAdsResponse(
       response_slice, xds_client()->server_name_,
-      (xds_client()->lds_result_.has_value()
-           ? xds_client()->lds_result_->route_config_name
-           : ""),
-      xds_client()->xds_routing_enabled_, ClusterNamesForRequest(),
-      EdsServiceNamesForRequest(), &lds_update, &rds_update, &cds_update_map,
-      &eds_update_map, &version, &nonce, &type_url);
+      ResourceNamesForRequest(XdsApi::kRdsTypeUrl),
+      ResourceNamesForRequest(XdsApi::kCdsTypeUrl),
+      ResourceNamesForRequest(XdsApi::kEdsTypeUrl), &lds_update, &rds_update,
+      &cds_update_map, &eds_update_map, &version, &nonce, &type_url);
   grpc_slice_unref_internal(response_slice);
   if (type_url.empty()) {
     // Ignore unparsable response.
@@ -1346,26 +1322,19 @@ bool XdsClient::ChannelState::AdsCallState::IsCurrentCallOnChannel() const {
   return this == chand()->ads_calld_->calld();
 }
 
-std::set<StringView>
-XdsClient::ChannelState::AdsCallState::ClusterNamesForRequest() {
-  std::set<StringView> cluster_names;
-  for (auto& p : state_map_[XdsApi::kCdsTypeUrl].subscribed_resources) {
-    cluster_names.insert(p.first);
-    OrphanablePtr<ResourceState>& state = p.second;
-    state->Start(Ref());
+std::set<absl::string_view>
+XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
+    const std::string& type_url) {
+  std::set<absl::string_view> resource_names;
+  auto it = state_map_.find(type_url);
+  if (it != state_map_.end()) {
+    for (auto& p : it->second.subscribed_resources) {
+      resource_names.insert(p.first);
+      OrphanablePtr<ResourceState>& state = p.second;
+      state->Start(Ref());
+    }
   }
-  return cluster_names;
-}
-
-std::set<StringView>
-XdsClient::ChannelState::AdsCallState::EdsServiceNamesForRequest() {
-  std::set<StringView> eds_names;
-  for (auto& p : state_map_[XdsApi::kEdsTypeUrl].subscribed_resources) {
-    eds_names.insert(p.first);
-    OrphanablePtr<ResourceState>& state = p.second;
-    state->Start(Ref());
-  }
-  return eds_names;
+  return resource_names;
 }
 
 //
@@ -1426,8 +1395,8 @@ bool LoadReportCountersAreZero(const XdsApi::ClusterLoadReportMap& snapshot) {
 
 void XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
   // Construct snapshot from all reported stats.
-  XdsApi::ClusterLoadReportMap snapshot =
-      xds_client()->BuildLoadReportSnapshot(parent_->cluster_names_);
+  XdsApi::ClusterLoadReportMap snapshot = xds_client()->BuildLoadReportSnapshot(
+      parent_->send_all_clusters_, parent_->cluster_names_);
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   const bool old_val = last_report_counters_were_zero_;
@@ -1669,10 +1638,12 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
   // This anonymous lambda is a hack to avoid the usage of goto.
   [&]() {
     // Parse the response.
+    bool send_all_clusters = false;
     std::set<std::string> new_cluster_names;
     grpc_millis new_load_reporting_interval;
     grpc_error* parse_error = xds_client()->api_.ParseLrsResponse(
-        response_slice, &new_cluster_names, &new_load_reporting_interval);
+        response_slice, &send_all_clusters, &new_cluster_names,
+        &new_load_reporting_interval);
     if (parse_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR,
               "[xds_client %p] LRS response parsing failed. error=%s",
@@ -1682,11 +1653,13 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
     }
     seen_response_ = true;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] LRS response received, %" PRIuPTR
-              " cluster names, load_report_interval=%" PRId64 "ms",
-              xds_client(), new_cluster_names.size(),
-              new_load_reporting_interval);
+      gpr_log(
+          GPR_INFO,
+          "[xds_client %p] LRS response received, %" PRIuPTR
+          " cluster names, send_all_clusters=%d, load_report_interval=%" PRId64
+          "ms",
+          xds_client(), new_cluster_names.size(), send_all_clusters,
+          new_load_reporting_interval);
       size_t i = 0;
       for (const auto& name : new_cluster_names) {
         gpr_log(GPR_INFO, "[xds_client %p] cluster_name %" PRIuPTR ": %s",
@@ -1705,7 +1678,8 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
       }
     }
     // Ignore identical update.
-    if (cluster_names_ == new_cluster_names &&
+    if (send_all_clusters == send_all_clusters_ &&
+        cluster_names_ == new_cluster_names &&
         load_reporting_interval_ == new_load_reporting_interval) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
         gpr_log(GPR_INFO,
@@ -1718,6 +1692,7 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
     // Stop current load reporting (if any) to adopt the new config.
     reporter_.reset();
     // Record the new config.
+    send_all_clusters_ = send_all_clusters;
     cluster_names_ = std::move(new_cluster_names);
     load_reporting_interval_ = new_load_reporting_interval;
     // Try starting sending load report.
@@ -1792,21 +1767,15 @@ grpc_millis GetRequestTimeout(const grpc_channel_args& args) {
       {15000, 0, INT_MAX});
 }
 
-bool GetXdsRoutingEnabled(const grpc_channel_args& args) {
-  return grpc_channel_args_find_bool(&args, GRPC_ARG_XDS_ROUTING_ENABLED,
-                                     false);
-}
-
 }  // namespace
 
 XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
                      grpc_pollset_set* interested_parties,
-                     StringView server_name,
+                     absl::string_view server_name,
                      std::unique_ptr<ServiceConfigWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
       request_timeout_(GetRequestTimeout(channel_args)),
-      xds_routing_enabled_(GetXdsRoutingEnabled(channel_args)),
       work_serializer_(std::move(work_serializer)),
       interested_parties_(interested_parties),
       bootstrap_(
@@ -1868,7 +1837,8 @@ void XdsClient::Orphan() {
 }
 
 void XdsClient::WatchClusterData(
-    StringView cluster_name, std::unique_ptr<ClusterWatcherInterface> watcher) {
+    absl::string_view cluster_name,
+    std::unique_ptr<ClusterWatcherInterface> watcher) {
   std::string cluster_name_str = std::string(cluster_name);
   ClusterState& cluster_state = cluster_map_[cluster_name_str];
   ClusterWatcherInterface* w = watcher.get();
@@ -1878,14 +1848,14 @@ void XdsClient::WatchClusterData(
   if (cluster_state.update.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] returning cached cluster data for %s",
-              this, StringViewToCString(cluster_name).get());
+              this, cluster_name_str.c_str());
     }
     w->OnClusterChanged(cluster_state.update.value());
   }
   chand_->Subscribe(XdsApi::kCdsTypeUrl, cluster_name_str);
 }
 
-void XdsClient::CancelClusterDataWatch(StringView cluster_name,
+void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
                                        ClusterWatcherInterface* watcher,
                                        bool delay_unsubscription) {
   if (shutting_down_) return;
@@ -1903,7 +1873,7 @@ void XdsClient::CancelClusterDataWatch(StringView cluster_name,
 }
 
 void XdsClient::WatchEndpointData(
-    StringView eds_service_name,
+    absl::string_view eds_service_name,
     std::unique_ptr<EndpointWatcherInterface> watcher) {
   std::string eds_service_name_str = std::string(eds_service_name);
   EndpointState& endpoint_state = endpoint_map_[eds_service_name_str];
@@ -1914,14 +1884,14 @@ void XdsClient::WatchEndpointData(
   if (endpoint_state.update.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] returning cached endpoint data for %s",
-              this, StringViewToCString(eds_service_name).get());
+              this, eds_service_name_str.c_str());
     }
     w->OnEndpointChanged(endpoint_state.update.value());
   }
   chand_->Subscribe(XdsApi::kEdsTypeUrl, eds_service_name_str);
 }
 
-void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
+void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
                                         EndpointWatcherInterface* watcher,
                                         bool delay_unsubscription) {
   if (shutting_down_) return;
@@ -1939,13 +1909,13 @@ void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
 }
 
 RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
-    StringView lrs_server, StringView cluster_name,
-    StringView eds_service_name) {
+    absl::string_view lrs_server, absl::string_view cluster_name,
+    absl::string_view eds_service_name) {
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
-  // We jump through some hoops here to make sure that the StringViews
+  // We jump through some hoops here to make sure that the absl::string_views
   // stored in the XdsClusterDropStats object point to the strings
   // in the load_report_map_ key, so that they have the same lifetime.
   auto it = load_report_map_
@@ -1960,8 +1930,9 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
 }
 
 void XdsClient::RemoveClusterDropStats(
-    StringView /*lrs_server*/, StringView cluster_name,
-    StringView eds_service_name, XdsClusterDropStats* cluster_drop_stats) {
+    absl::string_view /*lrs_server*/, absl::string_view cluster_name,
+    absl::string_view eds_service_name,
+    XdsClusterDropStats* cluster_drop_stats) {
   auto load_report_it = load_report_map_.find(
       std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
   if (load_report_it == load_report_map_.end()) return;
@@ -1980,13 +1951,14 @@ void XdsClient::RemoveClusterDropStats(
 }
 
 RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
-    StringView lrs_server, StringView cluster_name, StringView eds_service_name,
+    absl::string_view lrs_server, absl::string_view cluster_name,
+    absl::string_view eds_service_name,
     RefCountedPtr<XdsLocalityName> locality) {
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
-  // We jump through some hoops here to make sure that the StringViews
+  // We jump through some hoops here to make sure that the absl::string_views
   // stored in the XdsClusterLocalityStats object point to the strings
   // in the load_report_map_ key, so that they have the same lifetime.
   auto it = load_report_map_
@@ -2003,8 +1975,9 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
 }
 
 void XdsClient::RemoveClusterLocalityStats(
-    StringView /*lrs_server*/, StringView cluster_name,
-    StringView eds_service_name, const RefCountedPtr<XdsLocalityName>& locality,
+    absl::string_view /*lrs_server*/, absl::string_view cluster_name,
+    absl::string_view eds_service_name,
+    const RefCountedPtr<XdsLocalityName>& locality,
     XdsClusterLocalityStats* cluster_locality_stats) {
   auto load_report_it = load_report_map_.find(
       std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
@@ -2035,57 +2008,307 @@ namespace {
 std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
   return absl::StrFormat(
       "      \"cds:%s\":{\n"
-      "        \"child_policy\":[ {\n"
+      "        \"childPolicy\":[ {\n"
       "          \"cds_experimental\":{\n"
       "            \"cluster\": \"%s\"\n"
       "          }\n"
       "        } ]\n"
       "       }",
-      cluster_name.c_str(), cluster_name.c_str());
+      cluster_name, cluster_name);
 }
 
-std::string CreateServiceConfigRoute(const std::string& cluster_name,
-                                     const std::string& service,
-                                     const std::string& method) {
+std::string CreateServiceConfigRoute(const std::string& action_name,
+                                     const XdsApi::RdsUpdate::RdsRoute& route) {
+  std::vector<std::string> headers;
+  for (const auto& header : route.matchers.header_matchers) {
+    std::string header_matcher;
+    switch (header.type) {
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::EXACT:
+        header_matcher = absl::StrFormat("             \"exact_match\": \"%s\"",
+                                         header.string_matcher);
+        break;
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::REGEX:
+        header_matcher = absl::StrFormat("             \"regex_match\": \"%s\"",
+                                         header.regex_match->pattern());
+        break;
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::RANGE:
+        header_matcher = absl::StrFormat(
+            "             \"range_match\":{\n"
+            "              \"start\":%d,\n"
+            "              \"end\":%d\n"
+            "             }",
+            header.range_start, header.range_end);
+        break;
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::PRESENT:
+        header_matcher =
+            absl::StrFormat("             \"present_match\": %s",
+                            header.present_match ? "true" : "false");
+        break;
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::PREFIX:
+        header_matcher = absl::StrFormat(
+            "             \"prefix_match\": \"%s\"", header.string_matcher);
+        break;
+      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+          HeaderMatcherType::SUFFIX:
+        header_matcher = absl::StrFormat(
+            "             \"suffix_match\": \"%s\"", header.string_matcher);
+        break;
+      default:
+        break;
+    }
+    std::vector<std::string> header_parts;
+    header_parts.push_back(
+        absl::StrFormat("           { \n"
+                        "             \"name\": \"%s\",\n",
+                        header.name));
+    header_parts.push_back(header_matcher);
+    if (header.invert_match) {
+      header_parts.push_back(
+          absl::StrFormat(",\n"
+                          "             \"invert_match\": true"));
+    }
+    header_parts.push_back(
+        absl::StrFormat("\n"
+                        "           }"));
+    headers.push_back(absl::StrJoin(header_parts, ""));
+  }
+  std::vector<std::string> headers_service_config;
+  if (!headers.empty()) {
+    headers_service_config.push_back("\"headers\":[\n");
+    headers_service_config.push_back(absl::StrJoin(headers, ","));
+    headers_service_config.push_back("           ],\n");
+  }
+  std::string path_match_str;
+  switch (route.matchers.path_matcher.type) {
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        PREFIX:
+      path_match_str = absl::StrFormat(
+          "\"prefix\": \"%s\",\n", route.matchers.path_matcher.string_matcher);
+      break;
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        PATH:
+      path_match_str = absl::StrFormat(
+          "\"path\": \"%s\",\n", route.matchers.path_matcher.string_matcher);
+      break;
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        REGEX:
+      path_match_str =
+          absl::StrFormat("\"regex\": \"%s\",\n",
+                          route.matchers.path_matcher.regex_matcher->pattern());
+      break;
+  }
   return absl::StrFormat(
       "      { \n"
-      "         \"methodName\": {\n"
-      "           \"service\": \"%s\",\n"
-      "           \"method\": \"%s\"\n"
-      "        },\n"
-      "        \"action\": \"cds:%s\"\n"
+      "           %s"
+      "           %s"
+      "           %s"
+      "           \"action\": \"%s\"\n"
       "      }",
-      service.c_str(), method.c_str(), cluster_name.c_str());
+      path_match_str, absl::StrJoin(headers_service_config, ""),
+      route.matchers.fraction_per_million.has_value()
+          ? absl::StrFormat("\"match_fraction\":%d,\n",
+                            route.matchers.fraction_per_million.value())
+          : "",
+      action_name);
 }
+
+// Create the service config for one weighted cluster.
+std::string CreateServiceConfigActionWeightedCluster(
+    const std::string& name,
+    const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>& clusters) {
+  std::vector<std::string> config_parts;
+  config_parts.push_back(
+      absl::StrFormat("      \"weighted:%s\":{\n"
+                      "        \"childPolicy\":[ {\n"
+                      "          \"weighted_target_experimental\":{\n"
+                      "            \"targets\":{\n",
+                      name));
+  std::vector<std::string> weighted_targets;
+  weighted_targets.reserve(clusters.size());
+  for (const auto& cluster_weight : clusters) {
+    weighted_targets.push_back(absl::StrFormat(
+        "              \"%s\":{\n"
+        "                \"weight\":%d,\n"
+        "                \"childPolicy\":[ {\n"
+        "                  \"cds_experimental\":{\n"
+        "                    \"cluster\": \"%s\"\n"
+        "                  }\n"
+        "                } ]\n"
+        "               }",
+        cluster_weight.name, cluster_weight.weight, cluster_weight.name));
+  }
+  config_parts.push_back(absl::StrJoin(weighted_targets, ",\n"));
+  config_parts.push_back(
+      "            }\n"
+      "          }\n"
+      "        } ]\n"
+      "       }");
+  return absl::StrJoin(config_parts, "");
+}
+
+struct WeightedClustersKeys {
+  std::string cluster_names_key;
+  std::string cluster_weights_key;
+};
+
+// Returns the cluster names and weights key or the cluster names only key.
+WeightedClustersKeys GetWeightedClustersKey(
+    const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
+        weighted_clusters) {
+  std::set<std::string> cluster_names;
+  std::set<std::string> cluster_weights;
+  for (const auto& cluster_weight : weighted_clusters) {
+    cluster_names.emplace(absl::StrFormat("%s", cluster_weight.name));
+    cluster_weights.emplace(
+        absl::StrFormat("%s_%d", cluster_weight.name, cluster_weight.weight));
+  }
+  return {absl::StrJoin(cluster_names, "_"),
+          absl::StrJoin(cluster_weights, "_")};
+}
+
 }  // namespace
+
+std::string XdsClient::WeightedClustersActionName(
+    const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
+        weighted_clusters) {
+  WeightedClustersKeys keys = GetWeightedClustersKey(weighted_clusters);
+  auto cluster_names_map_it =
+      weighted_cluster_index_map_.find(keys.cluster_names_key);
+  GPR_ASSERT(cluster_names_map_it != weighted_cluster_index_map_.end());
+  const auto& cluster_weights_map =
+      cluster_names_map_it->second.cluster_weights_map;
+  auto cluster_weights_map_it =
+      cluster_weights_map.find(keys.cluster_weights_key);
+  GPR_ASSERT(cluster_weights_map_it != cluster_weights_map.end());
+  return absl::StrFormat("%s_%d", keys.cluster_names_key,
+                         cluster_weights_map_it->second);
+}
+
+void XdsClient::UpdateWeightedClusterIndexMap(
+    const XdsApi::RdsUpdate& rds_update) {
+  // Construct a list of unique WeightedCluster
+  // actions which we need to process: to find action names
+  std::map<std::string /* cluster_weights_key */,
+           std::string /* cluster_names_key */>
+      actions_to_process;
+  for (const auto& route : rds_update.routes) {
+    if (!route.weighted_clusters.empty()) {
+      WeightedClustersKeys keys =
+          GetWeightedClustersKey(route.weighted_clusters);
+      auto action_it = actions_to_process.find(keys.cluster_weights_key);
+      if (action_it == actions_to_process.end()) {
+        actions_to_process[std::move(keys.cluster_weights_key)] =
+            std::move(keys.cluster_names_key);
+      }
+    }
+  }
+  // First pass of all unique WeightedCluster actions: if the exact same
+  // weighted target policy (same clusters and weights) appears in the old map,
+  // then that old action name is taken again and should be moved to the new
+  // map; any other action names from the old set of actions are candidates for
+  // reuse.
+  XdsClient::WeightedClusterIndexMap new_weighted_cluster_index_map;
+  for (auto action_it = actions_to_process.begin();
+       action_it != actions_to_process.end();) {
+    const std::string& cluster_names_key = action_it->second;
+    const std::string& cluster_weights_key = action_it->first;
+    auto old_cluster_names_map_it =
+        weighted_cluster_index_map_.find(cluster_names_key);
+    if (old_cluster_names_map_it != weighted_cluster_index_map_.end()) {
+      // Add cluster_names_key to the new map and copy next_index.
+      auto& new_cluster_names_info =
+          new_weighted_cluster_index_map[cluster_names_key];
+      new_cluster_names_info.next_index =
+          old_cluster_names_map_it->second.next_index;
+      // Lookup cluster_weights_key in old map.
+      auto& old_cluster_weights_map =
+          old_cluster_names_map_it->second.cluster_weights_map;
+      auto old_cluster_weights_map_it =
+          old_cluster_weights_map.find(cluster_weights_key);
+      if (old_cluster_weights_map_it != old_cluster_weights_map.end()) {
+        // same policy found, move from old map to new map.
+        new_cluster_names_info.cluster_weights_map[cluster_weights_key] =
+            old_cluster_weights_map_it->second;
+        old_cluster_weights_map.erase(old_cluster_weights_map_it);
+        // This action has been added to new map, so no need to process it
+        // again.
+        action_it = actions_to_process.erase(action_it);
+        continue;
+      }
+    }
+    ++action_it;
+  }
+  // Second pass of all remaining unique WeightedCluster actions: if clusters
+  // for a new action are the same as an old unused action, reuse the name.  If
+  // clusters differ, use a brand new name.
+  for (const auto& action : actions_to_process) {
+    const std::string& cluster_names_key = action.second;
+    const std::string& cluster_weights_key = action.first;
+    auto& new_cluster_names_info =
+        new_weighted_cluster_index_map[cluster_names_key];
+    auto& old_cluster_weights_map =
+        weighted_cluster_index_map_[cluster_names_key].cluster_weights_map;
+    auto old_cluster_weights_it = old_cluster_weights_map.begin();
+    if (old_cluster_weights_it != old_cluster_weights_map.end()) {
+      // There is something to reuse: this action uses the same set
+      // of clusters as a previous action and that action name is not
+      // already taken.
+      new_cluster_names_info.cluster_weights_map[cluster_weights_key] =
+          old_cluster_weights_it->second;
+      // Remove the name from being able to reuse again.
+      old_cluster_weights_map.erase(old_cluster_weights_it);
+    } else {
+      // There is nothing to reuse, take the next index to use and
+      // increment.
+      new_cluster_names_info.cluster_weights_map[cluster_weights_key] =
+          new_cluster_names_info.next_index++;
+    }
+  }
+  weighted_cluster_index_map_ = std::move(new_weighted_cluster_index_map);
+}
 
 grpc_error* XdsClient::CreateServiceConfig(
     const XdsApi::RdsUpdate& rds_update,
-    RefCountedPtr<ServiceConfig>* service_config) const {
+    RefCountedPtr<ServiceConfig>* service_config) {
+  UpdateWeightedClusterIndexMap(rds_update);
+  std::vector<std::string> actions_vector;
+  std::vector<std::string> route_table;
+  std::set<std::string> actions_set;
+  for (const auto& route : rds_update.routes) {
+    const std::string action_name =
+        route.weighted_clusters.empty()
+            ? route.cluster_name
+            : WeightedClustersActionName(route.weighted_clusters);
+    if (actions_set.find(action_name) == actions_set.end()) {
+      actions_set.emplace(action_name);
+      actions_vector.push_back(
+          route.weighted_clusters.empty()
+              ? CreateServiceConfigActionCluster(action_name)
+              : CreateServiceConfigActionWeightedCluster(
+                    action_name, route.weighted_clusters));
+    }
+    route_table.push_back(CreateServiceConfigRoute(
+        absl::StrFormat("%s:%s",
+                        route.weighted_clusters.empty() ? "cds" : "weighted",
+                        action_name),
+        route));
+  }
   std::vector<std::string> config_parts;
   config_parts.push_back(
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"xds_routing_experimental\":{\n"
       "      \"actions\":{\n");
-  std::vector<std::string> actions_vector;
-  for (size_t i = 0; i < rds_update.routes.size(); ++i) {
-    auto route = rds_update.routes[i];
-    actions_vector.push_back(
-        CreateServiceConfigActionCluster(route.cluster_name.c_str()));
-  }
   config_parts.push_back(absl::StrJoin(actions_vector, ",\n"));
   config_parts.push_back(
       "    },\n"
       "      \"routes\":[\n");
-  std::vector<std::string> routes_vector;
-  for (size_t i = 0; i < rds_update.routes.size(); ++i) {
-    auto route_info = rds_update.routes[i];
-    routes_vector.push_back(CreateServiceConfigRoute(
-        route_info.cluster_name.c_str(), route_info.service.c_str(),
-        route_info.method.c_str()));
-  }
-  config_parts.push_back(absl::StrJoin(routes_vector, ",\n"));
+  config_parts.push_back(absl::StrJoin(route_table, ",\n"));
   config_parts.push_back(
       "    ]\n"
       "    } }\n"
@@ -2098,7 +2321,7 @@ grpc_error* XdsClient::CreateServiceConfig(
 }
 
 XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshot(
-    const std::set<std::string>& clusters) {
+    bool send_all_clusters, const std::set<std::string>& clusters) {
   XdsApi::ClusterLoadReportMap snapshot_map;
   for (auto load_report_it = load_report_map_.begin();
        load_report_it != load_report_map_.end();) {
@@ -2113,7 +2336,7 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshot(
     // asking for the data in the future, we don't incorrectly include
     // data from previous reporting intervals in that future report.
     const bool record_stats =
-        clusters.find(cluster_key.first) != clusters.end();
+        send_all_clusters || clusters.find(cluster_key.first) != clusters.end();
     XdsApi::ClusterLoadReport snapshot;
     // Aggregate drop stats.
     snapshot.dropped_requests = std::move(load_report.deleted_drop_stats);
@@ -2213,6 +2436,12 @@ RefCountedPtr<XdsClient> XdsClient::GetFromChannelArgs(
       grpc_channel_args_find_pointer<XdsClient>(&args, GRPC_ARG_XDS_CLIENT);
   if (xds_client != nullptr) return xds_client->Ref();
   return nullptr;
+}
+
+grpc_channel_args* XdsClient::RemoveFromChannelArgs(
+    const grpc_channel_args& args) {
+  const char* arg_name = GRPC_ARG_XDS_CLIENT;
+  return grpc_channel_args_copy_and_remove(&args, &arg_name, 1);
 }
 
 }  // namespace grpc_core

@@ -14,6 +14,7 @@
 #include "envoy/api/v2/core/health_check.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/migrate.upb.h"
+#include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
@@ -23,25 +24,27 @@ static const upb_msglayout *const envoy_api_v2_endpoint_Endpoint_submsgs[2] = {
   &envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_endpoint_Endpoint__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
-  {2, UPB_SIZE(4, 8), 0, 1, 11, 1},
+static const upb_msglayout_field envoy_api_v2_endpoint_Endpoint__fields[3] = {
+  {1, UPB_SIZE(8, 16), 0, 0, 11, 1},
+  {2, UPB_SIZE(12, 24), 0, 1, 11, 1},
+  {3, UPB_SIZE(0, 0), 0, 0, 9, 1},
 };
 
 const upb_msglayout envoy_api_v2_endpoint_Endpoint_msginit = {
   &envoy_api_v2_endpoint_Endpoint_submsgs[0],
   &envoy_api_v2_endpoint_Endpoint__fields[0],
-  UPB_SIZE(8, 16), 2, false,
+  UPB_SIZE(16, 32), 3, false,
 };
 
-static const upb_msglayout_field envoy_api_v2_endpoint_Endpoint_HealthCheckConfig__fields[1] = {
+static const upb_msglayout_field envoy_api_v2_endpoint_Endpoint_HealthCheckConfig__fields[2] = {
   {1, UPB_SIZE(0, 0), 0, 0, 13, 1},
+  {2, UPB_SIZE(4, 8), 0, 0, 9, 1},
 };
 
 const upb_msglayout envoy_api_v2_endpoint_Endpoint_HealthCheckConfig_msginit = {
   NULL,
   &envoy_api_v2_endpoint_Endpoint_HealthCheckConfig__fields[0],
-  UPB_SIZE(4, 4), 1, false,
+  UPB_SIZE(16, 32), 2, false,
 };
 
 static const upb_msglayout *const envoy_api_v2_endpoint_LbEndpoint_submsgs[3] = {

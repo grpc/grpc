@@ -174,31 +174,32 @@ void ServerContextBase::CompletionOp::FillOps(::grpc::internal::Call* call) {
 }
 
 bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
-  bool ret = false;
-  grpc_core::ReleasableMutexLock lock(&mu_);
-  if (done_intercepting_) {
-    /* We are done intercepting. */
-    if (has_tag_) {
-      *tag = tag_;
-      ret = true;
+  // Decide whether to call the cancel callback within the lock
+  bool call_cancel;
+
+  {
+    grpc_core::MutexLock lock(&mu_);
+    if (done_intercepting_) {
+      // We are done intercepting.
+      bool has_tag = has_tag_;
+      if (has_tag) {
+        *tag = tag_;
+      }
+      Unref();
+      return has_tag;
     }
-    Unref();
-    return ret;
+    finalized_ = true;
+
+    // If for some reason the incoming status is false, mark that as a
+    // cancellation.
+    // TODO(vjpai): does this ever happen?
+    if (!*status) {
+      cancelled_ = 1;
+    }
+
+    call_cancel = (cancelled_ != 0);
+    // Release the lock since we may call a callback and interceptors.
   }
-  finalized_ = true;
-
-  // If for some reason the incoming status is false, mark that as a
-  // cancellation.
-  // TODO(vjpai): does this ever happen?
-  if (!*status) {
-    cancelled_ = 1;
-  }
-
-  // Decide whether to call the cancel callback before releasing the lock
-  bool call_cancel = (cancelled_ != 0);
-
-  // Release the lock since we may call a callback and interceptors now.
-  lock.Unlock();
 
   if (call_cancel && callback_controller_ != nullptr) {
     callback_controller_->MaybeCallOnCancel();
@@ -207,15 +208,15 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
   interceptor_methods_.AddInterceptionHookPoint(
       ::grpc::experimental::InterceptionHookPoints::POST_RECV_CLOSE);
   if (interceptor_methods_.RunInterceptors()) {
-    /* No interceptors were run */
-    if (has_tag_) {
+    // No interceptors were run
+    bool has_tag = has_tag_;
+    if (has_tag) {
       *tag = tag_;
-      ret = true;
     }
     Unref();
-    return ret;
+    return has_tag;
   }
-  /* There are interceptors to be run. Return false for now */
+  // There are interceptors to be run. Return false for now.
   return false;
 }
 
@@ -304,13 +305,13 @@ void ServerContextBase::BeginCompletionOp(
   return static_cast<::grpc::internal::CompletionQueueTag*>(completion_op_);
 }
 
-void ServerContextBase::AddInitialMetadata(const grpc::string& key,
-                                           const grpc::string& value) {
+void ServerContextBase::AddInitialMetadata(const std::string& key,
+                                           const std::string& value) {
   initial_metadata_.insert(std::make_pair(key, value));
 }
 
-void ServerContextBase::AddTrailingMetadata(const grpc::string& key,
-                                            const grpc::string& value) {
+void ServerContextBase::AddTrailingMetadata(const std::string& key,
+                                            const std::string& value) {
   trailing_metadata_.insert(std::make_pair(key, value));
 }
 
@@ -355,8 +356,8 @@ void ServerContextBase::set_compression_algorithm(
   AddInitialMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
 }
 
-grpc::string ServerContextBase::peer() const {
-  grpc::string peer;
+std::string ServerContextBase::peer() const {
+  std::string peer;
   if (call_) {
     char* c_peer = grpc_call_get_peer(call_);
     peer = c_peer;
@@ -370,7 +371,7 @@ const struct census_context* ServerContextBase::census_context() const {
 }
 
 void ServerContextBase::SetLoadReportingCosts(
-    const std::vector<grpc::string>& cost_data) {
+    const std::vector<std::string>& cost_data) {
   if (call_ == nullptr) return;
   for (const auto& cost_datum : cost_data) {
     AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);

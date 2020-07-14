@@ -22,12 +22,13 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -61,7 +62,7 @@ struct grpc_end2end_http_proxy {
     gpr_ref_init(&users, 1);
     combiner = grpc_combiner_create();
   }
-  grpc_core::UniquePtr<char> proxy_name;
+  std::string proxy_name;
   grpc_core::Thread thd;
   grpc_tcp_server* server;
   grpc_channel_args* channel_args;
@@ -492,11 +493,10 @@ static void on_read_request_done_locked(void* arg, grpc_error* error) {
   }
   // Make sure we got a CONNECT request.
   if (strcmp(conn->http_request.method, "CONNECT") != 0) {
-    char* msg;
-    gpr_asprintf(&msg, "HTTP proxy got request method %s",
-                 conn->http_request.method);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("HTTP proxy got request method ",
+                     conn->http_request.method)
+            .c_str());
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
                             GRPC_ERROR_REF(error));
     GRPC_ERROR_UNREF(error);
@@ -612,8 +612,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   grpc_end2end_http_proxy* proxy = new grpc_end2end_http_proxy();
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
-  grpc_core::JoinHostPort(&proxy->proxy_name, "localhost", proxy_port);
-  gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.get());
+  proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
+  gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.c_str());
   // Create TCP server.
   proxy->channel_args = grpc_channel_args_copy(args);
   grpc_error* error =
@@ -663,5 +663,5 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
 
 const char* grpc_end2end_http_proxy_get_proxy_name(
     grpc_end2end_http_proxy* proxy) {
-  return proxy->proxy_name.get();
+  return proxy->proxy_name.c_str();
 }

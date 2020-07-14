@@ -23,12 +23,14 @@
 
 #include <stdbool.h>
 
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/slice_buffer.h>
 
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
@@ -45,17 +47,17 @@
 grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer);
 
 /* Check peer name information returned from SSL handshakes. */
-grpc_error* grpc_ssl_check_peer_name(grpc_core::StringView peer_name,
+grpc_error* grpc_ssl_check_peer_name(absl::string_view peer_name,
                                      const tsi_peer* peer);
 /* Compare targer_name information extracted from SSL security connectors. */
-int grpc_ssl_cmp_target_name(
-    grpc_core::StringView target_name, grpc_core::StringView other_target_name,
-    grpc_core::StringView overridden_target_name,
-    grpc_core::StringView other_overridden_target_name);
+int grpc_ssl_cmp_target_name(absl::string_view target_name,
+                             absl::string_view other_target_name,
+                             absl::string_view overridden_target_name,
+                             absl::string_view other_overridden_target_name);
 /* Check the host that will be set for a call is acceptable.*/
-bool grpc_ssl_check_call_host(grpc_core::StringView host,
-                              grpc_core::StringView target_name,
-                              grpc_core::StringView overridden_target_name,
+bool grpc_ssl_check_call_host(absl::string_view host,
+                              absl::string_view target_name,
+                              absl::string_view overridden_target_name,
                               grpc_auth_context* auth_context,
                               grpc_error** error);
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
@@ -71,6 +73,9 @@ grpc_get_tsi_client_certificate_request_type(
 grpc_security_level grpc_tsi_security_level_string_to_enum(
     const char* security_level);
 
+/* Map grpc_tls_version to tsi_tls_version. */
+tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version);
+
 /* Map grpc_security_level enum to a string. */
 const char* grpc_security_level_to_string(grpc_security_level security_level);
 
@@ -84,14 +89,15 @@ const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
 /* Initialize TSI SSL server/client handshaker factory. */
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
-    bool skip_server_certificate_verification,
-    tsi_ssl_session_cache* ssl_session_cache,
+    bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
+    tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pairs, size_t num_key_cert_pairs,
     const char* pem_root_certs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
+    tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
 /* Exposed for testing only. */
@@ -101,7 +107,7 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context);
 void grpc_shallow_peer_destruct(tsi_peer* peer);
 int grpc_ssl_host_matches_name(const tsi_peer* peer,
-                               grpc_core::StringView peer_name);
+                               absl::string_view peer_name);
 
 /* --- Default SSL Root Store. --- */
 namespace grpc_core {

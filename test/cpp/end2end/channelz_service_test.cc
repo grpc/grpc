@@ -118,7 +118,7 @@ class ChannelzServerTest : public ::testing::Test {
     // We set up a proxy server with channelz enabled.
     proxy_port_ = grpc_pick_unused_port_or_die();
     ServerBuilder proxy_builder;
-    grpc::string proxy_server_address = "localhost:" + to_string(proxy_port_);
+    std::string proxy_server_address = "localhost:" + to_string(proxy_port_);
     proxy_builder.AddListeningPort(proxy_server_address,
                                    InsecureServerCredentials());
     // forces channelz and channel tracing to be enabled.
@@ -136,7 +136,7 @@ class ChannelzServerTest : public ::testing::Test {
       // create a new backend.
       backends_[i].port = grpc_pick_unused_port_or_die();
       ServerBuilder backend_builder;
-      grpc::string backend_server_address =
+      std::string backend_server_address =
           "localhost:" + to_string(backends_[i].port);
       backend_builder.AddListeningPort(backend_server_address,
                                        InsecureServerCredentials());

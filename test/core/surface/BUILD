@@ -67,6 +67,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "concurrent_connectivity_test",
     srcs = ["concurrent_connectivity_test.cc"],
+    flaky = True,  # TODO(b/157516542)
     language = "C++",
     deps = [
         "//:gpr",
@@ -148,7 +149,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -156,6 +156,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "server_chttp2_test",
     srcs = ["server_chttp2_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",

@@ -16,15 +16,15 @@
  *
  */
 
+#include <gmock/gmock.h>
+#include <grpc/grpc.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/server_builder.h>
-#include <memory>
-
-#include <gmock/gmock.h>
-#include <grpc/grpc.h>
 #include <gtest/gtest.h>
+
+#include <memory>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
@@ -72,7 +72,7 @@ class TestTlsCredentialReload : public TlsCredentialReloadInterface {
 static void tls_server_authorization_check_callback(
     grpc_tls_server_authorization_check_arg* arg) {
   GPR_ASSERT(arg != nullptr);
-  grpc::string cb_user_data = "cb_user_data";
+  std::string cb_user_data = "cb_user_data";
   arg->cb_user_data = static_cast<void*>(gpr_strdup(cb_user_data.c_str()));
   arg->success = 1;
   arg->target_name = gpr_strdup("callback_target_name");
@@ -85,7 +85,7 @@ class TestTlsServerAuthorizationCheck
     : public TlsServerAuthorizationCheckInterface {
   int Schedule(TlsServerAuthorizationCheckArg* arg) override {
     GPR_ASSERT(arg != nullptr);
-    grpc::string cb_user_data = "cb_user_data";
+    std::string cb_user_data = "cb_user_data";
     arg->set_cb_user_data(static_cast<void*>(gpr_strdup(cb_user_data.c_str())));
     arg->set_success(1);
     arg->set_target_name("sync_target_name");
@@ -390,8 +390,8 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   c_arg.context = nullptr;
   c_arg.cb_user_data = static_cast<void*>(nullptr);
   grpc_tls_key_materials_config c_key_materials;
-  grpc::string test_private_key = "private_key";
-  grpc::string test_cert_chain = "cert_chain";
+  std::string test_private_key = "private_key";
+  std::string test_cert_chain = "cert_chain";
   grpc_ssl_pem_key_cert_pair* ssl_pair =
       (grpc_ssl_pem_key_cert_pair*)gpr_malloc(
           sizeof(grpc_ssl_pem_key_cert_pair));
@@ -401,12 +401,12 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
       ::grpc_core::PemKeyCertPair(ssl_pair);
   ::absl::InlinedVector<::grpc_core::PemKeyCertPair, 1> pem_key_cert_pair_list;
   pem_key_cert_pair_list.push_back(pem_key_cert_pair);
-  grpc::string test_pem_root_certs = "pem_root_certs";
+  std::string test_pem_root_certs = "pem_root_certs";
   c_key_materials.set_key_materials(test_pem_root_certs.c_str(),
                                     pem_key_cert_pair_list);
   c_arg.key_materials_config = &c_key_materials;
   c_arg.status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-  grpc::string test_error_details = "error_details";
+  std::string test_error_details = "error_details";
   c_arg.error_details->set_error_details(test_error_details.c_str());
 
   grpc_tls_credential_reload_config* c_config = config.c_config();
@@ -573,12 +573,13 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
           test_server_authorization_check));
 
   TlsCredentialsOptions options = TlsCredentialsOptions(
-      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
       GRPC_TLS_SERVER_VERIFICATION, key_materials_config,
       credential_reload_config, server_authorization_check_config);
   grpc_tls_credentials_options* c_options = options.c_credentials_options();
   EXPECT_EQ(c_options->cert_request_type(),
-            GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+            GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  EXPECT_EQ(c_options->server_verification_option(),
+            GRPC_TLS_SERVER_VERIFICATION);
   grpc_tls_key_materials_config* c_key_materials_config =
       c_options->key_materials_config();
   grpc_tls_credential_reload_config* c_credential_reload_config =
@@ -588,7 +589,7 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   c_credential_reload_arg.key_materials_config =
       c_options->key_materials_config();
   c_credential_reload_arg.status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-  grpc::string test_error_details = "error_details";
+  std::string test_error_details = "error_details";
   c_credential_reload_arg.error_details = new grpc_tls_error_details();
   c_credential_reload_arg.error_details->set_error_details(
       test_error_details.c_str());
@@ -678,28 +679,11 @@ TEST_F(CredentialsTest, LoadTlsChannelCredentials) {
           test_server_authorization_check));
 
   TlsCredentialsOptions options = TlsCredentialsOptions(
-      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
       GRPC_TLS_SERVER_VERIFICATION, nullptr, credential_reload_config,
       server_authorization_check_config);
   std::shared_ptr<grpc_impl::ChannelCredentials> channel_credentials =
       grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
-}
-
-// This test demonstrates how the TLS credentials will be used to create
-// server credentials.
-TEST_F(CredentialsTest, LoadTlsServerCredentials) {
-  std::shared_ptr<TestTlsCredentialReload> test_credential_reload(
-      new TestTlsCredentialReload());
-  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config(
-      new TlsCredentialReloadConfig(test_credential_reload));
-
-  TlsCredentialsOptions options = TlsCredentialsOptions(
-      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
-      GRPC_TLS_SERVER_VERIFICATION, nullptr, credential_reload_config, nullptr);
-  std::shared_ptr<::grpc_impl::ServerCredentials> server_credentials =
-      grpc::experimental::TlsServerCredentials(options);
-  GPR_ASSERT(server_credentials.get() != nullptr);
 }
 
 TEST_F(CredentialsTest, TlsCredentialReloadConfigErrorMessages) {

@@ -53,11 +53,10 @@ RefCountedPtr<TargetAuthorityTable> CreateTargetAuthorityTable(
       static_cast<TargetAuthorityTable::Entry*>(
           gpr_zalloc(sizeof(*target_authority_entries) * addresses.size()));
   for (size_t i = 0; i < addresses.size(); ++i) {
-    char* addr_str;
-    GPR_ASSERT(
-        grpc_sockaddr_to_string(&addr_str, &addresses[i].address(), true) > 0);
-    target_authority_entries[i].key = grpc_slice_from_copied_string(addr_str);
-    gpr_free(addr_str);
+    std::string addr_str =
+        grpc_sockaddr_to_string(&addresses[i].address(), true);
+    target_authority_entries[i].key =
+        grpc_slice_from_copied_string(addr_str.c_str());
     const char* balancer_name =
         FindGrpclbBalancerNameInChannelArgs(*addresses[i].args());
     target_authority_entries[i].value.reset(gpr_strdup(balancer_name));

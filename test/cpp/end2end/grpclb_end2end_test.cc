@@ -21,12 +21,15 @@
 #include <mutex>
 #include <set>
 #include <sstream>
+#include <string>
 #include <thread>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -158,26 +161,26 @@ class BackendServiceImpl : public BackendService {
 
   void Shutdown() {}
 
-  std::set<grpc::string> clients() {
+  std::set<std::string> clients() {
     grpc::internal::MutexLock lock(&clients_mu_);
     return clients_;
   }
 
  private:
-  void AddClient(const grpc::string& client) {
+  void AddClient(const std::string& client) {
     grpc::internal::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
 
   grpc::internal::Mutex mu_;
   grpc::internal::Mutex clients_mu_;
-  std::set<grpc::string> clients_;
+  std::set<std::string> clients_;
 };
 
-grpc::string Ip4ToPackedString(const char* ip_str) {
+std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
   GPR_ASSERT(inet_pton(AF_INET, ip_str, &ip4) == 1);
-  return grpc::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
+  return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
 struct ClientStats {
@@ -185,7 +188,7 @@ struct ClientStats {
   size_t num_calls_finished = 0;
   size_t num_calls_finished_with_client_failed_to_send = 0;
   size_t num_calls_finished_known_received = 0;
-  std::map<grpc::string, size_t> drop_token_counts;
+  std::map<std::string, size_t> drop_token_counts;
 
   ClientStats& operator+=(const ClientStats& other) {
     num_calls_started += other.num_calls_started;
@@ -233,6 +236,11 @@ class BalancerServiceImpl : public BalancerService {
 
       if (!stream->Read(&request)) {
         goto done;
+      } else {
+        if (request.has_initial_request()) {
+          grpc::internal::MutexLock lock(&mu_);
+          service_names_.push_back(request.initial_request().name());
+        }
       }
       IncreaseRequestCount();
       gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
@@ -314,7 +322,7 @@ class BalancerServiceImpl : public BalancerService {
 
   static LoadBalanceResponse BuildResponseForBackends(
       const std::vector<int>& backend_ports,
-      const std::map<grpc::string, size_t>& drop_token_counts) {
+      const std::map<std::string, size_t>& drop_token_counts) {
     LoadBalanceResponse response;
     for (const auto& drop_token_count : drop_token_counts) {
       for (size_t i = 0; i < drop_token_count.second; ++i) {
@@ -328,10 +336,8 @@ class BalancerServiceImpl : public BalancerService {
       server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
       server->set_port(backend_port);
       static int token_count = 0;
-      char* token;
-      gpr_asprintf(&token, "token%03d", ++token_count);
-      server->set_load_balance_token(token);
-      gpr_free(token);
+      server->set_load_balance_token(
+          absl::StrFormat("token%03d", ++token_count));
     }
     return response;
   }
@@ -358,6 +364,11 @@ class BalancerServiceImpl : public BalancerService {
     }
   }
 
+  std::vector<std::string> service_names() {
+    grpc::internal::MutexLock lock(&mu_);
+    return service_names_;
+  }
+
  private:
   void SendResponse(Stream* stream, const LoadBalanceResponse& response,
                     int delay_ms) {
@@ -373,6 +384,7 @@ class BalancerServiceImpl : public BalancerService {
 
   const int client_load_reporting_interval_seconds_;
   std::vector<ResponseDelayPair> responses_and_delays_;
+  std::vector<std::string> service_names_;
 
   grpc::internal::Mutex mu_;
   grpc::internal::CondVar serverlist_cond_;
@@ -439,7 +451,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int fallback_timeout = 0,
-                 const grpc::string& expected_targets = "") {
+                 const std::string& expected_targets = "") {
     ChannelArguments args;
     if (fallback_timeout > 0) args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
@@ -530,16 +542,15 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
   struct AddressData {
     int port;
-    grpc::string balancer_name;
+    std::string balancer_name;
   };
 
   static grpc_core::ServerAddressList CreateLbAddressesFromAddressDataList(
       const std::vector<AddressData>& address_data) {
     grpc_core::ServerAddressList addresses;
     for (const auto& addr : address_data) {
-      char* lb_uri_str;
-      gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", addr.port);
-      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str, true);
+      std::string lb_uri_str = absl::StrCat("ipv4:127.0.0.1:", addr.port);
+      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str.c_str(), true);
       GPR_ASSERT(lb_uri != nullptr);
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
@@ -549,7 +560,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
           grpc_channel_args_copy_and_add(nullptr, &arg, 1);
       addresses.emplace_back(address.addr, address.len, args);
       grpc_uri_destroy(lb_uri);
-      gpr_free(lb_uri_str);
     }
     return addresses;
   }
@@ -618,11 +628,17 @@ class GrpclbEnd2endTest : public ::testing::Test {
   }
 
   Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
-                 bool wait_for_ready = false) {
+                 bool wait_for_ready = false,
+                 const Status& expected_status = Status::OK) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
     request.set_message(kRequestMessage_);
+    if (!expected_status.ok()) {
+      auto* error = request.mutable_param()->mutable_expected_error();
+      error->set_code(expected_status.error_code());
+      error->set_error_message(expected_status.error_message());
+    }
     ClientContext context;
     context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
     if (wait_for_ready) context.set_wait_for_ready(true);
@@ -650,12 +666,12 @@ class GrpclbEnd2endTest : public ::testing::Test {
   template <typename T>
   struct ServerThread {
     template <typename... Args>
-    explicit ServerThread(const grpc::string& type, Args&&... args)
+    explicit ServerThread(const std::string& type, Args&&... args)
         : port_(grpc_pick_unused_port_or_die()),
           type_(type),
           service_(std::forward<Args>(args)...) {}
 
-    void Start(const grpc::string& server_host) {
+    void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
       GPR_ASSERT(!running_);
       running_ = true;
@@ -671,7 +687,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
     }
 
-    void Serve(const grpc::string& server_host, grpc::internal::Mutex* mu,
+    void Serve(const std::string& server_host, grpc::internal::Mutex* mu,
                grpc::internal::CondVar* cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
@@ -698,14 +714,14 @@ class GrpclbEnd2endTest : public ::testing::Test {
     }
 
     const int port_;
-    grpc::string type_;
+    std::string type_;
     T service_;
     std::unique_ptr<Server> server_;
     std::unique_ptr<std::thread> thread_;
     bool running_ = false;
   };
 
-  const grpc::string server_host_;
+  const std::string server_host_;
   const size_t num_backends_;
   const size_t num_balancers_;
   const int client_load_reporting_interval_seconds_;
@@ -715,8 +731,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
   std::vector<std::unique_ptr<ServerThread<BalancerServiceImpl>>> balancers_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator_;
-  const grpc::string kRequestMessage_ = "Live long and prosper.";
-  const grpc::string kApplicationTargetName_ = "application_target_name";
+  const std::string kRequestMessage_ = "Live long and prosper.";
+  const std::string kApplicationTargetName_ = "application_target_name";
 };
 
 class SingleBalancerTest : public GrpclbEnd2endTest {
@@ -749,6 +765,22 @@ TEST_F(SingleBalancerTest, Vanilla) {
 
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest, ReturnServerStatus) {
+  SetNextResolutionAllBalancers();
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
+      0);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  // Send a request that the backend will fail, and make sure we get
+  // back the right status.
+  Status expected(StatusCode::INVALID_ARGUMENT, "He's dead, Jim!");
+  Status actual = SendRpc(/*response=*/nullptr, /*timeout_ms=*/1000,
+                          /*wait_for_ready=*/false, expected);
+  EXPECT_EQ(actual.error_code(), expected.error_code());
+  EXPECT_EQ(actual.error_message(), expected.error_message());
 }
 
 TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
@@ -866,84 +898,6 @@ TEST_F(SingleBalancerTest, SwapChildPolicy) {
   EXPECT_EQ(1U, balancers_[0]->service_.response_count());
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
-}
-
-TEST_F(SingleBalancerTest, UpdatesGoToMostRecentChildPolicy) {
-  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
-  ResetStub(kFallbackTimeoutMs);
-  int unreachable_balancer_port = grpc_pick_unused_port_or_die();
-  int unreachable_backend_port = grpc_pick_unused_port_or_die();
-  // Phase 1: Start with RR pointing to first backend.
-  gpr_log(GPR_INFO, "PHASE 1: Initial setup with RR with first backend");
-  SetNextResolution(
-      {
-          // Unreachable balancer.
-          {unreachable_balancer_port, ""},
-      },
-      {
-          // Fallback address: first backend.
-          {backends_[0]->port_, ""},
-      },
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"grpclb\":{\n"
-      "      \"childPolicy\":[\n"
-      "        { \"round_robin\":{} }\n"
-      "      ]\n"
-      "    } }\n"
-      "  ]\n"
-      "}");
-  // RPCs should go to first backend.
-  WaitForBackend(0);
-  // Phase 2: Switch to PF pointing to unreachable backend.
-  gpr_log(GPR_INFO, "PHASE 2: Update to use PF with unreachable backend");
-  SetNextResolution(
-      {
-          // Unreachable balancer.
-          {unreachable_balancer_port, ""},
-      },
-      {
-          // Fallback address: unreachable backend.
-          {unreachable_backend_port, ""},
-      },
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"grpclb\":{\n"
-      "      \"childPolicy\":[\n"
-      "        { \"pick_first\":{} }\n"
-      "      ]\n"
-      "    } }\n"
-      "  ]\n"
-      "}");
-  // RPCs should continue to go to the first backend, because the new
-  // PF child policy will never go into state READY.
-  WaitForBackend(0);
-  // Phase 3: Switch back to RR pointing to second and third backends.
-  // This ensures that we create a new policy rather than updating the
-  // pending PF policy.
-  gpr_log(GPR_INFO, "PHASE 3: Update to use RR again with two backends");
-  SetNextResolution(
-      {
-          // Unreachable balancer.
-          {unreachable_balancer_port, ""},
-      },
-      {
-          // Fallback address: second and third backends.
-          {backends_[1]->port_, ""},
-          {backends_[2]->port_, ""},
-      },
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"grpclb\":{\n"
-      "      \"childPolicy\":[\n"
-      "        { \"round_robin\":{} }\n"
-      "      ]\n"
-      "    } }\n"
-      "  ]\n"
-      "}");
-  // RPCs should go to the second and third backends.
-  WaitForBackend(1);
-  WaitForBackend(2);
 }
 
 TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {
@@ -1437,6 +1391,27 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   // and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->service_.response_count());
+}
+
+TEST_F(SingleBalancerTest, ServiceNameFromLbPolicyConfig) {
+  constexpr char kServiceConfigWithTarget[] =
+      "{\n"
+      "  \"loadBalancingConfig\":[\n"
+      "    { \"grpclb\":{\n"
+      "      \"serviceName\":\"test_service\"\n"
+      "    }}\n"
+      "  ]\n"
+      "}";
+
+  SetNextResolutionAllBalancers(kServiceConfigWithTarget);
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
+      0);
+  // Make sure that trying to connect works without a call.
+  channel_->GetState(true /* try_to_connect */);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  EXPECT_EQ(balancers_[0]->service_.service_names().back(), "test_service");
 }
 
 class UpdatesTest : public GrpclbEnd2endTest {

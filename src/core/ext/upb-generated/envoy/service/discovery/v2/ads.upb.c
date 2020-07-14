@@ -10,6 +10,7 @@
 #include "upb/msg.h"
 #include "envoy/service/discovery/v2/ads.upb.h"
 #include "envoy/api/v2/discovery.upb.h"
+#include "udpa/annotations/status.upb.h"
 
 #include "upb/port_def.inc"
 

@@ -62,6 +62,16 @@ common name which is set to *.test.google.com.
 $ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in server1.csr \
   -out server1.pem -extensions req_ext -extfile server1-openssl.cnf -days 3650
 
+multi-domain is a self-signed certificate having multiple subject alternative names:
+----------------------------------------------------------------------------
+
+$ openssl genrsa -out multi-domain.key.rsa 2048
+$ openssl pkcs8 -topk8 -in multi-domain.key.rsa -out multi-domain.key -nocrypt
+$ openssl req -new -key multi-domain.key -out multi-domain.csr -config
+multi-domain-openssl.cnf
+$ openssl req -x509 -new -extensions v3_req -key multi-domain.key -out
+multi-domain.pem -days 3650 -config multi-domain-openssl.cnf
+
 Clean up:
 ---------
 $ rm *.rsa
@@ -71,7 +81,7 @@ $ rm ca.srl
 Sync up with other repositories
 ===============================
 
-Copies of these keys exist in multiple locations across all the grpc repos
+Copies of these keys (except for multi-domain) exist in multiple locations across all the grpc repos
 (e.g., see the following partial list). You need to be careful when updating
 the keys.
 

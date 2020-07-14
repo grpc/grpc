@@ -135,6 +135,8 @@ grpc_google_refresh_token_credentials_create_type grpc_google_refresh_token_cred
 grpc_access_token_credentials_create_type grpc_access_token_credentials_create_import;
 grpc_google_iam_credentials_create_type grpc_google_iam_credentials_create_import;
 grpc_sts_credentials_create_type grpc_sts_credentials_create_import;
+grpc_auth_metadata_context_copy_type grpc_auth_metadata_context_copy_import;
+grpc_auth_metadata_context_reset_type grpc_auth_metadata_context_reset_import;
 grpc_metadata_credentials_create_from_plugin_type grpc_metadata_credentials_create_from_plugin_import;
 grpc_secure_channel_create_type grpc_secure_channel_create_import;
 grpc_server_credentials_release_type grpc_server_credentials_release_import;
@@ -407,6 +409,8 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_access_token_credentials_create_import = (grpc_access_token_credentials_create_type) GetProcAddress(library, "grpc_access_token_credentials_create");
   grpc_google_iam_credentials_create_import = (grpc_google_iam_credentials_create_type) GetProcAddress(library, "grpc_google_iam_credentials_create");
   grpc_sts_credentials_create_import = (grpc_sts_credentials_create_type) GetProcAddress(library, "grpc_sts_credentials_create");
+  grpc_auth_metadata_context_copy_import = (grpc_auth_metadata_context_copy_type) GetProcAddress(library, "grpc_auth_metadata_context_copy");
+  grpc_auth_metadata_context_reset_import = (grpc_auth_metadata_context_reset_type) GetProcAddress(library, "grpc_auth_metadata_context_reset");
   grpc_metadata_credentials_create_from_plugin_import = (grpc_metadata_credentials_create_from_plugin_type) GetProcAddress(library, "grpc_metadata_credentials_create_from_plugin");
   grpc_secure_channel_create_import = (grpc_secure_channel_create_type) GetProcAddress(library, "grpc_secure_channel_create");
   grpc_server_credentials_release_import = (grpc_server_credentials_release_type) GetProcAddress(library, "grpc_server_credentials_release");

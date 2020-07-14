@@ -13,6 +13,7 @@
 #include "envoy/type/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/migrate.upb.h"
+#include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"

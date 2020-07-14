@@ -13,15 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Use devtoolset environment that has GCC 4.8 before set -ex
-# shellcheck disable=SC1091
-source scl_source enable devtoolset-2
-
 set -ex
 
 cd "$(dirname "$0")/../../.."
 
-make plugins
+EMBED_ZLIB=true PROTOBUF_CONFIG_OPTS=--with-zlib=no make plugins
 
 mkdir -p "${ARTIFACTS_OUT}"
 cp bins/opt/protobuf/protoc bins/opt/*_plugin "${ARTIFACTS_OUT}"/

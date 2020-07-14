@@ -77,13 +77,13 @@ void MaybeEchoMetadata(ServerContext* context) {
   if (iter != client_metadata.end()) {
     context->AddInitialMetadata(
         kEchoInitialMetadataKey,
-        grpc::string(iter->second.begin(), iter->second.end()));
+        std::string(iter->second.begin(), iter->second.end()));
   }
   iter = client_metadata.find(kEchoTrailingBinMetadataKey);
   if (iter != client_metadata.end()) {
     context->AddTrailingMetadata(
         kEchoTrailingBinMetadataKey,
-        grpc::string(iter->second.begin(), iter->second.end()));
+        std::string(iter->second.begin(), iter->second.end()));
   }
   // Check if client sent a magic key in the header that makes us echo
   // back the user-agent (for testing purpose)
@@ -93,7 +93,7 @@ void MaybeEchoMetadata(ServerContext* context) {
     if (iter != client_metadata.end()) {
       context->AddInitialMetadata(
           kEchoUserAgentKey,
-          grpc::string(iter->second.begin(), iter->second.end()));
+          std::string(iter->second.begin(), iter->second.end()));
     }
   }
 }
@@ -267,7 +267,7 @@ class TestServiceImpl : public TestService::Service {
       if (request.response_parameters_size() != 0) {
         response.mutable_payload()->set_type(request.payload().type());
         response.mutable_payload()->set_body(
-            grpc::string(request.response_parameters(0).size(), '\0'));
+            std::string(request.response_parameters(0).size(), '\0'));
         int time_us;
         if ((time_us = request.response_parameters(0).interval_us()) > 0) {
           // Sleep before response if needed
@@ -305,7 +305,7 @@ class TestServiceImpl : public TestService::Service {
                       "Request does not have response parameters.");
       }
       response.mutable_payload()->set_body(
-          grpc::string(requests[i].response_parameters(0).size(), '\0'));
+          std::string(requests[i].response_parameters(0).size(), '\0'));
       write_success = stream->Write(response);
     }
     if (write_success) {

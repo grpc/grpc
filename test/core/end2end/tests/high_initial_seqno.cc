@@ -21,11 +21,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/string.h"
@@ -179,7 +182,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -205,7 +208,6 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   grpc_arg client_arg;
   grpc_channel_args client_args;
-  char* name;
 
   client_arg.type = GRPC_ARG_INTEGER;
   client_arg.key = const_cast<char*>(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER);
@@ -214,16 +216,15 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config,
   client_args.num_args = 1;
   client_args.args = &client_arg;
 
-  gpr_asprintf(&name, "test_invoke_requests first_seqno=%d",
-               initial_sequence_number);
-  f = begin_test(config, name, &client_args, nullptr);
+  std::string name = absl::StrCat("test_invoke_requests first_seqno=",
+                                  initial_sequence_number);
+  f = begin_test(config, name.c_str(), &client_args, nullptr);
   for (i = 0; i < 10; i++) {
     simple_request_body(config, f);
     gpr_log(GPR_INFO, "Running test: Passed simple request %d", i);
   }
   end_test(&f);
   config.tear_down_data(&f);
-  gpr_free(name);
 }
 
 void high_initial_seqno(grpc_end2end_test_config config) {

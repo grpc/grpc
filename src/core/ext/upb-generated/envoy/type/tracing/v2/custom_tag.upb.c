@@ -10,6 +10,7 @@
 #include "upb/msg.h"
 #include "envoy/type/tracing/v2/custom_tag.upb.h"
 #include "envoy/type/metadata/v2/metadata.upb.h"
+#include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"

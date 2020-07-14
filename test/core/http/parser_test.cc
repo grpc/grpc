@@ -21,10 +21,13 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/util/slice_splitter.h"
@@ -216,7 +219,6 @@ int main(int argc, char** argv) {
   size_t i;
   const grpc_slice_split_mode split_modes[] = {GRPC_SLICE_SPLIT_IDENTITY,
                                                GRPC_SLICE_SPLIT_ONE_BYTE};
-  char *tmp1, *tmp2;
 
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -293,14 +295,14 @@ int main(int argc, char** argv) {
     test_request_fails(split_modes[i], "GET / HTTP/1.2\r\n");
     test_request_fails(split_modes[i], "GET / HTTP/1.0\n");
 
-    tmp1 =
+    char* tmp1 =
         static_cast<char*>(gpr_malloc(2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH));
     memset(tmp1, 'a', 2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH - 1);
     tmp1[2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH - 1] = 0;
-    gpr_asprintf(&tmp2, "HTTP/1.0 200 OK\r\nxyz: %s\r\n\r\n", tmp1);
-    test_fails(split_modes[i], tmp2);
+    std::string tmp2 =
+        absl::StrFormat("HTTP/1.0 200 OK\r\nxyz: %s\r\n\r\n", tmp1);
     gpr_free(tmp1);
-    gpr_free(tmp2);
+    test_fails(split_modes[i], tmp2.c_str());
   }
 
   grpc_shutdown();

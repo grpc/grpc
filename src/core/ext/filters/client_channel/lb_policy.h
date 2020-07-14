@@ -24,12 +24,13 @@
 #include <functional>
 #include <iterator>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -92,11 +93,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Application-specific requests cost metrics.  Metric names are
     /// determined by the application.  Each value is an absolute cost
     /// (e.g. 3487 bytes of storage) associated with the request.
-    std::map<StringView, double> request_cost;
+    std::map<absl::string_view, double> request_cost;
     /// Application-specific resource utilization metrics.  Metric names
     /// are determined by the application.  Each value is expressed as a
     /// fraction of total resources available.
-    std::map<StringView, double> utilization;
+    std::map<absl::string_view, double> utilization;
   };
 
   /// Interface for accessing per-call state.
@@ -114,7 +115,17 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Returns the backend metric data returned by the server for the call,
     /// or null if no backend metric data was returned.
+    // TODO(roth): Move this out of CallState, since it should not be
+    // accessible to the picker, only to the recv_trailing_metadata_ready
+    // callback.  It should instead be in its own interface.
     virtual const BackendMetricData* GetBackendMetricData() = 0;
+
+    /// EXPERIMENTAL API.
+    /// Returns the value of the call attribute \a key.
+    /// Keys are static strings, so an attribute can be accessed by an LB
+    /// policy implementation only if it knows about the internal key.
+    /// Returns a null string_view if key not found.
+    virtual absl::string_view ExperimentalGetCallAttribute(const char* key) = 0;
   };
 
   /// Interface for accessing metadata.
@@ -122,12 +133,13 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   class MetadataInterface {
    public:
     class iterator
-        : public std::iterator<std::input_iterator_tag,
-                               std::pair<StringView, StringView>,  // value_type
-                               std::ptrdiff_t,  // difference_type
-                               std::pair<StringView, StringView>*,  // pointer
-                               std::pair<StringView, StringView>&   // reference
-                               > {
+        : public std::iterator<
+              std::input_iterator_tag,
+              std::pair<absl::string_view, absl::string_view>,  // value_type
+              std::ptrdiff_t,  // difference_type
+              std::pair<absl::string_view, absl::string_view>*,  // pointer
+              std::pair<absl::string_view, absl::string_view>&   // reference
+              > {
      public:
       iterator(const MetadataInterface* md, intptr_t handle)
           : md_(md), handle_(handle) {}
@@ -154,7 +166,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Implementations must ensure that the key and value remain alive
     /// until the call ends.  If desired, they may be allocated via
     /// CallState::Alloc().
-    virtual void Add(StringView key, StringView value) = 0;
+    virtual void Add(absl::string_view key, absl::string_view value) = 0;
 
     /// Iteration interface.
     virtual iterator begin() const = 0;
@@ -171,19 +183,21 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     friend class iterator;
 
     virtual intptr_t IteratorHandleNext(intptr_t handle) const = 0;
-    virtual std::pair<StringView /*key*/, StringView /*value */>
+    virtual std::pair<absl::string_view /*key*/, absl::string_view /*value */>
     IteratorHandleGet(intptr_t handle) const = 0;
   };
 
   /// Arguments used when picking a subchannel for a call.
   struct PickArgs {
+    /// The path of the call.  Indicates the RPC service and method name.
+    absl::string_view path;
     /// Initial metadata associated with the picking call.
     /// The LB policy may use the existing metadata to influence its routing
     /// decision, and it may add new metadata elements to be sent with the
     /// call to the chosen backend.
     MetadataInterface* initial_metadata;
     /// An interface for accessing call state.  Can be used to allocate
-    /// data associated with the call in an efficient way.
+    /// memory associated with the call in an efficient way.
     CallState* call_state;
   };
 
@@ -225,6 +239,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// does not take ownership, so any data that needs to be used after
     /// returning must be copied.
     /// The call state can be used to obtain backend metric data.
+    // TODO(roth): The arguments to this callback should be moved into a
+    // struct, so that we can later add new fields without breaking
+    // existing implementations.
     std::function<void(grpc_error*, MetadataInterface*, CallState*)>
         recv_trailing_metadata_ready;
   };
@@ -253,9 +270,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// A proxy object implemented by the client channel and used by the
   /// LB policy to communicate with the channel.
-  // TODO(juanlishen): Consider adding a mid-layer subclass that helps handle
-  // things like swapping in pending policy when it's ready. Currently, we are
-  // duplicating the logic in many subclasses.
   class ChannelControlHelper {
    public:
     ChannelControlHelper() = default;
@@ -275,7 +289,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
-    virtual void AddTraceEvent(TraceSeverity severity, StringView message) = 0;
+    virtual void AddTraceEvent(TraceSeverity severity,
+                               absl::string_view message) = 0;
   };
 
   /// Interface for configuration data used by an LB policy implementation.

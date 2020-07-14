@@ -33,18 +33,22 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   PHPGrpcGenerator() {}
   ~PHPGrpcGenerator() {}
 
+  uint64_t GetSupportedFeatures() const override {
+    return FEATURE_PROTO3_OPTIONAL;
+  }
+
   bool Generate(const grpc::protobuf::FileDescriptor* file,
-                const grpc::string& parameter,
+                const std::string& parameter,
                 grpc::protobuf::compiler::GeneratorContext* context,
-                grpc::string* error) const {
+                std::string* error) const override {
     if (file->service_count() == 0) {
       return true;
     }
 
-    std::vector<std::pair<grpc::string, grpc::string> > options;
+    std::vector<std::pair<std::string, std::string> > options;
     ParseGeneratorParameter(parameter, &options);
 
-    grpc::string class_suffix;
+    std::string class_suffix;
     for (size_t i = 0; i < options.size(); ++i) {
       if (options[i].first == "class_suffix") {
         class_suffix = options[i].second;
@@ -55,10 +59,10 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     }
 
     for (int i = 0; i < file->service_count(); i++) {
-      grpc::string code = GenerateFile(file, file->service(i), class_suffix);
+      std::string code = GenerateFile(file, file->service(i), class_suffix);
 
       // Get output file name
-      grpc::string file_name =
+      std::string file_name =
           GetPHPServiceFilename(file, file->service(i), class_suffix);
 
       std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(

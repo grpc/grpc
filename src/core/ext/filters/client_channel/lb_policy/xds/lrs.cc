@@ -123,7 +123,8 @@ class LrsLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
-    void AddTraceEvent(TraceSeverity severity, StringView message) override;
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override;
 
    private:
     RefCountedPtr<LrsLb> lrs_policy_;
@@ -253,9 +254,11 @@ void LrsLb::UpdateLocked(UpdateArgs args) {
         config_->eds_service_name(), config_->locality_name());
     MaybeUpdatePickerLocked();
   }
+  // Remove XdsClient from channel args, so that its presence doesn't
+  // prevent us from sharing subchannels between channels.
+  grpc_channel_args* new_args = XdsClient::RemoveFromChannelArgs(*args.args);
   // Update child policy.
-  UpdateChildPolicyLocked(std::move(args.addresses), args.args);
-  args.args = nullptr;  // Ownership passed to UpdateChildPolicyLocked().
+  UpdateChildPolicyLocked(std::move(args.addresses), new_args);
 }
 
 void LrsLb::MaybeUpdatePickerLocked() {
@@ -341,7 +344,8 @@ void LrsLb::Helper::RequestReresolution() {
   lrs_policy_->channel_control_helper()->RequestReresolution();
 }
 
-void LrsLb::Helper::AddTraceEvent(TraceSeverity severity, StringView message) {
+void LrsLb::Helper::AddTraceEvent(TraceSeverity severity,
+                                  absl::string_view message) {
   if (lrs_policy_->shutting_down_) return;
   lrs_policy_->channel_control_helper()->AddTraceEvent(severity, message);
 }

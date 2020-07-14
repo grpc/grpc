@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/alloc.h>
@@ -54,8 +55,9 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
 }
 
 void ClientChannelServiceConfigParser::Register() {
-  g_client_channel_service_config_parser_index = ServiceConfig::RegisterParser(
-      absl::make_unique<ClientChannelServiceConfigParser>());
+  g_client_channel_service_config_parser_index =
+      ServiceConfigParser::RegisterParser(
+          absl::make_unique<ClientChannelServiceConfigParser>());
 }
 
 namespace {
@@ -309,7 +311,7 @@ std::string ParseHealthCheckConfig(const Json& field, grpc_error** error) {
 
 }  // namespace
 
-std::unique_ptr<ServiceConfig::ParsedConfig>
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
                                                     grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
@@ -349,13 +351,11 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:loadBalancingPolicy error:Unknown lb policy"));
       } else if (requires_config) {
-        char* error_msg;
-        gpr_asprintf(&error_msg,
-                     "field:loadBalancingPolicy error:%s requires a config. "
-                     "Please use loadBalancingConfig instead.",
-                     lb_policy_name.c_str());
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg));
-        gpr_free(error_msg);
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("field:loadBalancingPolicy error:", lb_policy_name,
+                         " requires a config. Please use loadBalancingConfig "
+                         "instead.")
+                .c_str()));
       }
     }
   }
@@ -390,7 +390,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
   return nullptr;
 }
 
-std::unique_ptr<ServiceConfig::ParsedConfig>
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(const Json& json,
                                                        grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);

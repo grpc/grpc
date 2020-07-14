@@ -35,6 +35,7 @@
   "unit._channel_connectivity_test.ChannelConnectivityTest",
   "unit._channel_ready_future_test.ChannelReadyFutureTest",
   "unit._compression_test.CompressionTest",
+  "unit._contextvars_propagation_test.ContextVarsPropagationTest",
   "unit._credentials_test.CredentialsTest",
   "unit._cython._cancel_many_calls_test.CancelManyCallsTest",
   "unit._cython._channel_test.ChannelTest",

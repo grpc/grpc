@@ -49,10 +49,9 @@ void MaybeEchoDeadline(experimental::ServerContextBase* context,
   }
 }
 
-void CheckServerAuthContext(
-    const experimental::ServerContextBase* context,
-    const grpc::string& expected_transport_security_type,
-    const grpc::string& expected_client_identity) {
+void CheckServerAuthContext(const experimental::ServerContextBase* context,
+                            const std::string& expected_transport_security_type,
+                            const std::string& expected_client_identity) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
@@ -74,7 +73,7 @@ void CheckServerAuthContext(
 // key-value pair. Returns -1 if the pair wasn't found.
 int MetadataMatchCount(
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    const grpc::string& key, const grpc::string& value) {
+    const std::string& key, const std::string& value) {
   int count = 0;
   for (const auto& metadatum : metadata) {
     if (ToString(metadatum.first) == key &&
@@ -185,6 +184,10 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         EXPECT_TRUE(initial_metadata_sent_);
       }
       EXPECT_EQ(ctx_->IsCancelled(), on_cancel_invoked_);
+      // Validate that finishing with a non-OK status doesn't cause cancellation
+      if (req_->has_param() && req_->param().has_expected_error()) {
+        EXPECT_FALSE(on_cancel_invoked_);
+      }
       async_cancel_check_.join();
       if (rpc_wait_thread_.joinable()) {
         rpc_wait_thread_.join();
@@ -269,7 +272,7 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         // Terminate rpc with error and debug info in trailer.
         if (req_->param().debug_info().stack_entries_size() ||
             !req_->param().debug_info().detail().empty()) {
-          grpc::string serialized_debug_info =
+          std::string serialized_debug_info =
               req_->param().debug_info().SerializeAsString();
           ctx_->AddTrailingMetadata(kDebugInfoTrailerKey,
                                     serialized_debug_info);
@@ -286,7 +289,7 @@ experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
       if (req_->has_param() && req_->param().response_message_length() > 0) {
         resp_->set_message(
-            grpc::string(req_->param().response_message_length(), '\0'));
+            std::string(req_->param().response_message_length(), '\0'));
       }
       if (req_->has_param() && req_->param().echo_peer()) {
         resp_->mutable_param()->set_peer(ctx_->peer());
@@ -495,16 +498,24 @@ CallbackTestServiceImpl::ResponseStream(
 
     void NextWrite() {
       response_.set_message(request_->message() +
-                            grpc::to_string(num_msgs_sent_));
+                            std::to_string(num_msgs_sent_));
       if (num_msgs_sent_ == server_responses_to_send_ - 1 &&
           server_coalescing_api_ != 0) {
-        num_msgs_sent_++;
-        StartWriteLast(&response_, WriteOptions());
+        {
+          std::lock_guard<std::mutex> l(finish_mu_);
+          if (!finished_) {
+            num_msgs_sent_++;
+            StartWriteLast(&response_, WriteOptions());
+          }
+        }
         // If we use WriteLast, we shouldn't wait before attempting Finish
         FinishOnce(Status::OK);
       } else {
-        num_msgs_sent_++;
-        StartWrite(&response_);
+        std::lock_guard<std::mutex> l(finish_mu_);
+        if (!finished_) {
+          num_msgs_sent_++;
+          StartWrite(&response_);
+        }
       }
     }
     experimental::CallbackServerContext* const ctx_;
@@ -568,12 +579,15 @@ CallbackTestServiceImpl::BidiStream(
       if (ok) {
         num_msgs_read_++;
         response_.set_message(request_.message());
-        if (num_msgs_read_ == server_write_last_) {
-          StartWriteLast(&response_, WriteOptions());
-          // If we use WriteLast, we shouldn't wait before attempting Finish
-        } else {
-          StartWrite(&response_);
-          return;
+        std::lock_guard<std::mutex> l(finish_mu_);
+        if (!finished_) {
+          if (num_msgs_read_ == server_write_last_) {
+            StartWriteLast(&response_, WriteOptions());
+            // If we use WriteLast, we shouldn't wait before attempting Finish
+          } else {
+            StartWrite(&response_);
+            return;
+          }
         }
       }
 

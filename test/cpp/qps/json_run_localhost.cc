@@ -88,12 +88,16 @@ int main(int argc, char** argv) {
   bool first = true;
 
   for (int i = 0; i < kNumWorkers; i++) {
-    const auto port = grpc_pick_unused_port_or_die();
+    const auto driver_port = grpc_pick_unused_port_or_die();
+    // ServerPort can be used or not later depending on the type of worker
+    // but we like to issue all ports required here to avoid port conflict.
+    const auto server_port = grpc_pick_unused_port_or_die();
     std::vector<std::string> args = {bin_dir + "/qps_worker", "-driver_port",
-                                     as_string(port)};
+                                     as_string(driver_port), "-server_port",
+                                     as_string(server_port)};
     g_workers[i] = new SubProcess(args);
     if (!first) env << ",";
-    env << "localhost:" << port;
+    env << "localhost:" << driver_port;
     first = false;
   }
 

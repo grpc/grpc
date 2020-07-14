@@ -30,7 +30,7 @@ extern grpc_core::TraceFlag tsi_tracing_enabled;
 
 /* Base for tsi_frame_protector implementations.
    See transport_security_interface.h for documentation. */
-typedef struct {
+struct tsi_frame_protector_vtable {
   tsi_result (*protect)(tsi_frame_protector* self,
                         const unsigned char* unprotected_bytes,
                         size_t* unprotected_bytes_size,
@@ -46,15 +46,14 @@ typedef struct {
                           unsigned char* unprotected_bytes,
                           size_t* unprotected_bytes_size);
   void (*destroy)(tsi_frame_protector* self);
-} tsi_frame_protector_vtable;
-
+};
 struct tsi_frame_protector {
   const tsi_frame_protector_vtable* vtable;
 };
 
 /* Base for tsi_handshaker implementations.
    See transport_security_interface.h for documentation. */
-typedef struct {
+struct tsi_handshaker_vtable {
   tsi_result (*get_bytes_to_send_to_peer)(tsi_handshaker* self,
                                           unsigned char* bytes,
                                           size_t* bytes_size);
@@ -74,8 +73,7 @@ typedef struct {
                      tsi_handshaker_result** handshaker_result,
                      tsi_handshaker_on_next_done_cb cb, void* user_data);
   void (*shutdown)(tsi_handshaker* self);
-} tsi_handshaker_vtable;
-
+};
 struct tsi_handshaker {
   const tsi_handshaker_vtable* vtable;
   bool frame_protector_created;
@@ -91,7 +89,7 @@ struct tsi_handshaker {
    in grpc, where we do need the exec_ctx passed through, but the API still
    needs to compile in other applications, where grpc_exec_ctx is not defined.
 */
-typedef struct {
+struct tsi_handshaker_result_vtable {
   tsi_result (*extract_peer)(const tsi_handshaker_result* self, tsi_peer* peer);
   tsi_result (*create_zero_copy_grpc_protector)(
       const tsi_handshaker_result* self,
@@ -104,8 +102,7 @@ typedef struct {
                                  const unsigned char** bytes,
                                  size_t* bytes_size);
   void (*destroy)(tsi_handshaker_result* self);
-} tsi_handshaker_result_vtable;
-
+};
 struct tsi_handshaker_result {
   const tsi_handshaker_result_vtable* vtable;
 };

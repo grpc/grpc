@@ -69,11 +69,11 @@ static void channel_idle_poll_for_timeout(grpc_channel* channel,
 static void run_timeouts_test(const test_fixture* fixture) {
   gpr_log(GPR_INFO, "TEST: %s", fixture->name);
 
-  grpc_core::UniquePtr<char> addr;
   grpc_init();
-  grpc_core::JoinHostPort(&addr, "localhost", grpc_pick_unused_port_or_die());
+  std::string addr =
+      grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
 
-  grpc_channel* channel = fixture->create_channel(addr.get());
+  grpc_channel* channel = fixture->create_channel(addr.c_str());
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* start 1 watcher and then let it time out */
@@ -120,11 +120,11 @@ static void run_channel_shutdown_before_timeout_test(
     const test_fixture* fixture) {
   gpr_log(GPR_INFO, "TEST: %s", fixture->name);
 
-  grpc_core::UniquePtr<char> addr;
   grpc_init();
-  grpc_core::JoinHostPort(&addr, "localhost", grpc_pick_unused_port_or_die());
+  std::string addr =
+      grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
 
-  grpc_channel* channel = fixture->create_channel(addr.get());
+  grpc_channel* channel = fixture->create_channel(addr.c_str());
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* start 1 watcher and then shut down the channel before the timer goes off */

@@ -201,7 +201,7 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
     GPR_ASSERT(grpc_slice_buf_start_eq(call_details.host, "localhost", 9) ||
                grpc_slice_buf_start_eq(call_details.host, "127.0.0.1", 9));
   }
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

@@ -9,9 +9,10 @@
 #include <stddef.h>
 #include "upb/msg.h"
 #include "envoy/api/v2/core/address.upb.h"
-#include "envoy/api/v2/core/base.upb.h"
+#include "envoy/api/v2/core/socket_option.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/migrate.upb.h"
+#include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"

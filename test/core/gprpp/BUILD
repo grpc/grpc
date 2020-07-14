@@ -136,19 +136,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "string_view_test",
-    srcs = ["string_view_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr_base",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "thd_test",
     srcs = ["thd_test.cc"],
     language = "C++",

@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include "upb/msg.h"
 #include "envoy/api/v2/listener/listener_components.upb.h"
-#include "envoy/api/v2/auth/cert.upb.h"
+#include "envoy/api/v2/auth/tls.upb.h"
 #include "envoy/api/v2/core/address.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
 #include "envoy/type/range.upb.h"
@@ -17,6 +17,7 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/migrate.upb.h"
+#include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
@@ -48,7 +49,7 @@ static const upb_msglayout_field envoy_api_v2_listener_FilterChainMatch__fields[
   {4, UPB_SIZE(8, 8), 0, 0, 9, 1},
   {5, UPB_SIZE(24, 40), 0, 1, 11, 1},
   {6, UPB_SIZE(36, 64), 0, 0, 11, 3},
-  {7, UPB_SIZE(40, 72), 0, 0, 13, 3},
+  {7, UPB_SIZE(40, 72), 0, 0, 13, _UPB_LABEL_PACKED},
   {8, UPB_SIZE(28, 48), 0, 1, 11, 1},
   {9, UPB_SIZE(16, 24), 0, 0, 9, 1},
   {10, UPB_SIZE(44, 80), 0, 0, 9, 3},

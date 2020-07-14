@@ -203,18 +203,19 @@ typedef struct {
 /** Should BDP probing be performed? */
 #define GRPC_ARG_HTTP2_BDP_PROBE "grpc.http2.bdp_probe"
 /** Minimum time between sending successive ping frames without receiving any
-    data frame, Int valued, milliseconds. */
+    data/header frame, Int valued, milliseconds. */
 #define GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_time_between_pings_ms"
 /** Minimum allowed time between a server receiving successive ping frames
-   without sending any data frame. Int valued, milliseconds */
+   without sending any data/header frame. Int valued, milliseconds
+ */
 #define GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_ping_interval_without_data_ms"
 /** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
-/** How many pings can we send before needing to send a data frame or header
-    frame? (0 indicates that an infinite number of pings can be sent without
-    sending a data frame or header frame) */
+/** How many pings can we send before needing to send a
+   data/header frame? (0 indicates that an infinite number of
+   pings can be sent without sending a data frame or header frame) */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
 /** How many misbehaving pings the server can bear before sending goaway and
@@ -359,11 +360,6 @@ typedef struct {
  * The default is 15 seconds. */
 #define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
   "grpc.xds_resource_does_not_exist_timeout_ms"
-/* If set, enable xds routing policy.  This boolean argument is currently
- * disabled by default; however, it will be changed to enabled by default
- * once the functionality proves stable.  This arg will eventually
- * be removed completely. */
-#define GRPC_ARG_XDS_ROUTING_ENABLED "grpc.xds_routing_enabled"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"
@@ -391,6 +387,9 @@ typedef struct {
   "grpc.disable_client_authority_filter"
 /** If set to zero, disables use of http proxies. Enabled by default. */
 #define GRPC_ARG_ENABLE_HTTP_PROXY "grpc.enable_http_proxy"
+/** Channel arg to set http proxy per channel. If set, the channel arg
+ *  value will be prefered over the envrionment variable settings. */
+#define GRPC_ARG_HTTP_PROXY "grpc.http_proxy"
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
 #define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"
@@ -675,8 +674,10 @@ typedef struct grpc_op {
       const char** error_string;
     } recv_status_on_client;
     struct grpc_op_recv_close_on_server {
-      /** out argument, set to 1 if the call failed in any way (seen as a
-          cancellation on the server), or 0 if the call succeeded */
+      /** out argument, set to 1 if the call failed at the server for
+          a reason other than a non-OK status (cancel, deadline
+          exceeded, network failure, etc.), 0 otherwise (RPC processing ran to
+          completion and was able to provide any status from the server) */
       int* cancelled;
     } recv_close_on_server;
   } data;

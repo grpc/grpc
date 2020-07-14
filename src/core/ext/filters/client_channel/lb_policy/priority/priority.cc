@@ -152,7 +152,8 @@ class PriorityLb : public LoadBalancingPolicy {
       void UpdateState(grpc_connectivity_state state,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
-      void AddTraceEvent(TraceSeverity severity, StringView message) override;
+      void AddTraceEvent(TraceSeverity severity,
+                         absl::string_view message) override;
 
      private:
       RefCountedPtr<ChildPriority> priority_;
@@ -730,8 +731,8 @@ void PriorityLb::ChildPriority::Helper::UpdateState(
   priority_->OnConnectivityStateUpdateLocked(state, std::move(picker));
 }
 
-void PriorityLb::ChildPriority::Helper::AddTraceEvent(TraceSeverity severity,
-                                                      StringView message) {
+void PriorityLb::ChildPriority::Helper::AddTraceEvent(
+    TraceSeverity severity, absl::string_view message) {
   if (priority_->priority_policy_->shutting_down_) return;
   priority_->priority_policy_->channel_control_helper()->AddTraceEvent(severity,
                                                                        message);

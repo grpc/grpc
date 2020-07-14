@@ -7,7 +7,7 @@
 For information about the other examples in this directory, see their respective
 README files.
 
-[gRPC Basics]: https://grpc.io/docs/tutorials/basic/cpp
+[gRPC Basics]: https://grpc.io/docs/languages/cpp/basics
 [Hello World]: helloworld
-[Quick Start]: https://grpc.io/docs/quickstart/cpp
+[Quick Start]: https://grpc.io/docs/languages/cpp/quickstart
 [Route Guide]: route_guide

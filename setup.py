@@ -55,6 +55,7 @@ if 'linux' in sys.platform:
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
+RE2_INCLUDE = (os.path.join('third_party', 're2'),)
 SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src',
                             'include'),)
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
@@ -232,7 +233,7 @@ if BUILD_WITH_SYSTEM_CARES:
 
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
-                                 SSL_INCLUDE + UPB_INCLUDE +
+                                 RE2_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
                                  UPB_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
@@ -355,6 +356,9 @@ INSTALL_REQUIRES = (
     "futures>=2.2.0; python_version<'3.2'",
     "enum34>=1.0.4; python_version<'3.4'",
 )
+EXTRAS_REQUIRES = {
+    'protobuf': 'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
+}
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'Sphinx~=1.8.1',
@@ -380,6 +384,7 @@ COMMAND_CLASS = {
     'build_py': commands.BuildPy,
     'build_ext': commands.BuildExt,
     'gather': commands.Gather,
+    'clean': commands.Clean,
 }
 
 # Ensure that package data is copied over before any commands have been run:
@@ -417,6 +422,7 @@ setuptools.setup(
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
     install_requires=INSTALL_REQUIRES,
+    extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     cmdclass=COMMAND_CLASS,
 )

@@ -135,7 +135,7 @@ following stanza under the `<Project>` xml node:
 
 ```xml
   <ItemGroup>
-    <Protobuf Include="**/*.proto" OutputDir="%(RelativePath)" CompileOutputs="false"  />
+    <Protobuf Include="**/*.proto" OutputDir="%(RelativeDir)" CompileOutputs="false"  />
   </ItemGroup>
 ```
 
@@ -144,7 +144,7 @@ and its subdirectories (`**`) include all files matching the wildcard `*.proto`.
 You can instead selectively include your files or selectively exclude files from
 the glob pattern; [MSBuild documentation explains
 that](https://docs.microsoft.com/visualstudio/msbuild/msbuild-items). The
-`OutputDir="%(RelativePath)"` orders the output directory for each .cs file be
+`OutputDir="%(RelativeDir)"` orders the output directory for each .cs file be
 same as the corresponding .proto directory. Finally, `CompileOutputs="false"`
 prevents compiling the generated files into an assembly.
 
@@ -188,7 +188,7 @@ directories according to their service use, for example:
 
 ```xml
   <ItemGroup>
-    <Protobuf Include="**/*.proto" OutputDir="%(RelativePath)"
+    <Protobuf Include="**/*.proto" OutputDir="%(RelativeDir)"
               CompileOutputs="false" GrpcServices="None" />
     <Protobuf Update="**/hello/*.proto;**/bye/*.proto" GrpcServices="Both" />
   </ItemGroup>

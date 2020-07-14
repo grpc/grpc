@@ -33,19 +33,6 @@
 #endif
 #if defined(GRPC_CUSTOM_SOCKET)
 // Do Nothing
-#elif defined(GPR_MANYLINUX1)
-#define GRPC_HAVE_ARPA_NAMESER 1
-#define GRPC_HAVE_IFADDRS 1
-#define GRPC_HAVE_IPV6_RECVPKTINFO 1
-#define GRPC_HAVE_IP_PKTINFO 1
-#define GRPC_HAVE_MSG_NOSIGNAL 1
-#define GRPC_HAVE_UNIX_SOCKET 1
-#define GRPC_POSIX_FORK 1
-#define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
-#define GRPC_POSIX_SOCKET 1
-#define GRPC_POSIX_SOCKETUTILS 1
-#define GRPC_POSIX_WAKEUP_FD 1
-#define GRPC_LINUX_EPOLL 1
 #elif defined(GPR_WINDOWS)
 #define GRPC_WINSOCK_SOCKET 1
 #define GRPC_WINDOWS_SOCKETUTILS 1
@@ -90,11 +77,6 @@
 #if __GLIBC_PREREQ(2, 10)
 #define GRPC_LINUX_SOCKETUTILS 1
 #endif
-#endif
-#ifdef LINUX_VERSION_CODE
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
-#define GRPC_HAVE_TCP_USER_TIMEOUT
-#ifdef __GLIBC_PREREQ
 #if !(__GLIBC_PREREQ(2, 17))
 /*
  * TCP_USER_TIMEOUT wasn't imported to glibc until 2.17. Use Linux system
@@ -102,9 +84,7 @@
  */
 #define GRPC_LINUX_TCP_H 1
 #endif /* __GLIBC_PREREQ(2, 17) */
-#endif /* ifdef __GLIBC_PREREQ */
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37) */
-#endif /* LINUX_VERSION_CODE */
+#endif
 #ifndef __GLIBC__
 #define GRPC_LINUX_EPOLL 1
 #define GRPC_LINUX_EPOLL_CREATE1 1

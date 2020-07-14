@@ -27,8 +27,13 @@ message AnotherTestResponse { }
 
 message Foo { }
 
+message Bar {
+  message Baz { }
+}
+
 service AnotherTestService {
   rpc GetTest(AnotherTestRequest) returns (AnotherTestResponse) { }
   rpc OtherTest(Thing) returns (Thing) { }
   rpc FooTest(Foo) returns (Foo) { }
+  rpc NestedMessageTest(Foo) returns (Bar.Baz) { }
 }
