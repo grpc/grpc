@@ -48,7 +48,7 @@
 DEFINE_string(server_address, "", "channelz server address");
 DEFINE_string(custom_credentials_type, "", "custom credentials type");
 DEFINE_int64(sampling_times, 2, "number of sampling");
-DEFINE_int64(sampling_interval_seconds, 1, "sampling interval in seconds");
+DEFINE_int64(sampling_interval_seconds, 3, "sampling interval in seconds");
 DEFINE_string(output_json, "./output.json", "output filename in json format");
 
 using grpc::channelz::v1::GetChannelRequest;
@@ -457,11 +457,11 @@ int main(int argc, char** argv) {
     channelz_sampler.now = time(0);
     // Server side code
     bool isRPCOK = channelz_sampler.GetServersRPC();
-    if (!isRPCOK) abort();
+    if (!isRPCOK) GPR_ASSERT(0);
     channelz_sampler.GetSocketsOfServers();
     // Client side code
     isRPCOK = channelz_sampler.GetTopChannelsRPC();
-    if (!isRPCOK) abort();
+    if (!isRPCOK) GPR_ASSERT(0);
     channelz_sampler.TraverseTopChannels();
     // dump data to stdout
     channelz_sampler.DumpStdout();

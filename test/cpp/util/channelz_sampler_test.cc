@@ -56,6 +56,9 @@ using grpc::Status;
 // Test variables
 std::string server_address("0.0.0.0:10000");
 std::string custom_credentials_type("INSECURE_CREDENTIALS");
+std::string sampling_times = "2";
+std::string sampling_interval_seconds = "5";
+std::string output_json("./output.json");
 
 // Creata an echo server - randomly delay 0.1 to 0.2 s
 class EchoServerImpl final : public grpc::testing::TestService::Service {
@@ -90,8 +93,7 @@ void RunServer() {
                              1024);
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
-
+  gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
   server->Wait();
 }
 
@@ -125,7 +127,7 @@ void RunClient(std::string client_id) {
   EchoClientImpl echoer(grpc::CreateChannel(server_address, channel_creds));
   unsigned int client_echo_sleep_second = 1;
 
-  std::cout << "Client " << client_id << " is echoing!" << std::endl;
+  gpr_log(GPR_INFO, "Client %s is echoing!", client_id.c_str());
   while (true) {
     Status status = echoer.EmptyCall();
     sleep(client_echo_sleep_second);
@@ -136,17 +138,13 @@ void RunClient(std::string client_id) {
 TEST(ChannelzSamplerTest, SimpleTest) {
   // server thread
   std::thread server_thread(RunServer);
-  std::cout << "Wait 3 seconds to make sure server is started..." << std::endl;
+  gpr_log(GPR_INFO, "Wait 3 seconds to make sure server is started...");
   float server_start_seconds = 3.0;
   sleep(server_start_seconds);
 
   // client thread
   std::thread client_thread_1(RunClient, "1");
   std::thread client_thread_2(RunClient, "2");
-  float run_services_seconds = 5.0;
-  std::cout << "Run echo service for " << run_services_seconds << " seconds."
-            << std::endl;
-  sleep(run_services_seconds);
 
   // Run the channelz sampler
   std::string channelz_sampler_bin_path =
@@ -154,9 +152,16 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   grpc::SubProcess* test_driver = new grpc::SubProcess(
       {std::move(channelz_sampler_bin_path),
        "--server_address=" + server_address,
-       "--custom_credentials_type=" + custom_credentials_type});
-  while (true)
-    ;
+       "--custom_credentials_type=" + custom_credentials_type,
+       "--sampling_times=" + sampling_times,
+       "--sampling_interval_seconds=" + sampling_interval_seconds,
+       "--output_json=" + output_json});
+
+  test_driver->Join();
+  server_thread.join();
+  client_thread_1.join();
+  client_thread_2.join();
+
   EXPECT_TRUE(true);
 }
 
