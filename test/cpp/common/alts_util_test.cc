@@ -83,8 +83,6 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   std::string expected_rp("record protocol");
   std::string expected_peer("peer");
   std::string expected_local("local");
-
-  //doggo
   std::string expected_peer_atrributes_key("peer");
   std::string expected_peer_atrributes_value("attributes");
 
