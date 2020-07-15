@@ -129,6 +129,14 @@ class CallCredentials : private grpc::GrpcLibraryCodegen {
   virtual SecureCallCredentials* AsSecureCredentials() = 0;
 };
 
+struct TlsVersion {
+  TlsVersion() : min_tls_version(TLS1_2), max_tls_version(TLS1_3) {}
+  TlsVersion(grpc_tls_version min_tls_version, grpc_tls_version max_tls_version)
+      : min_tls_version(min_tls_version), max_tls_version(max_tls_version) {}
+  grpc_tls_version min_tls_version;
+  grpc_tls_version max_tls_version;
+};
+
 /// Options used to build SslCredentials.
 struct SslCredentialsOptions {
   /// The buffer containing the PEM encoding of the server root certificates. If
@@ -146,6 +154,9 @@ struct SslCredentialsOptions {
   /// This parameter can be empty if the client does not have a certificate
   /// chain.
   std::string pem_cert_chain;
+
+  /// The TLS version negotiated during the TLS handshake.
+  TlsVersion tls_version;
 };
 
 // Factories for building different types of Credentials The functions may

@@ -168,6 +168,8 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_google_default_credentials_create);
   printf("%lx", (unsigned long) grpc_set_ssl_roots_override_callback);
   printf("%lx", (unsigned long) grpc_ssl_credentials_create);
+  printf("%lx", (unsigned long) grpc_ssl_credentials_set_min_tls_version);
+  printf("%lx", (unsigned long) grpc_ssl_credentials_set_max_tls_version);
   printf("%lx", (unsigned long) grpc_ssl_credentials_create_ex);
   printf("%lx", (unsigned long) grpc_call_credentials_release);
   printf("%lx", (unsigned long) grpc_composite_channel_credentials_create);
@@ -187,6 +189,8 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_ssl_server_certificate_config_create);
   printf("%lx", (unsigned long) grpc_ssl_server_certificate_config_destroy);
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_create);
+  printf("%lx", (unsigned long) grpc_ssl_server_credentials_set_min_tls_version);
+  printf("%lx", (unsigned long) grpc_ssl_server_credentials_set_max_tls_version);
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_create_ex);
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_create_options_using_config);
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_create_options_using_config_fetcher);

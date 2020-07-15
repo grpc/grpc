@@ -29,8 +29,10 @@ namespace grpc {
 namespace testing {
 
 const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
-// For real credentials, like tls/ssl, this name should match the AuthContext
-// property "transport_security_type".
+const char kTls12CredentialsType[] = "tls12";
+const char kTls13CredentialsType[] = "tls13";
+// For real credentials below, this name should match the AuthContext property
+// "transport_security_type".
 const char kTlsCredentialsType[] = "ssl";
 const char kAltsCredentialsType[] = "alts";
 const char kGoogleDefaultCredentialsType[] = "google_default_credentials";
@@ -51,7 +53,7 @@ class CredentialsProvider {
   virtual ~CredentialsProvider() {}
 
   // Add a secure type in addition to the defaults. The default provider has
-  // (kInsecureCredentialsType, kTlsCredentialsType).
+  // (kInsecureCredentialsType, kTls12CredentialsType, kTls13CredentialsType).
   virtual void AddSecureType(
       const std::string& type,
       std::unique_ptr<CredentialTypeProvider> type_provider) = 0;
