@@ -226,6 +226,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.h )
   s.files += %w( src/core/ext/filters/http/client/http_client_filter.cc )
   s.files += %w( src/core/ext/filters/http/client/http_client_filter.h )
+  s.files += %w( src/core/ext/filters/http/client/util.cc )
+  s.files += %w( src/core/ext/filters/http/client/util.h )
   s.files += %w( src/core/ext/filters/http/client_authority_filter.cc )
   s.files += %w( src/core/ext/filters/http/client_authority_filter.h )
   s.files += %w( src/core/ext/filters/http/http_filters_plugin.cc )

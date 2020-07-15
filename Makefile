@@ -3462,6 +3462,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
+    src/core/ext/filters/http/client/util.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/message_compress_filter.cc \
@@ -4175,6 +4176,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
+    src/core/ext/filters/http/client/util.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/message_compress_filter.cc \
