@@ -261,9 +261,9 @@ bool PathMatch(
 }
 
 bool HeaderMatchHelper(
-    const std::string& user_agent, const grpc_millis deadline,
     const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher& header_matcher,
-    LoadBalancingPolicy::MetadataInterface* initial_metadata) {
+    LoadBalancingPolicy::MetadataInterface* initial_metadata,
+    const std::string& user_agent, const std::string& deadline) {
   absl::optional<absl::string_view> value;
   if (header_matcher.name == "grpc-tags-bin" ||
       header_matcher.name == "grpc-trace-bin" ||
@@ -274,7 +274,7 @@ bool HeaderMatchHelper(
   } else if (header_matcher.name == "user-agent") {
     value = user_agent;
   } else if (header_matcher.name == "grpc-timeout") {
-    value = absl::StrFormat("%ld", deadline - grpc_core::ExecCtx::Get()->Now());
+    value = deadline;
   } else {
     value = GetMetadataValue(header_matcher.name, initial_metadata);
   }
@@ -315,13 +315,13 @@ bool HeaderMatchHelper(
 }
 
 bool HeadersMatch(
-    const std::string& user_agent, const grpc_millis deadline,
     const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
         header_matchers,
-    LoadBalancingPolicy::MetadataInterface* initial_metadata) {
+    LoadBalancingPolicy::MetadataInterface* initial_metadata,
+    const std::string& user_agent, const std::string& deadline) {
   for (const auto& header_matcher : header_matchers) {
-    bool match = HeaderMatchHelper(user_agent, deadline, header_matcher,
-                                   initial_metadata);
+    bool match = HeaderMatchHelper(header_matcher, initial_metadata, user_agent,
+                                   deadline);
     if (header_matcher.invert_match) match = !match;
     if (!match) return false;
   }
@@ -335,13 +335,14 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 }
 
 XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
-  // Set user_agent string to the stored string constrcuted from args.
   for (const Route& route : route_table_) {
     // Path matching.
     if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
     // Header Matching.
-    if (!HeadersMatch(user_agent_, args.deadline,
-                      route.matchers->header_matchers, args.initial_metadata))
+    if (!HeadersMatch(route.matchers->header_matchers, args.initial_metadata,
+                      user_agent_,
+                      std::string(args.call_state->ExperimentalGetCallAttribute(
+                          kCallAttributeDeadline))))
       continue;
     // Match fraction check
     if (route.matchers->fraction_per_million.has_value() &&
@@ -365,8 +366,8 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
 //
 
 XdsRoutingLb::XdsRoutingLb(Args args)
-    : user_agent_(GenerateUserAgentFromArgs(args.args, "chttp2")),
-      LoadBalancingPolicy(std::move(args)) {}
+    : LoadBalancingPolicy(std::move(args)),
+      user_agent_(GenerateUserAgentFromArgs(args.args, "chttp2")) {}
 
 XdsRoutingLb::~XdsRoutingLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {

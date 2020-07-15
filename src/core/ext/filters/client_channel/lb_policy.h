@@ -192,8 +192,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   struct PickArgs {
     /// The path of the call.  Indicates the RPC service and method name.
     absl::string_view path;
-    /// The grpc deadline.
-    grpc_millis deadline;
     /// Initial metadata associated with the picking call.
     /// The LB policy may use the existing metadata to influence its routing
     /// decision, and it may add new metadata elements to be sent with the
