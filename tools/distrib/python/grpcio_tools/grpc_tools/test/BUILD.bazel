@@ -27,7 +27,7 @@ py_test(
   name = "protoc_test",
   srcs = ["protoc_test.py"],
   deps = [
-      "//tools/distrib/python/grpcio_tools/grpc_tools:grpc_tools",
+      "//tools/distrib/python/grpcio_tools:grpc_tools",
       ":complicated_py_pb2",
   ],
   data = [

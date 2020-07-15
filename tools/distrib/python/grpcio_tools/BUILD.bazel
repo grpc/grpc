@@ -12,38 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//src/python:__subpackages__"])
+package(default_visibility = ["//src/python:__subpackages__", "//tools/distrib/python/grpcio_tools:__subpackages__"])
 
 load("//bazel:cython_library.bzl", "pyx_library")
 
-NON_BAZEL_ROOT = "../"
-
 cc_library(
     name = "protoc_lib",
-    srcs = ["main.cc"],
-    hdrs = ["main.h"],
+    srcs = ["grpc_tools/main.cc"],
+    hdrs = ["grpc_tools/main.h"],
     deps = [
       "@com_google_protobuf//:protoc_lib",
       "//src/compiler:grpc_plugin_support",
     ],
-    includes = [NON_BAZEL_ROOT],
+    includes = ["."],
 )
 
 pyx_library(
     name = "cyprotoc",
-    srcs = ["_protoc_compiler.pyx"],
+    srcs = ["grpc_tools/_protoc_compiler.pyx"],
     deps = [":protoc_lib"],
-    includes = [NON_BAZEL_ROOT],
 )
 
 py_library(
     name = "grpc_tools",
-    srcs = ["__init__.py", "protoc.py"],
+    srcs = ["grpc_tools/__init__.py", "grpc_tools/protoc.py"],
     deps = [
       ":cyprotoc",
       "@com_google_protobuf//:protobuf_python",
       "//src/python/grpcio/grpc:grpcio",
     ],
     srcs_version = "PY2AND3",
-    imports = [NON_BAZEL_ROOT],
 )
