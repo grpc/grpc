@@ -39,6 +39,7 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/rls/rls.h"
+#include "src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h"
@@ -48,7 +49,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -1014,10 +1014,7 @@ RlsLb::ControlChannel::ControlChannel(RefCountedPtr<RlsLb> lb_policy,
                                       const std::string& target,
                                       const grpc_channel_args* channel_args)
     : lb_policy_(std::move(lb_policy)) {
-  grpc_channel_credentials* creds =
-      grpc_channel_credentials_find_in_args(channel_args);
-  channel_ =
-      grpc_secure_channel_create(creds, target.c_str(), nullptr, nullptr);
+  channel_ = grpc_rls_channel_create(target, channel_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_DEBUG,
             "[rlslb %p] ControlChannel=%p, channel=%p: control channel created",

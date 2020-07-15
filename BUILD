@@ -318,6 +318,7 @@ grpc_cc_library(
         "grpc_lb_policy_eds",
         "grpc_lb_policy_grpclb",
         "grpc_lb_policy_lrs",
+        "grpc_lb_policy_rls",
         "grpc_lb_policy_xds_routing",
         "grpc_resolver_xds",
     ],
@@ -1325,12 +1326,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_rls_secure",
+    name = "grpc_lb_policy_rls",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/rls/rls.cc",
+        "src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/rls/rls.h",
+        "src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/memory",
+        "absl/hash",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "rls_upb",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_rls_secure",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/rls/rls.cc",
+        "src/core/ext/filters/client_channel/lb_policy/rls/rls_channel_secure.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/rls/rls.h",
+        "src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.h",
     ],
     external_deps = [
         "absl/strings",
