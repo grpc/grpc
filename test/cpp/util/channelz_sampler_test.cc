@@ -28,6 +28,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -50,8 +51,6 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-
-#include <gtest/gtest.h>
 
 // Test variables
 std::string server_address("0.0.0.0:10000");
