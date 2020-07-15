@@ -122,12 +122,12 @@ static grpc_resource_user* te_get_resource_user(grpc_endpoint* ep) {
   return grpc_endpoint_get_resource_user(te->wrapped);
 }
 
-static std::string te_get_peer(grpc_endpoint* ep) {
+static absl::string_view te_get_peer(grpc_endpoint* ep) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   return grpc_endpoint_get_peer(te->wrapped);
 }
 
-static std::string te_get_local_address(grpc_endpoint* ep) {
+static absl::string_view te_get_local_address(grpc_endpoint* ep) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   return grpc_endpoint_get_local_address(te->wrapped);
 }

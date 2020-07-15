@@ -60,27 +60,25 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
                        grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
-  char* peer;
-  char* last_colon;
+  absl::string_view peer;
+  int last_colon;
   reconnect_server* server = static_cast<reconnect_server*>(arg);
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   timestamp_list* new_tail;
-  peer = gpr_strdup(grpc_endpoint_get_peer(tcp).c_str());
+  peer = grpc_endpoint_get_peer(tcp);
   grpc_endpoint_shutdown(tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(tcp);
-  if (peer) {
-    last_colon = strrchr(peer, ':');
-    if (server->peer == nullptr) {
-      server->peer = peer;
-    } else {
-      if (last_colon == nullptr) {
-        gpr_log(GPR_ERROR, "peer does not contain a ':'");
-      } else if (strncmp(server->peer, peer,
-                         static_cast<size_t>(last_colon - peer)) != 0) {
-        gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer, peer);
-      }
-      gpr_free(peer);
+  last_colon = peer.rfind(':');
+  if (server->peer == nullptr) {
+    server->peer = new std::string(peer);
+  } else {
+    if (last_colon == std::string::npos) {
+      gpr_log(GPR_ERROR, "peer does not contain a ':'");
+    } else if (peer.compare(0, static_cast<size_t>(last_colon),
+                            *server->peer) != 0) {
+      gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer->c_str(),
+              peer);
     }
   }
   new_tail = static_cast<timestamp_list*>(gpr_malloc(sizeof(timestamp_list)));
@@ -120,7 +118,7 @@ void reconnect_server_clear_timestamps(reconnect_server* server) {
     server->head = new_head;
   }
   server->tail = nullptr;
-  gpr_free(server->peer);
+  delete server->peer;
   server->peer = nullptr;
 }
 

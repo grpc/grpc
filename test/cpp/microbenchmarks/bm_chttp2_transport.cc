@@ -125,10 +125,10 @@ class DummyEndpoint : public grpc_endpoint {
   static grpc_resource_user* get_resource_user(grpc_endpoint* ep) {
     return static_cast<DummyEndpoint*>(ep)->ru_;
   }
-  static std::string get_peer(grpc_endpoint* /*ep*/) {
-    return gpr_strdup("test");
+  static absl::string_view get_peer(grpc_endpoint* /*ep*/) { return "test"; }
+  static absl::string_view get_local_address(grpc_endpoint* /*ep*/) {
+    return "test";
   }
-  static std::string get_local_address(grpc_endpoint* /*ep*/) { return "test"; }
   static int get_fd(grpc_endpoint* /*ep*/) { return 0; }
   static bool can_track_err(grpc_endpoint* /*ep*/) { return false; }
 };

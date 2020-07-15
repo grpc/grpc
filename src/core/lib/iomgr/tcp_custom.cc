@@ -58,11 +58,11 @@ struct custom_tcp_endpoint {
   gpr_refcount refcount;
   grpc_custom_socket* socket;
 
-  grpc_closure* read_cb;
-  grpc_closure* write_cb;
+  grpc_closure* read_cb = nullptr;
+  grpc_closure* write_cb = nullptr;
 
-  grpc_slice_buffer* read_slices;
-  grpc_slice_buffer* write_slices;
+  grpc_slice_buffer* read_slices = nullptr;
+  grpc_slice_buffer* write_slices = nullptr;
 
   grpc_resource_user* resource_user;
   grpc_resource_user_slice_allocator slice_allocator;
@@ -75,7 +75,7 @@ struct custom_tcp_endpoint {
 static void tcp_free(grpc_custom_socket* s) {
   custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)s->endpoint;
   grpc_resource_user_unref(tcp->resource_user);
-  gpr_free(tcp);
+  delete tcp;
   s->refs--;
   if (s->refs == 0) {
     grpc_custom_socket_vtable->destroy(s);
@@ -319,12 +319,12 @@ static void endpoint_destroy(grpc_endpoint* ep) {
   grpc_custom_socket_vtable->close(tcp->socket, custom_close_callback);
 }
 
-static std::string endpoint_get_peer(grpc_endpoint* ep) {
+static absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
   custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
   return tcp->peer_string;
 }
 
-static std::string endpoint_get_local_address(grpc_endpoint* ep) {
+static absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
   custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
   return tcp->local_address;
 }
@@ -354,18 +354,13 @@ static grpc_endpoint_vtable vtable = {endpoint_read,
 grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
                                           grpc_resource_quota* resource_quota,
                                           const char* peer_string) {
-  custom_tcp_endpoint* tcp =
-      (custom_tcp_endpoint*)gpr_malloc(sizeof(custom_tcp_endpoint));
+  custom_tcp_endpoint* tcp = new custom_tcp_endpoint;
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "Creating TCP endpoint %p", socket);
   }
-  tcp->read_cb = nullptr;
-  tcp->write_cb = nullptr;
-  tcp->read_slices = nullptr;
-  tcp->write_slices = nullptr;
   socket->refs++;
   socket->endpoint = (grpc_endpoint*)tcp;
   tcp->socket = socket;
@@ -374,8 +369,8 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
   tcp->peer_string = peer_string;
   struct sockaddr local_addr;
   int local_addrlen;
-  if (grpc_custom_socket_vtable->getsockname(socket, &local_addr,
-                                             &local_addrlen) != nullptr) {
+  if (grpc_custom_socket_vtable->getsockname(
+          socket, &local_addr, &local_addrlen) != GRPC_ERROR_NONE) {
     tcp->local_address = "";
   } else {
     grpc_resolved_address resolved_local_addr;

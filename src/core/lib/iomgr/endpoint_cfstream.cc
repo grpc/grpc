@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -65,7 +66,7 @@ static void CFStreamFree(CFStreamEndpoint* ep) {
   CFRelease(ep->read_stream);
   CFRelease(ep->write_stream);
   CFSTREAM_HANDLE_UNREF(ep->stream_sync, "free");
-  gpr_free(ep);
+  delete ep;
 }
 
 #ifndef NDEBUG
@@ -311,17 +312,17 @@ grpc_resource_user* CFStreamGetResourceUser(grpc_endpoint* ep) {
   return ep_impl->resource_user;
 }
 
-char* CFStreamGetPeer(grpc_endpoint* ep) {
+absl::string_view CFStreamGetPeer(grpc_endpoint* ep) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   return ep_impl->peer_string;
 }
 
-int CFStreamGetFD(grpc_endpoint* ep) { return 0; }
-
-std::string CFStreamGetLocalAddress(grpc_endpoint* ep) {
+absl::string_view CFStreamGetLocalAddress(grpc_endpoint* ep) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   return ep_impl->local_address;
 };
+
+int CFStreamGetFD(grpc_endpoint* ep) { return 0; }
 
 bool CFStreamCanTrackErr(grpc_endpoint* ep) { return false; }
 
@@ -347,8 +348,7 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
     CFReadStreamRef read_stream, CFWriteStreamRef write_stream,
     const char* peer_string, grpc_resource_quota* resource_quota,
     CFStreamHandle* stream_sync) {
-  CFStreamEndpoint* ep_impl =
-      static_cast<CFStreamEndpoint*>(gpr_malloc(sizeof(CFStreamEndpoint)));
+  CFStreamEndpoint* ep_impl = new CFStreamEndpoint;
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "CFStream endpoint:%p create readStream:%p writeStream: %p",
@@ -363,7 +363,7 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
   ep_impl->stream_sync = stream_sync;
   CFSTREAM_HANDLE_REF(ep_impl->stream_sync, "endpoint create");
 
-  ep_impl->peer_string(peer_string);
+  ep_impl->peer_string = peer_string;
   int native_handle = CFReadStreamCopyProperty(
       ep_impl->read_stream, kCFStreamPropertySocketNativeHandle);
   struct sockaddr local_addr;
@@ -372,7 +372,7 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
     ep_impl->local_address = "";
   } else {
     grpc_resolved_address resolved_local_addr;
-    resolved_local_addr.addr = &local_addr;
+    memcpy(resolved_local_addr.addr, &local_addr, local_addrlen);
     resolved_local_addr.len = local_addrlen;
     ep_impl->local_address =
         grpc_sockaddr_to_uri(&reinterpret_cast<grpc_sockaddr>(local_addr));

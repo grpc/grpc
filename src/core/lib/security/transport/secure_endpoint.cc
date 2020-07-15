@@ -401,12 +401,12 @@ static void endpoint_delete_from_pollset_set(grpc_endpoint* secure_ep,
   grpc_endpoint_delete_from_pollset_set(ep->wrapped_ep, pollset_set);
 }
 
-static std::string endpoint_get_peer(grpc_endpoint* secure_ep) {
+static absl::string_view endpoint_get_peer(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   return grpc_endpoint_get_peer(ep->wrapped_ep);
 }
 
-static std::string endpoint_get_local_address(grpc_endpoint* secure_ep) {
+static absl::string_view endpoint_get_local_address(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   return grpc_endpoint_get_local_address(ep->wrapped_ep);
 }

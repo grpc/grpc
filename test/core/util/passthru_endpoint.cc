@@ -152,14 +152,14 @@ static void me_destroy(grpc_endpoint* ep) {
   }
 }
 
-static std::string me_get_peer(grpc_endpoint* ep) {
+static absl::string_view me_get_peer(grpc_endpoint* ep) {
   passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
   return (reinterpret_cast<half*>(ep)) == &p->client
              ? "fake:mock_client_endpoint"
              : "fake:mock_server_endpoint";
 }
 
-static std::string me_get_local_address(grpc_endpoint* ep) {
+static absl::string_view me_get_local_address(grpc_endpoint* ep) {
   passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
   return (reinterpret_cast<half*>(ep)) == &p->client
              ? "fake:mock_client_endpoint"

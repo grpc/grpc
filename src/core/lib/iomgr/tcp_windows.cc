@@ -135,7 +135,7 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
   grpc_resource_user_unref(tcp->resource_user);
   if (tcp->shutting_down) GRPC_ERROR_UNREF(tcp->shutdown_error);
-  gpr_free(tcp);
+  delete tcp;
 }
 
 #ifndef NDEBUG
@@ -476,14 +476,14 @@ static void win_destroy(grpc_endpoint* ep) {
   TCP_UNREF(tcp, "destroy");
 }
 
-static std::string win_get_peer(grpc_endpoint* ep) {
+static absl::string_view win_get_peer(grpc_endpoint* ep) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   return tcp->peer_string;
 }
 
-static std::string win_get_local_address(grpc_endpoint* ep) {
+static absl::string_view win_get_local_address(grpc_endpoint* ep) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
-  return gpr_strdup(tcp->local_address);
+  return tcp->local_address;
 }
 
 static grpc_resource_user* win_get_resource_user(grpc_endpoint* ep) {
@@ -521,7 +521,7 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
       }
     }
   }
-  grpc_tcp* tcp = (grpc_tcp*)gpr_malloc(sizeof(grpc_tcp));
+  grpc_tcp* tcp = new grpc_tcp;
   memset(tcp, 0, sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
   tcp->socket = socket;
@@ -534,7 +534,10 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   if (getsockname(tcp->socket->socket, &local_addr, &local_addrlen) < 0) {
     tcp->local_address = "";
   } else {
-    tcp->local_address = grpc_sockaddr_to_uri(&local_addr);
+    grpc_resolved_address resolved_local_addr;
+    memcpy(resolved_local_addr.addr, &local_addr, local_addrlen);
+    resolved_local_addr.len = local_addrlen;
+    tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
   tcp->peer_string = peer_string;
   grpc_slice_buffer_init(&tcp->last_read_buffer);

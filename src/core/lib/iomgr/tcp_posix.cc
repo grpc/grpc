@@ -634,7 +634,7 @@ static void tcp_free(grpc_tcp* tcp) {
   tcp->outgoing_buffer_arg = nullptr;
   gpr_mu_destroy(&tcp->tb_mu);
   tcp->tcp_zerocopy_send_ctx.~TcpZerocopySendCtx();
-  gpr_free(tcp);
+  delete tcp;
 }
 
 #ifndef NDEBUG
@@ -1639,12 +1639,12 @@ static void tcp_delete_from_pollset_set(grpc_endpoint* ep,
   grpc_pollset_set_del_fd(pollset_set, tcp->em_fd);
 }
 
-static std::string tcp_get_peer(grpc_endpoint* ep) {
+static absl::string_view tcp_get_peer(grpc_endpoint* ep) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   return tcp->peer_string;
 }
 
-static std::string tcp_get_local_address(grpc_endpoint* ep) {
+static absl::string_view tcp_get_local_address(grpc_endpoint* ep) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   return tcp->local_address;
 }
@@ -1753,7 +1753,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp_read_chunk_size = GPR_CLAMP(tcp_read_chunk_size, tcp_min_read_chunk_size,
                                   tcp_max_read_chunk_size);
 
-  grpc_tcp* tcp = static_cast<grpc_tcp*>(gpr_malloc(sizeof(grpc_tcp)));
+  grpc_tcp* tcp = new grpc_tcp;
   tcp->base.vtable = &vtable;
   tcp->peer_string = peer_string;
   tcp->fd = grpc_fd_wrapped_fd(em_fd);

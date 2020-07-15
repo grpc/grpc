@@ -98,11 +98,11 @@ static void me_destroy(grpc_endpoint* ep) {
   gpr_free(m);
 }
 
-static std::string me_get_peer(grpc_endpoint* /*ep*/) {
+static absl::string_view me_get_peer(grpc_endpoint* /*ep*/) {
   return "fake:mock_endpoint";
 }
 
-static std::string me_get_local_address(grpc_endpoint* /*ep*/) {
+static absl::string_view me_get_local_address(grpc_endpoint* /*ep*/) {
   return "fake:mock_endpoint";
 }
 
