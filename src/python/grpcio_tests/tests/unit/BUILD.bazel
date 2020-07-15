@@ -122,7 +122,7 @@ py2and3_test(
         "data/foo/bar.proto",
     ],
     deps = [
-        "//external:six",
+        "@six",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/testing",
         "//tools/distrib/python/grpcio_tools/grpc_tools",
