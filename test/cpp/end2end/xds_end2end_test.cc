@@ -3558,7 +3558,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   auto* header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("header1");
-  header_matcher1->set_exact_match("POST");
+  header_matcher1->set_exact_match("POST,PUT,GET");
   auto* header_matcher2 = route1->mutable_match()->add_headers();
   header_matcher2->set_name("header2");
   header_matcher2->mutable_safe_regex_match()->set_regex("[a-z]*");
@@ -3582,9 +3582,10 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"header1", "POST"},      {"header2", "blah"},
-      {"header3", "1"},         {"header5", "/grpc.testing.EchoTest1Service/"},
-      {"header6", "grpc.java"},
+      {"header1", "POST"}, {"header2", "blah"},
+      {"header3", "1"},    {"header5", "/grpc.testing.EchoTest1Service/"},
+      {"header1", "PUT"},  {"header6", "grpc.java"},
+      {"header1", "GET"},
   };
   const auto header_match_rpc_options = RpcOptions()
                                             .set_rpc_service(SERVICE_ECHO1)
@@ -3968,9 +3969,10 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   SetRouteConfiguration(0, route_config);
   // Send headers which will mismatch each route
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"header1", "POST1"},
+      {"header1", "POST"},
       {"header2", "1000"},
       {"header3", "123"},
+      {"header1", "GET"},
   };
   WaitForAllBackends(0, 1);
   CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_metadata(metadata));
