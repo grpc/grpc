@@ -32,7 +32,7 @@ static const upb_msglayout *const grpc_gcp_Identity_submsgs[1] = {
 static const upb_msglayout_field grpc_gcp_Identity__fields[3] = {
   {1, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, 1},
   {2, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, 1},
-  {3, UPB_SIZE(0, 0), 0, 0, 11, 3},
+  {3, UPB_SIZE(0, 0), 0, 0, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout grpc_gcp_Identity_msginit = {
@@ -100,7 +100,7 @@ static const upb_msglayout *const grpc_gcp_StartServerHandshakeReq_submsgs[4] = 
 
 static const upb_msglayout_field grpc_gcp_StartServerHandshakeReq__fields[7] = {
   {1, UPB_SIZE(24, 48), 0, 0, 9, 3},
-  {2, UPB_SIZE(28, 56), 0, 2, 11, 3},
+  {2, UPB_SIZE(28, 56), 0, 2, 11, _UPB_LABEL_MAP},
   {3, UPB_SIZE(4, 8), 0, 0, 12, 1},
   {4, UPB_SIZE(12, 24), 0, 0, 11, 1},
   {5, UPB_SIZE(16, 32), 0, 0, 11, 1},
@@ -120,13 +120,13 @@ static const upb_msglayout *const grpc_gcp_StartServerHandshakeReq_HandshakePara
 
 static const upb_msglayout_field grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry__fields[2] = {
   {1, UPB_SIZE(0, 0), 0, 0, 5, 1},
-  {2, UPB_SIZE(4, 8), 0, 0, 11, 1},
+  {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
 };
 
 const upb_msglayout grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_msginit = {
   &grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_submsgs[0],
   &grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry__fields[0],
-  UPB_SIZE(8, 16), 2, false,
+  UPB_SIZE(16, 32), 2, false,
 };
 
 static const upb_msglayout_field grpc_gcp_NextHandshakeMessageReq__fields[1] = {

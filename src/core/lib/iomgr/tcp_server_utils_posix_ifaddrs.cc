@@ -31,9 +31,10 @@
 
 #include <string>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -145,14 +146,8 @@ grpc_error* grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     }
     if ((err = grpc_tcp_server_add_addr(s, &addr, port_index, fd_index, &dsmode,
                                         &new_sp)) != GRPC_ERROR_NONE) {
-      char* err_str = nullptr;
-      grpc_error* root_err;
-      if (gpr_asprintf(&err_str, "Failed to add listener: %s",
-                       addr_str.c_str()) < 0) {
-        err_str = gpr_strdup("Failed to add listener");
-      }
-      root_err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_str);
-      gpr_free(err_str);
+      grpc_error* root_err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Failed to add listener: ", addr_str).c_str());
       err = grpc_error_add_child(root_err, err);
       break;
     } else {

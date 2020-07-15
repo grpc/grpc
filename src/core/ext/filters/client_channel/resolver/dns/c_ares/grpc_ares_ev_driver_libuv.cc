@@ -20,6 +20,8 @@
 #include "src/core/lib/iomgr/port.h"
 #if GRPC_ARES == 1 && defined(GRPC_UV)
 
+#include "absl/strings/str_format.h"
+
 #include <ares.h>
 #include <uv.h>
 
@@ -43,14 +45,13 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
  public:
   GrpcPolledFdLibuv(ares_socket_t as,
                     std::shared_ptr<WorkSerializer> work_serializer)
-      : as_(as), work_serializer_(std::move(work_serializer)) {
-    gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, (intptr_t)as);
+      : name_(absl::StrFormat("c-ares socket: %" PRIdPTR, (intptr_t)as)),
+        as_(as),
+        work_serializer_(std::move(work_serializer)) {
     handle_ = new uv_poll_t();
     uv_poll_init_socket(uv_default_loop(), handle_, as);
     handle_->data = this;
   }
-
-  ~GrpcPolledFdLibuv() { gpr_free(name_); }
 
   void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
     GPR_ASSERT(read_closure_ == nullptr);
@@ -98,9 +99,10 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
 
   ares_socket_t GetWrappedAresSocketLocked() override { return as_; }
 
-  const char* GetName() override { return name_; }
+  const char* GetName() override { return name_.c_str(); }
 
-  char* name_;
+  // TODO(apolcyn): Data members should be private.
+  std::string name_;
   ares_socket_t as_;
   uv_poll_t* handle_;
   grpc_closure* read_closure_ = nullptr;

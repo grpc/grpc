@@ -102,7 +102,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 def create_dummy_channel():
     """Creating dummy channels is a workaround for retries"""
-    host, port, sock = get_socket()
+    host, port, sock = get_socket(sock_options=(socket.SO_REUSEADDR,))
     sock.close()
     return grpc.insecure_channel('{}:{}'.format(host, port))
 
@@ -207,7 +207,7 @@ class MetadataFlagsTest(unittest.TestCase):
         unhandled_exceptions = queue.Queue()
 
         # We just need an unused TCP port
-        host, port, sock = get_socket()
+        host, port, sock = get_socket(sock_options=(socket.SO_REUSEADDR,))
         sock.close()
 
         addr = '{}:{}'.format(host, port)

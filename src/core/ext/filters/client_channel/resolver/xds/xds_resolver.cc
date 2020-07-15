@@ -18,12 +18,17 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
+
+const char* kCallAttributeDeadline = "deadline";
 
 namespace {
 
@@ -37,7 +42,8 @@ class XdsResolver : public Resolver {
       : Resolver(std::move(args.work_serializer),
                  std::move(args.result_handler)),
         args_(grpc_channel_args_copy(args.args)),
-        interested_parties_(args.pollset_set) {
+        interested_parties_(args.pollset_set),
+        config_selector_(MakeRefCounted<XdsConfigSelector>()) {
     char* path = args.uri->path;
     if (path[0] == '/') ++path;
     server_name_ = path;
@@ -71,15 +77,32 @@ class XdsResolver : public Resolver {
     void OnServiceConfigChanged(
         RefCountedPtr<ServiceConfig> service_config) override;
     void OnError(grpc_error* error) override;
+    void OnResourceDoesNotExist() override;
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
+  };
+
+  class XdsConfigSelector : public ConfigSelector {
+   public:
+    CallConfig GetCallConfig(GetCallConfigArgs args) override {
+      char* deadline_str = static_cast<char*>(
+          args.arena->Alloc(GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE));
+      grpc_http2_encode_timeout(
+          args.initial_metadata->deadline - grpc_core::ExecCtx::Get()->Now(),
+          deadline_str);
+      CallConfig call_config;
+      call_config.call_attributes[kCallAttributeDeadline] =
+          absl::string_view(deadline_str);
+      return call_config;
+    }
   };
 
   std::string server_name_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
+  RefCountedPtr<XdsConfigSelector> config_selector_;
 };
 
 void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
@@ -89,10 +112,13 @@ void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated service config: %s",
             resolver_.get(), service_config->json_string().c_str());
   }
-  grpc_arg xds_client_arg = resolver_->xds_client_->MakeChannelArg();
+  grpc_arg new_args[] = {
+      resolver_->xds_client_->MakeChannelArg(),
+      resolver_->config_selector_->MakeChannelArg(),
+  };
   Result result;
-  result.args =
-      grpc_channel_args_copy_and_add(resolver_->args_, &xds_client_arg, 1);
+  result.args = grpc_channel_args_copy_and_add(resolver_->args_, new_args,
+                                               GPR_ARRAY_SIZE(new_args));
   result.service_config = std::move(service_config);
   resolver_->result_handler()->ReturnResult(std::move(result));
 }
@@ -106,6 +132,20 @@ void XdsResolver::ServiceConfigWatcher::OnError(grpc_error* error) {
   result.args =
       grpc_channel_args_copy_and_add(resolver_->args_, &xds_client_arg, 1);
   result.service_config_error = error;
+  resolver_->result_handler()->ReturnResult(std::move(result));
+}
+
+void XdsResolver::ServiceConfigWatcher::OnResourceDoesNotExist() {
+  if (resolver_->xds_client_ == nullptr) return;
+  gpr_log(GPR_ERROR,
+          "[xds_resolver %p] LDS/RDS resource does not exist -- returning "
+          "empty service config",
+          resolver_.get());
+  Result result;
+  result.service_config =
+      ServiceConfig::Create("{}", &result.service_config_error);
+  GPR_ASSERT(result.service_config != nullptr);
+  result.args = grpc_channel_args_copy(resolver_->args_);
   resolver_->result_handler()->ReturnResult(std::move(result));
 }
 
@@ -142,7 +182,7 @@ class XdsResolverFactory : public ResolverFactory {
     return MakeOrphanable<XdsResolver>(std::move(args));
   }
 
-  const char* scheme() const override { return "xds-experimental"; }
+  const char* scheme() const override { return "xds"; }
 };
 
 }  // namespace

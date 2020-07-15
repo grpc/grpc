@@ -25,9 +25,13 @@
 
 #include "src/core/lib/iomgr/error.h"
 
+namespace grpc_core {
+
 /// Adds a port to \a server.  Sets \a port_num to the port number.
 /// Takes ownership of \a args.
-grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
-                                        grpc_channel_args* args, int* port_num);
+grpc_error* Chttp2ServerAddPort(grpc_server* server, const char* addr,
+                                grpc_channel_args* args, int* port_num);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H */

@@ -34,7 +34,8 @@ from ._interceptor import (ClientCallDetails, ClientInterceptor,
                            InterceptedUnaryUnaryCall,
                            UnaryUnaryClientInterceptor,
                            UnaryStreamClientInterceptor,
-                           StreamUnaryClientInterceptor, ServerInterceptor)
+                           StreamUnaryClientInterceptor,
+                           StreamStreamClientInterceptor, ServerInterceptor)
 from ._server import server
 from ._base_server import Server, ServicerContext
 from ._typing import ChannelArgumentType
@@ -63,6 +64,7 @@ __all__ = (
     'UnaryStreamClientInterceptor',
     'UnaryUnaryClientInterceptor',
     'StreamUnaryClientInterceptor',
+    'StreamStreamClientInterceptor',
     'InterceptedUnaryUnaryCall',
     'ServerInterceptor',
     'insecure_channel',

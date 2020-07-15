@@ -14,14 +14,12 @@
 """Reference implementation for status mapping in gRPC Python."""
 
 import collections
+import sys
 
 import grpc
 
 from google.rpc import status_pb2
-
-_CODE_TO_GRPC_CODE_MAPPING = {x.value[0]: x for x in grpc.StatusCode}
-
-_GRPC_DETAILS_METADATA_KEY = 'grpc-status-details-bin'
+from ._common import code_to_grpc_status_code, GRPC_DETAILS_METADATA_KEY
 
 
 class _Status(
@@ -29,13 +27,6 @@ class _Status(
                                ('code', 'details', 'trailing_metadata')),
         grpc.Status):
     pass
-
-
-def _code_to_grpc_status_code(code):
-    try:
-        return _CODE_TO_GRPC_CODE_MAPPING[code]
-    except KeyError:
-        raise ValueError('Invalid status code %s' % code)
 
 
 def from_call(call):
@@ -56,13 +47,12 @@ def from_call(call):
     if call.trailing_metadata() is None:
         return None
     for key, value in call.trailing_metadata():
-        if key == _GRPC_DETAILS_METADATA_KEY:
+        if key == GRPC_DETAILS_METADATA_KEY:
             rich_status = status_pb2.Status.FromString(value)
             if call.code().value[0] != rich_status.code:
                 raise ValueError(
                     'Code in Status proto (%s) doesn\'t match status code (%s)'
-                    %
-                    (_code_to_grpc_status_code(rich_status.code), call.code()))
+                    % (code_to_grpc_status_code(rich_status.code), call.code()))
             if call.details() != rich_status.message:
                 raise ValueError(
                     'Message in Status proto (%s) doesn\'t match status details (%s)'
@@ -83,7 +73,17 @@ def to_status(status):
     Returns:
       A grpc.Status instance representing the input google.rpc.status.Status message.
     """
-    return _Status(code=_code_to_grpc_status_code(status.code),
+    return _Status(code=code_to_grpc_status_code(status.code),
                    details=status.message,
-                   trailing_metadata=((_GRPC_DETAILS_METADATA_KEY,
+                   trailing_metadata=((GRPC_DETAILS_METADATA_KEY,
                                        status.SerializeToString()),))
+
+
+__all__ = [
+    'from_call',
+    'to_status',
+]
+
+if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
+    from . import _async as aio  # pylint: disable=unused-import
+    __all__.append('aio')

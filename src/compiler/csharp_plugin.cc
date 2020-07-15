@@ -29,11 +29,15 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   CSharpGrpcGenerator() {}
   ~CSharpGrpcGenerator() {}
 
+  uint64_t GetSupportedFeatures() const override {
+    return FEATURE_PROTO3_OPTIONAL;
+  }
+
   bool Generate(const grpc::protobuf::FileDescriptor* file,
-                const grpc::string& parameter,
+                const std::string& parameter,
                 grpc::protobuf::compiler::GeneratorContext* context,
-                grpc::string* error) const {
-    std::vector<std::pair<grpc::string, grpc::string> > options;
+                std::string* error) const override {
+    std::vector<std::pair<std::string, std::string> > options;
     grpc::protobuf::compiler::ParseGeneratorParameter(parameter, &options);
 
     bool generate_client = true;
@@ -52,14 +56,14 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       }
     }
 
-    grpc::string code = grpc_csharp_generator::GetServices(
+    std::string code = grpc_csharp_generator::GetServices(
         file, generate_client, generate_server, internal_access);
     if (code.size() == 0) {
       return true;  // don't generate a file if there are no services
     }
 
     // Get output file name.
-    grpc::string file_name;
+    std::string file_name;
     if (!grpc_csharp_generator::ServicesFilename(file, &file_name)) {
       return false;
     }

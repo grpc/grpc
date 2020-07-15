@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_CORE_BACKOFF_PROTO_UPB_H_
 #define ENVOY_API_V2_CORE_BACKOFF_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
@@ -30,7 +29,7 @@ extern const upb_msglayout google_protobuf_Duration_msginit;
 /* envoy.api.v2.core.BackoffStrategy */
 
 UPB_INLINE envoy_api_v2_core_BackoffStrategy *envoy_api_v2_core_BackoffStrategy_new(upb_arena *arena) {
-  return (envoy_api_v2_core_BackoffStrategy *)upb_msg_new(&envoy_api_v2_core_BackoffStrategy_msginit, arena);
+  return (envoy_api_v2_core_BackoffStrategy *)_upb_msg_new(&envoy_api_v2_core_BackoffStrategy_msginit, arena);
 }
 UPB_INLINE envoy_api_v2_core_BackoffStrategy *envoy_api_v2_core_BackoffStrategy_parse(const char *buf, size_t size,
                         upb_arena *arena) {
@@ -41,28 +40,30 @@ UPB_INLINE char *envoy_api_v2_core_BackoffStrategy_serialize(const envoy_api_v2_
   return upb_encode(msg, &envoy_api_v2_core_BackoffStrategy_msginit, arena, len);
 }
 
-UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_core_BackoffStrategy_base_interval(const envoy_api_v2_core_BackoffStrategy *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_core_BackoffStrategy_max_interval(const envoy_api_v2_core_BackoffStrategy *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_Duration*, UPB_SIZE(4, 8)); }
+UPB_INLINE bool envoy_api_v2_core_BackoffStrategy_has_base_interval(const envoy_api_v2_core_BackoffStrategy *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
+UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_core_BackoffStrategy_base_interval(const envoy_api_v2_core_BackoffStrategy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), const struct google_protobuf_Duration*); }
+UPB_INLINE bool envoy_api_v2_core_BackoffStrategy_has_max_interval(const envoy_api_v2_core_BackoffStrategy *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
+UPB_INLINE const struct google_protobuf_Duration* envoy_api_v2_core_BackoffStrategy_max_interval(const envoy_api_v2_core_BackoffStrategy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Duration*); }
 
 UPB_INLINE void envoy_api_v2_core_BackoffStrategy_set_base_interval(envoy_api_v2_core_BackoffStrategy *msg, struct google_protobuf_Duration* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_Duration*, UPB_SIZE(0, 0)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), struct google_protobuf_Duration*) = value;
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_BackoffStrategy_mutable_base_interval(envoy_api_v2_core_BackoffStrategy *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_core_BackoffStrategy_base_interval(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_BackoffStrategy_set_base_interval(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_BackoffStrategy_set_max_interval(envoy_api_v2_core_BackoffStrategy *msg, struct google_protobuf_Duration* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_Duration*, UPB_SIZE(4, 8)) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Duration*) = value;
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_BackoffStrategy_mutable_max_interval(envoy_api_v2_core_BackoffStrategy *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_api_v2_core_BackoffStrategy_max_interval(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_core_BackoffStrategy_set_max_interval(msg, sub);
   }

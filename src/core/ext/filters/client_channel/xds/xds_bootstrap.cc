@@ -23,9 +23,10 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -36,47 +37,36 @@ namespace grpc_core {
 
 namespace {
 
-UniquePtr<char> BootstrapString(const XdsBootstrap& bootstrap) {
-  gpr_strvec v;
-  gpr_strvec_init(&v);
-  char* tmp;
+std::string BootstrapString(const XdsBootstrap& bootstrap) {
+  std::vector<std::string> parts;
   if (bootstrap.node() != nullptr) {
-    gpr_asprintf(&tmp,
-                 "node={\n"
-                 "  id=\"%s\",\n"
-                 "  cluster=\"%s\",\n"
-                 "  locality={\n"
-                 "    region=\"%s\",\n"
-                 "    zone=\"%s\",\n"
-                 "    subzone=\"%s\"\n"
-                 "  },\n"
-                 "  metadata=%s,\n"
-                 "},\n",
-                 bootstrap.node()->id.c_str(),
-                 bootstrap.node()->cluster.c_str(),
-                 bootstrap.node()->locality_region.c_str(),
-                 bootstrap.node()->locality_zone.c_str(),
-                 bootstrap.node()->locality_subzone.c_str(),
-                 bootstrap.node()->metadata.Dump().c_str());
-    gpr_strvec_add(&v, tmp);
+    parts.push_back(absl::StrFormat(
+        "node={\n"
+        "  id=\"%s\",\n"
+        "  cluster=\"%s\",\n"
+        "  locality={\n"
+        "    region=\"%s\",\n"
+        "    zone=\"%s\",\n"
+        "    subzone=\"%s\"\n"
+        "  },\n"
+        "  metadata=%s,\n"
+        "},\n",
+        bootstrap.node()->id, bootstrap.node()->cluster,
+        bootstrap.node()->locality_region, bootstrap.node()->locality_zone,
+        bootstrap.node()->locality_subzone, bootstrap.node()->metadata.Dump()));
   }
-  gpr_asprintf(&tmp,
-               "servers=[\n"
-               "  {\n"
-               "    uri=\"%s\",\n"
-               "    creds=[\n",
-               bootstrap.server().server_uri.c_str());
-  gpr_strvec_add(&v, tmp);
-  for (size_t i = 0; i < bootstrap.server().channel_creds.size(); ++i) {
-    const auto& creds = bootstrap.server().channel_creds[i];
-    gpr_asprintf(&tmp, "      {type=\"%s\", config=%s},\n", creds.type.c_str(),
-                 creds.config.Dump().c_str());
-    gpr_strvec_add(&v, tmp);
+  parts.push_back(
+      absl::StrFormat("servers=[\n"
+                      "  {\n"
+                      "    uri=\"%s\",\n"
+                      "    creds=[\n",
+                      bootstrap.server().server_uri));
+  for (const auto& creds : bootstrap.server().channel_creds) {
+    parts.push_back(absl::StrFormat("      {type=\"%s\", config=%s},\n",
+                                    creds.type, creds.config.Dump()));
   }
-  gpr_strvec_add(&v, gpr_strdup("    ]\n  }\n]"));
-  UniquePtr<char> result(gpr_strvec_flatten(&v, nullptr));
-  gpr_strvec_destroy(&v);
-  return result;
+  parts.push_back("    ]\n  }\n]");
+  return absl::StrJoin(parts, "");
 }
 
 }  // namespace
@@ -107,11 +97,9 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(XdsClient* client,
   Json json = Json::Parse(contents_str_view, error);
   grpc_slice_unref_internal(contents);
   if (*error != GRPC_ERROR_NONE) {
-    char* msg;
-    gpr_asprintf(&msg, "Failed to parse bootstrap file %s", path.get());
-    grpc_error* error_out =
-        GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(msg, error, 1);
-    gpr_free(msg);
+    grpc_error* error_out = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
+        absl::StrCat("Failed to parse bootstrap file ", path.get()).c_str(),
+        error, 1);
     GRPC_ERROR_UNREF(*error);
     *error = error_out;
     return nullptr;
@@ -121,7 +109,7 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(XdsClient* client,
   if (*error == GRPC_ERROR_NONE && GRPC_TRACE_FLAG_ENABLED(*tracer)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] Bootstrap config for creating xds client:\n%s",
-            client, BootstrapString(*result).get());
+            client, BootstrapString(*result).c_str());
   }
   return result;
 }
@@ -163,10 +151,8 @@ grpc_error* XdsBootstrap::ParseXdsServerList(Json* json) {
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);
     if (child.type() != Json::Type::OBJECT) {
-      char* msg;
-      gpr_asprintf(&msg, "array element %" PRIuPTR " is not an object", i);
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
-      gpr_free(msg);
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("array element ", i, " is not an object").c_str()));
     } else {
       grpc_error* parse_error = ParseXdsServer(&child, i);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
@@ -203,10 +189,8 @@ grpc_error* XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
   // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
   // string is not static in this case.
   if (error_list.empty()) return GRPC_ERROR_NONE;
-  char* msg;
-  gpr_asprintf(&msg, "errors parsing index %" PRIuPTR, idx);
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-  gpr_free(msg);
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      absl::StrCat("errors parsing index ", idx).c_str());
   for (size_t i = 0; i < error_list.size(); ++i) {
     error = grpc_error_add_child(error, error_list[i]);
   }
@@ -219,10 +203,8 @@ grpc_error* XdsBootstrap::ParseChannelCredsArray(Json* json,
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);
     if (child.type() != Json::Type::OBJECT) {
-      char* msg;
-      gpr_asprintf(&msg, "array element %" PRIuPTR " is not an object", i);
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
-      gpr_free(msg);
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("array element ", i, " is not an object").c_str()));
     } else {
       grpc_error* parse_error = ParseChannelCreds(&child, i, server);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
@@ -261,10 +243,8 @@ grpc_error* XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
   // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
   // string is not static in this case.
   if (error_list.empty()) return GRPC_ERROR_NONE;
-  char* msg;
-  gpr_asprintf(&msg, "errors parsing index %" PRIuPTR, idx);
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-  gpr_free(msg);
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      absl::StrCat("errors parsing index ", idx).c_str());
   for (size_t i = 0; i < error_list.size(); ++i) {
     error = grpc_error_add_child(error, error_list[i]);
   }

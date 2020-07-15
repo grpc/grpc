@@ -21,11 +21,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
@@ -38,11 +41,9 @@ static void* tag(intptr_t t) { return (void*)t; }
 void gpr_default_log(gpr_log_func_args* args);
 
 static void test_no_log(gpr_log_func_args* args) {
-  char* message = nullptr;
-  gpr_asprintf(&message, "Unwanted log: %s", args->message);
-  args->message = message;
+  std::string message = absl::StrCat("Unwanted log: ", args->message);
+  args->message = message.c_str();
   gpr_default_log(args);
-  gpr_free(message);
   abort();
 }
 
@@ -218,7 +219,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == call_details.flags);
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

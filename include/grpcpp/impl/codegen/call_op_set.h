@@ -51,8 +51,8 @@ class CallHook;
 // TODO(yangg) if the map is changed before we send, the pointers will be a
 // mess. Make sure it does not happen.
 inline grpc_metadata* FillMetadataArray(
-    const std::multimap<grpc::string, grpc::string>& metadata,
-    size_t* metadata_count, const grpc::string& optional_error_details) {
+    const std::multimap<std::string, std::string>& metadata,
+    size_t* metadata_count, const std::string& optional_error_details) {
   *metadata_count = metadata.size() + (optional_error_details.empty() ? 0 : 1);
   if (*metadata_count == 0) {
     return nullptr;
@@ -198,9 +198,10 @@ class WriteOptions {
 
 namespace internal {
 
-/// Default argument for CallOpSet. I is unused by the class, but can be
-/// used for generating multiple names for the same thing.
-template <int I>
+/// Default argument for CallOpSet. The Unused parameter is unused by
+/// the class, but can be used for generating multiple names for the
+/// same thing.
+template <int Unused>
 class CallNoOp {
  protected:
   void AddOp(grpc_op* /*ops*/, size_t* /*nops*/) {}
@@ -219,7 +220,7 @@ class CallOpSendInitialMetadata {
     maybe_compression_level_.is_set = false;
   }
 
-  void SendInitialMetadata(std::multimap<grpc::string, grpc::string>* metadata,
+  void SendInitialMetadata(std::multimap<std::string, std::string>* metadata,
                            uint32_t flags) {
     maybe_compression_level_.is_set = false;
     send_ = true;
@@ -275,7 +276,7 @@ class CallOpSendInitialMetadata {
   bool send_;
   uint32_t flags_;
   size_t initial_metadata_count_;
-  std::multimap<grpc::string, grpc::string>* metadata_map_;
+  std::multimap<std::string, std::string>* metadata_map_;
   grpc_metadata* initial_metadata_;
   struct {
     bool is_set;
@@ -548,7 +549,7 @@ class CallOpGenericRecvMessage {
   }
 
   void FinishOp(bool* status) {
-    if (!deserialize_ || hijacked_) return;
+    if (!deserialize_) return;
     if (recv_buf_.Valid()) {
       if (*status) {
         got_message = true;
@@ -654,7 +655,7 @@ class CallOpServerSendStatus {
   CallOpServerSendStatus() : send_status_available_(false) {}
 
   void ServerSendStatus(
-      std::multimap<grpc::string, grpc::string>* trailing_metadata,
+      std::multimap<std::string, std::string>* trailing_metadata,
       const Status& status) {
     send_error_details_ = status.error_details();
     metadata_map_ = trailing_metadata;
@@ -708,10 +709,10 @@ class CallOpServerSendStatus {
   bool hijacked_ = false;
   bool send_status_available_;
   grpc_status_code send_status_code_;
-  grpc::string send_error_details_;
-  grpc::string send_error_message_;
+  std::string send_error_details_;
+  std::string send_error_message_;
   size_t trailing_metadata_count_;
-  std::multimap<grpc::string, grpc::string>* metadata_map_;
+  std::multimap<std::string, std::string>* metadata_map_;
   grpc_metadata* trailing_metadata_;
   grpc_slice error_message_slice_;
 };
@@ -798,9 +799,9 @@ class CallOpClientRecvStatus {
       *recv_status_ =
           Status(static_cast<StatusCode>(status_code_),
                  GRPC_SLICE_IS_EMPTY(error_message_)
-                     ? grpc::string()
-                     : grpc::string(GRPC_SLICE_START_PTR(error_message_),
-                                    GRPC_SLICE_END_PTR(error_message_)),
+                     ? std::string()
+                     : std::string(GRPC_SLICE_START_PTR(error_message_),
+                                   GRPC_SLICE_END_PTR(error_message_)),
                  metadata_map_->GetBinaryErrorDetails());
       if (debug_error_string_ != nullptr) {
         client_context_->set_debug_error_string(debug_error_string_);

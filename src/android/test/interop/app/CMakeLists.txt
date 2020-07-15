@@ -110,7 +110,9 @@ add_library(grpc-interop
   SHARED
   src/main/cpp/grpc-interop.cc
   ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.h
-  ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.cc)
+  ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.cc
+  ${GRPC_SRC_DIR}/test/core/util/histogram.h
+  ${GRPC_SRC_DIR}/test/core/util/histogram.cc)
 
 target_link_libraries(grpc-interop
   messages_proto_lib

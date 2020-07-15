@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/grpc_security_constants.h>
 #include "absl/strings/string_view.h"
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -83,7 +84,7 @@ typedef struct tsi_ssl_client_handshaker_factory
     tsi_ssl_client_handshaker_factory;
 
 /* Object that holds a private key / certificate chain pair in PEM format. */
-typedef struct {
+struct tsi_ssl_pem_key_cert_pair {
   /* private_key is the NULL-terminated string containing the PEM encoding of
      the client's private key. */
   const char* private_key;
@@ -91,8 +92,7 @@ typedef struct {
   /* cert_chain is the NULL-terminated string containing the PEM encoding of
      the client's certificate chain. */
   const char* cert_chain;
-} tsi_ssl_pem_key_cert_pair;
-
+};
 /* TO BE DEPRECATED.
    Creates a client handshaker factory.
    - pem_key_cert_pair is a pointer to the object containing client's private
@@ -153,6 +153,10 @@ struct tsi_ssl_client_handshaker_options {
   /* skip server certificate verification. */
   bool skip_server_certificate_verification;
 
+  /* The min and max TLS versions that will be negotiated by the handshaker. */
+  tsi_tls_version min_tls_version;
+  tsi_tls_version max_tls_version;
+
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
         pem_root_certs(nullptr),
@@ -161,7 +165,9 @@ struct tsi_ssl_client_handshaker_options {
         alpn_protocols(nullptr),
         num_alpn_protocols(0),
         session_cache(nullptr),
-        skip_server_certificate_verification(false) {}
+        skip_server_certificate_verification(false),
+        min_tls_version(tsi_tls_version::TSI_TLS1_2),
+        max_tls_version(tsi_tls_version::TSI_TLS1_3) {}
 };
 
 /* Creates a client handshaker factory.
@@ -277,6 +283,9 @@ struct tsi_ssl_server_handshaker_options {
   const char* session_ticket_key;
   /* session_ticket_key_size is a size of session ticket encryption key. */
   size_t session_ticket_key_size;
+  /* The min and max TLS versions that will be negotiated by the handshaker. */
+  tsi_tls_version min_tls_version;
+  tsi_tls_version max_tls_version;
 
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
@@ -287,7 +296,9 @@ struct tsi_ssl_server_handshaker_options {
         alpn_protocols(nullptr),
         num_alpn_protocols(0),
         session_ticket_key(nullptr),
-        session_ticket_key_size(0) {}
+        session_ticket_key_size(0),
+        min_tls_version(tsi_tls_version::TSI_TLS1_2),
+        max_tls_version(tsi_tls_version::TSI_TLS1_3) {}
 };
 
 /* Creates a server handshaker factory.
@@ -334,10 +345,9 @@ typedef void (*tsi_ssl_handshaker_factory_destructor)(
     tsi_ssl_handshaker_factory* factory);
 
 /* Virtual table for tsi_ssl_handshaker_factory. */
-typedef struct {
+struct tsi_ssl_handshaker_factory_vtable {
   tsi_ssl_handshaker_factory_destructor destroy;
-} tsi_ssl_handshaker_factory_vtable;
-
+};
 /* Set destructor of handshaker_factory to new_destructor, returns previous
    destructor. */
 const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(

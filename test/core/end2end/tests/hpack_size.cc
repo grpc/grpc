@@ -21,11 +21,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/string.h"
@@ -333,7 +336,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -355,7 +358,6 @@ static void test_size(grpc_end2end_test_config config, int encode_size,
   grpc_channel_args server_args;
   grpc_arg client_arg;
   grpc_channel_args client_args;
-  char* name;
 
   server_arg.type = GRPC_ARG_INTEGER;
   server_arg.key = const_cast<char*>(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
@@ -369,15 +371,16 @@ static void test_size(grpc_end2end_test_config config, int encode_size,
   client_args.num_args = 1;
   client_args.args = &client_arg;
 
-  gpr_asprintf(&name, "test_size:e=%d:d=%d", encode_size, decode_size);
-  f = begin_test(config, name, encode_size != 4096 ? &client_args : nullptr,
+  std::string name =
+      absl::StrFormat("test_size:e=%d:d=%d", encode_size, decode_size);
+  f = begin_test(config, name.c_str(),
+                 encode_size != 4096 ? &client_args : nullptr,
                  decode_size != 4096 ? &server_args : nullptr);
   for (i = 0; i < 4 * GPR_ARRAY_SIZE(hobbits); i++) {
     simple_request_body(config, f, i);
   }
   end_test(&f);
   config.tear_down_data(&f);
-  gpr_free(name);
 }
 
 void hpack_size(grpc_end2end_test_config config) {

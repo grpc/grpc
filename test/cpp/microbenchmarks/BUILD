@@ -236,6 +236,7 @@ grpc_cc_library(
 
 grpc_cc_test(
     name = "bm_fullstack_unary_ping_pong",
+    size = "large",
     srcs = [
         "bm_fullstack_unary_ping_pong.cc",
     ],
@@ -282,7 +283,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_opencensus_plugin",
     srcs = ["bm_opencensus_plugin.cc"],
-    flaky = True,  # TODO(b/151696309)
     language = "C++",
     deps = [
         ":helpers_secure",

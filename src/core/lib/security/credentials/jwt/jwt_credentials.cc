@@ -23,8 +23,13 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/support/alloc.h>
@@ -81,16 +86,14 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
     jwt = grpc_jwt_encode_and_sign(&key_, context.service_url, jwt_lifetime_,
                                    nullptr);
     if (jwt != nullptr) {
-      char* md_value;
-      gpr_asprintf(&md_value, "Bearer %s", jwt);
+      std::string md_value = absl::StrCat("Bearer ", jwt);
       gpr_free(jwt);
       cached_.jwt_expiration =
           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), jwt_lifetime_);
       cached_.service_url = gpr_strdup(context.service_url);
       cached_.jwt_md = grpc_mdelem_from_slices(
           grpc_slice_from_static_string(GRPC_AUTHORIZATION_METADATA_KEY),
-          grpc_slice_from_copied_string(md_value));
-      gpr_free(md_value);
+          grpc_slice_from_cpp_string(std::move(md_value)));
       jwt_md = GRPC_MDELEM_REF(cached_.jwt_md);
     }
     gpr_mu_unlock(&cache_mu_);

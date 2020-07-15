@@ -16,6 +16,11 @@
  *
  */
 
+/**
+ * class Channel
+ * @see https://github.com/grpc/grpc/tree/master/src/php/ext/grpc/channel.c
+ */
+
 #include "channel.h"
 
 #include <ext/standard/php_var.h>

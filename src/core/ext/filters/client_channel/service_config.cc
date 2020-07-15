@@ -18,27 +18,17 @@
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 
-#include <string.h>
+#include <string>
 
 #include "absl/strings/str_cat.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string.h"
+#include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
-
-namespace {
-typedef absl::InlinedVector<std::unique_ptr<ServiceConfig::Parser>,
-                            ServiceConfig::kNumPreallocatedParsers>
-    ServiceConfigParserList;
-ServiceConfigParserList* g_registered_parsers;
-}  // namespace
 
 RefCountedPtr<ServiceConfig> ServiceConfig::Create(
     absl::string_view json_string, grpc_error** error) {
@@ -59,21 +49,16 @@ ServiceConfig::ServiceConfig(std::string json_string, Json json,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON value is not an object");
     return;
   }
-  grpc_error* error_list[2];
-  int error_count = 0;
-  grpc_error* global_error = ParseGlobalParams();
+  std::vector<grpc_error*> error_list;
+  grpc_error* global_error = GRPC_ERROR_NONE;
+  parsed_global_configs_ =
+      ServiceConfigParser::ParseGlobalParameters(json_, &global_error);
+  if (global_error != GRPC_ERROR_NONE) error_list.push_back(global_error);
   grpc_error* local_error = ParsePerMethodParams();
-  if (global_error != GRPC_ERROR_NONE) {
-    error_list[error_count++] = global_error;
-  }
-  if (local_error != GRPC_ERROR_NONE) {
-    error_list[error_count++] = local_error;
-  }
-  if (error_count > 0) {
-    *error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "Service config parsing error", error_list, error_count);
-    GRPC_ERROR_UNREF(global_error);
-    GRPC_ERROR_UNREF(local_error);
+  if (local_error != GRPC_ERROR_NONE) error_list.push_back(local_error);
+  if (!error_list.empty()) {
+    *error = GRPC_ERROR_CREATE_FROM_VECTOR("Service config parsing error",
+                                           &error_list);
   }
 }
 
@@ -83,34 +68,18 @@ ServiceConfig::~ServiceConfig() {
   }
 }
 
-grpc_error* ServiceConfig::ParseGlobalParams() {
-  std::vector<grpc_error*> error_list;
-  for (size_t i = 0; i < g_registered_parsers->size(); i++) {
-    grpc_error* parser_error = GRPC_ERROR_NONE;
-    auto parsed_obj =
-        (*g_registered_parsers)[i]->ParseGlobalParams(json_, &parser_error);
-    if (parser_error != GRPC_ERROR_NONE) {
-      error_list.push_back(parser_error);
-    }
-    parsed_global_configs_.push_back(std::move(parsed_obj));
-  }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("Global Params", &error_list);
-}
-
 grpc_error* ServiceConfig::ParseJsonMethodConfig(const Json& json) {
-  // Parse method config with each registered parser.
-  auto objs_vector = absl::make_unique<ParsedConfigVector>();
   std::vector<grpc_error*> error_list;
-  for (size_t i = 0; i < g_registered_parsers->size(); i++) {
-    grpc_error* parser_error = GRPC_ERROR_NONE;
-    auto parsed_obj =
-        (*g_registered_parsers)[i]->ParsePerMethodParams(json, &parser_error);
-    if (parser_error != GRPC_ERROR_NONE) {
-      error_list.push_back(parser_error);
-    }
-    objs_vector->push_back(std::move(parsed_obj));
+  // Parse method config with each registered parser.
+  auto parsed_configs =
+      absl::make_unique<ServiceConfigParser::ParsedConfigVector>();
+  grpc_error* parser_error = GRPC_ERROR_NONE;
+  *parsed_configs =
+      ServiceConfigParser::ParsePerMethodParameters(json, &parser_error);
+  if (parser_error != GRPC_ERROR_NONE) {
+    error_list.push_back(parser_error);
   }
-  parsed_method_config_vectors_storage_.push_back(std::move(objs_vector));
+  parsed_method_config_vectors_storage_.push_back(std::move(parsed_configs));
   const auto* vector_ptr = parsed_method_config_vectors_storage_.back().get();
   // Add an entry for each path.
   bool found_name = false;
@@ -231,7 +200,7 @@ std::string ServiceConfig::ParseJsonMethodName(const Json& json,
                       method_name == nullptr ? "" : *method_name);
 }
 
-const ServiceConfig::ParsedConfigVector*
+const ServiceConfigParser::ParsedConfigVector*
 ServiceConfig::GetMethodParsedConfigVector(const grpc_slice& path) const {
   // Try looking up the full path in the map.
   auto it = parsed_method_configs_map_.find(path);
@@ -247,21 +216,6 @@ ServiceConfig::GetMethodParsedConfigVector(const grpc_slice& path) const {
   if (it != parsed_method_configs_map_.end()) return it->second;
   // Try default method config, if set.
   return default_method_config_vector_;
-}
-
-size_t ServiceConfig::RegisterParser(std::unique_ptr<Parser> parser) {
-  g_registered_parsers->push_back(std::move(parser));
-  return g_registered_parsers->size() - 1;
-}
-
-void ServiceConfig::Init() {
-  GPR_ASSERT(g_registered_parsers == nullptr);
-  g_registered_parsers = new ServiceConfigParserList();
-}
-
-void ServiceConfig::Shutdown() {
-  delete g_registered_parsers;
-  g_registered_parsers = nullptr;
 }
 
 }  // namespace grpc_core

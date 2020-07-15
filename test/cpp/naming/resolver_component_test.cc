@@ -18,22 +18,26 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+#include <thread>
+#include <vector>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
+
+#include <gflags/gflags.h>
+#include <gmock/gmock.h>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-
-#include <string.h>
-
-#include <errno.h>
-#include <fcntl.h>
-#include <gflags/gflags.h>
-#include <gmock/gmock.h>
-#include <thread>
-#include <vector>
 
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
@@ -87,6 +91,13 @@ using namespace google;
 using namespace gflags;
 
 DEFINE_string(target_name, "", "Target name to resolve.");
+DEFINE_string(do_ordered_address_comparison, "",
+              "Whether or not to compare resolved addresses to expected "
+              "addresses using an ordered comparison. This is useful for "
+              "testing certain behaviors that involve sorting of resolved "
+              "addresses. Note it would be better if this argument was a "
+              "bool flag, but it's a string for ease of invocation from "
+              "the generated python test runner.");
 DEFINE_string(expected_addrs, "",
               "List of expected backend or balancer addresses in the form "
               "'<ip0:port0>,<is_balancer0>;<ip1:port1>,<is_balancer1>;...'. "
@@ -484,8 +495,18 @@ class CheckingResultHandler : public ResultHandler {
               found_lb_addrs.size(), args->expected_addrs.size());
       abort();
     }
-    EXPECT_THAT(args->expected_addrs,
-                UnorderedElementsAreArray(found_lb_addrs));
+    if (FLAGS_do_ordered_address_comparison == "True") {
+      EXPECT_EQ(args->expected_addrs, found_lb_addrs);
+    } else if (FLAGS_do_ordered_address_comparison == "False") {
+      EXPECT_THAT(args->expected_addrs,
+                  UnorderedElementsAreArray(found_lb_addrs));
+    } else {
+      gpr_log(GPR_ERROR,
+              "Invalid for setting for --do_ordered_address_comparison. "
+              "Have %s, want True or False",
+              FLAGS_do_ordered_address_comparison.c_str());
+      GPR_ASSERT(0);
+    }
     const char* service_config_json =
         result.service_config == nullptr
             ? nullptr
@@ -561,7 +582,7 @@ void RunResolvesRelevantRecordsTest(
   args.expected_service_config_error = FLAGS_expected_service_config_error;
   args.expected_lb_policy = FLAGS_expected_lb_policy;
   // maybe build the address with an authority
-  char* whole_uri = nullptr;
+  std::string whole_uri;
   gpr_log(GPR_DEBUG,
           "resolver_component_test: --inject_broken_nameserver_list: %s",
           FLAGS_inject_broken_nameserver_list.c_str());
@@ -573,14 +594,12 @@ void RunResolvesRelevantRecordsTest(
         new grpc::testing::FakeNonResponsiveDNSServer(
             g_fake_non_responsive_dns_server_port));
     grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
-    GPR_ASSERT(
-        gpr_asprintf(&whole_uri, "dns:///%s", FLAGS_target_name.c_str()));
+    whole_uri = absl::StrCat("dns:///", FLAGS_target_name);
   } else if (FLAGS_inject_broken_nameserver_list == "False") {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
             FLAGS_local_dns_server_address.c_str());
-    GPR_ASSERT(gpr_asprintf(&whole_uri, "dns://%s/%s",
-                            FLAGS_local_dns_server_address.c_str(),
-                            FLAGS_target_name.c_str()));
+    whole_uri = absl::StrFormat("dns://%s/%s", FLAGS_local_dns_server_address,
+                                FLAGS_target_name);
   } else {
     gpr_log(GPR_DEBUG, "Invalid value for --inject_broken_nameserver_list.");
     abort();
@@ -622,11 +641,10 @@ void RunResolvesRelevantRecordsTest(
   }
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      grpc_core::ResolverRegistry::CreateResolver(whole_uri, resolver_args,
-                                                  args.pollset_set, args.lock,
-                                                  CreateResultHandler(&args));
+      grpc_core::ResolverRegistry::CreateResolver(
+          whole_uri.c_str(), resolver_args, args.pollset_set, args.lock,
+          CreateResultHandler(&args));
   grpc_channel_args_destroy(resolver_args);
-  gpr_free(whole_uri);
   auto* resolver_ptr = resolver.get();
   args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); },
                  DEBUG_LOCATION);

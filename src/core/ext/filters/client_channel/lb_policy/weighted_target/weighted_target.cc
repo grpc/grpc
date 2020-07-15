@@ -302,6 +302,7 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
     targets_[name]->UpdateLocked(config, std::move(address_map[name]),
                                  args.args);
   }
+  UpdateStateLocked();
 }
 
 void WeightedTargetLb::UpdateStateLocked() {

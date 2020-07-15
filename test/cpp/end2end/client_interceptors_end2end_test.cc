@@ -267,7 +267,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
 
  private:
   experimental::ClientRpcInfo* info_;
-  std::multimap<grpc::string, grpc::string> metadata_map_;
+  std::multimap<std::string, std::string> metadata_map_;
   ClientContext ctx_;
   EchoRequest req_;
   EchoResponse resp_;
@@ -349,7 +349,7 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
 
  private:
   experimental::ClientRpcInfo* info_;
-  grpc::string msg;
+  std::string msg;
 };
 
 class ClientStreamingRpcHijackingInterceptor

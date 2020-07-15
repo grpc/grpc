@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from cpython.version cimport PY_MAJOR_VERSION, PY_MINOR_VERSION
+
 
 cdef grpc_status_code get_status_code(object code) except *:
     if isinstance(code, int):
@@ -165,3 +167,20 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
 
     # Port the exception if there is any
     await future
+
+
+if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 7:
+    def get_working_loop():
+        """Returns a running event loop.
+
+        Due to a defect of asyncio.get_event_loop, its returned event loop might
+        not be set as the default event loop for the main thread.
+        """
+        try:
+            return asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.get_event_loop()
+else:
+    def get_working_loop():
+        """Returns a running event loop."""
+        return asyncio.get_event_loop()

@@ -24,6 +24,9 @@
 
 namespace grpc_core {
 
+#define GRPC_REGISTER_SUBCHANNEL_CALM_DOWN_AFTER_ATTEMPTS 100
+#define GRPC_REGISTER_SUBCHANNEL_CALM_DOWN_MICROS 10
+
 GlobalSubchannelPool::GlobalSubchannelPool() {
   subchannel_map_ = grpc_avl_create(&subchannel_avl_vtable_);
   gpr_mu_init(&mu_);
@@ -58,7 +61,7 @@ Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
                                                      Subchannel* constructed) {
   Subchannel* c = nullptr;
   // Compare and swap (CAS) loop:
-  while (c == nullptr) {
+  for (int attempt_count = 0; c == nullptr; attempt_count++) {
     // Ref the shared map to have a local copy.
     gpr_mu_lock(&mu_);
     grpc_avl old_map = grpc_avl_ref(subchannel_map_, nullptr);
@@ -72,7 +75,26 @@ Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
         GRPC_SUBCHANNEL_UNREF(constructed,
                               "subchannel_register+found_existing");
         // Exit the CAS loop without modifying the shared map.
-      }  // Else, reuse failed, so retry CAS loop.
+      } else {
+        // Reuse of the subchannel failed, so retry CAS loop
+        if (attempt_count >=
+            GRPC_REGISTER_SUBCHANNEL_CALM_DOWN_AFTER_ATTEMPTS) {
+          // GRPC_SUBCHANNEL_REF_FROM_WEAK_REF returning nullptr means that the
+          // subchannel we got is no longer valid and it's going to be removed
+          // from the AVL tree soon. Spinning here excesively here can actually
+          // prevent another thread from removing the subchannel, basically
+          // resulting in a live lock. See b/157516542 for more details.
+          // TODO(jtattermusch): the entire ref-counting mechanism for
+          // subchannels should be overhaulded, but the current workaround
+          // is fine for short-term.
+          // TODO(jtattermusch): gpr does not support thread yield operation,
+          // so a very short wait is the best we can do.
+          gpr_sleep_until(gpr_time_add(
+              gpr_now(GPR_CLOCK_REALTIME),
+              gpr_time_from_micros(GRPC_REGISTER_SUBCHANNEL_CALM_DOWN_MICROS,
+                                   GPR_TIMESPAN)));
+        }
+      }
     } else {
       // There hasn't been such subchannel. Add one.
       // Note that we should ref the old map first because grpc_avl_add() will

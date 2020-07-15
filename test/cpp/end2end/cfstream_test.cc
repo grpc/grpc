@@ -60,10 +60,10 @@ namespace testing {
 namespace {
 
 struct TestScenario {
-  TestScenario(const grpc::string& creds_type, const grpc::string& content)
+  TestScenario(const std::string& creds_type, const std::string& content)
       : credentials_type(creds_type), message_content(content) {}
-  const grpc::string credentials_type;
-  const grpc::string message_content;
+  const std::string credentials_type;
+  const std::string message_content;
 };
 
 class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
@@ -244,16 +244,16 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
  private:
   struct ServerData {
     int port_;
-    const grpc::string creds_;
+    const std::string creds_;
     std::unique_ptr<Server> server_;
     TestServiceImpl service_;
     std::unique_ptr<std::thread> thread_;
     bool server_ready_ = false;
 
-    ServerData(int port, const grpc::string& creds)
+    ServerData(int port, const std::string& creds)
         : port_(port), creds_(creds) {}
 
-    void Start(const grpc::string& server_host) {
+    void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
@@ -265,7 +265,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
       gpr_log(GPR_INFO, "server startup complete");
     }
 
-    void Serve(const grpc::string& server_host, std::mutex* mu,
+    void Serve(const std::string& server_host, std::mutex* mu,
                std::condition_variable* cond) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
@@ -287,17 +287,17 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
   };
 
   CompletionQueue cq_;
-  const grpc::string server_host_;
-  const grpc::string interface_;
-  const grpc::string ipv4_address_;
+  const std::string server_host_;
+  const std::string interface_;
+  const std::string ipv4_address_;
   std::unique_ptr<ServerData> server_;
   int port_;
 };
 
 std::vector<TestScenario> CreateTestScenarios() {
   std::vector<TestScenario> scenarios;
-  std::vector<grpc::string> credentials_types;
-  std::vector<grpc::string> messages;
+  std::vector<std::string> credentials_types;
+  std::vector<std::string> messages;
 
   credentials_types.push_back(kInsecureCredentialsType);
   auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
@@ -307,7 +307,7 @@ std::vector<TestScenario> CreateTestScenarios() {
 
   messages.push_back("🖖");
   for (size_t k = 1; k < GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH / 1024; k *= 32) {
-    grpc::string big_msg;
+    std::string big_msg;
     for (size_t i = 0; i < k * 1024; ++i) {
       char c = 'a' + (i % 26);
       big_msg += c;

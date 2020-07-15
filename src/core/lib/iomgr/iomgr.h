@@ -45,6 +45,16 @@ void grpc_iomgr_shutdown_background_closure();
  */
 bool grpc_iomgr_run_in_background();
 
+/* Returns true if polling engine is non-polling, false otherwise.
+ * Currently only 'none' is non-polling.
+ */
+bool grpc_iomgr_non_polling();
+
+/* Mark the polling engine as non-polling. For internal use only.
+ * Currently only 'none' is non-polling.
+ */
+void grpc_iomgr_mark_non_polling_internal();
+
 /** Returns true if the caller is a worker thread for any background poller. */
 bool grpc_iomgr_is_any_background_poller_thread();
 

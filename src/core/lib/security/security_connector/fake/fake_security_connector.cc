@@ -22,6 +22,8 @@
 
 #include <stdbool.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -227,11 +229,10 @@ static void fake_check_peer(
   prop_name = peer.properties[0].name;
   if (prop_name == nullptr ||
       strcmp(prop_name, TSI_CERTIFICATE_TYPE_PEER_PROPERTY)) {
-    char* msg;
-    gpr_asprintf(&msg, "Unexpected property in fake peer: %s.",
-                 prop_name == nullptr ? "<EMPTY>" : prop_name);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unexpected property in fake peer: ",
+                     prop_name == nullptr ? "<EMPTY>" : prop_name)
+            .c_str());
     goto end;
   }
   if (strncmp(peer.properties[0].value.data, TSI_FAKE_CERTIFICATE_TYPE,
@@ -243,11 +244,10 @@ static void fake_check_peer(
   prop_name = peer.properties[1].name;
   if (prop_name == nullptr ||
       strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY) != 0) {
-    char* msg;
-    gpr_asprintf(&msg, "Unexpected property in fake peer: %s.",
-                 prop_name == nullptr ? "<EMPTY>" : prop_name);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unexpected property in fake peer: ",
+                     prop_name == nullptr ? "<EMPTY>" : prop_name)
+            .c_str());
     goto end;
   }
   if (strncmp(peer.properties[1].value.data, TSI_FAKE_SECURITY_LEVEL,
