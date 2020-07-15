@@ -694,46 +694,40 @@ RlsLb::Cache::Cache(RlsLb* lb_policy) : lb_policy_(lb_policy) {
                   &timer_callback_);
 }
 
-RlsLb::Cache::Entry* RlsLb::Cache::Find(RequestKey key) {
+RlsLb::Cache::Entry* RlsLb::Cache::Find(const RequestKey& key) {
   auto it = map_.find(key);
   if (it == map_.end()) {
     return nullptr;
   } else {
-    auto lru_it = it->second->iterator();
-    lru_list_.push_back(*lru_it);
-    lru_list_.erase(lru_it);
-    lru_it = lru_list_.end();
-    lru_it--;
-    it->second->set_iterator(lru_it);
+    SetRecentUsage(it);
     return it->second.get();
   }
 }
 
-void RlsLb::Cache::Add(RequestKey key, OrphanablePtr<Entry> entry) {
+RlsLb::Cache::Entry* RlsLb::Cache::FindOrInsert(const RequestKey& key) {
   auto it = map_.find(key);
-  if (GPR_UNLIKELY(it != map_.end())) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-      gpr_log(GPR_INFO, "[rlslb %p] cache entry add failed with existing entry",
-              lb_policy_);
-    }
-  } else {
+  if (it == map_.end()) {
+    Entry* entry = new Entry(lb_policy_->Ref());
+    map_.emplace(key, OrphanablePtr<Entry>(entry));
+    auto lru_it = lru_list_.insert(lru_list_.end(), key);
+    entry->set_iterator(lru_it);
+    size_t key_size = key.Size();
+    size_ += (key_size   /* entry in lru_list_ */
+              + key_size /* key of entry in map_ */
+              + sizeof(Entry) /* value of entry in map_ */);
+    MaybeShrinkSize();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_DEBUG, "[rlslb %p] cache entry added, entry=%p", lb_policy_,
-              entry.get());
+              entry);
     }
-    lru_list_.push_back(key);
-    entry->set_iterator(--(lru_list_.end()));
-    map_.emplace(std::move(key), std::move(entry));
-    while (static_cast<int>(map_.size()) > size_elements_) {
-      auto lru_it = lru_list_.begin();
-      auto map_it = map_.find(*lru_it);
-      if (!map_it->second->CanEvict()) break;
-      GPR_DEBUG_ASSERT(map_it != map_.end());
-      if (map_it != map_.end()) {
-        map_.erase(map_it);
-      }
-      lru_list_.erase(lru_it);
+    return entry;
+  } else {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+      gpr_log(GPR_DEBUG, "[rlslb %p] cache entry found, entry=%p", lb_policy_,
+              it->second.get());
     }
+    SetRecentUsage(it);
+    return it->second.get();
   }
 }
 
@@ -742,23 +736,8 @@ void RlsLb::Cache::Resize(int64_t bytes) {
     gpr_log(GPR_DEBUG, "[rlslb %p] bytes=%" PRId64 ": cache resized",
             lb_policy_, bytes);
   }
-  // take ceiling if the result is a fraction
-  size_elements_ = (bytes + kCacheEntrySize - 1) / kCacheEntrySize;
-  size_bytes_ = bytes;
-  if (size_elements_ >= static_cast<int>(map_.size())) return;
-  int to_drop_size = map_.size() - size_elements_;
-  auto it = lru_list_.begin();
-  for (int i = 0; i < to_drop_size; i++) {
-    GPR_DEBUG_ASSERT(it != lru_list_.end());
-    if (it == lru_list_.end()) break;
-    auto map_it = map_.find(*it);
-    if (!map_it->second->CanEvict()) break;
-    GPR_DEBUG_ASSERT(map_it != map_.end());
-    if (GPR_UNLIKELY(map_it != map_.end())) {
-      map_.erase(map_it);
-    }
-    it = lru_list_.erase(it);
-  }
+  size_limit_ = bytes;
+  MaybeShrinkSize();
 }
 
 void RlsLb::Cache::ResetAllBackoff() {
@@ -796,6 +775,10 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error* error) {
     if (GPR_UNLIKELY(it->second->ShouldRemove())) {
       if (!it->second->CanEvict()) break;
       auto lru_it = it->second->iterator();
+      size_t key_size = lru_it->Size();
+      cache->size_ -= (key_size   /* entry in lru_list_ */
+                       + key_size /* key of entry in map_ */
+                       + sizeof(Entry) /* value of entry in map_ */);
       it = cache->map_.erase(it);
       cache->lru_list_.erase(lru_it);
     } else {
@@ -805,6 +788,29 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error* error) {
   grpc_millis now = ExecCtx::Get()->Now();
   grpc_timer_init(&cache->cleanup_timer_, now + kCacheCleanupTimerInterval,
                   &cache->timer_callback_);
+}
+
+void RlsLb::Cache::MaybeShrinkSize() {
+  while (size_ > size_limit_) {
+    auto lru_it = lru_list_.begin();
+    if (GPR_UNLIKELY(lru_it == lru_list_.end())) break;
+    auto map_it = map_.find(*lru_it);
+    GPR_ASSERT(map_it != map_.end());
+    if (!map_it->second->CanEvict()) break;
+    size_t key_size = lru_it->Size();
+    size_ -= (key_size   /* entry in lru_list_ */
+              + key_size /* key of entry in map_ */
+              + sizeof(Entry) /* value of entry in map_ */);
+    map_.erase(map_it);
+    lru_list_.erase(lru_it);
+  }
+}
+
+void RlsLb::Cache::SetRecentUsage(MapType::iterator entry) {
+  auto lru_it = entry->second->iterator();
+  auto new_it = lru_list_.insert(lru_list_.end(), *lru_it);
+  lru_list_.erase(lru_it);
+  entry->second->set_iterator(new_it);
 }
 
 // Request map implementation
@@ -948,11 +954,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error* error) {
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     }
   }
-  Cache::Entry* cache_entry = lb_policy_->cache_.Find(key_);
-  if (cache_entry == nullptr) {
-    cache_entry = new Cache::Entry(lb_policy_);
-    lb_policy_->cache_.Add(key_, OrphanablePtr<Cache::Entry>(cache_entry));
-  }
+  Cache::Entry* cache_entry = lb_policy_->cache_.FindOrInsert(key_);
   cache_entry->OnRlsResponseLocked(std::move(res), std::move(backoff_state_));
   lb_policy_->request_map_.erase(key_);
 }
@@ -1002,6 +1004,7 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
   result.target = std::string(target_strview.data, target_strview.size);
   result.header_data =
       std::string(header_data_strview.data, header_data_strview.size);
+  grpc_slice_unref_internal(recv_slice);
   return result;
 }
 
@@ -1550,9 +1553,18 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("RLS config is not object");
     return nullptr;
   }
+  RlsLb::KeyMapBuilderMap parsed_key_map_builder_map;
+  std::string parsed_lookup_service;
+  grpc_millis parsed_lookup_service_timeout;
+  grpc_millis parsed_max_age;
+  grpc_millis parsed_stale_age;
+  int64_t parsed_cache_size_bytes;
+  std::string parsed_default_target;
+  Json parsed_child_policy_config;
+  RefCountedPtr<LoadBalancingPolicy::Config>
+      parsed_default_child_policy_parsed_config;
+  std::string parsed_child_policy_config_target_field_name;
   absl::InlinedVector<grpc_error*, 1> error_list;
-  RefCountedPtr<RlsLbConfig> result;
-  result.reset(new RlsLbConfig());
   grpc_error* internal_error = GRPC_ERROR_NONE;
   const Json::Object& config = config_json.object_value();
   const Json::Object* route_lookup_config_ptr = ParseObjectFieldFromJsonObject(
@@ -1566,7 +1578,7 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
     if (internal_error != GRPC_ERROR_NONE) {
       error_list.push_back(internal_error);
     } else if (grpc_key_builders_json_ptr != nullptr) {
-      result->key_map_builder_map_ = RlsCreateKeyMapBuilderMap(
+      parsed_key_map_builder_map = RlsCreateKeyMapBuilderMap(
           *grpc_key_builders_json_ptr, &internal_error);
       if (internal_error != GRPC_ERROR_NONE) {
         error_list.push_back(internal_error);
@@ -1578,7 +1590,7 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
     if (internal_error != GRPC_ERROR_NONE) {
       error_list.push_back(internal_error);
     } else {
-      result->lookup_service_ = *lookup_service;
+      parsed_lookup_service = *lookup_service;
     }
     // lookup_service_timeout
     const Json::Object* lookup_service_timeout_ptr =
@@ -1588,9 +1600,9 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
     if (internal_error != GRPC_ERROR_NONE) {
       error_list.push_back(internal_error);
     } else if (lookup_service_timeout_ptr == nullptr) {
-      result->lookup_service_timeout_ = kDefaultLookupServiceTimeout;
+      parsed_lookup_service_timeout = kDefaultLookupServiceTimeout;
     } else {
-      result->lookup_service_timeout_ =
+      parsed_lookup_service_timeout =
           ParseDuration(*lookup_service_timeout_ptr, &internal_error);
       if (internal_error != GRPC_ERROR_NONE) {
         error_list.push_back(internal_error);
@@ -1603,14 +1615,14 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
     if (internal_error != GRPC_ERROR_NONE) {
       error_list.push_back(internal_error);
     } else if (max_age_ptr == nullptr) {
-      result->max_age_ = kDefaultLookupServiceTimeout;
+      parsed_max_age = kDefaultLookupServiceTimeout;
       max_age_missing = true;
     } else {
-      result->max_age_ = ParseDuration(*max_age_ptr, &internal_error);
+      parsed_max_age = ParseDuration(*max_age_ptr, &internal_error);
       if (internal_error != GRPC_ERROR_NONE) {
         error_list.push_back(internal_error);
-      } else if (result->max_age_ > kMaxMaxAge) {
-        result->max_age_ = kMaxMaxAge;
+      } else if (parsed_max_age > kMaxMaxAge) {
+        parsed_max_age = kMaxMaxAge;
       }
     }
     // stale_age
@@ -1622,22 +1634,22 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "max_age needs to be set when stale_age is set"));
     } else if (stale_age_ptr == nullptr && !max_age_missing) {
-      result->stale_age_ = result->max_age_;
+      parsed_stale_age = parsed_max_age;
     } else {
-      result->stale_age_ = ParseDuration(*stale_age_ptr, &internal_error);
+      parsed_stale_age = ParseDuration(*stale_age_ptr, &internal_error);
       if (internal_error != GRPC_ERROR_NONE) {
         error_list.push_back(internal_error);
-      } else if (result->stale_age_ > result->max_age_) {
-        result->stale_age_ = result->max_age_;
+      } else if (parsed_stale_age > parsed_max_age) {
+        parsed_stale_age = parsed_max_age;
       }
     }
     // cache_size_bytes
-    result->cache_size_bytes_ = ParseNumberFieldFromJsonObject(
+    parsed_cache_size_bytes = ParseNumberFieldFromJsonObject(
         *route_lookup_config_ptr, "cacheSizeBytes", &internal_error, true,
         kDefaultCacheSizeBytes);
     if (internal_error != GRPC_ERROR_NONE) {
       error_list.push_back(internal_error);
-    } else if (result->cache_size_bytes_ <= 0) {
+    } else if (parsed_cache_size_bytes <= 0) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "cache_size_bytes must be greater than 0"));
     }
@@ -1648,7 +1660,7 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
       error_list.push_back(internal_error);
     } else if (default_target_ptr != nullptr &&
                default_target_ptr->length() > 0) {
-      result->default_target_ = *default_target_ptr;
+      parsed_default_target = *default_target_ptr;
     }
   }
   // child_policy_config_target_field_name
@@ -1661,7 +1673,7 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "child policy config target field name is empty"));
   } else {
-    result->child_policy_config_target_field_name_ =
+    parsed_child_policy_config_target_field_name =
         *child_policy_config_target_field_name_ptr;
     const Json* child_policy_array_json_ptr =
         ParseFieldJsonFromJsonObject(config, "childPolicy", &internal_error);
@@ -1702,13 +1714,12 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
           }
           Json::Object* child_policy_config =
               child_policy_config_json.mutable_object();
-          (*child_policy_config)[result
-                                     ->child_policy_config_target_field_name_] =
-              result->default_target().empty() ? kDummyTargetFieldValue
-                                               : result->default_target_;
+          (*child_policy_config)[parsed_child_policy_config_target_field_name] =
+              parsed_default_target.empty() ? kDummyTargetFieldValue
+                                            : parsed_default_target;
         }
       }
-      result->default_child_policy_parsed_config_ =
+      parsed_default_child_policy_parsed_config =
           LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
               new_child_policy_array_json, &internal_error);
       if (internal_error != GRPC_ERROR_NONE) {
@@ -1718,14 +1729,14 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
           if (child_policy_json.type() == Json::Type::OBJECT &&
               child_policy_json.object_value().size() == 1 &&
               child_policy_json.object_value().begin()->first ==
-                  result->default_child_policy_parsed_config_->name()) {
+                  parsed_default_child_policy_parsed_config->name()) {
             Json selected_child_policy_config = std::move(child_policy_json);
             new_child_policy_array->clear();
             new_child_policy_array->push_back(
                 std::move(selected_child_policy_config));
             // Intentionally left the default target in the child policy config
             // for easier processing in UpdateLocked().
-            result->child_policy_config_ = std::move(*new_child_policy_array);
+            parsed_child_policy_config = std::move(*new_child_policy_array);
             break;
           }
         }
@@ -1734,7 +1745,13 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
   }
   *error =
       GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing RLS config", &error_list);
-  return result;
+  return MakeRefCounted<RlsLbConfig>(
+      std::move(parsed_key_map_builder_map), parsed_lookup_service,
+      parsed_lookup_service_timeout, parsed_max_age, parsed_stale_age,
+      parsed_cache_size_bytes, std::move(parsed_default_target),
+      std::move(parsed_child_policy_config),
+      std::move(parsed_default_child_policy_parsed_config),
+      std::move(parsed_child_policy_config_target_field_name));
 }
 
 }  // namespace grpc_core

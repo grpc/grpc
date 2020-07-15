@@ -96,11 +96,19 @@ class RlsLb : public LoadBalancingPolicy {
     template <typename H>
     friend H AbslHashValue(H h, const RequestKey& key) {
       std::hash<std::string> string_hasher;
-      for (const std::pair<std::string, std::string>& kv : key.key_map) {
+      for (auto& kv : key.key_map) {
         h = H::combine(std::move(h), string_hasher(kv.first),
                        string_hasher(kv.second));
       }
       return H::combine(std::move(h), string_hasher(key.path));
+    }
+
+    size_t Size() const {
+      size_t size = path.length() + sizeof(RequestKey);
+      for (auto& kv : key_map) {
+        size += (kv.first.length() + kv.second.length());
+      }
+      return size;
     }
   };
 
@@ -227,6 +235,9 @@ class RlsLb : public LoadBalancingPolicy {
       /// min_expiration_time_ has passed.
       bool CanEvict() const;
 
+      /// Calculate the size of the entry.
+      size_t Size() const;
+
       /// Notify the entry when it's evicted from the cache. Performs shut down.
       void Orphan() override;
 
@@ -244,7 +255,7 @@ class RlsLb : public LoadBalancingPolicy {
      private:
       void OnBackoffTimerLocked();
 
-      // Callback when the backoff timer is fired.
+      /// Callback when the backoff timer is fired.
       static void OnBackoffTimer(void* args, grpc_error* error);
 
       RefCountedPtr<RlsLb> lb_policy_;
@@ -277,11 +288,14 @@ class RlsLb : public LoadBalancingPolicy {
     /// Find an entry from the cache that corresponds to a key. If an entry is
     /// not found, nullptr is returned. Otherwise, the entry is considered
     /// recently used and its order in the LRU list of the cache is updated.
-    Entry* Find(RequestKey key);
+    Entry* Find(const RequestKey& key);
 
-    /// Add an entry to the cache. If an entry with the same key exists, the
-    /// method is a no-op.
-    void Add(RequestKey key, OrphanablePtr<Entry> entry);
+    /// Find an entry from the cache that corresponds to a key. If an entry is
+    /// not found, an entry is created, inserted in the cache, and returned to
+    /// the caller. Otherwise, the entry found is returned to the caller. The
+    /// entry returned to the user is considered recently used and its order in
+    /// the LRU list of the cache is updated.
+    Entry* FindOrInsert(const RequestKey& key);
 
     /// Resize the cache. If the new cache size is greater than the current size
     /// of the cache, do nothing. Otherwise, evict the oldest entries that
@@ -295,21 +309,28 @@ class RlsLb : public LoadBalancingPolicy {
     void Shutdown();
 
    private:
+    using MapType = std::unordered_map<RequestKey, OrphanablePtr<Entry>,
+                                       absl::Hash<RequestKey>>;
+
     static void OnCleanupTimer(void* arg, grpc_error* error);
+
+    /// Evict oversized cache elements when the current size is greater than
+    /// the size limit.
+    void MaybeShrinkSize();
+
+    /// Set an entry to be recently used and move it to the end of the LRU
+    /// list.
+    void SetRecentUsage(MapType::iterator entry);
 
     RlsLb* lb_policy_;
 
-    int64_t size_bytes_ = 0;
-    int size_elements_ = 0;
+    int64_t size_limit_ = 0;
+    int64_t size_ = sizeof(Cache);
 
     std::list<RequestKey> lru_list_;
-    std::unordered_map<RequestKey, OrphanablePtr<Entry>, absl::Hash<RequestKey>>
-        map_;
+    MapType map_;
     grpc_timer cleanup_timer_;
     grpc_closure timer_callback_;
-
-    const int kCacheEntrySize =
-        (2 * sizeof(RequestKey) + sizeof(Entry) + sizeof(OrphanablePtr<Entry>));
   };
 
   class ControlChannel : public InternallyRefCounted<ControlChannel> {
@@ -475,6 +496,27 @@ class RlsLb : public LoadBalancingPolicy {
 /// Parsed RLS LB policy configuration.
 class RlsLbConfig : public LoadBalancingPolicy::Config {
  public:
+  RlsLbConfig(RlsLb::KeyMapBuilderMap key_map_builder_map,
+              std::string lookup_service, grpc_millis lookup_service_timeout,
+              grpc_millis max_age, grpc_millis stale_age,
+              int64_t cache_size_bytes, std::string default_target,
+              Json child_policy_config,
+              RefCountedPtr<LoadBalancingPolicy::Config>
+                  default_child_policy_parsed_config,
+              std::string child_policy_config_target_field_name)
+      : key_map_builder_map_(std::move(key_map_builder_map)),
+        lookup_service_(std::move(lookup_service)),
+        lookup_service_timeout_(lookup_service_timeout),
+        max_age_(max_age),
+        stale_age_(stale_age),
+        cache_size_bytes_(cache_size_bytes),
+        default_target_(std::move(default_target)),
+        child_policy_config_(std::move(child_policy_config)),
+        default_child_policy_parsed_config_(
+            std::move(default_child_policy_parsed_config)),
+        child_policy_config_target_field_name_(
+            std::move(child_policy_config_target_field_name)) {}
+
   const char* name() const override;
 
   const RlsLb::KeyMapBuilderMap& key_map_builder_map() const {
@@ -516,8 +558,6 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   RefCountedPtr<LoadBalancingPolicy::Config>
       default_child_policy_parsed_config_;
   std::string child_policy_config_target_field_name_;
-
-  friend RlsLbFactory;
 };
 
 class RlsLbFactory : public LoadBalancingPolicyFactory {
