@@ -3712,6 +3712,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
     src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
+    src/core/ext/filters/client_channel/lb_policy/rls/rls_channel_secure.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
@@ -4426,6 +4427,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
+    src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
+    src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
@@ -4639,6 +4642,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/google/rpc/status.upbdefs.c \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
@@ -20419,14 +20423,13 @@ ifneq ($(OPENSSL_DEP),)
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/rls/rls.cc: $(OPENSSL_DEP)
+src/core/ext/filters/client_channel/lb_policy/rls/rls_channel_secure.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/xds/xds_channel_secure.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)

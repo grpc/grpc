@@ -1366,6 +1366,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
+  src/core/ext/filters/client_channel/lb_policy/rls/rls_channel_secure.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
@@ -2113,6 +2114,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
+  src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
+  src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
@@ -2326,6 +2329,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/google/rpc/status.upbdefs.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   src/core/ext/upb-generated/udpa/annotations/migrate.upbdefs.c
   src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -2541,6 +2545,8 @@ target_link_libraries(grpc_unsecure
   upb
   absl::optional
   absl::strings
+  absl::memory
+  absl::hash
   absl::inlined_vector
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -15793,7 +15799,7 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr"
-  "-lgrpc_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc_unsecure -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc_unsecure.pc")
 
@@ -15813,6 +15819,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++_unsecure -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++_unsecure.pc")
