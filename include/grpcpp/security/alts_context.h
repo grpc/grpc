@@ -22,6 +22,7 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/auth_context.h>
 
+#include <map>
 #include <memory>
 #include <map>
 

@@ -83,8 +83,11 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   std::string expected_rp("record protocol");
   std::string expected_peer("peer");
   std::string expected_local("local");
+<<<<<<< HEAD
 
   //doggo
+=======
+>>>>>>> 8900f41dafc213da9aceac8c81daa2208d656e9c
   std::string expected_peer_atrributes_key("peer");
   std::string expected_peer_atrributes_value("attributes");
 
@@ -102,10 +105,20 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
       context,
       upb_strview_make(expected_local.data(), expected_local.length()));
 
+<<<<<<< HEAD
 grpc_gcp_AltsContext_peer_attributes_set(context,
       upb_strview_make(expected_peer_atrributes_key.data(), expected_peer_atrributes_key.length()),
       upb_strview_make(expected_peer_atrributes_value.data(), expected_peer_atrributes_value.length()),
       context_arena.ptr()); 
+=======
+grpc_gcp_AltsContext_peer_attributes_set(
+    context,
+    upb_strview_make(expected_peer_atrributes_key.data(), 
+                     expected_peer_atrributes_key.length()),
+    upb_strview_make(expected_peer_atrributes_value.data(), 
+                     expected_peer_atrributes_value.length()),
+    context_arena.ptr()); 
+>>>>>>> 8900f41dafc213da9aceac8c81daa2208d656e9c
 
   size_t serialized_ctx_length;
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
@@ -129,7 +142,12 @@ grpc_gcp_AltsContext_peer_attributes_set(context,
   EXPECT_EQ(0, rpc_protocol_versions.min_rpc_version.major_version);
   EXPECT_EQ(0, rpc_protocol_versions.min_rpc_version.minor_version);
 
+<<<<<<< HEAD
   EXPECT_EQ(expected_peer_atrributes_value, alts_context->peer_attributes()[expected_peer_atrributes_key]);
+=======
+  EXPECT_EQ(expected_peer_atrributes_value, 
+            alts_context->peer_attributes()[expected_peer_atrributes_key]);
+>>>>>>> 8900f41dafc213da9aceac8c81daa2208d656e9c
 }
 
 TEST(AltsUtilTest, AuthContextWithGoodAltsContext) {

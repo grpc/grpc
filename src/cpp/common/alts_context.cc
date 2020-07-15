@@ -81,14 +81,18 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
         grpc_gcp_AltsContext_security_level(ctx));
   }
   if (grpc_gcp_AltsContext_has_peer_attributes(ctx)) {
-    // std::map<std::string, std::string> peer_attributes_map;
     size_t iter = UPB_MAP_BEGIN;
-    const grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry= grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
-    while ( peer_attributes_entry != nullptr) {
-      upb_strview key = grpc_gcp_AltsContext_PeerAttributesEntry_key(peer_attributes_entry);
-      upb_strview val = grpc_gcp_AltsContext_PeerAttributesEntry_value(peer_attributes_entry);
-      peer_attributes_map[std::string(key.data, key.size)] = std::string(val.data, val.size);
-      peer_attributes_entry = grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
+    const grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
+        grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
+    while (peer_attributes_entry != nullptr) {
+      upb_strview key =
+          grpc_gcp_AltsContext_PeerAttributesEntry_key(peer_attributes_entry);
+      upb_strview val = 
+          grpc_gcp_AltsContext_PeerAttributesEntry_value(peer_attributes_entry);
+      peer_attributes_map[std::string(key.data, key.size)] = 
+          std::string(val.data, val.size);
+      peer_attributes_entry = 
+          grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
     }
 
   }
