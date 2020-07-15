@@ -145,6 +145,20 @@ grpc_channel_credentials* grpc_ssl_credentials_create(
       reinterpret_cast<const grpc_ssl_verify_peer_options*>(verify_options));
 }
 
+void grpc_ssl_credentials_set_min_tls_version(
+    grpc_channel_credentials* creds, grpc_tls_version min_tls_version) {
+  grpc_ssl_credentials* ssl_creds =
+      reinterpret_cast<grpc_ssl_credentials*>(creds);
+  ssl_creds->set_min_tls_version(min_tls_version);
+}
+
+void grpc_ssl_credentials_set_max_tls_version(
+    grpc_channel_credentials* creds, grpc_tls_version max_tls_version) {
+  grpc_ssl_credentials* ssl_creds =
+      reinterpret_cast<grpc_ssl_credentials*>(creds);
+  ssl_creds->set_max_tls_version(max_tls_version);
+}
+
 grpc_channel_credentials* grpc_ssl_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options, void* reserved) {
@@ -320,6 +334,20 @@ grpc_server_credentials* grpc_ssl_server_credentials_create(
           ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
           : GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
       reserved);
+}
+
+void grpc_ssl_server_credentials_set_min_tls_version(
+    grpc_server_credentials* creds, grpc_tls_version min_tls_version) {
+  grpc_ssl_server_credentials* ssl_creds =
+      reinterpret_cast<grpc_ssl_server_credentials*>(creds);
+  ssl_creds->set_min_tls_version(min_tls_version);
+}
+
+void grpc_ssl_server_credentials_set_max_tls_version(
+    grpc_server_credentials* creds, grpc_tls_version max_tls_version) {
+  grpc_ssl_server_credentials* ssl_creds =
+      reinterpret_cast<grpc_ssl_server_credentials*>(creds);
+  ssl_creds->set_max_tls_version(max_tls_version);
 }
 
 grpc_server_credentials* grpc_ssl_server_credentials_create_ex(

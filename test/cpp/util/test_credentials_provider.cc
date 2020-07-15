@@ -90,7 +90,18 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       grpc::experimental::AltsCredentialsOptions alts_opts;
       return grpc::experimental::AltsCredentials(alts_opts);
     } else if (type == grpc::testing::kTlsCredentialsType) {
-      SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
+      SslCredentialsOptions ssl_opts = {test_root_cert, "", "",
+                                        grpc_impl::TlsVersion(TLS1_2, TLS1_3)};
+      args->SetSslTargetNameOverride("foo.test.google.fr");
+      return grpc::SslCredentials(ssl_opts);
+    } else if (type == grpc::testing::kTls12CredentialsType) {
+      SslCredentialsOptions ssl_opts = {test_root_cert, "", "",
+                                        grpc_impl::TlsVersion(TLS1_2, TLS1_2)};
+      args->SetSslTargetNameOverride("foo.test.google.fr");
+      return grpc::SslCredentials(ssl_opts);
+    } else if (type == grpc::testing::kTls13CredentialsType) {
+      SslCredentialsOptions ssl_opts = {test_root_cert, "", "",
+                                        grpc_impl::TlsVersion(TLS1_3, TLS1_3)};
       args->SetSslTargetNameOverride("foo.test.google.fr");
       return grpc::SslCredentials(ssl_opts);
     } else if (type == grpc::testing::kGoogleDefaultCredentialsType) {
@@ -127,6 +138,38 @@ class DefaultCredentialsProvider : public CredentialsProvider {
                                                             test_server1_cert};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       }
+      ssl_opts.min_tls_version = TLS1_2;
+      ssl_opts.max_tls_version = TLS1_3;
+      return SslServerCredentials(ssl_opts);
+    } else if (type == grpc::testing::kTls12CredentialsType) {
+      SslServerCredentialsOptions ssl_opts;
+      ssl_opts.pem_root_certs = "";
+      if (!custom_server_key_.empty() && !custom_server_cert_.empty()) {
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {
+            custom_server_key_, custom_server_cert_};
+        ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+      } else {
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
+                                                            test_server1_cert};
+        ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+      }
+      ssl_opts.min_tls_version = TLS1_2;
+      ssl_opts.max_tls_version = TLS1_2;
+      return SslServerCredentials(ssl_opts);
+    } else if (type == grpc::testing::kTls13CredentialsType) {
+      SslServerCredentialsOptions ssl_opts;
+      ssl_opts.pem_root_certs = "";
+      if (!custom_server_key_.empty() && !custom_server_cert_.empty()) {
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {
+            custom_server_key_, custom_server_cert_};
+        ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+      } else {
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
+                                                            test_server1_cert};
+        ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+      }
+      ssl_opts.min_tls_version = TLS1_3;
+      ssl_opts.max_tls_version = TLS1_3;
       return SslServerCredentials(ssl_opts);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
@@ -143,6 +186,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   std::vector<std::string> GetSecureCredentialsTypeList() override {
     std::vector<std::string> types;
     types.push_back(grpc::testing::kTlsCredentialsType);
+    types.push_back(grpc::testing::kTls12CredentialsType);
+    types.push_back(grpc::testing::kTls13CredentialsType);
     std::unique_lock<std::mutex> lock(mu_);
     for (auto it = added_secure_type_names_.begin();
          it != added_secure_type_names_.end(); it++) {
