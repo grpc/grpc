@@ -22,6 +22,7 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/auth_context.h>
 
+#include <map>
 #include <memory>
 
 struct grpc_gcp_AltsContext;
@@ -50,6 +51,7 @@ class AltsContext {
   std::string local_service_account() const;
   grpc_security_level security_level() const;
   RpcProtocolVersions peer_rpc_versions() const;
+  std::map<std::string, std::string> peer_attributes();
 
  private:
   // TODO(ZhenLian): Also plumb field peer_attributes when it is in use
@@ -59,6 +61,7 @@ class AltsContext {
   std::string local_service_account_;
   grpc_security_level security_level_ = GRPC_SECURITY_NONE;
   RpcProtocolVersions peer_rpc_versions_ = {{0, 0}, {0, 0}};
+  std::map<std::string, std::string> peer_attributes_map;
 };
 
 }  // namespace experimental
