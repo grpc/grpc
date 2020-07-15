@@ -20,10 +20,10 @@ import logging
 
 import grpc
 
-hw_protos, hw_services = grpc.protos_and_services(
-    "protos/helloworld.proto", include_paths=["../.."])
-rg_protos, rg_services = grpc.protos_and_services(
-    "protos/route_guide.proto", include_paths=["../.."])
+hw_protos, hw_services = grpc.protos_and_services("protos/helloworld.proto",
+                                                  include_paths=["../.."])
+rg_protos, rg_services = grpc.protos_and_services("protos/route_guide.proto",
+                                                  include_paths=["../.."])
 import route_guide_resources
 
 
@@ -103,11 +103,10 @@ class _RouteGuideServicer(rg_services.RouteGuideServicer):
             prev_point = point
 
         elapsed_time = time.time() - start_time
-        return rg_protos.RouteSummary(
-            point_count=point_count,
-            feature_count=feature_count,
-            distance=int(distance),
-            elapsed_time=int(elapsed_time))
+        return rg_protos.RouteSummary(point_count=point_count,
+                                      feature_count=feature_count,
+                                      distance=int(distance),
+                                      elapsed_time=int(elapsed_time))
 
     def RouteChat(self, request_iterator, context):
         prev_notes = []

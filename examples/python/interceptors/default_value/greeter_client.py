@@ -18,8 +18,8 @@ import logging
 
 import grpc
 
-protos, services = grpc.protos_and_services(
-    "protos/helloworld.proto", include_paths=["../../.."])
+protos, services = grpc.protos_and_services("protos/helloworld.proto",
+                                            include_paths=["../../.."])
 import default_value_client_interceptor
 
 

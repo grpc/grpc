@@ -44,8 +44,8 @@ class DemoServer(services.GRPCDemoServicer):
     def ClientStreamingMethod(self, request_iterator, context):
         print("ClientStreamingMethod called by client...")
         for request in request_iterator:
-            print("recv from client(%d), message= %s" % (request.client_id,
-                                                         request.request_data))
+            print("recv from client(%d), message= %s" %
+                  (request.client_id, request.request_data))
         response = protos.Response(
             server_id=SERVER_ID,
             response_data="Python server ClientStreamingMethod ok")

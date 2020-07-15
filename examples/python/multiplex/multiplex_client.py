@@ -21,17 +21,17 @@ import logging
 
 import grpc
 
-hw_protos, hw_services = grpc.protos_and_services(
-    "protos/helloworld.proto", include_paths=["../.."])
-rg_protos, rg_services = grpc.protos_and_services(
-    "protos/route_guide.proto", include_paths=["../.."])
+hw_protos, hw_services = grpc.protos_and_services("protos/helloworld.proto",
+                                                  include_paths=["../.."])
+rg_protos, rg_services = grpc.protos_and_services("protos/route_guide.proto",
+                                                  include_paths=["../.."])
 import route_guide_resources
 
 
 def make_route_note(message, latitude, longitude):
-    return rg_protos.RouteNote(
-        message=message,
-        location=rg_protos.Point(latitude=latitude, longitude=longitude))
+    return rg_protos.RouteNote(message=message,
+                               location=rg_protos.Point(latitude=latitude,
+                                                        longitude=longitude))
 
 
 def guide_get_one_feature(route_guide_stub, point):
@@ -47,17 +47,18 @@ def guide_get_one_feature(route_guide_stub, point):
 
 
 def guide_get_feature(route_guide_stub):
-    guide_get_one_feature(route_guide_stub,
-                          rg_protos.Point(
-                              latitude=409146138, longitude=-746188906))
+    guide_get_one_feature(
+        route_guide_stub,
+        rg_protos.Point(latitude=409146138, longitude=-746188906))
     guide_get_one_feature(route_guide_stub,
                           rg_protos.Point(latitude=0, longitude=0))
 
 
 def guide_list_features(route_guide_stub):
-    rectangle = rg_protos.Rectangle(
-        lo=rg_protos.Point(latitude=400000000, longitude=-750000000),
-        hi=rg_protos.Point(latitude=420000000, longitude=-730000000))
+    rectangle = rg_protos.Rectangle(lo=rg_protos.Point(latitude=400000000,
+                                                       longitude=-750000000),
+                                    hi=rg_protos.Point(latitude=420000000,
+                                                       longitude=-730000000))
     print("Looking for features between 40, -75 and 42, -73")
 
     features = route_guide_stub.ListFeatures(rectangle)

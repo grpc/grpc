@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//src/python:__subpackages__", "//tools/distrib/python/grpcio_tools:__subpackages__"])
+package(default_visibility = [
+    "//src/python:__subpackages__",
+    "//tools/distrib/python/grpcio_tools:__subpackages__",
+])
 
 load("//bazel:cython_library.bzl", "pyx_library")
 
@@ -20,11 +23,11 @@ cc_library(
     name = "protoc_lib",
     srcs = ["grpc_tools/main.cc"],
     hdrs = ["grpc_tools/main.h"],
-    deps = [
-      "@com_google_protobuf//:protoc_lib",
-      "//src/compiler:grpc_plugin_support",
-    ],
     includes = ["."],
+    deps = [
+        "//src/compiler:grpc_plugin_support",
+        "@com_google_protobuf//:protoc_lib",
+    ],
 )
 
 pyx_library(
@@ -35,11 +38,14 @@ pyx_library(
 
 py_library(
     name = "grpc_tools",
-    srcs = ["grpc_tools/__init__.py", "grpc_tools/protoc.py"],
-    deps = [
-      ":cyprotoc",
-      "@com_google_protobuf//:protobuf_python",
-      "//src/python/grpcio/grpc:grpcio",
+    srcs = [
+        "grpc_tools/__init__.py",
+        "grpc_tools/protoc.py",
     ],
     srcs_version = "PY2AND3",
+    deps = [
+        ":cyprotoc",
+        "//src/python/grpcio/grpc:grpcio",
+        "@com_google_protobuf//:protobuf_python",
+    ],
 )

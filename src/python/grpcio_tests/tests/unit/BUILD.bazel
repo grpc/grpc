@@ -116,15 +116,15 @@ py2and3_test(
     name = "_dynamic_stubs_test",
     size = "small",
     srcs = ["_dynamic_stubs_test.py"],
-    main = "_dynamic_stubs_test.py",
-    imports = ["../../"],
     data = [
         "data/foo/bar.proto",
     ],
+    imports = ["../../"],
+    main = "_dynamic_stubs_test.py",
     deps = [
-        "@six",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/testing",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
+        "@six",
     ],
 )

@@ -101,8 +101,8 @@ if sys.version_info[0] > 2:
 
         def _generated_file_to_module_name(self, filepath):
             components = filepath.split(os.path.sep)
-            return ".".join(
-                components[:-1] + [os.path.splitext(components[-1])[0]])
+            return ".".join(components[:-1] +
+                            [os.path.splitext(components[-1])[0]])
 
         def exec_module(self, module):
             assert module.__name__ == self._module_name

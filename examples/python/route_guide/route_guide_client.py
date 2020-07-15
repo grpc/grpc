@@ -20,15 +20,15 @@ import logging
 
 import grpc
 
-protos, services = grpc.protos_and_services(
-    "protos/route_guide.proto", include_paths=["../.."])
+protos, services = grpc.protos_and_services("protos/route_guide.proto",
+                                            include_paths=["../.."])
 import route_guide_resources
 
 
 def make_route_note(message, latitude, longitude):
-    return protos.RouteNote(
-        message=message,
-        location=protos.Point(latitude=latitude, longitude=longitude))
+    return protos.RouteNote(message=message,
+                            location=protos.Point(latitude=latitude,
+                                                  longitude=longitude))
 
 
 def guide_get_one_feature(stub, point):
@@ -44,16 +44,16 @@ def guide_get_one_feature(stub, point):
 
 
 def guide_get_feature(stub):
-    guide_get_one_feature(stub,
-                          protos.Point(
-                              latitude=409146138, longitude=-746188906))
+    guide_get_one_feature(
+        stub, protos.Point(latitude=409146138, longitude=-746188906))
     guide_get_one_feature(stub, protos.Point(latitude=0, longitude=0))
 
 
 def guide_list_features(stub):
-    rectangle = protos.Rectangle(
-        lo=protos.Point(latitude=400000000, longitude=-750000000),
-        hi=protos.Point(latitude=420000000, longitude=-730000000))
+    rectangle = protos.Rectangle(lo=protos.Point(latitude=400000000,
+                                                 longitude=-750000000),
+                                 hi=protos.Point(latitude=420000000,
+                                                 longitude=-730000000))
     print("Looking for features between 40, -75 and 42, -73")
 
     features = stub.ListFeatures(rectangle)

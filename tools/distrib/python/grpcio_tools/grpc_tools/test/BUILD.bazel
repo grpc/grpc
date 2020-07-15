@@ -4,38 +4,38 @@ load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 proto_library(
     name = "simplest_proto",
+    testonly = True,
     srcs = ["simplest.proto"],
     strip_import_prefix = "/tools/distrib/python/grpcio_tools/",
-    testonly = True,
 )
 
 proto_library(
     name = "complicated_proto",
-    srcs = ["complicated.proto"],
-    deps = [":simplest_proto"],
-    strip_import_prefix = "/tools/distrib/python/grpcio_tools/",
     testonly = True,
+    srcs = ["complicated.proto"],
+    strip_import_prefix = "/tools/distrib/python/grpcio_tools/",
+    deps = [":simplest_proto"],
 )
 
 py_proto_library(
     name = "complicated_py_pb2",
-    deps = ["complicated_proto"],
     testonly = True,
+    deps = ["complicated_proto"],
 )
 
 py_test(
-  name = "protoc_test",
-  srcs = ["protoc_test.py"],
-  deps = [
-      "//tools/distrib/python/grpcio_tools:grpc_tools",
-      ":complicated_py_pb2",
-  ],
-  data = [
-    "simple.proto",
-    "simpler.proto",
-    "simplest.proto",
-    "complicated.proto",
-    "flawed.proto",
-  ],
-  python_version = "PY3",
+    name = "protoc_test",
+    srcs = ["protoc_test.py"],
+    data = [
+        "complicated.proto",
+        "flawed.proto",
+        "simple.proto",
+        "simpler.proto",
+        "simplest.proto",
+    ],
+    python_version = "PY3",
+    deps = [
+        ":complicated_py_pb2",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
+    ],
 )

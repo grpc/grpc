@@ -18,8 +18,8 @@ import logging
 
 import grpc
 
-protos, services = grpc.protos_and_services(
-    "protos/helloworld.protos", include_paths=["../../.."])
+protos, services = grpc.protos_and_services("protos/helloworld.protos",
+                                            include_paths=["../../.."])
 from request_header_validator_interceptor import RequestHeaderValidatorInterceptor
 
 
@@ -33,9 +33,8 @@ def serve():
     header_validator = RequestHeaderValidatorInterceptor(
         'one-time-password', '42', grpc.StatusCode.UNAUTHENTICATED,
         'Access denied!')
-    server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=10),
-        interceptors=(header_validator,))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10),
+                         interceptors=(header_validator,))
     services.add_GreeterServicer_to_server(Greeter(), server)
     server.add_insecure_port('[::]:50051')
     server.start()

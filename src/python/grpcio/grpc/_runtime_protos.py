@@ -14,6 +14,7 @@
 
 import sys
 
+
 def _uninstalled_protos(*args, **kwargs):
     raise NotImplementedError(
         "Install the grpcio-tools package to use the protos function.")
