@@ -107,8 +107,8 @@ void RunClient(std::string client_id, gpr_event* done_ev) {
   std::shared_ptr<grpc::ChannelCredentials> channel_creds =
       grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
           custom_credentials_type, &channel_args);
-  std::unique_ptr<grpc::testing::TestService::Stub> stub
-      = grpc::testing::TestService::NewStub(
+  std::unique_ptr<grpc::testing::TestService::Stub> stub =
+      grpc::testing::TestService::NewStub(
           grpc::CreateChannel(server_address, channel_creds));
   unsigned int client_echo_sleep_second = 1;
 
