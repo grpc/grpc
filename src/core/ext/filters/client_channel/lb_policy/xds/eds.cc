@@ -133,7 +133,7 @@ class EdsLb : public LoadBalancingPolicy {
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_channel_args& args) override;
-    void UpdateState(grpc_connectivity_state state,
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     // This is a no-op, because we get the addresses from the xds
     // client, which is a watch-based API.
@@ -214,6 +214,7 @@ class EdsLb : public LoadBalancingPolicy {
 
   // The latest state and picker returned from the child policy.
   grpc_connectivity_state child_state_;
+  absl::Status child_status_;
   RefCountedPtr<ChildPickerWrapper> child_picker_;
 };
 
@@ -265,16 +266,20 @@ RefCountedPtr<SubchannelInterface> EdsLb::Helper::CreateSubchannel(
 }
 
 void EdsLb::Helper::UpdateState(grpc_connectivity_state state,
+                                const absl::Status& status,
                                 std::unique_ptr<SubchannelPicker> picker) {
   if (eds_policy_->shutting_down_ || eds_policy_->child_policy_ == nullptr) {
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-    gpr_log(GPR_INFO, "[edslb %p] child policy updated state=%s picker=%p",
-            eds_policy_.get(), ConnectivityStateName(state), picker.get());
+    gpr_log(GPR_INFO,
+            "[edslb %p] child policy updated state=%s status=(%s) picker=%p",
+            eds_policy_.get(), ConnectivityStateName(state),
+            status.ToString().c_str(), picker.get());
   }
   // Save the state and picker.
   eds_policy_->child_state_ = state;
+  eds_policy_->child_status_ = status;
   eds_policy_->child_picker_ =
       MakeRefCounted<ChildPickerWrapper>(std::move(picker));
   // Wrap the picker in a DropPicker and pass it up.
@@ -340,6 +345,8 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
     if (eds_policy_->child_policy_ == nullptr) {
       eds_policy_->channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE,
+          absl::Status(absl::StatusCode::kUnavailable,
+                       grpc_error_string(error)),
           absl::make_unique<TransientFailurePicker>(error));
     } else {
       GRPC_ERROR_UNREF(error);
@@ -351,11 +358,12 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
         GPR_ERROR,
         "[edslb %p] EDS resource does not exist -- reporting TRANSIENT_FAILURE",
         eds_policy_.get());
+    grpc_error* error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("EDS resource does not exist");
     eds_policy_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::make_unique<TransientFailurePicker>(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "EDS resource does not exist")));
+        absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
+        absl::make_unique<TransientFailurePicker>(error));
     eds_policy_->MaybeDestroyChildPolicyLocked();
   }
 
@@ -689,6 +697,7 @@ EdsLb::CreateChildPolicyConfigLocked() {
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
+        absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
         absl::make_unique<TransientFailurePicker>(error));
     return nullptr;
   }
@@ -769,13 +778,13 @@ void EdsLb::MaybeUpdateDropPickerLocked() {
   // If we're dropping all calls, report READY, regardless of what (or
   // whether) the child has reported.
   if (drop_config_ != nullptr && drop_config_->drop_all()) {
-    channel_control_helper()->UpdateState(GRPC_CHANNEL_READY,
+    channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
                                           absl::make_unique<DropPicker>(this));
     return;
   }
   // Update only if we have a child picker.
   if (child_picker_ != nullptr) {
-    channel_control_helper()->UpdateState(child_state_,
+    channel_control_helper()->UpdateState(child_state_, child_status_,
                                           absl::make_unique<DropPicker>(this));
   }
 }

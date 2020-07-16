@@ -42,38 +42,52 @@ TEST(ConnectivityStateName, Basic) {
 
 class Watcher : public ConnectivityStateWatcherInterface {
  public:
-  Watcher(int* count, grpc_connectivity_state* output,
+  Watcher(int* count, grpc_connectivity_state* output, absl::Status* status,
           bool* destroyed = nullptr)
-      : count_(count), output_(output), destroyed_(destroyed) {}
+      : count_(count),
+        output_(output),
+        status_(status),
+        destroyed_(destroyed) {}
 
   ~Watcher() {
     if (destroyed_ != nullptr) *destroyed_ = true;
   }
 
-  void Notify(grpc_connectivity_state new_state) override {
+  void Notify(grpc_connectivity_state new_state,
+              const absl::Status& status) override {
     ++*count_;
     *output_ = new_state;
+    *status_ = status;
   }
 
  private:
   int* count_;
   grpc_connectivity_state* output_;
+  absl::Status* status_;
   bool* destroyed_;
 };
 
 TEST(StateTracker, SetAndGetState) {
-  ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_CONNECTING);
+  ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_CONNECTING,
+                                   absl::Status());
   EXPECT_EQ(tracker.state(), GRPC_CHANNEL_CONNECTING);
-  tracker.SetState(GRPC_CHANNEL_READY, "whee");
+  tracker.SetState(GRPC_CHANNEL_READY, absl::Status(), "whee");
   EXPECT_EQ(tracker.state(), GRPC_CHANNEL_READY);
+  absl::Status transient_failure_status(absl::StatusCode::kUnavailable,
+                                        "Some transient failure");
+  tracker.SetState(GRPC_CHANNEL_TRANSIENT_FAILURE, transient_failure_status,
+                   "reason");
+  EXPECT_EQ(tracker.state(), GRPC_CHANNEL_TRANSIENT_FAILURE);
+  EXPECT_EQ(tracker.status(), transient_failure_status);
 }
 
 TEST(StateTracker, NotificationUponAddingWatcher) {
   int count = 0;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  absl::Status status;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_CONNECTING);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
-                     MakeOrphanable<Watcher>(&count, &state));
+                     MakeOrphanable<Watcher>(&count, &state, &status));
   EXPECT_EQ(count, 1);
   EXPECT_EQ(state, GRPC_CHANNEL_CONNECTING);
 }
@@ -81,12 +95,13 @@ TEST(StateTracker, NotificationUponAddingWatcher) {
 TEST(StateTracker, NotificationUponStateChange) {
   int count = 0;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  absl::Status status;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
-                     MakeOrphanable<Watcher>(&count, &state));
+                     MakeOrphanable<Watcher>(&count, &state, &status));
   EXPECT_EQ(count, 0);
   EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
-  tracker.SetState(GRPC_CHANNEL_CONNECTING, "whee");
+  tracker.SetState(GRPC_CHANNEL_CONNECTING, absl::Status(), "whee");
   EXPECT_EQ(count, 1);
   EXPECT_EQ(state, GRPC_CHANNEL_CONNECTING);
 }
@@ -94,10 +109,11 @@ TEST(StateTracker, NotificationUponStateChange) {
 TEST(StateTracker, SubscribeThenUnsubscribe) {
   int count = 0;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  absl::Status status;
   bool destroyed = false;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
   ConnectivityStateWatcherInterface* watcher =
-      new Watcher(&count, &state, &destroyed);
+      new Watcher(&count, &state, &status, &destroyed);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
                      OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
   // No initial notification, since we started the watch from the
@@ -114,10 +130,11 @@ TEST(StateTracker, SubscribeThenUnsubscribe) {
 TEST(StateTracker, OrphanUponShutdown) {
   int count = 0;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  absl::Status status;
   bool destroyed = false;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
   ConnectivityStateWatcherInterface* watcher =
-      new Watcher(&count, &state, &destroyed);
+      new Watcher(&count, &state, &status, &destroyed);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
                      OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
   // No initial notification, since we started the watch from the
@@ -125,7 +142,7 @@ TEST(StateTracker, OrphanUponShutdown) {
   EXPECT_EQ(count, 0);
   EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
   // Set state to SHUTDOWN.
-  tracker.SetState(GRPC_CHANNEL_SHUTDOWN, "shutting down");
+  tracker.SetState(GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutting down");
   EXPECT_TRUE(destroyed);
   EXPECT_EQ(count, 1);
   EXPECT_EQ(state, GRPC_CHANNEL_SHUTDOWN);
@@ -134,10 +151,11 @@ TEST(StateTracker, OrphanUponShutdown) {
 TEST(StateTracker, AddWhenAlreadyShutdown) {
   int count = 0;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  absl::Status status;
   bool destroyed = false;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_SHUTDOWN);
   ConnectivityStateWatcherInterface* watcher =
-      new Watcher(&count, &state, &destroyed);
+      new Watcher(&count, &state, &status, &destroyed);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
                      OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
   EXPECT_TRUE(destroyed);
@@ -148,10 +166,11 @@ TEST(StateTracker, AddWhenAlreadyShutdown) {
 TEST(StateTracker, NotifyShutdownAtDestruction) {
   int count = 0;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  absl::Status status;
   {
     ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
     tracker.AddWatcher(GRPC_CHANNEL_IDLE,
-                       MakeOrphanable<Watcher>(&count, &state));
+                       MakeOrphanable<Watcher>(&count, &state, &status));
     // No initial notification, since we started the watch from the
     // current state.
     EXPECT_EQ(count, 0);
@@ -165,10 +184,11 @@ TEST(StateTracker, NotifyShutdownAtDestruction) {
 TEST(StateTracker, DoNotNotifyShutdownAtDestructionIfAlreadyInShutdown) {
   int count = 0;
   grpc_connectivity_state state = GRPC_CHANNEL_SHUTDOWN;
+  absl::Status status;
   {
     ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_SHUTDOWN);
     tracker.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
-                       MakeOrphanable<Watcher>(&count, &state));
+                       MakeOrphanable<Watcher>(&count, &state, &status));
     // No initial notification, since we started the watch from the
     // current state.
     EXPECT_EQ(count, 0);

@@ -432,6 +432,7 @@
         'upb',
         'absl/types:optional',
         'absl/strings:strings',
+        'absl/status:status',
         'absl/container:inlined_vector',
       ],
       'sources': [
@@ -1008,6 +1009,7 @@
         'upb',
         'absl/types:optional',
         'absl/strings:strings',
+        'absl/status:status',
         'absl/container:inlined_vector',
       ],
       'sources': [

@@ -30,7 +30,8 @@
 
 class Watcher : public grpc_core::ConnectivityStateWatcherInterface {
  public:
-  void Notify(grpc_connectivity_state new_state) override {
+  void Notify(grpc_connectivity_state new_state,
+              const absl::Status& /* status */) override {
     GPR_ASSERT(new_state == GRPC_CHANNEL_SHUTDOWN);
   }
 };

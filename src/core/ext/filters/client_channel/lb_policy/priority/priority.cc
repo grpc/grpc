@@ -113,6 +113,9 @@ class PriorityLb : public LoadBalancingPolicy {
     grpc_connectivity_state connectivity_state() const {
       return connectivity_state_;
     }
+
+    absl::Status connectivity_status() const { return connectivity_status_; }
+
     bool failover_timer_callback_pending() const {
       return failover_timer_callback_pending_;
     }
@@ -150,6 +153,7 @@ class PriorityLb : public LoadBalancingPolicy {
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
           const grpc_channel_args& args) override;
       void UpdateState(grpc_connectivity_state state,
+                       const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       void AddTraceEvent(TraceSeverity severity,
@@ -164,7 +168,7 @@ class PriorityLb : public LoadBalancingPolicy {
         const grpc_channel_args* args);
 
     void OnConnectivityStateUpdateLocked(
-        grpc_connectivity_state state,
+        grpc_connectivity_state state, const absl::Status& status,
         std::unique_ptr<SubchannelPicker> picker);
 
     void StartFailoverTimerLocked();
@@ -180,6 +184,7 @@ class PriorityLb : public LoadBalancingPolicy {
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
+    absl::Status connectivity_status_;
     RefCountedPtr<RefCountedPicker> picker_wrapper_;
 
     // States for delayed removal.
@@ -334,6 +339,7 @@ void PriorityLb::HandleChildConnectivityStateChangeLocked(
       // If it's still READY or IDLE, we stick with this child, so pass
       // the new picker up to our parent.
       channel_control_helper()->UpdateState(child->connectivity_state(),
+                                            child->connectivity_status(),
                                             child->GetPicker());
     } else {
       // If it's no longer READY or IDLE, we should stop using it.
@@ -380,6 +386,7 @@ void PriorityLb::HandleChildConnectivityStateChangeLocked(
   // The current priority has returned a new picker, so pass it up to
   // our parent.
   channel_control_helper()->UpdateState(child->connectivity_state(),
+                                        child->connectivity_status(),
                                         child->GetPicker());
 }
 
@@ -409,7 +416,7 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
     if (child == nullptr) {
       if (report_connecting) {
         channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_CONNECTING,
+            GRPC_CHANNEL_CONNECTING, absl::Status(),
             absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
       }
       child = MakeOrphanable<ChildPriority>(
@@ -436,7 +443,7 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
       }
       if (report_connecting) {
         channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_CONNECTING,
+            GRPC_CHANNEL_CONNECTING, absl::Status(),
             absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
       }
       return;
@@ -457,6 +464,7 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
       GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
       absl::make_unique<TransientFailurePicker>(error));
 }
 
@@ -476,6 +484,7 @@ void PriorityLb::SelectPriorityLocked(uint32_t priority) {
   // Update picker.
   auto& child = children_[config_->priorities()[priority]];
   channel_control_helper()->UpdateState(child->connectivity_state(),
+                                        child->connectivity_status(),
                                         child->GetPicker());
 }
 
@@ -584,7 +593,8 @@ void PriorityLb::ChildPriority::ResetBackoffLocked() {
 }
 
 void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
-    grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
+    grpc_connectivity_state state, const absl::Status& status,
+    std::unique_ptr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO,
             "[priority_lb %p] child %s (%p): state update: %s, picker %p",
@@ -593,6 +603,7 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
   }
   // Store the state and picker.
   connectivity_state_ = state;
+  connectivity_status_ = status;
   picker_wrapper_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
   // If READY or TRANSIENT_FAILURE, cancel failover timer.
   if (state == GRPC_CHANNEL_READY || state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
@@ -646,7 +657,10 @@ void PriorityLb::ChildPriority::OnFailoverTimerLocked(grpc_error* error) {
               priority_policy_.get(), name_.c_str(), this);
     }
     failover_timer_callback_pending_ = false;
-    OnConnectivityStateUpdateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, nullptr);
+    OnConnectivityStateUpdateLocked(
+        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
+        nullptr);
   }
   Unref(DEBUG_LOCATION, "ChildPriority+OnFailoverTimerLocked");
   GRPC_ERROR_UNREF(error);
@@ -725,10 +739,11 @@ PriorityLb::ChildPriority::Helper::CreateSubchannel(
 }
 
 void PriorityLb::ChildPriority::Helper::UpdateState(
-    grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
+    grpc_connectivity_state state, const absl::Status& status,
+    std::unique_ptr<SubchannelPicker> picker) {
   if (priority_->priority_policy_->shutting_down_) return;
   // Notify the priority.
-  priority_->OnConnectivityStateUpdateLocked(state, std::move(picker));
+  priority_->OnConnectivityStateUpdateLocked(state, status, std::move(picker));
 }
 
 void PriorityLb::ChildPriority::Helper::AddTraceEvent(
