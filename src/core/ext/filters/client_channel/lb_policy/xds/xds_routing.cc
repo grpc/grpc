@@ -169,6 +169,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
           const grpc_channel_args& args) override;
       void UpdateState(grpc_connectivity_state state,
+                       const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       void AddTraceEvent(TraceSeverity severity,
@@ -507,7 +508,8 @@ void XdsRoutingLb::UpdateStateLocked() {
               "TRANSIENT_FAILURE from XdsRoutingLb"),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
   }
-  channel_control_helper()->UpdateState(connectivity_state, std::move(picker));
+  channel_control_helper()->UpdateState(connectivity_state, absl::Status(),
+                                        std::move(picker));
 }
 
 //
@@ -663,13 +665,15 @@ XdsRoutingLb::XdsRoutingChild::Helper::CreateSubchannel(
 }
 
 void XdsRoutingLb::XdsRoutingChild::Helper::UpdateState(
-    grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
+    grpc_connectivity_state state, const absl::Status& status,
+    std::unique_ptr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_routing_lb %p] child %s: received update: state=%s picker=%p",
+            "[xds_routing_lb %p] child %s: received update: state=%s "
+            "status_message=(%s) picker=%p",
             xds_routing_child_->xds_routing_policy_.get(),
             xds_routing_child_->name_.c_str(), ConnectivityStateName(state),
-            picker.get());
+            status.ToString().c_str(), picker.get());
   }
   if (xds_routing_child_->xds_routing_policy_->shutting_down_) return;
   // Cache the picker in the XdsRoutingChild.
