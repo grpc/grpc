@@ -524,9 +524,10 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
             "[weighted_target_lb %p] WeightedChild %p %s: connectivity "
-            "state update: state=%s picker_wrapper=%p",
+            "state update: state=%s status_message=(%s)picker_wrapper=%p",
             weighted_target_policy_.get(), this, name_.c_str(),
-            ConnectivityStateName(state), picker_wrapper_.get());
+            ConnectivityStateName(state), status.ToString().c_str(),
+            picker_wrapper_.get());
   }
   // If the child reports IDLE, immediately tell it to exit idle.
   if (state == GRPC_CHANNEL_IDLE) child_policy_->ExitIdleLocked();

@@ -273,7 +273,8 @@ void EdsLb::Helper::UpdateState(grpc_connectivity_state state,
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
     gpr_log(GPR_INFO,
-            "[edslb %p] child policy updated state=%s status=(%s) picker=%p",
+            "[edslb %p] child policy updated state=%s status_message=(%s) "
+            "picker=%p",
             eds_policy_.get(), ConnectivityStateName(state),
             status.ToString().c_str(), picker.get());
   }

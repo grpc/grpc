@@ -248,8 +248,9 @@ void CdsLb::Helper::UpdateState(grpc_connectivity_state state,
                                 std::unique_ptr<SubchannelPicker> picker) {
   if (parent_->shutting_down_ || parent_->child_policy_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] state updated by child: %s", this,
-            ConnectivityStateName(state));
+    gpr_log(GPR_INFO,
+            "[cdslb %p] state updated by child: %s message_state: (%s)", this,
+            ConnectivityStateName(state), status.ToString().c_str());
   }
   parent_->channel_control_helper()->UpdateState(state, status,
                                                  std::move(picker));

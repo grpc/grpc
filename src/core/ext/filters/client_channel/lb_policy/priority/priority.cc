@@ -597,9 +597,11 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
     std::unique_ptr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO,
-            "[priority_lb %p] child %s (%p): state update: %s, picker %p",
+            "[priority_lb %p] child %s (%p): state update: %s, status_message: "
+            "(%s) picker %p",
             priority_policy_.get(), name_.c_str(), this,
-            ConnectivityStateName(state), picker.get());
+            ConnectivityStateName(state), status.ToString().c_str(),
+            picker.get());
   }
   // Store the state and picker.
   connectivity_state_ = state;
