@@ -94,9 +94,9 @@ void create_loop_destroy(void* addr) {
   }
 }
 
-// Always stack-allocate or new server_thread_args; never use gpr_malloc since
+// Always stack-allocate or new ServerThreadArgs; never use gpr_malloc since
 // this contains C++ objects.
-struct server_thread_args {
+struct ServerThreadArgs {
   std::string addr;
   grpc_server* server = nullptr;
   grpc_completion_queue* cq = nullptr;
@@ -107,8 +107,7 @@ struct server_thread_args {
 };
 
 void server_thread(void* vargs) {
-  struct server_thread_args* args =
-      static_cast<struct server_thread_args*>(vargs);
+  struct ServerThreadArgs* args = static_cast<struct ServerThreadArgs*>(vargs);
   grpc_event ev;
   gpr_timespec deadline =
       grpc_timeout_milliseconds_to_deadline(SERVER_SHUTDOWN_TIMEOUT);
@@ -121,8 +120,7 @@ static void on_connect(void* vargs, grpc_endpoint* tcp,
                        grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
-  struct server_thread_args* args =
-      static_cast<struct server_thread_args*>(vargs);
+  struct ServerThreadArgs* args = static_cast<struct ServerThreadArgs*>(vargs);
   grpc_endpoint_shutdown(tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(tcp);
@@ -133,8 +131,7 @@ static void on_connect(void* vargs, grpc_endpoint* tcp,
 }
 
 void bad_server_thread(void* vargs) {
-  struct server_thread_args* args =
-      static_cast<struct server_thread_args*>(vargs);
+  struct ServerThreadArgs* args = static_cast<struct ServerThreadArgs*>(vargs);
 
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
@@ -178,7 +175,7 @@ static void done_pollset_shutdown(void* pollset, grpc_error* /*error*/) {
 }
 
 int run_concurrent_connectivity_test() {
-  struct server_thread_args args;
+  struct ServerThreadArgs args;
 
   grpc_init();
 
