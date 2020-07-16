@@ -263,7 +263,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   }
   tsi_handshaker_result* result = nullptr;
   if (is_handshake_finished_properly(resp)) {
-    tsi_result status = 
+    tsi_result status =
         alts_tsi_handshaker_result_create(resp, client->is_client, &result);
     if (status != TSI_OK) {
       gpr_log(GPR_ERROR, "alts_tsi_handshaker_result_create() failed");

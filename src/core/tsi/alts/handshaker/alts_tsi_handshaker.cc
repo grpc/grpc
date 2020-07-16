@@ -342,12 +342,15 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   if (grpc_gcp_Identity_has_attributes(
           const_cast<grpc_gcp_Identity*>(peer_identity))) {
     size_t iter = UPB_MAP_BEGIN;
-    grpc_gcp_Identity_AttributesEntry* peer_attributes_entry = grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
+    grpc_gcp_Identity_AttributesEntry* peer_attributes_entry = 
+        grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
     while (peer_attributes_entry != nullptr) {
       upb_strview key = grpc_gcp_Identity_AttributesEntry_key(
-          const_cast<grpc_gcp_Identity_AttributesEntry*>(peer_attributes_entry));
+          const_cast<grpc_gcp_Identity_AttributesEntry*>(
+              peer_attributes_entry));
       upb_strview val = grpc_gcp_Identity_AttributesEntry_value(
-          const_cast<grpc_gcp_Identity_AttributesEntry*>(peer_attributes_entry));
+          const_cast<grpc_gcp_Identity_AttributesEntry*>(
+              peer_attributes_entry));
       grpc_gcp_AltsContext_peer_attributes_set(context, key, val,
                                                context_arena.ptr());
       peer_attributes_entry =

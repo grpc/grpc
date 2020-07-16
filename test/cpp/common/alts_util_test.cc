@@ -101,9 +101,9 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
       upb_strview_make(expected_local.data(), expected_local.length()));
   grpc_gcp_AltsContext_peer_attributes_set(
       context,
-      upb_strview_make(expected_peer_atrributes_key.data(), 
+      upb_strview_make(expected_peer_atrributes_key.data(),
                        expected_peer_atrributes_key.length()),
-      upb_strview_make(expected_peer_atrributes_value.data(), 
+      upb_strview_make(expected_peer_atrributes_value.data(),
                        expected_peer_atrributes_value.length()),
       context_arena.ptr()); 
   size_t serialized_ctx_length;
@@ -127,7 +127,7 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   EXPECT_EQ(0, rpc_protocol_versions.max_rpc_version.minor_version);
   EXPECT_EQ(0, rpc_protocol_versions.min_rpc_version.major_version);
   EXPECT_EQ(0, rpc_protocol_versions.min_rpc_version.minor_version);
-  EXPECT_EQ(expected_peer_atrributes_value, 
+  EXPECT_EQ(expected_peer_atrributes_value,
             alts_context->peer_attributes()[expected_peer_atrributes_key]);
 }
 
