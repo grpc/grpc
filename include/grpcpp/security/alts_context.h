@@ -54,7 +54,6 @@ class AltsContext {
   std::map<std::string, std::string> peer_attributes();
 
  private:
-  // TODO(ZhenLian): Also plumb field peer_attributes when it is in use
   std::string application_protocol_;
   std::string record_protocol_;
   std::string peer_service_account_;
