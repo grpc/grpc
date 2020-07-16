@@ -89,7 +89,7 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
           grpc_gcp_AltsContext_PeerAttributesEntry_key(peer_attributes_entry);
       upb_strview val = 
           grpc_gcp_AltsContext_PeerAttributesEntry_value(peer_attributes_entry);
-      peer_attributes_map[std::string(key.data, key.size)] = 
+      peer_attributes_map_[std::string(key.data, key.size)] = 
           std::string(val.data, val.size);
       peer_attributes_entry = 
           grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
@@ -121,7 +121,7 @@ AltsContext::RpcProtocolVersions AltsContext::peer_rpc_versions() const {
 }
 
 std::map<std::string, std::string> AltsContext::peer_attributes() {
-  return peer_attributes_map;
+  return peer_attributes_map_;
 }
 
 }  // namespace experimental
