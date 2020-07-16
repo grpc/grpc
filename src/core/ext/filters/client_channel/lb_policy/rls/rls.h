@@ -472,9 +472,12 @@ class RlsLb : public LoadBalancingPolicy {
                         std::unique_ptr<BackOff>* backoff_state = nullptr);
 
   /// Update picker with the channel to trigger reprocessing of pending picks.
-  /// The method must be invoked on the control plane work serializer.
-  void UpdatePickerLocked();
+  /// The method will schedule the actual picker update on the execution context
+  /// to be run later.
+  void UpdatePicker();
 
+  /// Update picker in the LB policy's work serializer.
+  static void UpdatePickerCallback(void* arg, grpc_error* error);
   /// The name of the server for the channel.
   std::string server_name_;
 

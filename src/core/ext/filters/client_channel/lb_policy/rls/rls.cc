@@ -551,15 +551,7 @@ void RlsLb::Cache::Entry::Orphan() {
   backoff_state_.reset();
   if (timer_pending_) {
     grpc_timer_cancel(&backoff_timer_);
-    // The pick is in backoff state and there could be a pick queued if
-    // wait_for_ready is true. We'll update the picker for that case.
-    Ref().release();
-    lb_policy_->work_serializer()->Run(
-        [this]() {
-          lb_policy_->UpdatePickerLocked();
-          Unref();
-        },
-        DEBUG_LOCATION);
+    lb_policy_->UpdatePicker();
   }
   child_policy_wrapper_.reset();
 }
@@ -569,13 +561,7 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
   if (response.error == GRPC_ERROR_NONE) {
     if (child_policy_wrapper_ != nullptr &&
         child_policy_wrapper_->child()->target() == response.target) {
-      Ref().release();
-      lb_policy_->work_serializer()->Run(
-          [this]() {
-            lb_policy_->UpdatePickerLocked();
-            Unref();
-          },
-          DEBUG_LOCATION);
+      lb_policy_->UpdatePicker();
     } else {
       auto it = lb_policy_->child_policy_map_.find(response.target);
       if (it == lb_policy_->child_policy_map_.end()) {
@@ -594,13 +580,7 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
                                                      lb_policy_->channel_args_);
       } else {
         child_policy_wrapper_ = it->second->Ref();
-        Ref().release();
-        lb_policy_->work_serializer()->Run(
-            [this]() {
-              lb_policy_->UpdatePickerLocked();
-              Unref();
-            },
-            DEBUG_LOCATION);
+        lb_policy_->UpdatePicker();
       }
     }
     header_data_ = std::move(response.header_data);
@@ -631,13 +611,7 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
       Ref().release();
       grpc_timer_init(&backoff_timer_, backoff_time_, &backoff_timer_callback_);
     }
-    Ref().release();
-    lb_policy_->work_serializer()->Run(
-        [this]() {
-          lb_policy_->UpdatePickerLocked();
-          Unref();
-        },
-        DEBUG_LOCATION);
+    lb_policy_->UpdatePicker();
   }
   // move the entry to the end of the LRU list
   Cache& cache = lb_policy_->cache_;
@@ -654,13 +628,7 @@ void RlsLb::Cache::Entry::OnBackoffTimerLocked() {
   // Picks from wait_for_ready enabled RPCs may be queued when we entered the
   // backoff state. Here when the entry comes out of the backoff, the picker
   // needs to be updated so that the queued picks are reprocessed.
-  Ref().release();
-  lb_policy_->work_serializer()->Run(
-      [this]() {
-        lb_policy_->UpdatePickerLocked();
-        Unref();
-      },
-      DEBUG_LOCATION);
+  lb_policy_->UpdatePicker();
 }
 
 void RlsLb::Cache::Entry::OnBackoffTimer(void* arg, grpc_error* error) {
@@ -1131,13 +1099,7 @@ void RlsLb::ControlChannel::StateWatcher::OnReadyLocked(grpc_error* error) {
   if (channel_->is_shutdown_) return;
   channel_->lb_policy_->cache_.ResetAllBackoff();
   if (channel_->lb_policy_->config_->default_target().empty()) {
-    Ref().release();
-    channel_->lb_policy_->work_serializer()->Run(
-        [this]() {
-          channel_->lb_policy_->UpdatePickerLocked();
-          Unref();
-        },
-        DEBUG_LOCATION);
+    channel_->lb_policy_->UpdatePicker();
   }
 }
 
@@ -1265,13 +1227,7 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
   if (picker != nullptr) {
     wrapper_->picker_ = std::move(picker);
   }
-  wrapper_->Ref().release();
-  wrapper_->lb_policy_->work_serializer()->Run(
-      [this]() {
-        wrapper_->lb_policy_->UpdatePickerLocked();
-        wrapper_->Unref();
-      },
-      DEBUG_LOCATION);
+  wrapper_->lb_policy_->UpdatePicker();
 }
 
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::RequestReresolution() {
@@ -1353,7 +1309,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
       } else {
         default_child_policy_ = it->second->Ref();
       }
-      UpdatePickerLocked();
+      UpdatePicker();
     }
   }
   if (old_config == nullptr ||
@@ -1425,13 +1381,27 @@ bool RlsLb::MaybeMakeRlsCall(const RequestKey& key,
   return true;
 }
 
-void RlsLb::UpdatePickerLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_DEBUG, "[rlslb %p] update picker", this);
-  }
-  // TODO(mxyan): more sophisticated channel state inference?
-  channel_control_helper()->UpdateState(GRPC_CHANNEL_READY,
-                                        absl::make_unique<Picker>(Ref()));
+void RlsLb::UpdatePicker() {
+  Ref().release();
+  ExecCtx::Run(DEBUG_LOCATION,
+               GRPC_CLOSURE_CREATE(UpdatePickerCallback, this, grpc_schedule_on_exec_ctx),
+               GRPC_ERROR_NONE);
+}
+
+void RlsLb::UpdatePickerCallback(void* arg, grpc_error* error) {
+  RefCountedPtr<RlsLb> lb_policy(static_cast<RlsLb*>(arg));
+  lb_policy->work_serializer()->Run(
+      [lb_policy]() {
+        if (lb_policy->is_shutdown_) return;
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+          gpr_log(GPR_DEBUG, "[rlslb %p] update picker", lb_policy.get());
+        }
+        // TODO(mxyan): more sophisticated channel state inference?
+        lb_policy->channel_control_helper()->UpdateState(
+            GRPC_CHANNEL_READY,
+            absl::make_unique<Picker>(lb_policy->Ref()));
+      },
+      DEBUG_LOCATION);
 }
 
 RlsLb::KeyMapBuilder::KeyMapBuilder(const Json& config, grpc_error** error) {
