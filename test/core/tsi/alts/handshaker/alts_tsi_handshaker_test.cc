@@ -345,7 +345,7 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry = 
       grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
   GPR_ASSERT(peer_attributes_entry != nullptr);
-  while ( peer_attributes_entry != nullptr) {
+  while (peer_attributes_entry != nullptr) {
     upb_strview key = grpc_gcp_AltsContext_PeerAttributesEntry_key(
         const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
             peer_attributes_entry));
@@ -439,7 +439,7 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry = 
       grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
   GPR_ASSERT(peer_attributes_entry != nullptr);
-  while ( peer_attributes_entry != nullptr) {
+  while (peer_attributes_entry != nullptr) {
     upb_strview key = grpc_gcp_AltsContext_PeerAttributesEntry_key(
         const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
             peer_attributes_entry));

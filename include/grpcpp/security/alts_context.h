@@ -24,7 +24,6 @@
 
 #include <map>
 #include <memory>
-#include <map>
 
 struct grpc_gcp_AltsContext;
 
@@ -62,7 +61,7 @@ class AltsContext {
   std::string local_service_account_;
   grpc_security_level security_level_ = GRPC_SECURITY_NONE;
   RpcProtocolVersions peer_rpc_versions_ = {{0, 0}, {0, 0}};
-  std::map<std::string, std::string> peer_attributes_map;
+  std::map<std::string, std::string> peer_attributes_map_;
 };
 
 }  // namespace experimental

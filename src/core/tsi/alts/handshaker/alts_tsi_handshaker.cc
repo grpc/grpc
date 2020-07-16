@@ -301,7 +301,6 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Invalid local identity");
     return TSI_FAILED_PRECONDITION;
   }
-
   upb_strview local_service_account =
       grpc_gcp_Identity_service_account(local_identity);
   // We don't check if local service account is empty here
@@ -335,13 +334,11 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                                  local_service_account);
   grpc_gcp_AltsContext_set_peer_rpc_versions(
       context, const_cast<grpc_gcp_RpcProtocolVersions*>(peer_rpc_version));
-
   grpc_gcp_Identity* peer_identity = const_cast<grpc_gcp_Identity*>(identity);
   if (peer_identity == nullptr) {
     gpr_log(GPR_ERROR, "Null peer identity in ALTS context.");
     return TSI_FAILED_PRECONDITION;
   }
-
   if (grpc_gcp_Identity_has_attributes(
           const_cast<grpc_gcp_Identity*>(peer_identity))) {
     size_t iter = UPB_MAP_BEGIN;
@@ -357,7 +354,6 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
           grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
     }
   }
- 
   size_t serialized_ctx_length;
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
       context, context_arena.ptr(), &serialized_ctx_length);

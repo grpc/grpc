@@ -117,7 +117,7 @@ AltsContext::RpcProtocolVersions AltsContext::peer_rpc_versions() const {
 }
 
 std::map<std::string, std::string> AltsContext::peer_attributes() {
-  return peer_attributes_map;
+  return peer_attributes_map_;
 }
 
 }  // namespace experimental
