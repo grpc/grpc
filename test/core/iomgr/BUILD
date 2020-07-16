@@ -132,6 +132,9 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+    ],
 )
 
 grpc_cc_test(
