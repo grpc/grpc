@@ -22,8 +22,10 @@ import setuptools
 from distutils.unixccompiler import UnixCCompiler
 UnixCCompiler.src_extensions.append('.S')
 del UnixCCompiler
+from distutils.msvccompiler import MSVCCompiler
+MSVCCompiler.src_extensions.append('.asm')
+del MSVCCompiler
 
-from distutils import ccompiler
 from distutils import cygwinccompiler
 from distutils import extension as _extension
 from distutils import util
@@ -104,7 +106,7 @@ CLASSIFIERS = [
     'License :: OSI Approved :: Apache Software License',
 ]
 
-BUILD_WITH_BORING_SSL_ASM = os.environ.get('GRPC_BUILD_WITH_BORING_SSL_ASM', False)
+BUILD_WITH_BORING_SSL_ASM = os.environ.get('GRPC_BUILD_WITH_BORING_SSL_ASM', True)
 
 # Environment variable to determine whether or not the Cython extension should
 # *use* Cython or use the generated C files. Note that this requires the C files
@@ -274,16 +276,27 @@ DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
 NO_BORING_ASM = True
 if BUILD_WITH_BORING_SSL_ASM:
-   LINUX_X86_64 = "linux-x86_64"
-   if LINUX_X86_64 == util.get_platform():
-      asm_files = [f for f in grpc_core_dependencies.ASM_SOURCE_FILES
-                   if (LINUX_X86_64 in f or "hrss/asm" in f)
-                   and "test" not in f]
-      print(asm_files)
-      NO_BORING_ASM = False
-   else:
-       print("ASM Builds for BoringSSL currently only supported "
-             "on linux-x86-64. Found:", util.get_platform())
+    LINUX_X86_64 = "linux-x86_64"
+    LINUX_ARM = "linux-arm"
+    if LINUX_X86_64 == util.get_platform() or LINUX_ARM == util.get_platform():
+        platform = LINUX_X86_64 if LINUX_X86_64 == util.get_platform() else LINUX_ARM
+        asm_files = [f for f in grpc_core_dependencies.ASM_SOURCE_FILES
+                    if (platform in f or "hrss/asm" in f)
+                    and "test" not in f]
+        NO_BORING_ASM = False
+    elif "mac" in util.get_platform() and "x86_64" in util.get_platform():
+        asm_files = [f for f in grpc_core_dependencies.ASM_SOURCE_FILES
+                     if (LINUX_X86_64 in f or "hrss/asm" in f)
+                     and "test" not in f]
+        NO_BORING_ASM = False
+    elif "win" in sys.platform and '64bit' in platform.architecture()[0]:
+        asm_files = [f for f in grpc_core_dependencies.ASM_SOURCE_FILES
+                     if ("win-x86_64" in f)
+                     and "test" not in f]
+        NO_BORING_ASM = False
+    else:
+       print("ASM Builds for BoringSSL currently not supported on:",
+             util.get_platform())
 if NO_BORING_ASM:
    DEFINE_MACROS += (('OPENSSL_NO_ASM', 1),)
 
