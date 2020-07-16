@@ -804,8 +804,8 @@ def create_instance_template(gcp, name, network, source_image, machine_type,
     logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.instanceTemplates().insert(
         project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
-    wait_for_global_operation(gcp, result['name'])
     gcp.instance_template = GcpResource(config['name'], result['targetLink'])
+    wait_for_global_operation(gcp, result['name'])
 
 
 def add_instance_group(gcp, zone, name, size):
@@ -858,8 +858,8 @@ def create_health_check(gcp, name):
     logger.debug('Sending GCP request with body=%s', config)
     result = compute_to_use.healthChecks().insert(
         project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
-    wait_for_global_operation(gcp, result['name'])
     gcp.health_check = GcpResource(config['name'], result['targetLink'])
+    wait_for_global_operation(gcp, result['name'])
 
 
 def create_health_check_firewall_rule(gcp, name):
@@ -875,9 +875,9 @@ def create_health_check_firewall_rule(gcp, name):
     logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.firewalls().insert(
         project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
-    wait_for_global_operation(gcp, result['name'])
     gcp.health_check_firewall_rule = GcpResource(config['name'],
                                                  result['targetLink'])
+    wait_for_global_operation(gcp, result['name'])
 
 
 def add_backend_service(gcp, name):
@@ -897,9 +897,9 @@ def add_backend_service(gcp, name):
     logger.debug('Sending GCP request with body=%s', config)
     result = compute_to_use.backendServices().insert(
         project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
-    wait_for_global_operation(gcp, result['name'])
     backend_service = GcpResource(config['name'], result['targetLink'])
     gcp.backend_services.append(backend_service)
+    wait_for_global_operation(gcp, result['name'])
     return backend_service
 
 
@@ -919,8 +919,8 @@ def create_url_map(gcp, name, backend_service, host_name):
     logger.debug('Sending GCP request with body=%s', config)
     result = gcp.compute.urlMaps().insert(
         project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
-    wait_for_global_operation(gcp, result['name'])
     gcp.url_map = GcpResource(config['name'], result['targetLink'])
+    wait_for_global_operation(gcp, result['name'])
 
 
 def patch_url_map_host_rule_with_port(gcp, name, backend_service, host_name):
@@ -972,8 +972,8 @@ def create_target_proxy(gcp, name, validate_for_proxyless=True):
         result = gcp.compute.targetHttpProxies().insert(
             project=gcp.project,
             body=config).execute(num_retries=_GCP_API_RETRIES)
-    wait_for_global_operation(gcp, result['name'])
     gcp.target_proxy = GcpResource(config['name'], result['targetLink'])
+    wait_for_global_operation(gcp, result['name'])
 
 
 def create_global_forwarding_rule(gcp, name, potential_ports):
@@ -995,10 +995,10 @@ def create_global_forwarding_rule(gcp, name, potential_ports):
             result = compute_to_use.globalForwardingRules().insert(
                 project=gcp.project,
                 body=config).execute(num_retries=_GCP_API_RETRIES)
-            wait_for_global_operation(gcp, result['name'])
             gcp.global_forwarding_rule = GcpResource(config['name'],
                                                      result['targetLink'])
             gcp.service_port = port
+            wait_for_global_operation(gcp, result['name'])
             return
         except googleapiclient.errors.HttpError as http_error:
             logger.warning(
