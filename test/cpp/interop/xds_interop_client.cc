@@ -288,18 +288,20 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
 };
 
 void RunTestLoop(std::chrono::duration<double> duration_per_query) {
-  std::vector<absl::string_view> rpc_methods = absl::StrSplit(FLAGS_rpc, ',');
+  std::vector<absl::string_view> rpc_methods =
+      absl::StrSplit(FLAGS_rpc, ',', absl::SkipEmpty());
   // Store Metadata like
   // "EmptyCall:key1:value1,UnaryCall:key1:value1,UnaryCall:key2:value2" into a
   // map where the key is the RPC method and value is a vector of key:value
   // pairs. {EmptyCall, [{key1,value1}],
   //  UnaryCall, [{key1,value1}, {key2,value2}]}
   std::vector<absl::string_view> rpc_metadata =
-      absl::StrSplit(FLAGS_metadata, ',');
+      absl::StrSplit(FLAGS_metadata, ',', absl::SkipEmpty());
   std::map<std::string, std::vector<std::pair<std::string, std::string>>>
       metadata_map;
   for (auto& data : rpc_metadata) {
-    std::vector<absl::string_view> metadata = absl::StrSplit(data, ':');
+    std::vector<absl::string_view> metadata =
+        absl::StrSplit(data, ':', absl::SkipEmpty());
     GPR_ASSERT(metadata.size() == 3);
     metadata_map[std::string(metadata[0])].push_back(
         {std::string(metadata[1]), std::string(metadata[2])});
