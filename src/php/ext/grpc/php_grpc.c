@@ -285,122 +285,259 @@ PHP_MINIT_FUNCTION(grpc) {
   REGISTER_INI_ENTRIES();
 
   /* Register call error constants */
+  /** everything went ok */
   REGISTER_LONG_CONSTANT("Grpc\\CALL_OK", GRPC_CALL_OK,
                          CONST_CS | CONST_PERSISTENT);
+  /** something failed, we don't know what */
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR", GRPC_CALL_ERROR,
                          CONST_CS | CONST_PERSISTENT);
+  /** this method is not available on the server */
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_NOT_ON_SERVER",
                          GRPC_CALL_ERROR_NOT_ON_SERVER,
                          CONST_CS | CONST_PERSISTENT);
+  /** this method is not available on the client */
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_NOT_ON_CLIENT",
                          GRPC_CALL_ERROR_NOT_ON_CLIENT,
                          CONST_CS | CONST_PERSISTENT);
+  /** this method must be called before invoke */
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_ALREADY_INVOKED",
                          GRPC_CALL_ERROR_ALREADY_INVOKED,
                          CONST_CS | CONST_PERSISTENT);
+  /** this method must be called after invoke */
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_NOT_INVOKED",
                          GRPC_CALL_ERROR_NOT_INVOKED,
                          CONST_CS | CONST_PERSISTENT);
+  /** this call is already finished
+      (writes_done or write_status has already been called) */
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_ALREADY_FINISHED",
                          GRPC_CALL_ERROR_ALREADY_FINISHED,
                          CONST_CS | CONST_PERSISTENT);
+  /** there is already an outstanding read/write operation on the call */
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_TOO_MANY_OPERATIONS",
                          GRPC_CALL_ERROR_TOO_MANY_OPERATIONS,
                          CONST_CS | CONST_PERSISTENT);
+  /** the flags value was illegal for this call */
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_INVALID_FLAGS",
                          GRPC_CALL_ERROR_INVALID_FLAGS,
                          CONST_CS | CONST_PERSISTENT);
 
   /* Register flag constants */
+  /** Hint that the write may be buffered and need not go out on the wire
+      immediately. GRPC is free to buffer the message until the next non-buffered
+      write, or until writes_done, but it need not buffer completely or at all. */
   REGISTER_LONG_CONSTANT("Grpc\\WRITE_BUFFER_HINT", GRPC_WRITE_BUFFER_HINT,
                          CONST_CS | CONST_PERSISTENT);
+  /** Force compression to be disabled for a particular write
+      (start_write/add_metadata). Illegal on invoke/accept. */
   REGISTER_LONG_CONSTANT("Grpc\\WRITE_NO_COMPRESS", GRPC_WRITE_NO_COMPRESS,
                          CONST_CS | CONST_PERSISTENT);
 
   /* Register status constants */
+  /** Not an error; returned on success */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_OK", GRPC_STATUS_OK,
                          CONST_CS | CONST_PERSISTENT);
+  /** The operation was cancelled (typically by the caller). */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_CANCELLED", GRPC_STATUS_CANCELLED,
                          CONST_CS | CONST_PERSISTENT);
+  /** Unknown error.  An example of where this error may be returned is
+      if a Status value received from another address space belongs to
+      an error-space that is not known in this address space.  Also
+      errors raised by APIs that do not return enough error information
+      may be converted to this error. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_UNKNOWN", GRPC_STATUS_UNKNOWN,
                          CONST_CS | CONST_PERSISTENT);
+  /** Client specified an invalid argument.  Note that this differs
+      from FAILED_PRECONDITION.  INVALID_ARGUMENT indicates arguments
+      that are problematic regardless of the state of the system
+      (e.g., a malformed file name). */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_INVALID_ARGUMENT",
                          GRPC_STATUS_INVALID_ARGUMENT,
                          CONST_CS | CONST_PERSISTENT);
+  /** Deadline expired before operation could complete.  For operations
+      that change the state of the system, this error may be returned
+      even if the operation has completed successfully.  For example, a
+      successful response from a server could have been delayed long
+      enough for the deadline to expire. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_DEADLINE_EXCEEDED",
                          GRPC_STATUS_DEADLINE_EXCEEDED,
                          CONST_CS | CONST_PERSISTENT);
+  /** Some requested entity (e.g., file or directory) was not found. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_NOT_FOUND", GRPC_STATUS_NOT_FOUND,
                          CONST_CS | CONST_PERSISTENT);
+  /** Some entity that we attempted to create (e.g., file or directory)
+      already exists. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_ALREADY_EXISTS",
                          GRPC_STATUS_ALREADY_EXISTS,
                          CONST_CS | CONST_PERSISTENT);
+  /** The caller does not have permission to execute the specified
+      operation.  PERMISSION_DENIED must not be used for rejections
+      caused by exhausting some resource (use RESOURCE_EXHAUSTED
+      instead for those errors).  PERMISSION_DENIED must not be
+      used if the caller can not be identified (use UNAUTHENTICATED
+      instead for those errors). */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_PERMISSION_DENIED",
                          GRPC_STATUS_PERMISSION_DENIED,
                          CONST_CS | CONST_PERSISTENT);
+  /** The request does not have valid authentication credentials for the
+      operation. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_UNAUTHENTICATED",
                          GRPC_STATUS_UNAUTHENTICATED,
                          CONST_CS | CONST_PERSISTENT);
+  /** Some resource has been exhausted, perhaps a per-user quota, or
+      perhaps the entire file system is out of space. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_RESOURCE_EXHAUSTED",
                          GRPC_STATUS_RESOURCE_EXHAUSTED,
                          CONST_CS | CONST_PERSISTENT);
+  /** Operation was rejected because the system is not in a state
+      required for the operation's execution.  For example, directory
+      to be deleted may be non-empty, an rmdir operation is applied to
+      a non-directory, etc.
+
+      A litmus test that may help a service implementor in deciding
+      between FAILED_PRECONDITION, ABORTED, and UNAVAILABLE:
+       (a) Use UNAVAILABLE if the client can retry just the failing call.
+       (b) Use ABORTED if the client should retry at a higher-level
+           (e.g., restarting a read-modify-write sequence).
+       (c) Use FAILED_PRECONDITION if the client should not retry until
+           the system state has been explicitly fixed.  E.g., if an "rmdir"
+           fails because the directory is non-empty, FAILED_PRECONDITION
+           should be returned since the client should not retry unless
+           they have first fixed up the directory by deleting files from it.
+       (d) Use FAILED_PRECONDITION if the client performs conditional
+           REST Get/Update/Delete on a resource and the resource on the
+           server does not match the condition. E.g., conflicting
+           read-modify-write on the same resource. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_FAILED_PRECONDITION",
                          GRPC_STATUS_FAILED_PRECONDITION,
                          CONST_CS | CONST_PERSISTENT);
+  /** The operation was aborted, typically due to a concurrency issue
+      like sequencer check failures, transaction aborts, etc.
+
+      See litmus test above for deciding between FAILED_PRECONDITION,
+      ABORTED, and UNAVAILABLE. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_ABORTED", GRPC_STATUS_ABORTED,
                          CONST_CS | CONST_PERSISTENT);
+  /** Operation was attempted past the valid range.  E.g., seeking or
+      reading past end of file.
+
+      Unlike INVALID_ARGUMENT, this error indicates a problem that may
+      be fixed if the system state changes. For example, a 32-bit file
+      system will generate INVALID_ARGUMENT if asked to read at an
+      offset that is not in the range [0,2^32-1], but it will generate
+      OUT_OF_RANGE if asked to read from an offset past the current
+      file size.
+
+      There is a fair bit of overlap between FAILED_PRECONDITION and
+      OUT_OF_RANGE.  We recommend using OUT_OF_RANGE (the more specific
+      error) when it applies so that callers who are iterating through
+      a space can easily look for an OUT_OF_RANGE error to detect when
+      they are done. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_OUT_OF_RANGE",
                          GRPC_STATUS_OUT_OF_RANGE,
                          CONST_CS | CONST_PERSISTENT);
+  /** Operation is not implemented or not supported/enabled in this service. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_UNIMPLEMENTED",
                          GRPC_STATUS_UNIMPLEMENTED,
                          CONST_CS | CONST_PERSISTENT);
+  /** Internal errors.  Means some invariants expected by underlying
+      system has been broken.  If you see one of these errors,
+      something is very broken. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_INTERNAL", GRPC_STATUS_INTERNAL,
                          CONST_CS | CONST_PERSISTENT);
+  /** The service is currently unavailable.  This is a most likely a
+      transient condition and may be corrected by retrying with
+      a backoff. Note that it is not always safe to retry non-idempotent
+      operations.
+
+      WARNING: Although data MIGHT not have been transmitted when this
+      status occurs, there is NOT A GUARANTEE that the server has not seen
+      anything. So in general it is unsafe to retry on this status code
+      if the call is non-idempotent.
+
+      See litmus test above for deciding between FAILED_PRECONDITION,
+      ABORTED, and UNAVAILABLE. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_UNAVAILABLE", GRPC_STATUS_UNAVAILABLE,
                          CONST_CS | CONST_PERSISTENT);
+  /** Unrecoverable data loss or corruption. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_DATA_LOSS", GRPC_STATUS_DATA_LOSS,
                          CONST_CS | CONST_PERSISTENT);
 
   /* Register op type constants */
+  /** Send initial metadata: one and only one instance MUST be sent for each
+      call, unless the call was cancelled - in which case this can be skipped.
+      This op completes after all bytes of metadata have been accepted by
+      outgoing flow control. */
   REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_INITIAL_METADATA",
                          GRPC_OP_SEND_INITIAL_METADATA,
                          CONST_CS | CONST_PERSISTENT);
+  /** Send a message: 0 or more of these operations can occur for each call.
+      This op completes after all bytes for the message have been accepted by
+      outgoing flow control. */
   REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_MESSAGE",
                          GRPC_OP_SEND_MESSAGE,
                          CONST_CS | CONST_PERSISTENT);
+  /** Send a close from the client: one and only one instance MUST be sent from
+      the client, unless the call was cancelled - in which case this can be
+      skipped. This op completes after all bytes for the call
+      (including the close) have passed outgoing flow control. */
   REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_CLOSE_FROM_CLIENT",
                          GRPC_OP_SEND_CLOSE_FROM_CLIENT,
                          CONST_CS | CONST_PERSISTENT);
+  /** Send status from the server: one and only one instance MUST be sent from
+      the server unless the call was cancelled - in which case this can be
+      skipped. This op completes after all bytes for the call
+      (including the status) have passed outgoing flow control. */
   REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_STATUS_FROM_SERVER",
                          GRPC_OP_SEND_STATUS_FROM_SERVER,
                          CONST_CS | CONST_PERSISTENT);
+  /** Receive initial metadata: one and only one MUST be made on the client,
+      must not be made on the server.
+      This op completes after all initial metadata has been read from the
+      peer. */
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_INITIAL_METADATA",
                          GRPC_OP_RECV_INITIAL_METADATA,
                          CONST_CS | CONST_PERSISTENT);
+  /** Receive a message: 0 or more of these operations can occur for each call.
+      This op completes after all bytes of the received message have been
+      read, or after a half-close has been received on this call. */
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_MESSAGE",
                          GRPC_OP_RECV_MESSAGE,
                          CONST_CS | CONST_PERSISTENT);
+  /** Receive status on the client: one and only one must be made on the client.
+      This operation always succeeds, meaning ops paired with this operation
+      will also appear to succeed, even though they may not have. In that case
+      the status will indicate some failure.
+      This op completes after all activity on the call has completed. */
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_STATUS_ON_CLIENT",
                          GRPC_OP_RECV_STATUS_ON_CLIENT,
                          CONST_CS | CONST_PERSISTENT);
+  /** Receive close on the server: one and only one must be made on the
+      server. This op completes after the close has been received by the
+      server. This operation always succeeds, meaning ops paired with
+      this operation will also appear to succeed, even though they may not
+      have. */
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_CLOSE_ON_SERVER",
                          GRPC_OP_RECV_CLOSE_ON_SERVER,
                          CONST_CS | CONST_PERSISTENT);
 
   /* Register connectivity state constants */
+  /** channel is idle */
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_IDLE",
                          GRPC_CHANNEL_IDLE,
                          CONST_CS | CONST_PERSISTENT);
+  /** channel is connecting */
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_CONNECTING",
                          GRPC_CHANNEL_CONNECTING,
                          CONST_CS | CONST_PERSISTENT);
+  /** channel is ready for work */
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_READY",
                          GRPC_CHANNEL_READY,
                          CONST_CS | CONST_PERSISTENT);
+  /** channel has seen a failure but expects to recover */
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_TRANSIENT_FAILURE",
                          GRPC_CHANNEL_TRANSIENT_FAILURE,
                          CONST_CS | CONST_PERSISTENT);
+  /** channel has seen a failure that it cannot recover from */
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_FATAL_FAILURE",
                          GRPC_CHANNEL_SHUTDOWN,
                          CONST_CS | CONST_PERSISTENT);

@@ -220,8 +220,8 @@ class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
 
 class TestScenario {
  public:
-  TestScenario(bool inproc_stub, const grpc::string& creds_type, bool hcs,
-               const grpc::string& content)
+  TestScenario(bool inproc_stub, const std::string& creds_type, bool hcs,
+               const std::string& content)
       : inproc(inproc_stub),
         health_check_service(hcs),
         credentials_type(creds_type),
@@ -229,8 +229,8 @@ class TestScenario {
   void Log() const;
   bool inproc;
   bool health_check_service;
-  const grpc::string credentials_type;
-  const grpc::string message_content;
+  const std::string credentials_type;
+  const std::string message_content;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -927,9 +927,9 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
   send_request.set_message(GetParam().message_content);
-  std::pair<grpc::string, grpc::string> meta1("key1", "val1");
-  std::pair<grpc::string, grpc::string> meta2("key2", "val2");
-  std::pair<grpc::string, grpc::string> meta3("g.r.d-bin", "xyz");
+  std::pair<std::string, std::string> meta1("key1", "val1");
+  std::pair<std::string, std::string> meta2("key2", "val2");
+  std::pair<std::string, std::string> meta3("g.r.d-bin", "xyz");
   cli_ctx.AddMetadata(meta1.first, meta1.second);
   cli_ctx.AddMetadata(meta2.first, meta2.second);
   cli_ctx.AddMetadata(meta3.first, meta3.second);
@@ -973,8 +973,8 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
   send_request.set_message(GetParam().message_content);
-  std::pair<grpc::string, grpc::string> meta1("key1", "val1");
-  std::pair<grpc::string, grpc::string> meta2("key2", "val2");
+  std::pair<std::string, std::string> meta1("key1", "val1");
+  std::pair<std::string, std::string> meta2("key2", "val2");
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
@@ -1016,8 +1016,8 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreaming) {
   ServerContext srv_ctx;
   ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
 
-  std::pair<::grpc::string, ::grpc::string> meta1("key1", "val1");
-  std::pair<::grpc::string, ::grpc::string> meta2("key2", "val2");
+  std::pair<::std::string, ::std::string> meta1("key1", "val1");
+  std::pair<::std::string, ::std::string> meta2("key2", "val2");
 
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
@@ -1071,8 +1071,8 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreamingImplicit) {
   ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
 
   send_request.set_message(GetParam().message_content);
-  std::pair<::grpc::string, ::grpc::string> meta1("key1", "val1");
-  std::pair<::grpc::string, ::grpc::string> meta2("key2", "val2");
+  std::pair<::std::string, ::std::string> meta1("key1", "val1");
+  std::pair<::std::string, ::std::string> meta2("key2", "val2");
 
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
@@ -1126,8 +1126,8 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
   send_request.set_message(GetParam().message_content);
-  std::pair<grpc::string, grpc::string> meta1("key1", "val1");
-  std::pair<grpc::string, grpc::string> meta2("key2", "val2");
+  std::pair<std::string, std::string> meta1("key1", "val1");
+  std::pair<std::string, std::string> meta2("key2", "val2");
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
@@ -1171,19 +1171,19 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
   send_request.set_message(GetParam().message_content);
-  std::pair<grpc::string, grpc::string> meta1("key1", "val1");
-  std::pair<grpc::string, grpc::string> meta2(
+  std::pair<std::string, std::string> meta1("key1", "val1");
+  std::pair<std::string, std::string> meta2(
       "key2-bin",
-      grpc::string("\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc", 13));
-  std::pair<grpc::string, grpc::string> meta3("key3", "val3");
-  std::pair<grpc::string, grpc::string> meta6(
+      std::string("\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc", 13));
+  std::pair<std::string, std::string> meta3("key3", "val3");
+  std::pair<std::string, std::string> meta6(
       "key4-bin",
-      grpc::string("\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
-                   14));
-  std::pair<grpc::string, grpc::string> meta5("key5", "val5");
-  std::pair<grpc::string, grpc::string> meta4(
+      std::string("\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
+                  14));
+  std::pair<std::string, std::string> meta5("key5", "val5");
+  std::pair<std::string, std::string> meta4(
       "key6-bin",
-      grpc::string(
+      std::string(
           "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee", 15));
 
   cli_ctx.AddMetadata(meta1.first, meta1.second);
@@ -1403,7 +1403,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       EchoRequest send_request;
       // Client sends 3 messages (tags 3, 4 and 5)
       for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
-        send_request.set_message("Ping " + grpc::to_string(tag_idx));
+        send_request.set_message("Ping " + std::to_string(tag_idx));
         cli_stream->Write(send_request, tag(tag_idx));
         Verifier()
             .Expect(tag_idx, expected_client_cq_result)
@@ -1588,7 +1588,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // Server sends three messages (tags 3, 4 and 5)
     // But if want_done tag is true, we might also see tag 11
     for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
-      send_response.set_message("Pong " + grpc::to_string(tag_idx));
+      send_response.set_message("Pong " + std::to_string(tag_idx));
       srv_stream.Write(send_response, tag(tag_idx));
       // Note that we'll add something to the verifier and verify that
       // something was seen, but it might be tag 11 and not what we
@@ -1870,8 +1870,8 @@ TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelAfter) {
 std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
                                               bool test_message_size_limit) {
   std::vector<TestScenario> scenarios;
-  std::vector<grpc::string> credentials_types;
-  std::vector<grpc::string> messages;
+  std::vector<std::string> credentials_types;
+  std::vector<std::string> messages;
 
   auto insec_ok = [] {
     // Only allow insecure credentials type when it is registered with the
@@ -1893,7 +1893,7 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
   if (test_message_size_limit) {
     for (size_t k = 1; k < GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH / 1024;
          k *= 32) {
-      grpc::string big_msg;
+      std::string big_msg;
       for (size_t i = 0; i < k * 1024; ++i) {
         char c = 'a' + (i % 26);
         big_msg += c;
@@ -1905,7 +1905,7 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
     // (causes timeouts) and doesn't really increase the signal from tests.
     // Reserve 100 bytes for other fields of the message proto.
     messages.push_back(
-        grpc::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
+        std::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
 #endif
   }
 

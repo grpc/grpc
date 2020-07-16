@@ -172,7 +172,7 @@ module GRPC
       i = @interceptors.pop
       return yield unless i
 
-      i.send(type, args) do
+      i.send(type, **args) do
         if @interceptors.any?
           intercept!(type, args) do
             yield

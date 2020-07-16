@@ -25,7 +25,7 @@ static const upb_msglayout_field grpc_gcp_AltsContext__fields[7] = {
   {4, UPB_SIZE(24, 40), 0, 0, 9, 1},
   {5, UPB_SIZE(32, 56), 0, 0, 9, 1},
   {6, UPB_SIZE(40, 72), 0, 1, 11, 1},
-  {7, UPB_SIZE(44, 80), 0, 0, 11, 3},
+  {7, UPB_SIZE(44, 80), 0, 0, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout grpc_gcp_AltsContext_msginit = {

@@ -23,6 +23,8 @@
 
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
 
+#include "upb/upb.hpp"
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_internal.h"

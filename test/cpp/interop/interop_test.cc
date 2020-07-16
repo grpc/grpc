@@ -25,10 +25,14 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <string>
+#include <vector>
+
+#include "absl/strings/str_cat.h"
+
 #include <gflags/gflags.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include "test/core/util/port.h"
 #include "test/cpp/util/test_config.h"
 
@@ -42,15 +46,9 @@ int test_client(const char* root, const char* host, int port) {
   pid_t cli;
   cli = fork();
   if (cli == 0) {
-    char* binary_path;
-    char* port_arg;
-    gpr_asprintf(&binary_path, "%s/interop_client", root);
-    gpr_asprintf(&port_arg, "--server_port=%d", port);
-
-    execl(binary_path, binary_path, port_arg, NULL);
-
-    gpr_free(binary_path);
-    gpr_free(port_arg);
+    std::string binary_path = absl::StrCat(root, "/interop_client");
+    std::string port_arg = absl::StrCat("--server_port=", port);
+    execl(binary_path.c_str(), binary_path.c_str(), port_arg.c_str(), NULL);
     return 1;
   }
   /* wait for client */
@@ -88,19 +86,16 @@ int main(int argc, char** argv) {
   /* start the server */
   svr = fork();
   if (svr == 0) {
-    const size_t num_args = 3 + !FLAGS_extra_server_flags.empty();
-    char** args = (char**)gpr_malloc(sizeof(char*) * num_args);
-    memset(args, 0, sizeof(char*) * num_args);
-    gpr_asprintf(&args[0], "%s/interop_server", root);
-    gpr_asprintf(&args[1], "--port=%d", port);
+    std::vector<char*> args;
+    std::string command = absl::StrCat(root, "/interop_server");
+    args.push_back(const_cast<char*>(command.c_str()));
+    std::string port_arg = absl::StrCat("--port=", port);
+    args.push_back(const_cast<char*>(port_arg.c_str()));
     if (!FLAGS_extra_server_flags.empty()) {
-      args[2] = gpr_strdup(FLAGS_extra_server_flags.c_str());
+      args.push_back(const_cast<char*>(FLAGS_extra_server_flags.c_str()));
     }
-    execv(args[0], args);
-    for (size_t i = 0; i < num_args - 1; ++i) {
-      gpr_free(args[i]);
-    }
-    gpr_free(args);
+    args.push_back(nullptr);
+    execv(args[0], args.data());
     return 1;
   }
   /* wait a little */

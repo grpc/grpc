@@ -22,9 +22,10 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 
@@ -56,12 +57,10 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
   }
   sc = creds->create_security_connector();
   if (sc == nullptr) {
-    char* msg;
-    gpr_asprintf(&msg,
-                 "Unable to create secure server with credentials of type %s.",
-                 creds->type());
-    err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+    err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unable to create secure server with credentials of type ",
+                     creds->type())
+            .c_str());
     goto done;
   }
   // Create channel args.

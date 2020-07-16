@@ -20,10 +20,13 @@
 
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
@@ -728,7 +731,7 @@ static void create_grpc_frame(grpc_slice_buffer* write_slice_buffer,
  Convert metadata in a format that Cronet can consume
 */
 static void convert_metadata_to_cronet_headers(
-    grpc_metadata_batch* metadata, const char* host, char** pp_url,
+    grpc_metadata_batch* metadata, const char* host, std::string* pp_url,
     bidirectional_stream_header** pp_headers, size_t* p_num_headers,
     const char** method) {
   grpc_linked_mdelem* curr = metadata->list.head;
@@ -789,7 +792,7 @@ static void convert_metadata_to_cronet_headers(
     }
     if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_PATH)) {
       /* Create URL by appending :path value to the hostname */
-      gpr_asprintf(pp_url, "https://%s%s", host, value);
+      *pp_url = absl::StrCat("https://", host, value);
       gpr_free(key);
       gpr_free(value);
       continue;
@@ -1051,7 +1054,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       bidirectional_stream_disable_auto_flush(s->cbs, true);
       bidirectional_stream_delay_request_headers_until_flush(s->cbs, true);
     }
-    char* url = nullptr;
+    std::string url;
     const char* method = "POST";
     s->header_array.headers = nullptr;
     convert_metadata_to_cronet_headers(
@@ -1059,11 +1062,10 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
         t->host, &url, &s->header_array.headers, &s->header_array.count,
         &method);
     s->header_array.capacity = s->header_array.count;
-    CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs, url);
-    bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array, false);
-    if (url) {
-      gpr_free(url);
-    }
+    CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs,
+               url.c_str());
+    bidirectional_stream_start(s->cbs, url.c_str(), 0, method, &s->header_array,
+                               false);
     unsigned int header_index;
     for (header_index = 0; header_index < s->header_array.count;
          header_index++) {

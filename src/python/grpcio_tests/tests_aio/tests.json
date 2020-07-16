@@ -30,6 +30,7 @@
   "unit.done_callback_test.TestDoneCallback",
   "unit.init_test.TestChannel",
   "unit.metadata_test.TestMetadata",
+  "unit.outside_init_test.TestOutsideInit",
   "unit.secure_call_test.TestStreamStreamSecureCall",
   "unit.secure_call_test.TestUnaryStreamSecureCall",
   "unit.secure_call_test.TestUnaryUnarySecureCall",

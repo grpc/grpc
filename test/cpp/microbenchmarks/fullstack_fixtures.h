@@ -65,7 +65,7 @@ class BaseFixture : public TrackCounters {};
 class FullstackFixture : public BaseFixture {
  public:
   FullstackFixture(Service* service, const FixtureConfiguration& config,
-                   const grpc::string& address) {
+                   const std::string& address) {
     ServerBuilder b;
     if (address.length() > 0) {
       b.AddListeningPort(address, InsecureServerCredentials());
@@ -120,7 +120,7 @@ class TCP : public FullstackFixture {
  private:
   int port_;
 
-  static grpc::string MakeAddress(int* port) {
+  static std::string MakeAddress(int* port) {
     *port = grpc_pick_unused_port_or_die();
     std::stringstream addr;
     addr << "localhost:" << *port;
@@ -139,7 +139,7 @@ class UDS : public FullstackFixture {
  private:
   int port_;
 
-  static grpc::string MakeAddress(int* port) {
+  static std::string MakeAddress(int* port) {
     *port = grpc_pick_unused_port_or_die();  // just for a unique id - not a
                                              // real port
     std::stringstream addr;

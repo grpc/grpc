@@ -44,9 +44,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <string>
 #include <vector>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -150,13 +152,11 @@ GrpcUdpListener::GrpcUdpListener(grpc_udp_server* server, int fd,
       server_(server),
       orphan_notified_(false),
       already_shutdown_(false) {
-  char* name;
   std::string addr_str = grpc_sockaddr_to_string(addr, true);
-  gpr_asprintf(&name, "udp-server-listener:%s", addr_str.c_str());
-  emfd_ = grpc_fd_create(fd, name, true);
+  std::string name = absl::StrCat("udp-server-listener:", addr_str);
+  emfd_ = grpc_fd_create(fd, name.c_str(), true);
   memcpy(&addr_, addr, sizeof(grpc_resolved_address));
   GPR_ASSERT(emfd_);
-  gpr_free(name);
   gpr_mu_init(&mutex_);
 }
 

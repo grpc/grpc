@@ -102,7 +102,7 @@ class FakeClient {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
-    grpc::string msg("hello");
+    std::string msg("hello");
 
     std::unique_ptr<ClientReaderWriterInterface<EchoRequest, EchoResponse>>
         stream = stub_->BidiStream(&context);

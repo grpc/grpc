@@ -21,9 +21,11 @@
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_update, grpc_transport_one_way_stats* stats) {
@@ -54,12 +56,10 @@ grpc_slice grpc_chttp2_window_update_create(
 grpc_error* grpc_chttp2_window_update_parser_begin_frame(
     grpc_chttp2_window_update_parser* parser, uint32_t length, uint8_t flags) {
   if (flags || length != 4) {
-    char* msg;
-    gpr_asprintf(&msg, "invalid window update: length=%d, flags=%02x", length,
-                 flags);
-    grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return err;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrFormat("invalid window update: length=%d, flags=%02x", length,
+                        flags)
+            .c_str());
   }
   parser->byte = 0;
   parser->amount = 0;
@@ -91,11 +91,8 @@ grpc_error* grpc_chttp2_window_update_parser_parse(void* parser,
     // top bit is reserved and must be ignored.
     uint32_t received_update = p->amount & 0x7fffffffu;
     if (received_update == 0) {
-      char* msg;
-      gpr_asprintf(&msg, "invalid window update bytes: %d", p->amount);
-      grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-      gpr_free(msg);
-      return err;
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("invalid window update bytes: ", p->amount).c_str());
     }
     GPR_ASSERT(is_last);
 

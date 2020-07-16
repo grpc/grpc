@@ -19,8 +19,11 @@
 #include <cinttypes>
 #include <fstream>
 #include <memory>
+#include <string>
 #include <type_traits>
 #include <utility>
+
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -118,7 +121,7 @@ InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
       do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
 
 bool InteropClient::AssertStatusOk(const Status& s,
-                                   const grpc::string& optional_debug_string) {
+                                   const std::string& optional_debug_string) {
   if (s.ok()) {
     return true;
   }
@@ -130,9 +133,8 @@ bool InteropClient::AssertStatusOk(const Status& s,
   return AssertStatusCode(s, StatusCode::OK, optional_debug_string);
 }
 
-bool InteropClient::AssertStatusCode(
-    const Status& s, StatusCode expected_code,
-    const grpc::string& optional_debug_string) {
+bool InteropClient::AssertStatusCode(const Status& s, StatusCode expected_code,
+                                     const std::string& optional_debug_string) {
   if (s.error_code() == expected_code) {
     return true;
   }
@@ -180,7 +182,7 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
   ClientContext context;
   InteropClientContextInspector inspector(context);
   request->set_response_size(kLargeResponseSize);
-  grpc::string payload(kLargeRequestSize, '\0');
+  std::string payload(kLargeRequestSize, '\0');
   request->mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
   if (request->has_expect_compressed()) {
     if (request->expect_compressed().value()) {
@@ -199,13 +201,13 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
 
   // Payload related checks.
   GPR_ASSERT(response->payload().body() ==
-             grpc::string(kLargeResponseSize, '\0'));
+             std::string(kLargeResponseSize, '\0'));
   return true;
 }
 
 bool InteropClient::DoComputeEngineCreds(
-    const grpc::string& default_service_account,
-    const grpc::string& oauth_scope) {
+    const std::string& default_service_account,
+    const std::string& oauth_scope) {
   gpr_log(GPR_DEBUG,
           "Sending a large unary rpc with compute engine credentials ...");
   SimpleRequest request;
@@ -223,13 +225,13 @@ bool InteropClient::DoComputeEngineCreds(
   GPR_ASSERT(response.username().c_str() == default_service_account);
   GPR_ASSERT(!response.oauth_scope().empty());
   const char* oauth_scope_str = response.oauth_scope().c_str();
-  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
+  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != std::string::npos);
   gpr_log(GPR_DEBUG, "Large unary with compute engine creds done.");
   return true;
 }
 
-bool InteropClient::DoOauth2AuthToken(const grpc::string& username,
-                                      const grpc::string& oauth_scope) {
+bool InteropClient::DoOauth2AuthToken(const std::string& username,
+                                      const std::string& oauth_scope) {
   gpr_log(GPR_DEBUG,
           "Sending a unary rpc with raw oauth2 access token credentials ...");
   SimpleRequest request;
@@ -249,12 +251,12 @@ bool InteropClient::DoOauth2AuthToken(const grpc::string& username,
   GPR_ASSERT(!response.oauth_scope().empty());
   GPR_ASSERT(username == response.username());
   const char* oauth_scope_str = response.oauth_scope().c_str();
-  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
+  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != std::string::npos);
   gpr_log(GPR_DEBUG, "Unary with oauth2 access token credentials done.");
   return true;
 }
 
-bool InteropClient::DoPerRpcCreds(const grpc::string& json_key) {
+bool InteropClient::DoPerRpcCreds(const std::string& json_key) {
   gpr_log(GPR_DEBUG, "Sending a unary rpc with per-rpc JWT access token ...");
   SimpleRequest request;
   SimpleResponse response;
@@ -274,12 +276,12 @@ bool InteropClient::DoPerRpcCreds(const grpc::string& json_key) {
   }
 
   GPR_ASSERT(!response.username().empty());
-  GPR_ASSERT(json_key.find(response.username()) != grpc::string::npos);
+  GPR_ASSERT(json_key.find(response.username()) != std::string::npos);
   gpr_log(GPR_DEBUG, "Unary with per-rpc JWT access token done.");
   return true;
 }
 
-bool InteropClient::DoJwtTokenCreds(const grpc::string& username) {
+bool InteropClient::DoJwtTokenCreds(const std::string& username) {
   gpr_log(GPR_DEBUG,
           "Sending a large unary rpc with JWT token credentials ...");
   SimpleRequest request;
@@ -291,13 +293,13 @@ bool InteropClient::DoJwtTokenCreds(const grpc::string& username) {
   }
 
   GPR_ASSERT(!response.username().empty());
-  GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
+  GPR_ASSERT(username.find(response.username()) != std::string::npos);
   gpr_log(GPR_DEBUG, "Large unary with JWT token creds done.");
   return true;
 }
 
 bool InteropClient::DoGoogleDefaultCredentials(
-    const grpc::string& default_service_account) {
+    const std::string& default_service_account) {
   gpr_log(GPR_DEBUG,
           "Sending a large unary rpc with GoogleDefaultCredentials...");
   SimpleRequest request;
@@ -336,7 +338,7 @@ bool InteropClient::DoClientCompressedUnary() {
   probe_req.mutable_expect_compressed()->set_value(true);  // lies!
 
   probe_req.set_response_size(kLargeResponseSize);
-  probe_req.mutable_payload()->set_body(grpc::string(kLargeRequestSize, '\0'));
+  probe_req.mutable_payload()->set_body(std::string(kLargeRequestSize, '\0'));
 
   gpr_log(GPR_DEBUG, "Sending probe for compressed unary request.");
   const Status s =
@@ -351,22 +353,22 @@ bool InteropClient::DoClientCompressedUnary() {
 
   const std::vector<bool> compressions = {true, false};
   for (size_t i = 0; i < compressions.size(); i++) {
-    char* log_suffix;
-    gpr_asprintf(&log_suffix, "(compression=%s)",
-                 compressions[i] ? "true" : "false");
+    std::string log_suffix =
+        absl::StrFormat("(compression=%s)", compressions[i] ? "true" : "false");
 
-    gpr_log(GPR_DEBUG, "Sending compressed unary request %s.", log_suffix);
+    gpr_log(GPR_DEBUG, "Sending compressed unary request %s.",
+            log_suffix.c_str());
     SimpleRequest request;
     SimpleResponse response;
     request.mutable_expect_compressed()->set_value(compressions[i]);
     if (!PerformLargeUnary(&request, &response, UnaryCompressionChecks)) {
-      gpr_log(GPR_ERROR, "Compressed unary request failed %s", log_suffix);
-      gpr_free(log_suffix);
+      gpr_log(GPR_ERROR, "Compressed unary request failed %s",
+              log_suffix.c_str());
       return false;
     }
 
-    gpr_log(GPR_DEBUG, "Compressed unary request failed %s", log_suffix);
-    gpr_free(log_suffix);
+    gpr_log(GPR_DEBUG, "Compressed unary request failed %s",
+            log_suffix.c_str());
   }
 
   return true;
@@ -375,24 +377,23 @@ bool InteropClient::DoClientCompressedUnary() {
 bool InteropClient::DoServerCompressedUnary() {
   const std::vector<bool> compressions = {true, false};
   for (size_t i = 0; i < compressions.size(); i++) {
-    char* log_suffix;
-    gpr_asprintf(&log_suffix, "(compression=%s)",
-                 compressions[i] ? "true" : "false");
+    std::string log_suffix =
+        absl::StrFormat("(compression=%s)", compressions[i] ? "true" : "false");
 
     gpr_log(GPR_DEBUG, "Sending unary request for compressed response %s.",
-            log_suffix);
+            log_suffix.c_str());
     SimpleRequest request;
     SimpleResponse response;
     request.mutable_response_compressed()->set_value(compressions[i]);
 
     if (!PerformLargeUnary(&request, &response, UnaryCompressionChecks)) {
-      gpr_log(GPR_ERROR, "Request for compressed unary failed %s", log_suffix);
-      gpr_free(log_suffix);
+      gpr_log(GPR_ERROR, "Request for compressed unary failed %s",
+              log_suffix.c_str());
       return false;
     }
 
-    gpr_log(GPR_DEBUG, "Request for compressed unary failed %s", log_suffix);
-    gpr_free(log_suffix);
+    gpr_log(GPR_DEBUG, "Request for compressed unary failed %s",
+            log_suffix.c_str());
   }
 
   return true;
@@ -421,7 +422,7 @@ bool InteropClient::DoRequestStreaming() {
   int aggregated_payload_size = 0;
   for (size_t i = 0; i < request_stream_sizes.size(); ++i) {
     Payload* payload = request.mutable_payload();
-    payload->set_body(grpc::string(request_stream_sizes[i], '\0'));
+    payload->set_body(std::string(request_stream_sizes[i], '\0'));
     if (!stream->Write(request)) {
       gpr_log(GPR_ERROR, "DoRequestStreaming(): stream->Write() failed");
       return TransientFailureOrAbort();
@@ -455,7 +456,7 @@ bool InteropClient::DoResponseStreaming() {
   unsigned int i = 0;
   while (stream->Read(&response)) {
     GPR_ASSERT(response.payload().body() ==
-               grpc::string(response_stream_sizes[i], '\0'));
+               std::string(response_stream_sizes[i], '\0'));
     ++i;
   }
 
@@ -486,7 +487,7 @@ bool InteropClient::DoClientCompressedStreaming() {
 
   probe_context.set_compression_algorithm(GRPC_COMPRESS_NONE);
   probe_req.mutable_expect_compressed()->set_value(true);  // lies!
-  probe_req.mutable_payload()->set_body(grpc::string(27182, '\0'));
+  probe_req.mutable_payload()->set_body(std::string(27182, '\0'));
 
   gpr_log(GPR_DEBUG, "Sending probe for compressed streaming request.");
 
@@ -515,7 +516,7 @@ bool InteropClient::DoClientCompressedStreaming() {
   std::unique_ptr<ClientWriter<StreamingInputCallRequest>> stream(
       serviceStub_.Get()->StreamingInputCall(&context, &response));
 
-  request.mutable_payload()->set_body(grpc::string(27182, '\0'));
+  request.mutable_payload()->set_body(std::string(27182, '\0'));
   request.mutable_expect_compressed()->set_value(true);
   gpr_log(GPR_DEBUG, "Sending streaming request with compression enabled");
   if (!stream->Write(request)) {
@@ -525,7 +526,7 @@ bool InteropClient::DoClientCompressedStreaming() {
 
   WriteOptions wopts;
   wopts.set_no_compression();
-  request.mutable_payload()->set_body(grpc::string(45904, '\0'));
+  request.mutable_payload()->set_body(std::string(45904, '\0'));
   request.mutable_expect_compressed()->set_value(false);
   gpr_log(GPR_DEBUG, "Sending streaming request with compression disabled");
   if (!stream->Write(request, wopts)) {
@@ -552,12 +553,11 @@ bool InteropClient::DoServerCompressedStreaming() {
 
   GPR_ASSERT(compressions.size() == sizes.size());
   for (size_t i = 0; i < sizes.size(); i++) {
-    char* log_suffix;
-    gpr_asprintf(&log_suffix, "(compression=%s; size=%d)",
-                 compressions[i] ? "true" : "false", sizes[i]);
+    std::string log_suffix =
+        absl::StrFormat("(compression=%s; size=%d)",
+                        compressions[i] ? "true" : "false", sizes[i]);
 
-    gpr_log(GPR_DEBUG, "Sending request streaming rpc %s.", log_suffix);
-    gpr_free(log_suffix);
+    gpr_log(GPR_DEBUG, "Sending request streaming rpc %s.", log_suffix.c_str());
 
     ResponseParameters* const response_parameter =
         request.add_response_parameters();
@@ -572,7 +572,7 @@ bool InteropClient::DoServerCompressedStreaming() {
   while (stream->Read(&response)) {
     // Payload size checks.
     GPR_ASSERT(response.payload().body() ==
-               grpc::string(request.response_parameters(k).size(), '\0'));
+               std::string(request.response_parameters(k).size(), '\0'));
 
     // Compression checks.
     GPR_ASSERT(request.response_parameters(k).has_compressed());
@@ -620,7 +620,7 @@ bool InteropClient::DoResponseStreamingWithSlowConsumer() {
   int i = 0;
   while (stream->Read(&response)) {
     GPR_ASSERT(response.payload().body() ==
-               grpc::string(kResponseMessageSize, '\0'));
+               std::string(kResponseMessageSize, '\0'));
     gpr_log(GPR_DEBUG, "received message %d", i);
     gpr_sleep_until(gpr_time_add(
         gpr_now(GPR_CLOCK_REALTIME),
@@ -670,7 +670,7 @@ bool InteropClient::DoHalfDuplex() {
   StreamingOutputCallResponse response;
   while (stream->Read(&response)) {
     GPR_ASSERT(response.payload().body() ==
-               grpc::string(response_stream_sizes[i], '\0'));
+               std::string(response_stream_sizes[i], '\0'));
     ++i;
   }
 
@@ -708,7 +708,7 @@ bool InteropClient::DoPingPong() {
 
   for (unsigned int i = 0; i < request_stream_sizes.size(); ++i) {
     response_parameter->set_size(response_stream_sizes[i]);
-    payload->set_body(grpc::string(request_stream_sizes[i], '\0'));
+    payload->set_body(std::string(request_stream_sizes[i], '\0'));
 
     if (!stream->Write(request)) {
       gpr_log(GPR_ERROR, "DoPingPong(): stream->Write() failed. i: %d", i);
@@ -721,7 +721,7 @@ bool InteropClient::DoPingPong() {
     }
 
     GPR_ASSERT(response.payload().body() ==
-               grpc::string(response_stream_sizes[i], '\0'));
+               std::string(response_stream_sizes[i], '\0'));
   }
 
   stream->WritesDone();
@@ -771,7 +771,7 @@ bool InteropClient::DoCancelAfterFirstResponse() {
   StreamingOutputCallRequest request;
   ResponseParameters* response_parameter = request.add_response_parameters();
   response_parameter->set_size(31415);
-  request.mutable_payload()->set_body(grpc::string(27182, '\0'));
+  request.mutable_payload()->set_body(std::string(27182, '\0'));
   StreamingOutputCallResponse response;
 
   if (!stream->Write(request)) {
@@ -783,7 +783,7 @@ bool InteropClient::DoCancelAfterFirstResponse() {
     gpr_log(GPR_ERROR, "DoCancelAfterFirstResponse(): stream->Read failed");
     return TransientFailureOrAbort();
   }
-  GPR_ASSERT(response.payload().body() == grpc::string(31415, '\0'));
+  GPR_ASSERT(response.payload().body() == std::string(31415, '\0'));
 
   gpr_log(GPR_DEBUG, "Trying to cancel...");
   context.TryCancel();
@@ -806,7 +806,7 @@ bool InteropClient::DoTimeoutOnSleepingServer() {
       stream(serviceStub_.Get()->FullDuplexCall(&context));
 
   StreamingOutputCallRequest request;
-  request.mutable_payload()->set_body(grpc::string(27182, '\0'));
+  request.mutable_payload()->set_body(std::string(27182, '\0'));
   stream->Write(request);
 
   Status s = stream->Finish();
@@ -844,7 +844,7 @@ bool InteropClient::DoStatusWithMessage() {
           "Sending RPC with a request for status code 2 and message");
 
   const grpc::StatusCode test_code = grpc::StatusCode::UNKNOWN;
-  const grpc::string test_msg = "This is a test message";
+  const std::string test_msg = "This is a test message";
 
   // Test UnaryCall.
   ClientContext context;
@@ -977,11 +977,11 @@ bool InteropClient::DoPickFirstUnary() {
 }
 
 bool InteropClient::DoCustomMetadata() {
-  const grpc::string kEchoInitialMetadataKey("x-grpc-test-echo-initial");
-  const grpc::string kInitialMetadataValue("test_initial_metadata_value");
-  const grpc::string kEchoTrailingBinMetadataKey(
+  const std::string kEchoInitialMetadataKey("x-grpc-test-echo-initial");
+  const std::string kInitialMetadataValue("test_initial_metadata_value");
+  const std::string kEchoTrailingBinMetadataKey(
       "x-grpc-test-echo-trailing-bin");
-  const grpc::string kTrailingBinValue("\x0a\x0b\x0a\x0b\x0a\x0b");
+  const std::string kTrailingBinValue("\x0a\x0b\x0a\x0b\x0a\x0b");
   ;
 
   {
@@ -992,7 +992,7 @@ bool InteropClient::DoCustomMetadata() {
     SimpleRequest request;
     SimpleResponse response;
     request.set_response_size(kLargeResponseSize);
-    grpc::string payload(kLargeRequestSize, '\0');
+    std::string payload(kLargeRequestSize, '\0');
     request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
 
     Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
@@ -1007,7 +1007,7 @@ bool InteropClient::DoCustomMetadata() {
     const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
     GPR_ASSERT(iter != server_trailing_metadata.end());
-    GPR_ASSERT(grpc::string(iter->second.begin(), iter->second.end()) ==
+    GPR_ASSERT(std::string(iter->second.begin(), iter->second.end()) ==
                kTrailingBinValue);
 
     gpr_log(GPR_DEBUG, "Done testing RPC with custom metadata");
@@ -1025,7 +1025,7 @@ bool InteropClient::DoCustomMetadata() {
     StreamingOutputCallRequest request;
     ResponseParameters* response_parameter = request.add_response_parameters();
     response_parameter->set_size(kLargeResponseSize);
-    grpc::string payload(kLargeRequestSize, '\0');
+    std::string payload(kLargeRequestSize, '\0');
     request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
     StreamingOutputCallResponse response;
 
@@ -1042,7 +1042,7 @@ bool InteropClient::DoCustomMetadata() {
     }
 
     GPR_ASSERT(response.payload().body() ==
-               grpc::string(kLargeResponseSize, '\0'));
+               std::string(kLargeResponseSize, '\0'));
 
     GPR_ASSERT(!stream->Read(&response));
 
@@ -1058,7 +1058,7 @@ bool InteropClient::DoCustomMetadata() {
     const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
     GPR_ASSERT(iter != server_trailing_metadata.end());
-    GPR_ASSERT(grpc::string(iter->second.begin(), iter->second.end()) ==
+    GPR_ASSERT(std::string(iter->second.begin(), iter->second.end()) ==
                kTrailingBinValue);
 
     gpr_log(GPR_DEBUG, "Done testing stream with custom metadata");
@@ -1080,7 +1080,7 @@ InteropClient::PerformOneSoakTestIteration(
   ClientContext context;
   InteropClientContextInspector inspector(context);
   request.set_response_size(kLargeResponseSize);
-  grpc::string payload(kLargeRequestSize, '\0');
+  std::string payload(kLargeRequestSize, '\0');
   request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
   if (reset_channel) {
     serviceStub_.ResetChannel();
@@ -1091,13 +1091,10 @@ InteropClient::PerformOneSoakTestIteration(
   if (!s.ok()) {
     return std::make_tuple(false, elapsed_ms, context.debug_error_string());
   } else if (elapsed_ms > max_acceptable_per_iteration_latency_ms) {
-    char* out;
-    GPR_ASSERT(gpr_asprintf(
-                   &out, "%d ms exceeds max acceptable latency: %d ms.",
-                   elapsed_ms, max_acceptable_per_iteration_latency_ms) != -1);
-    std::string debug_string(out);
-    gpr_free(out);
-    return std::make_tuple(false, elapsed_ms, debug_string);
+    std::string debug_string =
+        absl::StrFormat("%d ms exceeds max acceptable latency: %d ms.",
+                        elapsed_ms, max_acceptable_per_iteration_latency_ms);
+    return std::make_tuple(false, elapsed_ms, std::move(debug_string));
   } else {
     return std::make_tuple(true, elapsed_ms, "");
   }

@@ -9,7 +9,6 @@
 #ifndef ENVOY_API_V2_ENDPOINT_ENDPOINT_PROTO_UPB_H_
 #define ENVOY_API_V2_ENDPOINT_ENDPOINT_PROTO_UPB_H_
 
-#include "upb/generated_util.h"
 #include "upb/msg.h"
 #include "upb/decode.h"
 #include "upb/encode.h"

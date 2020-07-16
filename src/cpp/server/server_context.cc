@@ -305,13 +305,13 @@ void ServerContextBase::BeginCompletionOp(
   return static_cast<::grpc::internal::CompletionQueueTag*>(completion_op_);
 }
 
-void ServerContextBase::AddInitialMetadata(const grpc::string& key,
-                                           const grpc::string& value) {
+void ServerContextBase::AddInitialMetadata(const std::string& key,
+                                           const std::string& value) {
   initial_metadata_.insert(std::make_pair(key, value));
 }
 
-void ServerContextBase::AddTrailingMetadata(const grpc::string& key,
-                                            const grpc::string& value) {
+void ServerContextBase::AddTrailingMetadata(const std::string& key,
+                                            const std::string& value) {
   trailing_metadata_.insert(std::make_pair(key, value));
 }
 
@@ -356,8 +356,8 @@ void ServerContextBase::set_compression_algorithm(
   AddInitialMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
 }
 
-grpc::string ServerContextBase::peer() const {
-  grpc::string peer;
+std::string ServerContextBase::peer() const {
+  std::string peer;
   if (call_) {
     char* c_peer = grpc_call_get_peer(call_);
     peer = c_peer;
@@ -371,7 +371,7 @@ const struct census_context* ServerContextBase::census_context() const {
 }
 
 void ServerContextBase::SetLoadReportingCosts(
-    const std::vector<grpc::string>& cost_data) {
+    const std::vector<std::string>& cost_data) {
   if (call_ == nullptr) return;
   for (const auto& cost_datum : cost_data) {
     AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);

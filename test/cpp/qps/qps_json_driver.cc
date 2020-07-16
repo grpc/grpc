@@ -226,7 +226,7 @@ static double SearchOfferedLoad(
 }
 
 static bool QpsDriver() {
-  grpc::string json;
+  std::string json;
 
   bool scfile = (FLAGS_scenarios_file != "");
   bool scjson = (FLAGS_scenarios_json != "");
@@ -249,7 +249,7 @@ static bool QpsDriver() {
     fseek(json_file, 0, SEEK_SET);
     GPR_ASSERT(len == (long)fread(data, 1, len, json_file));
     fclose(json_file);
-    json = grpc::string(data, data + len);
+    json = std::string(data, data + len);
     delete[] data;
   } else if (scjson) {
     json = FLAGS_scenarios_json.c_str();

@@ -216,18 +216,19 @@ static int is_metadata_server_reachable() {
 
 /* Takes ownership of creds_path if not NULL. */
 static grpc_error* create_default_creds_from_path(
-    char* creds_path, grpc_core::RefCountedPtr<grpc_call_credentials>* creds) {
+    const std::string& creds_path,
+    grpc_core::RefCountedPtr<grpc_call_credentials>* creds) {
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
   grpc_core::RefCountedPtr<grpc_call_credentials> result;
   grpc_slice creds_data = grpc_empty_slice();
   grpc_error* error = GRPC_ERROR_NONE;
   Json json;
-  if (creds_path == nullptr) {
+  if (creds_path.empty()) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("creds_path unset");
     goto end;
   }
-  error = grpc_load_file(creds_path, 0, &creds_data);
+  error = grpc_load_file(creds_path.c_str(), 0, &creds_data);
   if (error != GRPC_ERROR_NONE) goto end;
   json = Json::Parse(grpc_core::StringViewFromSlice(creds_data), &error);
   if (error != GRPC_ERROR_NONE) goto end;
@@ -267,7 +268,6 @@ static grpc_error* create_default_creds_from_path(
 
 end:
   GPR_ASSERT((result == nullptr) + (error == GRPC_ERROR_NONE) == 1);
-  if (creds_path != nullptr) gpr_free(creds_path);
   grpc_slice_unref_internal(creds_data);
   *creds = result;
   return error;
@@ -286,10 +286,13 @@ grpc_channel_credentials* grpc_google_default_credentials_create() {
   gpr_once_init(&g_once, init_default_credentials);
 
   /* First, try the environment variable. */
-  err = create_default_creds_from_path(
-      gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR), &call_creds);
-  if (err == GRPC_ERROR_NONE) goto end;
-  error = grpc_error_add_child(error, err);
+  char* path_from_env = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
+  if (path_from_env != nullptr) {
+    err = create_default_creds_from_path(path_from_env, &call_creds);
+    gpr_free(path_from_env);
+    if (err == GRPC_ERROR_NONE) goto end;
+    error = grpc_error_add_child(error, err);
+  }
 
   /* Then the well-known file. */
   err = create_default_creds_from_path(
@@ -372,7 +375,7 @@ void grpc_flush_cached_google_default_credentials(void) {
 
 static grpc_well_known_credentials_path_getter creds_path_getter = nullptr;
 
-char* grpc_get_well_known_google_credentials_file_path(void) {
+std::string grpc_get_well_known_google_credentials_file_path(void) {
   if (creds_path_getter != nullptr) return creds_path_getter();
   return grpc_get_well_known_google_credentials_file_path_impl();
 }

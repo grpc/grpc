@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 # Builds Dart interop server and client in a base image.
-set -e
+set -ex
 
 mkdir -p /var/local/git
 git clone /var/local/jenkins/grpc-dart /var/local/git/grpc-dart
@@ -23,4 +23,4 @@ git clone /var/local/jenkins/grpc-dart /var/local/git/grpc-dart
 cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc-dart/interop
-/usr/lib/dart/bin/pub get
+/usr/lib/dart/bin/pub get --verbose

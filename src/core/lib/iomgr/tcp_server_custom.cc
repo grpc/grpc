@@ -216,10 +216,9 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
       (grpc_tcp_server_acceptor*)gpr_malloc(sizeof(*acceptor));
   grpc_endpoint* ep = nullptr;
   grpc_resolved_address peer_name;
-  char* peer_name_string;
+  std::string peer_name_string;
   grpc_error* err;
 
-  peer_name_string = nullptr;
   memset(&peer_name, 0, sizeof(grpc_resolved_address));
   peer_name.len = GRPC_MAX_SOCKADDR_SIZE;
   err = grpc_custom_socket_vtable->getpeername(
@@ -231,21 +230,16 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
     GRPC_ERROR_UNREF(err);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    if (peer_name_string) {
-      gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection: %s",
-              sp->server, peer_name_string);
-    } else {
-      gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection", sp->server);
-    }
+    gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection: %s", sp->server,
+            peer_name_string.c_str());
   }
   ep = custom_tcp_endpoint_create(socket, sp->server->resource_quota,
-                                  peer_name_string);
+                                  peer_name_string.c_str());
   acceptor->from_server = sp->server;
   acceptor->port_index = sp->port_index;
   acceptor->fd_index = 0;
   acceptor->external_connection = false;
   sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, nullptr, acceptor);
-  gpr_free(peer_name_string);
 }
 
 static void custom_accept_callback(grpc_custom_socket* socket,
