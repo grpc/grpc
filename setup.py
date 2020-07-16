@@ -22,9 +22,6 @@ import setuptools
 from distutils.unixccompiler import UnixCCompiler
 UnixCCompiler.src_extensions.append('.S')
 del UnixCCompiler
-from distutils.msvccompiler import MSVCCompiler
-MSVCCompiler.src_extensions.append('.asm')
-del MSVCCompiler
 
 from distutils import cygwinccompiler
 from distutils import extension as _extension
@@ -286,12 +283,7 @@ if BUILD_WITH_BORING_SSL_ASM:
         NO_BORING_ASM = False
     elif "mac" in util.get_platform() and "x86_64" in util.get_platform():
         asm_files = [f for f in grpc_core_dependencies.ASM_SOURCE_FILES
-                     if (LINUX_X86_64 in f or "hrss/asm" in f)
-                     and "test" not in f]
-        NO_BORING_ASM = False
-    elif "win" in sys.platform and '64bit' in platform.architecture()[0]:
-        asm_files = [f for f in grpc_core_dependencies.ASM_SOURCE_FILES
-                     if ("win-x86_64" in f)
+                     if ("mac-x86_64" in f or "hrss/asm" in f)
                      and "test" not in f]
         NO_BORING_ASM = False
     else:
