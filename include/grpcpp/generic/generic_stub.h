@@ -106,7 +106,7 @@ class TemplatedGenericStub final {
   /// StartCall is invoked on its reactor.
   void PrepareUnaryCall(ClientContext* context, const std::string& method,
                         const RequestType* request, ResponseType* response,
-                        ClientUnaryReactor* reactor) {
+                        ::grpc_impl::ClientUnaryReactor* reactor) {
     PrepareUnaryCallInternal(context, method, request, response, reactor);
   }
 
@@ -115,7 +115,7 @@ class TemplatedGenericStub final {
   /// until StartCall is invoked on its reactor.
   void PrepareBidiStreamingCall(
       ClientContext* context, const std::string& method,
-      ClientBidiReactor<RequestType, ResponseType>* reactor) {
+      ::grpc_impl::ClientBidiReactor<RequestType, ResponseType>* reactor) {
     PrepareBidiStreamingCallInternal(context, method, reactor);
   }
 #endif
