@@ -986,6 +986,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_cel_stub",
+    srcs = [
+        "src/core/lib/security/authorization/cel_stub/activation.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/authorization/cel_stub/activation.h",
+        "src/core/lib/security/authorization/cel_stub/cel_function.h",
+        "src/core/lib/security/authorization/cel_stub/cel_value.h",
+        "src/core/lib/security/authorization/cel_stub/cel_value_internal.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:variant",
+        "protobuf_headers",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_common",
     language = "c++",
     deps = [
