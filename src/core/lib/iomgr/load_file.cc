@@ -74,8 +74,8 @@ grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
   result = grpc_slice_new(contents, contents_size, gpr_free);
 
 end:
-  filenum = fileno(file);
-  gpr_log(GPR_ERROR, "reading %s : file %p : filenum %d : bytes_read %d : contents_size %d:  seek1 result %d, seek2 result: %d", filename, file, filenum, (int) bytes_read, (int) contents_size, seek_result1, seek_result2 );  
+  // filenum = fileno(file);
+  // gpr_log(GPR_ERROR, "reading %s : file %p : filenum %d : bytes_read %d : contents_size %d:  seek1 result %d, seek2 result: %d", filename, file, filenum, (int) bytes_read, (int) contents_size, seek_result1, seek_result2 );  
   *output = result;
   if (file != nullptr) fclose(file);
   if (error != GRPC_ERROR_NONE) {

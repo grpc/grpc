@@ -18,6 +18,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <atomic>
+#include <array>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -152,11 +154,25 @@ static void test_load_big_file(void) {
   gpr_free(buffer);
 }
 
+struct ReadFileLoopArgs {
+   const char* filename;
+   const size_t iterations;
+   const size_t expected_length;
+   std::atomic<size_t> ready_count;
+};
+
 static void read_file_loop(void* arg) {
-  const char* file_name = static_cast<const char*>(arg);
-  for (int i = 0; i < 10; i++) {
+  ReadFileLoopArgs* loop_args = static_cast<ReadFileLoopArgs*>(arg);
+  // NOTE: We have all threads spin waiting on each other to promote contention
+  // as much as possible.
+  size_t ready = loop_args->ready_count.fetch_sub(1);
+  while (ready != 0) {
+    ready = loop_args->ready_count.load();
+  }
+  for (int i = 0; i < loop_args->iterations; i++) {
     grpc_slice slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_name, 0, &slice)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(loop_args->filename, 0, &slice)));
+    GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == loop_args->expected_length);
     //GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == strlen(blah));
     //GPR_ASSERT(!memcmp(GRPC_SLICE_START_PTR(slice), blah, strlen(blah)));
     grpc_slice_unref(slice);
@@ -165,14 +181,30 @@ static void read_file_loop(void* arg) {
 
 static void test_concurrent_load_same_file(void) {
   LOG_TEST_NAME("test_concurrent_load_same_file");
-  const char* file_name = "src/core/tsi/test_creds/ca.pem";
+  const char* filename = "src/core/tsi/test_creds/ca.pem";
+  size_t expected_length;
+  grpc_slice file_contents;
+  grpc_load_file(filename, 0, &file_contents);
+  expected_length = GRPC_SLICE_LENGTH(file_contents);
+  grpc_slice_unref(file_contents);
+  const size_t kNumThreads = 1 << 8;
+  ReadFileLoopArgs args {
+    filename,
+    1 << 8,
+    expected_length
+  };
+  args.ready_count.store(kNumThreads);
 
-  bool ok;
-  grpc_core::Thread thd("read_file_thread1", read_file_loop, const_cast<char*>(file_name), &ok);
-  GPR_ASSERT(ok);
-  thd.Start();
-  read_file_loop(const_cast<char*>(file_name));
-  thd.Join();
+  std::array<grpc_core::Thread*, kNumThreads> threads;
+  std::array<bool, kNumThreads> creation_success;
+  for (size_t i = 0; i < kNumThreads; ++i) {
+    threads[i] = new grpc_core::Thread("boo", read_file_loop, &args, &creation_success[i]);
+    threads[i]->Start();
+    GPR_ASSERT(creation_success[i]);
+  }
+  for (size_t i = 0; i < kNumThreads; ++i) {
+    threads[i]->Join();
+  }
 }
 
 int main(int argc, char** argv) {
