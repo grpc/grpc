@@ -484,7 +484,10 @@ namespace Grpc.IntegrationTesting
 
         public static async Task RunCustomMetadataAsync(TestService.TestServiceClient client)
         {
+            
             Console.WriteLine("running custom_metadata");
+
+            Console.Error.WriteLine("unary call");
             {
                 // step 1: test unary call
                 var request = new SimpleRequest
@@ -502,6 +505,8 @@ namespace Grpc.IntegrationTesting
                 Assert.AreEqual("test_initial_metadata_value", responseHeaders.First((entry) => entry.Key == "x-grpc-test-echo-initial").Value);
                 CollectionAssert.AreEqual(new byte[] { 0xab, 0xab, 0xab }, responseTrailers.First((entry) => entry.Key == "x-grpc-test-echo-trailing-bin").ValueBytes);
             }
+
+            Console.Error.WriteLine("full duplex call");
 
             {
                 // step 2: test full duplex call
@@ -523,6 +528,8 @@ namespace Grpc.IntegrationTesting
                 Assert.AreEqual("test_initial_metadata_value", responseHeaders.First((entry) => entry.Key == "x-grpc-test-echo-initial").Value);
                 CollectionAssert.AreEqual(new byte[] { 0xab, 0xab, 0xab }, responseTrailers.First((entry) => entry.Key == "x-grpc-test-echo-trailing-bin").ValueBytes);
             }
+
+            Console.Error.WriteLine("finished");
 
             Console.WriteLine("Passed!");
         }

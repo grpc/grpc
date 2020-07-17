@@ -65,59 +65,59 @@ namespace Grpc.IntegrationTesting
             server.ShutdownAsync().Wait();
         }
 
-        [Test]
-        public void EmptyUnary()
-        {
-            InteropClient.RunEmptyUnary(client);
-        }
+        // [Test]
+        // public void EmptyUnary()
+        // {
+        //     InteropClient.RunEmptyUnary(client);
+        // }
 
-        [Test]
-        public void LargeUnary()
-        {
-            InteropClient.RunLargeUnary(client);
-        }
+        // [Test]
+        // public void LargeUnary()
+        // {
+        //     InteropClient.RunLargeUnary(client);
+        // }
 
-        [Test]
-        public async Task ClientStreaming()
-        {
-            await InteropClient.RunClientStreamingAsync(client);
-        }
+        // [Test]
+        // public async Task ClientStreaming()
+        // {
+        //     await InteropClient.RunClientStreamingAsync(client);
+        // }
 
-        [Test]
-        public async Task ServerStreaming()
-        {
-            await InteropClient.RunServerStreamingAsync(client);
-        }
+        // [Test]
+        // public async Task ServerStreaming()
+        // {
+        //     await InteropClient.RunServerStreamingAsync(client);
+        // }
 
-        [Test]
-        public async Task PingPong()
-        {
-            await InteropClient.RunPingPongAsync(client);
-        }
+        // [Test]
+        // public async Task PingPong()
+        // {
+        //     await InteropClient.RunPingPongAsync(client);
+        // }
 
-        [Test]
-        public async Task EmptyStream()
-        {
-            await InteropClient.RunEmptyStreamAsync(client);
-        }
+        // [Test]
+        // public async Task EmptyStream()
+        // {
+        //     await InteropClient.RunEmptyStreamAsync(client);
+        // }
 
-        [Test]
-        public async Task CancelAfterBegin()
-        {
-            await InteropClient.RunCancelAfterBeginAsync(client);
-        }
+        // [Test]
+        // public async Task CancelAfterBegin()
+        // {
+        //     await InteropClient.RunCancelAfterBeginAsync(client);
+        // }
 
-        [Test]
-        public async Task CancelAfterFirstResponse()
-        {
-            await InteropClient.RunCancelAfterFirstResponseAsync(client);
-        }
+        // [Test]
+        // public async Task CancelAfterFirstResponse()
+        // {
+        //     await InteropClient.RunCancelAfterFirstResponseAsync(client);
+        // }
 
-        [Test]
-        public async Task TimeoutOnSleepingServer()
-        {
-            await InteropClient.RunTimeoutOnSleepingServerAsync(client);
-        }
+        // [Test]
+        // public async Task TimeoutOnSleepingServer()
+        // {
+        //     await InteropClient.RunTimeoutOnSleepingServerAsync(client);
+        // }
 
         [Test]
         public async Task CustomMetadata()
@@ -125,22 +125,22 @@ namespace Grpc.IntegrationTesting
             await InteropClient.RunCustomMetadataAsync(client);
         }
 
-        [Test]
-        public async Task StatusCodeAndMessage()
-        {
-            await InteropClient.RunStatusCodeAndMessageAsync(client);
-        }
+        // [Test]
+        // public async Task StatusCodeAndMessage()
+        // {
+        //     await InteropClient.RunStatusCodeAndMessageAsync(client);
+        // }
 
-        [Test]
-        public void UnimplementedService()
-        {
-            InteropClient.RunUnimplementedService(new UnimplementedService.UnimplementedServiceClient(channel));
-        }
+        // [Test]
+        // public void UnimplementedService()
+        // {
+        //     InteropClient.RunUnimplementedService(new UnimplementedService.UnimplementedServiceClient(channel));
+        // }
 
-        [Test]
-        public void UnimplementedMethod()
-        {
-            InteropClient.RunUnimplementedMethod(client);
-        }
+        // [Test]
+        // public void UnimplementedMethod()
+        // {
+        //     InteropClient.RunUnimplementedMethod(client);
+        // }
     }
 }

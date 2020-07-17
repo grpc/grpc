@@ -62,12 +62,34 @@ namespace Grpc.Core.Internal
             var metadata = new Metadata();
             for (ulong i = 0; i < count; i++)
             {
+
                 var index = new UIntPtr(i);
                 UIntPtr keyLen;
                 IntPtr keyPtr = Native.grpcsharp_metadata_array_get_key(metadataArray, index, out keyLen);
                 int keyLen32 = checked((int)keyLen.ToUInt32());
-                string key = WellKnownStrings.TryIdentify(keyPtr, keyLen32)
+                string key;
+                
+                try {
+                 key = WellKnownStrings.TryIdentify(keyPtr, keyLen32)
                     ?? Marshal.PtrToStringAnsi(keyPtr, keyLen32);
+                }
+                catch (ArgumentException e)
+                {
+                    Console.Error.WriteLine("caught Exception " + e);
+
+                    Console.Error.WriteLine($"i:{i} count:{count} keyPtr:{keyPtr} keyLen:{keyLen32}");
+                    for (int j = 0; j < keyLen32; j++)
+                    {
+                        unsafe
+                        {
+                            byte* data = (byte*)keyPtr + j;
+                            Console.Error.WriteLine($"data {*data}");
+                        }
+                    }
+
+                    
+                    throw e;
+                }
                 UIntPtr valueLen;
                 IntPtr valuePtr = Native.grpcsharp_metadata_array_get_value(metadataArray, index, out valueLen);
                 int len32 = checked((int)valueLen.ToUInt64());
