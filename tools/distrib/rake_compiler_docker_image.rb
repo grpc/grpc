@@ -30,8 +30,8 @@ end
 def run_rake_compiler(platform, args)
   require 'rake_compiler_dock'
 
-  ENV['RCD_RUBYVM'] = 'mri'
-  ENV['RCD_PLATFORM'] = platform
+  options = { :rubyvm => 'mri', :platform => platform }
+  options[:runas] = false if platform =~ /linux/
   ENV['RCD_IMAGE'] = docker_image_for_rake_compiler(platform)
-  RakeCompilerDock.sh args
+  RakeCompilerDock.sh args, options
 end

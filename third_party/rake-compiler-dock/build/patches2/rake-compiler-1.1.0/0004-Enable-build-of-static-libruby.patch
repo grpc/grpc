@@ -1,0 +1,28 @@
+From 0b929b7027eb592c0971a400184f1dfa5a0bce7c Mon Sep 17 00:00:00 2001
+From: Lars Kanis <lars@greiz-reinsdorf.de>
+Date: Thu, 26 Dec 2019 19:13:48 +0100
+Subject: [PATCH 1/2] Enable build of static libruby
+
+This is used in rake-compiler-dock for linux targets.
+The static libruby is postprocessed in a special way.
+See rake-compiler-dock's Dockerfile.
+---
+ tasks/bin/cross-ruby.rake | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tasks/bin/cross-ruby.rake b/tasks/bin/cross-ruby.rake
+index c9b0bbb..2a73be7 100644
+--- a/tasks/bin/cross-ruby.rake
++++ b/tasks/bin/cross-ruby.rake
+@@ -108,6 +108,8 @@ end
+     file "#{build_dir}/Makefile" => [build_dir, source_dir] do |t|
+
+       options = [
++        '--enable-static',
++        '--enable-install-static-library',
+         "--host=#{mingw_host}",
+         "--target=#{mingw_target}",
+         "--build=#{RUBY_BUILD}",
+--
+2.20.1
+
