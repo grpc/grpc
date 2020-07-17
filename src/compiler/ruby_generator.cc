@@ -38,13 +38,12 @@ namespace grpc_ruby_generator {
 namespace {
 
 // Prints out the method using the ruby gRPC DSL.
-void PrintMethod(const MethodDescriptor* method, const grpc::string& package,
-                 Printer* out) {
-  grpc::string input_type = RubyTypeOf(method->input_type(), package);
+void PrintMethod(const MethodDescriptor* method, Printer* out) {
+  grpc::string input_type = RubyTypeOf(method->input_type());
   if (method->client_streaming()) {
     input_type = "stream(" + input_type + ")";
   }
-  grpc::string output_type = RubyTypeOf(method->output_type(), package);
+  grpc::string output_type = RubyTypeOf(method->output_type());
   if (method->server_streaming()) {
     output_type = "stream(" + output_type + ")";
   }
@@ -62,8 +61,7 @@ void PrintMethod(const MethodDescriptor* method, const grpc::string& package,
 }
 
 // Prints out the service using the ruby gRPC DSL.
-void PrintService(const ServiceDescriptor* service, const grpc::string& package,
-                  Printer* out) {
+void PrintService(const ServiceDescriptor* service, Printer* out) {
   if (service->method_count() == 0) {
     return;
   }
@@ -91,7 +89,7 @@ void PrintService(const ServiceDescriptor* service, const grpc::string& package,
   out->Print(pkg_vars, "self.service_name = '$service_full_name$'\n");
   out->Print("\n");
   for (int i = 0; i < service->method_count(); ++i) {
-    PrintMethod(service->method(i), package, out);
+    PrintMethod(service->method(i), out);
   }
   out->Outdent();
 
@@ -201,7 +199,7 @@ grpc::string GetServices(const FileDescriptor* file) {
     }
     for (int i = 0; i < file->service_count(); ++i) {
       auto service = file->service(i);
-      PrintService(service, file->package(), &out);
+      PrintService(service, &out);
     }
     for (size_t i = 0; i < modules.size(); ++i) {
       out.Outdent();
