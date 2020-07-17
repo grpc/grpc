@@ -1233,7 +1233,7 @@ channel_data::~channel_data() {
       }
       maybe_finish_shutdown(server);
     }
-  server_unref(server);
+    server_unref(server);
   }
 }
 
@@ -1338,8 +1338,8 @@ void SetServerBatchMethodAllocator(
     std::function<ServerBatchCallAllocation()> allocator) {
   GPR_DEBUG_ASSERT(server->unregistered_request_matcher == nullptr);
   server->unregistered_request_matcher =
-    absl::make_unique<AllocatingRequestMatcherBatch>(server, cq,
-                                                     std::move(allocator));
+      absl::make_unique<AllocatingRequestMatcherBatch>(server, cq,
+                                                       std::move(allocator));
 }
 
 }  // namespace grpc_core
@@ -1433,7 +1433,7 @@ void grpc_server_start(grpc_server* server) {
   }
   if (server->unregistered_request_matcher == nullptr) {
     server->unregistered_request_matcher =
-      absl::make_unique<grpc_core::RealRequestMatcher>(server);
+        absl::make_unique<grpc_core::RealRequestMatcher>(server);
   }
   for (std::unique_ptr<grpc_core::registered_method>& rm :
        server->registered_methods) {
