@@ -28,8 +28,6 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
 
-#include "upb/def.hpp"
-
 #include <grpc/slice_buffer.h>
 
 #include "re2/re2.h"
@@ -339,7 +337,6 @@ class XdsApi {
   TraceFlag* tracer_;
   const bool xds_routing_enabled_;
   const XdsBootstrap::Node* node_;
-  upb::SymbolTable symtab_;
   const std::string build_version_;
   const std::string user_agent_name_;
 };
