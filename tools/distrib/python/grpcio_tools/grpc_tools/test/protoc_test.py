@@ -4,10 +4,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import unittest
-
-import multiprocessing
+import contextlib
 import functools
+import multiprocessing
+import sys
+import unittest
 
 
 def _wrap_in_subprocess(error_queue, fn):
@@ -35,27 +36,30 @@ def _run_in_subprocess(test_case):
         proc.exitcode)
 
 
+@contextlib.contextmanager
+def _augmented_syspath(new_paths):
+    original_sys_path = sys.path
+    if new_paths is not None:
+        sys.path = sys.path + list(new_paths)
+    try:
+        yield
+    finally:
+        sys.path = original_sys_path
+
+
 def _test_import_protos():
     from grpc_tools import protoc
-    proto_path = "tools/distrib/python/grpcio_tools/"
-    protos = protoc._protos("grpc_tools/test/simple.proto", [proto_path])
-    assert protos.SimpleMessage is not None
+    with _augmented_syspath(("tools/distrib/python/grpcio_tools/",)):
+        protos = protoc._protos("grpc_tools/test/simple.proto")
+        assert protos.SimpleMessage is not None
 
 
 def _test_import_services():
     from grpc_tools import protoc
-    proto_path = "tools/distrib/python/grpcio_tools/"
-    protos = protoc._protos("grpc_tools/test/simple.proto", [proto_path])
-    services = protoc._services("grpc_tools/test/simple.proto", [proto_path])
-    assert services.SimpleMessageServiceStub is not None
-
-
-# NOTE: In this case, we use sys.path to determine where to look for our protos.
-def _test_import_implicit_include():
-    from grpc_tools import protoc
-    protos = protoc._protos("grpc_tools/test/simple.proto")
-    services = protoc._services("grpc_tools/test/simple.proto")
-    assert services.SimpleMessageServiceStub is not None
+    with _augmented_syspath(("tools/distrib/python/grpcio_tools/",)):
+        protos = protoc._protos("grpc_tools/test/simple.proto")
+        services = protoc._services("grpc_tools/test/simple.proto")
+        assert services.SimpleMessageServiceStub is not None
 
 
 def _test_import_services_without_protos():
@@ -66,26 +70,25 @@ def _test_import_services_without_protos():
 
 def _test_proto_module_imported_once():
     from grpc_tools import protoc
-    proto_path = "tools/distrib/python/grpcio_tools/"
-    protos = protoc._protos("grpc_tools/test/simple.proto", [proto_path])
-    services = protoc._services("grpc_tools/test/simple.proto", [proto_path])
-    complicated_protos = protoc._protos("grpc_tools/test/complicated.proto",
-                                        [proto_path])
-    simple_message = protos.SimpleMessage()
-    complicated_message = complicated_protos.ComplicatedMessage()
-    assert (simple_message.simpler_message.simplest_message.__class__ is
-            complicated_message.simplest_message.__class__)
+    with _augmented_syspath(("tools/distrib/python/grpcio_tools/",)):
+        protos = protoc._protos("grpc_tools/test/simple.proto")
+        services = protoc._services("grpc_tools/test/simple.proto")
+        complicated_protos = protoc._protos("grpc_tools/test/complicated.proto")
+        simple_message = protos.SimpleMessage()
+        complicated_message = complicated_protos.ComplicatedMessage()
+        assert (simple_message.simpler_message.simplest_message.__class__ is
+                complicated_message.simplest_message.__class__)
 
 
 def _test_static_dynamic_combo():
     from grpc_tools.test import complicated_pb2
     from grpc_tools import protoc
-    proto_path = "tools/distrib/python/grpcio_tools/"
-    protos = protoc._protos("grpc_tools/test/simple.proto", [proto_path])
-    static_message = complicated_pb2.ComplicatedMessage()
-    dynamic_message = protos.SimpleMessage()
-    assert (dynamic_message.simpler_message.simplest_message.__class__ is
-            static_message.simplest_message.__class__)
+    with _augmented_syspath(("tools/distrib/python/grpcio_tools/",)):
+        protos = protoc._protos("grpc_tools/test/simple.proto")
+        static_message = complicated_pb2.ComplicatedMessage()
+        dynamic_message = protos.SimpleMessage()
+        assert (dynamic_message.simpler_message.simplest_message.__class__ is
+                static_message.simplest_message.__class__)
 
 
 def _test_combined_import():
@@ -116,9 +119,6 @@ class ProtocTest(unittest.TestCase):
 
     def test_import_services(self):
         _run_in_subprocess(_test_import_services)
-
-    def test_import_implicit_include_path(self):
-        _run_in_subprocess(_test_import_implicit_include)
 
     def test_import_services_without_protos(self):
         _run_in_subprocess(_test_import_services_without_protos)

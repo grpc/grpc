@@ -52,36 +52,22 @@ if sys.version_info[0] > 2:
         proto_base_name = os.path.splitext(components[-1])[0]
         return ".".join(components[:-1] + [proto_base_name + suffix])
 
-    @contextlib.contextmanager
-    def _augmented_syspath(new_paths):
-        original_sys_path = sys.path
-        if new_paths is not None:
-            sys.path = sys.path + new_paths
-        try:
-            yield
-        finally:
-            sys.path = original_sys_path
+    def _protos(protobuf_path):
+        module_name = _proto_file_to_module_name(_PROTO_MODULE_SUFFIX,
+                                                 protobuf_path)
+        module = importlib.import_module(module_name)
+        return module
 
-    # TODO: Investigate making this even more of a no-op in the case that we have
-    # truly already imported the module.
-    def _protos(protobuf_path, include_paths=None):
-        with _augmented_syspath(include_paths):
-            module_name = _proto_file_to_module_name(_PROTO_MODULE_SUFFIX,
-                                                     protobuf_path)
-            module = importlib.import_module(module_name)
-            return module
+    def _services(protobuf_path):
+        _protos(protobuf_path)
+        module_name = _proto_file_to_module_name(_SERVICE_MODULE_SUFFIX,
+                                                 protobuf_path)
+        module = importlib.import_module(module_name)
+        return module
 
-    def _services(protobuf_path, include_paths=None):
-        _protos(protobuf_path, include_paths)
-        with _augmented_syspath(include_paths):
-            module_name = _proto_file_to_module_name(_SERVICE_MODULE_SUFFIX,
-                                                     protobuf_path)
-            module = importlib.import_module(module_name)
-            return module
-
-    def _protos_and_services(protobuf_path, include_paths=None):
-        return (_protos(protobuf_path, include_paths=include_paths),
-                _services(protobuf_path, include_paths=include_paths))
+    def _protos_and_services(protobuf_path):
+        return (_protos(protobuf_path),
+                _services(protobuf_path))
 
     _proto_code_cache = {}
     _proto_code_cache_lock = threading.RLock()
