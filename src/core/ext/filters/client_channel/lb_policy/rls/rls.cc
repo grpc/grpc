@@ -24,7 +24,6 @@
 #include <unordered_set>
 #include <utility>
 
-#include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/port_platform.h>
