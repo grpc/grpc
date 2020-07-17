@@ -653,7 +653,7 @@ class RealRequestMatcher : public RequestMatcherInterface {
     // an empty request queue, it will block until the call is actually
     // added to the pending list.
     requested_call* rc = nullptr;
-    size_t cq_idx;
+    size_t cq_idx = 0;
     size_t loop_count;
     {
       MutexLock lock(&server_->mu_call);
