@@ -21,12 +21,16 @@ try:
 except ImportError:
     pass
 
-import unittest
 import logging
+import os
+import sys
+import unittest
 
 import grpc
 
-from examples import helloworld_pb2_grpc
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
+services = grpc.services("examples/protos/helloworld.proto")
+
 from examples.python.errors import client as error_handling_client
 from examples.python.errors import server as error_handling_server
 
@@ -43,7 +47,7 @@ class ErrorHandlingExampleTest(unittest.TestCase):
         self._server.stop(None)
 
     def test_error_handling_example(self):
-        stub = helloworld_pb2_grpc.GreeterStub(self._channel)
+        stub = services.GreeterStub(self._channel)
         error_handling_client.process(stub)
         error_handling_client.process(stub)
         # No unhandled exception raised, test passed!

@@ -17,13 +17,16 @@ from __future__ import print_function
 import logging
 from concurrent import futures
 from contextlib import contextmanager
+import os
 import socket
+import sys
 import threading
 
 import grpc
 
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
+
+protos, services = grpc.protos_and_services("examples/protos/helloworld.proto")
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
@@ -41,15 +44,15 @@ def get_free_loopback_tcp_port():
     tcp_socket.close()
 
 
-class Greeter(helloworld_pb2_grpc.GreeterServicer):
+class Greeter(services.GreeterServicer):
 
     def SayHello(self, request, unused_context):
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+        return protos.HelloReply(message='Hello, %s!' % request.name)
 
 
 def create_server(server_address):
     server = grpc.server(futures.ThreadPoolExecutor())
-    helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
+    services.add_GreeterServicer_to_server(Greeter(), server)
     bound_port = server.add_insecure_port(server_address)
     assert bound_port == int(server_address.split(':')[-1])
     return server
@@ -57,7 +60,7 @@ def create_server(server_address):
 
 def process(stub, wait_for_ready=None):
     try:
-        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'),
+        response = stub.SayHello(protos.HelloRequest(name='you'),
                                  wait_for_ready=wait_for_ready)
         message = response.message
     except grpc.RpcError as rpc_error:
@@ -84,7 +87,7 @@ def main():
         # Create gRPC channel
         channel = grpc.insecure_channel(server_address)
         channel.subscribe(wait_for_transient_failure)
-        stub = helloworld_pb2_grpc.GreeterStub(channel)
+        stub = services.GreeterStub(channel)
 
         # Fire an RPC without wait_for_ready
         thread_disabled_wait_for_ready = threading.Thread(target=process,

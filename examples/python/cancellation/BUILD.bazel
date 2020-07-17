@@ -15,36 +15,20 @@
 # limitations under the License.
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 package(default_testonly = 1)
-
-proto_library(
-    name = "hash_name_proto",
-    srcs = ["hash_name.proto"],
-)
-
-py_proto_library(
-    name = "hash_name_py_pb2",
-    deps = [":hash_name_proto"],
-)
-
-py_grpc_library(
-    name = "hash_name_py_pb2_grpc",
-    srcs = [":hash_name_proto"],
-    deps = [":hash_name_py_pb2"],
-)
 
 py_binary(
     name = "client",
     srcs = ["client.py"],
     python_version = "PY3",
     srcs_version = "PY2AND3",
+    data = [
+        "hash_name.proto",
+    ],
     deps = [
-        ":hash_name_py_pb2",
-        ":hash_name_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
         "@six",
     ],
 )
@@ -53,8 +37,12 @@ py_library(
     name = "search",
     srcs = ["search.py"],
     srcs_version = "PY2AND3",
+    data = [
+        "hash_name.proto",
+    ],
     deps = [
-        ":hash_name_py_pb2",
+        "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )
 
@@ -63,9 +51,12 @@ py_binary(
     srcs = ["server.py"],
     python_version = "PY3",
     srcs_version = "PY2AND3",
+    data = [
+        "hash_name.proto",
+    ],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        ":hash_name_py_pb2",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
         ":search",
     ] + select({
         "//conditions:default": ["@futures//:futures"],

@@ -20,11 +20,14 @@ from __future__ import print_function
 from concurrent import futures
 import argparse
 import logging
+import os
 import threading
+import sys
+
 import grpc
 
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
+protos, services = grpc.protos_and_services("examples/protos/helloworld.proto")
 
 _DESCRIPTION = 'A server capable of compression.'
 _COMPRESSION_OPTIONS = {
@@ -37,7 +40,7 @@ _LOGGER = logging.getLogger(__name__)
 _SERVER_HOST = 'localhost'
 
 
-class Greeter(helloworld_pb2_grpc.GreeterServicer):
+class Greeter(services.GreeterServicer):
 
     def __init__(self, no_compress_every_n):
         super(Greeter, self).__init__()
@@ -56,14 +59,14 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
     def SayHello(self, request, context):
         if self._should_suppress_compression():
             context.set_response_compression(grpc.Compression.NoCompression)
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+        return protos.HelloReply(message='Hello, %s!' % request.name)
 
 
 def run_server(server_compression, no_compress_every_n, port):
     server = grpc.server(futures.ThreadPoolExecutor(),
                          compression=server_compression,
                          options=(('grpc.so_reuseport', 1),))
-    helloworld_pb2_grpc.add_GreeterServicer_to_server(
+    services.add_GreeterServicer_to_server(
         Greeter(no_compress_every_n), server)
     address = '{}:{}'.format(_SERVER_HOST, port)
     server.add_insecure_port(address)

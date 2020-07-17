@@ -18,10 +18,12 @@ py_binary(
     name = "debug_server",
     testonly = 1,
     srcs = ["debug_server.py"],
+    data = [
+        "//examples:protos/helloworld.proto",
+    ],
     deps = [
-        "//examples:helloworld_py_pb2",
-        "//examples:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
     ],
 )
@@ -31,10 +33,12 @@ py_binary(
     testonly = 1,
     srcs = ["send_message.py"],
     python_version = "PY3",
+    data = [
+        "//examples:protos/helloworld.proto",
+    ],
     deps = [
-        "//examples:helloworld_py_pb2",
-        "//examples:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )
 
@@ -53,13 +57,15 @@ py_test(
     name = "_debug_example_test",
     srcs = ["test/_debug_example_test.py"],
     python_version = "PY3",
+    data = [
+        "//examples:protos/helloworld.proto",
+    ],
     deps = [
         ":debug_server",
         ":get_stats",
         ":send_message",
-        "//examples:helloworld_py_pb2",
-        "//examples:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
     ],
 )

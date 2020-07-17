@@ -18,13 +18,18 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
+from concurrent import futures
 import contextlib
 import logging
-from concurrent import futures
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
 
 import grpc
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+
+protos, services = grpc.protos_and_services("examples/protos/helloworld.proto")
+
 from examples.python.auth import _credentials
 
 _LOGGER = logging.getLogger(__name__)
@@ -56,10 +61,10 @@ class SignatureValidationInterceptor(grpc.ServerInterceptor):
             return self._abortion
 
 
-class SimpleGreeter(helloworld_pb2_grpc.GreeterServicer):
+class SimpleGreeter(services.GreeterServicer):
 
     def SayHello(self, request, unused_context):
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+        return protos.HelloReply(message='Hello, %s!' % request.name)
 
 
 @contextlib.contextmanager
@@ -67,7 +72,7 @@ def run_server(port):
     # Bind interceptor to server
     server = grpc.server(futures.ThreadPoolExecutor(),
                          interceptors=(SignatureValidationInterceptor(),))
-    helloworld_pb2_grpc.add_GreeterServicer_to_server(SimpleGreeter(), server)
+    services.add_GreeterServicer_to_server(SimpleGreeter(), server)
 
     # Loading credentials
     server_credentials = grpc.ssl_server_credentials(((

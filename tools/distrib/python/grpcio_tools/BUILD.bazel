@@ -15,6 +15,7 @@
 package(default_visibility = [
     "//src/python:__subpackages__",
     "//tools/distrib/python/grpcio_tools:__subpackages__",
+    "//examples/python:__subpackages__",
 ])
 
 load("//bazel:cython_library.bzl", "pyx_library")
@@ -48,4 +49,5 @@ py_library(
         "//src/python/grpcio/grpc:grpcio",
         "@com_google_protobuf//:protobuf_python",
     ],
+    imports=["."],
 )

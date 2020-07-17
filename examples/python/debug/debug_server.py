@@ -20,13 +20,16 @@ from __future__ import print_function
 import argparse
 import logging
 from concurrent import futures
+import os
 import random
+import sys
 
 import grpc
 from grpc_channelz.v1 import channelz
 
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
+
+protos, services = grpc.protos_and_services("examples/protos/helloworld.proto")
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
@@ -34,7 +37,7 @@ _LOGGER.setLevel(logging.INFO)
 _RANDOM_FAILURE_RATE = 0.3
 
 
-class FaultInjectGreeter(helloworld_pb2_grpc.GreeterServicer):
+class FaultInjectGreeter(services.GreeterServicer):
 
     def __init__(self, failure_rate):
         self._failure_rate = failure_rate
@@ -43,12 +46,12 @@ class FaultInjectGreeter(helloworld_pb2_grpc.GreeterServicer):
         if random.random() < self._failure_rate:
             context.abort(grpc.StatusCode.UNAVAILABLE,
                           'Randomly injected failure.')
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+        return protos.HelloReply(message='Hello, %s!' % request.name)
 
 
 def create_server(addr, failure_rate):
     server = grpc.server(futures.ThreadPoolExecutor())
-    helloworld_pb2_grpc.add_GreeterServicer_to_server(
+    services.add_GreeterServicer_to_server(
         FaultInjectGreeter(failure_rate), server)
 
     # Add Channelz Servicer to the gRPC server

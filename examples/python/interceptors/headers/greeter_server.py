@@ -15,11 +15,14 @@
 
 from concurrent import futures
 import logging
+import os
+import sys
 
 import grpc
 
-protos, services = grpc.protos_and_services("protos/helloworld.protos",
-                                            include_paths=["../../.."])
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
+protos, services = grpc.protos_and_services("protos/helloworld.protos")
+
 from request_header_validator_interceptor import RequestHeaderValidatorInterceptor
 
 

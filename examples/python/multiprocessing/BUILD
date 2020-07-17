@@ -15,23 +15,6 @@
 # limitations under the License.
 
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
-
-proto_library(
-    name = "prime_proto",
-    srcs = ["prime.proto"],
-)
-
-py_proto_library(
-    name = "prime_proto_pb2",
-    deps = [":prime_proto"],
-)
-
-py_grpc_library(
-    name = "prime_proto_pb2_grpc",
-    srcs = [":prime_proto"],
-    deps = [":prime_proto_pb2"],
-)
 
 py_binary(
     name = "client",
@@ -40,10 +23,12 @@ py_binary(
     imports = ["."],
     python_version = "PY3",
     srcs_version = "PY3",
+    data = [
+      "prime.proto"
+    ],
     deps = [
-        ":prime_proto_pb2",
-        ":prime_proto_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )
 
@@ -54,10 +39,12 @@ py_binary(
     imports = ["."],
     python_version = "PY3",
     srcs_version = "PY3",
+    data = [
+      "prime.proto"
+    ],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        ":prime_proto_pb2",
-        ":prime_proto_pb2_grpc",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ] + select({
         "//conditions:default": ["@futures//:futures"],
         "//:python3": [],

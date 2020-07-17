@@ -15,7 +15,9 @@
 
 from concurrent import futures
 import logging
+import os
 import threading
+import sys
 
 import grpc
 from grpc_status import rpc_status
@@ -23,8 +25,8 @@ from grpc_status import rpc_status
 from google.protobuf import any_pb2
 from google.rpc import code_pb2, status_pb2, error_details_pb2
 
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
+protos, services = grpc.protos_and_services("examples/protos/helloworld.proto")
 
 
 def create_greet_limit_exceed_error_status(name):
@@ -43,7 +45,7 @@ def create_greet_limit_exceed_error_status(name):
     )
 
 
-class LimitedGreeter(helloworld_pb2_grpc.GreeterServicer):
+class LimitedGreeter(services.GreeterServicer):
 
     def __init__(self):
         self._lock = threading.RLock()
@@ -57,12 +59,12 @@ class LimitedGreeter(helloworld_pb2_grpc.GreeterServicer):
                 context.abort_with_status(rpc_status.to_status(rich_status))
             else:
                 self._greeted.add(request.name)
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+        return protos.HelloReply(message='Hello, %s!' % request.name)
 
 
 def create_server(server_address):
     server = grpc.server(futures.ThreadPoolExecutor())
-    helloworld_pb2_grpc.add_GreeterServicer_to_server(LimitedGreeter(), server)
+    services.add_GreeterServicer_to_server(LimitedGreeter(), server)
     port = server.add_insecure_port(server_address)
     return server, port
 

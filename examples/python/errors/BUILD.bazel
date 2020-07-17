@@ -18,10 +18,12 @@ py_library(
     name = "client",
     testonly = 1,
     srcs = ["client.py"],
+    data = [
+        "//examples:protos/helloworld.proto",
+    ],
     deps = [
-        "//examples:helloworld_py_pb2",
-        "//examples:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
         "//src/python/grpcio_status/grpc_status",
         requirement("googleapis-common-protos"),
     ],
@@ -31,11 +33,13 @@ py_library(
     name = "server",
     testonly = 1,
     srcs = ["server.py"],
+    data = [
+        "//examples:protos/helloworld.proto",
+    ],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
         "//src/python/grpcio_status/grpc_status:grpc_status",
-        "//examples:helloworld_py_pb2",
-        "//examples:helloworld_py_pb2_grpc",
     ] + select({
         "//conditions:default": [requirement("futures")],
         "//:python3": [],
@@ -51,9 +55,13 @@ py_test(
         "../../../src/python/grpcio_tests",
     ],
     python_version = "PY3",
+    data = [
+        "//examples:protos/helloworld.proto",
+    ],
     deps = [
         ":client",
         ":server",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
     ],
 )

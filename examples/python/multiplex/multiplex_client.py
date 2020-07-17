@@ -18,13 +18,15 @@ from __future__ import print_function
 import random
 import time
 import logging
+import os
+import sys
 
 import grpc
 
-hw_protos, hw_services = grpc.protos_and_services("protos/helloworld.proto",
-                                                  include_paths=["../.."])
-rg_protos, rg_services = grpc.protos_and_services("protos/route_guide.proto",
-                                                  include_paths=["../.."])
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
+hw_protos, hw_services = grpc.protos_and_services("protos/helloworld.proto")
+rg_protos, rg_services = grpc.protos_and_services("protos/route_guide.proto")
+
 import route_guide_resources
 
 

@@ -14,12 +14,16 @@
 """The Python implementation of the GRPC helloworld.Greeter client."""
 
 from __future__ import print_function
+
 import logging
+import os
+import sys
 
 import grpc
 
-protos, services = grpc.protos_and_services("protos/helloworld.protos",
-                                            include_paths=["../../.."])
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
+protos, services = grpc.protos_and_services("protos/helloworld.protos")
+
 import header_manipulator_client_interceptor
 
 
