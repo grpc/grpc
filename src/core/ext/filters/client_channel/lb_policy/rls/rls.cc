@@ -621,37 +621,22 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
   lru_iterator_--;
 }
 
-void RlsLb::Cache::Entry::OnBackoffTimerLocked() {
-  std::lock_guard<std::recursive_mutex> lock(lb_policy_->mu_);
-  timer_pending_ = false;
-  if (is_shutdown_) return;
-  // Picks from wait_for_ready enabled RPCs may be queued when we entered the
-  // backoff state. Here when the entry comes out of the backoff, the picker
-  // needs to be updated so that the queued picks are reprocessed.
-  lb_policy_->UpdatePicker();
-}
-
 void RlsLb::Cache::Entry::OnBackoffTimer(void* arg, grpc_error* error) {
-  Entry* entry = reinterpret_cast<Entry*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(
-        GPR_DEBUG,
-        "[rlslb %p] cache entry=%p, error=%p: successful RLS response received",
-        entry->lb_policy_.get(), entry, error);
-  }
-  if (error == GRPC_ERROR_CANCELLED) {
-    entry->lb_policy_->mu_.lock();
-    entry->timer_pending_ = false;
-    entry->lb_policy_->mu_.unlock();
-  } else {
-    entry->lb_policy_->work_serializer()->Run(
-        [entry]() {
-          entry->OnBackoffTimerLocked();
-          entry->Unref();
-        },
-        DEBUG_LOCATION);
-  }
-  entry->Unref();
+  RefCountedPtr<Entry> entry(static_cast<Entry*>(arg));
+  entry->lb_policy_->work_serializer()->Run(
+      [&entry, error]() {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+          gpr_log(GPR_DEBUG,
+                  "[rlslb %p] cache entry=%p, error=%p: successful RLS "
+                  "response received",
+                  entry->lb_policy_.get(), entry.get(), error);
+        }
+        entry->timer_pending_ = false;
+        // The pick was in backoff state and there could be a pick queued if
+        // wait_for_ready is true. We'll update the picker for that case.
+        entry->lb_policy_->UpdatePicker();
+      },
+      DEBUG_LOCATION);
 }
 
 RlsLb::Cache::Cache(RlsLb* lb_policy) : lb_policy_(lb_policy) {
@@ -721,41 +706,39 @@ void RlsLb::Cache::Shutdown() {
 }
 
 void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error* error) {
-  Cache* cache = reinterpret_cast<Cache*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_DEBUG, "[rlslb %p] cache=%p, error=%p: cleanup timer fired",
-            cache->lb_policy_, cache, error);
-  }
-  if (error == GRPC_ERROR_CANCELLED) {
-    cache->lb_policy_->Unref();
-    return;
-  }
-  std::lock_guard<std::recursive_mutex> lock(cache->lb_policy_->mu_);
-  if (cache->lb_policy_->is_shutdown_) {
-    // Cannot directly unref the lb policy because it could be the last ref on
-    // the lb policy, in which case the lb policy's lock is destroyed while
-    // we're still holding it.
-    cache->lb_policy_->work_serializer()->Run(
-        [cache]() { cache->lb_policy_->Unref(); }, DEBUG_LOCATION);
-    return;
-  }
-  for (auto it = cache->map_.begin(); it != cache->map_.end();) {
-    if (GPR_UNLIKELY(it->second->ShouldRemove())) {
-      if (!it->second->CanEvict()) break;
-      auto lru_it = it->second->iterator();
-      size_t key_size = lru_it->Size();
-      cache->size_ -= (key_size   /* entry in lru_list_ */
-                       + key_size /* key of entry in map_ */
-                       + sizeof(Entry) /* value of entry in map_ */);
-      it = cache->map_.erase(it);
-      cache->lru_list_.erase(lru_it);
-    } else {
-      it++;
-    }
-  }
-  grpc_millis now = ExecCtx::Get()->Now();
-  grpc_timer_init(&cache->cleanup_timer_, now + kCacheCleanupTimerInterval,
-                  &cache->timer_callback_);
+  Cache* cache = static_cast<Cache*>(arg);
+  cache->lb_policy_->work_serializer()->Run(
+      [&cache, error]() {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+          gpr_log(GPR_DEBUG,
+                  "[rlslb %p] cache=%p, error=%p: cleanup timer fired",
+                  cache->lb_policy_, cache, error);
+        }
+        if (error == GRPC_ERROR_CANCELLED || cache->lb_policy_->is_shutdown_)
+          return;
+        std::lock_guard<std::recursive_mutex> lock(cache->lb_policy_->mu_);
+        for (auto it = cache->map_.begin(); it != cache->map_.end();) {
+          if (GPR_UNLIKELY(it->second->ShouldRemove())) {
+            if (!it->second->CanEvict()) break;
+            auto lru_it = it->second->iterator();
+            size_t key_size = lru_it->Size();
+            cache->size_ -= (key_size   /* entry in lru_list_ */
+                             + key_size /* key of entry in map_ */
+                             + sizeof(Entry) /* value of entry in map_ */);
+            it = cache->map_.erase(it);
+            cache->lru_list_.erase(lru_it);
+          } else {
+            it++;
+          }
+        }
+        grpc_millis now = ExecCtx::Get()->Now();
+        cache->lb_policy_->Ref().release();
+        grpc_timer_init(&cache->cleanup_timer_,
+                        now + kCacheCleanupTimerInterval,
+                        &cache->timer_callback_);
+      },
+      DEBUG_LOCATION);
+  cache->lb_policy_->Unref();
 }
 
 void RlsLb::Cache::MaybeShrinkSize() {
@@ -885,14 +868,13 @@ void RlsLb::RlsRequest::StartCall(void* arg, grpc_error* error) {
 }
 
 void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error* error) {
-  RlsRequest* entry = reinterpret_cast<RlsRequest*>(arg);
+  RefCountedPtr<RlsRequest> entry(static_cast<RlsRequest*>(arg));
   entry->lb_policy_->work_serializer()->Run(
       [entry, error]() { entry->OnRlsCallCompleteLocked(error); },
       DEBUG_LOCATION);
 }
 
 void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error* error) {
-  std::lock_guard<std::recursive_mutex> lock(lb_policy_->mu_);
   if (lb_policy_->is_shutdown_) return;
   bool call_failed =
       (error != GRPC_ERROR_NONE || status_recv_ != GRPC_STATUS_OK);
@@ -902,7 +884,6 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error* error) {
             "response received",
             lb_policy_.get(), this, error, status_recv_);
   }
-  channel_->ReportResponseLocked(call_failed);
   ResponseInfo res;
   if (call_failed) {
     if (error == GRPC_ERROR_NONE) {
@@ -922,6 +903,8 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error* error) {
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     }
   }
+  std::lock_guard<std::recursive_mutex> lock(lb_policy_->mu_);
+  channel_->ReportResponseLocked(call_failed);
   Cache::Entry* cache_entry = lb_policy_->cache_.FindOrInsert(key_);
   cache_entry->OnRlsResponseLocked(std::move(res), std::move(backoff_state_));
   lb_policy_->request_map_.erase(key_);
@@ -1079,24 +1062,22 @@ void RlsLb::ControlChannel::StateWatcher::OnConnectivityStateChange(
   }
   if (new_state == GRPC_CHANNEL_READY && was_transient_failure_) {
     was_transient_failure_ = false;
-    Ref().release();
-    channel_->lb_policy_->work_serializer()->Run(
-        [this]() { OnReadyLocked(GRPC_ERROR_NONE); }, DEBUG_LOCATION);
+    channel_->lb_policy_->work_serializer()->Run([this]() { OnReadyLocked(); },
+                                                 DEBUG_LOCATION);
   } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     was_transient_failure_ = true;
   }
 }
 
-void RlsLb::ControlChannel::StateWatcher::OnReadyLocked(grpc_error* error) {
-  (void)error;
+void RlsLb::ControlChannel::StateWatcher::OnReadyLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_DEBUG,
             "[rlslb %p] ControlChannel=%p, StateWatcher=%p: channel transits "
             "to READY",
             channel_->lb_policy_.get(), channel_.get(), this);
   }
-  std::lock_guard<std::recursive_mutex> lock(channel_->lb_policy_->mu_);
   if (channel_->is_shutdown_) return;
+  std::lock_guard<std::recursive_mutex> lock(channel_->lb_policy_->mu_);
   channel_->lb_policy_->cache_.ResetAllBackoff();
   if (channel_->lb_policy_->config_->default_target().empty()) {
     channel_->lb_policy_->UpdatePicker();
@@ -1204,10 +1185,7 @@ RlsLb::ChildPolicyWrapper::ChildPolicyHelper::CreateSubchannel(
             "CreateSubchannel",
             wrapper_->lb_policy_.get(), this, wrapper_.get());
   }
-  {
-    std::lock_guard<std::recursive_mutex> lock(wrapper_->lb_policy_->mu_);
-    if (wrapper_->is_shutdown_) return nullptr;
-  }
+  if (wrapper_->is_shutdown_) return nullptr;
   return wrapper_->lb_policy_->channel_control_helper()->CreateSubchannel(args);
 }
 
@@ -1220,9 +1198,9 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
             wrapper_->lb_policy_.get(), this, wrapper_.get(), state,
             picker.get());
   }
-  std::lock_guard<std::recursive_mutex> lock(wrapper_->lb_policy_->mu_);
   if (wrapper_->is_shutdown_) return;
   wrapper_->connectivity_state_ = state;
+  std::lock_guard<std::recursive_mutex> lock(wrapper_->lb_policy_->mu_);
   GPR_DEBUG_ASSERT(picker != nullptr);
   if (picker != nullptr) {
     wrapper_->picker_ = std::move(picker);
@@ -1237,19 +1215,13 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::RequestReresolution() {
             "RequestReresolution",
             wrapper_->lb_policy_.get(), this, wrapper_.get());
   }
-  {
-    std::lock_guard<std::recursive_mutex> lock(wrapper_->lb_policy_->mu_);
-    if (wrapper_->is_shutdown_) return;
-  }
+  if (wrapper_->is_shutdown_) return;
   wrapper_->lb_policy_->channel_control_helper()->RequestReresolution();
 }
 
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::AddTraceEvent(
     TraceSeverity severity, absl::string_view message) {
-  {
-    std::lock_guard<std::recursive_mutex> lock(wrapper_->lb_policy_->mu_);
-    if (wrapper_->is_shutdown_) return;
-  }
+  if (wrapper_->is_shutdown_) return;
   wrapper_->lb_policy_->channel_control_helper()->AddTraceEvent(severity,
                                                                 message);
 }
@@ -1268,10 +1240,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_DEBUG, "[rlslb %p] policy updated", this);
   }
-  std::lock_guard<std::recursive_mutex> lock(mu_);
-  RefCountedPtr<RlsLbConfig> old_config = config_;
   ServerAddressList old_addresses = std::move(addresses_);
-  config_ = args.config;
   addresses_ = args.addresses;
   grpc_channel_args_destroy(channel_args_);
   channel_args_ = grpc_channel_args_copy(args.args);
@@ -1282,6 +1251,9 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   GPR_ASSERT(uri->path[0] != '\0');
   server_name_ = std::string(uri->path[0] == '/' ? uri->path + 1 : uri->path);
   grpc_uri_destroy(uri);
+  mu_.lock();
+  RefCountedPtr<RlsLbConfig> old_config = config_;
+  config_ = args.config;
   if (old_config == nullptr ||
       config_->lookup_service() != old_config->lookup_service()) {
     channel_ = RefCountedPtr<ControlChannel>(
@@ -1309,7 +1281,6 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
       } else {
         default_child_policy_ = it->second->Ref();
       }
-      UpdatePicker();
     }
   }
   if (old_config == nullptr ||
@@ -1325,7 +1296,19 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
       child.second->child()->UpdateLocked(copied_child_policy_config,
                                           addresses_, channel_args_);
     }
+    if (default_child_policy_ != nullptr) {
+      Json copied_child_policy_config = config_->child_policy_config();
+      grpc_error* error = InsertOrUpdateChildPolicyField(
+          &copied_child_policy_config,
+          config_->child_policy_config_target_field_name(),
+          default_child_policy_->child()->target());
+      GPR_ASSERT(error == GRPC_ERROR_NONE);
+      default_child_policy_->child()->UpdateLocked(copied_child_policy_config,
+                                                   addresses_, channel_args_);
+    }
   }
+  mu_.unlock();
+  UpdatePicker();
 }
 
 void RlsLb::ExitIdleLocked() {
@@ -1336,9 +1319,10 @@ void RlsLb::ExitIdleLocked() {
 }
 
 void RlsLb::ResetBackoffLocked() {
-  std::lock_guard<std::recursive_mutex> lock(mu_);
+  mu_.lock();
   channel_->ResetBackoff();
   cache_.ResetAllBackoff();
+  mu_.unlock();
   for (auto& child : child_policy_map_) {
     child.second->child()->ResetBackoffLocked();
   }

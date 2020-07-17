@@ -241,7 +241,8 @@ class RlsLb : public LoadBalancingPolicy {
       /// Notify the entry when it's evicted from the cache. Performs shut down.
       void Orphan() override;
 
-      /// Updates the entry upon reception of a new RLS response.
+      /// Updates the entry upon reception of a new RLS response. This method
+      /// must be called from the LB policy work serializer.
       void OnRlsResponseLocked(ResponseInfo response,
                                std::unique_ptr<BackOff> backoff_state);
 
@@ -253,8 +254,6 @@ class RlsLb : public LoadBalancingPolicy {
       Cache::Iterator iterator() const { return lru_iterator_; }
 
      private:
-      void OnBackoffTimerLocked();
-
       /// Callback when the backoff timer is fired.
       static void OnBackoffTimer(void* args, grpc_error* error);
 
@@ -385,7 +384,7 @@ class RlsLb : public LoadBalancingPolicy {
       void OnConnectivityStateChange(
           grpc_connectivity_state new_state) override;
 
-      void OnReadyLocked(grpc_error* error);
+      void OnReadyLocked();
 
       RefCountedPtr<ControlChannel> channel_;
 
@@ -478,17 +477,19 @@ class RlsLb : public LoadBalancingPolicy {
 
   /// Update picker in the LB policy's work serializer.
   static void UpdatePickerCallback(void* arg, grpc_error* error);
+
   /// The name of the server for the channel.
   std::string server_name_;
 
-  /// Mutex that protects the entire state of the LB policy, which includes all
-  /// the states below.
+  /// Mutex that protects the states of the lb policy which are shared with the
+  /// picker, including cache_, request_map_, channel_, and
+  /// default_child_policy_.
   std::recursive_mutex mu_;
   bool is_shutdown_ = false;
 
   RefCountedPtr<RlsLbConfig> config_;
   ServerAddressList addresses_;
-  grpc_channel_args* channel_args_ = nullptr;
+  const grpc_channel_args* channel_args_ = nullptr;
   Cache cache_;
   RequestMap request_map_;
   RefCountedPtr<ControlChannel> channel_;
