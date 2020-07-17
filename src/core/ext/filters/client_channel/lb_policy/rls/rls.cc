@@ -1160,6 +1160,15 @@ void RlsLb::ChildPolicyWrapper::ResetBackoffLocked() {
   }
 }
 
+grpc_connectivity_state RlsLb::ChildPolicyWrapper::ConnectivityStateLocked()
+    const {
+  if (was_transient_failure_) {
+    return GRPC_CHANNEL_TRANSIENT_FAILURE;
+  } else {
+    return connectivity_state_;
+  }
+}
+
 void RlsLb::ChildPolicyWrapper::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_DEBUG,
@@ -1200,6 +1209,11 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
   }
   if (wrapper_->is_shutdown_) return;
   wrapper_->connectivity_state_ = state;
+  if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    wrapper_->was_transient_failure_ = true;
+  } else if (state == GRPC_CHANNEL_READY) {
+    wrapper_->was_transient_failure_ = false;
+  }
   std::lock_guard<std::recursive_mutex> lock(wrapper_->lb_policy_->mu_);
   GPR_DEBUG_ASSERT(picker != nullptr);
   if (picker != nullptr) {
@@ -1381,9 +1395,30 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error* error) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
           gpr_log(GPR_DEBUG, "[rlslb %p] update picker", lb_policy.get());
         }
-        // TODO(mxyan): more sophisticated channel state inference?
+        grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+        int num_idle = 0;
+        int num_connecting = 0;
+        for (auto& item : lb_policy->child_policy_map_) {
+          grpc_connectivity_state item_state =
+              item.second->child()->ConnectivityStateLocked();
+          if (item_state == GRPC_CHANNEL_READY) {
+            state = GRPC_CHANNEL_READY;
+            break;
+          } else if (item_state == GRPC_CHANNEL_CONNECTING) {
+            num_connecting++;
+          } else if (item_state == GRPC_CHANNEL_IDLE) {
+            num_idle++;
+          }
+        }
+        if (state != GRPC_CHANNEL_READY) {
+          if (num_connecting > 0) {
+            state = GRPC_CHANNEL_CONNECTING;
+          } else if (num_idle > 0) {
+            state = GRPC_CHANNEL_IDLE;
+          }
+        }
         lb_policy->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_READY, absl::make_unique<Picker>(lb_policy->Ref()));
+            state, absl::make_unique<Picker>(lb_policy->Ref()));
       },
       DEBUG_LOCATION);
 }

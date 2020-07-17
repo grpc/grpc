@@ -160,6 +160,12 @@ class RlsLb : public LoadBalancingPolicy {
     /// child policy
     void ResetBackoffLocked();
 
+    /// Get the connectivity state of the child policy. Once the child policy
+    /// reports TRANSIENT_FAILURE, the function will always return
+    /// TRANSIENT_FAILURE state instead of the actual state of the child policy
+    /// until the child policy reports another READY state.
+    grpc_connectivity_state ConnectivityStateLocked() const;
+
     void Orphan() override;
 
     const std::string& target() const { return target_; }
@@ -191,6 +197,9 @@ class RlsLb : public LoadBalancingPolicy {
 
     bool is_shutdown_ = false;
 
+    /// Whether the child policy state has been in TRANSIENT_FAILURE since last
+    /// READY state.
+    bool was_transient_failure_ = false;
     OrphanablePtr<ChildPolicyHandler> child_policy_;
     grpc_connectivity_state connectivity_state_;
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_;
