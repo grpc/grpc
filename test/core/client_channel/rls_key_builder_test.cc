@@ -220,11 +220,8 @@ TEST_F(RlsKeyBuilderTest, WildcardMatch) {
   RlsLb::KeyMapBuilderMap key_builder_map =
       RlsCreateKeyMapBuilderMap(config_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
-  TestMetadata metadata;
-  metadata.Add(":path", "/test_service1/some_random_method");
-  std::string path = RlsFindPathFromMetadata(&metadata);
-  const RlsLb::KeyMapBuilder* builder =
-      RlsFindKeyMapBuilder(key_builder_map, path);
+  const RlsLb::KeyMapBuilder* builder = RlsFindKeyMapBuilder(
+      key_builder_map, "/test_service1/some_random_method");
   EXPECT_NE(builder, nullptr);
 }
 
@@ -256,11 +253,8 @@ TEST_F(RlsKeyBuilderTest, WildcardNonMatch) {
   RlsLb::KeyMapBuilderMap key_builder_map =
       RlsCreateKeyMapBuilderMap(config_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
-  TestMetadata metadata;
-  metadata.Add(":path", "/test_service2/some_random_method");
-  std::string path = RlsFindPathFromMetadata(&metadata);
-  const RlsLb::KeyMapBuilder* builder =
-      RlsFindKeyMapBuilder(key_builder_map, path);
+  const RlsLb::KeyMapBuilder* builder = RlsFindKeyMapBuilder(
+      key_builder_map, "/test_service2/some_random_method");
   EXPECT_EQ(builder, nullptr);
 }
 
@@ -272,10 +266,8 @@ TEST_F(RlsKeyBuilderTest, KeyExtraction) {
   metadata.Add("key1_field1", "key1_val");
   metadata.Add("key2_field2", "key2_val");
   metadata.Add("key3_field1", "key3_val");
-  metadata.Add(":path", "/test_service1/test_method2");
-  std::string path = RlsFindPathFromMetadata(&metadata);
   const RlsLb::KeyMapBuilder* builder =
-      RlsFindKeyMapBuilder(key_builder_map, path);
+      RlsFindKeyMapBuilder(key_builder_map, "/test_service1/test_method2");
   ASSERT_NE(builder, nullptr);
   RlsLb::KeyMap key = builder->BuildKeyMap(&metadata);
   EXPECT_THAT(key, ::testing::ElementsAre(::testing::Pair("key1", "key1_val"),
@@ -290,10 +282,8 @@ TEST_F(RlsKeyBuilderTest, PathMatching) {
   metadata.Add("key1_field1", "key1_val");
   metadata.Add("key2_field2", "key2_val");
   metadata.Add("key3_field1", "key3_val");
-  metadata.Add(":path", "/test_service2/test_method2");
-  std::string path = RlsFindPathFromMetadata(&metadata);
   const RlsLb::KeyMapBuilder* builder =
-      RlsFindKeyMapBuilder(key_builder_map, path);
+      RlsFindKeyMapBuilder(key_builder_map, "/test_service2/test_method2");
   ASSERT_NE(builder, nullptr);
   RlsLb::KeyMap key = builder->BuildKeyMap(&metadata);
   EXPECT_THAT(key, ::testing::ElementsAre(::testing::Pair("key3", "key3_val")));
@@ -306,10 +296,8 @@ TEST_F(RlsKeyBuilderTest, KeyExtractionMultipleIdenticalHeader) {
   TestMetadata metadata;
   metadata.Add("key1_field1", "key1_val1");
   metadata.Add("key1_field1", "key1_val2");
-  metadata.Add(":path", "/test_service1/test_method1");
-  std::string path = RlsFindPathFromMetadata(&metadata);
   const RlsLb::KeyMapBuilder* builder =
-      RlsFindKeyMapBuilder(key_builder_map, path);
+      RlsFindKeyMapBuilder(key_builder_map, "/test_service1/test_method1");
   ASSERT_NE(builder, nullptr);
   RlsLb::KeyMap key = builder->BuildKeyMap(&metadata);
   EXPECT_THAT(key, ::testing::ElementsAre(

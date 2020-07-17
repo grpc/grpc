@@ -589,10 +589,6 @@ const RlsLb::KeyMapBuilder* RlsFindKeyMapBuilder(
     const RlsLb::KeyMapBuilderMap& key_map_builder_map,
     const std::string& path);
 
-/// Extract path of the call from metadata.
-std::string RlsFindPathFromMetadata(
-    LoadBalancingPolicy::MetadataInterface* metadata);
-
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_RLS_RLS_H
