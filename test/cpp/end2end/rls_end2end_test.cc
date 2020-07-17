@@ -62,9 +62,9 @@ namespace {
 const char* kTestKey = "testKey";
 const char* kTestUrl = "test.google.fr";
 const char* kTestRequestPath = "/grpc.testing.EchoTestService/Echo";
-const grpc::string kServerHost = "localhost";
-const grpc::string kRequestMessage = "Live long and prosper.";
-const grpc::string kTarget = "test_target";
+const char* kServerHost = "localhost";
+const char* kRequestMessage = "Live long and prosper.";
+const char* kTarget = "test_target";
 const char* kDefaultTarget = "test_default_target";
 
 template <typename ServiceType>
@@ -358,9 +358,8 @@ class RlsServiceImpl : public RlsService {
     if (res.request_match.has_value()) {
       const std::string& server = request->server();
       const std::string& path = request->path();
-      std::map<std::string, std::string> key_map =
-          std::map<std::string, std::string>(request->key_map().begin(),
-                                             request->key_map().end());
+      std::map<std::string, std::string> key_map(request->key_map().begin(),
+                                                 request->key_map().end());
       if (server != res.request_match->server ||
           path != res.request_match->path ||
           key_map != res.request_match->key_map) {

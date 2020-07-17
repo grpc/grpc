@@ -661,15 +661,13 @@ RlsLb::Cache::Entry* RlsLb::Cache::Find(const RequestKey& key) {
 RlsLb::Cache::Entry* RlsLb::Cache::FindOrInsert(const RequestKey& key) {
   auto it = map_.find(key);
   if (it == map_.end()) {
+    size_t new_entry_size = key.Size() * 2 + sizeof(Entry);
+    MaybeShrinkSize(size_limit_ - new_entry_size);
     Entry* entry = new Entry(lb_policy_->Ref());
     map_.emplace(key, OrphanablePtr<Entry>(entry));
     auto lru_it = lru_list_.insert(lru_list_.end(), key);
     entry->set_iterator(lru_it);
-    size_t key_size = key.Size();
-    size_ += (key_size   /* entry in lru_list_ */
-              + key_size /* key of entry in map_ */
-              + sizeof(Entry) /* value of entry in map_ */);
-    MaybeShrinkSize();
+    size_ += new_entry_size;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_DEBUG, "[rlslb %p] cache entry added, entry=%p", lb_policy_,
               entry);
@@ -691,7 +689,7 @@ void RlsLb::Cache::Resize(int64_t bytes) {
             lb_policy_, bytes);
   }
   size_limit_ = bytes;
-  MaybeShrinkSize();
+  MaybeShrinkSize(size_limit_);
 }
 
 void RlsLb::Cache::ResetAllBackoff() {
@@ -742,8 +740,8 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error* error) {
   cache->lb_policy_->Unref();
 }
 
-void RlsLb::Cache::MaybeShrinkSize() {
-  while (size_ > size_limit_) {
+void RlsLb::Cache::MaybeShrinkSize(int64_t bytes) {
+  while (size_ > bytes) {
     auto lru_it = lru_list_.begin();
     if (GPR_UNLIKELY(lru_it == lru_list_.end())) break;
     auto map_it = map_.find(*lru_it);

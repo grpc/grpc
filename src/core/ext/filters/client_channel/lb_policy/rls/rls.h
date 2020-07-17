@@ -241,9 +241,6 @@ class RlsLb : public LoadBalancingPolicy {
       /// min_expiration_time_ has passed.
       bool CanEvict() const;
 
-      /// Calculate the size of the entry.
-      size_t Size() const;
-
       /// Notify the entry when it's evicted from the cache. Performs shut down.
       void Orphan() override;
 
@@ -321,7 +318,7 @@ class RlsLb : public LoadBalancingPolicy {
 
     /// Evict oversized cache elements when the current size is greater than
     /// the size limit.
-    void MaybeShrinkSize();
+    void MaybeShrinkSize(int64_t bytes);
 
     /// Set an entry to be recently used and move it to the end of the LRU
     /// list.
@@ -330,7 +327,7 @@ class RlsLb : public LoadBalancingPolicy {
     RlsLb* lb_policy_;
 
     int64_t size_limit_ = 0;
-    int64_t size_ = sizeof(Cache);
+    int64_t size_ = 0;
 
     std::list<RequestKey> lru_list_;
     MapType map_;
