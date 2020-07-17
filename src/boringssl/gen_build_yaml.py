@@ -22,12 +22,10 @@ import sys
 import os
 import yaml
 
-
-
 try:
     sources_path = os.path.abspath(
-                      os.path.join(os.path.dirname(sys.argv[0]),
-                      '../../third_party/boringssl-with-bazel/sources.json'))
+        os.path.join(os.path.dirname(sys.argv[0]),
+                     '../../third_party/boringssl-with-bazel/sources.json'))
     with open(sources_path, 'r') as s:
         sources = json.load(s)
 except ImportError:
@@ -41,17 +39,17 @@ def map_dir(filename):
 
 class Grpc(object):
     """ Adapter for boring-SSL json sources files. """
+
     def __init__(self, sources):
-       self.yaml = None
-       self.WriteFiles(sources)
+        self.yaml = None
+        self.WriteFiles(sources)
 
     def WriteFiles(self, files):
         test_binaries = ['ssl_test', 'crypto_test']
-        asm_outputs = {key: value
-                       for key, value in files.items()
-                       if any(
-                          f.endswith(".S") or f.endswith(".asm")
-                          for f in value)}
+        asm_outputs = {
+            key: value for key, value in files.items() if any(
+                f.endswith(".S") or f.endswith(".asm") for f in value)
+        }
         self.yaml = {
             '#':
                 'generated with src/boringssl/gen_build_yaml.py',
@@ -128,8 +126,5 @@ class Grpc(object):
         }
 
 
-
 grpc_platform = Grpc(sources)
 print(yaml.dump(grpc_platform.yaml))
-
-
