@@ -1717,6 +1717,55 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/curve25519_64.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_32.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/bitmap256.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/bitstate.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/compile.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/dfa.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/filtered_re2.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/filtered_re2.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/mimics_pcre.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/nfa.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/onepass.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/parse.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/perl_groups.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/pod_array.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/prefilter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/prefilter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/prefilter_tree.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/prefilter_tree.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/prog.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/prog.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/re2.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/re2.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/regexp.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/regexp.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/set.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/set.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/simplify.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/sparse_array.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/sparse_set.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/stringpiece.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/stringpiece.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/tostring.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/unicode_casefold.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/unicode_casefold.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/walker-inl.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/benchmark.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/flags.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/logging.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/malloc_counter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/mix.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/mutex.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/pcre.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/pcre.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/rune.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/strutil.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/strutil.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/test.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.c" role="src" />

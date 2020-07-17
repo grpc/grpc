@@ -894,6 +894,29 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/ssl/tls13_server.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
+    third_party/re2/re2/bitstate.cc \
+    third_party/re2/re2/compile.cc \
+    third_party/re2/re2/dfa.cc \
+    third_party/re2/re2/filtered_re2.cc \
+    third_party/re2/re2/mimics_pcre.cc \
+    third_party/re2/re2/nfa.cc \
+    third_party/re2/re2/onepass.cc \
+    third_party/re2/re2/parse.cc \
+    third_party/re2/re2/perl_groups.cc \
+    third_party/re2/re2/prefilter.cc \
+    third_party/re2/re2/prefilter_tree.cc \
+    third_party/re2/re2/prog.cc \
+    third_party/re2/re2/re2.cc \
+    third_party/re2/re2/regexp.cc \
+    third_party/re2/re2/set.cc \
+    third_party/re2/re2/simplify.cc \
+    third_party/re2/re2/stringpiece.cc \
+    third_party/re2/re2/tostring.cc \
+    third_party/re2/re2/unicode_casefold.cc \
+    third_party/re2/re2/unicode_groups.cc \
+    third_party/re2/util/pcre.cc \
+    third_party/re2/util/rune.cc \
+    third_party/re2/util/strutil.cc \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/def.c \
     third_party/upb/upb/encode.c \
@@ -1068,5 +1091,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
 fi
