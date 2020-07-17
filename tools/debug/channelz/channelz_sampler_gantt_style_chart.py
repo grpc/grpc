@@ -1,5 +1,5 @@
 import plotly as py
-
+  
 import plotly.figure_factory as ff
 
 import json
@@ -15,10 +15,10 @@ if __name__ == '__main__':
   pyplt = py.offline.plot
 
   # Read Json data
+  
   df = []
   with open(sys.argv[1], 'r') as f:
     temp = json.loads(f.read())
-
   for i in temp:
     df.append(
         dict(
@@ -27,7 +27,9 @@ if __name__ == '__main__':
             Finish=i['Finish'],
             ID=i['ID'],
             Type=i['Type'],
-            Description=i['Description']))
+            Description=i['Description'].replace('\n', '<br>')))
+
+
   sorted_df = sorted(df, key=lambda x: (x['Task'], x['Start']))
 
   # Create Gantt style chart
@@ -42,10 +44,12 @@ if __name__ == '__main__':
       colors=colors,
       index_col='Type',
       title='channelz_sampler',
-      bar_width=0.12,
+      bar_width=0.15,
       showgrid_x=True,
       show_colorbar=True,
+      height=1000,
       group_tasks=False,
-      show_hover_fill=True)
+      show_hover_fill=True
+  )
   pyplt(fig, filename='gantt.html')
 
