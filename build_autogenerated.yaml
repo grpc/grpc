@@ -2568,7 +2568,6 @@ libs:
   public_headers:
   - include/grpc++/ext/proto_server_reflection_plugin.h
   - include/grpcpp/ext/proto_server_reflection_plugin.h
-  - include/grpcpp/ext/proto_server_reflection_plugin_impl.h
   headers:
   - src/cpp/ext/proto_server_reflection.h
   src:
