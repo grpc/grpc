@@ -148,8 +148,7 @@ for filename in filename_list:
     if filename in _EXEMPT:
         continue
     # Skip check for upb generated code.
-    if (filename.endswith('.upb.h') or filename.endswith('.upb.c') or
-            filename.endswith('.upbdefs.h') or filename.endswith('.upbdefs.c')):
+    if filename.endswith('.upb.h') or filename.endswith('.upb.c'):
         continue
     ext = os.path.splitext(filename)[1]
     base = os.path.basename(filename)
