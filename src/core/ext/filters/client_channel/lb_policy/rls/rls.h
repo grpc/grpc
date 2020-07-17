@@ -46,7 +46,6 @@
 namespace grpc_core {
 
 class RlsLbConfig;
-class RlsLbFactory;
 
 class RlsLb : public LoadBalancingPolicy {
  public:
@@ -82,8 +81,6 @@ class RlsLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  class RlsRequest;
-
   // Key to access entries in the cache and the request map.
   struct RequestKey {
     std::string path;
@@ -210,7 +207,7 @@ class RlsLb : public LoadBalancingPolicy {
   /// references.
   class ChildPolicyOwner : public RefCounted<ChildPolicyOwner> {
    public:
-    ChildPolicyOwner(ChildPolicyWrapper* child, RlsLb* parent);
+    ChildPolicyOwner(OrphanablePtr<ChildPolicyWrapper> child, RlsLb* parent);
     ~ChildPolicyOwner();
 
     ChildPolicyWrapper* child() const { return child_.get(); }

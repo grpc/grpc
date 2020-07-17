@@ -566,7 +566,8 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
       auto it = lb_policy_->child_policy_map_.find(response.target);
       if (it == lb_policy_->child_policy_map_.end()) {
         child_policy_wrapper_ = MakeRefCounted<ChildPolicyOwner>(
-            new ChildPolicyWrapper(lb_policy_->Ref(), response.target),
+            MakeOrphanable<ChildPolicyWrapper>(lb_policy_->Ref(),
+                                               response.target),
             lb_policy_.get());
         Json copied_child_policy_config =
             lb_policy_->config_->child_policy_config();
@@ -1084,10 +1085,10 @@ void RlsLb::ControlChannel::StateWatcher::OnReadyLocked() {
   }
 }
 
-RlsLb::ChildPolicyOwner::ChildPolicyOwner(ChildPolicyWrapper* child,
-                                          RlsLb* parent)
-    : parent_(parent), child_(child) {
-  parent->child_policy_map_.emplace(child->target(), this);
+RlsLb::ChildPolicyOwner::ChildPolicyOwner(
+    OrphanablePtr<ChildPolicyWrapper> child, RlsLb* parent)
+    : parent_(parent), child_(std::move(child)) {
+  parent_->child_policy_map_.emplace(child_->target(), this);
 }
 
 RlsLb::ChildPolicyOwner::~ChildPolicyOwner() {
@@ -1289,7 +1290,9 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
       auto it = child_policy_map_.find(config_->default_target());
       if (it == child_policy_map_.end()) {
         default_child_policy_ = MakeRefCounted<ChildPolicyOwner>(
-            new ChildPolicyWrapper(Ref(), config_->default_target()), this);
+            MakeOrphanable<ChildPolicyWrapper>(Ref(),
+                                               config_->default_target()),
+            this);
         default_child_policy_->child()->UpdateLocked(
             config_->child_policy_config(), addresses_, channel_args_);
       } else {
