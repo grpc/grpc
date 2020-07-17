@@ -1368,7 +1368,8 @@ bool RlsLb::MaybeMakeRlsCall(const RequestKey& key,
 void RlsLb::UpdatePicker() {
   Ref().release();
   ExecCtx::Run(DEBUG_LOCATION,
-               GRPC_CLOSURE_CREATE(UpdatePickerCallback, this, grpc_schedule_on_exec_ctx),
+               GRPC_CLOSURE_CREATE(UpdatePickerCallback, this,
+                                   grpc_schedule_on_exec_ctx),
                GRPC_ERROR_NONE);
 }
 
@@ -1382,8 +1383,7 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error* error) {
         }
         // TODO(mxyan): more sophisticated channel state inference?
         lb_policy->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_READY,
-            absl::make_unique<Picker>(lb_policy->Ref()));
+            GRPC_CHANNEL_READY, absl::make_unique<Picker>(lb_policy->Ref()));
       },
       DEBUG_LOCATION);
 }
