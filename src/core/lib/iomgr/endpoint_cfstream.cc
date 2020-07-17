@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -364,18 +365,18 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
   CFSTREAM_HANDLE_REF(ep_impl->stream_sync, "endpoint create");
 
   ep_impl->peer_string = peer_string;
-  int native_handle = CFReadStreamCopyProperty(
-      ep_impl->read_stream, kCFStreamPropertySocketNativeHandle);
+  const int* native_handle =
+      reinterpret_cast<const int*>(CFReadStreamCopyProperty(
+          ep_impl->read_stream, kCFStreamPropertySocketNativeHandle));
   struct sockaddr local_addr;
-  socklen_t local_addrlen;
-  if (getsockname(native_handle, &local_addr, &local_addrlen) < 0) {
+  socklen_t local_addrlen = sizeof(local_addr);
+  if (getsockname(*native_handle, &local_addr, &local_addrlen) < 0) {
     ep_impl->local_address = "";
   } else {
     grpc_resolved_address resolved_local_addr;
     memcpy(resolved_local_addr.addr, &local_addr, local_addrlen);
     resolved_local_addr.len = local_addrlen;
-    ep_impl->local_address =
-        grpc_sockaddr_to_uri(&reinterpret_cast<grpc_sockaddr>(local_addr));
+    ep_impl->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
   ep_impl->read_cb = nil;
   ep_impl->write_cb = nil;
@@ -386,7 +387,7 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
   GRPC_CLOSURE_INIT(&ep_impl->write_action, WriteAction,
                     static_cast<void*>(ep_impl), grpc_schedule_on_exec_ctx);
   ep_impl->resource_user =
-      grpc_resource_user_create(resource_quota, peer_string.c_str());
+      grpc_resource_user_create(resource_quota, peer_string);
   grpc_resource_user_slice_allocator_init(&ep_impl->slice_allocator,
                                           ep_impl->resource_user,
                                           CFStreamReadAllocationDone, ep_impl);

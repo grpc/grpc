@@ -530,7 +530,7 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   GRPC_CLOSURE_INIT(&tcp->on_read, on_read, tcp, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&tcp->on_write, on_write, tcp, grpc_schedule_on_exec_ctx);
   struct sockaddr local_addr;
-  socklen_t local_addrlen;
+  socklen_t local_addrlen = sizeof(local_addr);
   if (getsockname(tcp->socket->socket, &local_addr, &local_addrlen) < 0) {
     tcp->local_address = "";
   } else {
@@ -541,8 +541,7 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   }
   tcp->peer_string = peer_string;
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  tcp->resource_user =
-      grpc_resource_user_create(resource_quota, peer_string.c_str());
+  tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
   grpc_resource_quota_unref_internal(resource_quota);
 
   return &tcp->base;

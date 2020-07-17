@@ -26,6 +26,7 @@
 #include <grpc/support/time.h>
 #include <string.h>
 
+#include "absl/strings/string_view.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -78,7 +79,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
     } else if (peer.compare(0, static_cast<size_t>(last_colon),
                             *server->peer) != 0) {
       gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer->c_str(),
-              peer);
+              std::string(peer).c_str());
     }
   }
   new_tail = static_cast<timestamp_list*>(gpr_malloc(sizeof(timestamp_list)));

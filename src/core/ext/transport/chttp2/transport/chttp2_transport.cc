@@ -1749,9 +1749,8 @@ static void retry_initiate_ping_locked(void* tp, grpc_error* error) {
 void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
   if (pq->inflight_id != id) {
-    std::string from(t->peer_string);
-    gpr_log(GPR_DEBUG, "Unknown ping response from %s: %" PRIx64, from.c_str(),
-            id);
+    gpr_log(GPR_DEBUG, "Unknown ping response from %s: %" PRIx64,
+            t->peer_string.c_str(), id);
     return;
   }
   grpc_core::ExecCtx::RunList(DEBUG_LOCATION,

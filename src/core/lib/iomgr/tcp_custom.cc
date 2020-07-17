@@ -368,7 +368,7 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
   gpr_ref_init(&tcp->refcount, 1);
   tcp->peer_string = peer_string;
   struct sockaddr local_addr;
-  int local_addrlen;
+  int local_addrlen = sizeof(local_addr);
   if (grpc_custom_socket_vtable->getsockname(
           socket, &local_addr, &local_addrlen) != GRPC_ERROR_NONE) {
     tcp->local_address = "";
