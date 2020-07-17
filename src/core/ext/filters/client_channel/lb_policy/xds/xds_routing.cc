@@ -263,7 +263,8 @@ absl::optional<absl::string_view> GetMetadataValue(
 bool HeaderMatchHelper(
     const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher& header_matcher,
     LoadBalancingPolicy::MetadataInterface* initial_metadata) {
-  auto value = GetMetadataValue(header_matcher.name, initial_metadata);
+  std::string concatenated_value;
+  auto value = GetMetadataValue(header_matcher.name, initial_metadata, &concatenated_value);
   if (!value.has_value()) {
     if (header_matcher.type == XdsApi::RdsUpdate::RdsRoute::Matchers::
                                    HeaderMatcher::HeaderMatcherType::PRESENT) {
