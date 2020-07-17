@@ -3795,7 +3795,6 @@ add_library(upb
   third_party/upb/upb/text_encode.c
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/protobuf/any.upbdefs.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   src/core/ext/upb-generated/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upb-generated/google/protobuf/duration.upb.c
   src/core/ext/upb-generated/google/protobuf/duration.upbdefs.c

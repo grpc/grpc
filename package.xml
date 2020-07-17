@@ -510,8 +510,6 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upbdefs.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/descriptor.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/descriptor.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/descriptor.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/descriptor.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/duration.upb.c" role="src" />
@@ -1717,6 +1715,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/curve25519_64.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_32.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.c" role="src" />
