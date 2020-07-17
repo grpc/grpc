@@ -39,7 +39,7 @@ do
   DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)
   DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
 
-  # skip the image if it already exists in the repo 
+  # skip the image if it already exists in the repo
   curl --silent -f -lSL https://registry.hub.docker.com/v2/repositories/${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}/tags/${DOCKER_IMAGE_TAG} > /dev/null \
       && continue
 
@@ -47,4 +47,19 @@ do
 
   # "docker login" needs to be run in advance
   docker push ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+done
+
+# third_party/rake-compiler-dock dockerfiles
+for NAME in rake_x86_64-linux rake_x86-linux rake_x64-mingw32 rake_x86-mingw32
+do
+  DOCKER_IMAGE_NAME=${NAME}_$(sha1sum third_party/rake-compiler-dock/${NAME}/Dockerfile | cut -f1 -d\ )
+
+  # skip the image if it already exists in the repo
+  curl --silent -f -lSL https://registry.hub.docker.com/v2/repositories/${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}/tags/latest > /dev/null \
+      && continue
+
+  docker build -t ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME} -f third_party/rake-compiler-dock/${NAME}/Dockerfile .
+
+  # "docker login" needs to be run in advance
+  docker push ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}
 done
