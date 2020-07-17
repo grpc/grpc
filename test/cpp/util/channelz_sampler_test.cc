@@ -57,18 +57,14 @@ using grpc::Status;
 std::string server_address("0.0.0.0:10000");
 std::string custom_credentials_type("INSECURE_CREDENTIALS");
 std::string sampling_times = "2";
-std::string sampling_interval_seconds = "5";
-std::string output_json("./output.json");
+std::string sampling_interval_seconds = "1";
+std::string output_json("output.json");
 
-// Creata an echo server - randomly delay 0.1 to 0.2 s
+// Creata an echo server
 class EchoServerImpl final : public grpc::testing::TestService::Service {
   Status EmptyCall(::grpc::ServerContext* context,
                    const grpc::testing::Empty* request,
                    grpc::testing::Empty* response) {
-    srand(unsigned(time(0)));
-    unsigned int server_delay_microseconds = 100000;
-    server_delay_microseconds += rand() % server_delay_microseconds;
-    usleep(server_delay_microseconds);
     return Status::OK;
   }
 };
@@ -87,10 +83,6 @@ void RunServer(gpr_event* done_ev) {
           custom_credentials_type);
   builder.AddListeningPort(server_address, server_creds);
 
-  // forces channelz and channel tracing to be enabled.
-  builder.AddChannelArgument(GRPC_ARG_ENABLE_CHANNELZ, 1);
-  builder.AddChannelArgument(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE,
-                             1024);
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
@@ -101,7 +93,7 @@ void RunServer(gpr_event* done_ev) {
   }
 }
 
-// Run client in a thread - - set timeout as 0.15s
+// Run client in a thread
 void RunClient(std::string client_id, gpr_event* done_ev) {
   grpc::ChannelArguments channel_args;
   std::shared_ptr<grpc::ChannelCredentials> channel_creds =
@@ -117,26 +109,25 @@ void RunClient(std::string client_id, gpr_event* done_ev) {
     if (gpr_event_get(done_ev)) {
       return;
     }
-    sleep(client_echo_sleep_second);
     // Rcho RPC
     grpc::testing::Empty request;
     grpc::testing::Empty response;
     ClientContext context;
-    int64_t timeout_microseconds = 150;
-    context.set_deadline(
-        grpc_timeout_milliseconds_to_deadline(timeout_microseconds));
     stub->EmptyCall(&context, request, &response);
+    // sleep before next RPC
+    sleep(client_echo_sleep_second);
   }
 }
 
 // Create the channelz to test the connection to the server
-void WaitForConnection() {
+bool WaitForConnection(int wait_server_seconds) {
   grpc::ChannelArguments channel_args;
   std::shared_ptr<grpc::ChannelCredentials> channel_creds =
       grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
           custom_credentials_type, &channel_args);
   auto channel = grpc::CreateChannel(server_address, channel_creds);
-  channel->WaitForConnected(grpc_timeout_seconds_to_deadline(3));
+  return channel->WaitForConnected(
+      grpc_timeout_seconds_to_deadline(wait_server_seconds));
 }
 
 // Test the channelz sampler
@@ -145,7 +136,8 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   gpr_event done_ev0;
   gpr_event_init(&done_ev0);
   std::thread server_thread(RunServer, &done_ev0);
-  WaitForConnection();
+  int wait_server_seconds = 10;
+  ASSERT_TRUE(WaitForConnection(wait_server_seconds));
 
   // client threads
   gpr_event done_ev1, done_ev2;
@@ -165,7 +157,24 @@ TEST(ChannelzSamplerTest, SimpleTest) {
        "--sampling_interval_seconds=" + sampling_interval_seconds,
        "--output_json=" + output_json});
 
-  test_driver->Join();
+  int status = test_driver->Join();
+  if (WIFEXITED(status)) {
+    if (WEXITSTATUS(status)) {
+      gpr_log(GPR_INFO, "Channelz sampler test test-runner exited with code %d",
+              WEXITSTATUS(status));
+      abort();
+    }
+  } else if (WIFSIGNALED(status)) {
+    gpr_log(GPR_INFO, "Channelz sampler test test-runner ended from signal %d",
+            WTERMSIG(status));
+    abort();
+  } else {
+    gpr_log(GPR_INFO,
+            "Channelz sampler test test-runner ended with unknown status %d",
+            status);
+    abort();
+  }
+
   gpr_event_set(&done_ev1, (void*)1);
   gpr_event_set(&done_ev2, (void*)1);
   client_thread_1.join();

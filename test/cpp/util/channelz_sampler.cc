@@ -47,9 +47,9 @@
 
 DEFINE_string(server_address, "", "channelz server address");
 DEFINE_string(custom_credentials_type, "", "custom credentials type");
-DEFINE_int64(sampling_times, 2, "number of sampling");
-DEFINE_int64(sampling_interval_seconds, 3, "sampling interval in seconds");
-DEFINE_string(output_json, "./output.json", "output filename in json format");
+DEFINE_int64(sampling_times, 1, "number of sampling");
+DEFINE_int64(sampling_interval_seconds, 0, "sampling interval in seconds");
+DEFINE_string(output_json, "", "output filename in json format");
 
 using grpc::channelz::v1::GetChannelRequest;
 using grpc::channelz::v1::GetChannelResponse;
@@ -127,7 +127,7 @@ class ChannelzSampler final {
   }
 
   // get the descedent channels/subchannels/sockets of a channel
-  // store descedent channels/subchannels into queues for later traverse
+  // push descedent channels/subchannels to queue for layer traverse
   // store descedent channels/subchannels/sockets for dumping data
   void GetChannelDescedence(
       const grpc::channelz::v1::Channel& channel,
@@ -141,8 +141,10 @@ class ChannelzSampler final {
         std::cout << ch_id << " ";
         grpc::channelz::v1::Channel ch = GetChannelRPC(ch_id);
         channel_queue.push(ch);
-        all_channels.push_back(ch);
-        StoreChannelInJson(ch);
+        if (CheckID(ch_id)) {
+          all_channels.push_back(ch);
+          StoreChannelInJson(ch);
+        }
       }
     }
     if (channel.subchannel_ref_size() > 0) {
@@ -152,8 +154,10 @@ class ChannelzSampler final {
         std::cout << subch_id << " ";
         grpc::channelz::v1::Subchannel subch = GetSubchannelRPC(subch_id);
         subchannel_queue.push(subch);
-        all_subchannels.push_back(subch);
-        StoreSubchannelInJson(subch);
+        if (CheckID(subch_id)) {
+          all_subchannels.push_back(subch);
+          StoreSubchannelInJson(subch);
+        }
       }
     }
     if (channel.socket_ref_size() > 0) {
@@ -162,15 +166,17 @@ class ChannelzSampler final {
         int64_t so_id = _socketref.socket_id();
         std::cout << so_id << " ";
         grpc::channelz::v1::Socket so = GetSocketRPC(so_id);
-        all_sockets.push_back(so);
-        StoreSocketInJson(so);
+        if (CheckID(so_id)) {
+          all_sockets.push_back(so);
+          StoreSocketInJson(so);
+        }
       }
     }
     std::cout << std::endl;
   }
 
   // get the descedent channels/subchannels/sockets of a subchannel
-  // store descedent channels/subchannels into queues for later traverse
+  // push descedent channels/subchannels to queue for layer traverse
   // store descedent channels/subchannels/sockets for dumping data
   void GetSubchannelDescedence(
       grpc::channelz::v1::Subchannel& subchannel,
@@ -185,8 +191,10 @@ class ChannelzSampler final {
         std::cout << ch_id << " ";
         grpc::channelz::v1::Channel ch = GetChannelRPC(ch_id);
         channel_queue.push(ch);
-        all_channels.push_back(ch);
-        StoreChannelInJson(ch);
+        if (CheckID(ch_id)) {
+          all_channels.push_back(ch);
+          StoreChannelInJson(ch);
+        }
       }
     }
     if (subchannel.subchannel_ref_size() > 0) {
@@ -196,8 +204,10 @@ class ChannelzSampler final {
         std::cout << subch_id << " ";
         grpc::channelz::v1::Subchannel subch = GetSubchannelRPC(subch_id);
         subchannel_queue.push(subch);
-        all_subchannels.push_back(subch);
-        StoreSubchannelInJson(subch);
+        if (CheckID(subch_id)) {
+          all_subchannels.push_back(subch);
+          StoreSubchannelInJson(subch);
+        }
       }
     }
     if (subchannel.socket_ref_size() > 0) {
@@ -206,8 +216,10 @@ class ChannelzSampler final {
         int64_t so_id = _socketref.socket_id();
         std::cout << so_id << " ";
         grpc::channelz::v1::Socket so = GetSocketRPC(so_id);
-        all_sockets.push_back(so);
-        StoreSocketInJson(so);
+        if (CheckID(so_id)) {
+          all_sockets.push_back(so);
+          StoreSocketInJson(so);
+        }
       }
     }
     std::cout << std::endl;
@@ -228,6 +240,7 @@ class ChannelzSampler final {
 
   // Get all servers, keep querying until getting all
   // Store servers for dumping data
+  // Need to check id repeating for servers
   bool GetServersRPC() {
     int64_t server_start_id = 0;
     while (true) {
@@ -264,9 +277,11 @@ class ChannelzSampler final {
       for (const auto& _socket : _server.listen_socket()) {
         int64_t so_id = _socket.socket_id();
         std::cout << so_id << " ";
-        grpc::channelz::v1::Socket so = GetSocketRPC(so_id);
-        all_sockets.push_back(so);
-        StoreSocketInJson(so);
+        if (CheckID(so_id)) {
+          grpc::channelz::v1::Socket so = GetSocketRPC(so_id);
+          all_sockets.push_back(so);
+          StoreSocketInJson(so);
+        }
       }
       std::cout << std::endl;
     }
@@ -274,6 +289,7 @@ class ChannelzSampler final {
 
   // Get all top channels, keep querying until getting all
   // Store channels for dumping data
+  // No need to check id repeating for top channels
   bool GetTopChannelsRPC() {
     int64_t channel_start_id = 0;
     while (true) {
@@ -342,7 +358,6 @@ class ChannelzSampler final {
       ::google::protobuf::TextFormat::PrintToString(_channel.data(), &data_str);
       printf("%s", data_str.c_str());
     }
-    all_channels.clear();
     for (const auto& _subchannel : all_subchannels) {
       std::cout << "subchannel " << GetSubchannelID(_subchannel)
                 << " data:" << std::endl;
@@ -350,19 +365,26 @@ class ChannelzSampler final {
                                                     &data_str);
       printf("%s", data_str.c_str());
     }
-    all_subchannels.clear();
     for (const auto& _server : all_servers) {
       std::cout << "server " << GetServerID(_server) << " data:" << std::endl;
       ::google::protobuf::TextFormat::PrintToString(_server.data(), &data_str);
       printf("%s", data_str.c_str());
     }
-    all_servers.clear();
     for (const auto& _socket : all_sockets) {
       std::cout << "socket " << GetSocketID(_socket) << " data:" << std::endl;
       ::google::protobuf::TextFormat::PrintToString(_socket.data(), &data_str);
       printf("%s", data_str.c_str());
     }
+  }
+
+  // Clear stored entities to prepare for the next scan
+  void ClearEntities() {
+    all_channels.clear();
+    all_subchannels.clear();
+    all_servers.clear();
     all_sockets.clear();
+    top_channels.clear();
+    id_set.clear();
   }
 
   // Store a channel in Json
@@ -427,6 +449,16 @@ class ChannelzSampler final {
   // Dump data in json
   std::string DumpJson() { return json.Dump(); }
 
+  // Check if one entity has been recorded
+  bool CheckID(int64_t id) {
+    if (id_set.count(id) == 0) {
+      id_set.insert(id);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   time_t now;
   // private:
   std::unique_ptr<grpc::channelz::v1::Channelz::Stub> channelz_stub;
@@ -435,6 +467,7 @@ class ChannelzSampler final {
   std::vector<grpc::channelz::v1::Channel> all_channels;
   std::vector<grpc::channelz::v1::Subchannel> all_subchannels;
   std::vector<grpc::channelz::v1::Socket> all_sockets;
+  std::unordered_set<int64_t> id_set;
   grpc_core::Json json;
 };
 
@@ -447,7 +480,6 @@ int main(int argc, char** argv) {
   channelz_sampler.Setup(FLAGS_custom_credentials_type, FLAGS_server_address);
 
   // Keep sampling based on FLAGS_sampling_times and
-  // FLAGS_sampling_interval_seconds Sample in the end of an interval
   for (int i = 0; i < FLAGS_sampling_times; ++i) {
     std::cout << "Wait for sampling interval "
               << FLAGS_sampling_interval_seconds << "s..." << std::endl;
@@ -465,12 +497,16 @@ int main(int argc, char** argv) {
     channelz_sampler.TraverseTopChannels();
     // dump data to stdout
     channelz_sampler.DumpStdout();
+    // clear stored entities to prepare for the next sampling
+    channelz_sampler.ClearEntities();
   }
 
   // store data in Json
-  std::ofstream output_file(FLAGS_output_json, std::ios::out);
-  output_file << channelz_sampler.DumpJson() << std::flush;
-  output_file.close();
+  if (!FLAGS_output_json.empty()) {
+    std::ofstream output_file(FLAGS_output_json, std::ios::out);
+    output_file << channelz_sampler.DumpJson() << std::flush;
+    output_file.close();
+  }
 
   return 0;
 }
