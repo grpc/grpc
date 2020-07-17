@@ -619,7 +619,7 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
 }
 #else  /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
-    const grpc_ares_request* r, const char* /*name*/,
+    const grpc_ares_request* /*r*/, const char* /*name*/,
     const char* /*default_port*/,
     std::unique_ptr<grpc_core::ServerAddressList>* /*addrs*/) {
   return false;
