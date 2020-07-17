@@ -272,24 +272,23 @@ if BUILD_WITH_SYSTEM_CARES:
 DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
 NO_BORING_ASM = True
+
+asm_key = ''
 if BUILD_WITH_BORING_SSL_ASM:
-    LINUX_X86_64 = "linux-x86_64"
-    LINUX_ARM = "linux-arm"
-    if LINUX_X86_64 == util.get_platform() or LINUX_ARM == util.get_platform():
-        platform = LINUX_X86_64 if LINUX_X86_64 == util.get_platform() else LINUX_ARM
-        asm_files = [f for f in grpc_core_dependencies.ASM_SOURCE_FILES
-                    if (platform in f or "hrss/asm" in f)
-                    and "test" not in f]
-        NO_BORING_ASM = False
+    LINUX_X86_64 = 'linux-x86_64'
+    LINUX_ARM = 'linux-arm'
+    if LINUX_X86_64 == util.get_platform():
+        asm_key = 'crypto_linux_x86_64'
+    elif LINUX_ARM == util.get_platform():
+        asm_key = 'crypto_linux_arm'
     elif "mac" in util.get_platform() and "x86_64" in util.get_platform():
-        asm_files = [f for f in grpc_core_dependencies.ASM_SOURCE_FILES
-                     if ("mac-x86_64" in f or "hrss/asm" in f)
-                     and "test" not in f]
-        NO_BORING_ASM = False
+        asm_key = 'crypto_mac_x86_64'
     else:
        print("ASM Builds for BoringSSL currently not supported on:",
              util.get_platform())
-if NO_BORING_ASM:
+if asm_key:
+   asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
+else:
    DEFINE_MACROS += (('OPENSSL_NO_ASM', 1),)
 
 if not DISABLE_LIBC_COMPATIBILITY:
