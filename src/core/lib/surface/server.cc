@@ -20,9 +20,6 @@
 
 #include "src/core/lib/surface/server.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +30,10 @@
 #include <list>
 #include <utility>
 #include <vector>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -129,7 +130,10 @@ struct channel_registered_method {
 };
 
 struct channel_data {
-  grpc_server* server;
+  channel_data() = default;
+  ~channel_data();
+
+  grpc_server* server = nullptr;
   grpc_channel* channel;
   size_t cq_idx;
   absl::optional<std::list<channel_data*>::iterator> list_position;
@@ -1198,20 +1202,16 @@ void server_destroy_call_elem(grpc_call_element* elem,
 
 grpc_error* server_init_channel_elem(grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(args->is_first);
   GPR_ASSERT(!args->is_last);
-  chand->server = nullptr;
-  chand->channel = nullptr;
-  chand->list_position.reset();
-  chand->registered_methods.reset();
+
+  new (static_cast<channel_data*>(elem->channel_data)) channel_data;
   return GRPC_ERROR_NONE;
 }
 
-void server_destroy_channel_elem(grpc_channel_element* elem) {
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  if (chand->registered_methods) {
-    for (const channel_registered_method& crm : *chand->registered_methods) {
+channel_data::~channel_data() {
+  if (registered_methods) {
+    for (const channel_registered_method& crm : *registered_methods) {
       grpc_slice_unref_internal(crm.method);
       GPR_DEBUG_ASSERT(crm.method.refcount == &kNoopRefcount ||
                        crm.method.refcount == nullptr);
@@ -1221,24 +1221,25 @@ void server_destroy_channel_elem(grpc_channel_element* elem) {
                          crm.host.refcount == nullptr);
       }
     }
-    chand->registered_methods.reset();
   }
-  if (chand->server) {
-    if (chand->server->channelz_server != nullptr &&
-        chand->channelz_socket_uuid != 0) {
-      chand->server->channelz_server->RemoveChildSocket(
-          chand->channelz_socket_uuid);
+  if (server) {
+    if (server->channelz_server != nullptr && channelz_socket_uuid != 0) {
+      server->channelz_server->RemoveChildSocket(channelz_socket_uuid);
     }
     {
-      MutexLock lock(&chand->server->mu_global);
-      if (chand->list_position.has_value()) {
-        chand->server->channels.erase(*chand->list_position);
-        chand->list_position.reset();
+      MutexLock lock(&server->mu_global);
+      if (list_position.has_value()) {
+        server->channels.erase(*list_position);
       }
-      maybe_finish_shutdown(chand->server);
+      maybe_finish_shutdown(server);
     }
-    server_unref(chand->server);
+  server_unref(server);
   }
+}
+
+void server_destroy_channel_elem(grpc_channel_element* elem) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  chand->~channel_data();
 }
 
 void register_completion_queue(grpc_server* server, grpc_completion_queue* cq,
@@ -1328,16 +1329,17 @@ void SetServerRegisteredMethodAllocator(
     grpc_server* server, grpc_completion_queue* cq, void* method_tag,
     std::function<ServerRegisteredCallAllocation()> allocator) {
   registered_method* rm = static_cast<registered_method*>(method_tag);
-  rm->matcher.reset(new AllocatingRequestMatcherRegistered(
-      server, cq, rm, std::move(allocator)));
+  rm->matcher = absl::make_unique<AllocatingRequestMatcherRegistered>(
+      server, cq, rm, std::move(allocator));
 }
 
 void SetServerBatchMethodAllocator(
     grpc_server* server, grpc_completion_queue* cq,
     std::function<ServerBatchCallAllocation()> allocator) {
   GPR_DEBUG_ASSERT(server->unregistered_request_matcher == nullptr);
-  server->unregistered_request_matcher.reset(
-      new AllocatingRequestMatcherBatch(server, cq, std::move(allocator)));
+  server->unregistered_request_matcher =
+    absl::make_unique<AllocatingRequestMatcherBatch>(server, cq,
+                                                     std::move(allocator));
 }
 
 }  // namespace grpc_core
@@ -1430,13 +1432,13 @@ void grpc_server_start(grpc_server* server) {
     }
   }
   if (server->unregistered_request_matcher == nullptr) {
-    server->unregistered_request_matcher.reset(
-        new grpc_core::RealRequestMatcher(server));
+    server->unregistered_request_matcher =
+      absl::make_unique<grpc_core::RealRequestMatcher>(server);
   }
   for (std::unique_ptr<grpc_core::registered_method>& rm :
        server->registered_methods) {
     if (rm->matcher == nullptr) {
-      rm->matcher.reset(new grpc_core::RealRequestMatcher(server));
+      rm->matcher = absl::make_unique<grpc_core::RealRequestMatcher>(server);
     }
   }
 
