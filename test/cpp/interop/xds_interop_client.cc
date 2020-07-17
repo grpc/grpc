@@ -214,7 +214,7 @@ class TestClient {
                 : call->simple_response.hostname();
         for (auto watcher : watchers) {
           watcher->RpcCompleted(call->saved_request_id, call->rpc_method,
-                                std::move(hostname));
+                                hostname);
         }
       }
 
