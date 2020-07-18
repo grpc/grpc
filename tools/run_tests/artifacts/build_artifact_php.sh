@@ -19,6 +19,11 @@ cd "$(dirname "$0")/../../.."
 
 mkdir -p "${ARTIFACTS_OUT}"
 
+# build the PHP extension archive (this just zips all the files up)
 pear package
+# test installing the PHP extension via pecl install
+find . -name "grpc-*.tgz" | cut -b3- | xargs pecl install
+# verified that the grpc extension is installed
+php -d extension=grpc.so --re grpc | head -1
 
 cp -r grpc-*.tgz "${ARTIFACTS_OUT}"/
