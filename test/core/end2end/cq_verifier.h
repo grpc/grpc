@@ -37,6 +37,10 @@ void cq_verifier_destroy(cq_verifier* v);
    bound completion queue */
 void cq_verify(cq_verifier* v);
 
+/* ensure all expected events (and only those events) are present on the
+   bound completion queue withing \a timeout_sec */
+void cq_verify_custom_timeout(cq_verifier* v, int timeout_sec);
+
 /* ensure that the completion queue is empty */
 void cq_verify_empty(cq_verifier* v);
 

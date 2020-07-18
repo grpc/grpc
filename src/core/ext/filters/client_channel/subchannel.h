@@ -228,6 +228,9 @@ class Subchannel {
   static Subchannel* Create(OrphanablePtr<SubchannelConnector> connector,
                             const grpc_channel_args* args);
 
+  // Throttle keepalive time
+  void ThrottleKeepaliveTime(int new_keepalive_time);
+
   // Strong and weak refcounting.
   Subchannel* Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
   void Unref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
@@ -422,6 +425,8 @@ class Subchannel {
   bool have_retry_alarm_ = false;
   // reset_backoff() was called while alarm was pending.
   bool retry_immediately_ = false;
+  // Keepalive time period (-1 for unset)
+  int keepalive_time_ = -1;
 
   // Channelz tracking.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;

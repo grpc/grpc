@@ -172,6 +172,134 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
   grpc_completion_queue_destroy(cq);
 }
 
+// Perform a simple RPC where the client makes a request, and both the client
+// and server continue reading so that gRPC can send and receive keepalive
+// pings.
+grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
+                                    grpc_completion_queue* cq,
+                                    int expected_keepalive_time) {
+  grpc_call* c;
+  grpc_call* s;
+  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_op ops[6];
+  grpc_op* op;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array request_metadata_recv;
+  grpc_call_details call_details;
+  grpc_status_code status;
+  grpc_call_error error;
+  grpc_slice details;
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(30);
+  // Start a call
+  c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                               grpc_slice_from_static_string("/foo"), nullptr,
+                               deadline, nullptr);
+  GPR_ASSERT(c);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  // Request a call on the server
+  error = grpc_server_request_call(server, &s, &call_details,
+                                   &request_metadata_recv, cq, cq, tag(101));
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  cq_verify(cqv);
+  // Since the server is configured to allow only a single ping strike, it would
+  // take 3 pings to trigger the GOAWAY frame with "too_many_pings" from the
+  // server. (The second ping from the client would be the first bad ping sent
+  // too quickly leading to a ping strike and the third ping would lead to the
+  // GOAWAY.) If the client settings match with the server's settings, there
+  // won't be a bad ping, and the call will end due to the deadline expiring
+  // instead.
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  cq_verify_custom_timeout(cqv, 60);
+  // The call will end after this
+  cq_verify(cqv);
+  // cleanup
+  grpc_slice_unref(details);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
+  cq_verifier_destroy(cqv);
+  return status;
+}
+TEST(TooManyPings, KeepaliveThrottling) {
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  // create the server with a ping interval of 10 seconds and a single ping
+  // strike.
+  grpc_arg server_args[2];
+  server_args[0] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
+      10 * 1000);
+  server_args[1] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), 1);
+  grpc_channel_args server_channel_args = {GPR_ARRAY_SIZE(server_args),
+                                           server_args};
+  grpc_server* server = grpc_server_create(&server_channel_args, nullptr);
+  std::string server_address =
+      grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
+  grpc_server_register_completion_queue(server, cq, nullptr);
+  GPR_ASSERT(
+      grpc_server_add_insecure_http2_port(server, server_address.c_str()));
+  grpc_server_start(server);
+  // create the channel with a keepalive ping interval of 1 second.
+  grpc_arg client_args[4];
+  client_args[0] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0);
+  client_args[1] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS),
+      0);
+  client_args[2] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 1 * 1000);
+  client_args[3] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0);
+  grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
+                                           client_args};
+  grpc_channel* channel = grpc_insecure_channel_create(
+      server_address.c_str(), &client_channel_args, nullptr);
+  int expected_keepalive_time_sec = 1;
+  // We need 4 GOAWAY frames to throttle the keepalive time from 1 second to 16
+  // seconds (> 10sec).
+  for (int i = 0; i < 4; i++) {
+    EXPECT_EQ(
+        PerformWaitingCall(channel, server, cq, expected_keepalive_time_sec),
+        GRPC_STATUS_UNAVAILABLE);
+    expected_keepalive_time_sec *= 2;
+  }
+  EXPECT_EQ(
+      PerformWaitingCall(channel, server, cq, expected_keepalive_time_sec),
+      GRPC_STATUS_DEADLINE_EXCEEDED);
+  // shutdown and destroy the client and server
+  grpc_channel_destroy(channel);
+  grpc_server_shutdown_and_notify(server, cq, nullptr);
+  grpc_completion_queue_shutdown(cq);
+  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                    nullptr)
+             .type != GRPC_QUEUE_SHUTDOWN)
+    ;
+  grpc_server_destroy(server);
+  grpc_completion_queue_destroy(cq);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {

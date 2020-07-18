@@ -459,4 +459,11 @@ grpc_transport_op* grpc_make_transport_op(grpc_closure* on_consumed);
 grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
     grpc_closure* on_consumed);
 
+namespace grpc_core {
+// This is the key to be used for loading/storing keepalive_throttling in the
+// absl::Status object.
+constexpr const char* keepalive_throttling_key =
+    "grpc.internal.keepalive_throttling";
+}  // namespace grpc_core
+
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H */
