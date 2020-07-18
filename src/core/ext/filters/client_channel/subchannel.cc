@@ -333,6 +333,17 @@ class Subchannel::ConnectedSubchannelStateWatcher
     Subchannel* c = subchannel_;
     absl::optional<absl::Cord> keepalive_throttling =
         status.GetPayload(grpc_core::keepalive_throttling_key);
+    if (keepalive_throttling.has_value()) {
+      int new_keepalive_time = -1;
+      if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
+                           &new_keepalive_time)) {
+        c->ThrottleKeepaliveTime(new_keepalive_time);
+      } else {
+        gpr_log(GPR_ERROR,
+                "Subchannel=%p: Illegal keepalive throttling value %s", c,
+                std::string(keepalive_throttling.value()).c_str());
+      }
+    }
     MutexLock lock(&c->mu_);
     switch (new_state) {
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
@@ -348,17 +359,6 @@ class Subchannel::ConnectedSubchannelStateWatcher
           c->connected_subchannel_.reset();
           if (c->channelz_node() != nullptr) {
             c->channelz_node()->SetChildSocket(nullptr);
-          }
-          if (keepalive_throttling.has_value()) {
-            int new_keepalive_time = -1;
-            if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
-                                 &new_keepalive_time)) {
-              c->ThrottleKeepaliveTimeLocked(new_keepalive_time);
-            } else {
-              gpr_log(GPR_ERROR,
-                      "Subchannel=%p: Illegal keepalive throttling value %s", c,
-                      std::string(keepalive_throttling.value()).c_str());
-            }
           }
           // We need to construct our own status if the underlying state was
           // shutdown since the accompanying status will be StatusCode::OK
@@ -758,10 +758,6 @@ Subchannel* Subchannel::Create(OrphanablePtr<SubchannelConnector> connector,
 
 void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
   MutexLock lock(&mu_);
-  ThrottleKeepaliveTimeLocked(new_keepalive_time);
-}
-
-void Subchannel::ThrottleKeepaliveTimeLocked(int new_keepalive_time) {
   // Only update the value if the new keepalive time is larger.
   if (new_keepalive_time > keepalive_time_) {
     keepalive_time_ = new_keepalive_time;
