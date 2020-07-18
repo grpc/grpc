@@ -346,10 +346,14 @@ class Subchannel::ConnectedSubchannelStateWatcher
           if (c->channelz_node() != nullptr) {
             c->channelz_node()->SetChildSocket(nullptr);
           }
+          // We need to construct our own status if the underlying state was
+          // shutdown since the accompanying status will be StatusCode::OK
+          // otherwise.
           c->SetConnectivityStateLocked(
-              GRPC_CHANNEL_TRANSIENT_FAILURE,
-              absl::Status(absl::StatusCode::kUnavailable,
-                           "Subchannel has disconnected."));
+              new_state, new_state == GRPC_CHANNEL_SHUTDOWN
+                             ? absl::Status(absl::StatusCode::kUnavailable,
+                                            "Subchannel has disconnected.")
+                             : status);
           c->backoff_begun_ = false;
           c->backoff_.Reset();
         }
