@@ -31,7 +31,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/http/client/http_client_filter.h"
-#include "src/core/ext/filters/http/client/util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/profiling/timers.h"
@@ -529,8 +528,36 @@ static size_t max_payload_size_from_args(const grpc_channel_args* args) {
 
 static grpc_core::ManagedMemorySlice user_agent_from_args(
     const grpc_channel_args* args, const char* transport_name) {
-  return grpc_core::ManagedMemorySlice(
-      grpc_core::GenerateUserAgentFromArgs(args, transport_name).c_str());
+  std::vector<std::string> user_agent_fields;
+
+  for (size_t i = 0; args && i < args->num_args; i++) {
+    if (0 == strcmp(args->args[i].key, GRPC_ARG_PRIMARY_USER_AGENT_STRING)) {
+      if (args->args[i].type != GRPC_ARG_STRING) {
+        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
+                GRPC_ARG_PRIMARY_USER_AGENT_STRING);
+      } else {
+        user_agent_fields.push_back(args->args[i].value.string);
+      }
+    }
+  }
+
+  user_agent_fields.push_back(
+      absl::StrFormat("grpc-c/%s (%s; %s)", grpc_version_string(),
+                      GPR_PLATFORM_STRING, transport_name));
+
+  for (size_t i = 0; args && i < args->num_args; i++) {
+    if (0 == strcmp(args->args[i].key, GRPC_ARG_SECONDARY_USER_AGENT_STRING)) {
+      if (args->args[i].type != GRPC_ARG_STRING) {
+        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
+                GRPC_ARG_SECONDARY_USER_AGENT_STRING);
+      } else {
+        user_agent_fields.push_back(args->args[i].value.string);
+      }
+    }
+  }
+
+  std::string user_agent_string = absl::StrJoin(user_agent_fields, " ");
+  return grpc_core::ManagedMemorySlice(user_agent_string.c_str());
 }
 
 /* Constructor for channel_data */

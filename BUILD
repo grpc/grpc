@@ -1164,20 +1164,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_http_util",
-    srcs = [
-        "src/core/ext/filters/http/client/util.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/http/client/util.h",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_http_filters",
     srcs = [
         "src/core/ext/filters/http/client/http_client_filter.cc",
@@ -1195,7 +1181,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
-        "grpc_http_util",
         "grpc_message_size_filter",
     ],
 )
@@ -1471,7 +1456,6 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
-        "grpc_http_util",
         "grpc_resolver_xds_header",
         "grpc_xds_api_header",
     ],
