@@ -334,11 +334,11 @@ void LrsLb::Helper::UpdateState(grpc_connectivity_state state,
                                 std::unique_ptr<SubchannelPicker> picker) {
   if (lrs_policy_->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
-    gpr_log(GPR_INFO,
-            "[lrs_lb %p] child connectivity state update: state=%s "
-            "status_message=(%s) picker=%p",
-            lrs_policy_.get(), ConnectivityStateName(state),
-            status.ToString().c_str(), picker.get());
+    gpr_log(
+        GPR_INFO,
+        "[lrs_lb %p] child connectivity state update: state=%s (%s) picker=%p",
+        lrs_policy_.get(), ConnectivityStateName(state),
+        status.ToString().c_str(), picker.get());
   }
   // Save the state and picker.
   lrs_policy_->state_ = state;

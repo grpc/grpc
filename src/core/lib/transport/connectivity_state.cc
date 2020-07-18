@@ -58,9 +58,8 @@ const char* ConnectivityStateName(grpc_connectivity_state state) {
 class AsyncConnectivityStateWatcherInterface::Notifier {
  public:
   Notifier(RefCountedPtr<AsyncConnectivityStateWatcherInterface> watcher,
-           grpc_connectivity_state state,
-           const std::shared_ptr<WorkSerializer>& work_serializer,
-           const absl::Status& status)
+           grpc_connectivity_state state, const absl::Status& status,
+           const std::shared_ptr<WorkSerializer>& work_serializer)
       : watcher_(std::move(watcher)), state_(state), status_(status) {
     if (work_serializer != nullptr) {
       work_serializer->Run(
@@ -77,8 +76,9 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
   static void SendNotification(void* arg, grpc_error* /*ignored*/) {
     Notifier* self = static_cast<Notifier*>(arg);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_connectivity_state_trace)) {
-      gpr_log(GPR_INFO, "watcher %p: delivering async notification for %s",
-              self->watcher_.get(), ConnectivityStateName(self->state_));
+      gpr_log(GPR_INFO, "watcher %p: delivering async notification for %s (%s)",
+              self->watcher_.get(), ConnectivityStateName(self->state_),
+              self->status_.ToString().c_str());
     }
     self->watcher_->OnConnectivityStateChange(self->state_, self->status_);
     delete self;
@@ -92,8 +92,8 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
 
 void AsyncConnectivityStateWatcherInterface::Notify(
     grpc_connectivity_state state, const absl::Status& status) {
-  new Notifier(Ref(), state, work_serializer_,
-               status);  // Deletes itself when done.
+  new Notifier(Ref(), state, status,
+               work_serializer_);  // Deletes itself when done.
 }
 
 //

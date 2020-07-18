@@ -330,8 +330,7 @@ class GrpcLb : public LoadBalancingPolicy {
         // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
         // fallback mode immediately.
         gpr_log(GPR_INFO,
-                "[grpclb %p] balancer channel in state:TRANSIENT_FAILURE "
-                "status_message:(%s) "
+                "[grpclb %p] balancer channel in state:TRANSIENT_FAILURE (%s); "
                 "entering fallback mode",
                 parent_.get(), status.ToString().c_str());
         parent_->fallback_at_startup_checks_pending_ = false;
@@ -693,7 +692,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
        state != GRPC_CHANNEL_READY)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO,
-              "[grpclb %p helper %p] state=%s status_message=(%s) passing "
+              "[grpclb %p helper %p] state=%s (%s) passing "
               "child picker %p as-is",
               parent_.get(), this, ConnectivityStateName(state),
               status.ToString().c_str(), picker.get());
@@ -705,7 +704,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   // Cases 2 and 3a: wrap picker from the child in our own picker.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO,
-            "[grpclb %p helper %p] state=%s status_message=(%s) wrapping child "
+            "[grpclb %p helper %p] state=%s (%s) wrapping child "
             "picker %p",
             parent_.get(), this, ConnectivityStateName(state),
             status.ToString().c_str(), picker.get());

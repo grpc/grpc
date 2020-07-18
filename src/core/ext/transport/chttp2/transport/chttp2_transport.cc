@@ -564,12 +564,8 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     }
     GPR_ASSERT(error != GRPC_ERROR_NONE);
     t->closed_with_error = GRPC_ERROR_REF(error);
-    connectivity_state_set(
-        t, GRPC_CHANNEL_SHUTDOWN,
-        absl::Status(
-            absl::StatusCode::kUnavailable,
-            absl::StrFormat("Transport closed %s", grpc_error_string(error))),
-        "close_transport");
+    connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
+                           "close_transport");
     if (t->ping_state.is_delayed_ping_timer_set) {
       grpc_timer_cancel(&t->ping_state.delayed_ping_timer);
     }
@@ -1112,8 +1108,9 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             : static_cast<grpc_millis>(current_keepalive_time_ms *
                                        KEEPALIVE_TIME_BACKOFF_MULTIPLIER);
   }
-  absl::Status status = absl::Status(absl::StatusCode::kUnavailable,
-                                     "Transport received too many pings");
+  absl::Status status =
+      absl::Status(grpc_error_get_status_code(t->goaway_error),
+                   grpc_error_string(t->goaway_error));
   /* lie: use transient failure from the transport to indicate goaway has been
    * received */
   connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,

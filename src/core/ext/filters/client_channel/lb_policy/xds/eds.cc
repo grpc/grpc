@@ -40,6 +40,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_EDS_DEFAULT_FALLBACK_TIMEOUT 10000
@@ -273,7 +274,7 @@ void EdsLb::Helper::UpdateState(grpc_connectivity_state state,
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
     gpr_log(GPR_INFO,
-            "[edslb %p] child policy updated state=%s status_message=(%s) "
+            "[edslb %p] child policy updated state=%s (%s) "
             "picker=%p",
             eds_policy_.get(), ConnectivityStateName(state),
             status.ToString().c_str(), picker.get());
@@ -346,7 +347,7 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
     if (eds_policy_->child_policy_ == nullptr) {
       eds_policy_->channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE,
-          absl::Status(absl::StatusCode::kUnavailable,
+          absl::Status(grpc_error_get_status_code(error),
                        grpc_error_string(error)),
           absl::make_unique<TransientFailurePicker>(error));
     } else {
@@ -359,11 +360,13 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
         GPR_ERROR,
         "[edslb %p] EDS resource does not exist -- reporting TRANSIENT_FAILURE",
         eds_policy_.get());
-    grpc_error* error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("EDS resource does not exist");
+    grpc_error* error = grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("EDS resource does not exist"),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     eds_policy_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
+        absl::Status(grpc_error_get_status_code(error),
+                     grpc_error_string(error)),
         absl::make_unique<TransientFailurePicker>(error));
     eds_policy_->MaybeDestroyChildPolicyLocked();
   }
@@ -698,7 +701,8 @@ EdsLb::CreateChildPolicyConfigLocked() {
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
+        absl::Status(grpc_error_get_status_code(error),
+                     grpc_error_string(error)),
         absl::make_unique<TransientFailurePicker>(error));
     return nullptr;
   }

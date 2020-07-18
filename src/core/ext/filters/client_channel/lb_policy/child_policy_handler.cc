@@ -55,7 +55,7 @@ class ChildPolicyHandler::Helper
       if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
         gpr_log(GPR_INFO,
                 "[child_policy_handler %p] helper %p: pending child policy %p "
-                "reports state=%s status_message=(%s)",
+                "reports state=%s (%s)",
                 parent_.get(), this, child_, ConnectivityStateName(state),
                 status.ToString().c_str());
       }

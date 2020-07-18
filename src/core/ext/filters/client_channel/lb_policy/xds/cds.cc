@@ -29,6 +29,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -210,7 +211,8 @@ void CdsLb::ClusterWatcher::OnError(grpc_error* error) {
   if (parent_->child_policy_ == nullptr) {
     parent_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
+        absl::Status(grpc_error_get_status_code(error),
+                     grpc_error_string(error)),
         absl::make_unique<TransientFailurePicker>(error));
   } else {
     GRPC_ERROR_UNREF(error);
@@ -222,10 +224,12 @@ void CdsLb::ClusterWatcher::OnResourceDoesNotExist() {
           "[cdslb %p] CDS resource for %s does not exist -- reporting "
           "TRANSIENT_FAILURE",
           parent_.get(), parent_->config_->cluster().c_str());
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      absl::StrCat("CDS resource \"", parent_->config_->cluster(),
-                   "\" does not exist")
-          .c_str());
+  grpc_error* error = grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("CDS resource \"", parent_->config_->cluster(),
+                       "\" does not exist")
+              .c_str()),
+      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   parent_->channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE,
       absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),

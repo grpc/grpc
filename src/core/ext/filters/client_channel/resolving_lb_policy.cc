@@ -216,7 +216,7 @@ void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
     helper_->ResolverTransientFailure(GRPC_ERROR_REF(state_error));
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(absl::StatusCode::kUnavailable,
+        absl::Status(grpc_error_get_status_code(state_error),
                      grpc_error_string(state_error)),
         absl::make_unique<TransientFailurePicker>(state_error));
   }

@@ -42,6 +42,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/transport/error_utils.h"
 
 #define GRPC_XDS_ROUTING_CHILD_RETENTION_INTERVAL_MS (15 * 60 * 1000)
 
@@ -473,6 +474,7 @@ void XdsRoutingLb::UpdateStateLocked() {
             ConnectivityStateName(connectivity_state));
   }
   std::unique_ptr<SubchannelPicker> picker;
+  absl::Status status;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY: {
       RoutePicker::RouteTable route_table;
@@ -503,12 +505,15 @@ void XdsRoutingLb::UpdateStateLocked() {
           absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
-      picker = absl::make_unique<TransientFailurePicker>(grpc_error_set_int(
+      grpc_error* error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "TRANSIENT_FAILURE from XdsRoutingLb"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      status = absl::Status(grpc_error_get_status_code(error),
+                            grpc_error_string(error));
+      picker = absl::make_unique<TransientFailurePicker>(error);
   }
-  channel_control_helper()->UpdateState(connectivity_state, absl::Status(),
+  channel_control_helper()->UpdateState(connectivity_state, status,
                                         std::move(picker));
 }
 
@@ -669,8 +674,8 @@ void XdsRoutingLb::XdsRoutingChild::Helper::UpdateState(
     std::unique_ptr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_routing_lb %p] child %s: received update: state=%s "
-            "status_message=(%s) picker=%p",
+            "[xds_routing_lb %p] child %s: received update: state=%s (%s) "
+            "picker=%p",
             xds_routing_child_->xds_routing_policy_.get(),
             xds_routing_child_->name_.c_str(), ConnectivityStateName(state),
             status.ToString().c_str(), picker.get());

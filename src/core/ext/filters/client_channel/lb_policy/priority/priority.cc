@@ -20,6 +20,7 @@
 #include <limits.h>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 
@@ -597,8 +598,7 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
     std::unique_ptr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO,
-            "[priority_lb %p] child %s (%p): state update: %s, status_message: "
-            "(%s) picker %p",
+            "[priority_lb %p] child %s (%p): state update: %s (%s) picker %p",
             priority_policy_.get(), name_.c_str(), this,
             ConnectivityStateName(state), status.ToString().c_str(),
             picker.get());
@@ -652,17 +652,17 @@ void PriorityLb::ChildPriority::OnFailoverTimer(void* arg, grpc_error* error) {
 void PriorityLb::ChildPriority::OnFailoverTimerLocked(grpc_error* error) {
   if (error == GRPC_ERROR_NONE && failover_timer_callback_pending_ &&
       !priority_policy_->shutting_down_) {
+    std::string error_message = absl::StrFormat(
+        "[priority_lb %p] child %s (%p): failover timer fired, "
+        "reporting TRANSIENT_FAILURE",
+        priority_policy_.get(), name_.c_str(), this);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-      gpr_log(GPR_INFO,
-              "[priority_lb %p] child %s (%p): failover timer fired, "
-              "reporting TRANSIENT_FAILURE",
-              priority_policy_.get(), name_.c_str(), this);
+      gpr_log(GPR_INFO, "%s", error_message.c_str());
     }
     failover_timer_callback_pending_ = false;
     OnConnectivityStateUpdateLocked(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
-        nullptr);
+        absl::Status(absl::StatusCode::kUnavailable, error_message), nullptr);
   }
   Unref(DEBUG_LOCATION, "ChildPriority+OnFailoverTimerLocked");
   GRPC_ERROR_UNREF(error);

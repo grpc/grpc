@@ -178,7 +178,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     RefCountedPtr<ChildPickerWrapper> picker_wrapper_;
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
-    absl::Status connectivity_status_;
     bool seen_failure_since_ready_ = false;
 
     // States for delayed removal.
@@ -377,7 +376,7 @@ void WeightedTargetLb::UpdateStateLocked() {
             this, ConnectivityStateName(connectivity_state));
   }
   std::unique_ptr<SubchannelPicker> picker;
-  const char* error_string = nullptr;
+  absl::Status status;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY:
       picker = absl::make_unique<WeightedPicker>(std::move(picker_list));
@@ -388,17 +387,14 @@ void WeightedTargetLb::UpdateStateLocked() {
           absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
-      error_string =
-          "weighted_target: all children report state TRANSIENT_FAILURE";
-      absl::make_unique<TransientFailurePicker>(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(error_string));
+      status = absl::Status(
+          absl::StatusCode::kUnavailable,
+          "weighted_target: all children report state TRANSIENT_FAILURE");
+      picker = absl::make_unique<TransientFailurePicker>(
+          GRPC_ERROR_CREATE_FROM_COPIED_STRING(status.ToString().c_str()));
   }
-  channel_control_helper()->UpdateState(
-      connectivity_state,
-      error_string != nullptr
-          ? absl::Status(absl::StatusCode::kUnavailable, error_string)
-          : absl::Status(),
-      std::move(picker));
+  channel_control_helper()->UpdateState(connectivity_state, status,
+                                        std::move(picker));
 }
 
 //
@@ -524,7 +520,7 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
             "[weighted_target_lb %p] WeightedChild %p %s: connectivity "
-            "state update: state=%s status_message=(%s)picker_wrapper=%p",
+            "state update: state=%s (%s) picker_wrapper=%p",
             weighted_target_policy_.get(), this, name_.c_str(),
             ConnectivityStateName(state), status.ToString().c_str(),
             picker_wrapper_.get());
@@ -545,7 +541,6 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
     seen_failure_since_ready_ = false;
   }
   connectivity_state_ = state;
-  connectivity_status_ = status;
   // Notify the LB policy.
   weighted_target_policy_->UpdateStateLocked();
 }

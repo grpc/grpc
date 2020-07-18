@@ -1953,10 +1953,7 @@ void ChannelData::StartTransportOpLocked(grpc_transport_op* op) {
                  GRPC_ERROR_NONE);
       disconnect_error_.Store(op->disconnect_with_error, MemoryOrder::RELEASE);
       UpdateStateAndPickerLocked(
-          GRPC_CHANNEL_SHUTDOWN,
-          absl::Status(absl::StatusCode::kUnavailable,
-                       grpc_error_string(op->disconnect_with_error)),
-          "shutdown from API",
+          GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
           absl::make_unique<LoadBalancingPolicy::TransientFailurePicker>(
               GRPC_ERROR_REF(op->disconnect_with_error)));
     }
