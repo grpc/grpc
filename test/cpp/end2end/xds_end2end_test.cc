@@ -3721,18 +3721,11 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
-  // Send headers which will mismatch each route
-  std::vector<std::pair<std::string, std::string>> metadata = {
-      {"grpc-tags-bin", "grpc-tags-bin"},
-      {"grpc-trace-bin", "grpc-trace-bin"},
-      {"grpc-previous-rpc-attempts", "grpc-previous-rpc-attempts"},
-  };
   WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_metadata(metadata));
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
-                                    .set_rpc_service(SERVICE_ECHO1)
-                                    .set_rpc_method(METHOD_ECHO1)
-                                    .set_metadata(metadata));
+  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(
+      kNumEcho1Rpcs,
+      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_rpc_method(METHOD_ECHO1));
   // Verify that only the default backend got RPCs since all previous routes
   // were mismatched.
   for (size_t i = 1; i < 4; ++i) {
