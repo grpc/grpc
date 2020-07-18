@@ -41,8 +41,8 @@ const upb_msglayout grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_msginit = {
 };
 
 static const upb_msglayout_field grpc_lookup_v1_RouteLookupResponse__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
+  {2, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {3, UPB_SIZE(8, 16), 0, 0, 9, 3},
 };
 
 const upb_msglayout grpc_lookup_v1_RouteLookupResponse_msginit = {

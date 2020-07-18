@@ -111,7 +111,7 @@ class RlsLb : public LoadBalancingPolicy {
 
   struct ResponseInfo {
     grpc_error* error;
-    std::string target;
+    std::vector<std::string> targets;
     std::string header_data;
   };
 
@@ -160,8 +160,9 @@ class RlsLb : public LoadBalancingPolicy {
     /// Get the connectivity state of the child policy. Once the child policy
     /// reports TRANSIENT_FAILURE, the function will always return
     /// TRANSIENT_FAILURE state instead of the actual state of the child policy
-    /// until the child policy reports another READY state.
-    grpc_connectivity_state ConnectivityStateLocked() const;
+    /// until the child policy reports another READY state. The mutex of the
+    /// RLS LB policy should be held when calling this method.
+    grpc_connectivity_state ConnectivityState() const;
 
     void Orphan() override;
 
@@ -198,7 +199,7 @@ class RlsLb : public LoadBalancingPolicy {
     /// READY state.
     bool was_transient_failure_ = false;
     OrphanablePtr<ChildPolicyHandler> child_policy_;
-    grpc_connectivity_state connectivity_state_;
+    grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_;
   };
 
@@ -276,7 +277,7 @@ class RlsLb : public LoadBalancingPolicy {
 
       // RLS response states
 
-      RefCountedPtr<ChildPolicyOwner> child_policy_wrapper_ = nullptr;
+      std::vector<RefCountedPtr<ChildPolicyOwner>> child_policy_wrappers_;
       std::string header_data_;
       grpc_millis data_expiration_time_ = GRPC_MILLIS_INF_PAST;
       grpc_millis stale_time_ = GRPC_MILLIS_INF_PAST;

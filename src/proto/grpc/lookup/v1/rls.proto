@@ -36,17 +36,20 @@ message RouteLookupRequest {
 }
 
 message RouteLookupResponse {
-  // Actual addressable entity to use for routing decision, using syntax
-  // requested by the request target_type.
-  string target = 1;
+  // Prioritized list (best one first) of addressable entities to use
+  // for routing, using syntax requested by the request target_type.
+  // The targets will be tried in order until a healthy one is found.
+  repeated string targets = 3;
   // Optional header value to pass along to AFE in the X-Google-RLS-Data header.
   // Cached with "target" and sent with all requests that match the request key.
   // Allows the RLS to pass its work product to the eventual target.
   string header_data = 2;
+
+  reserved 1;
+  reserved "target";
 }
 
 service RouteLookupService {
   // Lookup returns a target for a single key.
   rpc RouteLookup(RouteLookupRequest) returns (RouteLookupResponse) {}
 }
-

@@ -659,11 +659,13 @@ class RlsPolicyEnd2endTest : public ::testing::Test {
       grpc_status_code status, const char* header_data = nullptr,
       grpc_millis response_delay = 0,
       absl::optional<RlsServiceImpl::Request> request_match = {},
-      const std::string& target = kTarget) {
+      std::vector<std::string> targets = {kTarget}) {
     RlsServiceImpl::Response response;
     response.status = status;
     response.response_delay = response_delay;
-    response.response.set_target(target);
+    for (std::string& target : targets) {
+      response.response.add_targets(std::move(target));
+    }
     if (header_data != nullptr) response.response.set_header_data(header_data);
     if (request_match.has_value()) {
       response.request_match = std::move(request_match);
@@ -671,18 +673,26 @@ class RlsPolicyEnd2endTest : public ::testing::Test {
     rls_server_->service_.AddResponse(std::move(response));
   }
 
-  void SetNextLbResponse(std::vector<std::pair<std::string, int>> responses) {
+  void SetNextLbResponse(std::vector<std::pair<std::string, int>> responses,
+                         std::string dummy_target = "") {
     std::unordered_map<std::string, grpc::lb::v1::LoadBalanceResponse>
         response_map;
+    char localhost[] = {0x7F, 0x00, 0x00, 0x01};
     for (auto& item : responses) {
       grpc::lb::v1::LoadBalanceResponse res;
       auto server_list = res.mutable_server_list();
       auto server = server_list->add_servers();
-      char localhost[] = {0x7F, 0x00, 0x00, 0x01};
       server->set_ip_address(localhost, 4);
       server->set_port(backends_[item.second]->port_);
-
       response_map.insert(std::make_pair(item.first, res));
+    }
+    if (!dummy_target.empty()) {
+      grpc::lb::v1::LoadBalanceResponse res;
+      auto server_list = res.mutable_server_list();
+      auto server = server_list->add_servers();
+      server->set_ip_address(localhost, 4);
+      server->set_port(grpc_pick_unused_port_or_die());
+      response_map.insert(std::make_pair(dummy_target, res));
     }
 
     balancer_->service_.add_response(response_map, 0);
@@ -890,7 +900,7 @@ TEST_F(RlsPolicyEnd2endTest, StaleRlsResponse) {
   auto stub = BuildStub();
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
-  SetNextRlsResponse(GRPC_STATUS_OK, nullptr, 0, {}, kAlternativeTarget);
+  SetNextRlsResponse(GRPC_STATUS_OK, nullptr, 0, {}, {kAlternativeTarget});
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(backends_[0]->service_.request_count(), 2);
   EXPECT_EQ(backends_[1]->service_.request_count(), 0);
@@ -913,7 +923,7 @@ TEST_F(RlsPolicyEnd2endTest, ExpiredRlsResponse) {
   auto stub = BuildStub();
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
-  SetNextRlsResponse(GRPC_STATUS_OK, nullptr, 0, {}, kAlternativeTarget);
+  SetNextRlsResponse(GRPC_STATUS_OK, nullptr, 0, {}, {kAlternativeTarget});
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
@@ -934,7 +944,7 @@ TEST_F(RlsPolicyEnd2endTest, CacheEviction) {
   auto stub = BuildStub();
   CheckRpcSendOk(stub, DEBUG_LOCATION, false, 2000, {{"key3", "testValue1"}});
 
-  SetNextRlsResponse(GRPC_STATUS_OK, nullptr, 0, {}, kAlternativeTarget);
+  SetNextRlsResponse(GRPC_STATUS_OK, nullptr, 0, {}, {kAlternativeTarget});
   CheckRpcSendOk(stub, DEBUG_LOCATION, false, 2000, {{"key3", "testValue2"}});
 
   // expect the cache entry for the first call is already evicted
@@ -947,6 +957,19 @@ TEST_F(RlsPolicyEnd2endTest, CacheEviction) {
   // The first element is held by min_eviction_time so only 2 RLS requests are
   // sent.
   EXPECT_EQ(rls_server_->service_.request_count(), 2);
+}
+
+TEST_F(RlsPolicyEnd2endTest, MultipleTargets) {
+  StartBackends(1);
+  std::string service_config = BuildServiceConfig();
+  SetNextResolution(service_config.c_str());
+  SetNextRlsResponse(GRPC_STATUS_OK, "TestHeaderData", 0, {},
+                     {kTarget, kDefaultTarget});
+  SetNextLbResponse({{kDefaultTarget, 0}}, kTarget);
+
+  auto stub = BuildStub();
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_EQ(backends_[0]->service_.request_count(), 1);
 }
 
 }  // namespace

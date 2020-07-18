@@ -54,7 +54,7 @@ message GrpcKeyBuilder {
 
   // Extract keys from all listed headers.
   // For gRPC, it is an error to specify "required_match" on the NameMatcher
-  // protos, and we ignore it if set.
+  // protos.
   repeated NameMatcher headers = 2;
 }
 
@@ -156,7 +156,7 @@ message RouteLookupConfig {
   google.protobuf.Duration lookup_service_timeout = 4;
 
   // How long are responses valid for (like HTTP Cache-Control).
-  // If omitted (i.e. 0), responses are considered not to be cacheable.
+  // If omitted or zero, the longest valid cache time is used.
   // This value is clamped to 5 minutes to avoid unflushable bad responses.
   google.protobuf.Duration max_age = 5;
 
@@ -176,40 +176,15 @@ message RouteLookupConfig {
 
   // This is a list of all the possible targets that can be returned by the
   // lookup service.  If a target not on this list is returned, it will be
-  // treated the same as an RPC error from the RLS.
+  // treated the same as an unhealthy target.
   repeated string valid_targets = 8;
 
-  // This value provides a default target to use if needed.  It will be used for
-  // request processing strategy SYNC_LOOKUP_DEFAULT_TARGET_ON_ERROR if RLS
-  // returns an error, or strategy ASYNC_LOOKUP_DEFAULT_TARGET_ON_MISS if RLS
-  // returns an error or there is a cache miss in the client.  It will also be
-  // used if there are no healthy backends for an RLS target.  Note that
-  // requests can be routed only to a subdomain of the original target,
-  // e.g. "us_east_1.cloudbigtable.googleapis.com".
+  // This value provides a default target to use if needed.  If set, it will be
+  // used if RLS returns an error, times out, or returns an invalid response.
+  // Note that requests can be routed only to a subdomain of the original
+  // target, e.g. "us_east_1.cloudbigtable.googleapis.com".
   string default_target = 9;
 
-  // Specify how to process a request when not already in the cache.
-  enum RequestProcessingStrategy {
-    STRATEGY_UNSPECIFIED = 0;
-
-    // Query the RLS and process the request using target returned by the
-    // lookup. The target will then be cached and used for processing
-    // subsequent requests for the same key. Any errors during lookup service
-    // processing will fall back to default target for request processing.
-    SYNC_LOOKUP_DEFAULT_TARGET_ON_ERROR = 1;
-
-    // Query the RLS and process the request using target returned by the
-    // lookup. The target will then be cached and used for processing
-    // subsequent requests for the same key. Any errors during lookup service
-    // processing will return an error back to the client.  Services with
-    // strict regional routing requirements should use this strategy.
-    SYNC_LOOKUP_CLIENT_SEES_ERROR = 2;
-
-    // Query the RLS asynchronously but respond with the default target.  The
-    // target in the lookup response will then be cached and used for
-    // subsequent requests.  Services with strict latency requirements (but not
-    // strict regional routing requirements) should use this strategy.
-    ASYNC_LOOKUP_DEFAULT_TARGET_ON_MISS = 3;
-  }
-  RequestProcessingStrategy request_processing_strategy = 10;
+  reserved 10;
+  reserved "request_processing_strategy";
 }
