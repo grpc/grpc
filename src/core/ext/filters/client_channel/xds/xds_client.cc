@@ -399,13 +399,14 @@ class XdsClient::ChannelState::StateWatcher
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
-                                 const absl::Status& /* status */) override {
+                                 const absl::Status& status) override {
     if (!parent_->shutting_down_ &&
         new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       // In TRANSIENT_FAILURE.  Notify all watchers of error.
       gpr_log(GPR_INFO,
-              "[xds_client %p] xds channel in state TRANSIENT_FAILURE",
-              parent_->xds_client());
+              "[xds_client %p] xds channel in state:TRANSIENT_FAILURE "
+              "status_message:(%s)",
+              parent_->xds_client(), status.ToString().c_str());
       parent_->xds_client()->NotifyOnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "xds channel in TRANSIENT_FAILURE"));
     }

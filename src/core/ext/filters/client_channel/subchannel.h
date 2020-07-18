@@ -226,7 +226,7 @@ class Subchannel {
 
   // Creates a subchannel given \a connector and \a args.
   static Subchannel* Create(OrphanablePtr<SubchannelConnector> connector,
-                            const grpc_channel_args* args, int keepalive_time);
+                            const grpc_channel_args* args);
 
   // Strong and weak refcounting.
   Subchannel* Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
@@ -404,6 +404,7 @@ class Subchannel {
 
   // Connectivity state tracking.
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  absl::Status status_;
   // The list of watchers without a health check service name.
   ConnectivityStateWatcherList watcher_list_;
   // The map of watchers with health check service names.

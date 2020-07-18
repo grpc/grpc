@@ -261,7 +261,8 @@ class ChannelData {
   ~ChannelData();
 
   void UpdateStateAndPickerLocked(
-      grpc_connectivity_state state, const char* reason,
+      grpc_connectivity_state state, const absl::Status& status,
+      const char* reason,
       std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker);
 
   void UpdateServiceConfigInDataPlaneLocked(
@@ -329,7 +330,6 @@ class ChannelData {
   // applied in the data plane mutex when the picker is updated.
   std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>>
       pending_subchannel_updates_;
-  int keepalive_time_ = -1;
 
   //
   // Fields accessed from both data plane mutex and control plane
@@ -1101,18 +1101,6 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                 watcher_.get());
       }
       ConnectivityStateChange state_change = PopConnectivityStateChange();
-      absl::optional<absl::Cord> keepalive_throttling =
-          state_change.status.GetPayload("grpc.internal.keepalive_throttling");
-      if (keepalive_throttling.has_value()) {
-        parent_->chand_->keepalive_time_ =
-            std::max(parent_->chand_->keepalive_time_,
-                     atoi(std::string(keepalive_throttling.value()).c_str()));
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-          gpr_log(GPR_INFO,
-                  "Throttling keepalive time chand=%p keepalive_time=%d",
-                  parent_->chand_, parent_->chand_->keepalive_time_);
-        }
-      }
       // Ignore update if the parent WatcherWrapper has been replaced
       // since this callback was scheduled.
       if (watcher_ != nullptr) {
@@ -1357,8 +1345,8 @@ class ChannelData::ClientChannelControlHelper
         chand_->subchannel_pool_.get());
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
         &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &arg, 1);
-    Subchannel* subchannel = chand_->client_channel_factory_->CreateSubchannel(
-        new_args, chand_->keepalive_time_);
+    Subchannel* subchannel =
+        chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
     return MakeRefCounted<SubchannelWrapper>(
@@ -1366,19 +1354,21 @@ class ChannelData::ClientChannelControlHelper
   }
 
   void UpdateState(
-      grpc_connectivity_state state,
+      grpc_connectivity_state state, const absl::Status& status,
       std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) override {
     grpc_error* disconnect_error = chand_->disconnect_error();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       const char* extra = disconnect_error == GRPC_ERROR_NONE
                               ? ""
                               : " (ignoring -- channel shutting down)";
-      gpr_log(GPR_INFO, "chand=%p: update: state=%s picker=%p%s", chand_,
-              ConnectivityStateName(state), picker.get(), extra);
+      gpr_log(GPR_INFO, "chand=%p: update: state=%s status=(%s) picker=%p%s",
+              chand_, ConnectivityStateName(state), status.ToString().c_str(),
+              picker.get(), extra);
     }
     // Do update only if not shutting down.
     if (disconnect_error == GRPC_ERROR_NONE) {
-      chand_->UpdateStateAndPickerLocked(state, "helper", std::move(picker));
+      chand_->UpdateStateAndPickerLocked(state, status, "helper",
+                                         std::move(picker));
     }
   }
 
@@ -1689,22 +1679,9 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
                                &new_args);
   target_uri_.reset(proxy_name != nullptr ? proxy_name
                                           : gpr_strdup(server_uri));
-  keepalive_time_ = grpc_channel_args_find_integer(
-      new_args != nullptr ? new_args : args->channel_args,
-      GRPC_ARG_KEEPALIVE_TIME_MS, {-1 /* default value, unset */, 1, INT_MAX});
-  const char* arg_to_remove = GRPC_ARG_KEEPALIVE_TIME_MS;
-  if (new_args != nullptr) {
-    if (keepalive_time_ > 0) {
-      channel_args_ =
-          grpc_channel_args_copy_and_remove(new_args, &arg_to_remove, 1);
-      grpc_channel_args_destroy(new_args);
-    } else {
-      channel_args_ = new_args;
-    }
-  } else {
-    channel_args_ = grpc_channel_args_copy_and_remove(args->channel_args,
-                                                      &arg_to_remove, 1);
-  }
+  channel_args_ = new_args != nullptr
+                      ? new_args
+                      : grpc_channel_args_copy(args->channel_args);
   if (!ResolverRegistry::IsValidTarget(target_uri_.get())) {
     *error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("the target uri is not valid.");
@@ -1728,7 +1705,8 @@ ChannelData::~ChannelData() {
 }
 
 void ChannelData::UpdateStateAndPickerLocked(
-    grpc_connectivity_state state, const char* reason,
+    grpc_connectivity_state state, const absl::Status& status,
+    const char* reason,
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) {
   // Clean the control plane when entering IDLE.
   if (picker_ == nullptr) {
@@ -1738,7 +1716,7 @@ void ChannelData::UpdateStateAndPickerLocked(
     received_first_resolver_result_ = false;
   }
   // Update connectivity state.
-  state_tracker_.SetState(state, reason, absl::Status());
+  state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
     channelz_node_->AddTraceEvent(
@@ -1965,8 +1943,8 @@ void ChannelData::StartTransportOpLocked(grpc_transport_op* op) {
         static_cast<grpc_connectivity_state>(value) == GRPC_CHANNEL_IDLE) {
       if (disconnect_error() == GRPC_ERROR_NONE) {
         // Enter IDLE state.
-        UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, "channel entering IDLE",
-                                   nullptr);
+        UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, absl::Status(),
+                                   "channel entering IDLE", nullptr);
       }
       GRPC_ERROR_UNREF(op->disconnect_with_error);
     } else {
@@ -1975,7 +1953,7 @@ void ChannelData::StartTransportOpLocked(grpc_transport_op* op) {
                  GRPC_ERROR_NONE);
       disconnect_error_.Store(op->disconnect_with_error, MemoryOrder::RELEASE);
       UpdateStateAndPickerLocked(
-          GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
+          GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
           absl::make_unique<LoadBalancingPolicy::TransientFailurePicker>(
               GRPC_ERROR_REF(op->disconnect_with_error)));
     }

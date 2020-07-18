@@ -58,9 +58,8 @@ const char* ConnectivityStateName(grpc_connectivity_state state) {
 class AsyncConnectivityStateWatcherInterface::Notifier {
  public:
   Notifier(RefCountedPtr<AsyncConnectivityStateWatcherInterface> watcher,
-           grpc_connectivity_state state,
-           const std::shared_ptr<WorkSerializer>& work_serializer,
-           const absl::Status& status)
+           grpc_connectivity_state state, const absl::Status& status,
+           const std::shared_ptr<WorkSerializer>& work_serializer)
       : watcher_(std::move(watcher)), state_(state), status_(status) {
     if (work_serializer != nullptr) {
       work_serializer->Run(
@@ -77,8 +76,9 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
   static void SendNotification(void* arg, grpc_error* /*ignored*/) {
     Notifier* self = static_cast<Notifier*>(arg);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_connectivity_state_trace)) {
-      gpr_log(GPR_INFO, "watcher %p: delivering async notification for %s",
-              self->watcher_.get(), ConnectivityStateName(self->state_));
+      gpr_log(GPR_INFO, "watcher %p: delivering async notification for %s (%s)",
+              self->watcher_.get(), ConnectivityStateName(self->state_),
+              self->status_.ToString().c_str());
     }
     self->watcher_->OnConnectivityStateChange(self->state_, self->status_);
     delete self;
@@ -92,8 +92,8 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
 
 void AsyncConnectivityStateWatcherInterface::Notify(
     grpc_connectivity_state state, const absl::Status& status) {
-  new Notifier(Ref(), state, work_serializer_,
-               status);  // Deletes itself when done.
+  new Notifier(Ref(), state, status,
+               work_serializer_);  // Deletes itself when done.
 }
 
 //
@@ -129,7 +129,7 @@ void ConnectivityStateTracker::AddWatcher(
               name_, this, watcher.get(), ConnectivityStateName(initial_state),
               ConnectivityStateName(current_state));
     }
-    watcher->Notify(current_state, absl::Status());
+    watcher->Notify(current_state, status_);
   }
   // If we're in state SHUTDOWN, don't add the watcher, so that it will
   // be orphaned immediately.
@@ -148,8 +148,8 @@ void ConnectivityStateTracker::RemoveWatcher(
 }
 
 void ConnectivityStateTracker::SetState(grpc_connectivity_state state,
-                                        const char* reason,
-                                        const absl::Status& status) {
+                                        const absl::Status& status,
+                                        const char* reason) {
   grpc_connectivity_state current_state = state_.Load(MemoryOrder::RELAXED);
   if (state == current_state) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_connectivity_state_trace)) {
@@ -158,6 +158,7 @@ void ConnectivityStateTracker::SetState(grpc_connectivity_state state,
             ConnectivityStateName(state), reason, status.ToString().c_str());
   }
   state_.Store(state, MemoryOrder::RELAXED);
+  status_ = status;
   for (const auto& p : watchers_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_connectivity_state_trace)) {
       gpr_log(GPR_INFO,
@@ -170,11 +171,6 @@ void ConnectivityStateTracker::SetState(grpc_connectivity_state state,
   // If the new state is SHUTDOWN, orphan all of the watchers.  This
   // avoids the need for the callers to explicitly cancel them.
   if (state == GRPC_CHANNEL_SHUTDOWN) watchers_.clear();
-}
-
-void ConnectivityStateTracker::SetState(grpc_connectivity_state state,
-                                        const char* reason) {
-  SetState(state, reason, absl::Status());
 }
 
 grpc_connectivity_state ConnectivityStateTracker::state() const {

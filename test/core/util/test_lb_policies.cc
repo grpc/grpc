@@ -142,10 +142,10 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
       return parent_->channel_control_helper()->CreateSubchannel(args);
     }
 
-    void UpdateState(grpc_connectivity_state state,
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(
-          state, absl::make_unique<Picker>(std::move(picker), cb_));
+          state, status, absl::make_unique<Picker>(std::move(picker), cb_));
     }
 
     void RequestReresolution() override {
@@ -252,10 +252,10 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       return parent_->channel_control_helper()->CreateSubchannel(args);
     }
 
-    void UpdateState(grpc_connectivity_state state,
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(
-          state, absl::make_unique<Picker>(std::move(picker), cb_));
+          state, status, absl::make_unique<Picker>(std::move(picker), cb_));
     }
 
     void RequestReresolution() override {
