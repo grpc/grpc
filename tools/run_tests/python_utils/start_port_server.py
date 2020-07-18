@@ -46,7 +46,7 @@ def start_port_server():
     if running:
         current_version = int(
             subprocess.check_output([
-                sys.executable,
+                sys.executable,  # use the same python binary as this process
                 os.path.abspath('tools/run_tests/python_utils/port_server.py'),
                 'dump_version'
             ]))
@@ -73,12 +73,15 @@ def start_port_server():
             # Working directory of port server needs to be outside of Jenkins
             # workspace to prevent file lock issues.
             tempdir = tempfile.mkdtemp()
-            port_server = subprocess.Popen(
-                args,
-                env=env,
-                cwd=tempdir,
-                creationflags=0x00000008,  # detached process
-                close_fds=True)
+            if sys.version_info.major == 2:
+                creationflags = 0x00000008  # detached process
+            else:
+                creationflags = 0  # DETACHED_PROCESS doesn't seem to work with python3
+            port_server = subprocess.Popen(args,
+                                           env=env,
+                                           cwd=tempdir,
+                                           creationflags=creationflags,
+                                           close_fds=True)
         else:
             port_server = subprocess.Popen(args,
                                            env=env,

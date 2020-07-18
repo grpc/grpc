@@ -22,6 +22,10 @@
 
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -331,18 +335,15 @@ static void on_host_checked(void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE) {
     send_security_metadata(elem, batch);
   } else {
-    char* error_msg;
-    char* host = grpc_slice_to_c_string(calld->host);
-    gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
-                 host);
-    gpr_free(host);
+    std::string error_msg = absl::StrCat(
+        "Invalid host ", grpc_core::StringViewFromSlice(calld->host),
+        " set in :authority metadata.");
     grpc_transport_stream_op_batch_finish_with_failure(
         batch,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg),
-                           GRPC_ERROR_INT_GRPC_STATUS,
-                           GRPC_STATUS_UNAUTHENTICATED),
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str()),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED),
         calld->call_combiner);
-    gpr_free(error_msg);
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call, "check_call_host");
 }

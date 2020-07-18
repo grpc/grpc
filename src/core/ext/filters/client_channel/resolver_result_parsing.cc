@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/alloc.h>
@@ -353,13 +354,11 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:loadBalancingPolicy error:Unknown lb policy"));
       } else if (requires_config) {
-        char* error_msg;
-        gpr_asprintf(&error_msg,
-                     "field:loadBalancingPolicy error:%s requires a config. "
-                     "Please use loadBalancingConfig instead.",
-                     lb_policy_name.c_str());
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg));
-        gpr_free(error_msg);
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("field:loadBalancingPolicy error:", lb_policy_name,
+                         " requires a config. Please use loadBalancingConfig "
+                         "instead.")
+                .c_str()));
       }
     }
   }

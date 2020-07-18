@@ -1,5 +1,6 @@
 #!/bin/bash
-# Copyright 2016 gRPC authors.
+#
+# Copyright 2020 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,25 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -e
 
-# change to grpc repo root
-cd "$(dirname "$0")/../../.."
+if [ $# -lt 1 ];then
+  echo "Usage: $0 github-id"
+  exit 1
+fi
 
-cd third_party/protobuf && ./autogen.sh && \
-./configure && make -j4 && make install && ldconfig
+echo "Change a repo manager to $0"
 
-cd ../.. && make -j4 && make install
+BASE_PATH=$(dirname $0)
 
-cd examples/cpp/helloworld
+for file in bug_report.md cleanup_request.md feature_request.md question.md
+do
+	sed -i -E "s/assignees: ([a-zA-Z0-9-]+)/assignees: $1/" $BASE_PATH/ISSUE_TEMPLATE/$file
+done
 
-make
+sed -i -E "s/^@([a-zA-Z0-9-]+)/@$1/" $BASE_PATH/pull_request_template.md
 
-make clean
-
-cd ../../../examples/cpp/route_guide
-
-make
-
-make clean
-
+echo "Done"

@@ -23,11 +23,10 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -98,11 +97,9 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(XdsClient* client,
   Json json = Json::Parse(contents_str_view, error);
   grpc_slice_unref_internal(contents);
   if (*error != GRPC_ERROR_NONE) {
-    char* msg;
-    gpr_asprintf(&msg, "Failed to parse bootstrap file %s", path.get());
-    grpc_error* error_out =
-        GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(msg, error, 1);
-    gpr_free(msg);
+    grpc_error* error_out = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
+        absl::StrCat("Failed to parse bootstrap file ", path.get()).c_str(),
+        error, 1);
     GRPC_ERROR_UNREF(*error);
     *error = error_out;
     return nullptr;
@@ -154,10 +151,8 @@ grpc_error* XdsBootstrap::ParseXdsServerList(Json* json) {
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);
     if (child.type() != Json::Type::OBJECT) {
-      char* msg;
-      gpr_asprintf(&msg, "array element %" PRIuPTR " is not an object", i);
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
-      gpr_free(msg);
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("array element ", i, " is not an object").c_str()));
     } else {
       grpc_error* parse_error = ParseXdsServer(&child, i);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
@@ -194,10 +189,8 @@ grpc_error* XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
   // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
   // string is not static in this case.
   if (error_list.empty()) return GRPC_ERROR_NONE;
-  char* msg;
-  gpr_asprintf(&msg, "errors parsing index %" PRIuPTR, idx);
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-  gpr_free(msg);
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      absl::StrCat("errors parsing index ", idx).c_str());
   for (size_t i = 0; i < error_list.size(); ++i) {
     error = grpc_error_add_child(error, error_list[i]);
   }
@@ -210,10 +203,8 @@ grpc_error* XdsBootstrap::ParseChannelCredsArray(Json* json,
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);
     if (child.type() != Json::Type::OBJECT) {
-      char* msg;
-      gpr_asprintf(&msg, "array element %" PRIuPTR " is not an object", i);
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
-      gpr_free(msg);
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("array element ", i, " is not an object").c_str()));
     } else {
       grpc_error* parse_error = ParseChannelCreds(&child, i, server);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
@@ -252,10 +243,8 @@ grpc_error* XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
   // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
   // string is not static in this case.
   if (error_list.empty()) return GRPC_ERROR_NONE;
-  char* msg;
-  gpr_asprintf(&msg, "errors parsing index %" PRIuPTR, idx);
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-  gpr_free(msg);
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      absl::StrCat("errors parsing index ", idx).c_str());
   for (size_t i = 0; i < error_list.size(); ++i) {
     error = grpc_error_add_child(error, error_list[i]);
   }

@@ -29,9 +29,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -57,11 +58,12 @@ struct async_connect {
   int refs;
   grpc_closure write_closure;
   grpc_pollset_set* interested_parties;
-  char* addr_str;
+  std::string addr_str;
   grpc_endpoint** ep;
   grpc_closure* closure;
   grpc_channel_args* channel_args;
 };
+
 static grpc_error* prepare_socket(const grpc_resolved_address* addr, int fd,
                                   const grpc_channel_args* channel_args) {
   grpc_error* err = GRPC_ERROR_NONE;
@@ -102,8 +104,8 @@ static void tc_on_alarm(void* acp, grpc_error* error) {
   async_connect* ac = static_cast<async_connect*>(acp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     const char* str = grpc_error_string(error);
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s", ac->addr_str,
-            str);
+    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
+            ac->addr_str.c_str(), str);
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != nullptr) {
@@ -114,9 +116,8 @@ static void tc_on_alarm(void* acp, grpc_error* error) {
   gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
-    gpr_free(ac->addr_str);
     grpc_channel_args_destroy(ac->channel_args);
-    gpr_free(ac);
+    delete ac;
   }
 }
 
@@ -139,8 +140,8 @@ static void on_writable(void* acp, grpc_error* error) {
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     const char* str = grpc_error_string(error);
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s", ac->addr_str,
-            str);
+    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
+            ac->addr_str.c_str(), str);
   }
 
   gpr_mu_lock(&ac->mu);
@@ -172,7 +173,8 @@ static void on_writable(void* acp, grpc_error* error) {
   switch (so_error) {
     case 0:
       grpc_pollset_set_del_fd(ac->interested_parties, fd);
-      *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args, ac->addr_str);
+      *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args,
+                                           ac->addr_str.c_str());
       fd = nullptr;
       break;
     case ENOBUFS:
@@ -214,19 +216,17 @@ finish:
   done = (--ac->refs == 0);
   // Create a copy of the data from "ac" to be accessed after the unlock, as
   // "ac" and its contents may be deallocated by the time they are read.
-  const grpc_slice addr_str_slice = grpc_slice_from_copied_string(ac->addr_str);
+  const grpc_slice addr_str_slice = grpc_slice_from_cpp_string(ac->addr_str);
   gpr_mu_unlock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
-    char* error_descr;
     grpc_slice str;
     bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
     GPR_ASSERT(ret);
-    char* desc = grpc_slice_to_c_string(str);
-    gpr_asprintf(&error_descr, "Failed to connect to remote host: %s", desc);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION,
-                               grpc_slice_from_copied_string(error_descr));
-    gpr_free(error_descr);
-    gpr_free(desc);
+    std::string description = absl::StrCat("Failed to connect to remote host: ",
+                                           grpc_core::StringViewFromSlice(str));
+    error =
+        grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                           grpc_slice_from_cpp_string(std::move(description)));
     error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
                                addr_str_slice /* takes ownership */);
   } else {
@@ -236,9 +236,8 @@ finish:
     // This is safe even outside the lock, because "done", the sentinel, is
     // populated *inside* the lock.
     gpr_mu_destroy(&ac->mu);
-    gpr_free(ac->addr_str);
     grpc_channel_args_destroy(ac->channel_args);
-    gpr_free(ac);
+    delete ac;
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
 }
@@ -279,33 +278,25 @@ void grpc_tcp_client_create_from_prepared_fd(
     const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
     grpc_millis deadline, grpc_endpoint** ep) {
   int err;
-  async_connect* ac;
   do {
     err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr->addr),
                   addr->len);
   } while (err < 0 && errno == EINTR);
 
-  char* name;
-  char* addr_str;
-  addr_str = grpc_sockaddr_to_uri(addr);
-  gpr_asprintf(&name, "tcp-client:%s", addr_str);
-  grpc_fd* fdobj = grpc_fd_create(fd, name, true);
-  gpr_free(name);
-  gpr_free(addr_str);
+  std::string name = absl::StrCat("tcp-client:", grpc_sockaddr_to_uri(addr));
+  grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
 
   if (err >= 0) {
-    char* addr_str = grpc_sockaddr_to_uri(addr);
-    *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args, addr_str);
-    gpr_free(addr_str);
+    *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args,
+                                         grpc_sockaddr_to_uri(addr).c_str());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
     return;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     grpc_error* error = GRPC_OS_ERROR(errno, "connect");
-    char* addr_str = grpc_sockaddr_to_uri(addr);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                               grpc_slice_from_copied_string(addr_str));
-    gpr_free(addr_str);
+    error = grpc_error_set_str(
+        error, GRPC_ERROR_STR_TARGET_ADDRESS,
+        grpc_slice_from_cpp_string(grpc_sockaddr_to_uri(addr)));
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return;
@@ -313,7 +304,7 @@ void grpc_tcp_client_create_from_prepared_fd(
 
   grpc_pollset_set_add_fd(interested_parties, fdobj);
 
-  ac = static_cast<async_connect*>(gpr_malloc(sizeof(async_connect)));
+  async_connect* ac = new async_connect();
   ac->closure = closure;
   ac->ep = ep;
   ac->fd = fdobj;
@@ -327,7 +318,7 @@ void grpc_tcp_client_create_from_prepared_fd(
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
-            ac->addr_str, fdobj);
+            ac->addr_str.c_str(), fdobj);
   }
 
   gpr_mu_lock(&ac->mu);

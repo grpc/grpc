@@ -18,21 +18,23 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolve_address_custom.h"
+
+#include <string.h>
+
+#include <string>
+
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
 #include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
-
 #include "src/core/lib/iomgr/iomgr_custom.h"
-#include "src/core/lib/iomgr/resolve_address_custom.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-
-#include <string.h>
 
 struct grpc_custom_resolver {
   grpc_closure* on_done = nullptr;
@@ -88,23 +90,16 @@ static grpc_error* try_split_host_port(const char* name,
                                        const char* default_port,
                                        std::string* host, std::string* port) {
   /* parse name, splitting it into host and port parts */
-  grpc_error* error;
   grpc_core::SplitHostPort(name, host, port);
   if (host->empty()) {
-    char* msg;
-    gpr_asprintf(&msg, "unparseable host:port: '%s'", name);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return error;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrFormat("unparseable host:port: '%s'", name).c_str());
   }
   if (port->empty()) {
     // TODO(murgatroid99): add tests for this case
     if (default_port == nullptr) {
-      char* msg;
-      gpr_asprintf(&msg, "no port in name '%s'", name);
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-      gpr_free(msg);
-      return error;
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrFormat("no port in name '%s'", name).c_str());
     }
     *port = default_port;
   }

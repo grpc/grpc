@@ -21,12 +21,15 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -246,12 +249,10 @@ static void request_for_disabled_algorithm(
 
   const char* algo_name = nullptr;
   GPR_ASSERT(grpc_compression_algorithm_name(algorithm_to_disable, &algo_name));
-  char* expected_details = nullptr;
-  gpr_asprintf(&expected_details, "Compression algorithm '%s' is disabled.",
-               algo_name);
+  std::string expected_details =
+      absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
   /* and we expect a specific reason for it */
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, expected_details));
-  gpr_free(expected_details);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, expected_details.c_str()));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
 
   grpc_slice_unref(details);

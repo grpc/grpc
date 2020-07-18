@@ -172,7 +172,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.9'
+    ss.dependency 'BoringSSL-GRPC', '0.0.10'
     abseil_version = '1.20200225.0'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
@@ -181,7 +181,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
-    ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC'
+    ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
     ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/client_channel/backend_metric.cc',
@@ -266,6 +266,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc',
+                      'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
                       'src/core/ext/filters/client_channel/resolver_factory.h',
                       'src/core/ext/filters/client_channel/resolver_registry.cc',
                       'src/core/ext/filters/client_channel/resolver_registry.h',
@@ -304,6 +305,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/filters/http/client/http_client_filter.cc',
                       'src/core/ext/filters/http/client/http_client_filter.h',
+                      'src/core/ext/filters/http/client/util.cc',
+                      'src/core/ext/filters/http/client/util.h',
                       'src/core/ext/filters/http/client_authority_filter.cc',
                       'src/core/ext/filters/http/client_authority_filter.h',
                       'src/core/ext/filters/http/http_filters_plugin.cc',
@@ -1170,6 +1173,55 @@ Pod::Spec.new do |s|
                       'src/core/tsi/transport_security_grpc.cc',
                       'src/core/tsi/transport_security_grpc.h',
                       'src/core/tsi/transport_security_interface.h',
+                      'third_party/re2/re2/bitmap256.h',
+                      'third_party/re2/re2/bitstate.cc',
+                      'third_party/re2/re2/compile.cc',
+                      'third_party/re2/re2/dfa.cc',
+                      'third_party/re2/re2/filtered_re2.cc',
+                      'third_party/re2/re2/filtered_re2.h',
+                      'third_party/re2/re2/mimics_pcre.cc',
+                      'third_party/re2/re2/nfa.cc',
+                      'third_party/re2/re2/onepass.cc',
+                      'third_party/re2/re2/parse.cc',
+                      'third_party/re2/re2/perl_groups.cc',
+                      'third_party/re2/re2/pod_array.h',
+                      'third_party/re2/re2/prefilter.cc',
+                      'third_party/re2/re2/prefilter.h',
+                      'third_party/re2/re2/prefilter_tree.cc',
+                      'third_party/re2/re2/prefilter_tree.h',
+                      'third_party/re2/re2/prog.cc',
+                      'third_party/re2/re2/prog.h',
+                      'third_party/re2/re2/re2.cc',
+                      'third_party/re2/re2/re2.h',
+                      'third_party/re2/re2/regexp.cc',
+                      'third_party/re2/re2/regexp.h',
+                      'third_party/re2/re2/set.cc',
+                      'third_party/re2/re2/set.h',
+                      'third_party/re2/re2/simplify.cc',
+                      'third_party/re2/re2/sparse_array.h',
+                      'third_party/re2/re2/sparse_set.h',
+                      'third_party/re2/re2/stringpiece.cc',
+                      'third_party/re2/re2/stringpiece.h',
+                      'third_party/re2/re2/tostring.cc',
+                      'third_party/re2/re2/unicode_casefold.cc',
+                      'third_party/re2/re2/unicode_casefold.h',
+                      'third_party/re2/re2/unicode_groups.cc',
+                      'third_party/re2/re2/unicode_groups.h',
+                      'third_party/re2/re2/walker-inl.h',
+                      'third_party/re2/util/benchmark.h',
+                      'third_party/re2/util/flags.h',
+                      'third_party/re2/util/logging.h',
+                      'third_party/re2/util/malloc_counter.h',
+                      'third_party/re2/util/mix.h',
+                      'third_party/re2/util/mutex.h',
+                      'third_party/re2/util/pcre.cc',
+                      'third_party/re2/util/pcre.h',
+                      'third_party/re2/util/rune.cc',
+                      'third_party/re2/util/strutil.cc',
+                      'third_party/re2/util/strutil.h',
+                      'third_party/re2/util/test.h',
+                      'third_party/re2/util/utf.h',
+                      'third_party/re2/util/util.h',
                       'third_party/upb/upb/decode.c',
                       'third_party/upb/upb/decode.h',
                       'third_party/upb/upb/def.c',
@@ -1223,6 +1275,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                               'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                               'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
+                              'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
                               'src/core/ext/filters/client_channel/resolver_factory.h',
                               'src/core/ext/filters/client_channel/resolver_registry.h',
                               'src/core/ext/filters/client_channel/resolver_result_parsing.h',
@@ -1243,6 +1296,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/xds/xds_client_stats.h',
                               'src/core/ext/filters/deadline/deadline_filter.h',
                               'src/core/ext/filters/http/client/http_client_filter.h',
+                              'src/core/ext/filters/http/client/util.h',
                               'src/core/ext/filters/http/client_authority_filter.h',
                               'src/core/ext/filters/http/message_compress/message_compress_filter.h',
                               'src/core/ext/filters/http/message_compress/message_decompress_filter.h',
@@ -1651,6 +1705,32 @@ Pod::Spec.new do |s|
                               'src/core/tsi/transport_security.h',
                               'src/core/tsi/transport_security_grpc.h',
                               'src/core/tsi/transport_security_interface.h',
+                              'third_party/re2/re2/bitmap256.h',
+                              'third_party/re2/re2/filtered_re2.h',
+                              'third_party/re2/re2/pod_array.h',
+                              'third_party/re2/re2/prefilter.h',
+                              'third_party/re2/re2/prefilter_tree.h',
+                              'third_party/re2/re2/prog.h',
+                              'third_party/re2/re2/re2.h',
+                              'third_party/re2/re2/regexp.h',
+                              'third_party/re2/re2/set.h',
+                              'third_party/re2/re2/sparse_array.h',
+                              'third_party/re2/re2/sparse_set.h',
+                              'third_party/re2/re2/stringpiece.h',
+                              'third_party/re2/re2/unicode_casefold.h',
+                              'third_party/re2/re2/unicode_groups.h',
+                              'third_party/re2/re2/walker-inl.h',
+                              'third_party/re2/util/benchmark.h',
+                              'third_party/re2/util/flags.h',
+                              'third_party/re2/util/logging.h',
+                              'third_party/re2/util/malloc_counter.h',
+                              'third_party/re2/util/mix.h',
+                              'third_party/re2/util/mutex.h',
+                              'third_party/re2/util/pcre.h',
+                              'third_party/re2/util/strutil.h',
+                              'third_party/re2/util/test.h',
+                              'third_party/re2/util/utf.h',
+                              'third_party/re2/util/util.h',
                               'third_party/upb/upb/decode.h',
                               'third_party/upb/upb/def.h',
                               'third_party/upb/upb/encode.h',
@@ -1837,5 +1917,8 @@ Pod::Spec.new do |s|
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upbdefs.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upbdefs.h"\\\n#else\\\n  #include  "\\1.upbdefs.h"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find third_party/re2/re2/ third_party/re2/util/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g;s;#include "util/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/util/\\1"\\\n#else\\\n  #include  "util/\\1"\\\n#endif;g'
+    find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g'
+    find src/core/ third_party/re2/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

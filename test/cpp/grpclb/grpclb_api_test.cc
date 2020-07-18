@@ -28,6 +28,8 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/proto/grpc/lb/v1/load_balancer.pb.h"  // C++ version
 
+#include "test/core/util/test_config.h"
+
 namespace grpc {
 namespace {
 
@@ -135,6 +137,7 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -130,11 +131,9 @@ grpc_status_code TlsFetchKeyMaterials(
 grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    char* msg;
-    gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return error;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
+            .c_str());
   }
   return GRPC_ERROR_NONE;
 }
@@ -334,8 +333,10 @@ grpc_security_status TlsChannelSecurityConnector::ReplaceHandshakerFactory(
       key_materials_config_->pem_key_cert_pair_list());
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
       pem_key_cert_pair, key_materials_config_->pem_root_certs(),
-      skip_server_certificate_verification, ssl_session_cache,
-      &client_handshaker_factory_);
+      skip_server_certificate_verification,
+      grpc_get_tsi_tls_version(creds->options().min_tls_version()),
+      grpc_get_tsi_tls_version(creds->options().max_tls_version()),
+      ssl_session_cache, &client_handshaker_factory_);
   /* Free memory. */
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
   return status;
@@ -402,31 +403,30 @@ void TlsChannelSecurityConnector::ServerAuthorizationCheckDone(
 grpc_error* TlsChannelSecurityConnector::ProcessServerAuthorizationCheckResult(
     grpc_tls_server_authorization_check_arg* arg) {
   grpc_error* error = GRPC_ERROR_NONE;
-  char* msg = nullptr;
   /* Server authorization check is cancelled by caller. */
   if (arg->status == GRPC_STATUS_CANCELLED) {
-    gpr_asprintf(&msg,
-                 "Server authorization check is cancelled by the caller with "
-                 "error: %s",
-                 arg->error_details->error_details().c_str());
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Server authorization check is cancelled by the caller "
+                     "with error: ",
+                     arg->error_details->error_details())
+            .c_str());
   } else if (arg->status == GRPC_STATUS_OK) {
     /* Server authorization check completed successfully but returned check
      * failure. */
     if (!arg->success) {
-      gpr_asprintf(&msg, "Server authorization check failed with error: %s",
-                   arg->error_details->error_details().c_str());
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Server authorization check failed with error: ",
+                       arg->error_details->error_details())
+              .c_str());
     }
     /* Server authorization check did not complete correctly. */
   } else {
-    gpr_asprintf(
-        &msg,
-        "Server authorization check did not finish correctly with error: %s",
-        arg->error_details->error_details().c_str());
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat(
+            "Server authorization check did not finish correctly with error: ",
+            arg->error_details->error_details())
+            .c_str());
   }
-  gpr_free(msg);
   return error;
 }
 
@@ -544,7 +544,10 @@ grpc_security_status TlsServerSecurityConnector::ReplaceHandshakerFactory() {
   grpc_security_status status = grpc_ssl_tsi_server_handshaker_factory_init(
       pem_key_cert_pairs, num_key_cert_pairs,
       key_materials_config_->pem_root_certs(),
-      creds->options().cert_request_type(), &server_handshaker_factory_);
+      creds->options().cert_request_type(),
+      grpc_get_tsi_tls_version(creds->options().min_tls_version()),
+      grpc_get_tsi_tls_version(creds->options().max_tls_version()),
+      &server_handshaker_factory_);
   /* Free memory. */
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,
                                           num_key_cert_pairs);

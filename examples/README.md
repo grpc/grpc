@@ -1,27 +1,21 @@
 # Examples
 
-This directory contains code examples for all the C-based gRPC implementations: C++, Node.js, Python, Ruby, Objective-C, PHP, and C#. You can find examples and instructions specific to your
-favourite language in the relevant subdirectory.
+This directory contains examples for all the C-based gRPC implementations. Each
+language subdirectory contains a Hello World example and more:
 
-Examples for Go and Java gRPC live in their own repositories:
-
-* [Java](https://github.com/grpc/grpc-java/tree/master/examples)
-* [Android Java](https://github.com/grpc/grpc-java/tree/master/examples/android)
-* [Go](https://github.com/grpc/grpc-go/tree/master/examples)
-
-For more comprehensive documentation, including an [overview](https://grpc.io/docs/) and tutorials that use this example code, visit [grpc.io](https://grpc.io/docs/).
-
-## Quick start
-
-Each example directory has quick start instructions for the appropriate language, including installation instructions and how to run our simplest Hello World example:
-
-* [C++](cpp)
-* [Ruby](ruby)
-* [Node.js](node)
-* [Python](python/helloworld)
 * [C#](csharp)
+* [C++](cpp)
+* [Node.js](node)
 * [Objective-C](objective-c/helloworld)
 * [PHP](php)
+* [Python](python/helloworld)
+* [Ruby](ruby)
 
+For a complete list of supported languages, see [Supported languages and
+platforms][lang].
 
+For comprehensive documentation, including an [Introduction to gRPC][intro] and
+tutorials that use this example code, visit [grpc.io](https://grpc.io).
 
+[intro]: https://grpc.io/docs/what-is-grpc/introduction
+[lang]: https://grpc.io/docs/languages/
