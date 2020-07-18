@@ -232,7 +232,7 @@ void CdsLb::ClusterWatcher::OnResourceDoesNotExist() {
       GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   parent_->channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
+      absl::Status(grpc_error_get_status_code(error), grpc_error_string(error)),
       absl::make_unique<TransientFailurePicker>(error));
   parent_->MaybeDestroyChildPolicyLocked();
 }
