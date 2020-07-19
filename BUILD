@@ -1867,6 +1867,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_cel_engine",
+    srcs = [
+    ],
+    hdrs = [
+        "src/core/lib/security/authorization/cel_stub.h",
+    ],
+    language = "c++",
+    deps = [
+        "envoy_ads_upb",
+        "google_api_upb",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
