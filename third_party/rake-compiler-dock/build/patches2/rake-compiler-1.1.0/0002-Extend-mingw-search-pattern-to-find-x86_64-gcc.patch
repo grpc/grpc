@@ -1,0 +1,26 @@
+From 07b1a4909fa59324d309bb8a46867cacba97cafd Mon Sep 17 00:00:00 2001
+From: Lars Kanis <lars@greiz-reinsdorf.de>
+Date: Thu, 26 Dec 2019 18:31:25 +0100
+Subject: [PATCH] Extend mingw search pattern to find x86_64 gcc
+
+The previous pattern only recognized 32 bit compiler versions.
+---
+ lib/rake/extensioncompiler.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/rake/extensioncompiler.rb b/lib/rake/extensioncompiler.rb
+index b3d336b..75f4694 100644
+--- a/lib/rake/extensioncompiler.rb
++++ b/lib/rake/extensioncompiler.rb
+@@ -37,7 +37,7 @@ module Rake
+       paths = ENV['PATH'].split(File::PATH_SEPARATOR)
+ 
+       # the pattern to look into (captures *nix and windows executables)
+-      pattern = "{mingw32-,i?86*mingw*}gcc{,.*}"
++      pattern = "{mingw32-,i?86*mingw*,x86*mingw*}gcc{,.*}"
+ 
+       @mingw_gcc_executable = paths.find do |path|
+         # cleanup paths before globbing
+-- 
+2.20.1
+

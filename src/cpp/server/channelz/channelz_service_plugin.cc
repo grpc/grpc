@@ -75,11 +75,12 @@ namespace channelz {
 namespace experimental {
 
 void InitChannelzService() {
-  static bool already_here = false;
-  if (already_here) return;
-  already_here = true;
-  ::grpc::ServerBuilder::InternalAddPluginFactory(
-      &grpc::channelz::experimental::CreateChannelzServicePlugin);
+  static struct Initializer {
+    Initializer() {
+      ::grpc::ServerBuilder::InternalAddPluginFactory(
+          &grpc::channelz::experimental::CreateChannelzServicePlugin);
+    }
+  } initialize;
 }
 
 }  // namespace experimental

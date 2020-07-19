@@ -49,15 +49,21 @@ cdef class BaseCompletionQueue:
 
     cdef grpc_completion_queue* c_ptr(self)
 
+
+cdef class _BoundEventLoop:
+    cdef readonly object loop
+    cdef readonly object read_socket  # socket.socket
+
+
 cdef class PollerCompletionQueue(BaseCompletionQueue):
     cdef bint _shutdown
     cdef cpp_event_queue _queue
     cdef mutex _queue_mutex
-    cdef object _poller_thread
+    cdef object _poller_thread  # threading.Thread
     cdef int _write_fd
-    cdef object _read_socket
-    cdef object _write_socket
-    cdef object _loop
+    cdef object _read_socket    # socket.socket
+    cdef object _write_socket   # socket.socket
+    cdef dict _loops            # Mapping[asyncio.AbstractLoop, _BoundEventLoop]
 
     cdef void _poll(self) nogil
     cdef shutdown(self)

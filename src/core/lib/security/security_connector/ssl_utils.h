@@ -89,14 +89,15 @@ const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
 /* Initialize TSI SSL server/client handshaker factory. */
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
-    bool skip_server_certificate_verification,
-    tsi_ssl_session_cache* ssl_session_cache,
+    bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
+    tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pairs, size_t num_key_cert_pairs,
     const char* pem_root_certs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
+    tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
 /* Exposed for testing only. */

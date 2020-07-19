@@ -22,6 +22,8 @@
 #include <climits>
 #include <cstring>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -195,9 +197,11 @@ void NativeDnsResolver::OnResolvedLocked(grpc_error* error) {
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
     // Return transient error.
+    std::string error_message =
+        absl::StrCat("DNS resolution failed for service: ", name_to_resolve_);
     result_handler()->ReturnError(grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "DNS resolution failed", &error, 1),
+        GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(error_message.c_str(),
+                                                         &error, 1),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
     // Set up for retry.
     grpc_millis next_try = backoff_.NextAttemptTime();

@@ -7,6 +7,8 @@ require 'fileutils'
 
 require_relative 'build_config.rb'
 
+load 'tools/distrib/rake_compiler_docker_image.rb'
+
 # Add rubocop style checking tasks
 RuboCop::RakeTask.new(:rubocop) do |task|
   task.options = ['-c', 'src/ruby/.rubocop.yml']
@@ -81,8 +83,6 @@ end
 
 desc 'Build the Windows gRPC DLLs for Ruby'
 task 'dlls' do
-  require 'rake_compiler_dock'
-
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
   verbose = ENV['V'] || '0'
 
@@ -106,7 +106,7 @@ task 'dlls' do
     env_comp += "CXX=#{opt[:cross]}-g++ "
     env_comp += "LD=#{opt[:cross]}-gcc "
     env_comp += "LDXX=#{opt[:cross]}-g++ "
-    RakeCompilerDock.sh <<-EOT, platform: opt[:platform]
+    run_rake_compiler opt[:platform], <<-EOT
       gem update --system --no-document && \
       #{env} #{env_comp} make -j`nproc` #{out} && \
       #{opt[:cross]}-strip -x -S #{out} && \
@@ -121,6 +121,7 @@ task 'gem:native' do
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
+  ruby_cc_versions = '2.7.0:2.6.0:2.5.0:2.4.0:2.3.0'
 
   if RUBY_PLATFORM =~ /darwin/
     FileUtils.touch 'grpc_c.32.ruby'
@@ -130,22 +131,28 @@ task 'gem:native' do
         "invoked on macos with ruby #{RUBY_VERSION}. The ruby macos artifact " \
         "build should be running on ruby 2.5."
     end
-    system "rake cross native gem RUBY_CC_VERSION=2.7.0:2.6.0:2.5.0:2.4.0:2.3.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
+    system "rake cross native gem RUBY_CC_VERSION=#{ruby_cc_versions} V=#{verbose} GRPC_CONFIG=#{grpc_config}"
   else
-    require 'rake_compiler_dock'
-
     Rake::Task['dlls'].execute
-    ['x86-mingw32', 'x64-mingw32', 'x86_64-linux', 'x86-linux'].each do |plat|
-      RakeCompilerDock.sh <<-EOT, platform: plat
-        # Avoid conflicting declarations of gettimeofday: https://github.com/rake-compiler/rake-compiler-dock/issues/32
-        find /usr/local/rake-compiler -name win32.h | while read f ; do sudo sed -i 's/gettimeofday/rb_gettimeofday/' $f ; done && \
-
+    ['x86-mingw32', 'x64-mingw32'].each do |plat|
+      run_rake_compiler plat, <<-EOT
         gem update --system --no-document && \
         bundle && \
         rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
-          RUBY_CC_VERSION=2.7.0:2.6.0:2.5.0:2.4.0:2.3.0 \
-          V=#{verbose} \
-          GRPC_CONFIG=#{grpc_config}
+          RUBY_CC_VERSION=#{ruby_cc_versions} V=#{verbose} GRPC_CONFIG=#{grpc_config}
+      EOT
+    end
+    # Truncate grpc_c.*.ruby files because they're for Windows only.
+    File.truncate('grpc_c.32.ruby', 0)
+    File.truncate('grpc_c.64.ruby', 0)
+    ['x86_64-linux', 'x86-linux'].each do |plat|
+      run_rake_compiler plat,  <<-EOT
+        gem update --system --no-document && \
+        bundle && \
+        rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
+          RUBY_CC_VERSION=#{ruby_cc_versions} V=#{verbose} GRPC_CONFIG=#{grpc_config} &&
+        sudo chmod -R a+rw pkg &&
+        patchelf_gem.sh pkg/#{spec.full_name}-#{plat}.gem
       EOT
     end
   end

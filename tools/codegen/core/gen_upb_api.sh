@@ -41,7 +41,6 @@ proto_files=( \
   "envoy/api/v2/auth/secret.proto" \
   "envoy/api/v2/auth/tls.proto" \
   "envoy/api/v2/cds.proto" \
-  "envoy/api/v2/cluster.proto" \
   "envoy/api/v2/cluster/circuit_breaker.proto" \
   "envoy/api/v2/cluster/filter.proto" \
   "envoy/api/v2/cluster/outlier_detection.proto" \
@@ -126,3 +125,6 @@ do
     --upb_out=$UPB_OUTPUT_DIR \
     --plugin=protoc-gen-upb=$UPB_PLUGIN
 done
+
+find $UPB_OUTPUT_DIR -name "*.upbdefs.c" -type f -delete
+find $UPB_OUTPUT_DIR -name "*.upbdefs.h" -type f -delete
