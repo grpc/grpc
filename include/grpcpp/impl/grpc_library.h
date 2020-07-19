@@ -26,6 +26,8 @@
 #include <grpcpp/impl/codegen/core_codegen.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 
+#include "src/core/lib/surface/shutdown_library.h"
+
 namespace grpc {
 
 namespace internal {

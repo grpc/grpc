@@ -29,6 +29,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/surface/shutdown_library.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
 #include "src/cpp/server/thread_pool_interface.h"
 

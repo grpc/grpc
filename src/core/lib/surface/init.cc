@@ -50,6 +50,7 @@
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/surface/shutdown_library.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -68,7 +69,8 @@ static bool g_shutting_down;
 static void do_basic_init(void) {
   gpr_log_verbosity_init();
   gpr_mu_init(&g_init_mu);
-  g_shutting_down_cv = static_cast<gpr_cv*>(malloc(sizeof(gpr_cv)));
+  g_shutting_down_cv =
+      static_cast<gpr_cv*>(grpc_core::OnShutdownFree(malloc(sizeof(gpr_cv))));
   gpr_cv_init(g_shutting_down_cv);
   g_shutting_down = false;
   grpc_register_built_in_plugins();
@@ -166,36 +168,6 @@ void grpc_init(void) {
   GRPC_API_TRACE("grpc_init(void)", 0, ());
 }
 
-struct ShutdownData {
-  ~ShutdownData() {
-    std::reverse(functions.begin(), functions.end());
-    for (auto pair : functions) pair.first(pair.second);
-  }
-
-  static ShutdownData* get() {
-    static auto* data = new ShutdownData;
-    return data;
-  }
-
-  std::vector<std::pair<void (*)(const void*), const void*>> functions;
-  grpc_core::Mutex mutex;
-};
-
-static void ZeroArgFuncWrapper(const void* arg) {
-  void (*func)() = reinterpret_cast<void (*)()>(const_cast<void*>(arg));
-  func();
-}
-
-void grpc_on_shutdown_callback(void (*func)()) {
-  grpc_on_shutdown_callback_with_arg(ZeroArgFuncWrapper, reinterpret_cast<void*>(func));
-}
-
-void grpc_on_shutdown_callback_with_arg(void (*f)(const void*), const void* arg) {
-  auto shutdown_data = ShutdownData::get();
-  grpc_core::MutexLock lock(&shutdown_data->mutex);
-  shutdown_data->functions.push_back(std::make_pair(f, arg));
-}
-
 void grpc_shutdown_internal_locked(void) {
   int i;
   {
@@ -225,13 +197,8 @@ void grpc_shutdown_internal_locked(void) {
   grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   g_shutting_down = false;
   gpr_cv_broadcast(g_shutting_down_cv);
-  free(g_shutting_down_cv);
   // Absolute last action will be to delete static metadata context.
   grpc_destroy_static_metadata_ctx();
-
-  // Executes all custom cleanup functions, which were registered via
-  // grpc_on_shutdown_callback() and grpc_on_shutdown_callback_with_arg()
-  delete ShutdownData::get();
 }
 
 void grpc_shutdown_internal(void* /*ignored*/) {

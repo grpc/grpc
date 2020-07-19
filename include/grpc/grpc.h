@@ -533,27 +533,28 @@ GRPCAPI char* grpc_channelz_get_subchannel(intptr_t subchannel_id);
    is allocated and must be freed by the application. */
 GRPCAPI char* grpc_channelz_get_socket(intptr_t socket_id);
 
-/************* Shutdown support. *************/
-/* Register a function to be called at the end of the last grpc_shutdown() call. */
-GRPCAPI void grpc_on_shutdown_callback(void (*func)());
-/* Run an arbitrary function on an arg */
-GRPCAPI void grpc_on_shutdown_callback_with_arg(void (*f)(const void*), const void* arg);
+/** Shut down the grpc library.
+
+    Shut down the entire gRPC library, deleting all static-duration objects allocated by the library.
+
+    There are two reasons you might want to call this:
+
+    - You use a draconian definition of "memory leak" in which you expect every
+      single malloc() to have a corresponding free(), even for objects which live
+      until program exit.
+    - You are writing a dynamically-loaded library which needs to
+      clean up after itself when the library is unloaded.
+
+    It is safe to call this multiple times. However, it is not safe to use any other
+    part of the gRPC library after grpc_final_shutdown_library() has been
+    called. Furthermore this call is not thread safe, user needs to synchronize
+    multiple calls.
+
+    Before it's called, the normal cleanup using grpc_shutdown has to be done. */
+GRPCAPI void grpc_final_shutdown_library(void);
 
 #ifdef __cplusplus
 }
-#endif
-
-#ifdef __cplusplus
-/* should probably be somewere else (new header in src\core\lib\gprpp ??) */
-namespace grpc_core {
-template <typename T>
-T* OnShutdownDelete(T* p) {
-  grpc_on_shutdown_callback_with_arg([](const void* pp) { delete static_cast<const T*>(pp); },
-                       p);
-  return p;
-}
-}  // namespace grpc_core
-
 #endif
 
 #endif /* GRPC_GRPC_H */

@@ -31,6 +31,8 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/time.h>
 
+#include "src/core/lib/surface/shutdown_library.h"
+
 namespace grpc_impl {
 
 class Channel;

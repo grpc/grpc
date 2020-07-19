@@ -1702,6 +1702,7 @@ add_library(grpc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.cc
   src/core/lib/surface/server.cc
+  src/core/lib/surface/shutdown_library.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
   src/core/lib/transport/bdp_estimator.cc

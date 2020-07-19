@@ -32,6 +32,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/shutdown_library.h"
 
 namespace grpc_core {
 
