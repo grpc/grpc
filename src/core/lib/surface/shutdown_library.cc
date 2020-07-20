@@ -63,6 +63,10 @@ void grpc_final_shutdown_library( void ) {
 
   // Executes all custom cleanup functions, which were registered via
   // grpc_on_shutdown_callback() and grpc_on_shutdown_callback_with_arg()
-  if (!grpc_is_initialized())
+  // This function should be called only once, but accepts multiple calls.
+  static bool is_shutdown = false;
+  if (!is_shutdown && !grpc_is_initialized()) {
     delete ShutdownData::get();
+    is_shutdown = true;
+  }
 }
