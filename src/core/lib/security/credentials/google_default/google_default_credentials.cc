@@ -285,7 +285,11 @@ static void update_tenancy() {
     g_metadata_server_available = g_is_on_gce;
   }
   /* TODO: Add a platform-provided hint for GAE. */
+  gpr_mu_unlock(&g_state_mu);
+}
 
+static void update_metadata_server_available() {
+  gpr_mu_lock(&g_state_mu);
   /* Do a network test for metadata server. */
   if (!g_metadata_server_available) {
     g_metadata_server_available = is_metadata_server_reachable();
@@ -349,6 +353,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
   update_tenancy();
 
   if (call_creds == nullptr) {
+    update_metadata_server_available();
     call_creds = make_default_call_creds(&error);
   }
 
