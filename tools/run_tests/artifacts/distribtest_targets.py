@@ -243,6 +243,7 @@ class PHPDistribTest(object):
             return create_jobspec(
                 self.name, ['test/distrib/php/run_distrib_test_macos.sh'],
                 environ={'EXTERNAL_GIT_ROOT': '../../../..'},
+                timeout_seconds=15 * 60,
                 use_workspace=True)
         else:
             raise Exception("Not supported yet.")
