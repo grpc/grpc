@@ -541,6 +541,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     PrintMetadata(client_metadata, "Sending client initial metadata:");
 
     CliCall call(channel, formatted_method_name, client_metadata);
+    fprintf(stderr, "New call for method_name:%s has peer address:|%s|\n",
+            formatted_method_name.c_str(), call.peer().c_str());
 
     if (FLAGS_infile.empty()) {
       if (isatty(fileno(stdin))) {
@@ -670,6 +672,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
           std::multimap<grpc::string_ref, grpc::string_ref>
               server_initial_metadata, server_trailing_metadata;
           CliCall call(channel, formatted_method_name, client_metadata);
+          fprintf(stderr, "New call for method_name:%s has peer address:|%s|\n",
+                  formatted_method_name.c_str(), call.peer().c_str());
           call.Write(serialized_request_proto);
           call.WritesDone();
           if (!call.Read(&serialized_response_proto,
@@ -768,6 +772,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     PrintMetadata(client_metadata, "Sending client initial metadata:");
 
     CliCall call(channel, formatted_method_name, client_metadata);
+    fprintf(stderr, "New call for method_name:%s has peer address:|%s|\n",
+            formatted_method_name.c_str(), call.peer().c_str());
     call.Write(serialized_request_proto);
     call.WritesDone();
 
