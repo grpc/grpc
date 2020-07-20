@@ -90,7 +90,6 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
       peer_attributes_map[std::string(key.data, key.size)] = std::string(val.data, val.size);
       peer_attributes_entry = grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
     }
-
   }
 }
 
