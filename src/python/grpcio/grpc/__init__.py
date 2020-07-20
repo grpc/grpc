@@ -1876,8 +1876,8 @@ def compute_engine_channel_credentials(call_credentials):
     https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security
 
     This channel credential is expected to be used as part of a composite
-    credential in conjunction with a call credential following the Application
-    Default Credentials strategy. If used with any other sort of call
+    credential in conjunction with a call credentials that authenticates the
+    VM's default service account. If used with any other sort of call
     credential, the connection may suddenly and unexpectedly begin failing RPCs.
     """
     return ChannelCredentials(
