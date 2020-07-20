@@ -293,6 +293,14 @@ static void update_tenancy() {
   gpr_mu_unlock(&g_state_mu);
 }
 
+static bool metadata_server_available() {
+  bool available = false;
+  gpr_mu_lock(&g_state_mu);
+  available = static_cast<bool>(g_metadata_server_available);
+  gpr_mu_unlock(&g_state_mu);
+  return available;
+}
+
 static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
     grpc_error** error) {
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
@@ -313,7 +321,7 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   if (err == GRPC_ERROR_NONE) return call_creds;
   *error = grpc_error_add_child(*error, err);
 
-  if (g_metadata_server_available) {
+  if (metadata_server_available()) {
     call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
         grpc_google_compute_engine_credentials_create(nullptr));
     if (call_creds == nullptr) {
