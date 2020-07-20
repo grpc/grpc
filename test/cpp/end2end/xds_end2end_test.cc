@@ -3478,7 +3478,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const size_t kNumEchoRpcs = 100;
   SetNextResolution({});
@@ -3522,14 +3521,11 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewCluster3Name = "new_cluster_3";
   const size_t kNumEchoRpcs = 100;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -3543,17 +3539,12 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
   AdsServiceImpl::EdsResourceArgs args2({
       {"locality0", GetBackendPorts(2, 3)},
   });
-  AdsServiceImpl::EdsResourceArgs args3({
-      {"locality0", GetBackendPorts(3, 4)},
-  });
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args3, kNewCluster3Name));
   // Populate new CDS resources.
   Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
   new_cluster1.set_name(kNewCluster1Name);
@@ -3561,52 +3552,39 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
   Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
   new_cluster2.set_name(kNewCluster2Name);
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
-  Cluster new_cluster3 = balancers_[0]->ads_service()->default_cluster();
-  new_cluster1.set_name(kNewCluster3Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
   // Populating Route Configurations for LDS.
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("");
   auto* header_matcher1 = route1->mutable_match()->add_headers();
-  header_matcher1->set_name("grpc-special-case-test-tags-bin");
-  header_matcher1->set_exact_match("grpc-special-case-test-tags-bin");
+  header_matcher1->set_name("grpc-foo-bin");
+  header_matcher1->set_present_match(true);
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   auto route2 = route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_prefix("");
   auto* header_matcher2 = route2->mutable_match()->add_headers();
-  header_matcher2->set_name("grpc-special-case-test-trace-bin");
-  header_matcher2->set_exact_match("grpc-special-case-test-trace-bin");
+  header_matcher2->set_name("grpc-previous-rpc-attempts");
+  header_matcher2->set_present_match(true);
   route2->mutable_route()->set_cluster(kNewCluster2Name);
-  auto route3 = route_config.mutable_virtual_hosts(0)->add_routes();
-  route3->mutable_match()->set_prefix("");
-  auto* header_matcher3 = route3->mutable_match()->add_headers();
-  header_matcher3->set_name("grpc-previous-rpc-attempts");
-  header_matcher3->set_exact_match("grpc-previous-rpc-attempts");
-  route3->mutable_route()->set_cluster(kNewCluster3Name);
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
   // Send headers which will mismatch each route
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"grpc-special-case-test-tags-bin", "grpc-special-case-test-tags-bin"},
-      {"grpc-special-case-test-trace-bin",
-       "not-grpc-special-case-test-trace-bin"},
+      {"grpc-foo-bin", "grpc-foo-bin"},
       {"grpc-previous-rpc-attempts", "grpc-previous-rpc-attempts"},
   };
   WaitForAllBackends(0, 1);
   CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_metadata(metadata));
   // Verify that only the default backend got RPCs since all previous routes
   // were mismatched.
-  for (size_t i = 1; i < 4; ++i) {
-    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
-  }
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
