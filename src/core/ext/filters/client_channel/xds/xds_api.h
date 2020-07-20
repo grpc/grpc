@@ -335,7 +335,6 @@ class XdsApi {
  private:
   XdsClient* client_;
   TraceFlag* tracer_;
-  const bool xds_routing_enabled_;
   const XdsBootstrap::Node* node_;
   const std::string build_version_;
   const std::string user_agent_name_;
