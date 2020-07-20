@@ -142,7 +142,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
   grpc_slice_buffer_init(&state.outgoing_buffer);
   state.tcp = tcp;
   state.incoming_data_length = 0;
-  grpc_endpoint_add_to_pollset(tcp, server->pollset);
+  grpc_endpoint_add_to_pollset(tcp, server->pollset[0]);
   grpc_endpoint_read(tcp, &state.temp_incoming_buffer, &on_read,
                      /*urgent=*/false);
 }
