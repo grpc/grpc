@@ -358,7 +358,6 @@ void RunServer(const int port) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
 
   std::chrono::duration<double> duration_per_query =
       std::chrono::nanoseconds(std::chrono::seconds(1)) / FLAGS_qps;
