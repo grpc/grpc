@@ -90,7 +90,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       return true;
     }
 
-    bool grpc_local_import;
+    bool grpc_local_import = false;
     ::std::string framework;
     ::std::string pb_runtime_import_prefix;
     ::std::string grpc_local_import_prefix;
