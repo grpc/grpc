@@ -105,7 +105,7 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
                        expected_peer_atrributes_key.length()),
       upb_strview_make(expected_peer_atrributes_value.data(),
                        expected_peer_atrributes_value.length()),
-      context_arena.ptr()); 
+      context_arena.ptr());
   size_t serialized_ctx_length;
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
       context, context_arena.ptr(), &serialized_ctx_length);
