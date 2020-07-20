@@ -37,7 +37,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
-#include "src/core/ext/filters/http/client/util.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -120,18 +119,14 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     // Maintains an ordered xds route table as provided by RDS response.
     using RouteTable = std::vector<Route>;
 
-    RoutePicker(RouteTable route_table, std::string user_agent,
-                RefCountedPtr<XdsRoutingLbConfig> config)
-        : route_table_(std::move(route_table)),
-          user_agent_(std::move(user_agent)),
-          config_(std::move(config)) {}
+    explicit RoutePicker(RouteTable route_table,
+                         RefCountedPtr<XdsRoutingLbConfig> config)
+        : route_table_(std::move(route_table)), config_(std::move(config)) {}
 
     PickResult Pick(PickArgs args) override;
 
    private:
     RouteTable route_table_;
-    // Storing user_agent generated from args from http layer.
-    std::string user_agent_;
     // Take a reference to config so that we can use
     // XdsApi::RdsUpdate::RdsRoute::Matchers from it.
     RefCountedPtr<XdsRoutingLbConfig> config_;
@@ -220,9 +215,6 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 
   // Children.
   std::map<std::string, OrphanablePtr<XdsRoutingChild>> actions_;
-
-  // Storing user_agent generated from args from http layer.
-  std::string user_agent_;
 };
 
 //
@@ -270,24 +262,10 @@ absl::optional<absl::string_view> GetMetadataValue(
 
 bool HeaderMatchHelper(
     const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher& header_matcher,
-    LoadBalancingPolicy::MetadataInterface* initial_metadata,
-    const std::string& user_agent, absl::string_view deadline) {
+    LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   std::string concatenated_value;
-  absl::optional<absl::string_view> value;
-  if (header_matcher.name == "grpc-tags-bin" ||
-      header_matcher.name == "grpc-trace-bin" ||
-      header_matcher.name == "grpc-previous-rpc-attempts") {
-    value = absl::nullopt;
-  } else if (header_matcher.name == "content-type") {
-    value = "application/grpc";
-  } else if (header_matcher.name == "user-agent") {
-    value = user_agent;
-  } else if (header_matcher.name == "grpc-timeout") {
-    value = deadline;
-  } else {
-    value = GetMetadataValue(header_matcher.name, initial_metadata,
-                             &concatenated_value);
-  }
+  auto value = GetMetadataValue(header_matcher.name, initial_metadata,
+                                &concatenated_value);
   if (!value.has_value()) {
     if (header_matcher.type == XdsApi::RdsUpdate::RdsRoute::Matchers::
                                    HeaderMatcher::HeaderMatcherType::PRESENT) {
@@ -325,13 +303,11 @@ bool HeaderMatchHelper(
 }
 
 bool HeadersMatch(
+    LoadBalancingPolicy::PickArgs args,
     const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
-        header_matchers,
-    LoadBalancingPolicy::MetadataInterface* initial_metadata,
-    const std::string& user_agent, absl::string_view deadline) {
+        header_matchers) {
   for (const auto& header_matcher : header_matchers) {
-    bool match = HeaderMatchHelper(header_matcher, initial_metadata, user_agent,
-                                   deadline);
+    bool match = HeaderMatchHelper(header_matcher, args.initial_metadata);
     if (header_matcher.invert_match) match = !match;
     if (!match) return false;
   }
@@ -349,16 +325,11 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
     // Path matching.
     if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
     // Header Matching.
-    if (!HeadersMatch(route.matchers->header_matchers, args.initial_metadata,
-                      user_agent_,
-                      args.call_state->ExperimentalGetCallAttribute(
-                          kCallAttributeDeadline)))
-      continue;
+    if (!HeadersMatch(args, route.matchers->header_matchers)) continue;
     // Match fraction check
     if (route.matchers->fraction_per_million.has_value() &&
-        !UnderFraction(route.matchers->fraction_per_million.value())) {
+        !UnderFraction(route.matchers->fraction_per_million.value()))
       continue;
-    }
     // Found a match
     return route.picker->Pick(args);
   }
@@ -375,9 +346,7 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
 // XdsRoutingLb
 //
 
-XdsRoutingLb::XdsRoutingLb(Args args)
-    : LoadBalancingPolicy(std::move(args)),
-      user_agent_(GenerateUserAgentFromArgs(args.args, "chttp2")) {}
+XdsRoutingLb::XdsRoutingLb(Args args) : LoadBalancingPolicy(std::move(args)) {}
 
 XdsRoutingLb::~XdsRoutingLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
@@ -502,8 +471,7 @@ void XdsRoutingLb::UpdateStateLocked() {
         }
         route_table.push_back(std::move(route));
       }
-      picker = absl::make_unique<RoutePicker>(std::move(route_table),
-                                              user_agent_, config_);
+      picker = absl::make_unique<RoutePicker>(std::move(route_table), config_);
       break;
     }
     case GRPC_CHANNEL_CONNECTING:
