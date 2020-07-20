@@ -210,9 +210,7 @@ void CdsLb::ClusterWatcher::OnError(grpc_error* error) {
   // we keep running with the data we had previously.
   if (parent_->child_policy_ == nullptr) {
     parent_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(grpc_error_get_status_code(error),
-                     grpc_error_string(error)),
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
         absl::make_unique<TransientFailurePicker>(error));
   } else {
     GRPC_ERROR_UNREF(error);
@@ -231,8 +229,7 @@ void CdsLb::ClusterWatcher::OnResourceDoesNotExist() {
               .c_str()),
       GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   parent_->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::Status(grpc_error_get_status_code(error), grpc_error_string(error)),
+      GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
       absl::make_unique<TransientFailurePicker>(error));
   parent_->MaybeDestroyChildPolicyLocked();
 }

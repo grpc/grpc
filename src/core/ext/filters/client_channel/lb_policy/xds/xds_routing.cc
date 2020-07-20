@@ -509,8 +509,7 @@ void XdsRoutingLb::UpdateStateLocked() {
           GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "TRANSIENT_FAILURE from XdsRoutingLb"),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-      status = absl::Status(grpc_error_get_status_code(error),
-                            grpc_error_string(error));
+      status = grpc_error_to_absl_status(error);
       picker = absl::make_unique<TransientFailurePicker>(error);
   }
   channel_control_helper()->UpdateState(connectivity_state, status,

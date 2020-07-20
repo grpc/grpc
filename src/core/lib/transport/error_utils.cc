@@ -123,12 +123,13 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
   }
 }
 
-absl::StatusCode grpc_error_get_status_code(grpc_error* error) {
+absl::Status grpc_error_to_absl_status(grpc_error* error) {
   grpc_status_code status;
   grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status,
                         nullptr /* slice */, nullptr /* http_error */,
                         nullptr /* error_string */);
-  return static_cast<absl::StatusCode>(status);
+  return absl::Status(static_cast<absl::StatusCode>(status),
+                      grpc_error_string(error));
 }
 
 bool grpc_error_has_clear_grpc_status(grpc_error* error) {

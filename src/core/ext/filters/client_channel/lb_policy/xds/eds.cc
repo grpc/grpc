@@ -346,9 +346,7 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
     // we keep running with the data we had previously.
     if (eds_policy_->child_policy_ == nullptr) {
       eds_policy_->channel_control_helper()->UpdateState(
-          GRPC_CHANNEL_TRANSIENT_FAILURE,
-          absl::Status(grpc_error_get_status_code(error),
-                       grpc_error_string(error)),
+          GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
           absl::make_unique<TransientFailurePicker>(error));
     } else {
       GRPC_ERROR_UNREF(error);
@@ -364,9 +362,7 @@ class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("EDS resource does not exist"),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     eds_policy_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(grpc_error_get_status_code(error),
-                     grpc_error_string(error)),
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
         absl::make_unique<TransientFailurePicker>(error));
     eds_policy_->MaybeDestroyChildPolicyLocked();
   }
@@ -700,9 +696,7 @@ EdsLb::CreateChildPolicyConfigLocked() {
             error),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(grpc_error_get_status_code(error),
-                     grpc_error_string(error)),
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
         absl::make_unique<TransientFailurePicker>(error));
     return nullptr;
   }
