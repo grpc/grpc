@@ -35,7 +35,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -119,8 +118,8 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     // Maintains an ordered xds route table as provided by RDS response.
     using RouteTable = std::vector<Route>;
 
-    explicit RoutePicker(RouteTable route_table,
-                         RefCountedPtr<XdsRoutingLbConfig> config)
+    RoutePicker(RouteTable route_table,
+                RefCountedPtr<XdsRoutingLbConfig> config)
         : route_table_(std::move(route_table)), config_(std::move(config)) {}
 
     PickResult Pick(PickArgs args) override;
@@ -314,11 +313,11 @@ bool HeaderMatchHelper(
 }
 
 bool HeadersMatch(
-    LoadBalancingPolicy::PickArgs args,
     const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
-        header_matchers) {
+        header_matchers,
+    LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   for (const auto& header_matcher : header_matchers) {
-    bool match = HeaderMatchHelper(header_matcher, args.initial_metadata);
+    bool match = HeaderMatchHelper(header_matcher, initial_metadata);
     if (header_matcher.invert_match) match = !match;
     if (!match) return false;
   }
@@ -336,11 +335,14 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
     // Path matching.
     if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
     // Header Matching.
-    if (!HeadersMatch(args, route.matchers->header_matchers)) continue;
+    if (!HeadersMatch(route.matchers->header_matchers, args.initial_metadata)) {
+      continue;
+    }
     // Match fraction check
     if (route.matchers->fraction_per_million.has_value() &&
-        !UnderFraction(route.matchers->fraction_per_million.value()))
+        !UnderFraction(route.matchers->fraction_per_million.value())) {
       continue;
+    }
     // Found a match
     return route.picker->Pick(args);
   }
