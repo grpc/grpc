@@ -35,7 +35,7 @@ TEST_F(CelEngineTest, CreateEngineSuccessOnePolicy) {
   std::unique_ptr<CelEvaluationEngine> engine =
       CelEvaluationEngine::CreateCelEvaluationEngine(policies);
   EXPECT_NE(engine, nullptr)
-      << "Failed to create a CelEvaluationEngine with one policy.";
+      << "Error: Failed to create a CelEvaluationEngine with one policy.";
 }
 
 TEST_F(CelEngineTest, CreateEngineSuccessTwoPolicies) {
@@ -43,7 +43,7 @@ TEST_F(CelEngineTest, CreateEngineSuccessTwoPolicies) {
   std::unique_ptr<CelEvaluationEngine> engine =
       CelEvaluationEngine::CreateCelEvaluationEngine(policies);
   EXPECT_NE(engine, nullptr)
-      << "Failed to create a CelEvaluationEngine with two policies.";
+      << "Error: Failed to create a CelEvaluationEngine with two policies.";
 }
 
 TEST_F(CelEngineTest, CreateEngineFailNoPolicies) {
@@ -52,6 +52,15 @@ TEST_F(CelEngineTest, CreateEngineFailNoPolicies) {
       CelEvaluationEngine::CreateCelEvaluationEngine(policies);
   EXPECT_EQ(engine, nullptr)
       << "Error: Created a CelEvaluationEngine without policies.";
+}
+
+TEST_F(CelEngineTest, CreateEngineFailTooManyPolicies) {
+  std::vector<envoy_config_rbac_v2_RBAC*> policies{deny_policy, allow_policy,
+                                                   deny_policy};
+  std::unique_ptr<CelEvaluationEngine> engine =
+      CelEvaluationEngine::CreateCelEvaluationEngine(policies);
+  EXPECT_EQ(engine, nullptr)
+      << "Error: Created a CelEvaluationEngine with more than two policies.";
 }
 
 TEST_F(CelEngineTest, CreateEngineFailWrongPolicyOrder) {
