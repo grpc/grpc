@@ -3661,8 +3661,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewCluster3Name = "new_cluster_3";
-  const size_t kNumEcho1Rpcs = 100;
-  const size_t kNumEchoRpcs = 5;
+  const size_t kNumEchoRpcs = 100;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -3700,19 +3699,19 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  route1->mutable_match()->set_prefix("");
   auto* header_matcher1 = route1->mutable_match()->add_headers();
-  header_matcher1->set_name("grpc-tags-bin");
-  header_matcher1->set_exact_match("grpc-tags-bin");
+  header_matcher1->set_name("grpc-special-case-test-tags-bin");
+  header_matcher1->set_exact_match("grpc-special-case-test-tags-bin");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   auto route2 = route_config.mutable_virtual_hosts(0)->add_routes();
-  route2->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  route2->mutable_match()->set_prefix("");
   auto* header_matcher2 = route2->mutable_match()->add_headers();
-  header_matcher2->set_name("grpc-trace-bin");
-  header_matcher2->set_exact_match("grpc-trace-bin");
+  header_matcher2->set_name("grpc-special-case-test-trace-bin");
+  header_matcher2->set_exact_match("grpc-special-case-test-trace-bin");
   route2->mutable_route()->set_cluster(kNewCluster2Name);
   auto route3 = route_config.mutable_virtual_hosts(0)->add_routes();
-  route3->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  route3->mutable_match()->set_prefix("");
   auto* header_matcher3 = route3->mutable_match()->add_headers();
   header_matcher3->set_name("grpc-previous-rpc-attempts");
   header_matcher3->set_exact_match("grpc-previous-rpc-attempts");
@@ -3721,21 +3720,21 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
+  // Send headers which will mismatch each route
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"grpc-special-case-test-tags-bin", "grpc-special-case-test-tags-bin"},
+      {"grpc-special-case-test-trace-bin",
+       "not-grpc-special-case-test-trace-bin"},
+      {"grpc-previous-rpc-attempts", "grpc-previous-rpc-attempts"},
+  };
   WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(
-      kNumEcho1Rpcs,
-      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_rpc_method(METHOD_ECHO1));
+  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_metadata(metadata));
   // Verify that only the default backend got RPCs since all previous routes
   // were mismatched.
   for (size_t i = 1; i < 4; ++i) {
     EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
-    EXPECT_EQ(0, backends_[i]->backend_service1()->request_count());
-    EXPECT_EQ(0, backends_[i]->backend_service2()->request_count());
   }
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(kNumEcho1Rpcs, backends_[0]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
