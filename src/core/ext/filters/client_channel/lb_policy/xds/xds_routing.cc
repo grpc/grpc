@@ -264,8 +264,19 @@ bool HeaderMatchHelper(
     const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher& header_matcher,
     LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   std::string concatenated_value;
-  auto value = GetMetadataValue(header_matcher.name, initial_metadata,
-                                &concatenated_value);
+  absl::optional<absl::string_view> value;
+  // Note: If we ever allow binary headers here, we still need to
+  // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
+  // they are not visible to the LB policy in grpc-go.
+  if (absl::EndsWith(header_matcher.name, "-bin") ||
+      header_matcher.name == "grpc-previous-rpc-attempts") {
+    value = absl::nullopt;
+  } else if (header_matcher.name == "content-type") {
+    value = "application/grpc";
+  } else {
+    value = GetMetadataValue(header_matcher.name, initial_metadata,
+                             &concatenated_value);
+  }
   if (!value.has_value()) {
     if (header_matcher.type == XdsApi::RdsUpdate::RdsRoute::Matchers::
                                    HeaderMatcher::HeaderMatcherType::PRESENT) {
