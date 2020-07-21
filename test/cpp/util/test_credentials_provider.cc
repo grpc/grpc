@@ -19,19 +19,19 @@
 
 #include "test/cpp/util/test_credentials_provider.h"
 
-#include <cstdio>
-#include <fstream>
-#include <iostream>
-
-#include <mutex>
-#include <unordered_map>
-
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/security/server_credentials.h>
 
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <mutex>
+#include <unordered_map>
+
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test_credentials_provider.h"
 
 DEFINE_string(tls_cert_file, "", "The TLS cert file used when --use_tls=true");
 DEFINE_string(tls_key_file, "", "The TLS key file used when --use_tls=true");
@@ -91,17 +91,17 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       return grpc::experimental::AltsCredentials(alts_opts);
     } else if (type == grpc::testing::kTlsCredentialsType) {
       SslCredentialsOptions ssl_opts = {
-          test_root_cert, "", "", grpc_impl::TlsVersionRange(TLS1_2, TLS1_3)};
+          test_root_cert, "", "", {TLS1_2, TLS1_3}};
       args->SetSslTargetNameOverride("foo.test.google.fr");
       return grpc::SslCredentials(ssl_opts);
     } else if (type == grpc::testing::kTls12CredentialsType) {
       SslCredentialsOptions ssl_opts = {
-          test_root_cert, "", "", grpc_impl::TlsVersionRange(TLS1_2, TLS1_2)};
+          test_root_cert, "", "", {TLS1_2, TLS1_2}};
       args->SetSslTargetNameOverride("foo.test.google.fr");
       return grpc::SslCredentials(ssl_opts);
     } else if (type == grpc::testing::kTls13CredentialsType) {
       SslCredentialsOptions ssl_opts = {
-          test_root_cert, "", "", grpc_impl::TlsVersionRange(TLS1_3, TLS1_3)};
+          test_root_cert, "", "", {TLS1_3, TLS1_3}};
       args->SetSslTargetNameOverride("foo.test.google.fr");
       return grpc::SslCredentials(ssl_opts);
     } else if (type == grpc::testing::kGoogleDefaultCredentialsType) {
@@ -140,13 +140,10 @@ class DefaultCredentialsProvider : public CredentialsProvider {
                                                             test_server1_cert};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       }
-      if (type == grpc::testing::kTlsCredentialsType) {
-        ssl_opts.min_tls_version = TLS1_2;
-        ssl_opts.max_tls_version = TLS1_3;
-      } else if (type == grpc::testing::kTls12CredentialsType) {
+      if (type == grpc::testing::kTls12CredentialsType) {
         ssl_opts.min_tls_version = TLS1_2;
         ssl_opts.max_tls_version = TLS1_2;
-      } else {  // kTls13CredentialsType
+      } else if (type == grpc::testing::kTls13CredentialsType) {
         ssl_opts.min_tls_version = TLS1_3;
         ssl_opts.max_tls_version = TLS1_3;
       }
@@ -174,6 +171,15 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       types.push_back(*it);
     }
     return types;
+  }
+
+  std::string GetTransportSecurityType(
+      const std::string& credentials_type) override {
+    if (credentials_type == grpc::testing::kTls12CredentialsType ||
+        credentials_type == grpc::testing::kTls13CredentialsType) {
+      return kTlsCredentialsType;
+    }
+    return credentials_type;
   }
 
  private:

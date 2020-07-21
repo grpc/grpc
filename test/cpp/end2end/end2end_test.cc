@@ -2134,6 +2134,7 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   EchoResponse response;
   request.set_message("Hello");
   request.mutable_param()->set_check_auth_context(
+      GetParam().credentials_type == kTlsCredentialsType ||
       GetParam().credentials_type == kTls12CredentialsType ||
       GetParam().credentials_type == kTls13CredentialsType);
   request.mutable_param()->set_expected_transport_security_type(
@@ -2147,15 +2148,11 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
   ASSERT_EQ(1u, tst.size());
-  std::string transport_security_type = GetParam().credentials_type;
-  if (GetParam().credentials_type == kTls12CredentialsType ||
-      GetParam().credentials_type == kTls13CredentialsType) {
-    transport_security_type = kTlsCredentialsType;
-  }
+  std::string transport_security_type =
+      GetCredentialsProvider()->GetTransportSecurityType(
+          GetParam().credentials_type);
   EXPECT_EQ(transport_security_type, ToString(tst[0]));
-  if (GetParam().credentials_type == kTlsCredentialsType ||
-      GetParam().credentials_type == kTls12CredentialsType ||
-      GetParam().credentials_type == kTls13CredentialsType) {
+  if (transport_security_type == kTlsCredentialsType) {
     EXPECT_EQ("x509_subject_alternative_name",
               auth_ctx->GetPeerIdentityPropertyName());
     EXPECT_EQ(4u, auth_ctx->GetPeerIdentity().size());
