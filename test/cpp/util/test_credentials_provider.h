@@ -29,6 +29,9 @@ namespace grpc {
 namespace testing {
 
 const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
+// Using kTls12CredentialsType and kTLS13CredentialsType forces the TLS version
+// to TLS 1.2 and TLS 1.3 respectively. Using kTlsCredentialsType sets the min
+// TLS version to TLS 1.2 and the max TLS version to TLS 1.3.
 const char kTls12CredentialsType[] = "tls12";
 const char kTls13CredentialsType[] = "tls13";
 // For real credentials below, this name should match the AuthContext property

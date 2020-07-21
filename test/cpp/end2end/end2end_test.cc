@@ -2229,13 +2229,14 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
   ASSERT_EQ(1u, tst.size());
-  std::string credentials_type = GetParam().credentials_type;
+  std::string transport_security_type = GetParam().credentials_type;
   if (GetParam().credentials_type == kTls12CredentialsType ||
       GetParam().credentials_type == kTls13CredentialsType) {
-    credentials_type = kTlsCredentialsType;
+    transport_security_type = kTlsCredentialsType;
   }
-  EXPECT_EQ(credentials_type, ToString(tst[0]));
-  if (GetParam().credentials_type == kTls12CredentialsType ||
+  EXPECT_EQ(transport_security_type, ToString(tst[0]));
+  if (GetParam().credentials_type == kTlsCredentialsType ||
+      GetParam().credentials_type == kTls12CredentialsType ||
       GetParam().credentials_type == kTls13CredentialsType) {
     EXPECT_EQ("x509_subject_alternative_name",
               auth_ctx->GetPeerIdentityPropertyName());

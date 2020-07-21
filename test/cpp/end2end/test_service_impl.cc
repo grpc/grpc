@@ -59,12 +59,12 @@ void CheckServerAuthContext(const experimental::ServerContextBase* context,
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
   EXPECT_EQ(1u, tst.size());
-  std::string credentials_type = expected_transport_security_type;
+  std::string transport_security_type = expected_transport_security_type;
   if (expected_transport_security_type == kTls12CredentialsType ||
       expected_transport_security_type == kTls13CredentialsType) {
-    credentials_type = kTlsCredentialsType;
+    transport_security_type = kTlsCredentialsType;
   }
-  EXPECT_EQ(credentials_type, ToString(tst[0]));
+  EXPECT_EQ(transport_security_type, ToString(tst[0]));
   if (expected_client_identity.empty()) {
     EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
     EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
