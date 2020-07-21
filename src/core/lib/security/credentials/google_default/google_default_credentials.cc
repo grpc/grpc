@@ -291,7 +291,6 @@ static void update_tenancy() {
 }
 
 static bool metadata_server_available() {
-  bool available = false;
   grpc_core::MutexLock lock(&g_state_mu);
   return static_cast<bool>(g_metadata_server_available);
 }
