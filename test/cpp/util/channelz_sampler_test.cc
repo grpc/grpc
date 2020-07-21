@@ -37,7 +37,6 @@
 #include <string>
 #include <thread>
 
-#include "include/grpcpp/ext/proto_server_reflection_plugin_impl.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -57,7 +56,7 @@ using grpc::Status;
 std::string server_address("0.0.0.0:10000");
 std::string custom_credentials_type("INSECURE_CREDENTIALS");
 std::string sampling_times = "2";
-std::string sampling_interval_seconds = "1";
+std::string sampling_interval_seconds = "3";
 std::string output_json("output.json");
 
 // Creata an echo server
@@ -75,14 +74,11 @@ void RunServer(gpr_event* done_ev) {
   ::grpc::channelz::experimental::InitChannelzService();
 
   EchoServerImpl service;
-  grpc::EnableDefaultHealthCheckService(true);
-  grpc_impl::reflection::InitProtoReflectionServerBuilderPlugin();
   grpc::ServerBuilder builder;
   auto server_creds =
       grpc::testing::GetCredentialsProvider()->GetServerCredentials(
           custom_credentials_type);
   builder.AddListeningPort(server_address, server_creds);
-
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
@@ -102,20 +98,16 @@ void RunClient(std::string client_id, gpr_event* done_ev) {
   std::unique_ptr<grpc::testing::TestService::Stub> stub =
       grpc::testing::TestService::NewStub(
           grpc::CreateChannel(server_address, channel_creds));
-  unsigned int client_echo_sleep_second = 1;
-
   gpr_log(GPR_INFO, "Client %s is echoing!", client_id.c_str());
   while (true) {
-    if (gpr_event_get(done_ev)) {
+    if (gpr_event_wait(done_ev, grpc_timeout_seconds_to_deadline(1)) !=
+        nullptr) {
       return;
     }
-    // Rcho RPC
     grpc::testing::Empty request;
     grpc::testing::Empty response;
     ClientContext context;
     stub->EmptyCall(&context, request, &response);
-    // sleep before next RPC
-    sleep(client_echo_sleep_second);
   }
 }
 
@@ -136,8 +128,8 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   gpr_event done_ev0;
   gpr_event_init(&done_ev0);
   std::thread server_thread(RunServer, &done_ev0);
-  int wait_server_seconds = 10;
-  ASSERT_TRUE(WaitForConnection(wait_server_seconds));
+  const int kWaitForServerSeconds = 10;
+  ASSERT_TRUE(WaitForConnection(kWaitForServerSeconds));
 
   // client threads
   gpr_event done_ev1, done_ev2;
@@ -160,19 +152,20 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   int status = test_driver->Join();
   if (WIFEXITED(status)) {
     if (WEXITSTATUS(status)) {
-      gpr_log(GPR_INFO, "Channelz sampler test test-runner exited with code %d",
+      gpr_log(GPR_ERROR,
+              "Channelz sampler test test-runner exited with code %d",
               WEXITSTATUS(status));
-      abort();
+      GPR_ASSERT(0);  // log the line number of the assertion failure
     }
   } else if (WIFSIGNALED(status)) {
-    gpr_log(GPR_INFO, "Channelz sampler test test-runner ended from signal %d",
+    gpr_log(GPR_ERROR, "Channelz sampler test test-runner ended from signal %d",
             WTERMSIG(status));
-    abort();
+    GPR_ASSERT(0);
   } else {
-    gpr_log(GPR_INFO,
+    gpr_log(GPR_ERROR,
             "Channelz sampler test test-runner ended with unknown status %d",
             status);
-    abort();
+    GPR_ASSERT(0);
   }
 
   gpr_event_set(&done_ev1, (void*)1);
