@@ -159,6 +159,8 @@ extern void retry_too_many_attempts(grpc_end2end_test_config config);
 extern void retry_too_many_attempts_pre_init(void);
 extern void server_finishes_request(grpc_end2end_test_config config);
 extern void server_finishes_request_pre_init(void);
+extern void server_streaming(grpc_end2end_test_config config);
+extern void server_streaming_pre_init(void);
 extern void shutdown_finishes_calls(grpc_end2end_test_config config);
 extern void shutdown_finishes_calls_pre_init(void);
 extern void shutdown_finishes_tags(grpc_end2end_test_config config);
@@ -256,6 +258,7 @@ void grpc_end2end_tests_pre_init(void) {
   retry_throttled_pre_init();
   retry_too_many_attempts_pre_init();
   server_finishes_request_pre_init();
+  server_streaming_pre_init();
   shutdown_finishes_calls_pre_init();
   shutdown_finishes_tags_pre_init();
   simple_cacheable_request_pre_init();
@@ -344,6 +347,7 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_throttled(config);
     retry_too_many_attempts(config);
     server_finishes_request(config);
+    server_streaming(config);
     shutdown_finishes_calls(config);
     shutdown_finishes_tags(config);
     simple_cacheable_request(config);
@@ -620,6 +624,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("server_finishes_request", argv[i])) {
       server_finishes_request(config);
+      continue;
+    }
+    if (0 == strcmp("server_streaming", argv[i])) {
+      server_streaming(config);
       continue;
     }
     if (0 == strcmp("shutdown_finishes_calls", argv[i])) {
