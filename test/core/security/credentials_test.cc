@@ -1542,7 +1542,7 @@ static void test_google_default_creds_call_creds_specified(void) {
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(call_creds));
-  GPR_ASSERT(g_test_gce_tenancy_checker_called == true);
+  GPR_ASSERT(g_test_gce_tenancy_checker_called == false);
   GPR_ASSERT(channel_creds != nullptr);
   GPR_ASSERT(channel_creds->call_creds() != nullptr);
   grpc_httpcli_set_override(compute_engine_httpcli_get_success_override,
@@ -1601,7 +1601,7 @@ static void test_google_default_creds_not_default(void) {
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(call_creds.release()));
-  GPR_ASSERT(g_test_gce_tenancy_checker_called == true);
+  GPR_ASSERT(g_test_gce_tenancy_checker_called == false);
   GPR_ASSERT(channel_creds != nullptr);
   GPR_ASSERT(channel_creds->call_creds() != nullptr);
   run_request_metadata_test(channel_creds->mutable_call_creds(), auth_md_ctx,

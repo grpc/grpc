@@ -59,7 +59,6 @@ using grpc_core::Json;
  * means the detection is done via network test that is unreliable and the
  * unreliable result should not be referred by successive calls. */
 static int g_metadata_server_available = 0;
-static int g_is_on_gce = 0;
 static gpr_mu g_state_mu;
 /* Protect a metadata_server_detector instance that can be modified by more than
  * one gRPC threads */
@@ -91,7 +90,7 @@ grpc_google_default_channel_credentials::create_security_connector(
   bool use_alts =
       is_grpclb_load_balancer || is_backend_from_grpclb_load_balancer;
   /* Return failure if ALTS is selected but not running on GCE. */
-  if (use_alts && !g_is_on_gce) {
+  if (use_alts && alts_creds_ == nullptr) {
     gpr_log(GPR_ERROR, "ALTS is selected, but not running on GCE.");
     return nullptr;
   }
@@ -281,15 +280,10 @@ static void update_tenancy() {
 
   /* Try a platform-provided hint for GCE. */
   if (!g_metadata_server_available) {
-    g_is_on_gce = g_gce_tenancy_checker();
-    g_metadata_server_available = g_is_on_gce;
+    g_metadata_server_available = g_gce_tenancy_checker();
   }
   /* TODO: Add a platform-provided hint for GAE. */
-  gpr_mu_unlock(&g_state_mu);
-}
 
-static void update_metadata_server_available() {
-  gpr_mu_lock(&g_state_mu);
   /* Do a network test for metadata server. */
   if (!g_metadata_server_available) {
     g_metadata_server_available = is_metadata_server_reachable();
@@ -309,6 +303,8 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
     grpc_error** error) {
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
   grpc_error* err;
+
+  update_tenancy();
 
   /* First, try the environment variable. */
   char* path_from_env = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
@@ -350,10 +346,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
   GRPC_API_TRACE("grpc_google_default_credentials_create(%p)", 1,
                  (call_credentials));
 
-  update_tenancy();
-
   if (call_creds == nullptr) {
-    update_metadata_server_available();
     call_creds = make_default_call_creds(&error);
   }
 
@@ -367,13 +360,19 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     grpc_channel_credentials* alts_creds =
         grpc_alts_credentials_create(options);
     grpc_alts_credentials_options_destroy(options);
-    auto creds =
-        grpc_core::MakeRefCounted<grpc_google_default_channel_credentials>(
-            grpc_core::RefCountedPtr<grpc_channel_credentials>(alts_creds),
-            grpc_core::RefCountedPtr<grpc_channel_credentials>(ssl_creds));
-    result = grpc_composite_channel_credentials_create(
-        creds.get(), call_creds.get(), nullptr);
-    GPR_ASSERT(result != nullptr);
+    if (alts_creds == nullptr) {
+      gpr_log(GPR_ERROR,
+              "Could not create google default credentials. Are you running on "
+              "GCE?");
+    } else {
+      auto creds =
+          grpc_core::MakeRefCounted<grpc_google_default_channel_credentials>(
+              grpc_core::RefCountedPtr<grpc_channel_credentials>(alts_creds),
+              grpc_core::RefCountedPtr<grpc_channel_credentials>(ssl_creds));
+      result = grpc_composite_channel_credentials_create(
+          creds.get(), call_creds.get(), nullptr);
+      GPR_ASSERT(result != nullptr);
+    }
   } else {
     gpr_log(GPR_ERROR, "Could not create google default credentials: %s",
             grpc_error_string(error));
