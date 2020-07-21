@@ -1793,6 +1793,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/decode.h )
   s.files += %w( third_party/upb/upb/def.c )
   s.files += %w( third_party/upb/upb/def.h )
+  s.files += %w( third_party/upb/upb/def.hpp )
   s.files += %w( third_party/upb/upb/encode.c )
   s.files += %w( third_party/upb/upb/encode.h )
   s.files += %w( third_party/upb/upb/msg.c )

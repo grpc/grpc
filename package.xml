@@ -1767,6 +1767,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/def.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.c" role="src" />

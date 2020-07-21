@@ -64,6 +64,7 @@ try:
             "third_party/upb/upb/upb.h",
             "third_party/upb/upb/upb.hpp",
             "third_party/upb/upb/def.h",
+            "third_party/upb/upb/def.hpp",
             "third_party/upb/upb/reflection.h",
             "third_party/upb/upb/text_encode.h",
             "src/core/ext/upb-generated/google/protobuf/any.upb.h",
