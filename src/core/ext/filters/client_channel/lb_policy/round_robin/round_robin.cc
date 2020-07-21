@@ -40,6 +40,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 namespace grpc_core {
@@ -335,8 +336,7 @@ void RoundRobin::RoundRobinSubchannelList::
                                "connections to all backends failing"),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
         absl::make_unique<TransientFailurePicker>(error));
   }
 }
@@ -453,8 +453,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
         absl::make_unique<TransientFailurePicker>(error));
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   } else if (subchannel_list_ == nullptr) {

@@ -125,6 +125,8 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
 
 absl::Status grpc_error_to_absl_status(grpc_error* error) {
   grpc_status_code status;
+  // TODO(yashykt): This should be updated once we decide on how to use the
+  // absl::Status payload to capture all the contents of grpc_error.
   grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status,
                         nullptr /* slice */, nullptr /* http_error */,
                         nullptr /* error_string */);

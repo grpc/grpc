@@ -34,6 +34,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -115,7 +116,9 @@ class PriorityLb : public LoadBalancingPolicy {
       return connectivity_state_;
     }
 
-    absl::Status connectivity_status() const { return connectivity_status_; }
+    const absl::Status& connectivity_status() const {
+      return connectivity_status_;
+    }
 
     bool failover_timer_callback_pending() const {
       return failover_timer_callback_pending_;
@@ -464,8 +467,7 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("no ready priority"),
       GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
+      GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
       absl::make_unique<TransientFailurePicker>(error));
 }
 

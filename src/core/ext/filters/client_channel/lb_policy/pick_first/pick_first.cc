@@ -30,6 +30,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -200,8 +201,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(absl::StatusCode::kUnavailable, grpc_error_string(error)),
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
         absl::make_unique<TransientFailurePicker>(error));
     return;
   }
@@ -319,9 +319,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                 "selected subchannel failed; switching to pending update"),
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
         p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_TRANSIENT_FAILURE,
-            absl::Status(absl::StatusCode::kUnavailable,
-                         grpc_error_string(error)),
+            GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
             absl::make_unique<TransientFailurePicker>(error));
       } else {
         p->channel_control_helper()->UpdateState(
@@ -400,9 +398,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                   "failed to connect to all addresses"),
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
           p->channel_control_helper()->UpdateState(
-              GRPC_CHANNEL_TRANSIENT_FAILURE,
-              absl::Status(absl::StatusCode::kUnavailable,
-                           grpc_error_string(error)),
+              GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
               absl::make_unique<TransientFailurePicker>(error));
         }
       }

@@ -36,6 +36,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -387,11 +388,12 @@ void WeightedTargetLb::UpdateStateLocked() {
           absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
-      status = absl::Status(
-          absl::StatusCode::kUnavailable,
-          "weighted_target: all children report state TRANSIENT_FAILURE");
-      picker = absl::make_unique<TransientFailurePicker>(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(status.ToString().c_str()));
+      grpc_error* error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "weighted_target: all children report state TRANSIENT_FAILURE"),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      status = grpc_error_to_absl_status(error);
+      picker = absl::make_unique<TransientFailurePicker>(error);
   }
   channel_control_helper()->UpdateState(connectivity_state, status,
                                         std::move(picker));
