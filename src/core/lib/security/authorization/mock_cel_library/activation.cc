@@ -17,14 +17,12 @@
  */
 
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/security/authorization/mock_cel_library/activation.h"
+
 #include <algorithm>
 #include <memory>
 #include <vector>
-
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "src/core/lib/security/authorization/cel_stub/activation.h"
-#include "src/core/lib/security/authorization/cel_stub/cel_function.h"
 
 namespace google {
 namespace api {
@@ -38,34 +36,11 @@ absl::optional<CelValue> Activation::FindValue(
   return absl::nullopt;
 }
 
-absl::Status Activation::InsertFunction(std::unique_ptr<CelFunction> function) {
-  return absl::OkStatus();
-}
-
-std::vector<const CelFunction*> Activation::FindFunctionOverloads(
-    absl::string_view name) const {
-  return std::vector<const CelFunction*>();
-}
-
-bool Activation::RemoveFunctionEntries(
-    const CelFunctionDescriptor& descriptor) {
-  return false;
-}
-
 void Activation::InsertValue(absl::string_view name, const CelValue& value) {
   return;
 }
 
-void Activation::InsertValueProducer(
-    absl::string_view name, std::unique_ptr<CelValueProducer> value_producer) {
-  return;
-}
-
 bool Activation::RemoveValueEntry(absl::string_view name) { return false; }
-
-bool Activation::ClearValueEntry(absl::string_view name) { return false; }
-
-int Activation::ClearCachedValues() { return 0; }
 
 }  // namespace runtime
 }  // namespace expr

@@ -16,15 +16,35 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_STUB_CEL_VALUE_H
-#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_STUB_CEL_VALUE_H
+#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_LIBRARY_CEL_VALUE_H
+#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_LIBRARY_CEL_VALUE_H
 
-#include <google/protobuf/message.h>
+// CelValue is a holder, capable of storing all kinds of data
+// supported by CEL.
+// CelValue defines explicitly typed/named getters/setters.
+// When storing pointers to objects, CelValue does not accept ownership
+// to them and does not control their lifecycle. Instead objects are expected
+// to be either external to expression evaluation, and controlled beyond the
+// scope or to be allocated and associated with some allocation/ownership
+// controller (Arena).
+// Usage examples:
+// (a) For primitive types:
+//    CelValue value = CelValue::CreateInt64(1);
+// (b) For string:
+//    string* msg = google::protobuf::Arena::Create<string>(arena,"test");
+//    CelValue value = CelValue::CreateString(msg);
+// (c) For messages:
+//    const MyMessage * msg = google::protobuf::Arena::CreateMessage<MyMessage>(arena);
+//    CelValue value = CelValue::CreateMessage(msg, &arena);
+
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-#include "src/core/lib/security/authorization/cel_stub/cel_value_internal.h"
+
+#include <google/protobuf/message.h>
+
+#include "src/core/lib/security/authorization/mock_cel_library/cel_value_internal.h"
 
 namespace google {
 namespace api {
@@ -33,6 +53,7 @@ namespace runtime {
 
 using CelError = absl::Status;
 
+// Break cyclic depdendencies for container types.
 class CelList;
 class CelMap;
 class UnknownSet;
@@ -365,4 +386,4 @@ class CelValue {
 }  // namespace api
 }  // namespace google
 
-#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_STUB_CEL_VALUE_H
+#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_LIBRARY_CEL_VALUE_H

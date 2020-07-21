@@ -16,16 +16,17 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_STUB_ACTIVATION_H
-#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_STUB_ACTIVATION_H
+#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_LIBRARY_ACTIVATION_H
+#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_LIBRARY_ACTIVATION_H
 
-#include <google/protobuf/util/field_mask_util.h>
 #include <grpc/support/port_platform.h>
-#include <vector>
 
 #include "absl/strings/string_view.h"
-#include "src/core/lib/security/authorization/cel_stub/cel_function.h"
-#include "src/core/lib/security/authorization/cel_stub/cel_value.h"
+#include <vector>
+
+#include <google/protobuf/util/field_mask_util.h>
+
+#include "src/core/lib/security/authorization/mock_cel_library/cel_value.h"
 
 namespace google {
 namespace api {
@@ -45,6 +46,9 @@ class CelValueProducer {
   }
 };
 
+// Instance of Activation class is used by evaluator.
+// It provides binding between references used in expressions
+// and actual values.
 class Activation {
  public:
   Activation() = default;
@@ -53,40 +57,38 @@ class Activation {
   Activation(const Activation&) = delete;
   Activation& operator=(const Activation&) = delete;
 
-  std::vector<const CelFunction*> FindFunctionOverloads(
-      absl::string_view name) const;
-
+  // Provide the value that is bound to the name, if found.
+  // arena parameter is provided to support the case when we want to pass the
+  // ownership of returned object ( Message/List/Map ) to Evaluator.
   absl::optional<CelValue> FindValue(absl::string_view name,
                                      google::protobuf::Arena* arena) const;
 
+  // Check whether a select path is unknown.
   bool IsPathUnknown(absl::string_view path) const { return true; }
-
-  absl::Status InsertFunction(std::unique_ptr<CelFunction> function);
-
+  
+  // Insert value into Activation.
   void InsertValue(absl::string_view name, const CelValue& value);
 
-  void InsertValueProducer(absl::string_view name,
-                           std::unique_ptr<CelValueProducer> value_producer);
-
-  bool RemoveFunctionEntries(const CelFunctionDescriptor& descriptor);
-
+  // Removes value or producer, returns true if entry with the name was found.
   bool RemoveValueEntry(absl::string_view name);
 
-  bool ClearValueEntry(absl::string_view name);
-
-  int ClearCachedValues();
-
+  // Set unknown value paths through FieldMask
   void set_unknown_paths(google::protobuf::FieldMask mask) { return; }
-
+  
+  // Return FieldMask defining the list of unknown paths.
   const google::protobuf::FieldMask& unknown_paths() const {
     return unknown_paths_;
   }
-
+  
+  // Sets the collection of attribute patterns that will be recognized as
+  // "unknown" values during expression evaluation.
   void set_unknown_attribute_patterns(
       std::vector<CelAttributePattern> unknown_attribute_patterns) {
     return;
   }
 
+  // Return the collection of attribute patterns that determine "unknown"
+  // values.
   const std::vector<CelAttributePattern>& unknown_attribute_patterns() const {
     return unknown_patterns_;
   }
@@ -101,4 +103,4 @@ class Activation {
 }  // namespace api
 }  // namespace google
 
-#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_STUB_ACTIVATION_H
+#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_LIBRARY_ACTIVATION_H
