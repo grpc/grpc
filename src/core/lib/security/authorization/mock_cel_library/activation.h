@@ -21,8 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
 #include <vector>
+#include "absl/strings/string_view.h"
 
 #include <google/protobuf/util/field_mask_util.h>
 
@@ -65,7 +65,7 @@ class Activation {
 
   // Check whether a select path is unknown.
   bool IsPathUnknown(absl::string_view path) const { return true; }
-  
+
   // Insert value into Activation.
   void InsertValue(absl::string_view name, const CelValue& value);
 
@@ -74,12 +74,12 @@ class Activation {
 
   // Set unknown value paths through FieldMask
   void set_unknown_paths(google::protobuf::FieldMask mask) { return; }
-  
+
   // Return FieldMask defining the list of unknown paths.
   const google::protobuf::FieldMask& unknown_paths() const {
     return unknown_paths_;
   }
-  
+
   // Sets the collection of attribute patterns that will be recognized as
   // "unknown" values during expression evaluation.
   void set_unknown_attribute_patterns(

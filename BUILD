@@ -986,15 +986,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_cel_stub",
+    name = "grpc_cel_engine",
     srcs = [
-        "src/core/lib/security/authorization/cel_stub/activation.cc",
+        "src/core/lib/security/authorization/mock_cel_library/activation.cc",
     ],
     hdrs = [
-        "src/core/lib/security/authorization/cel_stub/activation.h",
-        "src/core/lib/security/authorization/cel_stub/cel_function.h",
-        "src/core/lib/security/authorization/cel_stub/cel_value.h",
-        "src/core/lib/security/authorization/cel_stub/cel_value_internal.h",
+        "src/core/lib/security/authorization/mock_cel_library/activation.h",
+        "src/core/lib/security/authorization/mock_cel_library/cel_value.h",
+        "src/core/lib/security/authorization/mock_cel_library/cel_value_internal.h",
     ],
     external_deps = [
         "absl/status",
