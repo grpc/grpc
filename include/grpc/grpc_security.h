@@ -267,11 +267,21 @@ GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const verify_peer_options* verify_options, void* reserved);
 
-/** Sets the min TLS version in a channel credentials object. */
+/** Sets the minimum TLS version that will be negotiated during the TLS
+   handshake. The caller MUST ensure that |creds| is an instance of
+   |grpc_ssl_credentials|.
+    - creds: an instance of |grpc_ssl_credentials|. If |creds| is nullptr, then
+      this is a no-op.
+    - min_tls_version: the minimum TLS version. */
 GRPCAPI void grpc_ssl_credentials_set_min_tls_version(
     grpc_channel_credentials* creds, grpc_tls_version min_tls_version);
 
-/** Sets the max TLS version in a channel credentials object. */
+/** Sets the maximum TLS version that will be negotiated during the TLS
+   handshake. The caller MUST ensure that |creds| is an instance of
+   |grpc_ssl_credentials|.
+    - creds: an instance of |grpc_ssl_credentials|. If |creds| is nullptr, then
+      this is a no-op.
+    - min_tls_version: the maximum TLS version. */
 GRPCAPI void grpc_ssl_credentials_set_max_tls_version(
     grpc_channel_credentials* creds, grpc_tls_version max_tls_version);
 
@@ -555,11 +565,21 @@ GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs, int force_client_auth, void* reserved);
 
-/** Sets the min TLS version in a server credentials object. */
+/** Sets the minimum TLS version that will be negotiated during the TLS
+   handshake. The caller MUST ensure that |creds| is an instance of
+   |grpc_ssl_server_credentials|.
+    - creds: an instance of |grpc_ssl_server_credentials|. If |creds| is
+      nullptr, then this is a no-op.
+    - min_tls_version: the minimum TLS version. */
 GRPCAPI void grpc_ssl_server_credentials_set_min_tls_version(
     grpc_server_credentials* creds, grpc_tls_version min_tls_version);
 
-/** Sets the max TLS version in a server credentials object. */
+/** Sets the maximum TLS version that will be negotiated during the TLS
+   handshake. The caller MUST ensure that |creds| is an instance of
+   |grpc_ssl_server_credentials|.
+    - creds: an instance of |grpc_ssl_server_credentials|. If |creds| is
+      nullptr, then this is a no-op.
+    - min_tls_version: the maximum TLS version. */
 GRPCAPI void grpc_ssl_server_credentials_set_max_tls_version(
     grpc_server_credentials* creds, grpc_tls_version max_tls_version);
 

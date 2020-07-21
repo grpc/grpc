@@ -29,13 +29,13 @@ namespace grpc {
 namespace testing {
 
 const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
-// Using kTls12CredentialsType and kTLS13CredentialsType forces the TLS version
-// to TLS 1.2 and TLS 1.3 respectively. Using kTlsCredentialsType sets the min
-// TLS version to TLS 1.2 and the max TLS version to TLS 1.3.
+// The kTls12CredentialsType (resp. kTls13CredentialsType) credential type
+// yields SSL credentials that only use TLS 1.2 (resp. 1.3).
 const char kTls12CredentialsType[] = "tls12";
 const char kTls13CredentialsType[] = "tls13";
 // For real credentials below, this name should match the AuthContext property
-// "transport_security_type".
+// "transport_security_type". Using kTlsCredentialsType sets the min TLS version
+// to TLS 1.2 and the max TLS version to TLS 1.3.
 const char kTlsCredentialsType[] = "ssl";
 const char kAltsCredentialsType[] = "alts";
 const char kGoogleDefaultCredentialsType[] = "google_default_credentials";
@@ -56,7 +56,8 @@ class CredentialsProvider {
   virtual ~CredentialsProvider() {}
 
   // Add a secure type in addition to the defaults. The default provider has
-  // (kInsecureCredentialsType, kTls12CredentialsType, kTls13CredentialsType).
+  // (kInsecureCredentialsType, kTlsCredentialsType, kTls12CredentialsType,
+  // kTls13CredentialsType).
   virtual void AddSecureType(
       const std::string& type,
       std::unique_ptr<CredentialTypeProvider> type_provider) = 0;
@@ -73,6 +74,10 @@ class CredentialsProvider {
 
   // Provide a list of secure credentials type.
   virtual std::vector<std::string> GetSecureCredentialsTypeList() = 0;
+
+  // Provide a transport security type given a credentials type.
+  virtual std::string GetTransportSecurityType(
+      const std::string& credentials_type) = 0;
 };
 
 // Get the current provider. Create a default one if not set.

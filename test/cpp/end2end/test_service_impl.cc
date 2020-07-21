@@ -53,17 +53,15 @@ void MaybeEchoDeadline(experimental::ServerContextBase* context,
 }
 
 void CheckServerAuthContext(const experimental::ServerContextBase* context,
-                            const std::string& expected_transport_security_type,
+                            const std::string& expected_credentials_type,
                             const std::string& expected_client_identity) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
   EXPECT_EQ(1u, tst.size());
-  std::string transport_security_type = expected_transport_security_type;
-  if (expected_transport_security_type == kTls12CredentialsType ||
-      expected_transport_security_type == kTls13CredentialsType) {
-    transport_security_type = kTlsCredentialsType;
-  }
+  std::string transport_security_type =
+      GetCredentialsProvider()->GetTransportSecurityType(
+          expected_credentials_type);
   EXPECT_EQ(transport_security_type, ToString(tst[0]));
   if (expected_client_identity.empty()) {
     EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
