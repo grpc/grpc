@@ -356,19 +356,13 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     grpc_channel_credentials* alts_creds =
         grpc_alts_credentials_create(options);
     grpc_alts_credentials_options_destroy(options);
-    if (alts_creds == nullptr) {
-      gpr_log(GPR_ERROR,
-              "Could not create google default credentials. Are you running on "
-              "GCE?");
-    } else {
-      auto creds =
-          grpc_core::MakeRefCounted<grpc_google_default_channel_credentials>(
-              grpc_core::RefCountedPtr<grpc_channel_credentials>(alts_creds),
-              grpc_core::RefCountedPtr<grpc_channel_credentials>(ssl_creds));
-      result = grpc_composite_channel_credentials_create(
-          creds.get(), call_creds.get(), nullptr);
-      GPR_ASSERT(result != nullptr);
-    }
+    auto creds =
+        grpc_core::MakeRefCounted<grpc_google_default_channel_credentials>(
+            grpc_core::RefCountedPtr<grpc_channel_credentials>(alts_creds),
+            grpc_core::RefCountedPtr<grpc_channel_credentials>(ssl_creds));
+    result = grpc_composite_channel_credentials_create(
+        creds.get(), call_creds.get(), nullptr);
+    GPR_ASSERT(result != nullptr);
   } else {
     gpr_log(GPR_ERROR, "Could not create google default credentials: %s",
             grpc_error_string(error));
