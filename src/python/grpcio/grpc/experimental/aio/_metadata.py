@@ -101,10 +101,18 @@ class Metadata(abc.Mapping):
         return key in self._metadata
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return NotImplemented  # pytype: disable=bad-return-type
+        if isinstance(other, self.__class__):
+            return self._metadata == other._metadata
+        if isinstance(other, tuple):
+            return tuple(self) == other
+        return NotImplemented  # pytype: disable=bad-return-type
 
-        return self._metadata == other._metadata
+    def __add__(self, other: Any) -> bool:
+        if isinstance(other, self.__class__):
+            return Metadata(*(tuple(self) + tuple(other)))
+        if isinstance(other, tuple):
+            return Metadata(*(tuple(self) + other))
+        return NotImplemented  # pytype: disable=bad-return-type
 
     def __repr__(self) -> str:
         view = tuple(self)
