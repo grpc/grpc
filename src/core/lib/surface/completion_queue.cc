@@ -364,7 +364,7 @@ struct cq_callback_alternative_data {
 
     if (shared_cq_next == nullptr) {
       shared_cq_next = grpc_completion_queue_create_for_next(nullptr);
-      int num_nexting_threads = GPR_CLAMP(gpr_cpu_num_cores(), 2, 32);
+      int num_nexting_threads = GPR_CLAMP(gpr_cpu_num_cores(), 1, 32);
       threads_remaining.Store(num_nexting_threads,
                               grpc_core::MemoryOrder::RELEASE);
       for (int i = 0; i < num_nexting_threads; i++) {
