@@ -1347,11 +1347,19 @@ static void set_google_default_creds_env_var_with_file_contents(
   gpr_free(creds_file_name);
 }
 
+static bool test_gce_tenancy_checker(void) {
+  g_test_gce_tenancy_checker_called = true;
+  return g_test_is_on_gce;
+}
+
 static void test_google_default_creds_auth_key(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   char* json_key = test_json_key_str();
   grpc_flush_cached_google_default_credentials();
+  set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
+  g_test_gce_tenancy_checker_called = false;
+  g_test_is_on_gce = true;
   set_google_default_creds_env_var_with_file_contents(
       "json_key_google_default_creds", json_key);
   gpr_free(json_key);
@@ -1368,6 +1376,7 @@ static void test_google_default_creds_auth_key(void) {
       strcmp(jwt->key().client_id,
              "777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent.com") ==
       0);
+  GPR_ASSERT(g_test_gce_tenancy_checker_called == false);
   creds->Unref();
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
@@ -1410,11 +1419,6 @@ static int default_creds_metadata_server_detection_httpcli_get_success_override(
 }
 
 static std::string null_well_known_creds_path_getter(void) { return ""; }
-
-static bool test_gce_tenancy_checker(void) {
-  g_test_gce_tenancy_checker_called = true;
-  return g_test_is_on_gce;
-}
 
 static void test_google_default_creds_gce(void) {
   grpc_core::ExecCtx exec_ctx;

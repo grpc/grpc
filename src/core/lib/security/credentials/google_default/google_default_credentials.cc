@@ -304,8 +304,6 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
   grpc_error* err;
 
-  update_tenancy();
-
   /* First, try the environment variable. */
   char* path_from_env = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
   if (path_from_env != nullptr) {
@@ -320,6 +318,8 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
       grpc_get_well_known_google_credentials_file_path(), &call_creds);
   if (err == GRPC_ERROR_NONE) return call_creds;
   *error = grpc_error_add_child(*error, err);
+
+  update_tenancy();
 
   if (metadata_server_available()) {
     call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
