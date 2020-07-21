@@ -276,7 +276,7 @@ end:
 
 static void update_tenancy() {
   gpr_once_init(&g_once, init_default_credentials);
-  gpr_mu_lock(&g_state_mu);
+  grpc_core::MutexLock lock(&g_state_mu);
 
   /* Try a platform-provided hint for GCE. */
   if (!g_metadata_server_available) {
@@ -288,15 +288,12 @@ static void update_tenancy() {
   if (!g_metadata_server_available) {
     g_metadata_server_available = is_metadata_server_reachable();
   }
-  gpr_mu_unlock(&g_state_mu);
 }
 
 static bool metadata_server_available() {
   bool available = false;
-  gpr_mu_lock(&g_state_mu);
-  available = static_cast<bool>(g_metadata_server_available);
-  gpr_mu_unlock(&g_state_mu);
-  return available;
+  grpc_core::MutexLock lock(&g_state_mu);
+  return static_cast<bool>(g_metadata_server_available);
 }
 
 static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
