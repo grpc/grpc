@@ -298,7 +298,9 @@ class Clean(setuptools.Command):
     """Command to clean build artifacts."""
 
     description = 'Clean build artifacts.'
-    user_options = []
+    user_options = [
+        ('all', 'a', 'a phony flag to allow our script to continue'),
+    ]
 
     _FILE_PATTERNS = (
         'python_build',
@@ -311,7 +313,7 @@ class Clean(setuptools.Command):
         os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../.."))
 
     def initialize_options(self):
-        pass
+        self.all = False
 
     def finalize_options(self):
         pass
