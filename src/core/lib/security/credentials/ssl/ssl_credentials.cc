@@ -147,6 +147,7 @@ grpc_channel_credentials* grpc_ssl_credentials_create(
 
 void grpc_ssl_credentials_set_min_tls_version(
     grpc_channel_credentials* creds, grpc_tls_version min_tls_version) {
+  GPR_ASSERT(creds != nullptr);
   grpc_ssl_credentials* ssl_creds =
       reinterpret_cast<grpc_ssl_credentials*>(creds);
   ssl_creds->set_min_tls_version(min_tls_version);
@@ -154,6 +155,7 @@ void grpc_ssl_credentials_set_min_tls_version(
 
 void grpc_ssl_credentials_set_max_tls_version(
     grpc_channel_credentials* creds, grpc_tls_version max_tls_version) {
+  GPR_ASSERT(creds != nullptr);
   grpc_ssl_credentials* ssl_creds =
       reinterpret_cast<grpc_ssl_credentials*>(creds);
   ssl_creds->set_max_tls_version(max_tls_version);
@@ -338,6 +340,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create(
 
 void grpc_ssl_server_credentials_set_min_tls_version(
     grpc_server_credentials* creds, grpc_tls_version min_tls_version) {
+  GPR_ASSERT(creds != nullptr);
   grpc_ssl_server_credentials* ssl_creds =
       reinterpret_cast<grpc_ssl_server_credentials*>(creds);
   ssl_creds->set_min_tls_version(min_tls_version);
@@ -345,6 +348,7 @@ void grpc_ssl_server_credentials_set_min_tls_version(
 
 void grpc_ssl_server_credentials_set_max_tls_version(
     grpc_server_credentials* creds, grpc_tls_version max_tls_version) {
+  GPR_ASSERT(creds != nullptr);
   grpc_ssl_server_credentials* ssl_creds =
       reinterpret_cast<grpc_ssl_server_credentials*>(creds);
   ssl_creds->set_max_tls_version(max_tls_version);
