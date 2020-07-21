@@ -2095,11 +2095,6 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   }
   if (due_to_error != GRPC_ERROR_NONE && !s->seen_error) {
     s->seen_error = true;
-    /* We are setting the fake status here instead of in
-     * grpc_chttp2_mark_stream_closed to handle the case where the stream is
-     * read and write closed, but not all callbacks have been made possibly due
-     * to pending data. */
-    grpc_chttp2_fake_status(t, s, GRPC_ERROR_REF(due_to_error));
   }
   grpc_chttp2_mark_stream_closed(t, s, 1, 1, due_to_error);
 }
@@ -2209,9 +2204,12 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
                                     grpc_chttp2_stream* s, int close_reads,
                                     int close_writes, grpc_error* error) {
   if (s->read_closed && s->write_closed) {
-    /* already closed */
+    /* already closed, but we should still fake the status if needed. */
+    grpc_error* overall_error = removal_error(error, s, "Stream removed");
+    if (overall_error != GRPC_ERROR_NONE) {
+      grpc_chttp2_fake_status(t, s, overall_error);
+    }
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
-    GRPC_ERROR_UNREF(error);
     return;
   }
   bool closed_read = false;
