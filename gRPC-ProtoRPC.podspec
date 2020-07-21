@@ -54,7 +54,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = "src/objective-c/ProtoRPC"
     ss.dependency "#{s.name}/Legacy-Header", version
     ss.dependency 'gRPC/Interface', version
-    ss.dependency 'Protobuf', '~> 3.0'
+    ss.dependency 'Protobuf', '>= 4.0.0-rc1'
 
     ss.source_files = "src/objective-c/ProtoRPC/ProtoMethod.{h,m}",
                       "src/objective-c/ProtoRPC/ProtoRPC.{h,m}",
@@ -67,7 +67,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Legacy-Header", version
     ss.dependency 'gRPC/GRPCCore', version
     ss.dependency 'gRPC-RxLibrary', version
-    ss.dependency 'Protobuf', '~> 3.0'
+    ss.dependency 'Protobuf', '>= 4.0.0-rc1'
 
     ss.source_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.m",
                       "src/objective-c/ProtoRPC/ProtoServiceLegacy.m"

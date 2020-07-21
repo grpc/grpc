@@ -20,7 +20,7 @@ cd `dirname $0`/../..
 # get the version of protobuf in /third_party/protobuf
 pushd third_party/protobuf
 
-version1=$(git describe --tags | cut -f 1 -d'-')
+version1=$(git describe --tags | cut -f 1)
 v1=${version1:1}
 
 popd
