@@ -2095,6 +2095,7 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   }
   if (due_to_error != GRPC_ERROR_NONE && !s->seen_error) {
     s->seen_error = true;
+    grpc_chttp2_fake_status(t, s, GRPC_ERROR_REF(due_to_error));
   }
   grpc_chttp2_mark_stream_closed(t, s, 1, 1, due_to_error);
 }
