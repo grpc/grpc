@@ -79,6 +79,9 @@ _EXEMPT = frozenset((
     'examples/python/route_guide/route_guide_pb2.py',
     'examples/python/route_guide/route_guide_pb2_grpc.py',
 
+    # Generated doxygen config file
+    'tools/doxygen/Doxyfile.php',
+
     # An older file originally from outside gRPC.
     'src/php/tests/bootstrap.php',
     # census.proto copied from github

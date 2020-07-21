@@ -35,7 +35,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -119,8 +118,8 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     // Maintains an ordered xds route table as provided by RDS response.
     using RouteTable = std::vector<Route>;
 
-    explicit RoutePicker(RouteTable route_table,
-                         RefCountedPtr<XdsRoutingLbConfig> config)
+    RoutePicker(RouteTable route_table,
+                RefCountedPtr<XdsRoutingLbConfig> config)
         : route_table_(std::move(route_table)), config_(std::move(config)) {}
 
     PickResult Pick(PickArgs args) override;
@@ -264,8 +263,19 @@ bool HeaderMatchHelper(
     const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher& header_matcher,
     LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   std::string concatenated_value;
-  auto value = GetMetadataValue(header_matcher.name, initial_metadata,
-                                &concatenated_value);
+  absl::optional<absl::string_view> value;
+  // Note: If we ever allow binary headers here, we still need to
+  // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
+  // they are not visible to the LB policy in grpc-go.
+  if (absl::EndsWith(header_matcher.name, "-bin") ||
+      header_matcher.name == "grpc-previous-rpc-attempts") {
+    value = absl::nullopt;
+  } else if (header_matcher.name == "content-type") {
+    value = "application/grpc";
+  } else {
+    value = GetMetadataValue(header_matcher.name, initial_metadata,
+                             &concatenated_value);
+  }
   if (!value.has_value()) {
     if (header_matcher.type == XdsApi::RdsUpdate::RdsRoute::Matchers::
                                    HeaderMatcher::HeaderMatcherType::PRESENT) {
@@ -303,11 +313,11 @@ bool HeaderMatchHelper(
 }
 
 bool HeadersMatch(
-    LoadBalancingPolicy::PickArgs args,
     const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
-        header_matchers) {
+        header_matchers,
+    LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   for (const auto& header_matcher : header_matchers) {
-    bool match = HeaderMatchHelper(header_matcher, args.initial_metadata);
+    bool match = HeaderMatchHelper(header_matcher, initial_metadata);
     if (header_matcher.invert_match) match = !match;
     if (!match) return false;
   }
@@ -325,11 +335,14 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
     // Path matching.
     if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
     // Header Matching.
-    if (!HeadersMatch(args, route.matchers->header_matchers)) continue;
+    if (!HeadersMatch(route.matchers->header_matchers, args.initial_metadata)) {
+      continue;
+    }
     // Match fraction check
     if (route.matchers->fraction_per_million.has_value() &&
-        !UnderFraction(route.matchers->fraction_per_million.value()))
+        !UnderFraction(route.matchers->fraction_per_million.value())) {
       continue;
+    }
     // Found a match
     return route.picker->Pick(args);
   }

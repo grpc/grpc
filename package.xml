@@ -167,7 +167,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.h" role="src" />
