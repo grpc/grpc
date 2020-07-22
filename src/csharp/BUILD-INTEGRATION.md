@@ -105,6 +105,17 @@ button](https://stackoverflow.com/a/9770061). Click on it, and choose "Add as
 link". If you do not select this option, Visual Studio will copy files to the
 project directory instead.
 
+#### My .proto files have same filename in different folders
+
+By default Grpc.Tools compiles all .proto files into `obj` directory, flattening relative paths. For proto files with duplicated names it will cause following error `NETSDK1022 Duplicate 'Compile' items were included. [...]`. If you want to keep relative paths in your `obj` folder, define `OutputDir="$(Protobuf_OutputPath)%(RelativeDir)"`.
+
+```xml
+  <ItemGroup>
+    <Protobuf Include="Protos/v2/http.proto" OutputDir="$(Protobuf_OutputPath)%(RelativeDir)"  />
+    <Protobuf Include="Protos/v3/http.proto" OutputDir="$(Protobuf_OutputPath)%(RelativeDir)"  />
+  </ItemGroup>
+```
+
 ### I just want to generate proto and gRPC C# sources from my .proto files (no C# compile)
 
 Suppose you want to place generated files right beside each respective source
