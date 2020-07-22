@@ -65,7 +65,6 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   cq_verifier* cqv = cq_verifier_create(cq);
   grpc_op ops[6];
   grpc_op* op;
-  grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
@@ -78,7 +77,6 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
   GPR_ASSERT(c);
-  grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
@@ -111,7 +109,6 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   cq_verify(cqv);
   // cleanup
   grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
