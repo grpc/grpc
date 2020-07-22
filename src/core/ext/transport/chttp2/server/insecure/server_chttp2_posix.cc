@@ -51,12 +51,8 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
   grpc_transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false /* is_client */);
 
-  grpc_pollset** pollsets;
-  size_t num_pollsets = 0;
-  grpc_server_get_pollsets(server, &pollsets, &num_pollsets);
-
-  for (size_t i = 0; i < num_pollsets; i++) {
-    grpc_endpoint_add_to_pollset(server_endpoint, pollsets[i]);
+  for (grpc_pollset* pollset : grpc_server_get_pollsets(server)) {
+    grpc_endpoint_add_to_pollset(server_endpoint, pollset);
   }
 
   grpc_server_setup_transport(server, transport, nullptr, server_args, nullptr);

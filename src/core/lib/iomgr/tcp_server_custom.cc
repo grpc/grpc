@@ -417,12 +417,10 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   return error;
 }
 
-static void tcp_server_start(grpc_tcp_server* server, grpc_pollset** pollsets,
-                             size_t pollset_count,
+static void tcp_server_start(grpc_tcp_server* server,
+                             const std::vector<grpc_pollset*>* /*pollsets*/,
                              grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
   grpc_tcp_listener* sp;
-  (void)pollsets;
-  (void)pollset_count;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "SERVER_START %p", server);

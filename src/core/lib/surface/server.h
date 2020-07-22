@@ -41,9 +41,10 @@ class ServerListenerInterface : public Orphanable {
  public:
   virtual ~ServerListenerInterface() = default;
 
-  /// Starts listening.
-  virtual void Start(grpc_server* server, grpc_pollset** pollsets,
-                     size_t npollsets) = 0;
+  /// Starts listening. This listener may refer to the pollset object beyond
+  /// this call, so it is a pointer rather than a reference.
+  virtual void Start(grpc_server* server,
+                     const std::vector<grpc_pollset*>* pollsets) = 0;
 
   /// Returns the channelz node for the listen socket, or null if not
   /// supported.
@@ -78,12 +79,12 @@ const grpc_channel_args* grpc_server_get_channel_args(grpc_server* server);
 
 grpc_resource_user* grpc_server_get_default_resource_user(grpc_server* server);
 
-int grpc_server_has_open_connections(grpc_server* server);
+bool grpc_server_has_open_connections(grpc_server* server);
 
-/* Do not call this before grpc_server_start. Returns the pollsets and the
- * number of pollsets via 'pollsets' and 'pollset_count'. */
-void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
-                              size_t* pollset_count);
+// Do not call this before grpc_server_start. Returns the pollsets. The vector
+// itself is immutable, but the pollsets inside are mutable. The result is valid
+// for the lifetime of the server.
+const std::vector<grpc_pollset*>& grpc_server_get_pollsets(grpc_server* server);
 
 namespace grpc_core {
 
