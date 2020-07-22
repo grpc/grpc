@@ -18,7 +18,7 @@ import datetime
 import logging
 import unittest
 
-from subdir import simple_copy_pb2
+import simple_copy_pb2
 
 
 class ImportTest(unittest.TestCase):
