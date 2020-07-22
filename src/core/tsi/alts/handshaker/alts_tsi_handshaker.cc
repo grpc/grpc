@@ -339,8 +339,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Null peer identity in ALTS context.");
     return TSI_FAILED_PRECONDITION;
   }
-  if (grpc_gcp_Identity_has_attributes(
-          const_cast<grpc_gcp_Identity*>(peer_identity))) {
+  if (grpc_gcp_Identity_has_attributes(identity)) {
     size_t iter = UPB_MAP_BEGIN;
     grpc_gcp_Identity_AttributesEntry* peer_attributes_entry =
         grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
