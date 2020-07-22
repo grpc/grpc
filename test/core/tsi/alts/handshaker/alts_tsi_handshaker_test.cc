@@ -134,7 +134,6 @@ static grpc_byte_buffer* generate_handshaker_response(
       grpc_gcp_HandshakerResp_mutable_status(resp, arena.ptr());
   grpc_gcp_HandshakerStatus_set_code(status, 0);
   grpc_gcp_Identity* local_identity;
-
   switch (type) {
     case INVALID:
       break;
@@ -434,7 +433,6 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
-
   size_t iter = UPB_MAP_BEGIN;
   grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
       grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);

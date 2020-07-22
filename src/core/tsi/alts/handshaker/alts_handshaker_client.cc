@@ -274,7 +274,6 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
         result, &client->recv_bytes,
         grpc_gcp_HandshakerResp_bytes_consumed(resp));
   }
-
   grpc_status_code code = static_cast<grpc_status_code>(
       grpc_gcp_HandshakerStatus_code(resp_status));
   if (code != GRPC_STATUS_OK) {
@@ -550,10 +549,8 @@ static grpc_byte_buffer* get_serialized_start_server(
   GPR_ASSERT(bytes_received != nullptr);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
-
   upb::Arena arena;
   grpc_gcp_HandshakerReq* req = grpc_gcp_HandshakerReq_new(arena.ptr());
-
   grpc_gcp_StartServerHandshakeReq* start_server =
       grpc_gcp_HandshakerReq_mutable_server_start(req, arena.ptr());
   grpc_gcp_StartServerHandshakeReq_add_application_protocols(
