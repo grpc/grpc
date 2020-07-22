@@ -213,8 +213,7 @@ static void test_channelz(grpc_end2end_test_config config) {
       grpc_channel_get_channelz_node(f.client);
   GPR_ASSERT(channelz_channel != nullptr);
 
-  grpc_core::channelz::ServerNode* channelz_server =
-      grpc_server_get_channelz_node(f.server);
+  grpc_core::channelz::ServerNode* channelz_server = f.server->channelz_node();
   GPR_ASSERT(channelz_server != nullptr);
 
   std::string json = channelz_channel->RenderJsonString();
@@ -274,8 +273,7 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
       grpc_channel_get_channelz_node(f.client);
   GPR_ASSERT(channelz_channel != nullptr);
 
-  grpc_core::channelz::ServerNode* channelz_server =
-      grpc_server_get_channelz_node(f.server);
+  grpc_core::channelz::ServerNode* channelz_server = f.server->channelz_node();
   GPR_ASSERT(channelz_server != nullptr);
 
   run_one_request(config, f, true);
