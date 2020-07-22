@@ -1052,12 +1052,8 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
       GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
     } else {
       gpr_log(GPR_INFO, "Connect failed: %s", grpc_error_string(error));
-      error =
-          grpc_error_set_int(GRPC_ERROR_REF(error), GRPC_ERROR_INT_GRPC_STATUS,
-                             GRPC_STATUS_UNAVAILABLE);
       c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     grpc_error_to_absl_status(error));
-      GRPC_ERROR_UNREF(error);
       GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
     }
   }
