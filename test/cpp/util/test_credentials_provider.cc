@@ -19,19 +19,19 @@
 
 #include "test/cpp/util/test_credentials_provider.h"
 
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+
+#include <mutex>
+#include <unordered_map>
+
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/security/server_credentials.h>
 
-#include <cstdio>
-#include <fstream>
-#include <iostream>
-#include <mutex>
-#include <unordered_map>
-
 #include "test/core/end2end/data/ssl_test_data.h"
-#include "test_credentials_provider.h"
 
 DEFINE_string(tls_cert_file, "", "The TLS cert file used when --use_tls=true");
 DEFINE_string(tls_key_file, "", "The TLS key file used when --use_tls=true");
@@ -173,15 +173,6 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     return types;
   }
 
-  std::string GetTransportSecurityType(
-      const std::string& credentials_type) override {
-    if (credentials_type == grpc::testing::kTls12CredentialsType ||
-        credentials_type == grpc::testing::kTls13CredentialsType) {
-      return kTlsCredentialsType;
-    }
-    return credentials_type;
-  }
-
  private:
   std::mutex mu_;
   std::vector<std::string> added_secure_type_names_;
@@ -206,6 +197,14 @@ void SetCredentialsProvider(CredentialsProvider* provider) {
   // For now, forbids overriding provider.
   GPR_ASSERT(g_provider == nullptr);
   g_provider = provider;
+}
+
+std::string GetTransportSecurityType(const std::string& credentials_type) {
+  if (credentials_type == grpc::testing::kTls12CredentialsType ||
+      credentials_type == grpc::testing::kTls13CredentialsType) {
+    return kTlsCredentialsType;
+  }
+  return credentials_type;
 }
 
 }  // namespace testing

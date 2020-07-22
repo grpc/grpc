@@ -61,6 +61,7 @@ using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using grpc::testing::kTls12CredentialsType;
 using grpc::testing::kTls13CredentialsType;
+using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -2149,8 +2150,7 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
       auth_ctx->FindPropertyValues("transport_security_type");
   ASSERT_EQ(1u, tst.size());
   std::string transport_security_type =
-      GetCredentialsProvider()->GetTransportSecurityType(
-          GetParam().credentials_type);
+      GetTransportSecurityType(GetParam().credentials_type);
   EXPECT_EQ(transport_security_type, ToString(tst[0]));
   if (transport_security_type == kTlsCredentialsType) {
     EXPECT_EQ("x509_subject_alternative_name",

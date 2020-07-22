@@ -129,7 +129,7 @@ class CallCredentials : private grpc::GrpcLibraryCodegen {
   virtual SecureCallCredentials* AsSecureCredentials() = 0;
 };
 
-// The range of TLS versions allowed.
+// The range of TLS versions that may be negotiated during the handshake.
 struct TlsVersionRange {
   TlsVersionRange() : min_tls_version(TLS1_2), max_tls_version(TLS1_3) {}
   TlsVersionRange(grpc_tls_version min_version, grpc_tls_version max_version)

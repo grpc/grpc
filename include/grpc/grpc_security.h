@@ -254,7 +254,7 @@ GRPCAPI void grpc_ssl_credentials_set_min_tls_version(
    |grpc_ssl_credentials|.
     - creds: an instance of |grpc_ssl_credentials|. If |creds| is nullptr, then
       this is a no-op.
-    - min_tls_version: the maximum TLS version. */
+    - max_tls_version: the maximum TLS version. */
 GRPCAPI void grpc_ssl_credentials_set_max_tls_version(
     grpc_channel_credentials* creds, grpc_tls_version max_tls_version);
 
@@ -562,7 +562,7 @@ GRPCAPI void grpc_ssl_server_credentials_set_min_tls_version(
    |grpc_ssl_server_credentials|.
     - creds: an instance of |grpc_ssl_server_credentials|. If |creds| is
       nullptr, then this is a no-op.
-    - min_tls_version: the maximum TLS version. */
+    - max_tls_version: the maximum TLS version. */
 GRPCAPI void grpc_ssl_server_credentials_set_max_tls_version(
     grpc_server_credentials* creds, grpc_tls_version max_tls_version);
 
