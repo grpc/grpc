@@ -1757,6 +1757,8 @@ src/core/lib/security/credentials/plugin/plugin_credentials.cc \
 src/core/lib/security/credentials/plugin/plugin_credentials.h \
 src/core/lib/security/credentials/ssl/ssl_credentials.cc \
 src/core/lib/security/credentials/ssl/ssl_credentials.h \
+src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
+src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
 src/core/lib/security/credentials/tls/tls_credentials.cc \
