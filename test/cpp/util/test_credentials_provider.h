@@ -74,10 +74,6 @@ class CredentialsProvider {
 
   // Provide a list of secure credentials type.
   virtual std::vector<std::string> GetSecureCredentialsTypeList() = 0;
-
-  // Provide a transport security type given a credentials type.
-  virtual std::string GetTransportSecurityType(
-      const std::string& credentials_type) = 0;
 };
 
 // Get the current provider. Create a default one if not set.
@@ -88,6 +84,9 @@ CredentialsProvider* GetCredentialsProvider();
 // destroyed.
 // Not thread-safe.
 void SetCredentialsProvider(CredentialsProvider* provider);
+
+// Provide a transport security type given a credentials type.
+std::string GetTransportSecurityType(const std::string& credentials_type);
 
 }  // namespace testing
 }  // namespace grpc

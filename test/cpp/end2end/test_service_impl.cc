@@ -60,8 +60,7 @@ void CheckServerAuthContext(const experimental::ServerContextBase* context,
       auth_ctx->FindPropertyValues("transport_security_type");
   EXPECT_EQ(1u, tst.size());
   std::string transport_security_type =
-      GetCredentialsProvider()->GetTransportSecurityType(
-          expected_credentials_type);
+      GetTransportSecurityType(expected_credentials_type);
   EXPECT_EQ(transport_security_type, ToString(tst[0]));
   if (expected_client_identity.empty()) {
     EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
