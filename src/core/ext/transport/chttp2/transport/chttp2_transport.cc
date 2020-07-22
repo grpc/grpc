@@ -2200,7 +2200,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
                                     grpc_chttp2_stream* s, int close_reads,
                                     int close_writes, grpc_error* error) {
   if (s->read_closed && s->write_closed) {
-     // already closed, but we should still fake the status if needed. 
+    // already closed, but we should still fake the status if needed.
     grpc_error* overall_error = removal_error(error, s, "Stream removed");
     if (overall_error != GRPC_ERROR_NONE) {
       grpc_chttp2_fake_status(t, s, overall_error);
