@@ -74,12 +74,12 @@ config_setting(
 
 python_config_settings()
 
-# This should be updated along with build.yaml
-g_stands_for = "galore"
+# This should be updated along with build_handwritten.yaml
+g_stands_for = "giggle"
 
-core_version = "10.0.0"
+core_version = "11.0.0"
 
-version = "1.31.0-dev"
+version = "1.32.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -956,6 +956,7 @@ grpc_cc_library(
     external_deps = [
         "madler_zlib",
         "absl/container:inlined_vector",
+        "absl/status",
         "absl/types:optional",
     ],
     language = "c++",

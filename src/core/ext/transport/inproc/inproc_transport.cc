@@ -1132,7 +1132,8 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 
 void close_transport_locked(inproc_transport* t) {
   INPROC_LOG(GPR_INFO, "close_transport %p %d", t, t->is_closed);
-  t->state_tracker.SetState(GRPC_CHANNEL_SHUTDOWN, "close transport");
+  t->state_tracker.SetState(GRPC_CHANNEL_SHUTDOWN, absl::Status(),
+                            "close transport");
   if (!t->is_closed) {
     t->is_closed = true;
     /* Also end all streams on this transport */

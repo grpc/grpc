@@ -450,8 +450,8 @@ Q = @
 endif
 
 CORE_VERSION = 11.0.0
-CPP_VERSION = 1.31.0-dev
-CSHARP_VERSION = 2.31.0-dev
+CPP_VERSION = 1.32.0-dev
+CSHARP_VERSION = 2.32.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -6236,6 +6236,7 @@ endif
 LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/base/dynamic_annotations.cc \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
+    third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc \
@@ -6244,9 +6245,18 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
     third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
     third_party/abseil-cpp/absl/base/log_severity.cc \
+    third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
+    third_party/abseil-cpp/absl/debugging/internal/demangle.cc \
+    third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc \
+    third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc \
+    third_party/abseil-cpp/absl/debugging/stacktrace.cc \
+    third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
+    third_party/abseil-cpp/absl/status/status.cc \
+    third_party/abseil-cpp/absl/status/status_payload_printer.cc \
     third_party/abseil-cpp/absl/strings/ascii.cc \
     third_party/abseil-cpp/absl/strings/charconv.cc \
+    third_party/abseil-cpp/absl/strings/cord.cc \
     third_party/abseil-cpp/absl/strings/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \

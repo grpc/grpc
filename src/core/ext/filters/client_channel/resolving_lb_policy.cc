@@ -114,10 +114,11 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     return parent_->channel_control_helper()->CreateSubchannel(args);
   }
 
-  void UpdateState(grpc_connectivity_state state,
+  void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                    std::unique_ptr<SubchannelPicker> picker) override {
     if (parent_->resolver_ == nullptr) return;  // Shutting down.
-    parent_->channel_control_helper()->UpdateState(state, std::move(picker));
+    parent_->channel_control_helper()->UpdateState(state, status,
+                                                   std::move(picker));
   }
 
   void RequestReresolution() override {
@@ -160,7 +161,7 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
   if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: starting name resolution", this);
   }
-  channel_control_helper()->UpdateState(GRPC_CHANNEL_CONNECTING,
+  channel_control_helper()->UpdateState(GRPC_CHANNEL_CONNECTING, absl::Status(),
                                         absl::make_unique<QueuePicker>(Ref()));
   resolver_->StartLocked();
 }
@@ -214,7 +215,7 @@ void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
         "Resolver transient failure", &error, 1);
     helper_->ResolverTransientFailure(GRPC_ERROR_REF(state_error));
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(state_error),
         absl::make_unique<TransientFailurePicker>(state_error));
   }
   GRPC_ERROR_UNREF(error);

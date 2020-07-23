@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.31.0-dev'
+  version = '1.32.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -176,6 +176,7 @@ Pod::Spec.new do |s|
     abseil_version = '1.20200225.0'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
