@@ -202,8 +202,13 @@ message LoadBalancerStatsRequest {
 }
 
 message LoadBalancerStatsResponse {
+  message RpcsByPeer {
+    // The number of completed RPCs for each peer.
+    map<string, int32> rpcs_by_peer = 1;
+  }
   // The number of completed RPCs for each peer.
   map<string, int32> rpcs_by_peer = 1;
   // The number of RPCs that failed to record a remote peer.
   int32 num_failures = 2;
+  map<string, RpcsByPeer> rpcs_by_method = 3;
 }

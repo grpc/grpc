@@ -1,0 +1,15 @@
+diff --git a/template/fake.rb.in b/template/fake.rb.in
+index f1da719ecb..e0b649fb28 100644
+--- a/template/fake.rb.in
++++ b/template/fake.rb.in
+@@ -27,6 +27,10 @@ case "$0" in /*) r=-r"$0";; *) r=-r"./$0";; esac
+ exec $ruby "$r" "$@"
+ =end
+ =baseruby
++<% if RUBY_VERSION < "2.7" %>
++def ruby2_keywords(*)
++end
++<% end %>
+ class Object
+   remove_const :CROSS_COMPILING if defined?(CROSS_COMPILING)
+   CROSS_COMPILING = RUBY_PLATFORM

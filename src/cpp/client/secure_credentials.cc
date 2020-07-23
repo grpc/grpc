@@ -97,7 +97,8 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
 
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
-  return WrapChannelCredentials(grpc_google_default_credentials_create());
+  return WrapChannelCredentials(
+      grpc_google_default_credentials_create(nullptr));
 }
 
 // Builds SSL Credentials given SSL specific options

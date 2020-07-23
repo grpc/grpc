@@ -416,28 +416,6 @@ LIBS = m pthread ws2_32 dbghelp
 LDFLAGS += -pthread
 endif
 
-# If we are installing into a non-default prefix, both
-# the libraries we build, and the apps users build,
-# need to know how to find the libraries they depend on.
-# There is much gnashing of teeth about this subject.
-# It's tricky to do that without editing images during install,
-# as you don't want tests during build to find previously installed and
-# now stale libraries, etc.
-ifeq ($(SYSTEM),Linux)
-ifneq ($(prefix),/usr)
-# Linux best practice for rpath on installed files is probably:
-# 1) .pc file provides -Wl,-rpath,$(prefix)/lib
-# 2) binaries we install into $(prefix)/bin use -Wl,-rpath,$ORIGIN/../lib
-# 3) libraries we install into $(prefix)/lib use -Wl,-rpath,$ORIGIN
-# cf. https://www.akkadia.org/drepper/dsohowto.pdf
-# Doing all of that right is hard, but using -Wl,-rpath,$ORIGIN is always
-# safe, and solves problems seen in the wild.  Note that $ORIGIN
-# is a literal string interpreted much later by ld.so.  Escape it
-# here with a dollar sign so Make doesn't expand $O.
-LDFLAGS += '-Wl,-rpath,$$ORIGIN'
-endif
-endif
-
 #
 # The steps for cross-compiling are as follows:
 # First, clone and make install of grpc using the native compilers for the host.
@@ -472,8 +450,8 @@ Q = @
 endif
 
 CORE_VERSION = 11.0.0
-CPP_VERSION = 1.31.0-dev
-CSHARP_VERSION = 2.31.0-dev
+CPP_VERSION = 1.32.0-dev
+CSHARP_VERSION = 2.32.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -963,7 +941,7 @@ openssl_dep_message:
 	@echo "Your system doesn't have one, and either the third_party directory"
 	@echo "doesn't have it, or your compiler can't build BoringSSL."
 	@echo
-	@echo "Please consult INSTALL to get more information."
+	@echo "Please consult BUILDING.md to get more information."
 	@echo
 	@echo "If you need information about why these tests failed, run:"
 	@echo
@@ -977,7 +955,7 @@ protobuf_dep_message:
 	@echo "The target you are trying to run requires protobuf 3.12.0+"
 	@echo "Your system doesn't have it, and neither does the third_party directory."
 	@echo
-	@echo "Please consult INSTALL to get more information."
+	@echo "Please consult BUILDING.md to get more information."
 	@echo
 	@echo "If you need information about why these tests failed, run:"
 	@echo
@@ -991,7 +969,7 @@ protoc_dep_message:
 	@echo "The target you are trying to run requires protobuf-compiler 3.12.0+"
 	@echo "Your system doesn't have it, and neither does the third_party directory."
 	@echo
-	@echo "Please consult INSTALL to get more information."
+	@echo "Please consult BUILDING.md to get more information."
 	@echo
 	@echo "If you need information about why these tests failed, run:"
 	@echo
@@ -1006,8 +984,17 @@ systemtap_dep_error:
 	@echo "to build requires systemtap 2.7+ (on Linux) or dtrace (on other "
 	@echo "platforms such as Solaris and *BSD). "
 	@echo
-	@echo "Please consult INSTALL to get more information."
+	@echo "Please consult BUILDING.md to get more information."
 	@echo
+
+install_not_supported_message:
+	@echo
+	@echo "Installing via 'make' is no longer supported. Use cmake or bazel instead."
+	@echo
+	@echo "Please consult BUILDING.md to get more information."
+	@echo
+
+install_not_supported_error: install_not_supported_message stop
 
 stop:
 	@false
@@ -1293,6 +1280,7 @@ static_metadata_test: $(BINDIR)/$(CONFIG)/static_metadata_test
 stats_test: $(BINDIR)/$(CONFIG)/stats_test
 status_metadata_test: $(BINDIR)/$(CONFIG)/status_metadata_test
 status_util_test: $(BINDIR)/$(CONFIG)/status_util_test
+stranded_event_test: $(BINDIR)/$(CONFIG)/stranded_event_test
 streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 string_ref_test: $(BINDIR)/$(CONFIG)/string_ref_test
 test_cpp_client_credentials_test: $(BINDIR)/$(CONFIG)/test_cpp_client_credentials_test
@@ -1653,6 +1641,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/stats_test \
   $(BINDIR)/$(CONFIG)/status_metadata_test \
   $(BINDIR)/$(CONFIG)/status_util_test \
+  $(BINDIR)/$(CONFIG)/stranded_event_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/string_ref_test \
   $(BINDIR)/$(CONFIG)/test_cpp_client_credentials_test \
@@ -1811,6 +1800,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/stats_test \
   $(BINDIR)/$(CONFIG)/status_metadata_test \
   $(BINDIR)/$(CONFIG)/status_util_test \
+  $(BINDIR)/$(CONFIG)/stranded_event_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/string_ref_test \
   $(BINDIR)/$(CONFIG)/test_cpp_client_credentials_test \
@@ -2336,6 +2326,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/status_metadata_test || ( echo test status_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_util_test"
 	$(Q) $(BINDIR)/$(CONFIG)/status_util_test || ( echo test status_util_test failed ; exit 1 )
+	$(E) "[RUN]     Testing stranded_event_test"
+	$(Q) $(BINDIR)/$(CONFIG)/stranded_event_test || ( echo test stranded_event_test failed ; exit 1 )
 	$(E) "[RUN]     Testing streaming_throughput_test"
 	$(Q) $(BINDIR)/$(CONFIG)/streaming_throughput_test || ( echo test streaming_throughput_test failed ; exit 1 )
 	$(E) "[RUN]     Testing string_ref_test"
@@ -2980,255 +2972,17 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cpp
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-install: install_c install_cxx install-plugins install-certs
+install: install_not_supported_error
 
-install_c: install-headers_c install-static_c install-shared_c
+install_c: install_not_supported_error
 
-install_cxx: install-headers_cxx install-static_cxx install-shared_cxx
+install_cxx: install_not_supported_error
 
-install_csharp: install-shared_csharp install_c
+install_csharp: install_not_supported_error
 
-install_grpc_csharp_ext: install_csharp
+install-static: install_not_supported_error
 
-install-headers: install-headers_c install-headers_cxx
-
-install-headers_c:
-	$(E) "[INSTALL] Installing public C headers"
-	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
-	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
-
-install-headers_cxx:
-	$(E) "[INSTALL] Installing public C++ headers"
-	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
-	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
-
-install-static: install-static_c install-static_cxx
-
-install-static_c: static_c strip-static_c install-pkg-config_c
-	$(E) "[INSTALL] Installing libaddress_sorting.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(prefix)/lib/libaddress_sorting.a
-	$(E) "[INSTALL] Installing libgpr.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr.a $(prefix)/lib/libgpr.a
-	$(E) "[INSTALL] Installing libgrpc.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc.a $(prefix)/lib/libgrpc.a
-	$(E) "[INSTALL] Installing libgrpc_csharp_ext.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(prefix)/lib/libgrpc_csharp_ext.a
-	$(E) "[INSTALL] Installing libgrpc_unsecure.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(prefix)/lib/libgrpc_unsecure.a
-	$(E) "[INSTALL] Installing libre2.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libre2.a $(prefix)/lib/libre2.a
-	$(E) "[INSTALL] Installing libupb.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libupb.a $(prefix)/lib/libupb.a
-
-install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
-	$(E) "[INSTALL] Installing libgrpc++.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(prefix)/lib/libgrpc++.a
-	$(E) "[INSTALL] Installing libgrpc++_alts.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(prefix)/lib/libgrpc++_alts.a
-	$(E) "[INSTALL] Installing libgrpc++_error_details.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(prefix)/lib/libgrpc++_error_details.a
-	$(E) "[INSTALL] Installing libgrpc++_reflection.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(prefix)/lib/libgrpc++_reflection.a
-	$(E) "[INSTALL] Installing libgrpc++_unsecure.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(prefix)/lib/libgrpc++_unsecure.a
-	$(E) "[INSTALL] Installing libgrpcpp_channelz.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a $(prefix)/lib/libgrpcpp_channelz.a
-
-
-
-install-shared_c: shared_c strip-shared_c install-pkg-config_c
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libaddress_sorting.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libaddress_sorting.so.11
-	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libaddress_sorting.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgpr.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgpr.so.11
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgpr.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc.so.11
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc_csharp_ext.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_csharp_ext.so.11
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_csharp_ext.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc_unsecure.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_unsecure.so.11
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_unsecure.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libre2.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libre2.so.11
-	$(Q) ln -sf $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libre2.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libupb.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libupb.so.11
-	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libupb.so
-endif
-ifneq ($(SYSTEM),MINGW32)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig || true
-endif
-endif
-
-
-install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c install-pkg-config_cxx
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_alts.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_alts.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_alts.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_error_details.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_error_details.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_error_details.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_reflection.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_reflection.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_reflection.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_unsecure.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_unsecure.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_unsecure.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpcpp_channelz.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpcpp_channelz.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpcpp_channelz.so
-endif
-ifneq ($(SYSTEM),MINGW32)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig || true
-endif
-endif
-
-
-install-shared_csharp: shared_csharp strip-shared_csharp
-ifneq ($(SYSTEM),MINGW32)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig || true
-endif
-endif
-
-
-install-plugins: $(PROTOC_PLUGINS)
-	$(E) "[INSTALL] Installing grpc protoc plugins"
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(prefix)/bin/grpc_cpp_plugin
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_csharp_plugin $(prefix)/bin/grpc_csharp_plugin
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_node_plugin $(prefix)/bin/grpc_node_plugin
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(prefix)/bin/grpc_objective_c_plugin
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_php_plugin $(prefix)/bin/grpc_php_plugin
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_python_plugin $(prefix)/bin/grpc_python_plugin
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
-
-install-grpc-cli: grpc_cli
-	$(E) "[INSTALL] Installing grpc cli"
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cli $(prefix)/bin/grpc_cli
-
-install-pkg-config_c: pc_c pc_c_unsecure
-	$(E) "[INSTALL] Installing C pkg-config files"
-	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
-	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
-	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
-
-install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
-	$(E) "[INSTALL] Installing C++ pkg-config files"
-	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
-	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
-
-install-certs: etc/roots.pem
-	$(E) "[INSTALL] Installing root certificates"
-	$(Q) $(INSTALL) -d $(prefix)/share/grpc
-	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
+install-certs: install_not_supported_error
 
 clean:
 	$(E) "[CLEAN]   Cleaning build directories."
@@ -3758,144 +3512,78 @@ LIBGRPC_SRC = \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
-    src/core/ext/upb-generated/envoy/annotations/deprecation.upbdefs.c \
     src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
-    src/core/ext/upb-generated/envoy/annotations/resource.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/common.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/secret.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/tls.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cds.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/address.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/backoff.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/base.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/discovery.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/eds.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/lds.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/rds.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/srds.upbdefs.c \
     src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upbdefs.c \
     src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upbdefs.c \
     src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
-    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upbdefs.c \
     src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upbdefs.c \
     src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
-    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upbdefs.c \
     src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
-    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/http.upb.c \
-    src/core/ext/upb-generated/envoy/type/http.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/regex.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/string.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
-    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
-    src/core/ext/upb-generated/envoy/type/percent.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
-    src/core/ext/upb-generated/envoy/type/range.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/semantic_version.upb.c \
-    src/core/ext/upb-generated/envoy/type/semantic_version.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c \
-    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upbdefs.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
-    src/core/ext/upb-generated/gogoproto/gogo.upbdefs.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
-    src/core/ext/upb-generated/google/api/annotations.upbdefs.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
-    src/core/ext/upb-generated/google/api/http.upbdefs.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
-    src/core/ext/upb-generated/google/protobuf/any.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
     src/core/ext/upb-generated/google/protobuf/duration.upb.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upbdefs.c \
     src/core/ext/upb-generated/google/protobuf/empty.upb.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upbdefs.c \
     src/core/ext/upb-generated/google/protobuf/struct.upb.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upbdefs.c \
     src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upbdefs.c \
     src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upb-generated/google/rpc/status.upb.c \
-    src/core/ext/upb-generated/google/rpc/status.upbdefs.c \
     src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/sensitive.upbdefs.c \
     src/core/ext/upb-generated/udpa/annotations/status.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/status.upbdefs.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
-    src/core/ext/upb-generated/validate/validate.upbdefs.c \
     src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
@@ -4469,141 +4157,75 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
-    src/core/ext/upb-generated/envoy/annotations/deprecation.upbdefs.c \
     src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
-    src/core/ext/upb-generated/envoy/annotations/resource.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/common.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/secret.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/tls.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cds.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/address.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/backoff.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/base.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/discovery.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/eds.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/lds.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/rds.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upbdefs.c \
     src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/srds.upbdefs.c \
     src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upbdefs.c \
     src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upbdefs.c \
     src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
-    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upbdefs.c \
     src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upbdefs.c \
     src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
-    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upbdefs.c \
     src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
-    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/http.upb.c \
-    src/core/ext/upb-generated/envoy/type/http.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/regex.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/string.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
-    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
-    src/core/ext/upb-generated/envoy/type/percent.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
-    src/core/ext/upb-generated/envoy/type/range.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/semantic_version.upb.c \
-    src/core/ext/upb-generated/envoy/type/semantic_version.upbdefs.c \
     src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c \
-    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upbdefs.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
-    src/core/ext/upb-generated/gogoproto/gogo.upbdefs.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
-    src/core/ext/upb-generated/google/api/annotations.upbdefs.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
-    src/core/ext/upb-generated/google/api/http.upbdefs.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
-    src/core/ext/upb-generated/google/protobuf/any.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upbdefs.c \
+    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
     src/core/ext/upb-generated/google/protobuf/duration.upb.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upbdefs.c \
     src/core/ext/upb-generated/google/protobuf/empty.upb.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upbdefs.c \
     src/core/ext/upb-generated/google/protobuf/struct.upb.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upbdefs.c \
     src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upbdefs.c \
     src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upb-generated/google/rpc/status.upb.c \
-    src/core/ext/upb-generated/google/rpc/status.upbdefs.c \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/sensitive.upbdefs.c \
     src/core/ext/upb-generated/udpa/annotations/status.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/status.upbdefs.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
-    src/core/ext/upb-generated/validate/validate.upbdefs.c \
     src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
@@ -5013,7 +4635,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
     include/grpcpp/generic/generic_stub.h \
-    include/grpcpp/generic/generic_stub_impl.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
     include/grpcpp/impl/call.h \
@@ -5092,7 +4713,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/resource_quota.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
-    include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
     include/grpcpp/security/server_credentials_impl.h \
@@ -5346,7 +4966,6 @@ LIBGRPC++_REFLECTION_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/ext/proto_server_reflection_plugin.h \
     include/grpcpp/ext/proto_server_reflection_plugin.h \
-    include/grpcpp/ext/proto_server_reflection_plugin_impl.h \
 
 LIBGRPC++_REFLECTION_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_REFLECTION_SRC))))
 
@@ -5706,7 +5325,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
     include/grpcpp/generic/generic_stub.h \
-    include/grpcpp/generic/generic_stub_impl.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
     include/grpcpp/impl/call.h \
@@ -5785,7 +5403,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/resource_quota.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
-    include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
     include/grpcpp/security/server_credentials_impl.h \
@@ -6453,23 +6070,6 @@ LIBUPB_SRC = \
     third_party/upb/upb/port.c \
     third_party/upb/upb/table.c \
     third_party/upb/upb/upb.c \
-    third_party/upb/upb/def.c \
-    third_party/upb/upb/reflection.c \
-    third_party/upb/upb/text_encode.c \
-    src/core/ext/upb-generated/google/protobuf/any.upb.c \
-    src/core/ext/upb-generated/google/protobuf/any.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upbdefs.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upbdefs.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -6632,6 +6232,7 @@ endif
 LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/base/dynamic_annotations.cc \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
+    third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc \
@@ -6640,9 +6241,18 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
     third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
     third_party/abseil-cpp/absl/base/log_severity.cc \
+    third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
+    third_party/abseil-cpp/absl/debugging/internal/demangle.cc \
+    third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc \
+    third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc \
+    third_party/abseil-cpp/absl/debugging/stacktrace.cc \
+    third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
+    third_party/abseil-cpp/absl/status/status.cc \
+    third_party/abseil-cpp/absl/status/status_payload_printer.cc \
     third_party/abseil-cpp/absl/strings/ascii.cc \
     third_party/abseil-cpp/absl/strings/charconv.cc \
+    third_party/abseil-cpp/absl/strings/cord.cc \
     third_party/abseil-cpp/absl/strings/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
@@ -18321,6 +17931,52 @@ endif
 endif
 
 
+STRANDED_EVENT_TEST_SRC = \
+    test/core/end2end/cq_verifier.cc \
+    test/core/iomgr/stranded_event_test.cc \
+
+STRANDED_EVENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STRANDED_EVENT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/stranded_event_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
+
+$(BINDIR)/$(CONFIG)/stranded_event_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/stranded_event_test: $(PROTOBUF_DEP) $(STRANDED_EVENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(STRANDED_EVENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/stranded_event_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/cq_verifier.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/stranded_event_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_stranded_event_test: $(STRANDED_EVENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(STRANDED_EVENT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 STREAMING_THROUGHPUT_TEST_SRC = \
     $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
@@ -20358,7 +20014,7 @@ test/cpp/util/test_config_cc.cc: $(OPENSSL_DEP)
 test/cpp/util/test_credentials_provider.cc: $(OPENSSL_DEP)
 endif
 
-.PHONY: all strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_c test_cxx install install_c install_cxx install-headers install-headers_c install-headers_cxx install-shared install-shared_c install-shared_cxx install-static install-static_c install-static_cxx strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean
+.PHONY: all strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_c test_cxx install install_c install_cxx install_csharp install-static install-certs strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean
 
 .PHONY: printvars
 printvars:

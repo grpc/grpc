@@ -119,6 +119,18 @@ GRPCAPI void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache);
 GRPCAPI grpc_arg
 grpc_ssl_session_cache_create_channel_arg(grpc_ssl_session_cache* cache);
 
+/** --- grpc_call_credentials object.
+
+   A call credentials object represents a way to authenticate on a particular
+   call. These credentials can be composed with a channel credentials object
+   so that they are sent with every call on this channel.  */
+
+typedef struct grpc_call_credentials grpc_call_credentials;
+
+/** Releases a call credentials object.
+   The creator of the credentials object is responsible for its release. */
+GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
+
 /** --- grpc_channel_credentials object. ---
 
    A channel credentials object represents a way to authenticate a client on a
@@ -133,8 +145,23 @@ GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials* creds);
 /** Creates default credentials to connect to a google gRPC service.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. The security level of the
-   resulting connection is GRPC_PRIVACY_AND_INTEGRITY. */
-GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(void);
+   resulting connection is GRPC_PRIVACY_AND_INTEGRITY.
+
+   If specified, the supplied call credentials object will be attached to the
+   returned channel credentials object. The call_credentials object must remain
+   valid throughout the lifetime of the returned grpc_channel_credentials
+   object. It is expected that the call credentials object was generated
+   according to the Application Default Credentials mechanism and asserts the
+   identity of the default service account of the machine. Supplying any other
+   sort of call credential will result in undefined behavior, up to and
+   including the sudden and unexpected failure of RPCs.
+
+   If nullptr is supplied, the returned channel credentials object will use a
+   call credentials object based on the Application Default Credentials
+   mechanism.
+*/
+GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(
+    grpc_call_credentials* call_credentials);
 
 /** Callback for getting the SSL roots override from the application.
    In case of success, *pem_roots_certs must be set to a NULL terminated string
@@ -272,23 +299,13 @@ GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options, void* reserved);
 
-/** --- grpc_call_credentials object.
-
-   A call credentials object represents a way to authenticate on a particular
-   call. These credentials can be composed with a channel credentials object
-   so that they are sent with every call on this channel.  */
-
-typedef struct grpc_call_credentials grpc_call_credentials;
-
-/** Releases a call credentials object.
-   The creator of the credentials object is responsible for its release. */
-GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
-
 /** Creates a composite channel credentials object. The security level of
  * resulting connection is determined by channel_creds. */
 GRPCAPI grpc_channel_credentials* grpc_composite_channel_credentials_create(
     grpc_channel_credentials* channel_creds, grpc_call_credentials* call_creds,
     void* reserved);
+
+/** --- composite credentials. */
 
 /** Creates a composite call credentials object. */
 GRPCAPI grpc_call_credentials* grpc_composite_call_credentials_create(

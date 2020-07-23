@@ -18,8 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
 
@@ -37,7 +40,8 @@ class XdsResolver : public Resolver {
       : Resolver(std::move(args.work_serializer),
                  std::move(args.result_handler)),
         args_(grpc_channel_args_copy(args.args)),
-        interested_parties_(args.pollset_set) {
+        interested_parties_(args.pollset_set),
+        config_selector_(MakeRefCounted<XdsConfigSelector>()) {
     char* path = args.uri->path;
     if (path[0] == '/') ++path;
     server_name_ = path;
@@ -77,10 +81,18 @@ class XdsResolver : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
   };
 
+  class XdsConfigSelector : public ConfigSelector {
+   public:
+    CallConfig GetCallConfig(GetCallConfigArgs args) override {
+      return CallConfig();
+    }
+  };
+
   std::string server_name_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
+  RefCountedPtr<XdsConfigSelector> config_selector_;
 };
 
 void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
@@ -90,10 +102,13 @@ void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated service config: %s",
             resolver_.get(), service_config->json_string().c_str());
   }
-  grpc_arg xds_client_arg = resolver_->xds_client_->MakeChannelArg();
+  grpc_arg new_args[] = {
+      resolver_->xds_client_->MakeChannelArg(),
+      resolver_->config_selector_->MakeChannelArg(),
+  };
   Result result;
-  result.args =
-      grpc_channel_args_copy_and_add(resolver_->args_, &xds_client_arg, 1);
+  result.args = grpc_channel_args_copy_and_add(resolver_->args_, new_args,
+                                               GPR_ARRAY_SIZE(new_args));
   result.service_config = std::move(service_config);
   resolver_->result_handler()->ReturnResult(std::move(result));
 }
@@ -144,8 +159,6 @@ void XdsResolver::StartLocked() {
 
 class XdsResolverFactory : public ResolverFactory {
  public:
-  explicit XdsResolverFactory(const char* scheme) : scheme_(scheme) {}
-
   bool IsValidUri(const grpc_uri* uri) const override {
     if (GPR_UNLIKELY(0 != strcmp(uri->authority, ""))) {
       gpr_log(GPR_ERROR, "URI authority not supported");
@@ -159,14 +172,8 @@ class XdsResolverFactory : public ResolverFactory {
     return MakeOrphanable<XdsResolver>(std::move(args));
   }
 
-  const char* scheme() const override { return scheme_; }
-
- private:
-  const char* scheme_;
+  const char* scheme() const override { return "xds"; }
 };
-
-constexpr char kXdsScheme[] = "xds";
-constexpr char kXdsExperimentalScheme[] = "xds-experimental";
 
 }  // namespace
 
@@ -174,11 +181,7 @@ constexpr char kXdsExperimentalScheme[] = "xds-experimental";
 
 void grpc_resolver_xds_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::XdsResolverFactory>(grpc_core::kXdsScheme));
-  // TODO(roth): Remov this in the 1.31 release.
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::XdsResolverFactory>(
-          grpc_core::kXdsExperimentalScheme));
+      absl::make_unique<grpc_core::XdsResolverFactory>());
 }
 
 void grpc_resolver_xds_shutdown() {}

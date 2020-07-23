@@ -280,28 +280,6 @@
   LDFLAGS += -pthread
   endif
 
-  # If we are installing into a non-default prefix, both
-  # the libraries we build, and the apps users build,
-  # need to know how to find the libraries they depend on.
-  # There is much gnashing of teeth about this subject.
-  # It's tricky to do that without editing images during install,
-  # as you don't want tests during build to find previously installed and
-  # now stale libraries, etc.
-  ifeq ($(SYSTEM),Linux)
-  ifneq ($(prefix),/usr)
-  # Linux best practice for rpath on installed files is probably:
-  # 1) .pc file provides -Wl,-rpath,$(prefix)/lib
-  # 2) binaries we install into $(prefix)/bin use -Wl,-rpath,$ORIGIN/../lib
-  # 3) libraries we install into $(prefix)/lib use -Wl,-rpath,$ORIGIN
-  # cf. https://www.akkadia.org/drepper/dsohowto.pdf
-  # Doing all of that right is hard, but using -Wl,-rpath,$ORIGIN is always
-  # safe, and solves problems seen in the wild.  Note that $ORIGIN
-  # is a literal string interpreted much later by ld.so.  Escape it
-  # here with a dollar sign so Make doesn't expand $O.
-  LDFLAGS += '-Wl,-rpath,$$ORIGIN'
-  endif
-  endif
-
   #
   # The steps for cross-compiling are as follows:
   # First, clone and make install of grpc using the native compilers for the host.
@@ -869,7 +847,7 @@
   	@echo "Your system doesn't have one, and either the third_party directory"
   	@echo "doesn't have it, or your compiler can't build BoringSSL."
   	@echo
-  	@echo "Please consult INSTALL to get more information."
+  	@echo "Please consult BUILDING.md to get more information."
   	@echo
   	@echo "If you need information about why these tests failed, run:"
   	@echo
@@ -883,7 +861,7 @@
   	@echo "The target you are trying to run requires protobuf 3.12.0+"
   	@echo "Your system doesn't have it, and neither does the third_party directory."
   	@echo
-  	@echo "Please consult INSTALL to get more information."
+  	@echo "Please consult BUILDING.md to get more information."
   	@echo
   	@echo "If you need information about why these tests failed, run:"
   	@echo
@@ -897,7 +875,7 @@
   	@echo "The target you are trying to run requires protobuf-compiler 3.12.0+"
   	@echo "Your system doesn't have it, and neither does the third_party directory."
   	@echo
-  	@echo "Please consult INSTALL to get more information."
+  	@echo "Please consult BUILDING.md to get more information."
   	@echo
   	@echo "If you need information about why these tests failed, run:"
   	@echo
@@ -912,8 +890,17 @@
   	@echo "to build requires systemtap 2.7+ (on Linux) or dtrace (on other "
   	@echo "platforms such as Solaris and *BSD). "
   	@echo
-  	@echo "Please consult INSTALL to get more information."
+  	@echo "Please consult BUILDING.md to get more information."
   	@echo
+
+  install_not_supported_message:
+  	@echo
+  	@echo "Installing via 'make' is no longer supported. Use cmake or bazel instead."
+  	@echo
+  	@echo "Please consult BUILDING.md to get more information."
+  	@echo
+
+  install_not_supported_error: install_not_supported_message stop
 
   stop:
   	@false
@@ -1343,125 +1330,17 @@
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-  install: install_c install_cxx install-plugins install-certs
+  install: install_not_supported_error
 
-  install_c: install-headers_c install-static_c install-shared_c
+  install_c: install_not_supported_error
 
-  install_cxx: install-headers_cxx install-static_cxx install-shared_cxx
+  install_cxx: install_not_supported_error
 
-  install_csharp: install-shared_csharp install_c
+  install_csharp: install_not_supported_error
 
-  install_grpc_csharp_ext: install_csharp
+  install-static: install_not_supported_error
 
-  install-headers: install-headers_c install-headers_cxx
-
-  install-headers_c:
-  	$(E) "[INSTALL] Installing public C headers"
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
-
-  install-headers_cxx:
-  	$(E) "[INSTALL] Installing public C++ headers"
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
-
-  install-static: install-static_c install-static_cxx
-
-  install-static_c: static_c strip-static_c install-pkg-config_c
-  % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.language == "c":
-  % if lib.build == "all":
-  % if not lib.get('external_deps', None):
-  	$(E) "[INSTALL] Installing lib${lib.name}.a"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
-  % endif
-  % endif
-  % endif
-  % endif
-  % endfor
-
-  install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
-  % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.language == "c++":
-  % if lib.build == "all":
-  	$(E) "[INSTALL] Installing lib${lib.name}.a"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
-  % endif
-  % endif
-  % endif
-  % endfor
-
-  <%def name="install_shared(lang_filter)">\
-  % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.language == lang_filter:
-  % if lib.build == "all":
-  % if not lib.get('external_deps', None):
-  	$(E) "[INSTALL] Installing $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})
-  ifeq ($(SYSTEM),MINGW32)
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]})-dll.a $(prefix)/lib/lib${lib.name}.a
-  else ifneq ($(SYSTEM),Darwin)
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so
-  endif
-  % endif
-  % endif
-  % endif
-  % endif
-  % endfor
-  ifneq ($(SYSTEM),MINGW32)
-  ifneq ($(SYSTEM),Darwin)
-  	$(Q) ldconfig || true
-  endif
-  endif
-  </%def>
-
-  install-shared_c: shared_c strip-shared_c install-pkg-config_c
-  ${install_shared("c")}
-
-  install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c install-pkg-config_cxx
-  ${install_shared("c++")}
-
-  install-shared_csharp: shared_csharp strip-shared_csharp
-  ${install_shared("csharp")}
-
-  install-plugins: $(PROTOC_PLUGINS)
-  	$(E) "[INSTALL] Installing grpc protoc plugins"
-  % for tgt in targets:
-  % if tgt.build == 'protoc':
-  	$(Q) $(INSTALL) -d $(prefix)/bin
-  	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/${tgt.name} $(prefix)/bin/${tgt.name}
-  % endif
-  % endfor
-
-  install-grpc-cli: grpc_cli
-  	$(E) "[INSTALL] Installing grpc cli"
-  	$(Q) $(INSTALL) -d $(prefix)/bin
-  	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cli $(prefix)/bin/grpc_cli
-
-  install-pkg-config_c: pc_c pc_c_unsecure
-  	$(E) "[INSTALL] Installing C pkg-config files"
-  	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
-  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
-  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
-
-  install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
-  	$(E) "[INSTALL] Installing C++ pkg-config files"
-  	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
-  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
-
-  install-certs: etc/roots.pem
-  	$(E) "[INSTALL] Installing root certificates"
-  	$(Q) $(INSTALL) -d $(prefix)/share/grpc
-  	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
+  install-certs: install_not_supported_error
 
   clean:
   	$(E) "[CLEAN]   Cleaning build directories."
@@ -1937,10 +1816,7 @@
   dep_error openssl_dep_error openssl_dep_message git_update stop \
   buildtests buildtests_c buildtests_cxx \
   test test_c test_cxx \
-  install install_c install_cxx \
-  install-headers install-headers_c install-headers_cxx \
-  install-shared install-shared_c install-shared_cxx \
-  install-static install-static_c install-static_cxx \
+  install install_c install_cxx install_csharp install-static install-certs \
   strip strip-shared strip-static \
   strip_c strip-shared_c strip-static_c \
   strip_cxx strip-shared_cxx strip-static_cxx \

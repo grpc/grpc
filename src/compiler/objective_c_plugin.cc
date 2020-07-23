@@ -90,8 +90,10 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       return true;
     }
 
+    bool grpc_local_import = false;
     ::std::string framework;
     ::std::string pb_runtime_import_prefix;
+    ::std::string grpc_local_import_prefix;
     std::vector<::std::string> params_list =
         grpc_generator::tokenize(parameter, ",");
     for (auto param_str = params_list.begin(); param_str != params_list.end();
@@ -117,6 +119,13 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         }
         pb_runtime_import_prefix = param[1];
         grpc_generator::StripSuffix(&pb_runtime_import_prefix, "/");
+      } else if (param[0] == "grpc_local_import_prefix") {
+        grpc_local_import = true;
+        if (param.size() != 2) {
+          *error = grpc::string("Format: grpc_local_import_prefix=dir/");
+          return false;
+        }
+        grpc_local_import_prefix = param[1];
       }
     }
 
@@ -161,14 +170,30 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         imports = FrameworkImport(file_name + ".pbobjc.h", framework);
       }
 
-      ::std::string system_imports =
-          SystemImport("ProtoRPC/ProtoService.h") +
-          (generator_params.no_v1_compatibility
-               ? SystemImport("ProtoRPC/ProtoRPC.h")
-               : SystemImport("ProtoRPC/ProtoRPCLegacy.h"));
-      if (!generator_params.no_v1_compatibility) {
-        system_imports += SystemImport("RxLibrary/GRXWriteable.h") +
-                          SystemImport("RxLibrary/GRXWriter.h");
+      ::std::string system_imports;
+      if (grpc_local_import) {
+        system_imports =
+            LocalImport(grpc_local_import_prefix + "ProtoRPC/ProtoService.h");
+        if (generator_params.no_v1_compatibility) {
+          system_imports +=
+              LocalImport(grpc_local_import_prefix + "ProtoRPC/ProtoRPC.h");
+        } else {
+          system_imports += LocalImport(grpc_local_import_prefix +
+                                        "ProtoRPC/ProtoRPCLegacy.h");
+          system_imports += LocalImport(grpc_local_import_prefix +
+                                        "RxLibrary/GRXWriteable.h");
+          system_imports +=
+              LocalImport(grpc_local_import_prefix + "RxLibrary/GRXWriter.h");
+        }
+      } else {
+        system_imports = SystemImport("ProtoRPC/ProtoService.h");
+        if (generator_params.no_v1_compatibility) {
+          system_imports += SystemImport("ProtoRPC/ProtoRPC.h");
+        } else {
+          system_imports += SystemImport("ProtoRPC/ProtoRPCLegacy.h");
+          system_imports += SystemImport("RxLibrary/GRXWriteable.h");
+          system_imports += SystemImport("RxLibrary/GRXWriter.h");
+        }
       }
 
       ::std::string forward_declarations =
@@ -232,11 +257,24 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         imports = FrameworkImport(file_name + ".pbrpc.h", framework) +
                   FrameworkImport(file_name + ".pbobjc.h", framework);
       }
-      imports += (generator_params.no_v1_compatibility
-                      ? SystemImport("ProtoRPC/ProtoRPC.h")
-                      : SystemImport("ProtoRPC/ProtoRPCLegacy.h"));
-      if (!generator_params.no_v1_compatibility) {
-        imports += SystemImport("RxLibrary/GRXWriter+Immediate.h");
+
+      if (grpc_local_import) {
+        if (generator_params.no_v1_compatibility) {
+          imports +=
+              LocalImport(grpc_local_import_prefix + "ProtoRPC/ProtoRPC.h");
+        } else {
+          imports += LocalImport(grpc_local_import_prefix +
+                                 "ProtoRPC/ProtoRPCLegacy.h");
+          imports += LocalImport(grpc_local_import_prefix +
+                                 "RxLibrary/GRXWriter+Immediate.h");
+        }
+      } else {
+        if (generator_params.no_v1_compatibility) {
+          imports += SystemImport("ProtoRPC/ProtoRPC.h");
+        } else {
+          imports += SystemImport("ProtoRPC/ProtoRPCLegacy.h");
+          imports += SystemImport("RxLibrary/GRXWriter+Immediate.h");
+        }
       }
 
       ::std::string class_imports;

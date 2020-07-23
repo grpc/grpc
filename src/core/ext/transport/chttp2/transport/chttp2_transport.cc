@@ -20,6 +20,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -31,7 +33,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "absl/strings/str_format.h"
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -127,6 +128,7 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t);
 
 static void connectivity_state_set(grpc_chttp2_transport* t,
                                    grpc_connectivity_state state,
+                                   const absl::Status& status,
                                    const char* reason);
 
 static void benign_reclaimer(void* t, grpc_error* error);
@@ -562,7 +564,8 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     }
     GPR_ASSERT(error != GRPC_ERROR_NONE);
     t->closed_with_error = GRPC_ERROR_REF(error);
-    connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, "close_transport");
+    connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
+                           "close_transport");
     if (t->ping_state.is_delayed_ping_timer_set) {
       grpc_timer_cancel(&t->ping_state.delayed_ping_timer);
     }
@@ -1105,9 +1108,11 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             : static_cast<grpc_millis>(current_keepalive_time_ms *
                                        KEEPALIVE_TIME_BACKOFF_MULTIPLIER);
   }
+  absl::Status status = grpc_error_to_absl_status(t->goaway_error);
   /* lie: use transient failure from the transport to indicate goaway has been
    * received */
-  connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, "got_goaway");
+  connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+                         "got_goaway");
 }
 
 static void maybe_start_some_streams(grpc_chttp2_transport* t) {
@@ -1142,6 +1147,8 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
 
     if (t->next_stream_id >= MAX_CLIENT_STREAM_ID) {
       connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE,
+                             absl::Status(absl::StatusCode::kUnavailable,
+                                          "Transport Stream IDs exhausted"),
                              "no_more_stream_ids");
     }
 
@@ -2204,9 +2211,12 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
                                     grpc_chttp2_stream* s, int close_reads,
                                     int close_writes, grpc_error* error) {
   if (s->read_closed && s->write_closed) {
-    /* already closed */
+    /* already closed, but we should still fake the status if needed. */
+    grpc_error* overall_error = removal_error(error, s, "Stream removed");
+    if (overall_error != GRPC_ERROR_NONE) {
+      grpc_chttp2_fake_status(t, s, overall_error);
+    }
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
-    GRPC_ERROR_UNREF(error);
     return;
   }
   bool closed_read = false;
@@ -2916,10 +2926,11 @@ static void keepalive_watchdog_fired_locked(void* arg, grpc_error* error) {
 
 static void connectivity_state_set(grpc_chttp2_transport* t,
                                    grpc_connectivity_state state,
+                                   const absl::Status& status,
                                    const char* reason) {
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_INFO, "transport %p set connectivity_state=%d", t, state));
-  t->state_tracker.SetState(state, reason);
+  t->state_tracker.SetState(state, status, reason);
 }
 
 /*******************************************************************************
