@@ -15,42 +15,42 @@
  * limitations under the License.
  *
  */
-
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/ext/channelz_service_plugin.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/server_context.h>
-
 #include <stdlib.h>
 #include <unistd.h>
+
 #include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <thread>
 
+#include "grpc/grpc.h"
+#include "grpc/support/port_platform.h"
+#include "grpcpp/channel.h"
+#include "grpcpp/client_context.h"
+#include "grpcpp/create_channel.h"
+#include "grpcpp/ext/channelz_service_plugin.h"
+#include "grpcpp/grpcpp.h"
+#include "grpcpp/security/credentials.h"
+#include "grpcpp/security/server_credentials.h"
+#include "grpcpp/server.h"
+#include "grpcpp/server_builder.h"
+#include "grpcpp/server_context.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gtest/gtest.h"
 
+namespace {
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-
-#include <gtest/gtest.h>
+}  // namespace
 
 // Test variables
 std::string server_address("0.0.0.0:10000");
@@ -72,7 +72,6 @@ class EchoServerImpl final : public grpc::testing::TestService::Service {
 void RunServer(gpr_event* done_ev) {
   // register channelz service
   ::grpc::channelz::experimental::InitChannelzService();
-
   EchoServerImpl service;
   grpc::ServerBuilder builder;
   auto server_creds =
@@ -95,13 +94,12 @@ void RunClient(std::string client_id, gpr_event* done_ev) {
   std::shared_ptr<grpc::ChannelCredentials> channel_creds =
       grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
           custom_credentials_type, &channel_args);
-  std::unique_ptr<grpc::testing::TestService::Stub> stub =
-      grpc::testing::TestService::NewStub(
+  std::unique_ptr<grpc::testing::TestService::Stub> stub
+      = grpc::testing::TestService::NewStub(
           grpc::CreateChannel(server_address, channel_creds));
   gpr_log(GPR_INFO, "Client %s is echoing!", client_id.c_str());
   while (true) {
-    if (gpr_event_wait(done_ev, grpc_timeout_seconds_to_deadline(1)) !=
-        nullptr) {
+    if (gpr_event_wait(done_ev, grpc_timeout_seconds_to_deadline(1)) != nullptr) {
       return;
     }
     grpc::testing::Empty request;
@@ -118,8 +116,7 @@ bool WaitForConnection(int wait_server_seconds) {
       grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
           custom_credentials_type, &channel_args);
   auto channel = grpc::CreateChannel(server_address, channel_creds);
-  return channel->WaitForConnected(
-      grpc_timeout_seconds_to_deadline(wait_server_seconds));
+  return channel->WaitForConnected(grpc_timeout_seconds_to_deadline(wait_server_seconds));
 }
 
 // Test the channelz sampler
@@ -130,14 +127,12 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   std::thread server_thread(RunServer, &done_ev0);
   const int kWaitForServerSeconds = 10;
   ASSERT_TRUE(WaitForConnection(kWaitForServerSeconds));
-
   // client threads
   gpr_event done_ev1, done_ev2;
   gpr_event_init(&done_ev1);
   gpr_event_init(&done_ev2);
   std::thread client_thread_1(RunClient, "1", &done_ev1);
   std::thread client_thread_2(RunClient, "2", &done_ev2);
-
   // Run the channelz sampler
   std::string channelz_sampler_bin_path =
       "./bazel-bin/test/cpp/util/channelz_sampler";
@@ -148,7 +143,6 @@ TEST(ChannelzSamplerTest, SimpleTest) {
        "--sampling_times=" + sampling_times,
        "--sampling_interval_seconds=" + sampling_interval_seconds,
        "--output_json=" + output_json});
-
   int status = test_driver->Join();
   if (WIFEXITED(status)) {
     if (WEXITSTATUS(status)) {
@@ -158,14 +152,15 @@ TEST(ChannelzSamplerTest, SimpleTest) {
       GPR_ASSERT(0);  // log the line number of the assertion failure
     }
   } else if (WIFSIGNALED(status)) {
-    gpr_log(GPR_ERROR, "Channelz sampler test test-runner ended from signal %d",
+      gpr_log(GPR_ERROR,
+            "Channelz sampler test test-runner ended from signal %d",
             WTERMSIG(status));
-    GPR_ASSERT(0);
+      GPR_ASSERT(0);
   } else {
-    gpr_log(GPR_ERROR,
+      gpr_log(GPR_ERROR,
             "Channelz sampler test test-runner ended with unknown status %d",
             status);
-    GPR_ASSERT(0);
+      GPR_ASSERT(0);
   }
 
   gpr_event_set(&done_ev1, (void*)1);
@@ -181,3 +176,4 @@ int main(int argc, char** argv) {
   int ret = RUN_ALL_TESTS();
   return ret;
 }
+
