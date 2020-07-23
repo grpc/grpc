@@ -152,56 +152,54 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
     src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
-    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c \
-    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
-    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
-    src/core/ext/upb-generated/envoy/type/http.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
-    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
-    src/core/ext/upb-generated/envoy/type/percent.upb.c \
-    src/core/ext/upb-generated/envoy/type/range.upb.c \
-    src/core/ext/upb-generated/envoy/type/semantic_version.upb.c \
-    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c \
+    src/core/ext/upb-generated/envoy/config/accesslog/v3/accesslog.upb.c \
+    src/core/ext/upb-generated/envoy/config/cluster/v3/circuit_breaker.upb.c \
+    src/core/ext/upb-generated/envoy/config/cluster/v3/cluster.upb.c \
+    src/core/ext/upb-generated/envoy/config/cluster/v3/filter.upb.c \
+    src/core/ext/upb-generated/envoy/config/cluster/v3/outlier_detection.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/address.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/backoff.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/base.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c \
+    src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c \
+    src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c \
+    src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c \
+    src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c \
+    src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c \
+    src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c \
+    src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/secret.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/tls.upb.c \
+    src/core/ext/upb-generated/envoy/service/cluster/v3/cds.upb.c \
+    src/core/ext/upb-generated/envoy/service/discovery/v3/ads.upb.c \
+    src/core/ext/upb-generated/envoy/service/discovery/v3/discovery.upb.c \
+    src/core/ext/upb-generated/envoy/service/endpoint/v3/eds.upb.c \
+    src/core/ext/upb-generated/envoy/service/listener/v3/lds.upb.c \
+    src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c \
+    src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c \
+    src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c \
+    src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c \
+    src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/http.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/percent.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/range.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
@@ -221,6 +219,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
     src/core/ext/upb-generated/udpa/annotations/status.upb.c \
+    src/core/ext/upb-generated/udpa/annotations/versioning.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/lib/avl/avl.cc \
@@ -906,23 +905,25 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/inproc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/annotations)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/auth)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/cluster)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/core)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/endpoint)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/listener)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/route)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/filter/accesslog/v2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/listener/v2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/trace/v2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/discovery/v2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/load_stats/v2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/matcher)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/metadata/v2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/tracing/v2)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/accesslog/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/cluster/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/core/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/endpoint/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/listener/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/route/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/trace/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/cluster/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/discovery/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/endpoint/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/listener/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/load_stats/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/route/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/matcher/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/metadata/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/tracing/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/gogoproto)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/api)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/protobuf)
