@@ -809,8 +809,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx settings_timeout_test)
   add_dependencies(buildtests_cxx shutdown_test)
   add_dependencies(buildtests_cxx simple_request_bad_client_test)
-  add_dependencies(buildtests_cxx slice_hash_table_test)
-  add_dependencies(buildtests_cxx slice_weak_hash_table_test)
   add_dependencies(buildtests_cxx static_metadata_test)
   add_dependencies(buildtests_cxx stats_test)
   add_dependencies(buildtests_cxx status_metadata_test)
@@ -1678,7 +1676,6 @@ add_library(grpc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
-  src/core/lib/security/transport/target_authority_table.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/slice/b64.cc
@@ -1707,6 +1704,7 @@ add_library(grpc
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
+  src/core/lib/transport/authority_override.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/byte_stream.cc
   src/core/lib/transport/connectivity_state.cc
@@ -2337,6 +2335,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
+  src/core/lib/transport/authority_override.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/byte_stream.cc
   src/core/lib/transport/connectivity_state.cc
@@ -13750,84 +13749,6 @@ target_include_directories(simple_request_bad_client_test
 )
 
 target_link_libraries(simple_request_bad_client_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(slice_hash_table_test
-  test/core/slice/slice_hash_table_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(slice_hash_table_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(slice_hash_table_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(slice_weak_hash_table_test
-  test/core/slice/slice_weak_hash_table_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(slice_weak_hash_table_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(slice_weak_hash_table_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util

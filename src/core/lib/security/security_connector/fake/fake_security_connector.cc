@@ -40,7 +40,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/tsi/fake_transport_security.h"
 
 namespace {

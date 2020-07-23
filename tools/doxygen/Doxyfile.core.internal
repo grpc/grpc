@@ -1597,8 +1597,6 @@ src/core/lib/security/transport/secure_endpoint.h \
 src/core/lib/security/transport/security_handshaker.cc \
 src/core/lib/security/transport/security_handshaker.h \
 src/core/lib/security/transport/server_auth_filter.cc \
-src/core/lib/security/transport/target_authority_table.cc \
-src/core/lib/security/transport/target_authority_table.h \
 src/core/lib/security/transport/tsi_error.cc \
 src/core/lib/security/transport/tsi_error.h \
 src/core/lib/security/util/json_util.cc \
@@ -1609,13 +1607,11 @@ src/core/lib/slice/percent_encoding.cc \
 src/core/lib/slice/percent_encoding.h \
 src/core/lib/slice/slice.cc \
 src/core/lib/slice/slice_buffer.cc \
-src/core/lib/slice/slice_hash_table.h \
 src/core/lib/slice/slice_intern.cc \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/slice/slice_utils.h \
-src/core/lib/slice/slice_weak_hash_table.h \
 src/core/lib/surface/README.md \
 src/core/lib/surface/api_trace.cc \
 src/core/lib/surface/api_trace.h \
@@ -1651,6 +1647,8 @@ src/core/lib/surface/validate_metadata.cc \
 src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
 src/core/lib/transport/README.md \
+src/core/lib/transport/authority_override.cc \
+src/core/lib/transport/authority_override.h \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
 src/core/lib/transport/byte_stream.cc \

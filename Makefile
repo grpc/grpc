@@ -1273,8 +1273,6 @@ service_config_test: $(BINDIR)/$(CONFIG)/service_config_test
 settings_timeout_test: $(BINDIR)/$(CONFIG)/settings_timeout_test
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
 simple_request_bad_client_test: $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
-slice_hash_table_test: $(BINDIR)/$(CONFIG)/slice_hash_table_test
-slice_weak_hash_table_test: $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test
 ssl_server_fuzzer: $(BINDIR)/$(CONFIG)/ssl_server_fuzzer
 static_metadata_test: $(BINDIR)/$(CONFIG)/static_metadata_test
 stats_test: $(BINDIR)/$(CONFIG)/stats_test
@@ -1635,8 +1633,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/settings_timeout_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
-  $(BINDIR)/$(CONFIG)/slice_hash_table_test \
-  $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
   $(BINDIR)/$(CONFIG)/static_metadata_test \
   $(BINDIR)/$(CONFIG)/stats_test \
   $(BINDIR)/$(CONFIG)/status_metadata_test \
@@ -1794,8 +1790,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/settings_timeout_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
-  $(BINDIR)/$(CONFIG)/slice_hash_table_test \
-  $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
   $(BINDIR)/$(CONFIG)/static_metadata_test \
   $(BINDIR)/$(CONFIG)/stats_test \
   $(BINDIR)/$(CONFIG)/status_metadata_test \
@@ -2314,10 +2308,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/shutdown_test || ( echo test shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing simple_request_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/simple_request_bad_client_test || ( echo test simple_request_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing slice_hash_table_test"
-	$(Q) $(BINDIR)/$(CONFIG)/slice_hash_table_test || ( echo test slice_hash_table_test failed ; exit 1 )
-	$(E) "[RUN]     Testing slice_weak_hash_table_test"
-	$(Q) $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test || ( echo test slice_weak_hash_table_test failed ; exit 1 )
 	$(E) "[RUN]     Testing static_metadata_test"
 	$(Q) $(BINDIR)/$(CONFIG)/static_metadata_test || ( echo test static_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing stats_test"
@@ -3746,7 +3736,6 @@ LIBGRPC_SRC = \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
-    src/core/lib/security/transport/target_authority_table.cc \
     src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
     src/core/lib/slice/b64.cc \
@@ -3775,6 +3764,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
+    src/core/lib/transport/authority_override.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
@@ -4374,6 +4364,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
+    src/core/lib/transport/authority_override.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
@@ -17621,92 +17612,6 @@ endif
 endif
 
 
-SLICE_HASH_TABLE_TEST_SRC = \
-    test/core/slice/slice_hash_table_test.cc \
-
-SLICE_HASH_TABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_HASH_TABLE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/slice_hash_table_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
-
-$(BINDIR)/$(CONFIG)/slice_hash_table_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/slice_hash_table_test: $(PROTOBUF_DEP) $(SLICE_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SLICE_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/slice_hash_table_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/slice/slice_hash_table_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-deps_slice_hash_table_test: $(SLICE_HASH_TABLE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(SLICE_HASH_TABLE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-SLICE_WEAK_HASH_TABLE_TEST_SRC = \
-    test/core/slice/slice_weak_hash_table_test.cc \
-
-SLICE_WEAK_HASH_TABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_WEAK_HASH_TABLE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
-
-$(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: $(PROTOBUF_DEP) $(SLICE_WEAK_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SLICE_WEAK_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/slice/slice_weak_hash_table_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-deps_slice_weak_hash_table_test: $(SLICE_WEAK_HASH_TABLE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(SLICE_WEAK_HASH_TABLE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 SSL_SERVER_FUZZER_SRC = \
     test/core/security/ssl_server_fuzzer.cc \
     test/core/util/fuzzer_corpus_test.cc \
@@ -19948,7 +19853,6 @@ src/core/lib/security/transport/client_auth_filter.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/secure_endpoint.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/security_handshaker.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/server_auth_filter.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/target_authority_table.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/tsi_error.cc: $(OPENSSL_DEP)
 src/core/lib/security/util/json_util.cc: $(OPENSSL_DEP)
 src/core/lib/surface/init_secure.cc: $(OPENSSL_DEP)

@@ -37,7 +37,6 @@
 #include <grpc/support/time.h>
 
 #include <address_sorting/address_sorting.h>
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/gpr/string.h"
@@ -47,6 +46,7 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/nameser.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/transport/authority_override.h"
 
 using grpc_core::ServerAddress;
 using grpc_core::ServerAddressList;
@@ -237,7 +237,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
       absl::InlinedVector<grpc_arg, 1> args_to_add;
       if (hr->is_balancer) {
         args_to_add.emplace_back(
-            grpc_core::CreateGrpclbBalancerNameArg(hr->host));
+            grpc_core::CreateAuthorityOverrideChannelArg(hr->host));
       }
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
           nullptr, args_to_add.data(), args_to_add.size());
