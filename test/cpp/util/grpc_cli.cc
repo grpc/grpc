@@ -54,6 +54,8 @@
    10. --default_service_config, optional default service config to use
        on the channel. Note that this may be ignored if the name resolver
        returns a service config.
+   11. --display_peer_address, on CallMethod commands, log the peer socket
+       address of the connection that each RPC is made on to stderr.
 */
 
 #include <fstream>
