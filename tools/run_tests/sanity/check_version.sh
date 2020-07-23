@@ -21,23 +21,23 @@ buildfile=BUILD
 yamlfile=build_handwritten.yaml
 status=0
 
-function check_key() {
+check_key () {
     key=$1
     build=$(grep "^$key =" < $buildfile | awk -F\" '{print $2}')
     yaml=$(grep "^ *${key}:" < $yamlfile | head -1 | awk '{print $2}')
 
     if [ x"$build" = x ] ; then
-        echo $key not defined in $buildfile
+        echo "$key not defined in $buildfile"
         status=1
     fi
 
     if [ x"$yaml" = x ] ; then
-        echo $key not defined in $yamlfile
+        echo "$key not defined in $yamlfile"
         status=1
     fi
 
-    if [ x"$build" != x -a x"$yaml" != x -a "$build" != "$yaml" ] ; then
-        echo $key mismatch between $buildfile "($build)" and $yamlfile "($yaml)"
+    if [ x"$build" != x"$yaml" ] ; then
+        echo "$key mismatch between $buildfile ($build) and $yamlfile ($yaml)"
         status=1
     fi
 }
