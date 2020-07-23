@@ -65,8 +65,8 @@ struct grpc_server::RequestedCall {
   enum Type { BATCH_CALL, REGISTERED_CALL };
 
   RequestedCall(void* tag_arg, grpc_completion_queue* call_cq,
-                 grpc_call** call_arg, grpc_metadata_array* initial_md,
-                 grpc_call_details* details)
+                grpc_call** call_arg, grpc_metadata_array* initial_md,
+                grpc_call_details* details)
       : type(BATCH_CALL),
         tag(tag_arg),
         cq_bound_to_call(call_cq),
@@ -370,9 +370,8 @@ class grpc_server::AllocatingRequestMatcherBase
 class grpc_server::AllocatingRequestMatcherBatch
     : public AllocatingRequestMatcherBase {
  public:
-  AllocatingRequestMatcherBatch(
-      grpc_server* server, grpc_completion_queue* cq,
-      std::function<BatchCallAllocation()> allocator)
+  AllocatingRequestMatcherBatch(grpc_server* server, grpc_completion_queue* cq,
+                                std::function<BatchCallAllocation()> allocator)
       : AllocatingRequestMatcherBase(server, cq),
         allocator_(std::move(allocator)) {}
 
@@ -380,8 +379,8 @@ class grpc_server::AllocatingRequestMatcherBatch
                     CallData* calld) override {
     BatchCallAllocation call_info = allocator_();
     GPR_ASSERT(server()->ValidateServerRequest(
-        cq(), static_cast<void*>(call_info.tag), nullptr, nullptr)
-        == GRPC_CALL_OK);
+                   cq(), static_cast<void*>(call_info.tag), nullptr, nullptr) ==
+               GRPC_CALL_OK);
     RequestedCall* rc = new RequestedCall(
         static_cast<void*>(call_info.tag), cq(), call_info.call,
         call_info.initial_metadata, call_info.details);
@@ -407,9 +406,10 @@ class grpc_server::AllocatingRequestMatcherRegistered
   void MatchOrQueue(size_t /*start_request_queue_index*/,
                     CallData* calld) override {
     RegisteredCallAllocation call_info = allocator_();
-    GPR_ASSERT(server()->ValidateServerRequest(
-        cq(), static_cast<void*>(call_info.tag), call_info.optional_payload,
-        registered_method_) == GRPC_CALL_OK);
+    GPR_ASSERT(
+        server()->ValidateServerRequest(cq(), static_cast<void*>(call_info.tag),
+                                        call_info.optional_payload,
+                                        registered_method_) == GRPC_CALL_OK);
     RequestedCall* rc = new RequestedCall(
         static_cast<void*>(call_info.tag), cq(), call_info.call,
         call_info.initial_metadata, registered_method_, call_info.deadline,
@@ -470,14 +470,16 @@ class ChannelBroadcaster {
     grpc_transport_op* op = grpc_make_transport_op(&sc->closure);
     grpc_channel_element* elem;
     op->goaway_error =
-        send_goaway ? grpc_error_set_int(
-                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"),
-                          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK)
-                    : GRPC_ERROR_NONE;
+        send_goaway
+            ? grpc_error_set_int(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"),
+                  GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK)
+            : GRPC_ERROR_NONE;
     op->set_accept_stream = true;
     sc->slice = grpc_slice_from_copied_string("Server shutdown");
     op->disconnect_with_error = send_disconnect;
-    elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
+    elem =
+        grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
     elem->filter->start_transport_op(elem, op);
   }
 
@@ -525,9 +527,8 @@ grpc_core::RefCountedPtr<grpc_core::channelz::ServerNode> CreateChannelzNode(
     size_t channel_tracer_max_memory = grpc_channel_args_find_integer(
         args, GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE,
         {GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX});
-    channelz_node =
-        grpc_core::MakeRefCounted<grpc_core::channelz::ServerNode>(
-            server, channel_tracer_max_memory);
+    channelz_node = grpc_core::MakeRefCounted<grpc_core::channelz::ServerNode>(
+        server, channel_tracer_max_memory);
     channelz_node->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Server created"));
@@ -631,8 +632,7 @@ void grpc_server::SetRegisteredMethodAllocator(
 }
 
 void grpc_server::SetBatchMethodAllocator(
-    grpc_completion_queue* cq,
-    std::function<BatchCallAllocation()> allocator) {
+    grpc_completion_queue* cq, std::function<BatchCallAllocation()> allocator) {
   GPR_DEBUG_ASSERT(unregistered_request_matcher_ == nullptr);
   unregistered_request_matcher_ =
       absl::make_unique<AllocatingRequestMatcherBatch>(this, cq,
@@ -640,7 +640,7 @@ void grpc_server::SetBatchMethodAllocator(
 }
 
 void grpc_server::RegisterCompletionQueue(grpc_completion_queue* cq) {
-  for (grpc_completion_queue* queue  : cqs_) {
+  for (grpc_completion_queue* queue : cqs_) {
     if (queue == cq) return;
   }
   GRPC_CQ_INTERNAL_REF(cq, "server");
@@ -677,9 +677,8 @@ grpc_server::RegisteredMethod* grpc_server::RegisterMethod(
             flags);
     return nullptr;
   }
-  registered_methods_.emplace_back(
-      absl::make_unique<RegisteredMethod>(method, host, payload_handling,
-                                          flags));
+  registered_methods_.emplace_back(absl::make_unique<RegisteredMethod>(
+      method, host, payload_handling, flags));
   return registered_methods_.back().get();
 }
 
@@ -816,8 +815,7 @@ void grpc_server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
   for (auto& listener : listeners_) {
     grpc_core::channelz::ListenSocketNode* channelz_listen_socket_node =
         listener.listener->channelz_listen_socket_node();
-    if (channelz_node_ != nullptr &&
-        channelz_listen_socket_node != nullptr) {
+    if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
       channelz_node_->RemoveChildListenSocket(
           channelz_listen_socket_node->uuid());
     }
@@ -848,8 +846,7 @@ void grpc_server::Orphan() {
     GPR_ASSERT(listeners_destroyed_ == listeners_.size());
   }
   if (default_resource_user_ != nullptr) {
-    grpc_resource_quota_unref(
-        grpc_resource_user_quota(default_resource_user_));
+    grpc_resource_quota_unref(grpc_resource_user_quota(default_resource_user_));
     grpc_resource_user_shutdown(default_resource_user_);
     grpc_resource_user_unref(default_resource_user_);
   }
@@ -922,8 +919,8 @@ grpc_call_error grpc_server::RequestCall(
   if (error != GRPC_CALL_OK) {
     return error;
   }
-  RequestedCall* rc = new RequestedCall(tag, cq_bound_to_call, call,
-                                        request_metadata, details);
+  RequestedCall* rc =
+      new RequestedCall(tag, cq_bound_to_call, call, request_metadata, details);
   return QueueCallRequest(cq_idx, rc);
 }
 
@@ -940,7 +937,7 @@ grpc_call_error grpc_server::RequestRegisteredCall(
   }
   RequestedCall* rc =
       new RequestedCall(tag_new, cq_bound_to_call, call, request_metadata, rm,
-                         deadline, optional_payload);
+                        deadline, optional_payload);
   return QueueCallRequest(cq_idx, rc);
 }
 
@@ -1017,8 +1014,7 @@ void grpc_server::ChannelData::InitTransport(
   if (num_registered_methods > 0) {
     uint32_t max_probes = 0;
     size_t slots = 2 * num_registered_methods;
-    registered_methods_.reset(
-        new std::vector<ChannelRegisteredMethod>(slots));
+    registered_methods_.reset(new std::vector<ChannelRegisteredMethod>(slots));
     for (std::unique_ptr<RegisteredMethod>& rm : server_->registered_methods_) {
       grpc_core::ExternallyManagedSlice host;
       grpc_core::ExternallyManagedSlice method(rm->method.c_str());
@@ -1077,8 +1073,8 @@ grpc_server::ChannelData::GetRegisteredMethod(const grpc_slice& host,
   uint32_t hash = GRPC_MDSTR_KV_HASH(grpc_slice_hash_internal(host),
                                      grpc_slice_hash_internal(path));
   for (size_t i = 0; i <= registered_method_max_probes_; i++) {
-    ChannelRegisteredMethod* rm = &(*registered_methods_)[(hash + i) %
-                                       registered_methods_->size()];
+    ChannelRegisteredMethod* rm =
+        &(*registered_methods_)[(hash + i) % registered_methods_->size()];
     if (rm->server_registered_method == nullptr) break;
     if (!rm->has_host) continue;
     if (rm->host != host) continue;
@@ -1092,8 +1088,8 @@ grpc_server::ChannelData::GetRegisteredMethod(const grpc_slice& host,
   /* check for a wildcard method definition (no host set) */
   hash = GRPC_MDSTR_KV_HASH(0, grpc_slice_hash_internal(path));
   for (size_t i = 0; i <= registered_method_max_probes_; i++) {
-    ChannelRegisteredMethod* rm = &(*registered_methods_)[(hash + i) %
-                                       registered_methods_->size()];
+    ChannelRegisteredMethod* rm =
+        &(*registered_methods_)[(hash + i) % registered_methods_->size()];
     if (rm->server_registered_method == nullptr) break;
     if (rm->has_host) continue;
     if (rm->method != path) continue;
@@ -1299,10 +1295,10 @@ void grpc_server::CallData::StartNewRpc(grpc_call_element* elem) {
   grpc_server_register_method_payload_handling payload_handling =
       GRPC_SRM_PAYLOAD_NONE;
   if (path_set_ && host_set_) {
-    ChannelRegisteredMethod* rm = chand->GetRegisteredMethod(
-        host_, path_,
-        (recv_initial_metadata_flags_ &
-             GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST));
+    ChannelRegisteredMethod* rm =
+        chand->GetRegisteredMethod(host_, path_,
+                                   (recv_initial_metadata_flags_ &
+                                    GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST));
     if (rm != nullptr) {
       matcher_ = rm->server_registered_method->matcher.get();
       payload_handling = rm->server_registered_method->payload_handling;

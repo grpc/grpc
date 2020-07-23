@@ -78,8 +78,8 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
     /// Returns the channelz node for the listen socket, or null if not
     /// supported.
-    virtual grpc_core::channelz::ListenSocketNode*
-    channelz_listen_socket_node() const = 0;
+    virtual grpc_core::channelz::ListenSocketNode* channelz_listen_socket_node()
+        const = 0;
 
     /// Sets a closure to be invoked by the listener when its destruction
     /// is complete.
@@ -223,9 +223,9 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
    public:
     enum CallState {
       NOT_STARTED,  // Waiting for metadata.
-      PENDING,  // Initial metadata read, not flow controlled in yet.
-      ACTIVATED,  // Flow controlled in, on completion queue.
-      ZOMBIED,  // Cancelled before being queued.
+      PENDING,      // Initial metadata read, not flow controlled in yet.
+      ACTIVATED,    // Flow controlled in, on completion queue.
+      ZOMBIED,      // Cancelled before being queued.
     };
 
     CallData(grpc_call_element* elem, const grpc_call_element_args& args,
@@ -277,10 +277,10 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
     grpc_call* call_;
 
-// FIXME: replace with grpc_core::Atomic<CallState>
+    // FIXME: replace with grpc_core::Atomic<CallState>
     gpr_atm state_ = NOT_STARTED;
 
-// FIXME: use absl::optional<> here
+    // FIXME: use absl::optional<> here
     bool path_set_ = false;
     bool host_set_ = false;
     grpc_slice path_;
