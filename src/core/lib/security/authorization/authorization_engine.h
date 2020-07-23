@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_EVALUATION_ENGINE_H
-#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_EVALUATION_ENGINE_H
+#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_ENGINE_H
+#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_ENGINE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -28,7 +28,7 @@
 #include "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h"
 #include "upb/upb.hpp"
 
-// CelEvaluationEngine makes an AuthorizationDecision to ALLOW or DENY the
+// AuthorizationEngine makes an AuthorizationDecision to ALLOW or DENY the
 // current action based on the condition fields in provided RBAC policies.
 // The engine may be constructed with one or two policies. If two polcies,
 // the first policy is deny-if-matched and the second is allow-if-matched.
@@ -38,14 +38,14 @@
 // are compatible with this engine.
 //
 // Example:
-// CelEvaluationEngine*
-// cel_engine = CelEvaluationEngine::CreateCelEvaluationEngine(rbac_policies);
-// cel_engine->Evaluate(evaluate_args); // returns authorization decision.
-class CelEvaluationEngine {
+// AuthorizationEngine*
+// auth_engine = AuthorizationEngine::CreateAuthorizationEngine(rbac_policies);
+// auth_engine->Evaluate(evaluate_args); // returns authorization decision.
+class AuthorizationEngine {
  public:
   // rbac_policies must be a vector containing either a single policy of any
   // kind, or one deny policy and one allow policy, in that order.
-  static std::unique_ptr<CelEvaluationEngine> CreateCelEvaluationEngine(
+  static std::unique_ptr<AuthorizationEngine> CreateAuthorizationEngine(
       const std::vector<envoy_config_rbac_v2_RBAC*>& rbac_policies);
   // TODO(mywang@google.com): add an Evaluate member function.
 
@@ -55,7 +55,7 @@ class CelEvaluationEngine {
     kDeny,
   };
 
-  explicit CelEvaluationEngine(
+  explicit AuthorizationEngine(
       const std::vector<envoy_config_rbac_v2_RBAC*>& rbac_policies);
   std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
       deny_if_matched_;
@@ -64,4 +64,4 @@ class CelEvaluationEngine {
   upb::Arena arena_;
 };
 
-#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_EVALUATION_ENGINE_H */
+#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_ENGINE_H */

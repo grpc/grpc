@@ -14,29 +14,30 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/authorization/cel_evaluation_engine.h"
+#include "src/core/lib/security/authorization/authorization_engine.h"
 
-std::unique_ptr<CelEvaluationEngine>
-CelEvaluationEngine::CreateCelEvaluationEngine(
+std::unique_ptr<AuthorizationEngine>
+AuthorizationEngine::CreateAuthorizationEngine(
     const std::vector<envoy_config_rbac_v2_RBAC*>& rbac_policies) {
   if (rbac_policies.size() < 1 || rbac_policies.size() > 2) {
     gpr_log(GPR_ERROR,
-            "The rbac_policies vector does not have 1 or 2 policies.");
+            "Invalid rbac policies vector. Must contain either one or two rbac "
+            "policies.");
     return nullptr;
   } else if (rbac_policies.size() == 2 &&
              (envoy_config_rbac_v2_RBAC_action(rbac_policies[0]) != kDeny ||
               envoy_config_rbac_v2_RBAC_action(rbac_policies[1]) != kAllow)) {
     gpr_log(GPR_ERROR,
-            "The rbac_policies vector does not contain one deny \
+            "Invalid rbac policies vector. Must contain one deny \
                          policy and one allow policy, in that order.");
     return nullptr;
   } else {
-    return std::unique_ptr<CelEvaluationEngine>(
-        new CelEvaluationEngine(rbac_policies));
+    return std::unique_ptr<AuthorizationEngine>(
+        new AuthorizationEngine(rbac_policies));
   }
 }
 
-CelEvaluationEngine::CelEvaluationEngine(
+AuthorizationEngine::AuthorizationEngine(
     const std::vector<envoy_config_rbac_v2_RBAC*>& rbac_policies) {
   for (const auto& rbac_policy : rbac_policies) {
     // Extract array of policies and store their condition fields in either

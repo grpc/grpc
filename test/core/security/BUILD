@@ -73,13 +73,13 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "cel_engine_test",
-    srcs = ["cel_engine_test.cc"],
+    name = "authorization_engine_test",
+    srcs = ["authorization_engine_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
-        "//:grpc_cel_engine",
+        "//:grpc_authorization_engine",
         "//test/core/util:grpc_test_util",
     ],
 )

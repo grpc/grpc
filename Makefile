@@ -1034,7 +1034,6 @@ bad_ssl_cert_test: $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
 buffer_list_test: $(BINDIR)/$(CONFIG)/buffer_list_test
-cel_engine_test: $(BINDIR)/$(CONFIG)/cel_engine_test
 channel_args_test: $(BINDIR)/$(CONFIG)/channel_args_test
 channel_create_test: $(BINDIR)/$(CONFIG)/channel_create_test
 channel_stack_builder_test: $(BINDIR)/$(CONFIG)/channel_stack_builder_test
@@ -1156,6 +1155,7 @@ alts_credentials_fuzzer: $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer
 alts_util_test: $(BINDIR)/$(CONFIG)/alts_util_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
+authorization_engine_test: $(BINDIR)/$(CONFIG)/authorization_engine_test
 backoff_test: $(BINDIR)/$(CONFIG)/backoff_test
 bad_streaming_id_bad_client_test: $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test
 badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
@@ -1410,7 +1410,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
   $(BINDIR)/$(CONFIG)/buffer_list_test \
-  $(BINDIR)/$(CONFIG)/cel_engine_test \
   $(BINDIR)/$(CONFIG)/channel_args_test \
   $(BINDIR)/$(CONFIG)/channel_create_test \
   $(BINDIR)/$(CONFIG)/channel_stack_builder_test \
@@ -1535,6 +1534,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alts_util_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/authorization_engine_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
@@ -1693,6 +1693,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alts_util_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/authorization_engine_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
@@ -1896,8 +1897,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing buffer_list_test"
 	$(Q) $(BINDIR)/$(CONFIG)/buffer_list_test || ( echo test buffer_list_test failed ; exit 1 )
-	$(E) "[RUN]     Testing cel_engine_test"
-	$(Q) $(BINDIR)/$(CONFIG)/cel_engine_test || ( echo test cel_engine_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_args_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_args_test || ( echo test channel_args_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_create_test"
@@ -2138,6 +2137,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
+	$(E) "[RUN]     Testing authorization_engine_test"
+	$(Q) $(BINDIR)/$(CONFIG)/authorization_engine_test || ( echo test authorization_engine_test failed ; exit 1 )
 	$(E) "[RUN]     Testing backoff_test"
 	$(Q) $(BINDIR)/$(CONFIG)/backoff_test || ( echo test backoff_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_streaming_id_bad_client_test"
@@ -7615,41 +7616,6 @@ endif
 endif
 
 
-CEL_ENGINE_TEST_SRC = \
-    src/core/lib/security/authorization/cel_evaluation_engine.cc \
-    test/core/security/cel_engine_test.cc \
-
-CEL_ENGINE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CEL_ENGINE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/cel_engine_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/cel_engine_test: $(CEL_ENGINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CEL_ENGINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/cel_engine_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/src/core/lib/security/authorization/cel_evaluation_engine.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-$(OBJDIR)/$(CONFIG)/test/core/security/cel_engine_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-deps_cel_engine_test: $(CEL_ENGINE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(CEL_ENGINE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 CHANNEL_ARGS_TEST_SRC = \
     test/core/channel/channel_args_test.cc \
 
@@ -11769,6 +11735,52 @@ deps_auth_property_iterator_test: $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+AUTHORIZATION_ENGINE_TEST_SRC = \
+    src/core/lib/security/authorization/authorization_engine.cc \
+    test/core/security/authorization_engine_test.cc \
+
+AUTHORIZATION_ENGINE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(AUTHORIZATION_ENGINE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/authorization_engine_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/authorization_engine_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/authorization_engine_test: $(PROTOBUF_DEP) $(AUTHORIZATION_ENGINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(AUTHORIZATION_ENGINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/authorization_engine_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/core/lib/security/authorization/authorization_engine.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/core/security/authorization_engine_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_authorization_engine_test: $(AUTHORIZATION_ENGINE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(AUTHORIZATION_ENGINE_TEST_OBJS:.o=.dep)
 endif
 endif
 
