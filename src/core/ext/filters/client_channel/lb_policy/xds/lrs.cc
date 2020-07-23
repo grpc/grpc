@@ -120,7 +120,7 @@ class LrsLb : public LoadBalancingPolicy {
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_channel_args& args) override;
-    void UpdateState(grpc_connectivity_state state,
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     void AddTraceEvent(TraceSeverity severity,
@@ -157,6 +157,7 @@ class LrsLb : public LoadBalancingPolicy {
 
   // Latest state and picker reported by the child policy.
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  absl::Status status_;
   RefCountedPtr<RefCountedPicker> picker_;
 };
 
@@ -266,10 +267,14 @@ void LrsLb::MaybeUpdatePickerLocked() {
     auto lrs_picker =
         absl::make_unique<LoadReportingPicker>(picker_, locality_stats_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
-      gpr_log(GPR_INFO, "[lrs_lb %p] updating connectivity: state=%s picker=%p",
-              this, ConnectivityStateName(state_), lrs_picker.get());
+      gpr_log(
+          GPR_INFO,
+          "[lrs_lb %p] updating connectivity: state=%s status=(%s) picker=%p",
+          this, ConnectivityStateName(state_), status_.ToString().c_str(),
+          lrs_picker.get());
     }
-    channel_control_helper()->UpdateState(state_, std::move(lrs_picker));
+    channel_control_helper()->UpdateState(state_, status_,
+                                          std::move(lrs_picker));
   }
 }
 
@@ -325,15 +330,19 @@ RefCountedPtr<SubchannelInterface> LrsLb::Helper::CreateSubchannel(
 }
 
 void LrsLb::Helper::UpdateState(grpc_connectivity_state state,
+                                const absl::Status& status,
                                 std::unique_ptr<SubchannelPicker> picker) {
   if (lrs_policy_->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
-    gpr_log(GPR_INFO,
-            "[lrs_lb %p] child connectivity state update: state=%s picker=%p",
-            lrs_policy_.get(), ConnectivityStateName(state), picker.get());
+    gpr_log(
+        GPR_INFO,
+        "[lrs_lb %p] child connectivity state update: state=%s (%s) picker=%p",
+        lrs_policy_.get(), ConnectivityStateName(state),
+        status.ToString().c_str(), picker.get());
   }
   // Save the state and picker.
   lrs_policy_->state_ = state;
+  lrs_policy_->status_ = status;
   lrs_policy_->picker_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
   // Wrap the picker and return it to the channel.
   lrs_policy_->MaybeUpdatePickerLocked();
