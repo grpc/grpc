@@ -331,19 +331,6 @@ class Subchannel::ConnectedSubchannelStateWatcher
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
     Subchannel* c = subchannel_;
-    absl::optional<absl::Cord> keepalive_throttling =
-        status.GetPayload(grpc_core::keepalive_throttling_key);
-    if (keepalive_throttling.has_value()) {
-      int new_keepalive_time = -1;
-      if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
-                           &new_keepalive_time)) {
-        c->ThrottleKeepaliveTime(new_keepalive_time);
-      } else {
-        gpr_log(GPR_ERROR,
-                "Subchannel=%p: Illegal keepalive throttling value %s", c,
-                std::string(keepalive_throttling.value()).c_str());
-      }
-    }
     MutexLock lock(&c->mu_);
     switch (new_state) {
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
