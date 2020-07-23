@@ -20,9 +20,6 @@
 
 #include "src/core/lib/surface/server.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,6 +32,11 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/connected_channel.h"
