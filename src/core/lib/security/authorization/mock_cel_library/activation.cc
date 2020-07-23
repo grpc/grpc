@@ -29,18 +29,10 @@ namespace api {
 namespace expr {
 namespace runtime {
 
-// The below functions are stubs that return null or default values.
-
-absl::optional<CelValue> Activation::FindValue(
-    absl::string_view name, google::protobuf::Arena* arena) const {
-  return absl::nullopt;
-}
-
+// The below function is a stub that does nothing and returns.
 void Activation::InsertValue(absl::string_view name, const CelValue& value) {
   return;
 }
-
-bool Activation::RemoveValueEntry(absl::string_view name) { return false; }
 
 }  // namespace runtime
 }  // namespace expr

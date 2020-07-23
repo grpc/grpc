@@ -218,142 +218,8 @@ class CelValue {
     return CelValue(value);
   }
 
-  // Methods for accessing values of specific type
-  // They have the common usage pattern - prior to accessing the
-  // value, the caller should check that the value of this type is indeed
-  // stored in CelValue, using type() or Is...() methods.
-
-  // Returns stored boolean value.
-  // Fails if stored value type is not boolean.
-  bool BoolOrDie() const { return GetValueOrDie<bool>(Type::kBool); }
-
-  // Returns stored int64_t value.
-  // Fails if stored value type is not int64_t.
-  int64_t Int64OrDie() const { return GetValueOrDie<int64_t>(Type::kInt64); }
-
-  // Returns stored uint64_t value.
-  // Fails if stored value type is not uint64_t.
-  uint64_t Uint64OrDie() const {
-    return GetValueOrDie<uint64_t>(Type::kUint64);
-  }
-
-  // Returns stored double value.
-  // Fails if stored value type is not double.
-  double DoubleOrDie() const { return GetValueOrDie<double>(Type::kDouble); }
-
-  // Returns stored const string * value.
-  // Fails if stored value type is not const string *.
-  StringHolder StringOrDie() const {
-    return GetValueOrDie<StringHolder>(Type::kString);
-  }
-
-  BytesHolder BytesOrDie() const {
-    return GetValueOrDie<BytesHolder>(Type::kBytes);
-  }
-
-  // Returns stored const Message * value.
-  // Fails if stored value type is not const Message *.
-  const google::protobuf::Message* MessageOrDie() const {
-    return GetValueOrDie<const google::protobuf::Message*>(Type::kMessage);
-  }
-
-  // Returns stored const CelList * value.
-  // Fails if stored value type is not const CelList *.
-  const CelList* ListOrDie() const {
-    return GetValueOrDie<const CelList*>(Type::kList);
-  }
-
-  // Returns stored const CelMap * value.
-  // Fails if stored value type is not const CelMap *.
-  const CelMap* MapOrDie() const {
-    return GetValueOrDie<const CelMap*>(Type::kMap);
-  }
-
-  // Returns stored const UnknownAttributeSet * value.
-  // Fails if stored value type is not const UnknownAttributeSet *.
-  const UnknownSet* UnknownSetOrDie() const {
-    return GetValueOrDie<const UnknownSet*>(Type::kUnknownSet);
-  }
-
-  // Returns stored const CelError * value.
-  // Fails if stored value type is not const CelError *.
-  const CelError* ErrorOrDie() const {
-    return GetValueOrDie<const CelError*>(Type::kError);
-  }
-
-  bool IsNull() const { return value_.template Visit<bool>(NullCheckOp()); }
-
-  bool IsBool() const { return value_.is<bool>(); }
-
-  bool IsInt64() const { return value_.is<int64_t>(); }
-
-  bool IsUint64() const { return value_.is<uint64_t>(); }
-
-  bool IsDouble() const { return value_.is<double>(); }
-
-  bool IsString() const { return value_.is<StringHolder>(); }
-
-  bool IsBytes() const { return value_.is<BytesHolder>(); }
-
-  bool IsMessage() const {
-    return value_.is<const google::protobuf::Message*>();
-  }
-
-  bool IsList() const { return value_.is<const CelList*>(); }
-
-  bool IsMap() const { return value_.is<const CelMap*>(); }
-
-  bool IsUnknownSet() const { return value_.is<const UnknownSet*>(); }
-
-  bool IsError() const { return value_.is<const CelError*>(); }
-
-  // Invokes op() with the active value, and returns the result.
-  // All overloads of op() must have the same return type.
-  template <class ReturnType, class Op>
-  ReturnType Visit(Op&& op) const {
-    return value_.template Visit<ReturnType>(op);
-  }
-
-  // Template-style getter.
-  // Returns true, if assignment successful
-  template <typename Arg>
-  bool GetValue(Arg* value) const {
-    return this->template Visit<bool>(AssignerOp<Arg>(value));
-  }
-
-  // Provides type names for internal logging.
-  static std::string TypeName(Type value_type);
-
  private:
   ValueHolder value_;
-
-  template <typename T>
-  struct AssignerOp {
-    explicit AssignerOp(T* val) : value(val) {}
-
-    template <typename U>
-    bool operator()(const U&) {
-      return false;
-    }
-
-    bool operator()(const T& arg) {
-      *value = arg;
-      return true;
-    }
-
-    T* value;
-  };
-
-  struct NullCheckOp {
-    template <typename T>
-    bool operator()(const T&) const {
-      return false;
-    }
-
-    bool operator()(const google::protobuf::Message* arg) const {
-      return arg == nullptr;
-    }
-  };
 
   // Constructs CelValue wrapping value supplied as argument.
   // Value type T should be supported by specification of ValueHolder.
@@ -363,22 +229,8 @@ class CelValue {
   // Null pointer checker for pointer-based types.
   static void CheckNullPointer(const void* ptr, Type type) {
     if (ptr == nullptr) {
-      GOOGLE_LOG(FATAL) << "Null pointer supplied for "
-                        << TypeName(type);  // Crash ok
+      GOOGLE_LOG(FATAL) << "Null pointer supplied for Create";  // Crash ok
     }
-  }
-
-  // Gets value of type specified
-  template <class T>
-  T GetValueOrDie(Type requested_type) const {
-    auto value_ptr = value_.get<T>();
-    if (value_ptr == nullptr) {
-      GOOGLE_LOG(FATAL) << "Type mismatch"  // Crash ok
-                        << ": expected "
-                        << TypeName(requested_type)               // Crash ok
-                        << ", encountered " << TypeName(type());  // Crash ok
-    }
-    return *value_ptr;
   }
 };
 

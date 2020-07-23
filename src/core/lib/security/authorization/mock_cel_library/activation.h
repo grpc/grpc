@@ -33,19 +33,6 @@ namespace api {
 namespace expr {
 namespace runtime {
 
-class CelAttributePattern {
- public:
-  CelAttributePattern() = default;
-};
-
-class CelValueProducer {
- public:
-  CelValueProducer() = default;
-  absl::optional<CelValue> Produce(google::protobuf::Arena* arena) {
-    return absl::nullopt;
-  }
-};
-
 // Instance of Activation class is used by evaluator.
 // It provides binding between references used in expressions
 // and actual values.
@@ -57,45 +44,8 @@ class Activation {
   Activation(const Activation&) = delete;
   Activation& operator=(const Activation&) = delete;
 
-  // Provide the value that is bound to the name, if found.
-  // arena parameter is provided to support the case when we want to pass the
-  // ownership of returned object ( Message/List/Map ) to Evaluator.
-  absl::optional<CelValue> FindValue(absl::string_view name,
-                                     google::protobuf::Arena* arena) const;
-
-  // Check whether a select path is unknown.
-  bool IsPathUnknown(absl::string_view path) const { return true; }
-
   // Insert value into Activation.
   void InsertValue(absl::string_view name, const CelValue& value);
-
-  // Removes value or producer, returns true if entry with the name was found.
-  bool RemoveValueEntry(absl::string_view name);
-
-  // Set unknown value paths through FieldMask
-  void set_unknown_paths(google::protobuf::FieldMask mask) { return; }
-
-  // Return FieldMask defining the list of unknown paths.
-  const google::protobuf::FieldMask& unknown_paths() const {
-    return unknown_paths_;
-  }
-
-  // Sets the collection of attribute patterns that will be recognized as
-  // "unknown" values during expression evaluation.
-  void set_unknown_attribute_patterns(
-      std::vector<CelAttributePattern> unknown_attribute_patterns) {
-    return;
-  }
-
-  // Return the collection of attribute patterns that determine "unknown"
-  // values.
-  const std::vector<CelAttributePattern>& unknown_attribute_patterns() const {
-    return unknown_patterns_;
-  }
-
- private:
-  google::protobuf::FieldMask unknown_paths_;
-  std::vector<CelAttributePattern> unknown_patterns_;
 };
 
 }  // namespace runtime

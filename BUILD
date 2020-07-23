@@ -986,7 +986,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_cel_engine",
+    name = "grpc_authorization_engine",
     srcs = [
         "src/core/lib/security/authorization/mock_cel_library/activation.cc",
     ],
