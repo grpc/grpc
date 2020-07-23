@@ -30,7 +30,7 @@ def map_dir(filename):
 
 
 class Grpc(object):
-    """ Adapter for boring-SSL json sources files. """
+    """Adapter for boring-SSL json sources files. """
 
     def __init__(self, sources):
         self.yaml = None
