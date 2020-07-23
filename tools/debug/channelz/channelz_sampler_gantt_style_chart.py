@@ -14,21 +14,19 @@ if __name__ == '__main__':
 
   pyplt = py.offline.plot
 
-  # Read Json data
-  
   df = []
   with open(sys.argv[1], 'r') as f:
-    temp = json.loads(f.read())
-  for i in temp:
-    df.append(
-        dict(
+    for jsonstr in f.readlines():
+      temp = json.loads(jsonstr)
+      for i in temp:
+        df.append(
+          dict(
             Task=i['Task'],
             Start=i['Start'],
             Finish=i['Finish'],
             ID=i['ID'],
             Type=i['Type'],
             Description=i['Description'].replace('\n', '<br>')))
-
 
   sorted_df = sorted(df, key=lambda x: (x['Task'], x['Start']))
 
