@@ -51,7 +51,8 @@ Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel,
 
 CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
                  const std::string& method,
-                 const OutgoingMetadataContainer& metadata)
+                 const OutgoingMetadataContainer& metadata,
+                 const std::unique_ptr<std::chrono::system_clock::time_point>& deadline)
     : stub_(new grpc::GenericStub(channel)) {
   gpr_mu_init(&write_mu_);
   gpr_cv_init(&write_cv_);
@@ -60,6 +61,9 @@ CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
          iter != metadata.end(); ++iter) {
       ctx_.AddMetadata(iter->first, iter->second);
     }
+  }
+  if (deadline != nullptr) {
+    ctx_.set_deadline(*deadline.get());
   }
   call_ = stub_->PrepareCall(&ctx_, method, &cq_);
   call_->StartCall(tag(1));

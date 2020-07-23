@@ -45,7 +45,8 @@ class CliCall final {
       IncomingMetadataContainer;
 
   CliCall(const std::shared_ptr<grpc::Channel>& channel,
-          const std::string& method, const OutgoingMetadataContainer& metadata);
+          const std::string& method, const OutgoingMetadataContainer& metadata,
+          const std::unique_ptr<std::chrono::system_clock::time_point>& deadline = nullptr);
   ~CliCall();
 
   // Perform an unary generic RPC.

@@ -70,6 +70,7 @@ DEFINE_bool(batch, false,
             "more than a few RPCs. gRPC CLI has very different performance "
             "characteristics compared with normal RPC calls which make it "
             "unsuitable for loadtesting or significant production traffic.");
+DEFINE_uint32(timeout, 0, "Call timeout in seconds (0 disables timeout)");
 
 namespace {
 
@@ -486,7 +487,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       "    --binary_input           ; Input in binary format\n"
       "    --binary_output          ; Output in binary format\n"
       "    --json_input             ; Input in json format\n"
-      "    --json_output            ; Output in json format\n" +
+      "    --json_output            ; Output in json format\n"
+      "    --timeout                ; Call timeout in seconds\n" +
       cred.GetCredentialUsage());
 
   std::stringstream output_ss;
@@ -496,6 +498,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   std::string formatted_method_name;
   std::unique_ptr<ProtoFileParser> parser;
   std::string serialized_request_proto;
+  std::unique_ptr<std::chrono::system_clock::time_point> deadline;
   bool print_mode = false;
 
   std::shared_ptr<grpc::Channel> channel =
@@ -523,6 +526,10 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     }
   }
 
+  if (FLAGS_timeout > 0) {
+    deadline.reset(new std::chrono::system_clock::time_point(std::chrono::system_clock::now() + std::chrono::seconds(FLAGS_timeout)));
+  }
+
   if (argc == 3) {
     request_text = argv[2];
   }
@@ -540,7 +547,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     ParseMetadataFlag(&client_metadata);
     PrintMetadata(client_metadata, "Sending client initial metadata:");
 
-    CliCall call(channel, formatted_method_name, client_metadata);
+    CliCall call(channel, formatted_method_name, client_metadata, deadline);
 
     if (FLAGS_infile.empty()) {
       if (isatty(fileno(stdin))) {
@@ -669,7 +676,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
           std::string serialized_response_proto;
           std::multimap<grpc::string_ref, grpc::string_ref>
               server_initial_metadata, server_trailing_metadata;
-          CliCall call(channel, formatted_method_name, client_metadata);
+          CliCall call(channel, formatted_method_name, client_metadata, deadline);
           call.Write(serialized_request_proto);
           call.WritesDone();
           if (!call.Read(&serialized_response_proto,
@@ -767,7 +774,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     ParseMetadataFlag(&client_metadata);
     PrintMetadata(client_metadata, "Sending client initial metadata:");
 
-    CliCall call(channel, formatted_method_name, client_metadata);
+    CliCall call(channel, formatted_method_name, client_metadata, deadline);
     call.Write(serialized_request_proto);
     call.WritesDone();
 
