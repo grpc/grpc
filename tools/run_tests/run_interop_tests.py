@@ -190,8 +190,8 @@ class CSharpCoreCLRLanguage:
 class AspNetCoreLanguage:
 
     def __init__(self):
-        self.client_cwd = '../grpc-dotnet/testassets/InteropTestsClient/bin/Debug/netcoreapp3.0'
-        self.server_cwd = '../grpc-dotnet/testassets/InteropTestsWebsite/bin/Debug/netcoreapp3.0'
+        self.client_cwd = '../grpc-dotnet/output/InteropTestsClient'
+        self.server_cwd = '../grpc-dotnet/output/InteropTestsWebsite'
         self.safename = str(self)
 
     def cloud_to_prod_env(self):
