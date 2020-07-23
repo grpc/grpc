@@ -1028,9 +1028,9 @@ grpc_error* RdsResponseParse(
     }
     // Parse the route_config.
     XdsApi::RdsUpdate local_rds_update;
-    grpc_error* error = RouteConfigParse(
-        client, tracer, symtab, route_config, expected_server_name,
-        &local_rds_update);
+    grpc_error* error =
+        RouteConfigParse(client, tracer, symtab, route_config,
+                         expected_server_name, &local_rds_update);
     if (error != GRPC_ERROR_NONE) return error;
     rds_update->emplace(std::move(local_rds_update));
     return GRPC_ERROR_NONE;
@@ -1345,10 +1345,9 @@ grpc_error* XdsApi::ParseAdsResponse(
     return LdsResponseParse(client_, tracer_, symtab_.ptr(), response,
                             expected_server_name, lds_update, arena.ptr());
   } else if (*type_url == kRdsTypeUrl) {
-    return RdsResponseParse(client_, tracer_, symtab_.ptr(), response,
-                            expected_server_name,
-                            expected_route_configuration_names, rds_update,
-                            arena.ptr());
+    return RdsResponseParse(
+        client_, tracer_, symtab_.ptr(), response, expected_server_name,
+        expected_route_configuration_names, rds_update, arena.ptr());
   } else if (*type_url == kCdsTypeUrl) {
     return CdsResponseParse(client_, tracer_, symtab_.ptr(), response,
                             expected_cluster_names, cds_update_map,
