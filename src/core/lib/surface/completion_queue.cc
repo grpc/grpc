@@ -28,6 +28,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
@@ -363,42 +364,39 @@ struct cq_callback_alternative_data {
   static grpc_completion_queue* SharedNextableCQ() {
     grpc_core::MutexLock lock(&*shared_cq_next_mu);
 
-    if (shared_cq_next == nullptr) {
-      shared_cq_next = grpc_completion_queue_create_for_next(nullptr);
-      int num_nexting_threads = GPR_CLAMP(gpr_cpu_num_cores(), 1, 32);
-      threads_remaining.Store(num_nexting_threads,
-                              grpc_core::MemoryOrder::RELEASE);
-      for (int i = 0; i < num_nexting_threads; i++) {
-        grpc_core::Executor::Run(
-            GRPC_CLOSURE_CREATE(
-                [](void* arg, grpc_error* /*error*/) {
-                  grpc_completion_queue* cq =
-                      static_cast<grpc_completion_queue*>(arg);
-                  while (true) {
-                    grpc_event event = grpc_completion_queue_next(
-                        cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-                    if (event.type == GRPC_QUEUE_SHUTDOWN) {
-                      break;
-                    }
-                    GPR_DEBUG_ASSERT(event.type == GRPC_OP_COMPLETE);
-                    // We can always execute the callback inline rather than
-                    // pushing it to another Executor thread because this
-                    // thread is definitely running on an executor, does not
-                    // hold any application locks before executing the callback,
-                    // and cannot be entered recursively.
-                    auto* functor = static_cast<
-                        grpc_experimental_completion_queue_functor*>(event.tag);
-                    functor->functor_run(functor, event.success);
-                  }
-                  if (threads_remaining.FetchSub(
-                          1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
-                    grpc_completion_queue_destroy(cq);
-                  }
-                },
-                shared_cq_next, nullptr),
-            GRPC_ERROR_NONE, grpc_core::ExecutorType::DEFAULT,
-            grpc_core::ExecutorJobType::LONG);
-      }
+    if (shared_cq_next != nullptr) {
+      return shared_cq_next;
+    }
+
+    shared_cq_next = grpc_completion_queue_create_for_next(nullptr);
+    int num_nexting_threads = GPR_CLAMP(gpr_cpu_num_cores(), 2, 32);
+    shared_cq_threads = new std::vector<grpc_core::Thread>;
+    for (int i = 0; i < num_nexting_threads; i++) {
+      shared_cq_threads->emplace_back(
+          "nexting_thread",
+          [](void* arg) {
+            grpc_completion_queue* cq =
+                static_cast<grpc_completion_queue*>(arg);
+            while (true) {
+              grpc_event event = grpc_completion_queue_next(
+                  cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+              if (event.type == GRPC_QUEUE_SHUTDOWN) {
+                break;
+              }
+              GPR_DEBUG_ASSERT(event.type == GRPC_OP_COMPLETE);
+              // We can always execute the callback inline rather than
+              // pushing it to another Executor thread because this
+              // thread is definitely running on a background thread, does not
+              // hold any application locks before executing the callback,
+              // and cannot be entered recursively.
+              auto* functor =
+                  static_cast<grpc_experimental_completion_queue_functor*>(
+                      event.tag);
+              functor->functor_run(functor, event.success);
+            }
+          },
+          shared_cq_next);
+      shared_cq_threads->back().Start();
     }
     return shared_cq_next;
   }
@@ -406,13 +404,16 @@ struct cq_callback_alternative_data {
   static grpc_core::ManualConstructor<grpc_core::Mutex> shared_cq_next_mu;
   static grpc_completion_queue*
       shared_cq_next;  // GUARDED_BY(shared_cq_next_mu)
-  static grpc_core::Atomic<int> threads_remaining;
+  // Use plain pointer rather than unique_ptr to have trivial destruction
+  static std::vector<grpc_core::Thread>*
+      shared_cq_threads;  // GUARDED_BY(shared_cq_next_mu)
 };
 
 grpc_core::ManualConstructor<grpc_core::Mutex>
     cq_callback_alternative_data::shared_cq_next_mu;
 grpc_completion_queue* cq_callback_alternative_data::shared_cq_next = nullptr;
-grpc_core::Atomic<int> cq_callback_alternative_data::threads_remaining{0};
+std::vector<grpc_core::Thread>*
+    cq_callback_alternative_data::shared_cq_threads = nullptr;
 
 }  // namespace
 
@@ -584,10 +585,23 @@ void grpc_cq_shutdown() {
       grpc_core::MutexLock lock(
           &*cq_callback_alternative_data::shared_cq_next_mu);
       if (cq_callback_alternative_data::shared_cq_next != nullptr) {
+        GPR_DEBUG_ASSERT(cq_callback_alternative_data::shared_cq_threads !=
+                         nullptr);
         grpc_completion_queue_shutdown(
             cq_callback_alternative_data::shared_cq_next);
       }
-      cq_callback_alternative_data::shared_cq_next = nullptr;
+      if (cq_callback_alternative_data::shared_cq_threads != nullptr) {
+        GPR_DEBUG_ASSERT(cq_callback_alternative_data::shared_cq_next !=
+                         nullptr);
+        for (auto& th : *cq_callback_alternative_data::shared_cq_threads) {
+          th.Join();
+        }
+        delete cq_callback_alternative_data::shared_cq_threads;
+        cq_callback_alternative_data::shared_cq_threads = nullptr;
+        grpc_completion_queue_destroy(
+            cq_callback_alternative_data::shared_cq_next);
+        cq_callback_alternative_data::shared_cq_next = nullptr;
+      }
     }
     cq_callback_alternative_data::shared_cq_next_mu.Destroy();
   }
