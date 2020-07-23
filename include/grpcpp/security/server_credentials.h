@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2019 gRPC authors.
+ * Copyright 2015 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,71 +19,69 @@
 #ifndef GRPCPP_SECURITY_SERVER_CREDENTIALS_H
 #define GRPCPP_SECURITY_SERVER_CREDENTIALS_H
 
-#include <grpcpp/security/server_credentials_impl.h>
+#include <memory>
+#include <vector>
+
+#include <grpc/grpc_security_constants.h>
+#include <grpcpp/security/auth_metadata_processor.h>
+#include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/support/config.h>
+
+struct grpc_server;
 
 namespace grpc_impl {
 
 class Server;
 }  // namespace grpc_impl
 namespace grpc {
+struct SslServerCredentialsOptions;
 
-typedef ::grpc_impl::ServerCredentials ServerCredentials;
+/// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
+class ServerCredentials {
+ public:
+  virtual ~ServerCredentials();
 
-/// Options to create ServerCredentials with SSL
-struct SslServerCredentialsOptions {
-  /// \warning Deprecated
-  SslServerCredentialsOptions()
-      : force_client_auth(false),
-        client_certificate_request(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {}
-  SslServerCredentialsOptions(
-      grpc_ssl_client_certificate_request_type request_type)
-      : force_client_auth(false), client_certificate_request(request_type) {}
+  /// This method is not thread-safe and has to be called before the server is
+  /// started. The last call to this function wins.
+  virtual void SetAuthMetadataProcessor(
+      const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) = 0;
 
-  struct PemKeyCertPair {
-    std::string private_key;
-    std::string cert_chain;
-  };
-  std::string pem_root_certs;
-  std::vector<PemKeyCertPair> pem_key_cert_pairs;
-  /// \warning Deprecated
-  bool force_client_auth;
+ private:
+  friend class ::grpc_impl::Server;
 
-  /// If both \a force_client_auth and \a client_certificate_request
-  /// fields are set, \a force_client_auth takes effect, i.e.
-  /// \a REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
-  /// will be enforced.
-  grpc_ssl_client_certificate_request_type client_certificate_request;
+  /// Tries to bind \a server to the given \a addr (eg, localhost:1234,
+  /// 192.168.1.1:31416, [::1]:27182, etc.)
+  ///
+  /// \return bound port number on success, 0 on failure.
+  // TODO(dgq): the "port" part seems to be a misnomer.
+  virtual int AddPortToServer(const std::string& addr, grpc_server* server) = 0;
 };
 
-static inline std::shared_ptr<ServerCredentials> SslServerCredentials(
-    const SslServerCredentialsOptions& options) {
-  return ::grpc_impl::SslServerCredentials(options);
-}
+/// Builds SSL ServerCredentials given SSL specific options
+std::shared_ptr<ServerCredentials> SslServerCredentials(
+    const grpc::SslServerCredentialsOptions& options);
 
-static inline std::shared_ptr<ServerCredentials> InsecureServerCredentials() {
-  return ::grpc_impl::InsecureServerCredentials();
-}
+/// Builds insecure server credentials.
+std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
 namespace experimental {
 
-typedef ::grpc_impl::experimental::AltsServerCredentialsOptions
-    AltsServerCredentialsOptions;
+/// Options to create ServerCredentials with ALTS
+struct AltsServerCredentialsOptions {
+  /// Add fields if needed.
+};
 
-static inline std::shared_ptr<ServerCredentials> AltsServerCredentials(
-    const AltsServerCredentialsOptions& options) {
-  return ::grpc_impl::experimental::AltsServerCredentials(options);
-}
+/// Builds ALTS ServerCredentials given ALTS specific options
+std::shared_ptr<ServerCredentials> AltsServerCredentials(
+    const AltsServerCredentialsOptions& options);
 
-static inline std::shared_ptr<ServerCredentials> LocalServerCredentials(
-    grpc_local_connect_type type) {
-  return ::grpc_impl::experimental::LocalServerCredentials(type);
-}
+/// Builds Local ServerCredentials.
+std::shared_ptr<ServerCredentials> LocalServerCredentials(
+    grpc_local_connect_type type);
 
 /// Builds TLS ServerCredentials given TLS options.
-static inline std::shared_ptr<ServerCredentials> TlsServerCredentials(
-    const ::grpc_impl::experimental::TlsCredentialsOptions& options) {
-  return ::grpc_impl::experimental::TlsServerCredentials(options);
-}
+std::shared_ptr<ServerCredentials> TlsServerCredentials(
+    const TlsCredentialsOptions& options);
 
 }  // namespace experimental
 }  // namespace grpc

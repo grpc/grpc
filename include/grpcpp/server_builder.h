@@ -43,12 +43,12 @@ namespace grpc_impl {
 class CompletionQueue;
 class Server;
 class ServerCompletionQueue;
-class ServerCredentials;
 }  // namespace grpc_impl
 
 namespace grpc {
 
 class AsyncGenericService;
+class ServerCredentials;
 class Service;
 namespace testing {
 class ServerBuilderPluginTest;
@@ -130,7 +130,7 @@ class ServerBuilder {
   /// does not modify this pointer.
   ServerBuilder& AddListeningPort(
       const std::string& addr_uri,
-      std::shared_ptr<grpc_impl::ServerCredentials> creds,
+      std::shared_ptr<grpc::ServerCredentials> creds,
       int* selected_port = nullptr);
 
   /// Add a completion queue for handling asynchronous services.
@@ -312,7 +312,7 @@ class ServerBuilder {
   /// Experimental, to be deprecated
   struct Port {
     std::string addr;
-    std::shared_ptr<grpc_impl::ServerCredentials> creds;
+    std::shared_ptr<ServerCredentials> creds;
     int* selected_port;
   };
 
@@ -380,7 +380,7 @@ class ServerBuilder {
   /// List of completion queues added via \a AddCompletionQueue method.
   std::vector<grpc_impl::ServerCompletionQueue*> cqs_;
 
-  std::shared_ptr<grpc_impl::ServerCredentials> creds_;
+  std::shared_ptr<grpc::ServerCredentials> creds_;
   std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>> plugins_;
   grpc_resource_quota* resource_quota_;
   grpc::AsyncGenericService* generic_service_{nullptr};
