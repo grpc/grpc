@@ -262,8 +262,6 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
         grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
 
    private:
-    static void KillZombieClosure(void* arg, grpc_error* error);
-
     // Helper functions for handling calls at the top of the call stack.
     static void RecvInitialMetadataBatchComplete(void* arg, grpc_error* error);
     void StartNewRpc(grpc_call_element* elem);

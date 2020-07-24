@@ -1211,7 +1211,7 @@ bool grpc_server::CallData::MaybeActivate() {
   CallState expected = CallState::PENDING;
   return state_.CompareExchangeStrong(&expected, CallState::ACTIVATED,
                                       grpc_core::MemoryOrder::ACQ_REL,
-                                      grpc_core::MemoryOrder::ACQUIRE);
+                                      grpc_core::MemoryOrder::RELAXED);
 }
 
 void grpc_server::CallData::FailCallCreation(grpc_call_element* elem,
@@ -1278,10 +1278,13 @@ void grpc_server::CallData::PublishNewRpc(void* arg, grpc_error* error) {
   rm->MatchOrQueue(chand->cq_idx(), calld);
 }
 
-void grpc_server::CallData::KillZombieClosure(void* call,
-                                              grpc_error* /*error*/) {
+namespace {
+
+void KillZombieClosure(void* call, grpc_error* /*error*/) {
   grpc_call_unref(static_cast<grpc_call*>(call));
 }
+
+}  // namespace
 
 void grpc_server::CallData::KillZombie() {
   GRPC_CLOSURE_INIT(&kill_zombie_closure_, KillZombieClosure, call_,
@@ -1337,19 +1340,18 @@ void grpc_server::CallData::RecvInitialMetadataBatchComplete(
   if (error == GRPC_ERROR_NONE) {
     calld->StartNewRpc(elem);
   } else {
-    CallState expected = CallState::NOT_STARTED;
-    if (calld->state_.CompareExchangeStrong(&expected, CallState::ZOMBIED,
-                                            grpc_core::MemoryOrder::ACQ_REL,
-                                            grpc_core::MemoryOrder::ACQUIRE)) {
+    CallState expected_not_started = CallState::NOT_STARTED;
+    CallState expected_pending = CallState::PENDING;
+    if (calld->state_.CompareExchangeStrong(
+            &expected_not_started, CallState::ZOMBIED,
+            grpc_core::MemoryOrder::ACQ_REL, grpc_core::MemoryOrder::ACQUIRE)) {
       calld->KillZombie();
-    } else {
-      expected = CallState::PENDING;
-      if (calld->state_.CompareExchangeStrong(
-              &expected, CallState::ZOMBIED, grpc_core::MemoryOrder::ACQ_REL,
-              grpc_core::MemoryOrder::ACQUIRE)) {
-        // Zombied call will be destroyed when it's removed from the pending
-        // queue... later.
-      }
+    } else if (calld->state_.CompareExchangeStrong(
+                   &expected_pending, CallState::ZOMBIED,
+                   grpc_core::MemoryOrder::ACQ_REL,
+                   grpc_core::MemoryOrder::RELAXED)) {
+      // Zombied call will be destroyed when it's removed from the pending
+      // queue... later.
     }
   }
 }
