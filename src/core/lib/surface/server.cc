@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015-2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015-2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -697,11 +695,6 @@ void grpc_server::FailCall(size_t cq_idx, RequestedCall* rc,
                  &rc->completion);
 }
 
-void grpc_server::DoneShutdownEvent(void* server,
-                                    grpc_cq_completion* /*completion*/) {
-  static_cast<grpc_server*>(server)->Unref();
-}
-
 // Before calling MaybeFinishShutdown(), we must hold mu_global_ and not
 // hold mu_call_.
 void grpc_server::MaybeFinishShutdown() {
@@ -756,8 +749,8 @@ std::vector<grpc_channel*> grpc_server::GetChannelsLocked() const {
   return channels;
 }
 
-void grpc_server::ListenerDestroyDone(void* s, grpc_error* /*error*/) {
-  grpc_server* server = static_cast<grpc_server*>(s);
+void grpc_server::ListenerDestroyDone(void* arg, grpc_error* /*error*/) {
+  grpc_server* server = static_cast<grpc_server*>(arg);
   grpc_core::MutexLock lock(&server->mu_global_);
   server->listeners_destroyed_++;
   server->MaybeFinishShutdown();
@@ -890,8 +883,8 @@ grpc_call_error grpc_server::ValidateServerRequestAndCq(
   return GRPC_CALL_OK;
 }
 
-grpc_call_error grpc_server::QueueCallRequest(size_t cq_idx,
-                                              RequestedCall* rc) {
+grpc_call_error grpc_server::QueueRequestedCall(size_t cq_idx,
+                                                RequestedCall* rc) {
   if (shutdown_flag_.load(std::memory_order_acquire)) {
     FailCall(cq_idx, rc,
              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
@@ -923,7 +916,7 @@ grpc_call_error grpc_server::RequestCall(
   }
   RequestedCall* rc =
       new RequestedCall(tag, cq_bound_to_call, call, request_metadata, details);
-  return QueueCallRequest(cq_idx, rc);
+  return QueueRequestedCall(cq_idx, rc);
 }
 
 grpc_call_error grpc_server::RequestRegisteredCall(
@@ -940,7 +933,7 @@ grpc_call_error grpc_server::RequestRegisteredCall(
   RequestedCall* rc =
       new RequestedCall(tag_new, cq_bound_to_call, call, request_metadata, rm,
                         deadline, optional_payload);
-  return QueueCallRequest(cq_idx, rc);
+  return QueueRequestedCall(cq_idx, rc);
 }
 
 //
@@ -1105,10 +1098,10 @@ grpc_server::ChannelData::GetRegisteredMethod(const grpc_slice& host,
   return nullptr;
 }
 
-void grpc_server::ChannelData::AcceptStream(void* cd,
+void grpc_server::ChannelData::AcceptStream(void* arg,
                                             grpc_transport* /*transport*/,
                                             const void* transport_server_data) {
-  auto* chand = static_cast<grpc_server::ChannelData*>(cd);
+  auto* chand = static_cast<grpc_server::ChannelData*>(arg);
   /* create a call */
   grpc_call_create_args args;
   args.channel = chand->channel_;
@@ -1127,7 +1120,8 @@ void grpc_server::ChannelData::AcceptStream(void* cd,
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   auto* calld = static_cast<grpc_server::CallData*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
-    calld->FailCallCreation(elem, error);
+    GRPC_ERROR_UNREF(error);
+    calld->FailCallCreation();
     return;
   }
   calld->Start(elem);
@@ -1214,10 +1208,20 @@ bool grpc_server::CallData::MaybeActivate() {
                                       grpc_core::MemoryOrder::RELAXED);
 }
 
-void grpc_server::CallData::FailCallCreation(grpc_call_element* elem,
-                                             grpc_error* error) {
-  RecvInitialMetadataBatchComplete(elem, error);
-  GRPC_ERROR_UNREF(error);
+void grpc_server::CallData::FailCallCreation() {
+  CallState expected_not_started = CallState::NOT_STARTED;
+  CallState expected_pending = CallState::PENDING;
+  if (state_.CompareExchangeStrong(
+          &expected_not_started, CallState::ZOMBIED,
+          grpc_core::MemoryOrder::ACQ_REL, grpc_core::MemoryOrder::ACQUIRE)) {
+    KillZombie();
+  } else if (state_.CompareExchangeStrong(
+                 &expected_pending, CallState::ZOMBIED,
+                 grpc_core::MemoryOrder::ACQ_REL,
+                 grpc_core::MemoryOrder::RELAXED)) {
+    // Zombied call will be destroyed when it's removed from the pending
+    // queue... later.
+  }
 }
 
 void grpc_server::CallData::Start(grpc_call_element* elem) {
@@ -1334,26 +1338,14 @@ void grpc_server::CallData::StartNewRpc(grpc_call_element* elem) {
 }
 
 void grpc_server::CallData::RecvInitialMetadataBatchComplete(
-    void* ptr, grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(ptr);
+    void* arg, grpc_error* error) {
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<grpc_server::CallData*>(elem->call_data);
-  if (error == GRPC_ERROR_NONE) {
-    calld->StartNewRpc(elem);
-  } else {
-    CallState expected_not_started = CallState::NOT_STARTED;
-    CallState expected_pending = CallState::PENDING;
-    if (calld->state_.CompareExchangeStrong(
-            &expected_not_started, CallState::ZOMBIED,
-            grpc_core::MemoryOrder::ACQ_REL, grpc_core::MemoryOrder::ACQUIRE)) {
-      calld->KillZombie();
-    } else if (calld->state_.CompareExchangeStrong(
-                   &expected_pending, CallState::ZOMBIED,
-                   grpc_core::MemoryOrder::ACQ_REL,
-                   grpc_core::MemoryOrder::RELAXED)) {
-      // Zombied call will be destroyed when it's removed from the pending
-      // queue... later.
-    }
+  if (error != GRPC_ERROR_NONE) {
+    calld->FailCallCreation();
+    return;
   }
+  calld->StartNewRpc(elem);
 }
 
 void grpc_server::CallData::StartTransportStreamOpBatchImpl(

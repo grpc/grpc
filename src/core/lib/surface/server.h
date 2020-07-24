@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #ifndef GRPC_CORE_LIB_SURFACE_SERVER_H
 #define GRPC_CORE_LIB_SURFACE_SERVER_H
@@ -199,7 +197,7 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
    private:
     class ConnectivityWatcher;
 
-    static void AcceptStream(void* cd, grpc_transport* /*transport*/,
+    static void AcceptStream(void* arg, grpc_transport* /*transport*/,
                              const void* transport_server_data);
 
     void Destroy();
@@ -250,7 +248,7 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
     void KillZombie();
 
-    void FailCallCreation(grpc_call_element* elem, grpc_error* error);
+    void FailCallCreation();
 
     // Filter vtable functions.
     static grpc_error* InitCallElement(grpc_call_element* elem,
@@ -327,11 +325,15 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
   static void ListenerDestroyDone(void* arg, grpc_error* error);
 
-  static void DoneShutdownEvent(void* server, grpc_cq_completion* completion);
+  static void DoneShutdownEvent(void* server,
+                                grpc_cq_completion* /*completion*/) {
+    static_cast<grpc_server*>(server)->Unref();
+  }
+
   static void DoneRequestEvent(void* req, grpc_cq_completion* completion);
 
   void FailCall(size_t cq_idx, RequestedCall* rc, grpc_error* error);
-  grpc_call_error QueueCallRequest(size_t cq_idx, RequestedCall* rc);
+  grpc_call_error QueueRequestedCall(size_t cq_idx, RequestedCall* rc);
 
   void MaybeFinishShutdown();
 
@@ -360,7 +362,7 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
   //
   // If they are ever required to be nested, you must lock mu_global_
   // before mu_call_. This is currently used in shutdown processing
-  // (grpc_server_shutdown_and_notify() and maybe_finish_shutdown()).
+  // (ShutdownAndNotify() and MaybeFinishShutdown()).
   grpc_core::Mutex mu_global_;  // mutex for server and channel state
   grpc_core::Mutex mu_call_;    // mutex for call-specific state
 
