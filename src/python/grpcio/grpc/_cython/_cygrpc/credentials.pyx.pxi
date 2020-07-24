@@ -129,12 +129,14 @@ cdef class SSLSessionCacheLRU:
 
 cdef class SSLChannelCredentials(ChannelCredentials):
 
-  def __cinit__(self, pem_root_certificates, private_key, certificate_chain):
+  def __cinit__(self, pem_root_certificates, private_key, certificate_chain, min_tls_version, max_tls_version):
     if pem_root_certificates is not None and not isinstance(pem_root_certificates, bytes):
       raise TypeError('expected certificate to be bytes, got %s' % (type(pem_root_certificates)))
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
+    self._min_tls_version = min_tls_version
+    self._max_tls_version = max_tls_version
 
   cdef grpc_channel_credentials *c(self) except *:
     cdef const char *c_pem_root_certificates
@@ -144,7 +146,7 @@ cdef class SSLChannelCredentials(ChannelCredentials):
     else:
       c_pem_root_certificates = self._pem_root_certificates
     if self._private_key is None and self._certificate_chain is None:
-      return grpc_ssl_credentials_create(
+      ssl_creds = grpc_ssl_credentials_create(
           c_pem_root_certificates, NULL, NULL, NULL)
     else:
       if self._private_key:
@@ -155,8 +157,13 @@ cdef class SSLChannelCredentials(ChannelCredentials):
         c_pem_key_certificate_pair.certificate_chain = self._certificate_chain
       else:
         c_pem_key_certificate_pair.certificate_chain = NULL
-      return grpc_ssl_credentials_create(
+      ssl_creds = grpc_ssl_credentials_create(
           c_pem_root_certificates, &c_pem_key_certificate_pair, NULL, NULL)
+    if self._min_tls_version:
+      grpc_ssl_credentials_set_min_tls_version(ssl_creds, self._min_tls_version)
+    if self._max_tls_version:
+      grpc_ssl_credentials_set_max_tls_version(ssl_creds, self._max_tls_version)
+    return ssl_creds
 
 
 cdef class CompositeChannelCredentials(ChannelCredentials):
@@ -232,7 +239,8 @@ cdef grpc_ssl_pem_key_cert_pair* _create_c_ssl_pem_key_cert_pairs(pem_key_cert_p
   return c_ssl_pem_key_cert_pairs
 
 def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
-                           bint force_client_auth):
+                           bint force_client_auth, min_tls_version,
+                           max_tls_version):
   pem_root_certs = str_to_bytes(pem_root_certs)
   pem_key_cert_pairs = list(pem_key_cert_pairs)
   cdef ServerCredentials credentials = ServerCredentials()
@@ -254,6 +262,10 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
     c_cert_config)
   # C-core assumes ownership of c_options
   credentials.c_credentials = grpc_ssl_server_credentials_create_with_options(c_options)
+  if min_tls_version:
+    grpc_ssl_server_credentials_set_min_tls_version(credentials.c_credentials, min_tls_version)
+  if max_tls_version:
+    grpc_ssl_server_credentials_set_max_tls_version(credentials.c_credentials, max_tls_version)
   return credentials
 
 def server_certificate_config_ssl(pem_root_certs, pem_key_cert_pairs):
