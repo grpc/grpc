@@ -16,9 +16,11 @@ BEGIN {
     namespace = "Grpc";
     className = "";
     classDocComment = "";
-    delete methods; # methods[method][doc|args|static]
-    delete constants; # constants[i][name|doc]
-    constantsCount = 0;
+    delete methodDocComments;
+    delete methodIsStatic;
+    delete methodArgs;
+    delete methodNumArgs;
+    delete constantDocComments;
 
     #  * class className
     classLineRegex = "^ \\* class (\\S+)$";
@@ -88,9 +90,10 @@ $0 ~ phpMethodLineRegex {
     };
 
     method = gensub(phpMethodLineRegex, "\\2", "g");
-    methods[method]["doc"] = docComment;
+    methodDocComments[method] = docComment;
     for (i in args) {
-        methods[method]["args"][i] = args[i];
+        methodArgs[method, i] = args[i];
+        methodNumArgs[method] = i"";
     }
     docComment = "";
 }
@@ -110,7 +113,7 @@ $0 ~ phpMeLineRegex {
 
 # ZEND_ACC_STATIC
 inPhpMe && /ZEND_ACC_STATIC/ { 
-    methods[method]["static"] = 1;
+    methodIsStatic[method] = 1;
 }
 
 # closing bracet of PHP_ME(...)
@@ -122,9 +125,7 @@ iinPhpMe && /\)$/ {
 $0 ~ phpConstantLineRegs {
     inPhpConstant = 1;
     constant = gensub(phpConstantLineRegs, "\\1", "g");
-    constants[constantsCount]["name"] = constant;
-    constants[constantsCount]["doc"] = docComment;
-    constantsCount++;
+    constantDocComments[constant] = docComment;
 }
 
 # closing bracet of PHP_ME(...)
@@ -145,27 +146,27 @@ END {
     if (className != "") {
         print classDocComment
         print "class " className " {";
-        for (m in methods) {
+        for (m in methodDocComments) {
             if (hideMethods[className"::"m]) continue;
 
-            print methods[m]["doc"];
+            print methodDocComments[m];
             printf "public"
-            if (methods[m]["static"]) printf " static"
+            if (methodIsStatic[m]) printf " static"
             printf " function " m "("
-            if (isarray(methods[m]["args"])) {
-                printf methods[m]["args"][0];
-                for (i = 1; i < length(methods[m]["args"]); i++) {
-                    printf ", " methods[m]["args"][i];
-                }
+            for (combined in methodArgs) {
+              split(combined, sep, SUBSEP);
+              if (sep[1] != m) continue;
+              printf methodArgs[combined];
+              if (sep[2] != methodNumArgs[m]) printf ", ";
             }
             print ") {}";
         }
         print "\n}";
     }
 
-    for (i in constants) {
-        print constants[i]["doc"];
-        print "const " constants[i]["name"] " = 0;";
+    for (i in constantDocComments) {
+        print constantDocComments[i];
+        print "const " i " = 0;";
     }
 
     print "\n}";
