@@ -59,7 +59,8 @@ inDocComment==1 {
 
 # class document, must match ' * class <clasName>'
 inDocComment==1 && $0 ~ classLineRegex {
-    className = gensub(classLineRegex, "\\1", "g");
+    match($0, classLineRegex, arr);
+    className = arr[1];
 }
 
 # end of class document
@@ -70,7 +71,8 @@ inDocComment==1 && /\*\// && classDocComment == "" {
 
 # param line
 inDocComment==1 && $0 ~ paramLineRegex {
-    arg = gensub(paramLineRegex, "\\1", "g");
+    match($0, paramLineRegex, arr);
+    arg = arr[1];
     args[argsCount]=arg;
     argsCount++;
 }
@@ -82,14 +84,16 @@ inDocComment==1 && /\*\// {
 
 # PHP_METHOD
 $0 ~ phpMethodLineRegex {
-    class = gensub(phpMethodLineRegex, "\\1", "g");
+    match($0, phpMethodLineRegex, arr);
+    class = arr[1];
     if (class != className) {
         error = "ERROR: Missing or mismatch class names, in class comment block: " \
           className ", in PHP_METHOD: " class;
         exit;
     };
 
-    method = gensub(phpMethodLineRegex, "\\2", "g");
+    match($0, phpMethodLineRegex, arr);
+    method = arr[2];
     methodDocComments[method] = docComment;
     for (i in args) {
         methodArgs[method, i] = args[i];
@@ -102,13 +106,15 @@ $0 ~ phpMethodLineRegex {
 $0 ~ phpMeLineRegex {
     inPhpMe = 1;
 
-    class = gensub(phpMeLineRegex, "\\1", "g");
+    match($0, phpMeLineRegex, arr);
+    class = arr[1];
     if (class != className) {
         error = "ERROR: Missing or mismatch class names, in class comment block: " \
           className ", in PHP_ME: " class;
         exit;
     };
-    method = gensub(phpMeLineRegex, "\\2", "g");
+    match($0, phpMeLineRegex, arr);
+    method = arr[2];
 }
 
 # ZEND_ACC_STATIC
@@ -124,7 +130,8 @@ iinPhpMe && /\)$/ {
 # REGISTER_LONG_CONSTANT(constant, ...
 $0 ~ phpConstantLineRegs {
     inPhpConstant = 1;
-    constant = gensub(phpConstantLineRegs, "\\1", "g");
+    match($0, phpConstantLineRegs, arr);
+    constant = arr[1];
     constantDocComments[constant] = docComment;
 }
 
