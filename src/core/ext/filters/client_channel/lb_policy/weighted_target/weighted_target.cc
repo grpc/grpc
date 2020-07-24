@@ -290,9 +290,8 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
     const std::string& name = p.first;
     auto it = targets_.find(name);
     if (it == targets_.end()) {
-      it = targets_.emplace(std::make_pair(name, nullptr)).first;
-      it->second = MakeOrphanable<WeightedChild>(
-          Ref(DEBUG_LOCATION, "WeightedChild"), it->first);
+      targets_.emplace(name, MakeOrphanable<WeightedChild>(
+                                 Ref(DEBUG_LOCATION, "WeightedChild"), name));
     }
   }
   // Update all children.
