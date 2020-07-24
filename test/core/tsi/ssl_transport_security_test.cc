@@ -970,8 +970,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   const size_t number_tls_versions = 2;
-  const tsi_tls_version tls_versions[] = {tsi_tls_version::TSI_TLS1_2,
-                                          tsi_tls_version::TSI_TLS1_3};
+  const tsi_tls_version tls_versions[] = {tsi_tls_version::TSI_TLS1_2};
   for (size_t i = 0; i < number_tls_versions; i++) {
     // Set the TLS version to be used in the tests.
     test_tls_version = tls_versions[i];
