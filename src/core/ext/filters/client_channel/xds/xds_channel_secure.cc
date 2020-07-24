@@ -73,7 +73,7 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
   if (!bootstrap.server().channel_creds.empty()) {
     for (size_t i = 0; i < bootstrap.server().channel_creds.size(); ++i) {
       if (bootstrap.server().channel_creds[i].type == "google_default") {
-        creds = grpc_google_default_credentials_create();
+        creds = grpc_google_default_credentials_create(nullptr);
         break;
       } else if (bootstrap.server().channel_creds[i].type == "fake") {
         creds = grpc_fake_transport_security_credentials_create();

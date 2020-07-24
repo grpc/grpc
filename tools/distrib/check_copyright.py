@@ -79,6 +79,9 @@ _EXEMPT = frozenset((
     'examples/python/route_guide/route_guide_pb2.py',
     'examples/python/route_guide/route_guide_pb2_grpc.py',
 
+    # Generated doxygen config file
+    'tools/doxygen/Doxyfile.php',
+
     # An older file originally from outside gRPC.
     'src/php/tests/bootstrap.php',
     # census.proto copied from github
@@ -148,8 +151,7 @@ for filename in filename_list:
     if filename in _EXEMPT:
         continue
     # Skip check for upb generated code.
-    if (filename.endswith('.upb.h') or filename.endswith('.upb.c') or
-            filename.endswith('.upbdefs.h') or filename.endswith('.upbdefs.c')):
+    if filename.endswith('.upb.h') or filename.endswith('.upb.c'):
         continue
     ext = os.path.splitext(filename)[1]
     base = os.path.basename(filename)

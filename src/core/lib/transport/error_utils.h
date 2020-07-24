@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/http2_errors.h"
@@ -36,6 +38,10 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
                            grpc_status_code* code, grpc_slice* slice,
                            grpc_http2_error_code* http_status,
                            const char** error_string);
+
+/// Utility Function to convert a grpc_error * \a error to an absl::Status.
+/// Does NOT consume a ref to grpc_error.
+absl::Status grpc_error_to_absl_status(grpc_error* error);
 
 /// A utility function to check whether there is a clear status code that
 /// doesn't need to be guessed in \a error. This means that \a error or some

@@ -41,6 +41,7 @@ Create Client Credentials
 .. autofunction:: composite_call_credentials
 .. autofunction:: composite_channel_credentials
 .. autofunction:: local_channel_credentials(local_connect_type=grpc.LocalConnectionType.LOCAL_TCP)
+.. autofunction:: compute_engine_channel_credentials
 
 
 Create Server

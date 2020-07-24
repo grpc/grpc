@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/iomgr/load_file.h"
+#include "test/core/util/test_config.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -92,6 +93,7 @@ TEST(GrpcTlsCredentialsOptionsTest, ErrorDetails) {
 }  // namespace testing
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();

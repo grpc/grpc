@@ -54,11 +54,7 @@
 
 struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
-      : server(nullptr),
-        channel_args(nullptr),
-        mu(nullptr),
-        pollset(nullptr),
-        combiner(nullptr) {
+      : server(nullptr), channel_args(nullptr), mu(nullptr), combiner(nullptr) {
     gpr_ref_init(&users, 1);
     combiner = grpc_combiner_create();
   }
@@ -67,7 +63,7 @@ struct grpc_end2end_http_proxy {
   grpc_tcp_server* server;
   grpc_channel_args* channel_args;
   gpr_mu* mu;
-  grpc_pollset* pollset;
+  std::vector<grpc_pollset*> pollset;
   gpr_refcount users;
 
   grpc_core::Combiner* combiner;
@@ -568,7 +564,7 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
   conn->proxy = proxy;
   gpr_ref_init(&conn->refcount, 1);
   conn->pollset_set = grpc_pollset_set_create();
-  grpc_pollset_set_add_pollset(conn->pollset_set, proxy->pollset);
+  grpc_pollset_set_add_pollset(conn->pollset_set, proxy->pollset[0]);
   grpc_endpoint_add_to_pollset_set(endpoint, conn->pollset_set);
   grpc_slice_buffer_init(&conn->client_read_buffer);
   grpc_slice_buffer_init(&conn->client_deferred_write_buffer);
@@ -599,7 +595,7 @@ static void thread_main(void* arg) {
     gpr_mu_lock(proxy->mu);
     GRPC_LOG_IF_ERROR(
         "grpc_pollset_work",
-        grpc_pollset_work(proxy->pollset, &worker,
+        grpc_pollset_work(proxy->pollset[0], &worker,
                           grpc_core::ExecCtx::Get()->Now() + GPR_MS_PER_SEC));
     gpr_mu_unlock(proxy->mu);
     grpc_core::ExecCtx::Get()->Flush();
@@ -631,9 +627,10 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(port == proxy_port);
   // Start server.
-  proxy->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-  grpc_pollset_init(proxy->pollset, &proxy->mu);
-  grpc_tcp_server_start(proxy->server, &proxy->pollset, 1, on_accept, proxy);
+  auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  grpc_pollset_init(pollset, &proxy->mu);
+  proxy->pollset.push_back(pollset);
+  grpc_tcp_server_start(proxy->server, &proxy->pollset, on_accept, proxy);
 
   // Start proxy thread.
   proxy->thd = grpc_core::Thread("grpc_http_proxy", thread_main, proxy);
@@ -654,8 +651,8 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   grpc_tcp_server_shutdown_listeners(proxy->server);
   grpc_tcp_server_unref(proxy->server);
   grpc_channel_args_destroy(proxy->channel_args);
-  grpc_pollset_shutdown(proxy->pollset,
-                        GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset,
+  grpc_pollset_shutdown(proxy->pollset[0],
+                        GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset[0],
                                             grpc_schedule_on_exec_ctx));
   GRPC_COMBINER_UNREF(proxy->combiner, "test");
   delete proxy;
