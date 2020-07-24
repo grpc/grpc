@@ -45,7 +45,7 @@ class Activation {
   Activation& operator=(const Activation&) = delete;
 
   // Insert value into Activation.
-  void InsertValue(absl::string_view name, const CelValue& value);
+  void InsertValue(absl::string_view name, const CelValue& value) { return; }
 };
 
 }  // namespace runtime

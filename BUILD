@@ -987,13 +987,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_authorization_engine",
-    srcs = [
-        "src/core/lib/security/authorization/mock_cel_library/activation.cc",
-    ],
     hdrs = [
         "src/core/lib/security/authorization/mock_cel_library/activation.h",
         "src/core/lib/security/authorization/mock_cel_library/cel_value.h",
-        "src/core/lib/security/authorization/mock_cel_library/cel_value_internal.h",
     ],
     external_deps = [
         "absl/status",
