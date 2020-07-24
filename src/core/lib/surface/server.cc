@@ -1204,14 +1204,13 @@ bool grpc_server::CallData::MaybeActivate() {
 void grpc_server::CallData::FailCallCreation() {
   CallState expected_not_started = CallState::NOT_STARTED;
   CallState expected_pending = CallState::PENDING;
-  if (state_.CompareExchangeStrong(
-          &expected_not_started, CallState::ZOMBIED,
-          grpc_core::MemoryOrder::ACQ_REL, grpc_core::MemoryOrder::ACQUIRE)) {
+  if (state_.CompareExchangeStrong(&expected_not_started, CallState::ZOMBIED,
+                                   grpc_core::MemoryOrder::ACQ_REL,
+                                   grpc_core::MemoryOrder::ACQUIRE)) {
     KillZombie();
-  } else if (state_.CompareExchangeStrong(
-                 &expected_pending, CallState::ZOMBIED,
-                 grpc_core::MemoryOrder::ACQ_REL,
-                 grpc_core::MemoryOrder::RELAXED)) {
+  } else if (state_.CompareExchangeStrong(&expected_pending, CallState::ZOMBIED,
+                                          grpc_core::MemoryOrder::ACQ_REL,
+                                          grpc_core::MemoryOrder::RELAXED)) {
     // Zombied call will be destroyed when it's removed from the pending
     // queue... later.
   }
