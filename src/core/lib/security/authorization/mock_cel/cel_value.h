@@ -82,4 +82,4 @@ class CelValue {
 }  // namespace api
 }  // namespace google
 
-#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_VALUE_H
+#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_VALUE_H */

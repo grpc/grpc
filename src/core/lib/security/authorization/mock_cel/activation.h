@@ -48,4 +48,4 @@ class Activation {
 }  // namespace api
 }  // namespace google
 
-#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_ACTIVATION_H
+#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_ACTIVATION_H */
