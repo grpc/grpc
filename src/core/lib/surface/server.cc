@@ -26,6 +26,7 @@
 #include <atomic>
 #include <iterator>
 #include <list>
+#include <queue>
 #include <utility>
 #include <vector>
 
@@ -62,12 +63,12 @@ grpc_core::TraceFlag grpc_server_channel_trace(false, "server_channel");
 //
 
 struct grpc_server::RequestedCall {
-  enum Type { BATCH_CALL, REGISTERED_CALL };
+  enum class Type { BATCH_CALL, REGISTERED_CALL };
 
   RequestedCall(void* tag_arg, grpc_completion_queue* call_cq,
                 grpc_call** call_arg, grpc_metadata_array* initial_md,
                 grpc_call_details* details)
-      : type(BATCH_CALL),
+      : type(Type::BATCH_CALL),
         tag(tag_arg),
         cq_bound_to_call(call_cq),
         call(call_arg),
@@ -80,7 +81,7 @@ struct grpc_server::RequestedCall {
                 grpc_call** call_arg, grpc_metadata_array* initial_md,
                 RegisteredMethod* rm, gpr_timespec* deadline,
                 grpc_byte_buffer** optional_payload)
-      : type(REGISTERED_CALL),
+      : type(Type::REGISTERED_CALL),
         tag(tag_arg),
         cq_bound_to_call(call_cq),
         call(call_arg),
@@ -201,11 +202,12 @@ class grpc_server::RealRequestMatcher : public RequestMatcherInterface {
   }
 
   void ZombifyPending() override {
-    for (CallData* calld : pending_) {
+    while (!pending_.empty()) {
+      CallData* calld = pending_.front();
       calld->SetState(CallData::CallState::ZOMBIED);
       calld->KillZombie();
+      pending_.pop();
     }
-    pending_.clear();
   }
 
   void KillRequests(grpc_error* error) override {
@@ -241,7 +243,7 @@ class grpc_server::RealRequestMatcher : public RequestMatcherInterface {
                 requests_per_cq_[request_queue_index].Pop());
             if (pending_call.rc != nullptr) {
               pending_call.calld = pending_.front();
-              pending_.pop_front();
+              pending_.pop();
             }
           }
         }
@@ -279,44 +281,35 @@ class grpc_server::RealRequestMatcher : public RequestMatcherInterface {
     // the server mu_call_ lock to ensure that if something is added to
     // an empty request queue, it will block until the call is actually
     // added to the pending list.
-    struct CheckQueueResult {
-      RequestedCall* rc;
-      size_t loop_count;
-      size_t cq_idx;
-    };
-    auto check_queues = [this, start_request_queue_index] {
-      for (size_t i = 0; i < requests_per_cq_.size(); i++) {
-        size_t cq_idx =
-            (start_request_queue_index + i) % requests_per_cq_.size();
-        RequestedCall* rc =
-            reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].Pop());
-        if (rc != nullptr) {
-          return CheckQueueResult{rc, i, cq_idx};
-        }
-      }
-      return CheckQueueResult{nullptr, 0u, 0u};
-    };
-    CheckQueueResult result;
+    RequestedCall* rc = nullptr;
+    size_t cq_idx = 0;
+    size_t loop_count;
     {
       grpc_core::MutexLock lock(&server_->mu_call_);
-      result = check_queues();
-      if (result.rc == nullptr) {
+      for (loop_count = 0; loop_count < requests_per_cq_.size(); loop_count++) {
+        cq_idx =
+            (start_request_queue_index + loop_count) % requests_per_cq_.size();
+        rc = reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].Pop());
+        if (rc != nullptr) {
+          break;
+        }
+      }
+      if (rc == nullptr) {
         calld->SetState(CallData::CallState::PENDING);
-        pending_.push_back(calld);
+        pending_.push(calld);
         return;
       }
     }
-    GRPC_STATS_INC_SERVER_CQS_CHECKED(result.loop_count +
-                                      requests_per_cq_.size());
+    GRPC_STATS_INC_SERVER_CQS_CHECKED(loop_count + requests_per_cq_.size());
     calld->SetState(CallData::CallState::ACTIVATED);
-    calld->Publish(result.cq_idx, result.rc);
+    calld->Publish(cq_idx, rc);
   }
 
   grpc_server* server() const override { return server_; }
 
  private:
   grpc_server* const server_;
-  std::list<CallData*> pending_;
+  std::queue<CallData*> pending_;
   std::vector<LockedMultiProducerSingleConsumerQueue> requests_per_cq_;
 };
 
@@ -892,10 +885,10 @@ grpc_call_error grpc_server::QueueRequestedCall(size_t cq_idx,
   }
   RequestMatcherInterface* rm;
   switch (rc->type) {
-    case RequestedCall::BATCH_CALL:
+    case RequestedCall::Type::BATCH_CALL:
       rm = unregistered_request_matcher_.get();
       break;
-    case RequestedCall::REGISTERED_CALL:
+    case RequestedCall::Type::REGISTERED_CALL:
       rm = rc->data.registered.method->matcher.get();
       break;
   }
@@ -1243,7 +1236,7 @@ void grpc_server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
   cq_new_ = server_->cqs_[cq_idx];
   GPR_SWAP(grpc_metadata_array, *rc->initial_metadata, initial_metadata_);
   switch (rc->type) {
-    case RequestedCall::BATCH_CALL:
+    case RequestedCall::Type::BATCH_CALL:
       GPR_ASSERT(host_.has_value());
       GPR_ASSERT(path_.has_value());
       rc->data.batch.details->host = grpc_slice_ref_internal(*host_);
@@ -1252,7 +1245,7 @@ void grpc_server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
           grpc_millis_to_timespec(deadline_, GPR_CLOCK_MONOTONIC);
       rc->data.batch.details->flags = recv_initial_metadata_flags_;
       break;
-    case RequestedCall::REGISTERED_CALL:
+    case RequestedCall::Type::REGISTERED_CALL:
       *rc->data.registered.deadline =
           grpc_millis_to_timespec(deadline_, GPR_CLOCK_MONOTONIC);
       if (rc->data.registered.optional_payload != nullptr) {
