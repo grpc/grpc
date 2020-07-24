@@ -73,7 +73,7 @@ ClientContext::~ClientContext() {
 }
 
 void ClientContext::set_credentials(
-    const std::shared_ptr<grpc::CallCredentials>& creds) {
+    const std::shared_ptr<grpc_impl::CallCredentials>& creds) {
   creds_ = creds;
   // If call_ is set, we have already created the call, and set the call
   // credentials. This should only be done before we have started the batch

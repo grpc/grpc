@@ -26,15 +26,15 @@
 
 #include "src/cpp/client/create_channel_internal.h"
 
-namespace grpc {
-std::shared_ptr<grpc::Channel> CreateChannel(
-    const grpc::string& target,
+namespace grpc_impl {
+std::shared_ptr<grpc::Channel> CreateChannelImpl(
+    const std::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds) {
-  return CreateCustomChannel(target, creds, grpc::ChannelArguments());
+  return CreateCustomChannelImpl(target, creds, grpc::ChannelArguments());
 }
 
-std::shared_ptr<grpc::Channel> CreateCustomChannel(
-    const grpc::string& target,
+std::shared_ptr<grpc::Channel> CreateCustomChannelImpl(
+    const std::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds,
     const grpc::ChannelArguments& args) {
   grpc::GrpcLibraryCodegen
@@ -82,4 +82,4 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
 }
 }  // namespace experimental
 
-}  // namespace grpc
+}  // namespace grpc_impl

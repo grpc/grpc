@@ -58,7 +58,6 @@ struct grpc_call;
 
 namespace grpc {
 
-class CallCredentials;
 class ChannelInterface;
 
 namespace internal {
@@ -89,6 +88,7 @@ class ClientCallbackUnaryImpl;
 class ClientContextAccessor;
 }  // namespace internal
 
+class CallCredentials;
 class Channel;
 class CompletionQueue;
 class ServerContext;
@@ -318,15 +318,16 @@ class ClientContext {
   ///
   /// It is legal to call this only before initial metadata is sent.
   ///
-  /// \see  https://grpc.io/docs/guides/auth.html
-  void set_credentials(const std::shared_ptr<grpc::CallCredentials>& creds);
+  /// \see  https://grpc.io/docs/guides/auth
+  void set_credentials(
+      const std::shared_ptr<grpc_impl::CallCredentials>& creds);
 
   /// EXPERIMENTAL debugging API
   ///
   /// Returns the credentials for the client call. This should be used only in
   /// tests and for diagnostic purposes, and should not be used by application
   /// logic.
-  std::shared_ptr<grpc::CallCredentials> credentials() { return creds_; }
+  std::shared_ptr<grpc_impl::CallCredentials> credentials() { return creds_; }
 
   /// Return the compression algorithm the client call will request be used.
   /// Note that the gRPC runtime may decide to ignore this request, for example,
@@ -493,8 +494,8 @@ class ClientContext {
   grpc_call* call_;
   bool call_canceled_;
   gpr_timespec deadline_;
-  grpc::string authority_;
-  std::shared_ptr<grpc::CallCredentials> creds_;
+  std::string authority_;
+  std::shared_ptr<grpc_impl::CallCredentials> creds_;
   mutable std::shared_ptr<const grpc::AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<std::string, std::string> send_initial_metadata_;

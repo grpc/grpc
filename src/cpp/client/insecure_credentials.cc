@@ -24,7 +24,7 @@
 #include <grpcpp/support/config.h>
 #include "src/cpp/client/create_channel_internal.h"
 
-namespace grpc {
+namespace grpc_impl {
 
 namespace {
 class InsecureChannelCredentialsImpl final : public ChannelCredentials {
@@ -59,4 +59,4 @@ std::shared_ptr<ChannelCredentials> InsecureChannelCredentials() {
       new InsecureChannelCredentialsImpl());
 }
 
-}  // namespace grpc
+}  // namespace grpc_impl

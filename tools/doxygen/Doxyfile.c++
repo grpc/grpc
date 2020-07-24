@@ -940,6 +940,7 @@ include/grpcpp/client_context.h \
 include/grpcpp/completion_queue.h \
 include/grpcpp/completion_queue_impl.h \
 include/grpcpp/create_channel.h \
+include/grpcpp/create_channel_impl.h \
 include/grpcpp/create_channel_posix.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
 include/grpcpp/generic/async_generic_service.h \
@@ -1023,6 +1024,7 @@ include/grpcpp/resource_quota.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
 include/grpcpp/security/credentials.h \
+include/grpcpp/security/credentials_impl.h \
 include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/server_credentials_impl.h \
 include/grpcpp/security/tls_credentials_options.h \

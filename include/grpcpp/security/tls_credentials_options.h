@@ -36,7 +36,7 @@ typedef struct grpc_tls_server_authorization_check_config
     grpc_tls_server_authorization_check_config;
 typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
 
-namespace grpc {
+namespace grpc_impl {
 namespace experimental {
 
 /** TLS key materials config, wrapper for grpc_tls_key_materials_config. It is
@@ -340,6 +340,6 @@ class TlsCredentialsOptions {
 };
 
 }  // namespace experimental
-}  // namespace grpc
+}  // namespace grpc_impl
 
 #endif  // GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H

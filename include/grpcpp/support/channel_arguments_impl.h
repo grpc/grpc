@@ -28,13 +28,14 @@
 #include <grpcpp/support/config.h>
 
 namespace grpc {
-class SecureChannelCredentials;
 namespace testing {
 class ChannelArgumentsTest;
 }  // namespace testing
 }  // namespace grpc
 
 namespace grpc_impl {
+
+class SecureChannelCredentials;
 
 /// Options for channel creation. The user can use generic setters to pass
 /// key value pairs down to C channel creation code. For gRPC related options,
@@ -125,7 +126,7 @@ class ChannelArguments {
   }
 
  private:
-  friend class grpc::SecureChannelCredentials;
+  friend class grpc_impl::SecureChannelCredentials;
   friend class grpc::testing::ChannelArgumentsTest;
 
   /// Default pointer argument operations.
