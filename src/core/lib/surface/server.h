@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -207,6 +208,7 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
     grpc_core::RefCountedPtr<grpc_server> server_;
     grpc_channel* channel_;
+    // The index into grpc_server::cqs_ of the associated completion queue.
     size_t cq_idx_;
     absl::optional<std::list<ChannelData*>::iterator> list_position_;
     // A hash-table of the methods and hosts of the registered methods.
@@ -221,7 +223,7 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
   class CallData {
    public:
-    enum CallState {
+    enum class CallState {
       NOT_STARTED,  // Waiting for metadata.
       PENDING,      // Initial metadata read, not flow controlled in yet.
       ACTIVATED,    // Flow controlled in, on completion queue.
@@ -277,10 +279,9 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
     grpc_call* call_;
 
-    // FIXME: replace with grpc_core::Atomic<CallState>
-    gpr_atm state_ = NOT_STARTED;
+    grpc_core::Atomic<CallState> state_{CallState::NOT_STARTED};
 
-    // FIXME: use absl::optional<> here
+// FIXME: use absl::optional<> here
     bool path_set_ = false;
     bool host_set_ = false;
     grpc_slice path_;

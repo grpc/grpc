@@ -204,7 +204,7 @@ class grpc_server::RealRequestMatcher : public RequestMatcherInterface {
 
   void ZombifyPending() override {
     for (CallData* calld : pending_) {
-      calld->SetState(CallData::ZOMBIED);
+      calld->SetState(CallData::CallState::ZOMBIED);
       calld->KillZombie();
     }
     pending_.clear();
@@ -270,7 +270,7 @@ class grpc_server::RealRequestMatcher : public RequestMatcherInterface {
           reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].TryPop());
       if (rc != nullptr) {
         GRPC_STATS_INC_SERVER_CQS_CHECKED(i);
-        calld->SetState(CallData::ACTIVATED);
+        calld->SetState(CallData::CallState::ACTIVATED);
         calld->Publish(cq_idx, rc);
         return;
       }
@@ -303,14 +303,14 @@ class grpc_server::RealRequestMatcher : public RequestMatcherInterface {
       grpc_core::MutexLock lock(&server_->mu_call_);
       result = check_queues();
       if (result.rc == nullptr) {
-        calld->SetState(CallData::PENDING);
+        calld->SetState(CallData::CallState::PENDING);
         pending_.push_back(calld);
         return;
       }
     }
     GRPC_STATS_INC_SERVER_CQS_CHECKED(result.loop_count +
                                       requests_per_cq_.size());
-    calld->SetState(CallData::ACTIVATED);
+    calld->SetState(CallData::CallState::ACTIVATED);
     calld->Publish(result.cq_idx, result.rc);
   }
 
@@ -386,7 +386,7 @@ class grpc_server::AllocatingRequestMatcherBatch
     RequestedCall* rc = new RequestedCall(
         static_cast<void*>(call_info.tag), cq(), call_info.call,
         call_info.initial_metadata, call_info.details);
-    calld->SetState(CallData::ACTIVATED);
+    calld->SetState(CallData::CallState::ACTIVATED);
     calld->Publish(cq_idx(), rc);
   }
 
@@ -416,7 +416,7 @@ class grpc_server::AllocatingRequestMatcherRegistered
         static_cast<void*>(call_info.tag), cq(), call_info.call,
         call_info.initial_metadata, registered_method_, call_info.deadline,
         call_info.optional_payload);
-    calld->SetState(CallData::ACTIVATED);
+    calld->SetState(CallData::CallState::ACTIVATED);
     calld->Publish(cq_idx(), rc);
   }
 
@@ -1190,7 +1190,8 @@ grpc_server::CallData::CallData(grpc_call_element* elem,
 }
 
 grpc_server::CallData::~CallData() {
-  GPR_ASSERT(state_ != PENDING);
+  GPR_ASSERT(state_.Load(grpc_core::MemoryOrder::RELAXED) !=
+             CallState::PENDING);
   GRPC_ERROR_UNREF(recv_initial_metadata_error_);
   if (host_set_) {
     grpc_slice_unref_internal(host_);
@@ -1203,11 +1204,14 @@ grpc_server::CallData::~CallData() {
 }
 
 void grpc_server::CallData::SetState(CallState state) {
-  gpr_atm_no_barrier_store(&state_, state);
+  state_.Store(state, grpc_core::MemoryOrder::RELAXED);
 }
 
 bool grpc_server::CallData::MaybeActivate() {
-  return gpr_atm_full_cas(&state_, PENDING, ACTIVATED);
+  CallState expected = CallState::PENDING;
+  return state_.CompareExchangeStrong(&expected, CallState::ACTIVATED,
+                                      grpc_core::MemoryOrder::ACQ_REL,
+                                      grpc_core::MemoryOrder::ACQUIRE);
 }
 
 void grpc_server::CallData::FailCallCreation(grpc_call_element* elem,
@@ -1267,7 +1271,7 @@ void grpc_server::CallData::PublishNewRpc(void* arg, grpc_error* error) {
   grpc_server* server = rm->server();
   if (error != GRPC_ERROR_NONE ||
       server->shutdown_flag_.load(std::memory_order_acquire)) {
-    gpr_atm_no_barrier_store(&calld->state_, ZOMBIED);
+    calld->state_.Store(CallState::ZOMBIED, grpc_core::MemoryOrder::RELAXED);
     calld->KillZombie();
     return;
   }
@@ -1289,7 +1293,7 @@ void grpc_server::CallData::KillZombie() {
 void grpc_server::CallData::StartNewRpc(grpc_call_element* elem) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   if (server_->shutdown_flag_.load(std::memory_order_acquire)) {
-    gpr_atm_no_barrier_store(&state_, ZOMBIED);
+    state_.Store(CallState::ZOMBIED, grpc_core::MemoryOrder::RELAXED);
     KillZombie();
     return;
   }
@@ -1333,11 +1337,19 @@ void grpc_server::CallData::RecvInitialMetadataBatchComplete(
   if (error == GRPC_ERROR_NONE) {
     calld->StartNewRpc(elem);
   } else {
-    if (gpr_atm_full_cas(&calld->state_, NOT_STARTED, ZOMBIED)) {
+    CallState expected = CallState::NOT_STARTED;
+    if (calld->state_.CompareExchangeStrong(&expected, CallState::ZOMBIED,
+                                            grpc_core::MemoryOrder::ACQ_REL,
+                                            grpc_core::MemoryOrder::ACQUIRE)) {
       calld->KillZombie();
-    } else if (gpr_atm_full_cas(&calld->state_, PENDING, ZOMBIED)) {
-      /* zombied call will be destroyed when it's removed from the pending
-         queue... later */
+    } else {
+      expected = CallState::PENDING;
+      if (calld->state_.CompareExchangeStrong(
+              &expected, CallState::ZOMBIED, grpc_core::MemoryOrder::ACQ_REL,
+              grpc_core::MemoryOrder::ACQUIRE)) {
+        // Zombied call will be destroyed when it's removed from the pending
+        // queue... later.
+      }
     }
   }
 }
