@@ -16,17 +16,12 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_LIBRARY_ACTIVATION_H
-#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_LIBRARY_ACTIVATION_H
+#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_ACTIVATION_H
+#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_ACTIVATION_H
 
 #include <grpc/support/port_platform.h>
 
-#include <vector>
-#include "absl/strings/string_view.h"
-
-#include <google/protobuf/util/field_mask_util.h>
-
-#include "src/core/lib/security/authorization/mock_cel_library/cel_value.h"
+#include "src/core/lib/security/authorization/mock_cel/cel_value.h"
 
 namespace google {
 namespace api {
@@ -45,7 +40,7 @@ class Activation {
   Activation& operator=(const Activation&) = delete;
 
   // Insert value into Activation.
-  void InsertValue(absl::string_view name, const CelValue& value) { return; }
+  void InsertValue(absl::string_view name, const CelValue& value) {}
 };
 
 }  // namespace runtime
@@ -53,4 +48,4 @@ class Activation {
 }  // namespace api
 }  // namespace google
 
-#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_LIBRARY_ACTIVATION_H
+#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_ACTIVATION_H
