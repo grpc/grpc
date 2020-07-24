@@ -21,7 +21,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-namespace grpc {
+namespace grpc_impl {
 namespace {
 class InsecureServerCredentialsImpl final : public ServerCredentials {
  public:
@@ -41,4 +41,4 @@ std::shared_ptr<ServerCredentials> InsecureServerCredentials() {
       new InsecureServerCredentialsImpl());
 }
 
-}  // namespace grpc
+}  // namespace grpc_impl

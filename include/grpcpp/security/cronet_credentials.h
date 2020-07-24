@@ -23,7 +23,10 @@
 
 namespace grpc {
 
-std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine);
+static inline std::shared_ptr<grpc_impl::ChannelCredentials>
+CronetChannelCredentials(void* engine) {
+  return ::grpc_impl::CronetChannelCredentials(engine);
+}
 
 }  // namespace grpc
 

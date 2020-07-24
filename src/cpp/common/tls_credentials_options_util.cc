@@ -21,7 +21,7 @@
 #include <grpcpp/security/tls_credentials_options.h>
 #include "src/cpp/common/tls_credentials_options_util.h"
 
-namespace grpc {
+namespace grpc_impl {
 namespace experimental {
 
 /** Converts the Cpp key materials to C key materials; this allocates memory for
@@ -146,4 +146,4 @@ void TlsServerAuthorizationCheckArgDestroyContext(void* context) {
 }
 
 }  // namespace experimental
-}  // namespace grpc
+}  // namespace grpc_impl

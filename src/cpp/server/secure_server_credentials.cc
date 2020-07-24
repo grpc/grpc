@@ -94,7 +94,7 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
 
 }  // namespace grpc
 
-namespace grpc {
+namespace grpc_impl {
 
 int SecureServerCredentials::AddPortToServer(const std::string& addr,
                                              grpc_server* server) {
@@ -149,11 +149,11 @@ std::shared_ptr<ServerCredentials> LocalServerCredentials(
 }
 
 std::shared_ptr<ServerCredentials> TlsServerCredentials(
-    const grpc::experimental::TlsCredentialsOptions& options) {
+    const TlsCredentialsOptions& options) {
   grpc::GrpcLibraryCodegen init;
   return std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
       grpc_tls_server_credentials_create(options.c_credentials_options())));
 }
 
 }  // namespace experimental
-}  // namespace grpc
+}  // namespace grpc_impl
