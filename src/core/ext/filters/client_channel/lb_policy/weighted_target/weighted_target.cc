@@ -171,7 +171,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     // The owning LB policy.
     RefCountedPtr<WeightedTargetLb> weighted_target_policy_;
 
-    const std::string& name_;
+    const std::string name_;
 
     uint32_t weight_;
 
