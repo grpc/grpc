@@ -367,15 +367,14 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
   tcp->base.vtable = &vtable;
   gpr_ref_init(&tcp->refcount, 1);
   tcp->peer_string = peer_string;
-  struct sockaddr local_addr;
-  int local_addrlen = sizeof(local_addr);
+  grpc_resolved_address resolved_local_addr;
+  resolved_local_addr.len = sizeof(resolved_local_addr.addr);
   if (grpc_custom_socket_vtable->getsockname(
-          socket, &local_addr, &local_addrlen) != GRPC_ERROR_NONE) {
+          socket, reinterpret_cast<sockaddr*>(resolved_local_addr.addr),
+          reinterpret_cast<int*>(&resolved_local_addr.len)) !=
+      GRPC_ERROR_NONE) {
     tcp->local_address = "";
   } else {
-    grpc_resolved_address resolved_local_addr;
-    memcpy(resolved_local_addr.addr, &local_addr, local_addrlen);
-    resolved_local_addr.len = local_addrlen;
     tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
   tcp->shutting_down = false;

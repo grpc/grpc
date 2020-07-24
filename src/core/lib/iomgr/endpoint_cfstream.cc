@@ -368,14 +368,13 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
   const int* native_handle =
       reinterpret_cast<const int*>(CFReadStreamCopyProperty(
           ep_impl->read_stream, kCFStreamPropertySocketNativeHandle));
-  struct sockaddr local_addr;
-  socklen_t local_addrlen = sizeof(local_addr);
-  if (getsockname(*native_handle, &local_addr, &local_addrlen) < 0) {
+  grpc_resolved_address resolved_local_addr;
+  resolved_local_addr.len = sizeof(resolved_local_addr.addr);
+  if (getsockname(*native_handle,
+                  reinterpret_cast<sockaddr*>(resolved_local_addr.addr),
+                  &resolved_local_addr.len) < 0) {
     ep_impl->local_address = "";
   } else {
-    grpc_resolved_address resolved_local_addr;
-    memcpy(resolved_local_addr.addr, &local_addr, local_addrlen);
-    resolved_local_addr.len = local_addrlen;
     ep_impl->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
   ep_impl->read_cb = nil;

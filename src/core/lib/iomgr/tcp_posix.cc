@@ -1765,14 +1765,13 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->base.vtable = &vtable;
   tcp->peer_string = new std::string(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
-  struct sockaddr local_addr;
-  socklen_t local_addrlen = sizeof(local_addr);
-  if (getsockname(tcp->fd, &local_addr, &local_addrlen) < 0) {
+  grpc_resolved_address resolved_local_addr;
+  resolved_local_addr.len = sizeof(resolved_local_addr.addr);
+  if (getsockname(tcp->fd,
+                  reinterpret_cast<sockaddr*>(resolved_local_addr.addr),
+                  &resolved_local_addr.len) < 0) {
     tcp->local_address = new std::string();
   } else {
-    grpc_resolved_address resolved_local_addr;
-    memcpy(resolved_local_addr.addr, &local_addr, local_addrlen);
-    resolved_local_addr.len = local_addrlen;
     tcp->local_address =
         new std::string(grpc_sockaddr_to_uri(&resolved_local_addr));
   }
