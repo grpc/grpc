@@ -1193,11 +1193,11 @@ grpc_server::CallData::~CallData() {
   GPR_ASSERT(state_.Load(grpc_core::MemoryOrder::RELAXED) !=
              CallState::PENDING);
   GRPC_ERROR_UNREF(recv_initial_metadata_error_);
-  if (host_set_) {
-    grpc_slice_unref_internal(host_);
+  if (host_.has_value()) {
+    grpc_slice_unref_internal(*host_);
   }
-  if (path_set_) {
-    grpc_slice_unref_internal(path_);
+  if (path_.has_value()) {
+    grpc_slice_unref_internal(*path_);
   }
   grpc_metadata_array_destroy(&initial_metadata_);
   grpc_byte_buffer_destroy(payload_);
@@ -1240,10 +1240,10 @@ void grpc_server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
   GPR_SWAP(grpc_metadata_array, *rc->initial_metadata, initial_metadata_);
   switch (rc->type) {
     case RequestedCall::BATCH_CALL:
-      GPR_ASSERT(host_set_);
-      GPR_ASSERT(path_set_);
-      rc->data.batch.details->host = grpc_slice_ref_internal(host_);
-      rc->data.batch.details->method = grpc_slice_ref_internal(path_);
+      GPR_ASSERT(host_.has_value());
+      GPR_ASSERT(path_.has_value());
+      rc->data.batch.details->host = grpc_slice_ref_internal(*host_);
+      rc->data.batch.details->method = grpc_slice_ref_internal(*path_);
       rc->data.batch.details->deadline =
           grpc_millis_to_timespec(deadline_, GPR_CLOCK_MONOTONIC);
       rc->data.batch.details->flags = recv_initial_metadata_flags_;
@@ -1301,9 +1301,9 @@ void grpc_server::CallData::StartNewRpc(grpc_call_element* elem) {
   matcher_ = server_->unregistered_request_matcher_.get();
   grpc_server_register_method_payload_handling payload_handling =
       GRPC_SRM_PAYLOAD_NONE;
-  if (path_set_ && host_set_) {
+  if (path_.has_value() && host_.has_value()) {
     ChannelRegisteredMethod* rm =
-        chand->GetRegisteredMethod(host_, path_,
+        chand->GetRegisteredMethod(*host_, *path_,
                                    (recv_initial_metadata_flags_ &
                                     GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST));
     if (rm != nullptr) {
@@ -1385,12 +1385,10 @@ void grpc_server::CallData::RecvInitialMetadataReady(void* ptr,
     GPR_DEBUG_ASSERT(calld->recv_initial_metadata_->idx.named.path != nullptr);
     GPR_DEBUG_ASSERT(calld->recv_initial_metadata_->idx.named.authority !=
                      nullptr);
-    calld->path_ = grpc_slice_ref_internal(
-        GRPC_MDVALUE(calld->recv_initial_metadata_->idx.named.path->md));
-    calld->host_ = grpc_slice_ref_internal(
-        GRPC_MDVALUE(calld->recv_initial_metadata_->idx.named.authority->md));
-    calld->path_set_ = true;
-    calld->host_set_ = true;
+    calld->path_.emplace(grpc_slice_ref_internal(
+        GRPC_MDVALUE(calld->recv_initial_metadata_->idx.named.path->md)));
+    calld->host_.emplace(grpc_slice_ref_internal(
+        GRPC_MDVALUE(calld->recv_initial_metadata_->idx.named.authority->md)));
     grpc_metadata_batch_remove(calld->recv_initial_metadata_, GRPC_BATCH_PATH);
     grpc_metadata_batch_remove(calld->recv_initial_metadata_,
                                GRPC_BATCH_AUTHORITY);
@@ -1401,7 +1399,7 @@ void grpc_server::CallData::RecvInitialMetadataReady(void* ptr,
   if (op_deadline != GRPC_MILLIS_INF_FUTURE) {
     calld->deadline_ = op_deadline;
   }
-  if (calld->host_set_ && calld->path_set_) {
+  if (calld->host_.has_value() && calld->path_.has_value()) {
     /* do nothing */
   } else {
     /* Pass the error reference to calld->recv_initial_metadata_error */

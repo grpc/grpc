@@ -281,11 +281,8 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
     grpc_core::Atomic<CallState> state_{CallState::NOT_STARTED};
 
-// FIXME: use absl::optional<> here
-    bool path_set_ = false;
-    bool host_set_ = false;
-    grpc_slice path_;
-    grpc_slice host_;
+    absl::optional<grpc_slice> path_;
+    absl::optional<grpc_slice> host_;
     grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
 
     grpc_completion_queue* cq_new_ = nullptr;
