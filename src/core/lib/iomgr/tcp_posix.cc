@@ -352,6 +352,8 @@ using grpc_core::TcpZerocopySendRecord;
 
 namespace {
 struct grpc_tcp {
+  grpc_tcp(int max_sends, size_t send_bytes_threshold)
+      : tcp_zerocopy_send_ctx(max_sends, send_bytes_threshold) {}
   grpc_endpoint base;
   grpc_fd* em_fd;
   int fd;
@@ -386,8 +388,8 @@ struct grpc_tcp {
   grpc_closure write_done_closure;
   grpc_closure error_closure;
 
-  std::string* peer_string;
-  std::string* local_address;
+  std::string peer_string;
+  std::string local_address;
 
   grpc_resource_user* resource_user;
   grpc_resource_user_slice_allocator slice_allocator;
@@ -607,7 +609,7 @@ static grpc_error* tcp_annotate_error(grpc_error* src_error, grpc_tcp* tcp) {
            * choose to retry. */
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
       GRPC_ERROR_STR_TARGET_ADDRESS,
-      grpc_slice_from_copied_string(tcp->peer_string->c_str()));
+      grpc_slice_from_copied_string(tcp->peer_string.c_str()));
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error* error);
@@ -633,16 +635,7 @@ static void tcp_free(grpc_tcp* tcp) {
   gpr_mu_unlock(&tcp->tb_mu);
   tcp->outgoing_buffer_arg = nullptr;
   gpr_mu_destroy(&tcp->tb_mu);
-  tcp->tcp_zerocopy_send_ctx.~TcpZerocopySendCtx();
-  if (tcp->peer_string != nullptr) {
-    delete tcp->peer_string;
-    tcp->peer_string = nullptr;
-  }
-  if (tcp->local_address != nullptr) {
-    delete tcp->local_address;
-    tcp->local_address = nullptr;
-  }
-  gpr_free(tcp);
+  delete tcp;
 }
 
 #ifndef NDEBUG
@@ -690,7 +683,7 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
     size_t i;
     const char* str = grpc_error_string(error);
     gpr_log(GPR_INFO, "READ %p (peer=%s) error=%s", tcp,
-            tcp->peer_string->c_str(), str);
+            tcp->peer_string.c_str(), str);
 
     if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
@@ -1573,7 +1566,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     size_t i;
 
     for (i = 0; i < buf->count; i++) {
-      gpr_log(GPR_INFO, "WRITE %p (peer=%s)", tcp, tcp->peer_string->c_str());
+      gpr_log(GPR_INFO, "WRITE %p (peer=%s)", tcp, tcp->peer_string.c_str());
       if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
         char* data =
             grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -1649,12 +1642,12 @@ static void tcp_delete_from_pollset_set(grpc_endpoint* ep,
 
 static absl::string_view tcp_get_peer(grpc_endpoint* ep) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  return *tcp->peer_string;
+  return tcp->peer_string;
 }
 
 static absl::string_view tcp_get_local_address(grpc_endpoint* ep) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  return *tcp->local_address;
+  return tcp->local_address;
 }
 
 static int tcp_get_fd(grpc_endpoint* ep) {
@@ -1761,19 +1754,19 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp_read_chunk_size = GPR_CLAMP(tcp_read_chunk_size, tcp_min_read_chunk_size,
                                   tcp_max_read_chunk_size);
 
-  grpc_tcp* tcp = static_cast<grpc_tcp*>(gpr_malloc(sizeof(grpc_tcp)));
+  grpc_tcp* tcp = new grpc_tcp(tcp_tx_zerocopy_max_simult_sends,
+                               tcp_tx_zerocopy_send_bytes_thresh);
   tcp->base.vtable = &vtable;
-  tcp->peer_string = new std::string(peer_string);
+  tcp->peer_string = peer_string;
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
   grpc_resolved_address resolved_local_addr;
   resolved_local_addr.len = sizeof(resolved_local_addr.addr);
   if (getsockname(tcp->fd,
                   reinterpret_cast<sockaddr*>(resolved_local_addr.addr),
                   &resolved_local_addr.len) < 0) {
-    tcp->local_address = new std::string();
+    tcp->local_address = "";
   } else {
-    tcp->local_address =
-        new std::string(grpc_sockaddr_to_uri(&resolved_local_addr));
+    tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
   tcp->read_cb = nullptr;
   tcp->write_cb = nullptr;
@@ -1791,8 +1784,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
-  new (&tcp->tcp_zerocopy_send_ctx) TcpZerocopySendCtx(
-      tcp_tx_zerocopy_max_simult_sends, tcp_tx_zerocopy_send_bytes_thresh);
   if (tcp_tx_zerocopy_enabled && !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;
