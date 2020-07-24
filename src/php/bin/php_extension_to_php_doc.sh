@@ -16,8 +16,8 @@
 
 set -euo pipefail
 
-if ! command -v gawk > /dev/null; then
-    >&2 echo "ERROR: 'gawk' not installed"
+if ! command -v awk > /dev/null; then
+    >&2 echo "ERROR: 'awk' not installed"
     exit 1
 fi
 
@@ -28,10 +28,10 @@ COMMAND="${1:-}"
 # parse class and methods
 for FILENAME in call_credentials.c call.c channel.c channel_credentials.c \
                 server_credentials.c server.c timeval.c ; do
-    CLASS_NAME=$(sed -r 's/(^|_)(\w)/\U\2/g' <<< "${FILENAME%.*}")
+    CLASS_NAME=$(sed -E 's/(^|_)(\w)/\U\2/g' <<< "${FILENAME%.*}")
     if [[ "$COMMAND" == "generate" ]]; then
         echo Generating lib/Grpc/$CLASS_NAME.php ...
-        gawk -f php_extension_doxygen_filter.awk ../ext/grpc/$FILENAME \
+        awk -f php_extension_doxygen_filter.awk ../ext/grpc/$FILENAME \
             > ../lib/Grpc/$CLASS_NAME.php
     elif [[ "$COMMAND" == "cleanup" ]]; then
         rm ../lib/Grpc/$CLASS_NAME.php
@@ -44,7 +44,7 @@ done
 # parse constants
 if [[ "$COMMAND" == "generate" ]]; then
     echo Generating lib/Grpc/Constants.php ...
-    gawk -f php_extension_doxygen_filter.awk ../ext/grpc/php_grpc.c \
+    awk -f php_extension_doxygen_filter.awk ../ext/grpc/php_grpc.c \
         > ../lib/Grpc/Constants.php
 elif [[ "$COMMAND" == "cleanup" ]]; then
     rm ../lib/Grpc/Constants.php
