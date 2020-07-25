@@ -47,7 +47,8 @@ touch "$TOOLS_DIR"/src/proto/grpc/testing/__init__.py
     "$PROTO_SOURCE_DIR"/empty.proto
 
 # Generate and compile the PHP extension.
-(pear package && \
+(./src/php/bin/prepare_pecl_extension.sh && \
+  pear package && \
   find . -name grpc-*.tgz | xargs -I{} pecl install {})
 
 # Prepare generated PHP code.
