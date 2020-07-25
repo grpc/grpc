@@ -19,6 +19,8 @@ cd "$(dirname "$0")/../../.."
 
 mkdir -p "${ARTIFACTS_OUT}"
 
+# Clean up the source files manifest. Some renaming needs to be done first.
+./src/php/bin/prepare_pecl_extension.sh
 # Build the PHP extension archive (this just zips all the files up)
 pear package
 # Note: the extension compiled by this step is not being used in any

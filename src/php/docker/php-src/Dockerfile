@@ -54,7 +54,8 @@ WORKDIR /github/grpc
 
 COPY . .
 
-RUN pear package && \
+RUN ./src/php/bin/prepare_pecl_extension.sh && \
+  pear package && \
   find . -name grpc-*.tgz | xargs -I{} pecl install {}
 
 

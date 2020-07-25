@@ -1,0 +1,73 @@
+%YAML 1.2
+--- |
+  #!/bin/bash
+  # Copyright 2020 gRPC authors.
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #     http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+  
+  # This is a generated file. DO NOT EDIT!
+
+  # See more details at https://github.com/grpc/grpc/issues/23307.
+  #
+  # The PHP build process, particularly the `./configure` step, will
+  # turn pair of files with names like "a.upb.c" and "a.upbdefs.c" into
+  # conflicting Makefile targets like "a.lo".
+  #
+  # In order to avoid the "multiple definition of <symbol>" problem, this
+  # script will do some renaming first, before we build the PECL extension
+  # source distribution archive.
+  #
+  # Caller of this script is expected to run `pear package` to build the
+  # grpc-<version>.tgz PECL extension archive after running this script.
+  # After building the .tgz extension archive, caller is expected to
+  # clean up those temporary changes caused by this script separately.
+  
+  set -e
+  cd $(dirname $0)/../../..
+  <%
+    srcs = []
+    lib_maps = {lib.name: lib for lib in libs}
+    php_deps = ['grpc']
+    for dep in php_deps:
+      lib = lib_maps[dep]
+      srcs.extend(lib.headers + lib.src)
+    srcs = sorted(set(srcs))
+    upbdefs = {}
+    for src in srcs:
+      if src.endswith("upbdefs.c") or src.endswith("upbdefs.h"):
+        upbdefs[src] = src.replace(".upbdefs", "_upbdefs")
+  %>
+  # Rename files from *.upbdefs.c|h to *_upbdefs.c|h
+  % for src, src_renamed in upbdefs.items():
+  mv ${src} ${"\\"}
+     ${src_renamed}
+  % endfor
+  
+  output_file=$(mktemp)
+
+  # Rename the references to these _upbdefs.c|h files in the following
+  # PHP manifest files
+  sed 's/\.upbdefs/_upbdefs/g' config.m4 > $output_file
+  mv $output_file config.m4
+  sed 's/\.upbdefs/_upbdefs/g' package.xml > $output_file
+  mv $output_file package.xml
+  
+  # Rename the #include references within all source files
+  for file in ${"\\"}
+  % for src in srcs:
+    ${upbdefs[src] if src in upbdefs else src} ${"\\"}
+  % endfor
+    ; do
+    sed 's/\.upbdefs/_upbdefs/g' $file > $output_file
+    mv $output_file $file
+  done
