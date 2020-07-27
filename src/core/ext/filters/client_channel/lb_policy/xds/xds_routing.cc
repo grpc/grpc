@@ -187,7 +187,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsRoutingLb> xds_routing_policy_;
 
     // Points to the corresponding key in XdsRoutingLb::actions_.
-    const std::string& name_;
+    const std::string name_;
 
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
