@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -64,8 +65,8 @@ class Chttp2ServerListener : public ServerListenerInterface {
   Chttp2ServerListener(grpc_server* server, grpc_channel_args* args);
   ~Chttp2ServerListener();
 
-  void Start(grpc_server* server, grpc_pollset** pollsets,
-             size_t npollsets) override;
+  void Start(grpc_server* server,
+             const std::vector<grpc_pollset*>* pollsets) override;
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return channelz_listen_socket_.get();
@@ -383,13 +384,12 @@ Chttp2ServerListener::~Chttp2ServerListener() {
 
 /* Server callback: start listening on our ports */
 void Chttp2ServerListener::Start(grpc_server* /*server*/,
-                                 grpc_pollset** pollsets,
-                                 size_t pollset_count) {
+                                 const std::vector<grpc_pollset*>* pollsets) {
   {
     MutexLock lock(&mu_);
     shutdown_ = false;
   }
-  grpc_tcp_server_start(tcp_server_, pollsets, pollset_count, OnAccept, this);
+  grpc_tcp_server_start(tcp_server_, pollsets, OnAccept, this);
 }
 
 void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {

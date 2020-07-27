@@ -122,106 +122,102 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\envoy\\annotations\\deprecation.upbdefs.c " +
     "src\\core\\ext\\upb-generated\\envoy\\annotations\\resource.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\annotations\\resource.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\cert.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\cert.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\common.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\common.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\secret.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\secret.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\tls.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\tls.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cds.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cds.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\circuit_breaker.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\circuit_breaker.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\filter.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\filter.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\outlier_detection.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\outlier_detection.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\address.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\address.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\backoff.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\backoff.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\base.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\base.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\config_source.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\config_source.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\event_service_config.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\event_service_config.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\grpc_service.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\grpc_service.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\health_check.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\health_check.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\http_uri.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\http_uri.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\protocol.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\protocol.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\socket_option.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\socket_option.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\discovery.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\discovery.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\eds.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\eds.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\endpoint.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\endpoint.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\endpoint_components.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\endpoint_components.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\load_report.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\load_report.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\lds.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\lds.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener\\listener.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener\\listener.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener\\listener_components.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener\\listener_components.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener\\udp_listener_config.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener\\udp_listener_config.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\rds.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\rds.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\route.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\route.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\route\\route.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\route\\route.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\route\\route_components.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\route\\route_components.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\scoped_route.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\scoped_route.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\srds.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\srds.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\config\\filter\\accesslog\\v2\\accesslog.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\config\\filter\\accesslog\\v2\\accesslog.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\config\\filter\\network\\http_connection_manager\\v2\\http_connection_manager.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\config\\filter\\network\\http_connection_manager\\v2\\http_connection_manager.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v2\\api_listener.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v2\\api_listener.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v2\\http_tracer.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v2\\http_tracer.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v2\\ads.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v2\\ads.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\service\\load_stats\\v2\\lrs.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\service\\load_stats\\v2\\lrs.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\http.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\http.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\regex.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\regex.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\string.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\string.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\metadata\\v2\\metadata.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\metadata\\v2\\metadata.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\percent.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\percent.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\range.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\range.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\semantic_version.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\semantic_version.upbdefs.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\tracing\\v2\\custom_tag.upb.c " +
-    "src\\core\\ext\\upb-generated\\envoy\\type\\tracing\\v2\\custom_tag.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\accesslog\\v3\\accesslog.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\accesslog\\v3\\accesslog.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\cluster\\v3\\circuit_breaker.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\cluster\\v3\\circuit_breaker.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\cluster\\v3\\cluster.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\cluster\\v3\\cluster.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\cluster\\v3\\filter.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\cluster\\v3\\filter.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\cluster\\v3\\outlier_detection.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\cluster\\v3\\outlier_detection.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\address.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\address.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\backoff.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\backoff.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\base.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\base.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\config_source.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\config_source.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\event_service_config.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\event_service_config.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\grpc_service.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\grpc_service.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\health_check.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\health_check.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\http_uri.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\http_uri.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\protocol.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\protocol.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\proxy_protocol.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\proxy_protocol.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\socket_option.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3\\socket_option.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\endpoint\\v3\\endpoint.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\endpoint\\v3\\endpoint.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\endpoint\\v3\\endpoint_components.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\endpoint\\v3\\endpoint_components.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\endpoint\\v3\\load_report.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\endpoint\\v3\\load_report.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\api_listener.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\api_listener.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\listener.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\listener.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\listener_components.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\listener_components.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\udp_listener_config.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\udp_listener_config.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\route.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\route.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\route_components.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\route_components.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\scoped_route.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\scoped_route.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v3\\http_tracer.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v3\\http_tracer.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\network\\http_connection_manager\\v3\\http_connection_manager.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\network\\http_connection_manager\\v3\\http_connection_manager.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\cert.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\cert.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\common.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\common.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\secret.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\secret.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\tls.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\tls.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\cluster\\v3\\cds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\cluster\\v3\\cds.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v3\\ads.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v3\\ads.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v3\\discovery.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v3\\discovery.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\endpoint\\v3\\eds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\endpoint\\v3\\eds.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\listener\\v3\\lds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\listener\\v3\\lds.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\load_stats\\v3\\lrs.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\load_stats\\v3\\lrs.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\route\\v3\\rds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\route\\v3\\rds.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\route\\v3\\srds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\route\\v3\\srds.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\regex.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\regex.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\string.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\string.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\metadata\\v3\\metadata.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\metadata\\v3\\metadata.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\tracing\\v3\\custom_tag.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\tracing\\v3\\custom_tag.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\v3\\http.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\v3\\http.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\v3\\percent.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\v3\\percent.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\v3\\range.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\v3\\range.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\v3\\semantic_version.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\v3\\semantic_version.upbdefs.c " +
     "src\\core\\ext\\upb-generated\\gogoproto\\gogo.upb.c " +
     "src\\core\\ext\\upb-generated\\gogoproto\\gogo.upbdefs.c " +
     "src\\core\\ext\\upb-generated\\google\\api\\annotations.upb.c " +
@@ -255,6 +251,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\udpa\\annotations\\sensitive.upbdefs.c " +
     "src\\core\\ext\\upb-generated\\udpa\\annotations\\status.upb.c " +
     "src\\core\\ext\\upb-generated\\udpa\\annotations\\status.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\udpa\\annotations\\versioning.upb.c " +
+    "src\\core\\ext\\upb-generated\\udpa\\annotations\\versioning.upbdefs.c " +
     "src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1\\orca_load_report.upb.c " +
     "src\\core\\ext\\upb-generated\\validate\\validate.upb.c " +
     "src\\core\\ext\\upb-generated\\validate\\validate.upbdefs.c " +
@@ -544,6 +542,7 @@ if (PHP_GRPC != "no") {
     "src\\php\\ext\\grpc\\timeval.c " +
     "third_party\\abseil-cpp\\absl\\base\\dynamic_annotations.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\cycleclock.cc " +
+    "third_party\\abseil-cpp\\absl\\base\\internal\\low_level_alloc.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\raw_logging.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\spinlock.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\spinlock_wait.cc " +
@@ -552,9 +551,18 @@ if (PHP_GRPC != "no") {
     "third_party\\abseil-cpp\\absl\\base\\internal\\throw_delegate.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\unscaledcycleclock.cc " +
     "third_party\\abseil-cpp\\absl\\base\\log_severity.cc " +
+    "third_party\\abseil-cpp\\absl\\debugging\\internal\\address_is_readable.cc " +
+    "third_party\\abseil-cpp\\absl\\debugging\\internal\\demangle.cc " +
+    "third_party\\abseil-cpp\\absl\\debugging\\internal\\elf_mem_image.cc " +
+    "third_party\\abseil-cpp\\absl\\debugging\\internal\\vdso_support.cc " +
+    "third_party\\abseil-cpp\\absl\\debugging\\stacktrace.cc " +
+    "third_party\\abseil-cpp\\absl\\debugging\\symbolize.cc " +
     "third_party\\abseil-cpp\\absl\\numeric\\int128.cc " +
+    "third_party\\abseil-cpp\\absl\\status\\status.cc " +
+    "third_party\\abseil-cpp\\absl\\status\\status_payload_printer.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\ascii.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\charconv.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\cord.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\escaping.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\internal\\charconv_bigint.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\internal\\charconv_parse.cc " +
@@ -971,36 +979,50 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\annotations");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\listener");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\route");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\filter");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\filter\\accesslog");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\filter\\accesslog\\v2");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\filter\\network");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\filter\\network\\http_connection_manager");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\filter\\network\\http_connection_manager\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\accesslog");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\accesslog\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\cluster");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\cluster\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\core");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\core\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\endpoint");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\endpoint\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\listener");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\route");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\trace");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\network");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\network\\http_connection_manager");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\network\\http_connection_manager\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\cluster");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\cluster\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\discovery");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\endpoint");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\endpoint\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\listener");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\listener\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\load_stats");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\load_stats\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\load_stats\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\route");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\route\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\matcher");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\metadata");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\metadata\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\metadata\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\tracing");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\tracing\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\tracing\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\gogoproto");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\api");
@@ -1077,7 +1099,10 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\base");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\base\\internal");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\debugging");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\debugging\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\numeric");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\status");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal\\str_format");

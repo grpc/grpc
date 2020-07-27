@@ -247,10 +247,10 @@ static void on_read(void* arg, grpc_error* err) {
     std::string name = absl::StrCat("tcp-server-connection:", addr_str);
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
 
-    read_notifier_pollset =
-        sp->server->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
-                                 &sp->server->next_pollset_to_assign, 1)) %
-                             sp->server->pollset_count];
+    read_notifier_pollset = (*(sp->server->pollsets))
+        [static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
+             &sp->server->next_pollset_to_assign, 1)) %
+         sp->server->pollsets->size()];
 
     grpc_pollset_add_fd(read_notifier_pollset, fdobj);
 
@@ -487,8 +487,8 @@ static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
   return -1;
 }
 
-static void tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollsets,
-                             size_t pollset_count,
+static void tcp_server_start(grpc_tcp_server* s,
+                             const std::vector<grpc_pollset*>* pollsets,
                              grpc_tcp_server_cb on_accept_cb,
                              void* on_accept_cb_arg) {
   size_t i;
@@ -500,15 +500,14 @@ static void tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollsets,
   s->on_accept_cb = on_accept_cb;
   s->on_accept_cb_arg = on_accept_cb_arg;
   s->pollsets = pollsets;
-  s->pollset_count = pollset_count;
   sp = s->head;
   while (sp != nullptr) {
     if (s->so_reuseport && !grpc_is_unix_socket(&sp->addr) &&
-        pollset_count > 1) {
+        pollsets->size() > 1) {
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
-          "clone_port", clone_port(sp, (unsigned)(pollset_count - 1))));
-      for (i = 0; i < pollset_count; i++) {
-        grpc_pollset_add_fd(pollsets[i], sp->emfd);
+          "clone_port", clone_port(sp, (unsigned)(pollsets->size() - 1))));
+      for (i = 0; i < pollsets->size(); i++) {
+        grpc_pollset_add_fd((*pollsets)[i], sp->emfd);
         GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
                           grpc_schedule_on_exec_ctx);
         grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
@@ -516,8 +515,8 @@ static void tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollsets,
         sp = sp->next;
       }
     } else {
-      for (i = 0; i < pollset_count; i++) {
-        grpc_pollset_add_fd(pollsets[i], sp->emfd);
+      for (i = 0; i < pollsets->size(); i++) {
+        grpc_pollset_add_fd((*pollsets)[i], sp->emfd);
       }
       GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
                         grpc_schedule_on_exec_ctx);
@@ -594,9 +593,9 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     std::string name = absl::StrCat("tcp-server-connection:", addr_str);
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
     read_notifier_pollset =
-        s_->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
-                         &s_->next_pollset_to_assign, 1)) %
-                     s_->pollset_count];
+        (*(s_->pollsets))[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
+                              &s_->next_pollset_to_assign, 1)) %
+                          s_->pollsets->size()];
     grpc_pollset_add_fd(read_notifier_pollset, fdobj);
     grpc_tcp_server_acceptor* acceptor =
         static_cast<grpc_tcp_server_acceptor*>(gpr_malloc(sizeof(*acceptor)));

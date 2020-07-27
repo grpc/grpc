@@ -29,6 +29,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -79,7 +80,7 @@ class CdsLb : public LoadBalancingPolicy {
     explicit Helper(RefCountedPtr<CdsLb> parent) : parent_(std::move(parent)) {}
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_channel_args& args) override;
-    void UpdateState(grpc_connectivity_state state,
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     void AddTraceEvent(TraceSeverity severity,
@@ -209,7 +210,7 @@ void CdsLb::ClusterWatcher::OnError(grpc_error* error) {
   // we keep running with the data we had previously.
   if (parent_->child_policy_ == nullptr) {
     parent_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
         absl::make_unique<TransientFailurePicker>(error));
   } else {
     GRPC_ERROR_UNREF(error);
@@ -221,13 +222,15 @@ void CdsLb::ClusterWatcher::OnResourceDoesNotExist() {
           "[cdslb %p] CDS resource for %s does not exist -- reporting "
           "TRANSIENT_FAILURE",
           parent_.get(), parent_->config_->cluster().c_str());
+  grpc_error* error = grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("CDS resource \"", parent_->config_->cluster(),
+                       "\" does not exist")
+              .c_str()),
+      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   parent_->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::make_unique<TransientFailurePicker>(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("CDS resource \"", parent_->config_->cluster(),
-                           "\" does not exist")
-                  .c_str())));
+      GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
+      absl::make_unique<TransientFailurePicker>(error));
   parent_->MaybeDestroyChildPolicyLocked();
 }
 
@@ -242,13 +245,16 @@ RefCountedPtr<SubchannelInterface> CdsLb::Helper::CreateSubchannel(
 }
 
 void CdsLb::Helper::UpdateState(grpc_connectivity_state state,
+                                const absl::Status& status,
                                 std::unique_ptr<SubchannelPicker> picker) {
   if (parent_->shutting_down_ || parent_->child_policy_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] state updated by child: %s", this,
-            ConnectivityStateName(state));
+    gpr_log(GPR_INFO,
+            "[cdslb %p] state updated by child: %s message_state: (%s)", this,
+            ConnectivityStateName(state), status.ToString().c_str());
   }
-  parent_->channel_control_helper()->UpdateState(state, std::move(picker));
+  parent_->channel_control_helper()->UpdateState(state, status,
+                                                 std::move(picker));
 }
 
 void CdsLb::Helper::RequestReresolution() {

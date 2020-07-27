@@ -304,7 +304,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_channel_args& args) override;
-    void UpdateState(grpc_connectivity_state state,
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     void AddTraceEvent(TraceSeverity severity,
@@ -323,15 +323,16 @@ class GrpcLb : public LoadBalancingPolicy {
     ~StateWatcher() { parent_.reset(DEBUG_LOCATION, "StateWatcher"); }
 
    private:
-    void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
+    void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                   const absl::Status& status) override {
       if (parent_->fallback_at_startup_checks_pending_ &&
           new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
         // fallback mode immediately.
         gpr_log(GPR_INFO,
-                "[grpclb %p] balancer channel in state TRANSIENT_FAILURE; "
+                "[grpclb %p] balancer channel in state:TRANSIENT_FAILURE (%s); "
                 "entering fallback mode",
-                parent_.get());
+                parent_.get(), status.ToString().c_str());
         parent_->fallback_at_startup_checks_pending_ = false;
         grpc_timer_cancel(&parent_->lb_fallback_timer_);
         parent_->fallback_mode_ = true;
@@ -660,6 +661,7 @@ RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
 }
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
+                                 const absl::Status& status,
                                  std::unique_ptr<SubchannelPicker> picker) {
   if (parent_->shutting_down_) return;
   // Record whether child policy reports READY.
@@ -690,16 +692,22 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
        state != GRPC_CHANNEL_READY)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO,
-              "[grpclb %p helper %p] state=%s passing child picker %p as-is",
-              parent_.get(), this, ConnectivityStateName(state), picker.get());
+              "[grpclb %p helper %p] state=%s (%s) passing "
+              "child picker %p as-is",
+              parent_.get(), this, ConnectivityStateName(state),
+              status.ToString().c_str(), picker.get());
     }
-    parent_->channel_control_helper()->UpdateState(state, std::move(picker));
+    parent_->channel_control_helper()->UpdateState(state, status,
+                                                   std::move(picker));
     return;
   }
   // Cases 2 and 3a: wrap picker from the child in our own picker.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-    gpr_log(GPR_INFO, "[grpclb %p helper %p] state=%s wrapping child picker %p",
-            parent_.get(), this, ConnectivityStateName(state), picker.get());
+    gpr_log(GPR_INFO,
+            "[grpclb %p helper %p] state=%s (%s) wrapping child "
+            "picker %p",
+            parent_.get(), this, ConnectivityStateName(state),
+            status.ToString().c_str(), picker.get());
   }
   RefCountedPtr<GrpcLbClientStats> client_stats;
   if (parent_->lb_calld_ != nullptr &&
@@ -707,7 +715,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     client_stats = parent_->lb_calld_->client_stats()->Ref();
   }
   parent_->channel_control_helper()->UpdateState(
-      state,
+      state, status,
       absl::make_unique<Picker>(parent_.get(), parent_->serverlist_,
                                 std::move(picker), std::move(client_stats)));
 }
