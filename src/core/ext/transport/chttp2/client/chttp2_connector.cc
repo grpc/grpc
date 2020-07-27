@@ -217,6 +217,8 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
     NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, GRPC_ERROR_REF(error));
     // Clear out the endpoint, since it is the responsibility of the transport
     // to shut it down.
+    grpc_endpoint_delete_from_pollset_set(self->endpoint_,
+                                          self->args_.interested_parties);
     self->endpoint_ = nullptr;
     grpc_timer_cancel(&self->timer_);
   }
