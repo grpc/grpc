@@ -36,9 +36,17 @@ class Chttp2Connector : public SubchannelConnector {
   void Shutdown(grpc_error* error) override;
 
  private:
+  enum class ConnectorState {
+    kWaiting,  // Waiting for connection, handshake and settings frame to be
+               // received
+    kTransportPublished,  // Transport successfully published
+    kTransportDestroyed,  // Transport destroyed
+  };
   static void Connected(void* arg, grpc_error* error);
   void StartHandshakeLocked();
   static void OnHandshakeDone(void* arg, grpc_error* error);
+  static void OnReceiveSettings(void* arg, grpc_error* error);
+  static void OnTimeout(void* arg, grpc_error* error);
 
   Mutex mu_;
   Args args_;
@@ -47,9 +55,14 @@ class Chttp2Connector : public SubchannelConnector {
   bool shutdown_ = false;
   bool connecting_ = false;
   // Holds the endpoint when first created before being handed off to
-  // the handshake manager.
+  // the handshake manager, and then again after handshake is done.
   grpc_endpoint* endpoint_ = nullptr;
+  grpc_transport* transport_ = nullptr;
   grpc_closure connected_;
+  grpc_closure on_receive_settings_;
+  grpc_timer timer_;
+  grpc_closure on_timeout_;
+  ConnectorState state_ = ConnectorState::kWaiting;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
 };
 
