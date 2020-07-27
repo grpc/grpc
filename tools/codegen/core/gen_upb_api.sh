@@ -124,3 +124,13 @@ do
     --upb_out=$UPB_OUTPUT_DIR \
     --plugin=protoc-gen-upb=$UPB_PLUGIN
 done
+
+
+# In PHP build Makefile, the files with .upb.c suffix collide .upbdefs.c suffix due to a PHP buildsystem bug.
+# Work around this by changing the generated suffix from ".upbdefs.c" to "_ubpdefs.h".
+# Note that this trick is currently possible because the bazel BUILD file currently doesn't use upb generation
+# bazel rules, but generated files are listed in BUILD manually (and other build systems take the file names
+# from the bazel BUILD file)
+# See https://github.com/grpc/grpc/issues/23307
+
+find src/core/ext/upb-generated -name "*.upbdefs.c" -type f | sed -e 's/\(\(.*\).upbdefs.c\)/\1 \2_upbdefs.c/' | xargs -n2 mv
