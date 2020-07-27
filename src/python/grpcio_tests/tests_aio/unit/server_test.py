@@ -466,7 +466,7 @@ class TestServer(AioTestBase):
 
     async def test_port_binding_exception(self):
         address, _, __ = get_socket()
-        server = aio.server()
+        server = aio.server(options=(('grpc.so_reuseport', 0),))
 
         with self.assertRaises(RuntimeError):
             server.add_insecure_port(address)

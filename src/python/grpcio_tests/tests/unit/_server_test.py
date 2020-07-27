@@ -51,7 +51,7 @@ class ServerTest(unittest.TestCase):
 
     def test_failed_port_binding_exception(self):
         address, _, __ = get_socket()
-        server = grpc.server(None)
+        server = grpc.server(None, options=(('grpc.so_reuseport', 0),))
 
         with self.assertRaises(RuntimeError):
             server.add_insecure_port(address)
