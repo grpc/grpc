@@ -983,6 +983,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_authorization_engine",
+    srcs = [
+        "src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.cc",
+        "src/core/lib/security/authorization/mock_cel/evaluator_core.cc",
+
+    ],
+    hdrs = [
+        "src/core/lib/security/authorization/mock_cel/activation.h",
+        "src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h",
+        "src/core/lib/security/authorization/mock_cel/cel_expression.h",
+        "src/core/lib/security/authorization/mock_cel/evaluator_core.h",
+        "src/core/lib/security/authorization/mock_cel/statusor.h",
+    ],
+    external_deps = [
+        "absl/status",
+        
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_common",
     language = "c++",
     deps = [
@@ -1855,6 +1879,8 @@ grpc_cc_library(
         "tsi",
     ],
 )
+
+
 
 grpc_cc_library(
     name = "grpc_transport_chttp2",
