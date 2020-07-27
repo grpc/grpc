@@ -1314,15 +1314,6 @@ def wait_for_healthy_backends(gcp,
                     (timeout_sec, result))
 
 
-def wait_for_config_propagation(gcp, instance_group, client_cmd, client_env):
-    """Use client to verify config propagation from GCP->TD->client"""
-    instance_names = get_instance_names(gcp, instance_group)
-    client_process = subprocess.Popen(shlex.split(client_cmd), env=client_env)
-    wait_until_all_rpcs_go_to_given_backends(instance_names,
-                                             _WAIT_FOR_VALID_CONFIG_SEC)
-    client_process.terminate()
-
-
 def get_instance_names(gcp, instance_group):
     instance_names = []
     result = gcp.compute.instanceGroups().listInstances(
@@ -1505,13 +1496,6 @@ try:
             test_log_file = open(test_log_filename, 'w+')
             client_process = None
             if test_case in _TESTS_TO_FAIL_ON_RPC_FAILURE:
-                wait_for_config_propagation(
-                    gcp, instance_group,
-                    args.client_cmd.format(server_uri=server_uri,
-                                           stats_port=args.stats_port,
-                                           qps=args.qps,
-                                           fail_on_failed_rpc=False),
-                    client_env)
                 fail_on_failed_rpc = '--fail_on_failed_rpc=true'
             else:
                 fail_on_failed_rpc = '--fail_on_failed_rpc=false'
