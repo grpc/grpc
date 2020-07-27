@@ -145,7 +145,7 @@ std::shared_ptr<ServerCredentials> LocalServerCredentials(
 }
 
 std::shared_ptr<ServerCredentials> TlsServerCredentials(
-    const TlsCredentialsOptions& options) {
+    const grpc_impl::experimental::TlsCredentialsOptions& options) {
   grpc::GrpcLibraryCodegen init;
   return std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
       grpc_tls_server_credentials_create(options.c_credentials_options())));

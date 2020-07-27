@@ -81,7 +81,7 @@ std::shared_ptr<ServerCredentials> LocalServerCredentials(
 
 /// Builds TLS ServerCredentials given TLS options.
 std::shared_ptr<ServerCredentials> TlsServerCredentials(
-    const TlsCredentialsOptions& options);
+    const ::grpc_impl::experimental::TlsCredentialsOptions& options);
 
 }  // namespace experimental
 }  // namespace grpc
