@@ -49,15 +49,6 @@ def create_server_creds
     true) # force client auth
 end
 
-# Useful to update a value within a do block
-class MutableValue
-  attr_accessor :value
-
-  def initialize(value)
-    @value = value
-  end
-end
-
 def run_rpc_expect_unavailable(stub)
   exception = nil
   begin
