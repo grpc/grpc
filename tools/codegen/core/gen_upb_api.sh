@@ -128,3 +128,18 @@ do
     --upb_out=$UPB_OUTPUT_DIR \
     --plugin=protoc-gen-upb=$UPB_PLUGIN
 done
+
+# In PHP build Makefile, the files with .upb.c suffix collide .upbdefs.c suffix due to a PHP buildsystem bug.
+# Work around this by placing the generated files with ".upbdefs.c" suffix under a different directory.
+# See https://github.com/grpc/grpc/issues/23307
+
+# move all .upbdefs.c files from under src/core/ext/upb-generated to src/core/ext/upbdefs-generated
+UPBDEFS_OUTPUT_DIR=$PWD/src/core/ext/upbdefs-generated
+rm -rf $UPBDEFS_OUTPUT_DIR
+cp -r $UPB_OUTPUT_DIR $UPBDEFS_OUTPUT_DIR
+
+find $UPB_OUTPUT_DIR -name "*.upbdefs.c" -type f -delete
+
+find $UPBDEFS_OUTPUT_DIR -name "*.upb.h" -type f -delete
+find $UPBDEFS_OUTPUT_DIR -name "*.upb.c" -type f -delete
+find $UPBDEFS_OUTPUT_DIR -name "*.upbdefs.h" -type f -delete
