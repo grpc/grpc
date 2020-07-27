@@ -28,10 +28,20 @@ namespace api {
 namespace expr {
 namespace runtime {
 
+// Base class for an activation.
+class BaseActivation {
+ public:
+  BaseActivation() = default;
+
+  // Non-copyable/non-assignable
+  BaseActivation(const BaseActivation&) = delete;
+  BaseActivation& operator=(const BaseActivation&) = delete;
+};
+
 // Instance of Activation class is used by evaluator.
 // It provides binding between references used in expressions
 // and actual values.
-class Activation {
+class Activation : public BaseActivation {
  public:
   Activation() = default;
 
