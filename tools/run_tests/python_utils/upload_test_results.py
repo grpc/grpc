@@ -29,8 +29,8 @@ import big_query_utils
 
 _DATASET_ID = 'jenkins_test_results'
 _DESCRIPTION = 'Test results from master job run on Jenkins'
-# 90 days in milliseconds
-_EXPIRATION_MS = 90 * 24 * 60 * 60 * 1000
+# 365 days in milliseconds
+_EXPIRATION_MS = 365 * 24 * 60 * 60 * 1000
 _PARTITION_TYPE = 'DAY'
 _PROJECT_ID = 'grpc-testing'
 _RESULTS_SCHEMA = [

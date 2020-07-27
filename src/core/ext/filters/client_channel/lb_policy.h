@@ -24,6 +24,7 @@
 #include <functional>
 #include <iterator>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -190,6 +191,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// Arguments used when picking a subchannel for a call.
   struct PickArgs {
+    /// The path of the call.  Indicates the RPC service and method name.
+    absl::string_view path;
     /// Initial metadata associated with the picking call.
     /// The LB policy may use the existing metadata to influence its routing
     /// decision, and it may add new metadata elements to be sent with the
@@ -281,6 +284,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
+                             const absl::Status& status,
                              std::unique_ptr<SubchannelPicker>) = 0;
 
     /// Requests that the resolver re-resolve.

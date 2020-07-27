@@ -28,7 +28,9 @@ cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc
 
-make install-certs -j4
+# Install the roots.pem
+mkdir -p /usr/local/share/grpc
+cp etc/roots.pem /usr/local/share/grpc/roots.pem
 
 # build C++ interop client & server
 make interop_client interop_server -j4

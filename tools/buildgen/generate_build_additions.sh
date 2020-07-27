@@ -20,6 +20,7 @@ gen_build_yaml_dirs="  \
   src/boringssl        \
   src/benchmark        \
   src/proto            \
+  src/re2              \
   src/upb              \
   src/zlib             \
   src/c-ares           \

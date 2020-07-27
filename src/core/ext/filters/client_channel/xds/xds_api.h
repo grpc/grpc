@@ -28,10 +28,9 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
 
-#include "upb/def.hpp"
-
 #include <grpc/slice_buffer.h>
 
+#include "re2/re2.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
@@ -48,12 +47,74 @@ class XdsApi {
   static const char* kEdsTypeUrl;
 
   struct RdsUpdate {
+    // TODO(donnadionne): When we can use absl::variant<>, consider using that
+    // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
     struct RdsRoute {
-      std::string service;
-      std::string method;
-      // TODO(donnadionne): When we can use absl::variant<>, consider using that
-      // here, to enforce the fact that only one of cluster_name and
-      // weighted_clusters can be set.
+      // Matchers for this route.
+      struct Matchers {
+        struct PathMatcher {
+          enum class PathMatcherType {
+            PATH,    // path stored in string_matcher field
+            PREFIX,  // prefix stored in string_matcher field
+            REGEX,   // regex stored in regex_matcher field
+          };
+          PathMatcherType type;
+          std::string string_matcher;
+          std::unique_ptr<RE2> regex_matcher;
+          bool operator==(const PathMatcher& other) const {
+            if (type != other.type) return false;
+            if (type == PathMatcherType::REGEX) {
+              // Should never be null.
+              if (regex_matcher == nullptr || other.regex_matcher == nullptr) {
+                return false;
+              }
+              return regex_matcher->pattern() == other.regex_matcher->pattern();
+            }
+            return string_matcher == other.string_matcher;
+          }
+          std::string ToString() const;
+        };
+        struct HeaderMatcher {
+          enum class HeaderMatcherType {
+            EXACT,    // value stored in string_matcher field
+            REGEX,    // uses regex_match field
+            RANGE,    // uses range_start and range_end fields
+            PRESENT,  // uses present_match field
+            PREFIX,   // prefix stored in string_matcher field
+            SUFFIX,   // suffix stored in string_matcher field
+          };
+          std::string name;
+          HeaderMatcherType type;
+          int64_t range_start;
+          int64_t range_end;
+          std::string string_matcher;
+          std::unique_ptr<RE2> regex_match;
+          bool present_match;
+          // invert_match field may or may not exisit, so initialize it to
+          // false.
+          bool invert_match = false;
+          bool operator==(const HeaderMatcher& other) const {
+            return (name == other.name && type == other.type &&
+                    range_start == other.range_start &&
+                    range_end == other.range_end &&
+                    string_matcher == other.string_matcher &&
+                    present_match == other.present_match &&
+                    invert_match == other.invert_match);
+          }
+          std::string ToString() const;
+        };
+        PathMatcher path_matcher;
+        std::vector<HeaderMatcher> header_matchers;
+        absl::optional<uint32_t> fraction_per_million;
+        bool operator==(const Matchers& other) const {
+          return (path_matcher == other.path_matcher &&
+                  header_matchers == other.header_matchers &&
+                  fraction_per_million == other.fraction_per_million);
+        }
+        std::string ToString() const;
+      };
+      Matchers matchers;
+      // Action for this route.
       std::string cluster_name;
       struct ClusterWeight {
         std::string name;
@@ -62,14 +123,16 @@ class XdsApi {
         bool operator==(const ClusterWeight& other) const {
           return (name == other.name && weight == other.weight);
         }
+        std::string ToString() const;
       };
       std::vector<ClusterWeight> weighted_clusters;
 
       bool operator==(const RdsRoute& other) const {
-        return (service == other.service && method == other.method &&
+        return (matchers == other.matchers &&
                 cluster_name == other.cluster_name &&
                 weighted_clusters == other.weighted_clusters);
       }
+      std::string ToString() const;
     };
 
     std::vector<RdsRoute> routes;
@@ -77,6 +140,7 @@ class XdsApi {
     bool operator==(const RdsUpdate& other) const {
       return routes == other.routes;
     }
+    std::string ToString() const;
   };
 
   // TODO(roth): When we can use absl::variant<>, consider using that
@@ -230,7 +294,7 @@ class XdsApi {
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       ClusterLoadReport>;
 
-  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
+  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap* bootstrap);
 
   // Creates an ADS request.
   // Takes ownership of \a error.
@@ -240,19 +304,25 @@ class XdsApi {
                               const std::string& nonce, grpc_error* error,
                               bool populate_node);
 
-  // Parses the ADS response and outputs the validated update for either CDS or
-  // EDS. If the response can't be parsed at the top level, \a type_url will
-  // point to an empty string; otherwise, it will point to the received data.
-  grpc_error* ParseAdsResponse(
+  // Parses an ADS response.
+  // If the response can't be parsed at the top level, the resulting
+  // type_url will be empty.
+  struct AdsParseResult {
+    grpc_error* parse_error = GRPC_ERROR_NONE;
+    std::string version;
+    std::string nonce;
+    std::string type_url;
+    absl::optional<LdsUpdate> lds_update;
+    absl::optional<RdsUpdate> rds_update;
+    CdsUpdateMap cds_update_map;
+    EdsUpdateMap eds_update_map;
+  };
+  AdsParseResult ParseAdsResponse(
       const grpc_slice& encoded_response,
       const std::string& expected_server_name,
       const std::set<absl::string_view>& expected_route_configuration_names,
       const std::set<absl::string_view>& expected_cluster_names,
-      const std::set<absl::string_view>& expected_eds_service_names,
-      absl::optional<LdsUpdate>* lds_update,
-      absl::optional<RdsUpdate>* rds_update, CdsUpdateMap* cds_update_map,
-      EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
-      std::string* type_url);
+      const std::set<absl::string_view>& expected_eds_service_names);
 
   // Creates an LRS request querying \a server_name.
   grpc_slice CreateLrsInitialRequest(const std::string& server_name);
@@ -271,9 +341,8 @@ class XdsApi {
  private:
   XdsClient* client_;
   TraceFlag* tracer_;
-  const bool xds_routing_enabled_;
-  const XdsBootstrap::Node* node_;
-  upb::SymbolTable symtab_;
+  const bool use_v3_;
+  const XdsBootstrap* bootstrap_;  // Do not own.
   const std::string build_version_;
   const std::string user_agent_name_;
 };

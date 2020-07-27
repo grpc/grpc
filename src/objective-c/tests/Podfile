@@ -14,7 +14,7 @@ def grpc_deps
   pod 'BoringSSL-GRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
   
   pod 'gRPC/InternalTesting',           :path => GRPC_LOCAL_SRC
-  pod 'gRPC-Core',                      :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
+  pod 'gRPC-Core',                      :path => GRPC_LOCAL_SRC
   pod 'gRPC-RxLibrary',                 :path => GRPC_LOCAL_SRC
   pod 'gRPC-ProtoRPC',                  :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
   pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true

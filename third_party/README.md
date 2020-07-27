@@ -25,6 +25,16 @@ gRPC depends on several third-party libraries, their source code is available
   Also keep in mind that adding a new dependency can be quite disruptive 
   for the users and community - it means that all users will need to update their projects accordingly (for C++ projects often non-trivial) and 
   the community-provided C++ packages (e.g. vcpkg) will need to be updated as well.
+  
+## Checklist for adding a new third-party dependency
+
+**READ THIS BEFORE YOU ADD A NEW DEPENDENCY**
+
+- [ ] Make sure you understand the hidden costs of adding a dependency (see section above) and that you understand the     complexities of updating the build files. Maintenance of the build files isn't for free, so expect to be involved in maintenance tasks, cleanup and support (e.g resolving user bugs) of the build files in the future.
+
+- [ ] Once your change is ready, start an [adhoc run of artifact - packages - distribtests flow](https://fusion.corp.google.com/projectanalysis/summary/KOKORO/prod%3Agrpc%2Fcore%2Fexperimental%2Fgrpc_build_artifacts_multiplatform) and make sure everything passes (for technical reasons, not all the distribtests can run on each PR automatically).
+
+- [ ] Check the impact of the new dependency on the size of our distribution packages (compare BEFORE and AFTER) and post the comparison on your PR (it should not be approved without checking the impact sizes of packages first). The package sizes AFTER can be obtained from the adhoc package build from bullet point above.
 
 ## Instructions for updating dependencies
 
@@ -34,6 +44,7 @@ Usually the process is
 2. update the dependency in `grpc_deps.bzl` to the same commit
 3. update `tools/run_tests/sanity/check_submodules.sh` to make the sanity test pass
 4. (when needed) run `tools/buildgen/generate_projects.sh` to regenerate the generated files 
+5. populate the bazel download mirror by running `bazel/update_mirror.sh`
 
 Updating some dependencies requires extra care.
 
@@ -54,7 +65,7 @@ git commit -m "update submodule boringssl-with-bazel with origin/master-with-baz
 
 - Update boringssl dependency in `bazel/grpc_deps.bzl` to the same commit SHA as master-with-bazel branch
     - Update `http_archive(name = "boringssl",` section by updating the sha in `strip_prefix` and `urls` fields.
-    - Also, set `sha256` field to “” as the existing value is not valid. This will be added later once we know what that value is.
+    - Also, set `sha256` field to "" as the existing value is not valid. This will be added later once we know what that value is.
 
 - Update `tools/run_tests/sanity/check_submodules.sh` with the same commit
 
@@ -69,15 +80,15 @@ Rule 'boringssl' indicated that a canonical reproducible form can be obtained by
     - Update `bazel/grpc_deps.bzl` with the SHA value shown in the above debug msg. Commit again `git commit -m "Updated sha256"`
 
 - Run `tools/distrib/generate_boringssl_prefix_header.sh`
-    - Commit again `commit -m "generate boringssl prefix headers"`
+    - Commit again `git commit -m "generate boringssl prefix headers"`
 
 - Increment the boringssl podspec version number in 
   `templates/src/objective-c/BoringSSL-GRPC.podspec.template` and `templates/gRPC-Core.podspec.template`.
   [example](https://github.com/grpc/grpc/pull/21527/commits/9d4411842f02f167209887f1f3d2b9ab5d14931a)
-    - Commit again `commit -m "Increment podspec version"`
+    - Commit again `git commit -m "Increment podspec version"`
 
 - Run `tools/buildgen/generate_projects.sh` (yes, again)
-    - Commit again `commit -m "Second regeneration"`
+    - Commit again `git commit -m "Second regeneration"`
 
 - Create a PR with all the above commits.
 

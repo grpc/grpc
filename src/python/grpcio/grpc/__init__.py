@@ -187,7 +187,7 @@ class Future(six.with_metaclass(abc.ABCMeta)):
 
         The callback will be passed this Future object describing the outcome
         of the computation.  Callbacks will be invoked after the future is
-        terimated, whether successfully or not.
+        terminated, whether successfully or not.
 
         If the computation has already completed, the callback will be called
         immediately.
@@ -1866,6 +1866,23 @@ def alts_server_credentials():
       A ServerCredentials for use with an ALTS-enabled Server
     """
     return ServerCredentials(_cygrpc.server_credentials_alts())
+
+
+def compute_engine_channel_credentials(call_credentials):
+    """Creates a compute engine channel credential.
+
+    This credential can only be used in a GCP environment as it relies on
+    a handshaker service. For more info about ALTS, see
+    https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security
+
+    This channel credential is expected to be used as part of a composite
+    credential in conjunction with a call credentials that authenticates the
+    VM's default service account. If used with any other sort of call
+    credential, the connection may suddenly and unexpectedly begin failing RPCs.
+    """
+    return ChannelCredentials(
+        _cygrpc.channel_credentials_compute_engine(
+            call_credentials._credentials))
 
 
 def channel_ready_future(channel):

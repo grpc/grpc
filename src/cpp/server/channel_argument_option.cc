@@ -21,10 +21,10 @@
 namespace grpc {
 
 std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
-    const grpc::string& name, const grpc::string& value) {
+    const std::string& name, const std::string& value) {
   class StringOption final : public ServerBuilderOption {
    public:
-    StringOption(const grpc::string& name, const grpc::string& value)
+    StringOption(const std::string& name, const std::string& value)
         : name_(name), value_(value) {}
 
     virtual void UpdateArguments(ChannelArguments* args) override {
@@ -35,17 +35,17 @@ std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
         override {}
 
    private:
-    const grpc::string name_;
-    const grpc::string value_;
+    const std::string name_;
+    const std::string value_;
   };
   return std::unique_ptr<ServerBuilderOption>(new StringOption(name, value));
 }
 
 std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
-    const grpc::string& name, int value) {
+    const std::string& name, int value) {
   class IntOption final : public ServerBuilderOption {
    public:
-    IntOption(const grpc::string& name, int value)
+    IntOption(const std::string& name, int value)
         : name_(name), value_(value) {}
 
     virtual void UpdateArguments(ChannelArguments* args) override {
@@ -56,7 +56,7 @@ std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
         override {}
 
    private:
-    const grpc::string name_;
+    const std::string name_;
     const int value_;
   };
   return std::unique_ptr<ServerBuilderOption>(new IntOption(name, value));

@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-#include "src/core/ext/upb-generated/envoy/config/rbac/v2/rbac.upb.h"
+#include "src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.h"
 #include "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h"
 #include "upb/upb.hpp"
 
@@ -46,7 +46,7 @@ class AuthorizationEngine {
   // rbac_policies must be a vector containing either a single policy of any
   // kind, or one deny policy and one allow policy, in that order.
   static std::unique_ptr<AuthorizationEngine> CreateAuthorizationEngine(
-      const std::vector<envoy_config_rbac_v2_RBAC*>& rbac_policies);
+      const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies);
   // TODO(mywang@google.com): add an Evaluate member function.
 
  private:
@@ -56,7 +56,7 @@ class AuthorizationEngine {
   };
 
   explicit AuthorizationEngine(
-      const std::vector<envoy_config_rbac_v2_RBAC*>& rbac_policies);
+      const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies);
   std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
       deny_if_matched_;
   std::map<const std::string, const google_api_expr_v1alpha1_Expr*>

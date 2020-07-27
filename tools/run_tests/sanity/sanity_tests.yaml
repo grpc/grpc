@@ -11,6 +11,7 @@
 - script: tools/run_tests/sanity/check_submodules.sh
 - script: tools/run_tests/sanity/check_test_filtering.py
 - script: tools/run_tests/sanity/check_tracer_sanity.py
+- script: tools/run_tests/sanity/check_version.sh
 - script: tools/run_tests/sanity/core_banned_functions.py
 - script: tools/run_tests/sanity/core_untyped_structs.sh
 - script: tools/run_tests/sanity/cpp_banned_constructs.sh

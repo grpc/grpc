@@ -31,6 +31,8 @@
 #include <set>
 #include <thread>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -337,9 +339,7 @@ class FakeTcpServer {
       : process_read_cb_(process_read_cb) {
     port_ = grpc_pick_unused_port_or_die();
     accept_socket_ = socket(AF_INET6, SOCK_STREAM, 0);
-    char* addr_str;
-    GPR_ASSERT(gpr_asprintf(&addr_str, "[::]:%d", port_));
-    address_ = grpc_core::UniquePtr<char>(addr_str);
+    address_ = absl::StrCat("[::]:", port_);
     GPR_ASSERT(accept_socket_ != -1);
     if (accept_socket_ == -1) {
       gpr_log(GPR_ERROR, "Failed to create socket: %d", errno);
@@ -388,7 +388,7 @@ class FakeTcpServer {
             "thread complete");
   }
 
-  const char* address() { return address_.get(); }
+  const char* address() { return address_.c_str(); }
 
   static ProcessReadResult CloseSocketUponReceivingBytesFromPeer(
       int bytes_received_size, int read_error, int s) {
@@ -479,7 +479,7 @@ class FakeTcpServer {
   int accept_socket_;
   int port_;
   gpr_event stop_ev_;
-  grpc_core::UniquePtr<char> address_;
+  std::string address_;
   std::unique_ptr<std::thread> run_server_loop_thd_;
   std::function<ProcessReadResult(int, int, int)> process_read_cb_;
 };

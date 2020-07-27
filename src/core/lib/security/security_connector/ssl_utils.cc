@@ -20,12 +20,13 @@
 
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
+#include <vector>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
-#include <vector>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -67,6 +68,9 @@ static const char* cipher_suites = nullptr;
 // All cipher suites for default are compliant with HTTP2.
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
     grpc_ssl_cipher_suites,
+    "TLS_AES_128_GCM_SHA256:"
+    "TLS_AES_256_GCM_SHA384:"
+    "TLS_CHACHA20_POLY1305_SHA256:"
     "ECDHE-ECDSA-AES128-GCM-SHA256:"
     "ECDHE-ECDSA-AES256-GCM-SHA384:"
     "ECDHE-RSA-AES128-GCM-SHA256:"
@@ -134,6 +138,18 @@ grpc_get_tsi_client_certificate_request_type(
   }
 }
 
+tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version) {
+  switch (tls_version) {
+    case grpc_tls_version::TLS1_2:
+      return tsi_tls_version::TSI_TLS1_2;
+    case grpc_tls_version::TLS1_3:
+      return tsi_tls_version::TSI_TLS1_3;
+    default:
+      gpr_log(GPR_INFO, "Falling back to TLS 1.2.");
+      return tsi_tls_version::TSI_TLS1_2;
+  }
+}
+
 grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer) {
 #if TSI_OPENSSL_ALPN_SUPPORT
   /* Check the ALPN if ALPN is supported. */
@@ -155,12 +171,9 @@ grpc_error* grpc_ssl_check_peer_name(absl::string_view peer_name,
                                      const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    char* msg;
-    gpr_asprintf(&msg, "Peer name %s is not in peer certificate",
-                 peer_name.data());
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return error;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
+            .c_str());
   }
   return GRPC_ERROR_NONE;
 }
@@ -376,8 +389,8 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
-    bool skip_server_certificate_verification,
-    tsi_ssl_session_cache* ssl_session_cache,
+    bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
+    tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs;
   const tsi_ssl_root_certs_store* root_store;
@@ -409,6 +422,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.session_cache = ssl_session_cache;
   options.skip_server_certificate_verification =
       skip_server_certificate_verification;
+  options.min_tls_version = min_tls_version;
+  options.max_tls_version = max_tls_version;
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
@@ -425,6 +440,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
     const char* pem_root_certs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
+    tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi_ssl_server_handshaker_factory** handshaker_factory) {
   size_t num_alpn_protocols = 0;
   const char** alpn_protocol_strings =
@@ -438,6 +454,8 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.cipher_suites = grpc_get_ssl_cipher_suites();
   options.alpn_protocols = alpn_protocol_strings;
   options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
+  options.min_tls_version = min_tls_version;
+  options.max_tls_version = max_tls_version;
   const tsi_result result =
       tsi_create_ssl_server_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
