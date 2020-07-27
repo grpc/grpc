@@ -18,6 +18,8 @@ import logging
 
 import grpc
 
+from tests.unit.framework.common import get_socket
+
 
 class _ActualGenericRpcHandler(grpc.GenericRpcHandler):
 
@@ -46,6 +48,17 @@ class ServerTest(unittest.TestCase):
             ])
         self.assertIn('grpc.GenericRpcHandler',
                       str(exception_context.exception))
+
+    def test_failed_port_binding_exception(self):
+        address, _, __ = get_socket()
+        server = grpc.server(None)
+
+        with self.assertRaises(RuntimeError):
+            server.add_insecure_port(address)
+
+        with self.assertRaises(RuntimeError):
+            server.add_secure_port(address,
+                                   grpc.ssl_server_credentials(((b'', b''),)))
 
 
 if __name__ == '__main__':

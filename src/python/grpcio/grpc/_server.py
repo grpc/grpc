@@ -958,11 +958,27 @@ class _Server(grpc.Server):
         _add_generic_handlers(self._state, generic_rpc_handlers)
 
     def add_insecure_port(self, address):
-        return _add_insecure_port(self._state, _common.encode(address))
+        port = _add_insecure_port(self._state, _common.encode(address))
+        if port == 0:
+            # The Core API doesn't return a failure message. The best we can do
+            # is raising an exception to prevent further confusion.
+            raise RuntimeError('Failed to bind to address %s; set '
+                               'GRPC_VERBOSITY=debug env to see detailed error '
+                               'message.' % address)
+        else:
+            return port
 
     def add_secure_port(self, address, server_credentials):
-        return _add_secure_port(self._state, _common.encode(address),
+        port = _add_secure_port(self._state, _common.encode(address),
                                 server_credentials)
+        if port == 0:
+            # The Core API doesn't return a failure message. The best we can do
+            # is raising an exception to prevent further confusion.
+            raise RuntimeError('Failed to bind to address %s; set '
+                               'GRPC_VERBOSITY=debug env to see detailed error '
+                               'message.' % address)
+        else:
+            return port
 
     def start(self):
         _start(self._state)

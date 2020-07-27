@@ -21,7 +21,7 @@ import unittest
 import grpc
 from grpc.experimental import aio
 
-from tests.unit.framework.common import test_constants
+from tests.unit.framework.common import get_socket, test_constants
 from tests_aio.unit._test_base import AioTestBase
 
 _SIMPLE_UNARY_UNARY = '/test/SimpleUnaryUnary'
@@ -463,6 +463,17 @@ class TestServer(AioTestBase):
         await call.done_writing()
 
         self.assertEqual(grpc.StatusCode.INTERNAL, await call.code())
+
+    async def test_port_binding_exception(self):
+        address, _, __ = get_socket()
+        server = aio.server()
+
+        with self.assertRaises(RuntimeError):
+            server.add_insecure_port(address)
+
+        with self.assertRaises(RuntimeError):
+            server.add_secure_port(address,
+                                   grpc.ssl_server_credentials(((b'', b''),)))
 
 
 if __name__ == '__main__':

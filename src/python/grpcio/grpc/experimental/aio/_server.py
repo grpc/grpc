@@ -80,7 +80,15 @@ class Server(_base_server.Server):
         Returns:
           An integer port on which the server will accept RPC requests.
         """
-        return self._server.add_insecure_port(_common.encode(address))
+        port = self._server.add_insecure_port(_common.encode(address))
+        if port == 0:
+            # The Core API doesn't return a failure message. The best we can do
+            # is raising an exception to prevent further confusion.
+            raise RuntimeError('Failed to bind to address %s; set '
+                               'GRPC_VERBOSITY=debug env to see detailed error '
+                               'message.' % address)
+        else:
+            return port
 
     def add_secure_port(self, address: str,
                         server_credentials: grpc.ServerCredentials) -> int:
@@ -97,8 +105,16 @@ class Server(_base_server.Server):
         Returns:
           An integer port on which the server will accept RPC requests.
         """
-        return self._server.add_secure_port(_common.encode(address),
+        port = self._server.add_secure_port(_common.encode(address),
                                             server_credentials)
+        if port == 0:
+            # The Core API doesn't return a failure message. The best we can do
+            # is raising an exception to prevent further confusion.
+            raise RuntimeError('Failed to bind to address %s; set '
+                               'GRPC_VERBOSITY=debug env to see detailed error '
+                               'message.' % address)
+        else:
+            return port
 
     async def start(self) -> None:
         """Starts this Server.
