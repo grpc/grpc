@@ -1189,6 +1189,7 @@ client_channel_stress_test: $(BINDIR)/$(CONFIG)/client_channel_stress_test
 client_fuzzer: $(BINDIR)/$(CONFIG)/client_fuzzer
 client_interceptors_end2end_test: $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test
 client_lb_end2end_test: $(BINDIR)/$(CONFIG)/client_lb_end2end_test
+client_settings_timeout_test: $(BINDIR)/$(CONFIG)/client_settings_timeout_test
 codegen_test_full: $(BINDIR)/$(CONFIG)/codegen_test_full
 codegen_test_minimal: $(BINDIR)/$(CONFIG)/codegen_test_minimal
 connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
@@ -1567,6 +1568,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/client_channel_stress_test \
   $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/client_lb_end2end_test \
+  $(BINDIR)/$(CONFIG)/client_settings_timeout_test \
   $(BINDIR)/$(CONFIG)/codegen_test_full \
   $(BINDIR)/$(CONFIG)/codegen_test_minimal \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
@@ -1726,6 +1728,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/client_channel_stress_test \
   $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/client_lb_end2end_test \
+  $(BINDIR)/$(CONFIG)/client_settings_timeout_test \
   $(BINDIR)/$(CONFIG)/codegen_test_full \
   $(BINDIR)/$(CONFIG)/codegen_test_minimal \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
@@ -2198,6 +2201,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/client_callback_end2end_test || ( echo test client_callback_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_interceptors_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test || ( echo test client_interceptors_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing client_settings_timeout_test"
+	$(Q) $(BINDIR)/$(CONFIG)/client_settings_timeout_test || ( echo test client_settings_timeout_test failed ; exit 1 )
 	$(E) "[RUN]     Testing codegen_test_full"
 	$(Q) $(BINDIR)/$(CONFIG)/codegen_test_full || ( echo test codegen_test_full failed ; exit 1 )
 	$(E) "[RUN]     Testing codegen_test_minimal"
@@ -13655,6 +13660,52 @@ endif
 $(OBJDIR)/$(CONFIG)/test/core/util/test_lb_policies.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/orca_load_report_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/orca_load_report_for_test.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/client_lb_end2end_test.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/orca_load_report_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/orca_load_report_for_test.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_service_impl.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/orca_load_report_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/orca_load_report_for_test.grpc.pb.cc
+
+
+CLIENT_SETTINGS_TIMEOUT_TEST_SRC = \
+    test/core/end2end/cq_verifier.cc \
+    test/core/transport/chttp2/client_settings_timeout_test.cc \
+
+CLIENT_SETTINGS_TIMEOUT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_SETTINGS_TIMEOUT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/client_settings_timeout_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
+
+$(BINDIR)/$(CONFIG)/client_settings_timeout_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/client_settings_timeout_test: $(PROTOBUF_DEP) $(CLIENT_SETTINGS_TIMEOUT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CLIENT_SETTINGS_TIMEOUT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libabsl/synchronization:synchronization.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/client_settings_timeout_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/cq_verifier.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libabsl/synchronization:synchronization.a
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/chttp2/client_settings_timeout_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libabsl/synchronization:synchronization.a
+
+deps_client_settings_timeout_test: $(CLIENT_SETTINGS_TIMEOUT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CLIENT_SETTINGS_TIMEOUT_TEST_OBJS:.o=.dep)
+endif
+endif
 
 
 CODEGEN_TEST_FULL_SRC = \
