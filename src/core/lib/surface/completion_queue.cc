@@ -1109,15 +1109,30 @@ static void cq_end_op_for_callback_alternative(
     }
   }
 
-  // Pass through the actual work to the internal nextable CQ
-  grpc_cq_end_op(cqd->implementation, tag, error, done, done_arg, storage,
-                 internal);
-
   cq_check_tag(cq, tag, true); /* Used in debug builds only */
 
-  if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
-    cq_finish_shutdown_callback_alternative(cq);
-  }
+  // Pass through the actual work to the internal nextable CQ
+  struct DoneExtensionArg {
+    void (*done)(void* done_arg, grpc_cq_completion* storage);
+    void* done_arg;
+    grpc_completion_queue* cq;
+  };
+  auto extended_done = [](void* done_arg, grpc_cq_completion* storage) {
+    DoneExtensionArg* done_extension = static_cast<DoneExtensionArg*>(done_arg);
+    done_extension->done(done_extension->done_arg, storage);
+    cq_callback_alternative_data* cqd =
+        static_cast<cq_callback_alternative_data*> DATA_FROM_CQ(
+            done_extension->cq);
+    if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
+      cq_finish_shutdown_callback_alternative(done_extension->cq);
+    }
+    delete done_extension;
+  };
+  DoneExtensionArg* extended_done_arg =
+      new DoneExtensionArg{done, done_arg, cq};
+
+  grpc_cq_end_op(cqd->implementation, tag, error, extended_done,
+                 extended_done_arg, storage, internal);
 }
 
 void grpc_cq_end_op(grpc_completion_queue* cq, void* tag, grpc_error* error,
