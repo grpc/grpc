@@ -46,6 +46,8 @@ namespace runtime {
 // Break cyclic depdendencies for container types.
 class CelMap;
 
+// This is a temporary stub implementation of CEL APIs.
+// Once gRPC imports the CEL library, this class will be removed.
 class CelValue {
  public:
   // Default constructor.

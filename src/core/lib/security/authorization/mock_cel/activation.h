@@ -28,7 +28,8 @@ namespace api {
 namespace expr {
 namespace runtime {
 
-// Base class for an activation.
+// Base class for an activation. This is a temporary stub implementation of CEL
+// APIs. Once gRPC imports the CEL library, this class will be removed.
 class BaseActivation {
  public:
   BaseActivation() = default;
@@ -40,7 +41,8 @@ class BaseActivation {
 
 // Instance of Activation class is used by evaluator.
 // It provides binding between references used in expressions
-// and actual values.
+// and actual values. This is a temporary stub implementation of CEL APIs.
+// Once gRPC imports the CEL library, this class will be removed.
 class Activation : public BaseActivation {
  public:
   Activation() = default;
