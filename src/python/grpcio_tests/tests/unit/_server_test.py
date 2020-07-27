@@ -18,7 +18,7 @@ import logging
 
 import grpc
 
-from tests.unit.framework.common import get_socket
+from tests.unit import resources
 
 
 class _ActualGenericRpcHandler(grpc.GenericRpcHandler):
@@ -50,15 +50,18 @@ class ServerTest(unittest.TestCase):
                       str(exception_context.exception))
 
     def test_failed_port_binding_exception(self):
-        address, _, __ = get_socket()
         server = grpc.server(None, options=(('grpc.so_reuseport', 0),))
+        port = server.add_insecure_port('localhost:0')
+        bind_address = "localhost:%d" % port
 
         with self.assertRaises(RuntimeError):
-            server.add_insecure_port(address)
+            server.add_insecure_port(bind_address)
 
+        server_credentials = grpc.ssl_server_credentials([
+            (resources.private_key(), resources.certificate_chain())
+        ])
         with self.assertRaises(RuntimeError):
-            server.add_secure_port(address,
-                                   grpc.ssl_server_credentials(((b'', b''),)))
+            server.add_secure_port(bind_address, server_credentials)
 
 
 if __name__ == '__main__':

@@ -15,13 +15,15 @@
 import asyncio
 import gc
 import logging
+import socket
 import time
 import unittest
 
 import grpc
 from grpc.experimental import aio
 
-from tests.unit.framework.common import get_socket, test_constants
+from tests.unit import resources
+from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase
 
 _SIMPLE_UNARY_UNARY = '/test/SimpleUnaryUnary'
@@ -465,15 +467,18 @@ class TestServer(AioTestBase):
         self.assertEqual(grpc.StatusCode.INTERNAL, await call.code())
 
     async def test_port_binding_exception(self):
-        address, _, __ = get_socket()
         server = aio.server(options=(('grpc.so_reuseport', 0),))
+        port = server.add_insecure_port('localhost:0')
+        bind_address = "localhost:%d" % port
 
         with self.assertRaises(RuntimeError):
-            server.add_insecure_port(address)
+            server.add_insecure_port(bind_address)
 
+        server_credentials = grpc.ssl_server_credentials([
+            (resources.private_key(), resources.certificate_chain())
+        ])
         with self.assertRaises(RuntimeError):
-            server.add_secure_port(address,
-                                   grpc.ssl_server_credentials(((b'', b''),)))
+            server.add_secure_port(bind_address, server_credentials)
 
 
 if __name__ == '__main__':
