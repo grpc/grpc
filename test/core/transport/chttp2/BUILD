@@ -67,6 +67,25 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "client_settings_timeout_test",
+    srcs = ["client_settings_timeout_test.cc"],
+    external_deps = [
+        "absl/synchronization",
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "context_list_test",
     srcs = ["context_list_test.cc"],
     external_deps = [

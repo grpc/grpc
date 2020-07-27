@@ -175,7 +175,8 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error* error) {
       self->Ref().release();  // Ref held by OnReceiveSettings()
       GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings, self,
                         grpc_schedule_on_exec_ctx);
-      grpc_chttp2_transport_start_reading(self->transport_, args->read_buffer,
+      grpc_chttp2_transport_start_reading(self->result_->transport,
+                                          args->read_buffer,
                                           &self->on_receive_settings_);
       self->Ref().release();  // Ref held by OnTimeout()
       GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self,
@@ -200,13 +201,11 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
     // OnReceiveSettings can race with OnTimeout so use state_ to distinguish
     // the state we are in.
     if (error == GRPC_ERROR_NONE && self->state_ == ConnectorState::kWaiting) {
-      grpc_timer_cancel(&self->timer_);
       self->state_ = ConnectorState::kTransportPublished;
     } else if (self->state_ == ConnectorState::kWaiting) {
       // The transport received an error while waiting on the settings frame.
-      grpc_timer_cancel(&self->timer_);
       gpr_log(GPR_ERROR, "transport:%p Transport error (%s). Destroying.",
-              self->transport_, grpc_error_string(error));
+              self->result_->transport, grpc_error_string(error));
       grpc_transport_destroy(self->result_->transport);
       self->state_ = ConnectorState::kTransportDestroyed;
       self->result_->Reset();
@@ -219,6 +218,7 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
     // Clear out the endpoint, since it is the responsibility of the transport
     // to shut it down.
     self->endpoint_ = nullptr;
+    grpc_timer_cancel(&self->timer_);
   }
   self->Unref();
 }
@@ -236,7 +236,7 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error* error) {
       // to be called.
       gpr_log(GPR_ERROR,
               "transport:%p Timed out waiting on settings frame. Destroying.",
-              self->transport_);
+              self->result_->transport);
       grpc_transport_destroy(self->result_->transport);
       self->state_ = ConnectorState::kTransportDestroyed;
     }
