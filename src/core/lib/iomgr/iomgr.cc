@@ -31,7 +31,6 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/buffer_list.h"
@@ -51,7 +50,7 @@ static gpr_cv g_rcv;
 static int g_shutdown;
 static grpc_iomgr_object g_root_object;
 static bool g_grpc_abort_on_leaks;
-static grpc_core::Atomic<bool> g_iomgr_non_polling{false};
+static bool g_iomgr_non_polling;
 
 void grpc_iomgr_init() {
   grpc_core::ExecCtx exec_ctx;
@@ -196,9 +195,14 @@ void grpc_iomgr_unregister_object(grpc_iomgr_object* obj) {
 bool grpc_iomgr_abort_on_leaks(void) { return g_grpc_abort_on_leaks; }
 
 bool grpc_iomgr_non_polling() {
-  return g_iomgr_non_polling.Load(grpc_core::MemoryOrder::SEQ_CST);
+  gpr_mu_lock(&g_mu);
+  bool ret = g_iomgr_non_polling;
+  gpr_mu_unlock(&g_mu);
+  return ret;
 }
 
 void grpc_iomgr_mark_non_polling_internal() {
-  g_iomgr_non_polling.Store(true, grpc_core::MemoryOrder::SEQ_CST);
+  gpr_mu_lock(&g_mu);
+  g_iomgr_non_polling = true;
+  gpr_mu_unlock(&g_mu);
 }
