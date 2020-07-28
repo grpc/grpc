@@ -5638,7 +5638,6 @@ targets:
   - gpr
   - address_sorting
   - upb
-  - absl/synchronization:synchronization
 - name: codegen_test_full
   gtest: true
   build: test

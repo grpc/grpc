@@ -10307,7 +10307,6 @@ target_link_libraries(client_settings_timeout_test
   gpr
   address_sorting
   upb
-  absl::synchronization
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
