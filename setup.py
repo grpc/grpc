@@ -271,7 +271,6 @@ if BUILD_WITH_SYSTEM_CARES:
 
 DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
-NO_BORING_ASM = True
 
 asm_key = ''
 if BUILD_WITH_BORING_SSL_ASM:
