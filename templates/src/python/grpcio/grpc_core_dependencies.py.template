@@ -34,10 +34,10 @@
 
   ASM_SOURCE_FILES = {
   % for asm, asm_src in asm_srcs.iteritems():
-    '${asm}': [
+      '${asm}': [
     % for src in asm_src:
-      '${src}',
+          '${src}',
     % endfor
-    ],
+      ],
   % endfor
   }
