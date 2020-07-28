@@ -69,14 +69,6 @@ void grpc_cq_internal_unref(grpc_completion_queue* cc);
 /* Initializes global variables used by completion queues */
 void grpc_cq_global_init();
 
-// Completion queue initializations that must be done after iomgr
-// TODO(vjpai): Remove when callback_alternative is no longer needed.
-void grpc_cq_init();
-
-// Completion queue shutdowns that must be done before iomgr shutdown.
-// TODO(vjpai): Remove when callback_alternative is no longer needed.
-void grpc_cq_shutdown();
-
 /* Flag that an operation is beginning: the completion channel will not finish
    shutdown until a corrensponding grpc_cq_end_* call is made.
    \a tag is currently used only in debug builds. Return true on success, and

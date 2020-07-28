@@ -50,7 +50,6 @@ static gpr_cv g_rcv;
 static int g_shutdown;
 static grpc_iomgr_object g_root_object;
 static bool g_grpc_abort_on_leaks;
-static bool g_iomgr_non_polling;
 
 void grpc_iomgr_init() {
   grpc_core::ExecCtx exec_ctx;
@@ -193,16 +192,3 @@ void grpc_iomgr_unregister_object(grpc_iomgr_object* obj) {
 }
 
 bool grpc_iomgr_abort_on_leaks(void) { return g_grpc_abort_on_leaks; }
-
-bool grpc_iomgr_non_polling() {
-  gpr_mu_lock(&g_mu);
-  bool ret = g_iomgr_non_polling;
-  gpr_mu_unlock(&g_mu);
-  return ret;
-}
-
-void grpc_iomgr_mark_non_polling_internal() {
-  gpr_mu_lock(&g_mu);
-  g_iomgr_non_polling = true;
-  gpr_mu_unlock(&g_mu);
-}
