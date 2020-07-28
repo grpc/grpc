@@ -576,7 +576,7 @@ def test_round_robin(gcp, backend_service, instance_group):
         if abs(stats.rpcs_by_peer[instance] - expected_requests) > threshold:
             raise Exception(
                 'RPC peer distribution differs from expected by more than %d '
-                'for instance %s (%s)', threshold, instance, stats)
+                'for instance %s (%s)' % (threshold, instance, stats))
 
 
 def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
@@ -774,8 +774,8 @@ def test_traffic_splitting(gcp, original_backend_service, instance_group,
                 logger.info(e)
                 if i == retry_count - 1:
                     raise Exception(
-                        'RPC distribution (%s) differs from expected (%s)',
-                        got_instance_percentage, expected_instance_percentage)
+                        'RPC distribution (%s) differs from expected (%s)' %
+                        (got_instance_percentage, expected_instance_percentage))
             else:
                 logger.info("success")
                 break
@@ -1476,8 +1476,8 @@ def wait_for_global_operation(gcp,
                 raise Exception(result['error'])
             return
         time.sleep(2)
-    raise Exception('Operation %s did not complete within %d', operation,
-                    timeout_sec)
+    raise Exception('Operation %s did not complete within %d' %
+                    (operation, timeout_sec))
 
 
 def wait_for_zone_operation(gcp,
@@ -1494,8 +1494,8 @@ def wait_for_zone_operation(gcp,
                 raise Exception(result['error'])
             return
         time.sleep(2)
-    raise Exception('Operation %s did not complete within %d', operation,
-                    timeout_sec)
+    raise Exception('Operation %s did not complete within %d' %
+                    (operation, timeout_sec))
 
 
 def wait_for_healthy_backends(gcp,
