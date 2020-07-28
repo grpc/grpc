@@ -28,7 +28,8 @@ COMMAND="${1:-}"
 # parse class and methods
 for FILENAME in call_credentials.c call.c channel.c channel_credentials.c \
                 server_credentials.c server.c timeval.c ; do
-    CLASS_NAME=$(sed -E 's/(^|_)(\w)/\U\2/g' <<< "${FILENAME%.*}")
+    CLASS_NAME=$(awk -F _ '{for(i=1; i<=NF; i++) printf "%s", toupper(substr($i,1,1)) substr($i, 2);}' \
+        <<< "${FILENAME%.*}")
     if [[ "$COMMAND" == "generate" ]]; then
         echo Generating lib/Grpc/$CLASS_NAME.php ...
         awk -f php_extension_doxygen_filter.awk ../ext/grpc/$FILENAME \

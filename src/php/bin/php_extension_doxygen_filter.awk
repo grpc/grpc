@@ -20,7 +20,7 @@ function sed_gensub(regexp, replacement, how, target,         cmd_, ret_) { # ar
     gsub(/'/, "'\"'\"'", target);
     gsub(/\\\\/, "\\", regexp);
 
-    cmd_ = "printf '" target "' | sed -E 's/" regexp "/" replacement "/" tolower(how) "'";
+    cmd_ = "printf '" target "' | sed -nE 's/" regexp "/" replacement "/" tolower(how) "p'";
     if (cmd_ | getline ret_ != 1) {
         close(cmd_);
         error = "ERROR: running command: " cmd_ ", ret_: " ret_;
@@ -85,7 +85,7 @@ inDocComment==1 && $0 ~ classLineRegex {
 }
 
 # end of class document
-inDocComment==1 && /\*\// && classDocComment == "" {
+inDocComment==1 && /\*\// && className && classDocComment == "" {
     classDocComment = docComment;
     docComment = "";
 }
