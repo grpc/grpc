@@ -29,6 +29,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -88,14 +89,20 @@ struct rpc_state {
 static int server_port;
 static struct rpc_state state;
 static grpc_closure on_read;
+static grpc_closure on_writing_settings_frame;
 static grpc_closure on_write;
 
 static void* tag(intptr_t t) { return (void*)t; }
 
 static void done_write(void* /*arg*/, grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-
   gpr_atm_rel_store(&state.done_atm, 1);
+}
+
+static void done_writing_settings_frame(void* /* arg */, grpc_error* error) {
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
+                     /*urgent=*/false);
 }
 
 static void handle_write() {
@@ -108,7 +115,7 @@ static void handle_write() {
 }
 
 static void handle_read(void* /*arg*/, grpc_error* error) {
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  if (error != GRPC_ERROR_NONE) return;
   state.incoming_data_length += state.temp_incoming_buffer.length;
 
   size_t i;
@@ -137,6 +144,8 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
   gpr_free(acceptor);
   test_tcp_server* server = static_cast<test_tcp_server*>(arg);
   GRPC_CLOSURE_INIT(&on_read, handle_read, nullptr, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_writing_settings_frame, done_writing_settings_frame,
+                    nullptr, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&on_write, done_write, nullptr, grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.temp_incoming_buffer);
   grpc_slice_buffer_init(&state.outgoing_buffer);
@@ -148,9 +157,11 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
     grpc_slice slice = grpc_slice_from_static_buffer(
         HTTP2_SETTINGS_FRAME, sizeof(HTTP2_SETTINGS_FRAME) - 1);
     grpc_slice_buffer_add(&state.outgoing_buffer, slice);
-    grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_read, nullptr);
+    grpc_endpoint_write(state.tcp, &state.outgoing_buffer,
+                        &on_writing_settings_frame, nullptr);
   } else {
-    handle_write();
+    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
+                       /*urgent=*/false);
   }
 }
 
@@ -173,13 +184,17 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   state.cq = grpc_completion_queue_create_for_next(nullptr);
   cqv = cq_verifier_create(state.cq);
   state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
+  grpc_arg connect_arg = grpc_channel_arg_integer_create(
+      const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms"), 1000);
+  grpc_channel_args args = {1, &connect_arg};
+
   state.channel =
-      grpc_insecure_channel_create(state.target.c_str(), nullptr, nullptr);
+      grpc_insecure_channel_create(state.target.c_str(), &args, nullptr);
   grpc_slice host = grpc_slice_from_static_string("localhost");
   state.call = grpc_channel_create_call(
       state.channel, nullptr, GRPC_PROPAGATE_DEFAULTS, state.cq,
       grpc_slice_from_static_string("/Service/Method"), &host,
-      grpc_timeout_seconds_to_deadline(1), nullptr);
+      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -248,7 +263,7 @@ typedef struct {
 
 static void actually_poll_server(void* arg) {
   poll_args* pa = static_cast<poll_args*>(arg);
-  gpr_timespec deadline = n_sec_deadline(10);
+  gpr_timespec deadline = n_sec_deadline(1);
   while (true) {
     bool done = gpr_atm_acq_load(&state.done_atm) != 0;
     gpr_timespec time_left =
@@ -258,7 +273,7 @@ static void actually_poll_server(void* arg) {
     if (done || gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) < 0) {
       break;
     }
-    test_tcp_server_poll(pa->server, 1000);
+    test_tcp_server_poll(pa->server, 100);
   }
   gpr_event_set(pa->signal_when_done, (void*)1);
   gpr_free(pa);
@@ -345,7 +360,6 @@ int main(int argc, char** argv) {
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(503));
   run_test(true, HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
-
   /* unparseable response. */
   run_test(false, UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
            GRPC_STATUS_UNAVAILABLE, nullptr);

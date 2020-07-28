@@ -198,17 +198,19 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   {
     MutexLock lock(&self->mu_);
-    // OnReceiveSettings can race with OnTimeout so use self->result_ to
-    // distinguish the state we are in.
-    if (self->result_ != nullptr) {
+    if (!self->notify_state_set_) {
       if (error != GRPC_ERROR_NONE) {
         // Transport got an error while waiting on SETTINGS frame.
         grpc_transport_destroy(self->result_->transport);
         self->result_->Reset();
       }
       self->Notify(GRPC_ERROR_REF(error));
+      grpc_timer_cancel(&self->timer_);
+    } else {
+      // OnTimeout() was already invoked. Call Notify() again so that notify_
+      // can be invoked.
+      self->Notify(GRPC_ERROR_NONE);
     }
-    grpc_timer_cancel(&self->timer_);
   }
   self->Unref();
 }
@@ -217,29 +219,40 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error* error) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   {
     MutexLock lock(&self->mu_);
-    // OnTimeout can race with OnReceiveSettings so use self->result_ to
-    // distinguish the state we are in.
-    if (self->result_ != nullptr) {
+    if (!self->notify_state_set_) {
       // The transport did not receive the settings frame in time. Destroy the
       // transport.
       grpc_transport_destroy(self->result_->transport);
       self->result_->Reset();
       self->Notify(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "connection attempt timed out before receiving SETTINGS frame"));
+    } else {
+      // OnReceiveSettings() was already invoked. Call Notify() again so that
+      // notify_ can be invoked.
+      self->Notify(GRPC_ERROR_NONE);
     }
   }
   self->Unref();
 }
 
 void Chttp2Connector::Notify(grpc_error* error) {
-  NullThenSchedClosure(DEBUG_LOCATION, &notify_, error);
-  // Clear out the endpoint, since it is the responsibility of the transport
-  // to shut it down.
-  grpc_endpoint_delete_from_pollset_set(endpoint_, args_.interested_parties);
-  // Set endpoint_ to null so that the dtor doesn't destroy it.
-  endpoint_ = nullptr;
-  // Set result_ to null so that we don't try to send notification again.
-  result_ = nullptr;
+  if (notify_state_set_) {
+    GRPC_ERROR_UNREF(error);
+    NullThenSchedClosure(DEBUG_LOCATION, &notify_, notify_error_);
+    // Clear out the endpoint, since it is the responsibility of the transport
+    // to shut it down.
+    // Clear state for a new Connect().
+    grpc_endpoint_delete_from_pollset_set(endpoint_, args_.interested_parties);
+    // We do not destroy the endpoint here, since it is the responsibility of
+    // the transport to shut it down.
+    endpoint_ = nullptr;
+    result_ = nullptr;
+    notify_error_ = GRPC_ERROR_NONE;
+    notify_state_set_ = false;
+  } else {
+    notify_error_ = error;
+    notify_state_set_ = true;
+  }
 }
 
 }  // namespace grpc_core

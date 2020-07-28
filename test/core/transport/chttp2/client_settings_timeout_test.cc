@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/synchronization/notification.h"
-
 #include <gmock/gmock.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,7 +58,7 @@ class ClientSettingsTimeout : public ::testing::Test {
     std::string server_address =
         grpc_core::JoinHostPort("localhost", server_port);
     thread_.reset(new std::thread([this]() {
-      while (!notification_.HasBeenNotified()) {
+      while (!stop_polling_) {
         test_tcp_server_poll(&test_server_, 100);
       }
     }));
@@ -77,7 +75,7 @@ class ClientSettingsTimeout : public ::testing::Test {
     grpc_core::ExecCtx exec_ctx;
     grpc_channel_destroy(channel_);
     grpc_completion_queue_shutdown(cq_);
-    notification_.Notify();
+    stop_polling_.store(true);
     thread_->join();
     while (grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
                                       nullptr)
@@ -97,7 +95,7 @@ class ClientSettingsTimeout : public ::testing::Test {
   }
 
   std::unique_ptr<std::thread> thread_;
-  absl::Notification notification_;
+  std::atomic<bool> stop_polling_;
   test_tcp_server test_server_;
   grpc_completion_queue* cq_ = nullptr;
   grpc_server* server_ = nullptr;

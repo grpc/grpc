@@ -70,7 +70,6 @@ grpc_cc_test(
     name = "client_settings_timeout_test",
     srcs = ["client_settings_timeout_test.cc"],
     external_deps = [
-        "absl/synchronization",
         "gtest",
     ],
     language = "C++",
