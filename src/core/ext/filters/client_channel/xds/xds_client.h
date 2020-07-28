@@ -47,7 +47,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     virtual ~ServiceConfigWatcherInterface() = default;
 
     virtual void OnServiceConfigChanged(
-        RefCountedPtr<ServiceConfig> service_config) = 0;
+        RefCountedPtr<ServiceConfig> service_config,
+        const XdsApi::RdsUpdate& rds_update) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
 
