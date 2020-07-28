@@ -79,7 +79,7 @@ g_stands_for = "galore"
 
 core_version = "11.0.0"
 
-version = "1.31.0-pre1"
+version = "1.31.0-pre2"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
