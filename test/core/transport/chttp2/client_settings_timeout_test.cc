@@ -83,8 +83,6 @@ class ClientSettingsTimeout : public ::testing::Test {
                                       nullptr)
                .type != GRPC_QUEUE_SHUTDOWN)
       ;
-    notification_.Notify();
-    thread_->join();
     EXPECT_EQ(connected_, true);
     test_tcp_server_destroy(&test_server_);
     grpc_core::ExecCtx::Get()->Flush();

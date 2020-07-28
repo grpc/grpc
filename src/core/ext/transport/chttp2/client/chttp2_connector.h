@@ -36,17 +36,15 @@ class Chttp2Connector : public SubchannelConnector {
   void Shutdown(grpc_error* error) override;
 
  private:
-  enum class ConnectorState {
-    kWaiting,  // Waiting for connection, handshake and settings frame to be
-               // received
-    kTransportPublished,  // Transport successfully published
-    kTransportDestroyed,  // Transport destroyed
-  };
   static void Connected(void* arg, grpc_error* error);
   void StartHandshakeLocked();
   static void OnHandshakeDone(void* arg, grpc_error* error);
   static void OnReceiveSettings(void* arg, grpc_error* error);
   static void OnTimeout(void* arg, grpc_error* error);
+
+  // Called either when SETTINGS frame is received by the transport or if we
+  // errored out waiting on the SETTINGS frame.
+  void Notify(grpc_error* error);
 
   Mutex mu_;
   Args args_;

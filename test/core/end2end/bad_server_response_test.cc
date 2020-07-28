@@ -64,8 +64,6 @@
 #define HTTP2_DETAIL_MSG(STATUS_CODE) \
   "Received http2 header with status: " #STATUS_CODE
 
-#define HTTP1_DETAIL_MSG "Trying to connect an http1.x server"
-
 /* TODO(zyc) Check the content of incoming data instead of using this length */
 /* The 'bad' server will start sending responses after reading this amount of
  * data from the client. */
@@ -152,8 +150,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
     grpc_slice_buffer_add(&state.outgoing_buffer, slice);
     grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_read, nullptr);
   } else {
-    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
-                       /*urgent=*/false);
+    handle_write();
   }
 }
 
@@ -349,15 +346,13 @@ int main(int argc, char** argv) {
   run_test(true, HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
 
-  /* unparseable response. Deadline exceeds since the client expects to see a
-   * settings frame. */
+  /* unparseable response. */
   run_test(false, UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
-           GRPC_STATUS_DEADLINE_EXCEEDED, nullptr);
+           GRPC_STATUS_UNAVAILABLE, nullptr);
 
-  /* http1 response. Deadline exceeds since the client expects to see a settings
-   * frame. */
+  /* http1 response. */
   run_test(false, HTTP1_RESP_400, sizeof(HTTP1_RESP_400) - 1,
-           GRPC_STATUS_DEADLINE_EXCEEDED, HTTP1_DETAIL_MSG);
+           GRPC_STATUS_UNAVAILABLE, nullptr);
 
   grpc_shutdown();
   return 0;
