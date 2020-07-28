@@ -493,6 +493,7 @@ class ChannelzSampler final {
 int main(int argc, char** argv) {
   // make sure flags can be used
   grpc::testing::InitTest(&argc, &argv, true);
+  std::ofstream output_file(FLAGS_output_json);
   for (int i = 0; i < FLAGS_sampling_times; ++i) {
     ChannelzSampler channelz_sampler;
     channelz_sampler.Setup(FLAGS_custom_credentials_type, FLAGS_server_address);
@@ -508,11 +509,10 @@ int main(int argc, char** argv) {
     channelz_sampler.TraverseTopChannels();
     channelz_sampler.DumpStdout();
     if (!FLAGS_output_json.empty()) {
-      std::ofstream output_file(FLAGS_output_json, std::ios::app);
       output_file << channelz_sampler.DumpJson() << "\n" << std::flush;
-      output_file.close();
     }
   }
+  output_file.close();
   return 0;
 }
 
