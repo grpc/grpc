@@ -103,7 +103,8 @@ CLASSIFIERS = [
     'License :: OSI Approved :: Apache Software License',
 ]
 
-BUILD_WITH_BORING_SSL_ASM = os.environ.get('GRPC_BUILD_WITH_BORING_SSL_ASM', True)
+BUILD_WITH_BORING_SSL_ASM = os.environ.get('GRPC_BUILD_WITH_BORING_SSL_ASM', 
+                                           True)
 
 # Environment variable to determine whether or not the Cython extension should
 # *use* Cython or use the generated C files. Note that this requires the C files
@@ -283,12 +284,12 @@ if BUILD_WITH_BORING_SSL_ASM:
     elif "mac" in util.get_platform() and "x86_64" in util.get_platform():
         asm_key = 'crypto_mac_x86_64'
     else:
-       print("ASM Builds for BoringSSL currently not supported on:",
-             util.get_platform())
+        print("ASM Builds for BoringSSL currently not supported on:",
+              util.get_platform())
 if asm_key:
-   asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
+    asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
 else:
-   DEFINE_MACROS += (('OPENSSL_NO_ASM', 1),)
+    DEFINE_MACROS += (('OPENSSL_NO_ASM', 1),)
 
 if not DISABLE_LIBC_COMPATIBILITY:
     DEFINE_MACROS += (('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
