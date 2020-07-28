@@ -34,7 +34,32 @@ namespace grpc_impl {
 class Server;
 }  // namespace grpc_impl
 namespace grpc {
-struct SslServerCredentialsOptions;
+
+/// Options to create ServerCredentials with SSL
+struct SslServerCredentialsOptions {
+  /// \warning Deprecated
+  SslServerCredentialsOptions()
+      : force_client_auth(false),
+        client_certificate_request(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {}
+  SslServerCredentialsOptions(
+      grpc_ssl_client_certificate_request_type request_type)
+      : force_client_auth(false), client_certificate_request(request_type) {}
+
+  struct PemKeyCertPair {
+    std::string private_key;
+    std::string cert_chain;
+  };
+  std::string pem_root_certs;
+  std::vector<PemKeyCertPair> pem_key_cert_pairs;
+  /// \warning Deprecated
+  bool force_client_auth;
+
+  /// If both \a force_client_auth and \a client_certificate_request
+  /// fields are set, \a force_client_auth takes effect, i.e.
+  /// \a REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+  /// will be enforced.
+  grpc_ssl_client_certificate_request_type client_certificate_request;
+};
 
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
 class ServerCredentials {
@@ -61,7 +86,6 @@ class ServerCredentials {
 std::shared_ptr<ServerCredentials> SslServerCredentials(
     const grpc::SslServerCredentialsOptions& options);
 
-/// Builds insecure server credentials.
 std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
 namespace experimental {
@@ -76,12 +100,15 @@ std::shared_ptr<ServerCredentials> AltsServerCredentials(
     const AltsServerCredentialsOptions& options);
 
 /// Builds Local ServerCredentials.
+std::shared_ptr<ServerCredentials> AltsServerCredentials(
+    const AltsServerCredentialsOptions& options);
+
 std::shared_ptr<ServerCredentials> LocalServerCredentials(
     grpc_local_connect_type type);
 
 /// Builds TLS ServerCredentials given TLS options.
 std::shared_ptr<ServerCredentials> TlsServerCredentials(
-    const ::grpc_impl::experimental::TlsCredentialsOptions& options);
+    const experimental::TlsCredentialsOptions& options);
 
 }  // namespace experimental
 }  // namespace grpc

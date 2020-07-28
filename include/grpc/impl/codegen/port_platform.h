@@ -31,7 +31,7 @@
  * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil
  */
 #ifndef GPR_ABSEIL_SYNC
-/* #define GPR_ABSEIL_SYNC 1 */
+#define GPR_ABSEIL_SYNC 1
 #endif
 
 /* Get windows.h included everywhere (we need it) */

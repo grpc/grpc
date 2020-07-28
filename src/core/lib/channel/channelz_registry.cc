@@ -208,10 +208,12 @@ char* grpc_channelz_get_server(intptr_t server_id) {
 char* grpc_channelz_get_server_sockets(intptr_t server_id,
                                        intptr_t start_socket_id,
                                        intptr_t max_results) {
+  // Validate inputs before handing them of to the renderer.
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> base_node =
       grpc_core::channelz::ChannelzRegistry::Get(server_id);
   if (base_node == nullptr ||
-      base_node->type() != grpc_core::channelz::BaseNode::EntityType::kServer) {
+      base_node->type() != grpc_core::channelz::BaseNode::EntityType::kServer ||
+      start_socket_id < 0 || max_results < 0) {
     return nullptr;
   }
   // This cast is ok since we have just checked to make sure base_node is
