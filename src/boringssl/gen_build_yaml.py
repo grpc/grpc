@@ -46,11 +46,10 @@ class Grpc(object):
 
     def WriteFiles(self, files):
         test_binaries = ['ssl_test', 'crypto_test']
-        asm_outputs = {key: value
-                       for key, value in files.items()
-                       if any(
-                          f.endswith(".S") or f.endswith(".asm")
-                          for f in value)}
+        asm_outputs = {
+            key: value for key, value in files.items() if any(
+                f.endswith(".S") or f.endswith(".asm") for f in value)
+        }
         self.yaml = {
             '#':
                 'generated with src/boringssl/gen_build_yaml.py',
@@ -70,9 +69,10 @@ class Grpc(object):
                     'src':
                         sorted(
                             map_dir(f) for f in files['ssl'] + files['crypto']),
-                    'asm_src':
-                        {k: [map_dir(f) for f in value]
-                         for k, value in asm_outputs.items()},
+                    'asm_src': {
+                        k: [map_dir(f) for f in value
+                           ] for k, value in asm_outputs.items()
+                    },
                     'headers':
                         sorted(
                             map_dir(f)
