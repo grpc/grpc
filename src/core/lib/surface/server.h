@@ -26,6 +26,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
@@ -33,9 +34,25 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 
-extern grpc_core::TraceFlag grpc_server_channel_trace;
+namespace grpc_core {
+class Server;
+}  // namespace grpc_core
 
-struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
+struct grpc_server {
+  explicit grpc_server(const grpc_channel_args* args)
+      : channel_args(grpc_channel_args_copy(args)) {}
+  ~grpc_server() { grpc_channel_args_destroy(channel_args); }
+
+  grpc_core::Server* core_server();
+
+  grpc_channel_args* const channel_args;
+};
+
+namespace grpc_core {
+
+extern TraceFlag grpc_server_channel_trace;
+
+class Server : public InternallyRefCounted<Server> {
  public:
   // Filter vtable.
   static const grpc_channel_filter kServerTopFilter;
@@ -72,28 +89,30 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
     /// Starts listening. This listener may refer to the pollset object beyond
     /// this call, so it is a pointer rather than a reference.
-    virtual void Start(grpc_server* server,
+    virtual void Start(Server* server,
                        const std::vector<grpc_pollset*>* pollsets) = 0;
 
     /// Returns the channelz node for the listen socket, or null if not
     /// supported.
-    virtual grpc_core::channelz::ListenSocketNode* channelz_listen_socket_node()
-        const = 0;
+    virtual channelz::ListenSocketNode* channelz_listen_socket_node() const = 0;
 
     /// Sets a closure to be invoked by the listener when its destruction
     /// is complete.
     virtual void SetOnDestroyDone(grpc_closure* on_destroy_done) = 0;
   };
 
-  explicit grpc_server(const grpc_channel_args* args);
-  ~grpc_server();
+  explicit Server(const grpc_channel_args* args);
+  ~Server();
 
   void Orphan() override;
 
-  grpc_core::channelz::ServerNode* channelz_node() const {
-    return channelz_node_.get();
-  }
-  const grpc_channel_args* channel_args() const { return channel_args_; }
+  grpc_server* c_server() { return &server_; }
+
+  // Returns the offset of the grpc_server object within Server.
+  static size_t c_server_offset();
+
+  channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
+  const grpc_channel_args* channel_args() const { return server_.channel_args; }
   grpc_resource_user* default_resource_user() const {
     return default_resource_user_;
   }
@@ -108,19 +127,18 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
   // Adds a listener to the server.  When the server starts, it will call
   // the listener's Start() method, and when it shuts down, it will orphan
   // the listener.
-  void AddListener(grpc_core::OrphanablePtr<ListenerInterface> listener);
+  void AddListener(OrphanablePtr<ListenerInterface> listener);
 
   // Starts listening for connections.
   void Start();
 
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
-  void SetupTransport(
-      grpc_transport* transport, grpc_pollset* accepting_pollset,
-      const grpc_channel_args* args,
-      const grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>&
-          socket_node,
-      grpc_resource_user* resource_user = nullptr);
+  void SetupTransport(grpc_transport* transport,
+                      grpc_pollset* accepting_pollset,
+                      const grpc_channel_args* args,
+                      const RefCountedPtr<channelz::SocketNode>& socket_node,
+                      grpc_resource_user* resource_user = nullptr);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
@@ -161,8 +179,8 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
     RegisteredMethod* server_registered_method = nullptr;
     uint32_t flags;
     bool has_host;
-    grpc_core::ExternallyManagedSlice method;
-    grpc_core::ExternallyManagedSlice host;
+    ExternallyManagedSlice method;
+    ExternallyManagedSlice host;
   };
 
   class RequestMatcherInterface;
@@ -176,12 +194,11 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
     ChannelData() = default;
     ~ChannelData();
 
-    void InitTransport(grpc_core::RefCountedPtr<grpc_server> server,
-                       grpc_channel* channel, size_t cq_idx,
-                       grpc_transport* transport,
+    void InitTransport(RefCountedPtr<Server> server, grpc_channel* channel,
+                       size_t cq_idx, grpc_transport* transport,
                        intptr_t channelz_socket_uuid);
 
-    grpc_core::RefCountedPtr<grpc_server> server() const { return server_; }
+    RefCountedPtr<Server> server() const { return server_; }
     grpc_channel* channel() const { return channel_; }
     size_t cq_idx() const { return cq_idx_; }
 
@@ -204,9 +221,9 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
     static void FinishDestroy(void* arg, grpc_error* error);
 
-    grpc_core::RefCountedPtr<grpc_server> server_;
+    RefCountedPtr<Server> server_;
     grpc_channel* channel_;
-    // The index into grpc_server::cqs_ of the associated completion queue.
+    // The index into Server::cqs_ of the associated completion queue.
     size_t cq_idx_;
     absl::optional<std::list<ChannelData*>::iterator> list_position_;
     // A hash-table of the methods and hosts of the registered methods.
@@ -229,7 +246,7 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
     };
 
     CallData(grpc_call_element* elem, const grpc_call_element_args& args,
-             grpc_core::RefCountedPtr<grpc_server> server);
+             RefCountedPtr<Server> server);
     ~CallData();
 
     // Starts the recv_initial_metadata batch on the call.
@@ -271,11 +288,11 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
     static void RecvInitialMetadataReady(void* arg, grpc_error* error);
     static void RecvTrailingMetadataReady(void* arg, grpc_error* error);
 
-    grpc_core::RefCountedPtr<grpc_server> server_;
+    RefCountedPtr<Server> server_;
 
     grpc_call* call_;
 
-    grpc_core::Atomic<CallState> state_{CallState::NOT_STARTED};
+    Atomic<CallState> state_{CallState::NOT_STARTED};
 
     absl::optional<grpc_slice> path_;
     absl::optional<grpc_slice> host_;
@@ -305,13 +322,13 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
     grpc_closure publish_;
 
-    grpc_core::CallCombiner* call_combiner_;
+    CallCombiner* call_combiner_;
   };
 
   struct Listener {
-    explicit Listener(grpc_core::OrphanablePtr<ListenerInterface> l)
+    explicit Listener(OrphanablePtr<ListenerInterface> l)
         : listener(std::move(l)) {}
-    grpc_core::OrphanablePtr<ListenerInterface> listener;
+    OrphanablePtr<ListenerInterface> listener;
     grpc_closure destroy_done;
   };
 
@@ -327,7 +344,7 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
   static void DoneShutdownEvent(void* server,
                                 grpc_cq_completion* /*completion*/) {
-    static_cast<grpc_server*>(server)->Unref();
+    static_cast<Server*>(server)->Unref();
   }
 
   static void DoneRequestEvent(void* req, grpc_cq_completion* completion);
@@ -348,7 +365,7 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
 
   std::vector<grpc_channel*> GetChannelsLocked() const;
 
-  grpc_channel_args* const channel_args_;
+  grpc_server server_;
 
   grpc_resource_user* default_resource_user_ = nullptr;
 
@@ -363,13 +380,13 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
   // If they are ever required to be nested, you must lock mu_global_
   // before mu_call_. This is currently used in shutdown processing
   // (ShutdownAndNotify() and MaybeFinishShutdown()).
-  grpc_core::Mutex mu_global_;  // mutex for server and channel state
-  grpc_core::Mutex mu_call_;    // mutex for call-specific state
+  Mutex mu_global_;  // mutex for server and channel state
+  Mutex mu_call_;    // mutex for call-specific state
 
   // startup synchronization: flag is protected by mu_global_, signals whether
   // we are doing the listener start routine or not.
   bool starting_ = false;
-  grpc_core::CondVar starting_cv_;
+  CondVar starting_cv_;
 
   std::vector<std::unique_ptr<RegisteredMethod>> registered_methods_;
 
@@ -388,7 +405,9 @@ struct grpc_server : public grpc_core::InternallyRefCounted<grpc_server> {
   // The last time we printed a shutdown progress message.
   gpr_timespec last_shutdown_message_time_;
 
-  grpc_core::RefCountedPtr<grpc_core::channelz::ServerNode> channelz_node_;
+  RefCountedPtr<channelz::ServerNode> channelz_node_;
 };
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */
