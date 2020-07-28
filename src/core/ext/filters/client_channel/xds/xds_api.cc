@@ -1477,13 +1477,13 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
         client_, tracer_, symtab_.ptr(), response, expected_server_name,
         expected_route_configuration_names, &result.rds_update, arena.ptr());
   } else if (IsCds(result.type_url)) {
-    result.parse_error = CdsResponseParse(
-        client_, tracer_, symtab_.ptr(), response, expected_cluster_names,
-        &result.cds_update_map, arena.ptr());
+    result.parse_error = CdsResponseParse(client_, tracer_, symtab_.ptr(),
+                                          response, expected_cluster_names,
+                                          &result.cds_update_map, arena.ptr());
   } else if (IsEds(result.type_url)) {
-    result.parse_error = EdsResponseParse(
-        client_, tracer_, symtab_.ptr(), response, expected_eds_service_names,
-        &result.eds_update_map, arena.ptr());
+    result.parse_error = EdsResponseParse(client_, tracer_, symtab_.ptr(),
+                                          response, expected_eds_service_names,
+                                          &result.eds_update_map, arena.ptr());
   }
   return result;
 }
