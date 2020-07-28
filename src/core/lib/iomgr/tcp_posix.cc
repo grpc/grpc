@@ -1760,6 +1760,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->peer_string = peer_string;
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
   grpc_resolved_address resolved_local_addr;
+  memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));
   resolved_local_addr.len = sizeof(resolved_local_addr.addr);
   if (getsockname(tcp->fd,
                   reinterpret_cast<sockaddr*>(resolved_local_addr.addr),
