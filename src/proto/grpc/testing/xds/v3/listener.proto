@@ -1,0 +1,64 @@
+// Copyright 2020 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.config.listener.v3;
+
+import "google/protobuf/any.proto";
+
+// [#protodoc-title: Listener configuration]
+// Listener :ref:`configuration overview <config_listeners>`
+
+// Describes a type of API listener, which is used in non-proxy clients. The type of API
+// exposed to the non-proxy application depends on the type of API listener.
+message ApiListener {
+  // The type in this field determines the type of API listener. At present, the following
+  // types are supported:
+  // envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager (HTTP)
+  // [#next-major-version: In the v3 API, replace this Any field with a oneof containing the
+  // specific config message for each type of API listener. We could not do this in v2 because
+  // it would have caused circular dependencies for go protos: lds.proto depends on this file,
+  // and http_connection_manager.proto depends on rds.proto, which is in the same directory as
+  // lds.proto, so lds.proto cannot depend on this file.]
+  google.protobuf.Any api_listener = 1;
+}
+
+// [#next-free-field: 23]
+message Listener {
+  // The unique name by which this listener is known. If no name is provided,
+  // Envoy will allocate an internal UUID for the listener. If the listener is to be dynamically
+  // updated or removed via :ref:`LDS <config_listeners_lds>` a unique name must be provided.
+  string name = 1;
+
+  // Used to represent an API listener, which is used in non-proxy clients. The type of API
+  // exposed to the non-proxy application depends on the type of API listener.
+  // When this field is set, no other field except for :ref:`name<envoy_api_field_config.listener.v3.Listener.name>`
+  // should be set.
+  //
+  // .. note::
+  //
+  //  Currently only one ApiListener can be installed; and it can only be done via bootstrap config,
+  //  not LDS.
+  //
+  // [#next-major-version: In the v3 API, instead of this messy approach where the socket
+  // listener fields are directly in the top-level Listener message and the API listener types
+  // are in the ApiListener message, the socket listener messages should be in their own message,
+  // and the top-level Listener should essentially be a oneof that selects between the
+  // socket listener and the various types of API listener. That way, a given Listener message
+  // can structurally only contain the fields of the relevant type.]
+  ApiListener api_listener = 19;
+}
