@@ -173,17 +173,17 @@ class EndpointPairFixture : public BaseFixture {
     /* add server endpoint to server_
      * */
     {
-      const grpc_channel_args* server_args =
-          server_->c_server()->channel_args();
+      const grpc_channel_args* server_args = server_->c_server()->channel_args;
       server_transport_ = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */);
 
-      for (grpc_pollset* pollset : server_->c_server()->pollsets()) {
+      for (grpc_pollset* pollset :
+           server_->c_server()->core_server()->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
-      server_->c_server()->SetupTransport(server_transport_, nullptr,
-                                          server_args, nullptr);
+      server_->c_server()->core_server()->SetupTransport(
+          server_transport_, nullptr, server_args, nullptr);
       grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr);
     }
 
