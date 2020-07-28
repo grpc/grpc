@@ -80,7 +80,8 @@ class Server(_base_server.Server):
         Returns:
           An integer port on which the server will accept RPC requests.
         """
-        return self._server.add_insecure_port(_common.encode(address))
+        return _common.validate_port_binding_result(
+            address, self._server.add_insecure_port(_common.encode(address)))
 
     def add_secure_port(self, address: str,
                         server_credentials: grpc.ServerCredentials) -> int:
@@ -97,8 +98,10 @@ class Server(_base_server.Server):
         Returns:
           An integer port on which the server will accept RPC requests.
         """
-        return self._server.add_secure_port(_common.encode(address),
-                                            server_credentials)
+        return _common.validate_port_binding_result(
+            address,
+            self._server.add_secure_port(_common.encode(address),
+                                         server_credentials))
 
     async def start(self) -> None:
         """Starts this Server.
