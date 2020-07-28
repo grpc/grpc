@@ -24,7 +24,7 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
-namespace grpc_impl {
+namespace grpc {
 namespace experimental {
 
 /** The following function is exposed for testing purposes. **/
@@ -53,6 +53,6 @@ void TlsCredentialReloadArgDestroyContext(void* context);
 void TlsServerAuthorizationCheckArgDestroyContext(void* context);
 
 }  //  namespace experimental
-}  // namespace grpc_impl
+}  // namespace grpc
 
 #endif  // GRPC_INTERNAL_CPP_COMMON_TLS_CREDENTIALS_OPTIONS_UTIL_H
