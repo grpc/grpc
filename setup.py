@@ -103,7 +103,7 @@ CLASSIFIERS = [
     'License :: OSI Approved :: Apache Software License',
 ]
 
-BUILD_WITH_BORING_SSL_ASM = os.environ.get('GRPC_BUILD_WITH_BORING_SSL_ASM', 
+BUILD_WITH_BORING_SSL_ASM = os.environ.get('GRPC_BUILD_WITH_BORING_SSL_ASM',
                                            True)
 
 # Environment variable to determine whether or not the Cython extension should
