@@ -31,8 +31,17 @@ def main
   sleep 3
 
   begin
-    Timeout.timeout(10) do
-      control_stub.shutdown(ClientControl::Void.new)
+    Timeout.timeout(20) do
+      loop do
+        begin
+          control_stub.shutdown(ClientControl::Void.new)
+          break
+        rescue GRPC::BadStatus => e
+          STDERR.puts "control_stub.shutdown RPC received error:|#{e}|. " \
+          "This could mean that that child process e.g. isn't running yet, " \
+          "so we'll retry the RPC"
+        end
+      end
       Process.wait(client_pid)
     end
   rescue Timeout::Error

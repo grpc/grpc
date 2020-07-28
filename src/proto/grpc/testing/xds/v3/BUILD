@@ -47,14 +47,6 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
-    name = "status_proto",
-    srcs = [
-        "status.proto",
-    ],
-    well_known_protos = True,
-)
-
-grpc_proto_library(
     name = "discovery_proto",
     srcs = [
         "discovery.proto",
@@ -62,7 +54,6 @@ grpc_proto_library(
     well_known_protos = True,
     deps = [
         "base_proto",
-        "status_proto",
     ],
 )
 
