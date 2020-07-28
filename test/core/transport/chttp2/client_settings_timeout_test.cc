@@ -61,7 +61,7 @@ class ClientSettingsTimeout : public ::testing::Test {
         grpc_core::JoinHostPort("localhost", server_port);
     thread_.reset(new std::thread([this]() {
       while (!notification_.HasBeenNotified()) {
-        test_tcp_server_poll(&test_server_, 1000);
+        test_tcp_server_poll(&test_server_, 100);
       }
     }));
     grpc_arg connect_arg = grpc_channel_arg_integer_create(
@@ -82,7 +82,9 @@ class ClientSettingsTimeout : public ::testing::Test {
     while (grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
                                       nullptr)
                .type != GRPC_QUEUE_SHUTDOWN)
-      ;    
+      ;
+    notification_.Notify();
+    thread_->join();
     EXPECT_EQ(connected_, true);
     test_tcp_server_destroy(&test_server_);
     grpc_core::ExecCtx::Get()->Flush();

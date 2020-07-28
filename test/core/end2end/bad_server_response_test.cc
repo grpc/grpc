@@ -47,6 +47,8 @@
   "Content-Length: 0\n"                      \
   "Date: Tue, 07 Jun 2016 17:43:20 GMT\n\n"
 
+#define SETTINGS_FRAME "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
+
 #define HTTP2_RESP(STATUS_CODE)          \
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00" \
   "\x00\x00>\x01\x04\x00\x00\x00\x01"    \
@@ -309,40 +311,55 @@ int main(int argc, char** argv) {
   grpc_init();
 
   /* status defined in hpack static table */
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1, GRPC_STATUS_UNKNOWN,
            HTTP2_DETAIL_MSG(204));
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP2_RESP(206), sizeof(HTTP2_RESP(206)) - 1, GRPC_STATUS_UNKNOWN,
            HTTP2_DETAIL_MSG(206));
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP2_RESP(304), sizeof(HTTP2_RESP(304)) - 1, GRPC_STATUS_UNKNOWN,
            HTTP2_DETAIL_MSG(304));
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP2_RESP(400), sizeof(HTTP2_RESP(400)) - 1, GRPC_STATUS_INTERNAL,
            HTTP2_DETAIL_MSG(400));
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1,
            GRPC_STATUS_UNIMPLEMENTED, HTTP2_DETAIL_MSG(404));
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP2_RESP(500), sizeof(HTTP2_RESP(500)) - 1, GRPC_STATUS_UNKNOWN,
            HTTP2_DETAIL_MSG(500));
+  gpr_log(GPR_ERROR, "here");
 
   /* status not defined in hpack static table */
   run_test(HTTP2_RESP(401), sizeof(HTTP2_RESP(401)) - 1,
            GRPC_STATUS_UNAUTHENTICATED, HTTP2_DETAIL_MSG(401));
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP2_RESP(403), sizeof(HTTP2_RESP(403)) - 1,
            GRPC_STATUS_PERMISSION_DENIED, HTTP2_DETAIL_MSG(403));
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP2_RESP(429), sizeof(HTTP2_RESP(429)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(429));
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP2_RESP(499), sizeof(HTTP2_RESP(499)) - 1, GRPC_STATUS_UNKNOWN,
            HTTP2_DETAIL_MSG(499));
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP2_RESP(502), sizeof(HTTP2_RESP(502)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(502));
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP2_RESP(503), sizeof(HTTP2_RESP(503)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(503));
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
 
   /* unparseable response */
+  gpr_log(GPR_ERROR, "here");
   run_test(UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1, GRPC_STATUS_UNKNOWN,
            nullptr);
 
   /* http1 response */
+  gpr_log(GPR_ERROR, "here");
   run_test(HTTP1_RESP_400, sizeof(HTTP1_RESP_400) - 1, GRPC_STATUS_INTERNAL,
            HTTP1_DETAIL_MSG);
 

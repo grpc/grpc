@@ -198,21 +198,23 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   {
     MutexLock lock(&self->mu_);
-    // OnReceiveSettings can race with OnTimeout so use state_ to distinguish
-    // the state we are in.
-    if (error == GRPC_ERROR_NONE && self->state_ == ConnectorState::kWaiting) {
-      self->state_ = ConnectorState::kTransportPublished;
-    } else if (self->state_ == ConnectorState::kWaiting) {
-      // The transport received an error while waiting on the settings frame.
-      gpr_log(GPR_ERROR, "transport:%p Transport error (%s). Destroying.",
-              self->result_->transport, grpc_error_string(error));
-      grpc_transport_destroy(self->result_->transport);
-      self->state_ = ConnectorState::kTransportDestroyed;
-      self->result_->Reset();
+    // OnReceiveSettings can race with OnTimeout so use self->result_ to
+    // distinguish the state we are in.
+    if (error != GRPC_ERROR_NONE) {
+      if (self->result_ == nullptr) {
+        // Transport was already destroyed by OnTimeout().
+      } else {
+        // Transport got an error while waiting on SETTINGS frame.
+        grpc_transport_destroy(self->result_->transport);
+        self->result_->Reset();
+      }
     } else {
-      // The transport was already destroyed.
-      GPR_ASSERT(self->state_ == ConnectorState::kTransportDestroyed);
-      self->result_->Reset();
+      if (self->result_ == nullptr) {
+        // OnTimeout() raced with OnReceiveSettings() and nullified+reset
+        // result_
+      } else {
+        // The transport successfully received a SETTINGS frame.
+      }
     }
     NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, GRPC_ERROR_REF(error));
     // Clear out the endpoint, since it is the responsibility of the transport
@@ -220,6 +222,7 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
     grpc_endpoint_delete_from_pollset_set(self->endpoint_,
                                           self->args_.interested_parties);
     self->endpoint_ = nullptr;
+    self->result_ = nullptr;
     grpc_timer_cancel(&self->timer_);
   }
   self->Unref();
@@ -229,9 +232,9 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error* error) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   {
     MutexLock lock(&self->mu_);
-    // OnTimeout can race with OnReceiveSettings so use state_ to distinguish
-    // the state we are in.
-    if (self->state_ == ConnectorState::kWaiting) {
+    // OnTimeout can race with OnReceiveSettings so use self->result_ to
+    // distinguish the state we are in.
+    if (self->result_ != nullptr) {
       GPR_ASSERT(error != GRPC_ERROR_CANCELLED);
       // The transport did not receive the settings frame in time. Destroy the
       // transport. This will also trigger the closure for OnReceiveSettings()
@@ -240,7 +243,8 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error* error) {
               "transport:%p Timed out waiting on settings frame. Destroying.",
               self->result_->transport);
       grpc_transport_destroy(self->result_->transport);
-      self->state_ = ConnectorState::kTransportDestroyed;
+      self->result_->Reset();
+      self->result_ = nullptr;
     }
   }
   self->Unref();

@@ -61,7 +61,6 @@ class Chttp2Connector : public SubchannelConnector {
   grpc_closure on_receive_settings_;
   grpc_timer timer_;
   grpc_closure on_timeout_;
-  ConnectorState state_ = ConnectorState::kWaiting;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
 };
 
