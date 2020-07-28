@@ -48,6 +48,9 @@ class Chttp2Connector : public SubchannelConnector {
 
   Mutex mu_;
   Args args_;
+  // After handshaking is done and we are waiting on the SETTINGS frame, result_
+  // is set to nullptr either when we receive a SETTINGS frame or the timeout
+  // callback is invoked, whichever happens first.
   Result* result_ = nullptr;
   grpc_closure* notify_ = nullptr;
   bool shutdown_ = false;
