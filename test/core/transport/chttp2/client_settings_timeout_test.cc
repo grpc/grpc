@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -44,14 +44,14 @@ namespace grpc_core {
 namespace test {
 namespace {
 
-void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
+void* Tag(int i) { return (void*)static_cast<intptr_t>(i); }
 
 class ClientSettingsTimeout : public ::testing::Test {
  protected:
   ClientSettingsTimeout() {
     cq_ = grpc_completion_queue_create_for_next(nullptr);
     // create the server
-    test_tcp_server_init(&test_server_, OnConnect, nullptr);
+    test_tcp_server_init(&test_server_, OnConnect, this);
     int server_port = grpc_pick_unused_port_or_die();
     test_tcp_server_start(&test_server_, server_port);
     test_tcp_server_poll(&test_server_, 100);
@@ -59,7 +59,7 @@ class ClientSettingsTimeout : public ::testing::Test {
     std::string server_address =
         grpc_core::JoinHostPort("localhost", server_port);
     thread_.reset(new std::thread([this]() {
-      while (notification_.HasBeenNotified()) {
+      while (!notification_.HasBeenNotified()) {
         test_tcp_server_poll(&test_server_, 100);
       }
     }));
@@ -68,6 +68,7 @@ class ClientSettingsTimeout : public ::testing::Test {
     grpc_channel_args args = {1, &connect_arg};
     channel_ =
         grpc_insecure_channel_create(server_address.c_str(), &args, nullptr);
+    connected_.store(false);
   }
 
   ~ClientSettingsTimeout() {
@@ -80,13 +81,17 @@ class ClientSettingsTimeout : public ::testing::Test {
       ;
     notification_.Notify();
     thread_->join();
+    EXPECT_EQ(connected_, true);
     test_tcp_server_destroy(&test_server_);
     grpc_completion_queue_destroy(cq_);
   }
 
-  static void OnConnect(void* /* arg*/, grpc_endpoint* /* tcp */,
+  static void OnConnect(void* arg, grpc_endpoint* /* tcp */,
                         grpc_pollset* /*accepting_pollset*/,
-                        grpc_tcp_server_acceptor* /*acceptor*/) {}
+                        grpc_tcp_server_acceptor* /*acceptor*/) {
+    auto self = static_cast<ClientSettingsTimeout*>(arg);
+    self->connected_.store(true);
+  }
 
   std::unique_ptr<std::thread> thread_;
   absl::Notification notification_;
@@ -94,6 +99,7 @@ class ClientSettingsTimeout : public ::testing::Test {
   grpc_completion_queue* cq_ = nullptr;
   grpc_server* server_ = nullptr;
   grpc_channel* channel_ = nullptr;
+  std::atomic<bool> connected_;
 };
 
 TEST_F(ClientSettingsTimeout, Basic) {
@@ -130,10 +136,10 @@ TEST_F(ClientSettingsTimeout, Basic) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(1),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, Tag(1), 1);
   cq_verify(cqv);
   // Should fail with unavailable instead of deadline exceeded since the server
   // did not reply with settings frame.
