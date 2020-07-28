@@ -92,6 +92,7 @@ void Chttp2Connector::Shutdown(grpc_error* error) {
 void Chttp2Connector::Connected(void* arg, grpc_error* error) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   bool unref = false;
+  grpc_closure* closure_to_run = nullptr;
   {
     MutexLock lock(&self->mu_);
     GPR_ASSERT(self->connecting_);
@@ -106,9 +107,7 @@ void Chttp2Connector::Connected(void* arg, grpc_error* error) {
         grpc_endpoint_shutdown(self->endpoint_, GRPC_ERROR_REF(error));
       }
       self->result_->Reset();
-      grpc_closure* notify = self->notify_;
-      self->notify_ = nullptr;
-      ExecCtx::Run(DEBUG_LOCATION, notify, error);
+      std::swap(closure_to_run, self->notify_);
       unref = true;
     } else {
       GPR_ASSERT(self->endpoint_ != nullptr);
@@ -116,6 +115,7 @@ void Chttp2Connector::Connected(void* arg, grpc_error* error) {
     }
   }
   if (unref) self->Unref();
+  Closure::Run(DEBUG_LOCATION, self->notify, error);
 }
 
 void Chttp2Connector::StartHandshakeLocked() {
@@ -132,6 +132,7 @@ void Chttp2Connector::StartHandshakeLocked() {
 void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error* error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   Chttp2Connector* self = static_cast<Chttp2Connector*>(args->user_data);
+  grpc_closure* closure_to_run = nullptr;
   {
     MutexLock lock(&self->mu_);
     if (error != GRPC_ERROR_NONE || self->shutdown_) {
@@ -195,12 +196,11 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error* error) {
       // code. Just verify that exit_early flag is set.
       GPR_DEBUG_ASSERT(args->exit_early);
     }
-    grpc_closure* notify = self->notify_;
-    self->notify_ = nullptr;
-    ExecCtx::Run(DEBUG_LOCATION, notify, error);
+    std::swap(closure_to_run, self->notify_);
     self->handshake_mgr_.reset();
   }
   self->Unref();
+  Closure::Run(DEBUG_LOCATION, notify, error);
 }
 
 }  // namespace grpc_core
