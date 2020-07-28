@@ -547,7 +547,7 @@ class Server::CallbackRequest final
   // is nullptr since these services don't have pre-defined methods.
   CallbackRequest(Server* server, grpc::internal::RpcServiceMethod* method,
                   grpc::CompletionQueue* cq,
-                  grpc_server::RegisteredCallAllocation* data)
+                  grpc_core::Server::RegisteredCallAllocation* data)
       : server_(server),
         method_(method),
         has_request_payload_(method->method_type() ==
@@ -568,7 +568,7 @@ class Server::CallbackRequest final
   // For generic services, method is nullptr since these services don't have
   // pre-defined methods.
   CallbackRequest(Server* server, grpc::CompletionQueue* cq,
-                  grpc_server::BatchCallAllocation* data)
+                  grpc_core::Server::BatchCallAllocation* data)
       : server_(server),
         method_(nullptr),
         has_request_payload_(false),
@@ -1063,9 +1063,9 @@ bool Server::RegisterService(const std::string* host, grpc::Service* service) {
       has_callback_methods_ = true;
       grpc::internal::RpcServiceMethod* method_value = method.get();
       grpc::CompletionQueue* cq = CallbackCQ();
-      server_->SetRegisteredMethodAllocator(
+      server_->core_server()->SetRegisteredMethodAllocator(
           cq->cq(), method_registration_tag, [this, cq, method_value] {
-            grpc_server::RegisteredCallAllocation result;
+            grpc_core::Server::RegisteredCallAllocation result;
             new CallbackRequest<grpc::CallbackServerContext>(this, method_value,
                                                              cq, &result);
             return result;
@@ -1104,8 +1104,8 @@ void Server::RegisterCallbackGenericService(
   generic_handler_.reset(service->Handler());
 
   grpc::CompletionQueue* cq = CallbackCQ();
-  server_->SetBatchMethodAllocator(cq->cq(), [this, cq] {
-    grpc_server::BatchCallAllocation result;
+  server_->core_server()->SetBatchMethodAllocator(cq->cq(), [this, cq] {
+    grpc_core::Server::BatchCallAllocation result;
     new CallbackRequest<grpc::GenericCallbackServerContext>(this, cq, &result);
     return result;
   });
