@@ -47,17 +47,16 @@
   "Content-Length: 0\n"                      \
   "Date: Tue, 07 Jun 2016 17:43:20 GMT\n\n"
 
-#define SETTINGS_FRAME "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
+#define HTTP2_SETTINGS_FRAME "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
 
-#define HTTP2_RESP(STATUS_CODE)          \
-  "\x00\x00\x00\x04\x00\x00\x00\x00\x00" \
-  "\x00\x00>\x01\x04\x00\x00\x00\x01"    \
-  "\x10\x0e"                             \
-  "content-length\x01"                   \
-  "0"                                    \
-  "\x10\x0c"                             \
-  "content-type\x10"                     \
-  "application/grpc"                     \
+#define HTTP2_RESP(STATUS_CODE)       \
+  "\x00\x00>\x01\x04\x00\x00\x00\x01" \
+  "\x10\x0e"                          \
+  "content-length\x01"                \
+  "0"                                 \
+  "\x10\x0c"                          \
+  "content-type\x10"                  \
+  "application/grpc"                  \
   "\x10\x07:status\x03" #STATUS_CODE
 
 #define UNPARSEABLE_RESP "Bad Request\n"
@@ -83,6 +82,7 @@ struct rpc_state {
   grpc_endpoint* tcp;
   gpr_atm done_atm;
   bool write_done;
+  bool http2_response;
   const char* response_payload;
   size_t response_payload_length;
 };
@@ -145,8 +145,16 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
   state.tcp = tcp;
   state.incoming_data_length = 0;
   grpc_endpoint_add_to_pollset(tcp, server->pollset[0]);
-  grpc_endpoint_read(tcp, &state.temp_incoming_buffer, &on_read,
-                     /*urgent=*/false);
+  if (state.http2_response) {
+    // Send settings frame from server
+    grpc_slice slice = grpc_slice_from_static_buffer(
+        HTTP2_SETTINGS_FRAME, sizeof(HTTP2_SETTINGS_FRAME) - 1);
+    grpc_slice_buffer_add(&state.outgoing_buffer, slice);
+    grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_read, nullptr);
+  } else {
+    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
+                       /*urgent=*/false);
+  }
 }
 
 static gpr_timespec n_sec_deadline(int seconds) {
@@ -174,7 +182,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   state.call = grpc_channel_create_call(
       state.channel, nullptr, GRPC_PROPAGATE_DEFAULTS, state.cq,
       grpc_slice_from_static_string("/Service/Method"), &host,
-      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+      grpc_timeout_seconds_to_deadline(1), nullptr);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -272,7 +280,7 @@ static grpc_core::Thread* poll_server_until_read_done(
   return th;
 }
 
-static void run_test(const char* response_payload,
+static void run_test(bool http2_response, const char* response_payload,
                      size_t response_payload_length,
                      grpc_status_code expected_status,
                      const char* expected_detail) {
@@ -285,6 +293,7 @@ static void run_test(const char* response_payload,
   server_port = grpc_pick_unused_port_or_die();
   test_tcp_server_init(&test_server, on_connect, &test_server);
   test_tcp_server_start(&test_server, server_port);
+  state.http2_response = http2_response;
   state.response_payload = response_payload;
   state.response_payload_length = response_payload_length;
 
@@ -311,57 +320,44 @@ int main(int argc, char** argv) {
   grpc_init();
 
   /* status defined in hpack static table */
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1, GRPC_STATUS_UNKNOWN,
-           HTTP2_DETAIL_MSG(204));
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP2_RESP(206), sizeof(HTTP2_RESP(206)) - 1, GRPC_STATUS_UNKNOWN,
-           HTTP2_DETAIL_MSG(206));
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP2_RESP(304), sizeof(HTTP2_RESP(304)) - 1, GRPC_STATUS_UNKNOWN,
-           HTTP2_DETAIL_MSG(304));
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP2_RESP(400), sizeof(HTTP2_RESP(400)) - 1, GRPC_STATUS_INTERNAL,
-           HTTP2_DETAIL_MSG(400));
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1,
+  run_test(true, HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1,
+           GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(204));
+  run_test(true, HTTP2_RESP(206), sizeof(HTTP2_RESP(206)) - 1,
+           GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(206));
+  run_test(true, HTTP2_RESP(304), sizeof(HTTP2_RESP(304)) - 1,
+           GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(304));
+  run_test(true, HTTP2_RESP(400), sizeof(HTTP2_RESP(400)) - 1,
+           GRPC_STATUS_INTERNAL, HTTP2_DETAIL_MSG(400));
+  run_test(true, HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1,
            GRPC_STATUS_UNIMPLEMENTED, HTTP2_DETAIL_MSG(404));
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP2_RESP(500), sizeof(HTTP2_RESP(500)) - 1, GRPC_STATUS_UNKNOWN,
-           HTTP2_DETAIL_MSG(500));
-  gpr_log(GPR_ERROR, "here");
+  run_test(true, HTTP2_RESP(500), sizeof(HTTP2_RESP(500)) - 1,
+           GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(500));
 
   /* status not defined in hpack static table */
-  run_test(HTTP2_RESP(401), sizeof(HTTP2_RESP(401)) - 1,
+  run_test(true, HTTP2_RESP(401), sizeof(HTTP2_RESP(401)) - 1,
            GRPC_STATUS_UNAUTHENTICATED, HTTP2_DETAIL_MSG(401));
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP2_RESP(403), sizeof(HTTP2_RESP(403)) - 1,
+  run_test(true, HTTP2_RESP(403), sizeof(HTTP2_RESP(403)) - 1,
            GRPC_STATUS_PERMISSION_DENIED, HTTP2_DETAIL_MSG(403));
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP2_RESP(429), sizeof(HTTP2_RESP(429)) - 1,
+  run_test(true, HTTP2_RESP(429), sizeof(HTTP2_RESP(429)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(429));
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP2_RESP(499), sizeof(HTTP2_RESP(499)) - 1, GRPC_STATUS_UNKNOWN,
-           HTTP2_DETAIL_MSG(499));
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP2_RESP(502), sizeof(HTTP2_RESP(502)) - 1,
+  run_test(true, HTTP2_RESP(499), sizeof(HTTP2_RESP(499)) - 1,
+           GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(499));
+  run_test(true, HTTP2_RESP(502), sizeof(HTTP2_RESP(502)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(502));
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP2_RESP(503), sizeof(HTTP2_RESP(503)) - 1,
+  run_test(true, HTTP2_RESP(503), sizeof(HTTP2_RESP(503)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(503));
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
+  run_test(true, HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
 
-  /* unparseable response */
-  gpr_log(GPR_ERROR, "here");
-  run_test(UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1, GRPC_STATUS_UNKNOWN,
-           nullptr);
+  /* unparseable response. Deadline exceeds since the client expects to see a
+   * settings frame. */
+  run_test(false, UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
+           GRPC_STATUS_DEADLINE_EXCEEDED, nullptr);
 
-  /* http1 response */
-  gpr_log(GPR_ERROR, "here");
-  run_test(HTTP1_RESP_400, sizeof(HTTP1_RESP_400) - 1, GRPC_STATUS_INTERNAL,
-           HTTP1_DETAIL_MSG);
+  /* http1 response. Deadline exceeds since the client expects to see a settings
+   * frame. */
+  run_test(false, HTTP1_RESP_400, sizeof(HTTP1_RESP_400) - 1,
+           GRPC_STATUS_DEADLINE_EXCEEDED, HTTP1_DETAIL_MSG);
 
   grpc_shutdown();
   return 0;
