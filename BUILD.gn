@@ -170,9 +170,11 @@ config("grpc_config") {
     ]
     deps = [
         ":absl/time:time",
+        ":absl/synchronization:synchronization",
         ":absl/strings:strings",
         ":absl/strings:str_format",
         ":absl/memory:memory",
+        ":absl/base:base",
     ]
     
     public_configs = [
