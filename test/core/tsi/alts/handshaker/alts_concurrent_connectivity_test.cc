@@ -92,6 +92,10 @@ grpc_channel* create_secure_channel_for_test(
         const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms"),
         reconnect_backoff_ms));
   }
+  new_args.push_back(grpc_channel_arg_integer_create(
+      const_cast<char*>(
+          GRPC_ARG_RECEIVE_SETTINGS_FRAME_BEFORE_CLIENT_CONNECTION_DEADLINE),
+      0));
   grpc_channel_args* channel_args =
       grpc_channel_args_copy_and_add(nullptr, new_args.data(), new_args.size());
   grpc_channel* channel = grpc_secure_channel_create(channel_creds, server_addr,
