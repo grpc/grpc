@@ -38,6 +38,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
@@ -260,13 +261,18 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   // Establish a channel pointing at the TLS server. Since the gRPC runtime is
   // lazy, this won't necessarily establish a connection yet.
   std::string target = absl::StrCat("127.0.0.1:", port);
-  grpc_arg ssl_name_override = {
-      GRPC_ARG_STRING,
-      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      {const_cast<char*>("foo.test.google.fr")}};
+  grpc_arg channel_args[2];
+  channel_args[0] = {GRPC_ARG_STRING,
+                     const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
+                     {const_cast<char*>("foo.test.google.fr")}};
+  // TODO(yashykt): Remove this channel arg after fixing this test.
+  channel_args[1] = grpc_channel_arg_integer_create(
+      const_cast<char*>(
+          GRPC_ARG_RECEIVE_SETTINGS_FRAME_BEFORE_CLIENT_CONNECTION_DEADLINE),
+      0);
   grpc_channel_args grpc_args;
-  grpc_args.num_args = 1;
-  grpc_args.args = &ssl_name_override;
+  grpc_args.num_args = 2;
+  grpc_args.args = channel_args;
   grpc_channel* channel = grpc_secure_channel_create(ssl_creds, target.c_str(),
                                                      &grpc_args, nullptr);
   GPR_ASSERT(channel);

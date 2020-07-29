@@ -415,6 +415,13 @@ typedef struct {
 #define GRPC_ARG_CHANNEL_POOL_DOMAIN "grpc.channel_pooling_domain"
 /** gRPC Objective-C channel pooling id. */
 #define GRPC_ARG_CHANNEL_ID "grpc.channel_id"
+/** EXPERIMENTAL CHANNEL ARG. DO NOT USE. If set to non zero, client channels
+ * need to receiving SETTINGS frame to be part of connection deadline. Also
+ * allows, client channels to send RPCs on a subchannel before SETTINGs frame is
+ * received. */
+/** TODO(yashykt): Remove this channel arg once it is no longer needed. */
+#define GRPC_ARG_RECEIVE_SETTINGS_FRAME_BEFORE_CLIENT_CONNECTION_DEADLINE \
+  "grpc.experimental.receive_settings_frame_before_connection_deadline"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

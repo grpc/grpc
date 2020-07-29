@@ -115,7 +115,10 @@ static void handle_write() {
 }
 
 static void handle_read(void* /*arg*/, grpc_error* error) {
-  if (error != GRPC_ERROR_NONE) return;
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "handle_read error: %s", grpc_error_string(error));
+    return;
+  }
   state.incoming_data_length += state.temp_incoming_buffer.length;
 
   size_t i;
@@ -231,6 +234,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   cq_verify(cqv);
 
   GPR_ASSERT(status == expected_status);
+  gpr_log(GPR_ERROR, "%s",
+          grpc_dump_slice(details, GPR_DUMP_HEX | GPR_DUMP_ASCII));
   if (expected_detail != nullptr) {
     GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
                                                    expected_detail)));
@@ -315,8 +320,6 @@ static void run_test(bool http2_response, const char* response_payload,
   start_rpc(server_port, expected_status, expected_detail);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   thdptr->Join();
-  /* Proof that the server accepted the connection */
-  GPR_ASSERT(state.incoming_data_length > 0);
   /* clean up */
   grpc_endpoint_shutdown(state.tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
