@@ -43,7 +43,13 @@ describe GRPC::ActiveCall do
     @server = new_core_server_for_testing(nil)
     server_port = @server.add_http2_port(host, :this_port_is_insecure)
     @server.start
-    @ch = GRPC::Core::Channel.new("0.0.0.0:#{server_port}", nil,
+    # TODO(apolcyn): change this test around so that the server CQ is getting
+    # polled at the time that clients are attempting to connect. Then, we
+    # can remove this experimental arg setting.
+    hack_args = {
+      'grpc.experimental.receive_settings_frame_before_connection_deadline' => 0
+    }
+    @ch = GRPC::Core::Channel.new("0.0.0.0:#{server_port}", hack_args,
                                   :this_channel_is_insecure)
   end
 
