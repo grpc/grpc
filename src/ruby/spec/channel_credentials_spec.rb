@@ -50,6 +50,16 @@ describe GRPC::Core::ChannelCredentials do
       blk = proc { ChannelCredentials.new(nil) }
       expect(&blk).not_to raise_error
     end
+
+    it 'fails gracefully with constructed with a nil private key' do
+      blk = proc { GRPC::Core::ChannelCredentials.new(nil, nil, '') }
+      expect(&blk).to raise_error
+    end
+
+    it 'fails gracefully with constructed with a nil cert chain' do
+      blk = proc { GRPC::Core::ChannelCredentials.new(nil, '', nil) }
+      expect(&blk).to raise_error
+    end
   end
 
   describe '#compose' do
