@@ -25,7 +25,6 @@
 #include "src/core/lib/security/authorization/mock_cel/cel_value.h"
 #include "src/core/lib/security/authorization/mock_cel/statusor.h"
 
-
 namespace google {
 namespace api {
 namespace expr {
@@ -37,7 +36,6 @@ class CelEvaluationState {
   virtual ~CelEvaluationState() = default;
 };
 
-
 class CelExpression {
  public:   
   CelExpression() {};
@@ -45,11 +43,8 @@ class CelExpression {
   virtual ~CelExpression() = default;
 
   virtual cel_base::StatusOr<CelValue> Evaluate(
-      const BaseActivation& activation, CelEvaluationState* state) const = 0;
+      const BaseActivation& activation) const = 0;
 };
-
-
-
 
 class CelExpressionBuilder {
  public:
@@ -67,7 +62,6 @@ class CelExpressionBuilder {
       const google::api::expr::v1alpha1::Expr* expr,
       const google::api::expr::v1alpha1::SourceInfo* source_info,
       std::vector<absl::Status>* warnings) const = 0;
-
 };
 
 }  // namespace runtime
@@ -75,7 +69,4 @@ class CelExpressionBuilder {
 }  // namespace api
 }  // namespace google
 
-
 #endif //GRPC_CORE_LIB_SECURITY_AUTHORIZATON_MOCK_CEL_CEL_EXPRESSION_H
-
-

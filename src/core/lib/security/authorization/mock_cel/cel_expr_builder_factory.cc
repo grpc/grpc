@@ -26,7 +26,7 @@ namespace api {
 namespace expr {
 namespace runtime {
 
-CelExpressionBuilder* CreateCelExpressionBuilder () {
+std::unique_ptr<CelExpressionBuilder> CreateCelExpressionBuilder () {
   return new CelExpressionBuilder();
 }
 
@@ -36,4 +36,3 @@ CelExpressionBuilder* CreateCelExpressionBuilder () {
 }  // namespace google
 
 #endif //GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_EXPR_BUILDER_FACTORY_CC
-

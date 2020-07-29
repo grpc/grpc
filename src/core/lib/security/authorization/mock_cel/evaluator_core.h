@@ -16,8 +16,6 @@
  *
  */
 
-
-
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_EVALUATOR_CORE_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_EVALUATOR_CORE_H
 
@@ -28,13 +26,6 @@
 #include "src/core/lib/security/authorization/mock_cel/activation.h"
 #include "src/core/lib/security/authorization/mock_cel/cel_expression.h"
 #include "src/core/lib/security/authorization/mock_cel/cel_value.h"
-
-
-
-
-
-
-
 
 namespace google {
 namespace api {
@@ -48,7 +39,6 @@ class ExpressionStep {
 
 using ExecutionPath = std::vector<std::unique_ptr<const ExpressionStep>>;
 
-
 class CelExpressionFlatImpl : public CelExpression {
    // Constructs CelExpressionFlatImpl instance.
   // path is flat execution path that is based upon
@@ -61,11 +51,12 @@ class CelExpressionFlatImpl : public CelExpression {
                         std::set<std::string> iter_variable_names,
                         bool enable_unknowns = false,
                         bool enable_unknown_function_results = false)
-      : path_(std::move(path)),
-        max_iterations_(max_iterations),
-        iter_variable_names_(std::move(iter_variable_names)),
-        enable_unknowns_(enable_unknowns),
-        enable_unknown_function_results_(enable_unknown_function_results) {}
+      // : path_(std::move(path)),
+      //   max_iterations_(max_iterations),
+      //   iter_variable_names_(std::move(iter_variable_names)),
+      //   enable_unknowns_(enable_unknowns),
+      //   enable_unknown_function_results_(enable_unknown_function_results) 
+        {}
 
   cel_base::StatusOr<CelValue> Evaluate(const BaseActivation& activation,
                                     CelEvaluationState* state) const override;

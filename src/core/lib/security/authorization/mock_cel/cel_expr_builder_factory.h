@@ -26,9 +26,7 @@ namespace api {
 namespace expr {
 namespace runtime {
 
-//original function has return type std::unique_ptr<CelExpressionBuilder> but
-//for the purposes of this mock library it doesn't seem necessary?
-CelExpressionBuilder* CreateCelExpressionBuilder();
+std::unique_ptr<CelExpressionBuilder> CreateCelExpressionBuilder();
 
 }  // namespace runtime
 }  // namespace expr

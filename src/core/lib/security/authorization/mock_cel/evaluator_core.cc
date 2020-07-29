@@ -36,4 +36,3 @@ cel_base::StatusOr<CelValue> CelExpressionFlatImpl::Evaluate(
 }
 
 #endif //GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_EVALUATOR_CORE_CC
-
