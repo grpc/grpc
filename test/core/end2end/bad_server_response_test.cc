@@ -315,7 +315,8 @@ static void run_test(bool http2_response, const char* response_payload,
   start_rpc(server_port, expected_status, expected_detail);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   thdptr->Join();
-
+  /* Proof that the server accepted the connection */
+  GPR_ASSERT(state.incoming_data_length > 0);
   /* clean up */
   grpc_endpoint_shutdown(state.tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));

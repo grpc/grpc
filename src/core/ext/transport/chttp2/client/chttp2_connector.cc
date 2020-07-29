@@ -202,6 +202,7 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
       if (error != GRPC_ERROR_NONE) {
         // Transport got an error while waiting on SETTINGS frame.
         grpc_transport_destroy(self->result_->transport);
+        grpc_channel_args_destroy(self->result_->channel_args);
         self->result_->Reset();
       }
       self->Notify(GRPC_ERROR_REF(error));
@@ -223,6 +224,7 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error* error) {
       // The transport did not receive the settings frame in time. Destroy the
       // transport.
       grpc_transport_destroy(self->result_->transport);
+      grpc_channel_args_destroy(self->result_->channel_args);
       self->result_->Reset();
       self->Notify(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "connection attempt timed out before receiving SETTINGS frame"));
