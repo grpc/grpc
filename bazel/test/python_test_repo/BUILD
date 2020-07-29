@@ -69,6 +69,8 @@ py2and3_test(
 # Test compatibility of py_proto_library and py_grpc_library rules with
 # proto_library targets as deps when the latter use import_prefix and/or
 # strip_import_prefix arguments
+#
+# See namespaced/upper/example for more encompassing tests.
 proto_library(
     name = "helloworld_moved_proto",
     srcs = ["helloworld.proto"],

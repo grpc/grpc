@@ -42,16 +42,8 @@ grpc_proto_library(
     ],
     well_known_protos = True,
     deps = [
-        ":percent_proto",
+        "percent_proto",
     ],
-)
-
-grpc_proto_library(
-    name = "status_proto",
-    srcs = [
-        "status.proto",
-    ],
-    well_known_protos = True,
 )
 
 grpc_proto_library(
@@ -61,8 +53,7 @@ grpc_proto_library(
     ],
     well_known_protos = True,
     deps = [
-        ":base_proto",
-        ":status_proto",
+        "base_proto",
     ],
 )
 
@@ -74,7 +65,7 @@ grpc_proto_library(
     has_services = True,
     well_known_protos = True,
     deps = [
-        ":discovery_proto",
+        "discovery_proto",
     ],
 )
 
@@ -91,7 +82,7 @@ grpc_proto_library(
         "cluster.proto",
     ],
     deps = [
-        ":config_source_proto",
+        "config_source_proto",
     ],
 )
 
@@ -102,9 +93,9 @@ grpc_proto_library(
     ],
     well_known_protos = True,
     deps = [
-        ":address_proto",
-        ":base_proto",
-        ":percent_proto",
+        "address_proto",
+        "base_proto",
+        "percent_proto",
     ],
 )
 
@@ -123,8 +114,8 @@ grpc_proto_library(
     ],
     well_known_protos = True,
     deps = [
-        ":address_proto",
-        ":base_proto",
+        "address_proto",
+        "base_proto",
     ],
 )
 
@@ -136,8 +127,8 @@ grpc_proto_library(
     has_services = True,
     well_known_protos = True,
     deps = [
-        ":base_proto",
-        ":load_report_proto",
+        "base_proto",
+        "load_report_proto",
     ],
 )
 
@@ -169,10 +160,10 @@ grpc_proto_library(
     ],
     well_known_protos = True,
     deps = [
-        ":base_proto",
-        ":percent_proto",
-        ":range_proto",
-        ":regex_proto",
+        "base_proto",
+        "percent_proto",
+        "range_proto",
+        "regex_proto",
     ],
 )
 
@@ -182,7 +173,7 @@ grpc_proto_library(
         "http_connection_manager.proto",
     ],
     deps = [
-        ":config_source_proto",
-        ":route_proto",
+        "config_source_proto",
+        "route_proto",
     ],
 )

@@ -49,15 +49,6 @@ def create_server_creds
     true) # force client auth
 end
 
-# Useful to update a value within a do block
-class MutableValue
-  attr_accessor :value
-
-  def initialize(value)
-    @value = value
-  end
-end
-
 # rubocop:disable Metrics/AbcSize
 # rubocop:disable Metrics/MethodLength
 def main
@@ -136,10 +127,16 @@ def main
   STDERR.puts 'now perform another RPC and expect OK...'
   stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 10)
   jwt_aud_uri_extraction_success_count_mu.synchronize do
-    if jwt_aud_uri_extraction_success_count.value != 2003
+    if jwt_aud_uri_extraction_success_count.value < 4
+      fail "Expected auth metadata plugin callback to be ran with the jwt_aud_uri
+parameter matching its expected value at least 4 times (at least 1 out of the 2000
+initial expected-to-timeout RPCs should have caused this by now, and all three of the
+successful RPCs should have caused this). This test isn't doing what it's meant to do."
+    end
+    unless jwt_aud_uri_failure_values.empty?
       fail "Expected to get jwt_aud_uri:#{expected_jwt_aud_uri} passed to call creds
-user callback 2003 times, but it was only passed to the call creds user callback
-#{jwt_aud_uri_extraction_success_count.value} times. This suggests that either:
+user callback every time that it was invoked, but it did not match the expected value
+in #{jwt_aud_uri_failure_values.size} invocations. This suggests that either:
 a) the expected jwt_aud_uri value is incorrect
 b) there is some corruption of the jwt_aud_uri argument
 Here are are the values of the jwt_aud_uri parameter that were passed to the call

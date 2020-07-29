@@ -16,6 +16,7 @@
  *
  */
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <map>
@@ -41,7 +42,8 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_bool(fail_on_failed_rpc, false, "Fail client if any RPCs fail.");
+DEFINE_bool(fail_on_failed_rpc, false,
+            "Fail client if any RPCs fail after first successful RPC.");
 DEFINE_int32(num_channels, 1, "Number of channels.");
 DEFINE_bool(print_response, false, "Write RPC response to stdout.");
 DEFINE_int32(qps, 1, "Qps per channel.");
@@ -80,6 +82,8 @@ int global_request_id;
 std::set<XdsStatsWatcher*> watchers;
 // Mutex for global_request_id and watchers
 std::mutex mu;
+// Whether at least one RPC has succeeded, indicating xDS resolution completed.
+std::atomic<bool> one_rpc_succeeded(false);
 
 /** Records the remote peer distribution for a given range of RPCs. */
 class XdsStatsWatcher {
@@ -223,7 +227,7 @@ class TestClient {
           std::cout << "RPC failed: " << call->status.error_code() << ": "
                     << call->status.error_message() << std::endl;
         }
-        if (FLAGS_fail_on_failed_rpc) {
+        if (FLAGS_fail_on_failed_rpc && one_rpc_succeeded.load()) {
           abort();
         }
       } else {
@@ -239,6 +243,7 @@ class TestClient {
           std::cout << "Greeting: Hello world, this is " << hostname
                     << ", from " << call->context.peer() << std::endl;
         }
+        one_rpc_succeeded = true;
       }
 
       delete call;

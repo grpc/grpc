@@ -50,7 +50,7 @@ extern HashTable grpc_persistent_list;
 extern HashTable grpc_target_upper_bound_map;
 
 void free_grpc_channel_wrapper(grpc_channel_wrapper* channel, bool free_channel) {
-  if (free_channel) {
+  if (free_channel && channel->wrapped) {
     grpc_channel_destroy(channel->wrapped);
     channel->wrapped = NULL;
   }
