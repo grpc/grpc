@@ -14788,7 +14788,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_tls_certificate_distributor_test: protobuf_dep_error
 
