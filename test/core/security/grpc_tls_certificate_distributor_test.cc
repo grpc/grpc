@@ -66,9 +66,9 @@ class TlsCertificatesTestWatcher
   std::queue<std::string>& err_queue_;
 };
 
-// CallbackStatus is a struct containing parameters in watch_status_callback_ of
+// CallbackStatus contains the parameters in  the watch_status_callback_ of
 // the distributor. When a particular callback is invoked, we will push a
-// CallbackStatus to a queue, and later check if the status is correct.
+// CallbackStatus to a queue, and later check if the status updates are correct.
 struct CallbackStatus {
   std::string cert_name;
   bool root_being_watched;
@@ -83,8 +83,8 @@ void setKeyMaterialsIntoDistributor(
     const std::string& identity_key_contents,
     const std::string& identity_cert_contents) {
   if (!has_root && !has_identity) {
-    // We deliberately call SetKeyMaterials with two absl::nullopt cert contents
-    // to test its behaviors.
+    // We deliberately call SetKeyMaterials with two absl::nullopt certificate
+    // contents to test its behaviors.
     distributor.SetKeyMaterials(root_cert_name, absl::nullopt,
                                 identity_cert_name, absl::nullopt);
     return;
@@ -192,8 +192,7 @@ TEST(GrpcTlsCertificateDistributorTest, CredentialUpdates) {
   distributor.WatchTlsCertificates(std::move(watcher),
                                    absl::make_optional("root_cert_name"),
                                    absl::make_optional("identity_cert_name"));
-  // SetKeyMaterials should trigger the OnCertificatesChanged method of the
-  // watcher.
+  // SetKeyMaterials should trigger watcher's OnCertificatesChanged method.
   setKeyMaterialsIntoDistributor(
       distributor, true, "root_cert_name", "root_certificate_contents", true,
       "identity_cert_name", "identity_private_key_contents",
@@ -202,8 +201,7 @@ TEST(GrpcTlsCertificateDistributorTest, CredentialUpdates) {
       watcher_ptr, true, "root_certificate_contents", true,
       "identity_private_key_contents", "identity_certificate_contents");
   EXPECT_EQ(err_queue.size(), 0);
-  // SetRootCerts should trigger the OnCertificatesChanged method of the watcher
-  // again.
+  // SetRootCerts should trigger watcher's OnCertificatesChanged again.
   setKeyMaterialsIntoDistributor(distributor, true, "root_cert_name",
                                  "another_root_certificate_contents", false, "",
                                  "", "");
@@ -211,8 +209,7 @@ TEST(GrpcTlsCertificateDistributorTest, CredentialUpdates) {
       watcher_ptr, true, "another_root_certificate_contents", true,
       "identity_private_key_contents", "identity_certificate_contents");
   EXPECT_EQ(err_queue.size(), 0);
-  // SetKeyCertPairs should trigger the OnCertificatesChanged method of the
-  // watcher again.
+  // SetKeyCertPairs should trigger watcher's OnCertificatesChanged again.
   setKeyMaterialsIntoDistributor(distributor, false, "", "", true,
                                  "identity_cert_name",
                                  "another_identity_private_key_contents",
@@ -226,15 +223,16 @@ TEST(GrpcTlsCertificateDistributorTest, CredentialUpdates) {
 }
 
 // In this test, we create a scenario where we have 5 watchers and 3 credentials
-// being watched, to test the interaction between the credential updating and
-// watching status changing. Their relationships are:
+// being watched, to test the credential updating and
+// watching status changing. Details are:
 // - watcher 1 watches the root cert of cert_1 and identity cert of cert_2
 // - watcher 2 watches the root cert of cert_3 and identity cert of cert_1
 // - watcher 3 watches the identity cert of cert_3
 // - watcher 4 watches the root cert of cert_1
 // - watcher 5 watches the root cert of cert_2 and identity cert of cert_2
-// We will invoke the following sequence of the actions to see if they behave as
-// expected: register watcher 1 -> register watcher 4 -> register watcher 2 ->
+// We will invoke events in the following sequence to see if they behave as
+// expected:
+// register watcher 1 -> register watcher 4 -> register watcher 2 ->
 // update cert_1 ->register watcher 5 -> cancel watcher 5 -> cancel watcher 4
 // -> update cert_2 -> cancel watcher 1 -> register watcher 3 -> update cert_3
 // -> cancel watcher 2 -> cancel watcher 3
@@ -370,8 +368,9 @@ TEST(GrpcTlsCertificateDistributorTest, CredentialAndWatcherInterop) {
   EXPECT_EQ(queue.size(), 0);
 }
 
-// Test if the distributor is destructed with some watchers still watching, its
-// dtor will invoke the proper callbacks and OnError of each existing watcher.
+// Test a case when the distributor is destructed with some watchers still
+// watching, its dtor will invoke the proper callbacks and OnError of each
+// existing watcher.
 TEST(GrpcTlsCertificateDistributorTest, DestructorCleanUp) {
   std::queue<std::string> err_queue;
   std::unique_ptr<grpc_tls_certificate_distributor> distributor_ptr =
@@ -391,33 +390,23 @@ TEST(GrpcTlsCertificateDistributorTest, DestructorCleanUp) {
   distributor_ptr->WatchTlsCertificates(std::move(watcher_1),
                                         absl::make_optional("cert_1"),
                                         absl::make_optional("cert_1"));
-  auto status = queue.front();
-  EXPECT_STREQ(status.cert_name.c_str(), "cert_1");
-  EXPECT_EQ(status.root_being_watched, true);
-  EXPECT_EQ(status.identity_being_watched, false);
-  queue.pop();
-  status = queue.front();
-  EXPECT_STREQ(status.cert_name.c_str(), "cert_1");
-  EXPECT_EQ(status.root_being_watched, true);
-  EXPECT_EQ(status.identity_being_watched, true);
-  queue.pop();
+  verifyCallbackStatusQueue(
+      queue, std::vector<CallbackStatus>{{"cert_1", true, false},
+                                         {"cert_1", true, true}});
   // Reset the distributor without canceling watcher 1.
   distributor_ptr.reset();
+  // The error should be populated into err_queue.
   EXPECT_EQ(err_queue.size(), 1);
   std::string err_msg = err_queue.front();
-  EXPECT_EQ(queue.size(), 1);
   EXPECT_STREQ(err_msg.c_str(),
                "The grpc_tls_certificate_distributor is destructed but the "
-               "watchers are not cleaned up.");
-  status = queue.front();
-  EXPECT_STREQ(status.cert_name.c_str(), "cert_1");
-  EXPECT_EQ(status.root_being_watched, false);
-  EXPECT_EQ(status.identity_being_watched, false);
-  queue.pop();
+               "watcher may still be used.");
+  verifyCallbackStatusQueue(
+      queue, std::vector<CallbackStatus>{{"cert_1", false, false}});
 }
 
-// Cancel an unregistered watcher should not make the program fail(while we will
-// log the errors).
+// Cancel an unregistered watcher should not make the program crash(while we
+// will log the errors).
 TEST(GrpcTlsCertificateDistributorTest, CancelUnregisteredWatcher) {
   std::queue<std::string> err_queue;
   grpc_tls_certificate_distributor distributor;
