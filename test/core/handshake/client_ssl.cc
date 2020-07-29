@@ -200,7 +200,9 @@ static void server_thread(void* arg) {
   }
 
   const char* settings_frame = "\x00\x00\x00\x04\x00\x00\x00\x00\x00";
-  SSL_write(ssl, settings_frame, strlen(settings_frame));
+  int ret = SSL_write(ssl, settings_frame, strlen(settings_frame));
+  gpr_log(GPR_ERROR, "ret : %d errno: %d", ret, errno);
+  gpr_log(GPR_ERROR, "ssl_get_error:%d", SSL_get_error(ssl, ret));
 
   // Wait until the client drops its connection.
   char buf;
