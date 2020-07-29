@@ -122,7 +122,8 @@ class GuardValidator(object):
         # Is there a properly commented #endif?
         endif_re = self.endif_cpp_re if cpp_header else self.endif_c_re
         flines = fcontents.rstrip().splitlines()
-        match = endif_re.search('\n'.join(flines[-3:]))
+        match = (self.endif_c_re.search('\n'.join(flines[-3:])) or 
+                 self.endif_cpp_re.search('\n'.join(flines[-3:])))
         if not match:
             # No endif. Check if we have the last line as just '#endif' and if so
             # replace it with a properly commented one.

@@ -985,6 +985,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_authorization_engine",
+    hdrs = [
+        "src/core/lib/security/authorization/mock_cel/activation.h",
+        "src/core/lib/security/authorization/mock_cel/cel_value.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_common",
     language = "c++",
     deps = [
