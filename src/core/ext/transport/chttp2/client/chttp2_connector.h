@@ -46,18 +46,15 @@ class Chttp2Connector : public SubchannelConnector {
   // have been called since that is an indicator to the upper layer that we are
   // done with the connection attempt. So, the notification process is broken
   // into two steps. 1) Either OnTimeout() or OnReceiveSettings() gets invoked
-  // first. Whichever gets invoked, calls Notify() to set the result and
+  // first. Whichever gets invoked, calls MaybeNotify() to set the result and
   // triggers the other callback to be invoked. 2) When the other callback is
-  // invoked, we call Notify() again to actually invoke the notify_ callback.
-  // Note that this only happens if the handshake is done and the connector is
-  // waiting on the SETTINGS frame.
-  void Notify(grpc_error* error);
+  // invoked, we call MaybeNotify() again to actually invoke the notify_
+  // callback. Note that this only happens if the handshake is done and the
+  // connector is waiting on the SETTINGS frame.
+  void MaybeNotify(grpc_error* error);
 
   Mutex mu_;
   Args args_;
-  // After handshaking is done and we are waiting on the SETTINGS frame, result_
-  // is set to nullptr either when we receive a SETTINGS frame or the timeout
-  // callback is invoked, whichever happens first.
   Result* result_ = nullptr;
   grpc_closure* notify_ = nullptr;
   bool shutdown_ = false;
