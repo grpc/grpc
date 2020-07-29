@@ -19,8 +19,9 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
 
-#include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
+
+#include <grpc/grpc_security.h>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
@@ -36,15 +37,6 @@ struct grpc_tls_certificate_distributor
   // Interface for watching TLS certificates update.
   class TlsCertificatesWatcherInterface {
    public:
-    TlsCertificatesWatcherInterface() = default;
-    TlsCertificatesWatcherInterface(TlsCertificatesWatcherInterface&&) =
-        default;
-    TlsCertificatesWatcherInterface& operator=(
-        TlsCertificatesWatcherInterface&&) = default;
-    TlsCertificatesWatcherInterface(const TlsCertificatesWatcherInterface&) =
-        delete;
-    TlsCertificatesWatcherInterface& operator=(
-        const TlsCertificatesWatcherInterface&) = delete;
     virtual ~TlsCertificatesWatcherInterface() = default;
     // OnCertificatesChanged describes the actions the implementer will take
     // when the root or identity certificates are updated. Setting to
@@ -53,7 +45,7 @@ struct grpc_tls_certificate_distributor
     virtual void OnCertificatesChanged(
         absl::optional<std::string> root_certs,
         absl::optional<PemKeyCertPairList> key_cert_pairs) = 0;
-    // OnError describes the actions implementer will take when an error
+    // OnError describes the actions the implementer will take when an error
     // happens. The implementer owns the grpc_error.
     virtual void OnError(grpc_error* error) = 0;
   };
@@ -86,14 +78,13 @@ struct grpc_tls_certificate_distributor
   /**
    * Set the TLS certificate watch status callback function. The
    * grpc_tls_certificate_distributor will invoke this callback when a new
-   * certificate name is watched, or when a certificate name is not watched
-   * anymore.
+   * certificate name is watched by a newly registered watcher, or when a
+   * certificate name is not watched by any watchers.
    *
    * @param callback The callback function being set by the caller, e.g the
-   * producer. Note that this callback will be invoked for each certificate
-   * name, so if the identity certificate and root certificate are different
-   * names and both of their status got updated, this callback will be invoked
-   * twice with different names.
+   * Producer. Note that this callback will be invoked for each certificate
+   * name. If the identity certificate and root certificate's status are updated
+   * and they have the same cert name, this callback will be invoked twice.
    *
    * For the parameters in the callback function:
    * @param string_value The name of the certificates being watched.
@@ -107,7 +98,8 @@ struct grpc_tls_certificate_distributor
     watch_status_callback_ = callback;
   };
   /**
-   * Register a watcher. A watcher needs to specify what to watch.
+   * Register a watcher. The ownership of the WatcherInfo will be transferred to
+   * the watchers_ field of the distributor.
    *
    * @param watcher The watcher being registered.
    * @param root_cert_name The name of the root certificates that will be
@@ -120,42 +112,36 @@ struct grpc_tls_certificate_distributor
       std::unique_ptr<TlsCertificatesWatcherInterface> watcher,
       absl::optional<std::string> root_cert_name,
       absl::optional<std::string> identity_cert_name);
+  /**
+   * Cancel a watcher. The ownership of the watcher should be already
+   * transferred to the distributor, so a raw pointer of the watcher is needed.
+   *
+   * @param watcher The watcher being canceled.
+   */
   void CancelTlsCertificatesWatch(TlsCertificatesWatcherInterface* watcher);
-  class CertificateStatus {
-   public:
-    int root_cert_watcher_cnt;
-    int identity_cert_watcher_cnt;
-    CertificateStatus()
-        : root_cert_watcher_cnt(0), identity_cert_watcher_cnt(0) {}
-    CertificateStatus(int root_cnt, int identity_cnt)
-        : root_cert_watcher_cnt(root_cnt),
-          identity_cert_watcher_cnt(identity_cnt) {}
-  };
 
  private:
   struct WatcherInfo {
     std::unique_ptr<TlsCertificatesWatcherInterface> watcher;
     absl::optional<std::string> root_cert_name;
     absl::optional<std::string> identity_cert_name;
-
-    WatcherInfo() = default;
-    WatcherInfo(WatcherInfo&&) = default;
-    WatcherInfo& operator=(WatcherInfo&&) = default;
-    WatcherInfo(const WatcherInfo&) = delete;
-    WatcherInfo& operator=(const WatcherInfo&) = delete;
-    ~WatcherInfo() = default;
   };
 
-  // Whenever key materials change, CertificateUpdate will be invoked to send
-  // update to each watcher. root_cert_name and identity_cert_name are the names
-  // of the certificates being updated.
+  struct CertificateStatus {
+    int root_cert_watcher_cnt;
+    int identity_cert_watcher_cnt;
+  };
+
+  // Whenever key materials change, CertificateUpdated will be invoked to send
+  // updates to each watcher. root_cert_name and identity_cert_name are the
+  // names of the certificates being updated.
   void CertificatesUpdated(absl::optional<std::string> root_cert_name,
                            absl::optional<std::string> identity_cert_name);
 
   grpc_core::Mutex mu_;
   // The field watchers_ owns the ownership of the WatcherInfo.
   std::map<TlsCertificatesWatcherInterface*, WatcherInfo> watchers_;
-  // The callback to notify the caller, e.g. the producer, that the watch status
+  // The callback to notify the caller, e.g. the Producer, that the watch status
   // is changed.
   std::function<void(std::string, bool, bool)> watch_status_callback_;
   std::map<std::string, std::string> pem_root_certs_;

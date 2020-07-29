@@ -16,11 +16,12 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,32 +32,30 @@ grpc_tls_certificate_distributor::~grpc_tls_certificate_distributor() {
   for (const auto& watcher_it : watchers_) {
     TlsCertificatesWatcherInterface* watcher_interface = watcher_it.first;
     if (watcher_interface == nullptr || watcher_it.second.watcher == nullptr) {
-      gpr_log(GPR_INFO,
+      gpr_log(GPR_ERROR,
               "WatcherInfo in grpc_tls_certificate_distributor is in "
               "inconsistent state.");
       continue;
     }
     grpc_error* err_msg = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "The grpc_tls_certificate_distributor is destructed but the watchers "
-        "are not cleaned up.");
+        "The grpc_tls_certificate_distributor is destructed but the watcher "
+        "may still be used.");
     watcher_interface->OnError(err_msg);
   }
   if (watchers_.size() > 0) {
-    gpr_log(GPR_INFO,
+    gpr_log(GPR_ERROR,
             "The grpc_tls_certificate_distributor is destructed but the "
             "watchers are not cleaned up.");
     watchers_.clear();
   }
   // If watch_status_ is not empty, we need to explicitly invoke the callback
-  // for each certificate name saying that we are not able to watch those
+  // for each certificate name to indicate that we are not able to watch those
   // certificates anymore.
-  if (watch_status_.size() > 0) {
-    for (const auto& it : watch_status_) {
-      if ((it.second.root_cert_watcher_cnt != 0 ||
-           it.second.identity_cert_watcher_cnt != 0) &&
-          this->watch_status_callback_ != nullptr) {
-        this->watch_status_callback_(it.first, false, false);
-      }
+  for (const auto& it : watch_status_) {
+    if ((it.second.root_cert_watcher_cnt != 0 ||
+         it.second.identity_cert_watcher_cnt != 0) &&
+        this->watch_status_callback_ != nullptr) {
+      this->watch_status_callback_(it.first, false, false);
     }
   }
 }
@@ -134,17 +133,16 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     return;
   }
   WatcherInfo info = {std::move(watcher), root_cert_name, identity_cert_name};
-  // The ownership of WatcherInfo is transferred to watchers_.
   watchers_.insert(std::make_pair(watcher_ptr, std::move(info)));
   if (root_cert_name) {
     const auto& it = this->watch_status_.find(*root_cert_name);
-    // We will only notify the producer the first time a particular certificate
-    // name is watched.
+    // We will only notify the caller(e.g. the Producer) the first time a
+    // particular certificate name is being watched.
     if (it == this->watch_status_.end() ||
         it->second.root_cert_watcher_cnt == 0) {
       bool identity_cert_watched = false;
       if (it == this->watch_status_.end()) {
-        CertificateStatus status(1, 0);
+        CertificateStatus status = {1, 0};
         this->watch_status_.insert(std::make_pair(*root_cert_name, status));
       } else {
         it->second.root_cert_watcher_cnt += 1;
@@ -160,8 +158,8 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
   }
   if (identity_cert_name) {
     const auto& it = this->watch_status_.find(*identity_cert_name);
-    // We will only notify the producer the first time a particular certificate
-    // name is watched.
+    // We will only notify the caller(e.g. the Producer) the first time a
+    // particular certificate name is being watched.
     if (it == this->watch_status_.end() ||
         it->second.identity_cert_watcher_cnt == 0) {
       bool root_cert_watched = false;
@@ -198,7 +196,7 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
           "Watcher status messed up: expect to see at least 1 watcher for "
           "name " +
           root_cert_name;
-      gpr_log(GPR_INFO, "%s", error_msg.c_str());
+      gpr_log(GPR_ERROR, "%s", error_msg.c_str());
       watcher->OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(error_msg.c_str()));
       return;
     }
@@ -222,7 +220,7 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
           "Watcher status messed up: expect to see at least 1 watcher for "
           "name " +
           identity_cert_name;
-      gpr_log(GPR_INFO, "%s", error_msg.c_str());
+      gpr_log(GPR_ERROR, "%s", error_msg.c_str());
       watcher->OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(error_msg.c_str()));
       return;
     }
@@ -239,9 +237,9 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
   }
   int result = watchers_.erase(watcher);
   if (result == 0) {
-    gpr_log(GPR_INFO, "Failed to erase watcher element in the distributor.");
-    watcher->OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Failed to erase watcher element in the distributor."));
+    std::string error_msg = "Failed to erase the watchers in the distributor.";
+    gpr_log(GPR_ERROR, "%s", error_msg.c_str());
+    watcher->OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(error_msg.c_str()));
     return;
   }
 };
@@ -252,8 +250,8 @@ void grpc_tls_certificate_distributor::CertificatesUpdated(
   for (const auto& watcher_it : watchers_) {
     TlsCertificatesWatcherInterface* watcher_interface = watcher_it.first;
     if (watcher_interface == nullptr || watcher_it.second.watcher == nullptr) {
-      gpr_log(GPR_INFO,
-              "WatcherInfo in grpc_tls_certificate_distributor is in "
+      gpr_log(GPR_ERROR,
+              "The watchers in the distributor are in "
               "inconsistent state.");
       continue;
     }
@@ -266,12 +264,10 @@ void grpc_tls_certificate_distributor::CertificatesUpdated(
       const auto& it =
           this->pem_root_certs_.find(*watcher_it.second.root_cert_name);
       if (it == this->pem_root_certs_.end()) {
-        gpr_log(
-            GPR_INFO,
-            "The root certs are updated but couldn't find them in the record.");
-        watcher_interface->OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "The root certs are updated but couldn't find them in the "
-            "record."));
+        gpr_log(GPR_INFO,
+                "The root cert with name %s is watched but no certificates "
+                "with the same name exist yet.",
+                (*watcher_it.second.root_cert_name).c_str());
       } else {
         updated_root_certs = absl::make_optional(it->second);
       }
@@ -282,9 +278,10 @@ void grpc_tls_certificate_distributor::CertificatesUpdated(
       const auto& it =
           this->pem_key_cert_pair_.find(*watcher_it.second.identity_cert_name);
       if (it == this->pem_key_cert_pair_.end()) {
-        watcher_interface->OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "The key-cert pairs are updated but couldn't find them in the "
-            "record."));
+        gpr_log(GPR_INFO,
+                "The key-cert pair(s) with name %s is watched but no "
+                "certificates with the same name exist yet.",
+                (*watcher_it.second.identity_cert_name).c_str());
       } else {
         updated_identity_key_cert_pair = absl::make_optional(it->second);
       }
