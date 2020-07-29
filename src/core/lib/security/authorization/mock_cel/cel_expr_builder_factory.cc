@@ -27,7 +27,8 @@ namespace expr {
 namespace runtime {
 
 std::unique_ptr<CelExpressionBuilder> CreateCelExpressionBuilder () {
-  return new CelExpressionBuilder();
+  CelExpressionBuilder* builder = new CelExpressionBuilder();
+  return std::unique_ptr<CelExpressionBuilder>(builder);
 }
 
 }  // namespace runtime
