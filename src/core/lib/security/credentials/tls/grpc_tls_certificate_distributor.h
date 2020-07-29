@@ -73,8 +73,8 @@ struct grpc_tls_certificate_distributor
                     absl::string_view pem_root_certs);
   void SetKeyCertPairs(std::string identity_cert_name,
                        PemKeyCertPairList pem_key_cert_pairs);
-  bool HasRootCerts(std::string root_cert_name);
-  bool HasKeyCertPairs(std::string identity_cert_name);
+  bool HasRootCerts(const std::string& root_cert_name);
+  bool HasKeyCertPairs(const std::string& identity_cert_name);
   /**
    * Set the TLS certificate watch status callback function. The
    * grpc_tls_certificate_distributor will invoke this callback when a new
@@ -87,10 +87,10 @@ struct grpc_tls_certificate_distributor
    * and they have the same cert name, this callback will be invoked twice.
    *
    * For the parameters in the callback function:
-   * @param string_value The name of the certificates being watched.
-   * @param bool_value_1 If the root certificates with the specific name are
+   * string_value The name of the certificates being watched.
+   * bool_value_1 If the root certificates with the specific name are
    * still being watched.
-   * @param bool_value_2 If the identity certificates with the specific name are
+   * bool_value_2 If the identity certificates with the specific name are
    * still being watched.
    */
   void SetWatchStatusCallback(
@@ -135,8 +135,9 @@ struct grpc_tls_certificate_distributor
   // Whenever key materials change, CertificateUpdated will be invoked to send
   // updates to each watcher. root_cert_name and identity_cert_name are the
   // names of the certificates being updated.
-  void CertificatesUpdated(absl::optional<std::string> root_cert_name,
-                           absl::optional<std::string> identity_cert_name);
+  void CertificatesUpdated(
+      const absl::optional<std::string>& root_cert_name,
+      const absl::optional<std::string>& identity_cert_name);
 
   grpc_core::Mutex mu_;
   // The field watchers_ owns the ownership of the WatcherInfo.

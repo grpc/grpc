@@ -99,25 +99,28 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
 
 void grpc_tls_certificate_distributor::SetRootCerts(
     std::string root_cert_name, absl::string_view pem_root_certs) {
-  SetKeyMaterials(root_cert_name, absl::make_optional(pem_root_certs), "",
-                  absl::nullopt);
+  // move the root_cert_name to avoid unnecessary copy.
+  SetKeyMaterials(std::move(root_cert_name),
+                  absl::make_optional(pem_root_certs), "", absl::nullopt);
 };
 
 void grpc_tls_certificate_distributor::SetKeyCertPairs(
     std::string identity_cert_name, PemKeyCertPairList pem_key_cert_pairs) {
-  SetKeyMaterials("", absl::nullopt, identity_cert_name,
-                  absl::make_optional(pem_key_cert_pairs));
+  // move the identity_cert_name and pem_key_cert_pairs to avoid unnecessary
+  // copies.
+  SetKeyMaterials("", absl::nullopt, std::move(identity_cert_name),
+                  absl::make_optional(std::move(pem_key_cert_pairs)));
 };
 
 bool grpc_tls_certificate_distributor::HasRootCerts(
-    std::string root_cert_name) {
+    const std::string& root_cert_name) {
   grpc_core::MutexLock lock(&mu_);
   const auto& it = this->pem_root_certs_.find(root_cert_name);
   return it != this->pem_root_certs_.end();
 };
 
 bool grpc_tls_certificate_distributor::HasKeyCertPairs(
-    std::string identity_cert_name) {
+    const std::string& identity_cert_name) {
   grpc_core::MutexLock lock(&mu_);
   const auto& it = this->pem_key_cert_pair_.find(identity_cert_name);
   return it != this->pem_key_cert_pair_.end();
@@ -245,8 +248,8 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
 };
 
 void grpc_tls_certificate_distributor::CertificatesUpdated(
-    absl::optional<std::string> root_cert_name,
-    absl::optional<std::string> identity_cert_name) {
+    const absl::optional<std::string>& root_cert_name,
+    const absl::optional<std::string>& identity_cert_name) {
   for (const auto& watcher_it : watchers_) {
     TlsCertificatesWatcherInterface* watcher_interface = watcher_it.first;
     if (watcher_interface == nullptr || watcher_it.second.watcher == nullptr) {
