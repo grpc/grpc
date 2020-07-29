@@ -1132,15 +1132,19 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
   }
 
   std::vector<ClientStats> WaitForLoadReport() {
+    std::vector<ClientStats> result;
     grpc_core::MutexLock lock(&load_report_mu_);
     grpc_core::CondVar cv;
-    if (result_queue_.empty()) {
-      load_report_cond_ = &cv;
-      load_report_cond_->WaitUntil(&load_report_mu_,
-                                   [this] { return !result_queue_.empty(); });
-      load_report_cond_ = nullptr;
+    if (!result_queue_.empty()) {
+      result = std::move(result_queue_.front());
+      result_queue_.pop_front();
     }
-    std::vector<ClientStats> result = std::move(result_queue_.front());
+    load_report_cond_ = &cv;
+    load_report_cond_->WaitUntil(&load_report_mu_,
+                                 [this] { return !result_queue_.empty(); });
+    load_report_cond_ = nullptr;
+    result.insert(result.end(), result_queue_.front().begin(),
+                  result_queue_.front().end());
     result_queue_.pop_front();
     return result;
   }
@@ -5186,16 +5190,23 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   // Check client stats.
   std::vector<ClientStats> load_report =
       balancers_[0]->lrs_service()->WaitForLoadReport();
-  ASSERT_EQ(load_report.size(), 1UL);
-  ClientStats& client_stats = load_report.front();
-  EXPECT_EQ(num_drops, client_stats.total_dropped_requests());
+  size_t total_dropped_requests = 0;
+  size_t total_dropped_lb_drop_type = 0;
+  size_t total_dropped_throttle_drop_type = 0;
+  for (auto& client_stat : load_report) {
+    total_dropped_requests += client_stat.total_dropped_requests();
+    total_dropped_lb_drop_type += client_stat.dropped_requests(kLbDropType);
+    total_dropped_throttle_drop_type +=
+        client_stat.dropped_requests(kThrottleDropType);
+  }
+  EXPECT_EQ(num_drops, total_dropped_requests);
   const size_t total_rpc = num_warmup + kNumRpcs;
   EXPECT_THAT(
-      client_stats.dropped_requests(kLbDropType),
+      total_dropped_lb_drop_type,
       ::testing::AllOf(
           ::testing::Ge(total_rpc * kDropRateForLb * (1 - kErrorTolerance)),
           ::testing::Le(total_rpc * kDropRateForLb * (1 + kErrorTolerance))));
-  EXPECT_THAT(client_stats.dropped_requests(kThrottleDropType),
+  EXPECT_THAT(total_dropped_throttle_drop_type,
               ::testing::AllOf(
                   ::testing::Ge(total_rpc * (1 - kDropRateForLb) *
                                 kDropRateForThrottle * (1 - kErrorTolerance)),
