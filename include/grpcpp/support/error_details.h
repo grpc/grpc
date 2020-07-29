@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPCPP_SUPPORT_ERROR_DETAILS_IMPL_H
-#define GRPCPP_SUPPORT_ERROR_DETAILS_IMPL_H
+#ifndef GRPCPP_SUPPORT_ERROR_DETAILS_H
+#define GRPCPP_SUPPORT_ERROR_DETAILS_H
 
 #include <grpcpp/support/status.h>
 
@@ -45,4 +45,4 @@ grpc::Status SetErrorDetails(const ::google::rpc::Status& from,
 
 }  // namespace grpc
 
-#endif  // GRPCPP_SUPPORT_ERROR_DETAILS_IMPL_H
+#endif  // GRPCPP_SUPPORT_ERROR_DETAILS_H
