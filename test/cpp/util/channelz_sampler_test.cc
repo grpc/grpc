@@ -36,12 +36,12 @@
 #include "grpcpp/server.h"
 #include "grpcpp/server_builder.h"
 #include "grpcpp/server_context.h"
+#include "gtest/gtest.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_credentials_provider.h"
-#include "gtest/gtest.h"
 
 namespace {
 using grpc::Channel;
@@ -68,38 +68,19 @@ class EchoServerImpl final : public grpc::testing::TestService::Service {
   }
 };
 
-// Run server in a thread
-void RunServer(gpr_event* done_ev) {
-  // register channelz service
-  ::grpc::channelz::experimental::InitChannelzService();
-  EchoServerImpl service;
-  grpc::ServerBuilder builder;
-  auto server_creds =
-      grpc::testing::GetCredentialsProvider()->GetServerCredentials(
-          custom_credentials_type);
-  builder.AddListeningPort(server_address, server_creds);
-  builder.RegisterService(&service);
-  std::unique_ptr<Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
-  while (true) {
-    if (gpr_event_get(done_ev)) {
-      return;
-    }
-  }
-}
-
 // Run client in a thread
 void RunClient(std::string client_id, gpr_event* done_ev) {
   grpc::ChannelArguments channel_args;
   std::shared_ptr<grpc::ChannelCredentials> channel_creds =
       grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
           custom_credentials_type, &channel_args);
-  std::unique_ptr<grpc::testing::TestService::Stub> stub
-      = grpc::testing::TestService::NewStub(
+  std::unique_ptr<grpc::testing::TestService::Stub> stub =
+      grpc::testing::TestService::NewStub(
           grpc::CreateChannel(server_address, channel_creds));
   gpr_log(GPR_INFO, "Client %s is echoing!", client_id.c_str());
   while (true) {
-    if (gpr_event_wait(done_ev, grpc_timeout_seconds_to_deadline(1)) != nullptr) {
+    if (gpr_event_wait(done_ev, grpc_timeout_seconds_to_deadline(1)) !=
+        nullptr) {
       return;
     }
     grpc::testing::Empty request;
@@ -116,15 +97,23 @@ bool WaitForConnection(int wait_server_seconds) {
       grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
           custom_credentials_type, &channel_args);
   auto channel = grpc::CreateChannel(server_address, channel_creds);
-  return channel->WaitForConnected(grpc_timeout_seconds_to_deadline(wait_server_seconds));
+  return channel->WaitForConnected(
+      grpc_timeout_seconds_to_deadline(wait_server_seconds));
 }
 
 // Test the channelz sampler
 TEST(ChannelzSamplerTest, SimpleTest) {
-  // server thread
-  gpr_event done_ev0;
-  gpr_event_init(&done_ev0);
-  std::thread server_thread(RunServer, &done_ev0);
+  // start server
+  ::grpc::channelz::experimental::InitChannelzService();
+  EchoServerImpl service;
+  grpc::ServerBuilder builder;
+  auto server_creds =
+      grpc::testing::GetCredentialsProvider()->GetServerCredentials(
+          custom_credentials_type);
+  builder.AddListeningPort(server_address, server_creds);
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server(builder.BuildAndStart());
+  gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
   const int kWaitForServerSeconds = 10;
   ASSERT_TRUE(WaitForConnection(kWaitForServerSeconds));
   // client threads
@@ -152,23 +141,20 @@ TEST(ChannelzSamplerTest, SimpleTest) {
       GPR_ASSERT(0);  // log the line number of the assertion failure
     }
   } else if (WIFSIGNALED(status)) {
-      gpr_log(GPR_ERROR,
-            "Channelz sampler test test-runner ended from signal %d",
+    gpr_log(GPR_ERROR, "Channelz sampler test test-runner ended from signal %d",
             WTERMSIG(status));
-      GPR_ASSERT(0);
+    GPR_ASSERT(0);
   } else {
-      gpr_log(GPR_ERROR,
+    gpr_log(GPR_ERROR,
             "Channelz sampler test test-runner ended with unknown status %d",
             status);
-      GPR_ASSERT(0);
+    GPR_ASSERT(0);
   }
 
   gpr_event_set(&done_ev1, (void*)1);
   gpr_event_set(&done_ev2, (void*)1);
   client_thread_1.join();
   client_thread_2.join();
-  gpr_event_set(&done_ev0, (void*)1);
-  server_thread.join();
 }
 
 int main(int argc, char** argv) {
@@ -176,4 +162,3 @@ int main(int argc, char** argv) {
   int ret = RUN_ALL_TESTS();
   return ret;
 }
-
