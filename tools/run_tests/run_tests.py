@@ -862,25 +862,23 @@ class PythonLanguage(object):
 
         if args.compiler == 'default':
             if os.name == 'nt':
-                return (python36_config,)
+                return (python38_config,)
             else:
                 if args.iomgr_platform == 'asyncio':
-                    return (python36_config,)
+                    return (python36_config, python38_config)
                 elif os.uname()[0] == 'Darwin':
                     # NOTE(rbellevi): Testing takes significantly longer on
                     # MacOS, so we restrict the number of interpreter versions
                     # tested.
                     return (
                         python27_config,
-                        python36_config,
-                        python37_config,
+                        python38_config,
                     )
                 else:
                     return (
                         python27_config,
                         python35_config,
-                        python36_config,
-                        python37_config,
+                        python38_config,
                     )
         elif args.compiler == 'python2.7':
             return (python27_config,)
