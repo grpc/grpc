@@ -175,6 +175,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c \
+    src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c \
     src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c \
     src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c \
     src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c \
@@ -192,8 +193,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c \
     src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c \
     src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c \
     src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c \
     src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/http.upb.c \
@@ -202,6 +207,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
@@ -918,6 +924,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/core/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/endpoint/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/listener/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/rbac/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/route/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/trace/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3)
@@ -934,6 +941,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/gogoproto)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/api)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/api/expr/v1alpha1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/rpc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/gcp)
