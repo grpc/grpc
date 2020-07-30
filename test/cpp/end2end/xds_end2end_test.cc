@@ -318,6 +318,8 @@ class BackendServiceImpl
 class ClientStats {
  public:
   struct LocalityStats {
+    LocalityStats() {}
+
     // Converts from proto message class.
     template <class UpstreamLocalityStats>
     LocalityStats(const UpstreamLocalityStats& upstream_locality_stats)
@@ -329,11 +331,21 @@ class ClientStats {
           total_issued_requests(
               upstream_locality_stats.total_issued_requests()) {}
 
-    uint64_t total_successful_requests;
-    uint64_t total_requests_in_progress;
-    uint64_t total_error_requests;
-    uint64_t total_issued_requests;
+    LocalityStats& operator+=(const LocalityStats& other) {
+      total_successful_requests += other.total_successful_requests;
+      total_requests_in_progress += other.total_requests_in_progress;
+      total_error_requests += other.total_error_requests;
+      total_issued_requests += other.total_issued_requests;
+      return *this;
+    }
+
+    uint64_t total_successful_requests = 0;
+    uint64_t total_requests_in_progress = 0;
+    uint64_t total_error_requests = 0;
+    uint64_t total_issued_requests = 0;
   };
+
+  ClientStats() {}
 
   // Converts from proto message class.
   template <class ClusterStats>
@@ -394,10 +406,21 @@ class ClientStats {
     return iter->second;
   }
 
+  ClientStats& operator+=(const ClientStats& other) {
+    for (const auto& p : other.locality_stats_) {
+      locality_stats_[p.first] += p.second;
+    }
+    total_dropped_requests_ += other.total_dropped_requests_;
+    for (const auto& p : other.dropped_requests_) {
+      dropped_requests_[p.first] += p.second;
+    }
+    return *this;
+  }
+
  private:
   std::string cluster_name_;
   std::map<std::string, LocalityStats> locality_stats_;
-  uint64_t total_dropped_requests_;
+  uint64_t total_dropped_requests_ = 0;
   std::map<std::string, uint64_t> dropped_requests_;
 };
 
@@ -5184,12 +5207,18 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
           ::testing::Ge(KDropRateForLbAndThrottle * (1 - kErrorTolerance)),
           ::testing::Le(KDropRateForLbAndThrottle * (1 + kErrorTolerance))));
   // Check client stats.
-  std::vector<ClientStats> load_report =
-      balancers_[0]->lrs_service()->WaitForLoadReport();
-  ASSERT_EQ(load_report.size(), 1UL);
-  ClientStats& client_stats = load_report.front();
-  EXPECT_EQ(num_drops, client_stats.total_dropped_requests());
   const size_t total_rpc = num_warmup + kNumRpcs;
+  ClientStats client_stats;
+  do {
+    std::vector<ClientStats> load_reports =
+        balancers_[0]->lrs_service()->WaitForLoadReport();
+    for (const auto& load_report : load_reports) {
+      client_stats += load_report;
+    }
+  } while (client_stats.total_issued_requests() +
+               client_stats.total_dropped_requests() <
+           total_rpc);
+  EXPECT_EQ(num_drops, client_stats.total_dropped_requests());
   EXPECT_THAT(
       client_stats.dropped_requests(kLbDropType),
       ::testing::AllOf(
