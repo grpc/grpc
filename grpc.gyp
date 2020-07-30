@@ -375,11 +375,9 @@
       'type': 'static_library',
       'dependencies': [
         'absl/time:time',
-        'absl/synchronization:synchronization',
         'absl/strings:strings',
         'absl/strings:str_format',
         'absl/memory:memory',
-        'absl/base:base',
       ],
       'sources': [
         'src/core/lib/gpr/alloc.cc',
