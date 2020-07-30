@@ -81,6 +81,7 @@ struct rpc_state {
   grpc_endpoint* tcp;
   gpr_atm done_atm;
   bool http2_response;
+  bool send_settings;
   const char* response_payload;
   size_t response_payload_length;
   bool connection_attempt_made;
@@ -129,11 +130,14 @@ static void handle_read(void* /*arg*/, grpc_error* error) {
     gpr_free(dump);
   }
 
-  gpr_log(GPR_DEBUG, "got %" PRIuPTR " bytes, expected %" PRIuPTR " bytes",
+  gpr_log(GPR_DEBUG,
+          "got %" PRIuPTR " bytes, expected %" PRIuPTR
+          " bytes or a non-HTTP2 response to be sent",
           state.incoming_data_length,
           SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD);
   if (state.incoming_data_length >=
-      SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD) {
+          SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD ||
+      !state.http2_response) {
     handle_write();
   } else {
     grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
@@ -156,7 +160,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
   state.tcp = tcp;
   state.incoming_data_length = 0;
   grpc_endpoint_add_to_pollset(tcp, server->pollset[0]);
-  if (state.http2_response) {
+  if (state.send_settings) {
     // Send settings frame from server
     grpc_slice slice = grpc_slice_from_static_buffer(
         HTTP2_SETTINGS_FRAME, sizeof(HTTP2_SETTINGS_FRAME) - 1);
@@ -188,18 +192,20 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   state.cq = grpc_completion_queue_create_for_next(nullptr);
   cqv = cq_verifier_create(state.cq);
   state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
-  // Reduce the connection attempt deadline to 1 second.
-  grpc_arg connect_arg = grpc_channel_arg_integer_create(
-      const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms"), 1000);
-  grpc_channel_args args = {1, &connect_arg};
 
   state.channel =
-      grpc_insecure_channel_create(state.target.c_str(), &args, nullptr);
+      grpc_insecure_channel_create(state.target.c_str(), nullptr, nullptr);
   grpc_slice host = grpc_slice_from_static_string("localhost");
+  // The default connect deadline is 20 seconds, so reduce the RPC deadline to 1
+  // second. This helps us verify - a) If the server responded with a non-HTTP2
+  // response, the connect fails immediately resulting in
+  // GRPC_STATUS_UNAVAILABLE instead of GRPC_STATUS_DEADLINE_EXCEEDED. b) If the
+  // server does not send a HTTP2 SETTINGs frame, the RPC fails with a
+  // DEADLINE_EXCEEDED.
   state.call = grpc_channel_create_call(
       state.channel, nullptr, GRPC_PROPAGATE_DEFAULTS, state.cq,
       grpc_slice_from_static_string("/Service/Method"), &host,
-      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+      n_sec_deadline(1), nullptr);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -240,6 +246,9 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
     GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
                                                    expected_detail)));
   }
+
+  gpr_log(GPR_ERROR, "%s",
+          grpc_dump_slice(details, GPR_DUMP_ASCII | GPR_DUMP_HEX));
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -297,7 +306,8 @@ static grpc_core::Thread* poll_server_until_read_done(
   return th;
 }
 
-static void run_test(bool http2_response, const char* response_payload,
+static void run_test(bool http2_response, bool send_settings,
+                     const char* response_payload,
                      size_t response_payload_length,
                      grpc_status_code expected_status,
                      const char* expected_detail) {
@@ -311,6 +321,7 @@ static void run_test(bool http2_response, const char* response_payload,
   test_tcp_server_init(&test_server, on_connect, &test_server);
   test_tcp_server_start(&test_server, server_port);
   state.http2_response = http2_response;
+  state.send_settings = send_settings;
   state.response_payload = response_payload;
   state.response_payload_length = response_payload_length;
 
@@ -320,7 +331,7 @@ static void run_test(bool http2_response, const char* response_payload,
   start_rpc(server_port, expected_status, expected_detail);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   thdptr->Join();
-  /* Proof that the server accepted the connection. */
+  /* Proof that the server accepted the TCP connection. */
   GPR_ASSERT(state.connection_attempt_made == true);
   /* clean up */
   grpc_endpoint_shutdown(state.tcp,
@@ -338,42 +349,48 @@ int main(int argc, char** argv) {
   grpc_init();
 
   /* status defined in hpack static table */
-  run_test(true, HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1,
+  run_test(true, true, HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1,
            GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(204));
-  run_test(true, HTTP2_RESP(206), sizeof(HTTP2_RESP(206)) - 1,
+  run_test(true, true, HTTP2_RESP(206), sizeof(HTTP2_RESP(206)) - 1,
            GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(206));
-  run_test(true, HTTP2_RESP(304), sizeof(HTTP2_RESP(304)) - 1,
+  run_test(true, true, HTTP2_RESP(304), sizeof(HTTP2_RESP(304)) - 1,
            GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(304));
-  run_test(true, HTTP2_RESP(400), sizeof(HTTP2_RESP(400)) - 1,
+  run_test(true, true, HTTP2_RESP(400), sizeof(HTTP2_RESP(400)) - 1,
            GRPC_STATUS_INTERNAL, HTTP2_DETAIL_MSG(400));
-  run_test(true, HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1,
+  run_test(true, true, HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1,
            GRPC_STATUS_UNIMPLEMENTED, HTTP2_DETAIL_MSG(404));
-  run_test(true, HTTP2_RESP(500), sizeof(HTTP2_RESP(500)) - 1,
+  run_test(true, true, HTTP2_RESP(500), sizeof(HTTP2_RESP(500)) - 1,
            GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(500));
 
   /* status not defined in hpack static table */
-  run_test(true, HTTP2_RESP(401), sizeof(HTTP2_RESP(401)) - 1,
+  run_test(true, true, HTTP2_RESP(401), sizeof(HTTP2_RESP(401)) - 1,
            GRPC_STATUS_UNAUTHENTICATED, HTTP2_DETAIL_MSG(401));
-  run_test(true, HTTP2_RESP(403), sizeof(HTTP2_RESP(403)) - 1,
+  run_test(true, true, HTTP2_RESP(403), sizeof(HTTP2_RESP(403)) - 1,
            GRPC_STATUS_PERMISSION_DENIED, HTTP2_DETAIL_MSG(403));
-  run_test(true, HTTP2_RESP(429), sizeof(HTTP2_RESP(429)) - 1,
+  run_test(true, true, HTTP2_RESP(429), sizeof(HTTP2_RESP(429)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(429));
-  run_test(true, HTTP2_RESP(499), sizeof(HTTP2_RESP(499)) - 1,
+  run_test(true, true, HTTP2_RESP(499), sizeof(HTTP2_RESP(499)) - 1,
            GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(499));
-  run_test(true, HTTP2_RESP(502), sizeof(HTTP2_RESP(502)) - 1,
+  run_test(true, true, HTTP2_RESP(502), sizeof(HTTP2_RESP(502)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(502));
-  run_test(true, HTTP2_RESP(503), sizeof(HTTP2_RESP(503)) - 1,
+  run_test(true, true, HTTP2_RESP(503), sizeof(HTTP2_RESP(503)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(503));
-  run_test(true, HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
+  run_test(true, true, HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
-  /* unparseable response. */
-  run_test(false, UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
+  /* unparseable response. RPC should fail immediately due to a connect failure.
+   */
+  run_test(false, false, UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
            GRPC_STATUS_UNAVAILABLE, nullptr);
 
-  /* http1 response. */
-  run_test(false, HTTP1_RESP_400, sizeof(HTTP1_RESP_400) - 1,
+  /* http1 response. RPC should fail immediately due to a connect failure. */
+  run_test(false, false, HTTP1_RESP_400, sizeof(HTTP1_RESP_400) - 1,
            GRPC_STATUS_UNAVAILABLE, nullptr);
 
+  /* http2 response without sending a SETTINGs frame. RPC should fail with
+   * DEADLINE_EXCEEDED since the RPC deadline is lower than the connection
+   * attempt deadline. */
+  run_test(true, false, HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1,
+           GRPC_STATUS_DEADLINE_EXCEEDED, nullptr);
   grpc_shutdown();
   return 0;
 }
