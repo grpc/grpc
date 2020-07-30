@@ -29,10 +29,9 @@
 #include <grpcpp/support/client_callback_impl.h>
 #include <grpcpp/support/status.h>
 
-namespace grpc_impl {
-class CompletionQueue;
-}  // namespace grpc_impl
 namespace grpc {
+
+class CompletionQueue;
 
 typedef ::grpc_impl::ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericClientAsyncReaderWriter;

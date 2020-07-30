@@ -29,11 +29,11 @@
 namespace grpc_impl {
 
 class Server;
-class CompletionQueue;
 class ServerContext;
 }  // namespace grpc_impl
 namespace grpc {
 
+class CompletionQueue;
 class ServerInterface;
 
 namespace internal {
@@ -130,7 +130,7 @@ class Service {
   void RequestAsyncUnary(int index, ::grpc_impl::ServerContext* context,
                          Message* request,
                          internal::ServerAsyncStreamingInterface* stream,
-                         ::grpc_impl::CompletionQueue* call_cq,
+                         ::grpc::CompletionQueue* call_cq,
                          ::grpc_impl::ServerCompletionQueue* notification_cq,
                          void* tag) {
     // Typecast the index to size_t for indexing into a vector
@@ -143,7 +143,7 @@ class Service {
   void RequestAsyncClientStreaming(
       int index, ::grpc_impl::ServerContext* context,
       internal::ServerAsyncStreamingInterface* stream,
-      ::grpc_impl::CompletionQueue* call_cq,
+      ::grpc::CompletionQueue* call_cq,
       ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
     server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
@@ -153,7 +153,7 @@ class Service {
   void RequestAsyncServerStreaming(
       int index, ::grpc_impl::ServerContext* context, Message* request,
       internal::ServerAsyncStreamingInterface* stream,
-      ::grpc_impl::CompletionQueue* call_cq,
+      ::grpc::CompletionQueue* call_cq,
       ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
     server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
@@ -162,7 +162,7 @@ class Service {
   void RequestAsyncBidiStreaming(
       int index, ::grpc_impl::ServerContext* context,
       internal::ServerAsyncStreamingInterface* stream,
-      ::grpc_impl::CompletionQueue* call_cq,
+      ::grpc::CompletionQueue* call_cq,
       ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
     server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,

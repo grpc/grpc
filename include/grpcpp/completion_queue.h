@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  */
 
-#ifndef GRPCPP_COMPLETION_QUEUE_H
-#define GRPCPP_COMPLETION_QUEUE_H
+#ifndef GRPCPP_COMPLETION_QUEUE_IMPL_H
+#define GRPCPP_COMPLETION_QUEUE_IMPL_H
 
-#include <grpcpp/impl/codegen/completion_queue.h>
+#include <grpcpp/impl/codegen/completion_queue_impl.h>
 
-#endif  // GRPCPP_COMPLETION_QUEUE_H
+#endif  // GRPCPP_COMPLETION_QUEUE_IMPL_H
