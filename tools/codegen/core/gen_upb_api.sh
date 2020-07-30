@@ -80,6 +80,10 @@ proto_files=( \
   "envoy/type/matcher/v3/path.proto" \
   "envoy/type/matcher/v3/regex.proto" \
   "envoy/type/matcher/v3/string.proto" \
+  "envoy/type/matcher/v3/metadata.proto" \
+  "envoy/type/matcher/v3/number.proto" \
+  "envoy/type/matcher/v3/path.proto" \
+  "envoy/type/matcher/v3/value.proto" \
   "envoy/type/metadata/v3/metadata.proto" \
   "envoy/type/tracing/v3/custom_tag.proto" \
   "envoy/type/v3/http.proto" \
