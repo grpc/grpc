@@ -868,7 +868,7 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
     if (it == json.object_value().end()) {
       endpoint_picking_policy = Json::Array{
           Json::Object{
-              {"round_robin", Json::Object()},
+              {"weighted_round_robin", Json::Object()},
           },
       };
     } else {

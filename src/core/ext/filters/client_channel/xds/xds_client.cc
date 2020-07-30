@@ -1104,9 +1104,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
                 &locality.serverlist[i].address(), false);
             gpr_log(GPR_INFO,
                     "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
-                    " %s, server address %" PRIuPTR ": %s",
+                    " %s, server address %" PRIuPTR ": %s weight %u" ,
                     xds_client(), priority, locality_count,
-                    locality.name->AsHumanReadableString(), i, ipport.c_str());
+                    locality.name->AsHumanReadableString(), i, ipport.c_str(), locality.serverlist[i].lb_weight());
           }
           ++locality_count;
         }

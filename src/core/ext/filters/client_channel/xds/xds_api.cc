@@ -1382,6 +1382,13 @@ grpc_error* ServerAddressParseAndAppend(
   if (GPR_UNLIKELY(port >> 16) != 0) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port.");
   }
+  // endpoint weight
+  const google_protobuf_UInt32Value* lb_weight =
+      envoy_api_v2_endpoint_LbEndpoint_load_balancing_weight(
+          lb_endpoint);
+  // If LB weight is not specified, it means this locality is assigned no load.
+  uint32_t weight = lb_weight != nullptr ? google_protobuf_UInt32Value_value(lb_weight) : 0;
+
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
   char* address_str = static_cast<char*>(gpr_malloc(address_strview.size + 1));
@@ -1390,7 +1397,7 @@ grpc_error* ServerAddressParseAndAppend(
   grpc_string_to_sockaddr(&addr, address_str, port);
   gpr_free(address_str);
   // Append the address to the list.
-  list->emplace_back(addr, nullptr);
+  list->emplace_back(addr, nullptr, weight);
   return GRPC_ERROR_NONE;
 }
 

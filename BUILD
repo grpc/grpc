@@ -1001,6 +1001,7 @@ grpc_cc_library(
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_priority",
         "grpc_lb_policy_round_robin",
+        "grpc_lb_policy_weighted_round_robin",
         "grpc_lb_policy_weighted_target",
         "grpc_client_idle_filter",
         "grpc_max_age_filter",
@@ -1492,6 +1493,20 @@ grpc_cc_library(
     name = "grpc_lb_policy_round_robin",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_lb_subchannel_list",
+    ],
+)
+
+
+grpc_cc_library(
+    name = "grpc_lb_policy_weighted_round_robin",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc",
     ],
     language = "c++",
     deps = [

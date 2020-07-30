@@ -30,6 +30,10 @@ ServerAddress::ServerAddress(const grpc_resolved_address& address,
                              grpc_channel_args* args)
     : address_(address), args_(args) {}
 
+ServerAddress::ServerAddress(const grpc_resolved_address& address,
+                             grpc_channel_args* args, uint32_t lb_weight)
+    : address_(address), args_(args), lb_weight_(lb_weight) {}
+
 ServerAddress::ServerAddress(const void* address, size_t address_len,
                              grpc_channel_args* args)
     : args_(args) {
@@ -42,7 +46,7 @@ int ServerAddress::Cmp(const ServerAddress& other) const {
   if (address_.len < other.address_.len) return -1;
   int retval = memcmp(address_.addr, other.address_.addr, address_.len);
   if (retval != 0) return retval;
-  return grpc_channel_args_compare(args_, other.args_);
+  return grpc_channel_args_compare(args_, other.args_) && lb_weight_ == other.lb_weight_;
 }
 
 }  // namespace grpc_core

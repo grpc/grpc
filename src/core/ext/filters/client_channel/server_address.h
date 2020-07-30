@@ -39,6 +39,7 @@ class ServerAddress {
  public:
   // Takes ownership of args.
   ServerAddress(const grpc_resolved_address& address, grpc_channel_args* args);
+  ServerAddress(const grpc_resolved_address& address, grpc_channel_args* args, uint32_t lb_weight);
   ServerAddress(const void* address, size_t address_len,
                 grpc_channel_args* args);
 
@@ -46,17 +47,18 @@ class ServerAddress {
 
   // Copyable.
   ServerAddress(const ServerAddress& other)
-      : address_(other.address_), args_(grpc_channel_args_copy(other.args_)) {}
+      : address_(other.address_), args_(grpc_channel_args_copy(other.args_)), lb_weight_(other.lb_weight_) {}
   ServerAddress& operator=(const ServerAddress& other) {
     address_ = other.address_;
     grpc_channel_args_destroy(args_);
     args_ = grpc_channel_args_copy(other.args_);
+    lb_weight_ = other.lb_weight_;
     return *this;
   }
 
   // Movable.
   ServerAddress(ServerAddress&& other)
-      : address_(other.address_), args_(other.args_) {
+      : address_(other.address_), args_(other.args_), lb_weight_(other.lb_weight_) {
     other.args_ = nullptr;
   }
   ServerAddress& operator=(ServerAddress&& other) {
@@ -64,6 +66,7 @@ class ServerAddress {
     grpc_channel_args_destroy(args_);
     args_ = other.args_;
     other.args_ = nullptr;
+    lb_weight_ = other.lb_weight_;
     return *this;
   }
 
@@ -73,10 +76,12 @@ class ServerAddress {
 
   const grpc_resolved_address& address() const { return address_; }
   const grpc_channel_args* args() const { return args_; }
+  const uint32_t lb_weight() const { return lb_weight_; }
 
  private:
   grpc_resolved_address address_;
   grpc_channel_args* args_;
+  uint32_t lb_weight_;
 };
 
 //
