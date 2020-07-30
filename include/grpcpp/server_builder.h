@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPCPP_SERVER_BUILDER_IMPL_H
-#define GRPCPP_SERVER_BUILDER_IMPL_H
+#ifndef GRPCPP_SERVER_BUILDER_H
+#define GRPCPP_SERVER_BUILDER_H
 
 #include <climits>
 #include <map>
@@ -88,7 +88,7 @@ class ExternalConnectionAcceptor {
 }  // namespace experimental
 }  // namespace grpc
 
-namespace grpc_impl {
+namespace grpc {
 
 /// A builder class for the creation and startup of \a grpc::Server instances.
 class ServerBuilder {
@@ -264,7 +264,7 @@ class ServerBuilder {
   /// experimental.
   class experimental_type {
    public:
-    explicit experimental_type(grpc_impl::ServerBuilder* builder)
+    explicit experimental_type(ServerBuilder* builder)
         : builder_(builder) {}
 
     void SetInterceptorCreators(
@@ -412,6 +412,6 @@ class ServerBuilder {
       acceptors_;
 };
 
-}  // namespace grpc_impl
+}  // namespace grpc
 
-#endif  // GRPCPP_SERVER_BUILDER_IMPL_H
+#endif  // GRPCPP_SERVER_BUILDER_H
