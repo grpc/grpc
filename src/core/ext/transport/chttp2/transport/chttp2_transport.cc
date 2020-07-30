@@ -2546,6 +2546,9 @@ static void read_action_locked(void* tp, grpc_error* error) {
       errors[1] = grpc_chttp2_perform_read(t, t->read_buffer.slices[i]);
     }
     if (errors[1] != GRPC_ERROR_NONE) {
+      // TODO(yashykt): HTTP/1.x parsing should no longer be required after
+      // https://github.com/grpc/grpc/pull/23636, since we expect an HTTP2
+      // SETTINGs frame before we send any streams.
       errors[2] = try_http_parsing(t);
       GRPC_ERROR_UNREF(error);
       error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(

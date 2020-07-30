@@ -171,27 +171,17 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error* error) {
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
       GPR_ASSERT(self->result_->transport != nullptr);
-      if (grpc_channel_args_find_bool(
-              args->args,
-              GRPC_ARG_RECEIVE_SETTINGS_FRAME_BEFORE_CLIENT_CONNECTION_DEADLINE,
-              true)) {
-        self->endpoint_ = args->endpoint;
-        self->Ref().release();  // Ref held by OnReceiveSettings()
-        GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings, self,
-                          grpc_schedule_on_exec_ctx);
-        self->Ref().release();  // Ref held by OnTimeout()
-        grpc_chttp2_transport_start_reading(self->result_->transport,
-                                            args->read_buffer,
-                                            &self->on_receive_settings_);
-        GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self,
-                          grpc_schedule_on_exec_ctx);
-        grpc_timer_init(&self->timer_, self->args_.deadline,
-                        &self->on_timeout_);
-      } else {
-        grpc_chttp2_transport_start_reading(self->result_->transport,
-                                            args->read_buffer, nullptr);
-        NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
-      }
+      self->endpoint_ = args->endpoint;
+      self->Ref().release();  // Ref held by OnReceiveSettings()
+      GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings, self,
+                        grpc_schedule_on_exec_ctx);
+      self->Ref().release();  // Ref held by OnTimeout()
+      grpc_chttp2_transport_start_reading(self->result_->transport,
+                                          args->read_buffer,
+                                          &self->on_receive_settings_);
+      GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self,
+                        grpc_schedule_on_exec_ctx);
+      grpc_timer_init(&self->timer_, self->args_.deadline, &self->on_timeout_);
     } else {
       // If the handshaking succeeded but there is no endpoint, then the
       // handshaker may have handed off the connection to some external
@@ -208,9 +198,11 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   {
     MutexLock lock(&self->mu_);
-    if (!self->notify_state_set_) {
+    if (!self->notify_error_.has_value()) {
       if (error != GRPC_ERROR_NONE) {
         // Transport got an error while waiting on SETTINGS frame.
+        // TODO(yashykt): The following two lines should be moved to
+        // SubchannelConnector::Result::Reset()
         grpc_transport_destroy(self->result_->transport);
         grpc_channel_args_destroy(self->result_->channel_args);
         self->result_->Reset();
@@ -230,9 +222,11 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error* error) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   {
     MutexLock lock(&self->mu_);
-    if (!self->notify_state_set_) {
+    if (!self->notify_error_.has_value()) {
       // The transport did not receive the settings frame in time. Destroy the
       // transport.
+      // TODO(yashykt): The following two lines should be moved to
+      // SubchannelConnector::Result::Reset()
       grpc_transport_destroy(self->result_->transport);
       grpc_channel_args_destroy(self->result_->channel_args);
       self->result_->Reset();
@@ -248,9 +242,9 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error* error) {
 }
 
 void Chttp2Connector::MaybeNotify(grpc_error* error) {
-  if (notify_state_set_) {
+  if (notify_error_.has_value()) {
     GRPC_ERROR_UNREF(error);
-    NullThenSchedClosure(DEBUG_LOCATION, &notify_, notify_error_);
+    NullThenSchedClosure(DEBUG_LOCATION, &notify_, notify_error_.value());
     // Clear out the endpoint, since it is the responsibility of the transport
     // to shut it down.
     // Clear state for a new Connect().
@@ -258,11 +252,9 @@ void Chttp2Connector::MaybeNotify(grpc_error* error) {
     // We do not destroy the endpoint here, since it is the responsibility of
     // the transport to shut it down.
     endpoint_ = nullptr;
-    notify_error_ = GRPC_ERROR_NONE;
-    notify_state_set_ = false;
+    notify_error_.reset();
   } else {
     notify_error_ = error;
-    notify_state_set_ = true;
   }
 }
 

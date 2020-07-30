@@ -66,8 +66,7 @@ class Chttp2Connector : public SubchannelConnector {
   grpc_closure on_receive_settings_;
   grpc_timer timer_;
   grpc_closure on_timeout_;
-  bool notify_state_set_ = false;
-  grpc_error* notify_error_ = GRPC_ERROR_NONE;
+  absl::optional<grpc_error*> notify_error_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
 };
 

@@ -80,10 +80,10 @@ struct rpc_state {
   grpc_slice_buffer outgoing_buffer;
   grpc_endpoint* tcp;
   gpr_atm done_atm;
-  bool write_done;
   bool http2_response;
   const char* response_payload;
   size_t response_payload_length;
+  bool connection_attempt_made;
 };
 
 static int server_port;
@@ -152,6 +152,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
   GRPC_CLOSURE_INIT(&on_write, done_write, nullptr, grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.temp_incoming_buffer);
   grpc_slice_buffer_init(&state.outgoing_buffer);
+  state.connection_attempt_made = true;
   state.tcp = tcp;
   state.incoming_data_length = 0;
   grpc_endpoint_add_to_pollset(tcp, server->pollset[0]);
@@ -187,6 +188,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   state.cq = grpc_completion_queue_create_for_next(nullptr);
   cqv = cq_verifier_create(state.cq);
   state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
+  // Reduce the connection attempt deadline to 1 second.
   grpc_arg connect_arg = grpc_channel_arg_integer_create(
       const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms"), 1000);
   grpc_channel_args args = {1, &connect_arg};
@@ -285,7 +287,7 @@ static void actually_poll_server(void* arg) {
 static grpc_core::Thread* poll_server_until_read_done(
     test_tcp_server* server, gpr_event* signal_when_done) {
   gpr_atm_rel_store(&state.done_atm, 0);
-  state.write_done = 0;
+  state.connection_attempt_made = false;
   poll_args* pa = static_cast<poll_args*>(gpr_malloc(sizeof(*pa)));
   pa->server = server;
   pa->signal_when_done = signal_when_done;
@@ -318,6 +320,8 @@ static void run_test(bool http2_response, const char* response_payload,
   start_rpc(server_port, expected_status, expected_detail);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   thdptr->Join();
+  /* Proof that the server accepted the connection. */
+  GPR_ASSERT(state.connection_attempt_made == true);
   /* clean up */
   grpc_endpoint_shutdown(state.tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
