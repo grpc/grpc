@@ -65,41 +65,6 @@ _POLLING_STRATEGIES = {
     'mac': ['poll'],
 }
 
-BigQueryTestData = collections.namedtuple('BigQueryTestData', 'name flaky cpu')
-
-
-def get_bqtest_data(limit=None):
-    import big_query_utils
-
-    bq = big_query_utils.create_big_query()
-    query = """
-SELECT
-  filtered_test_name,
-  SUM(result != 'PASSED' AND result != 'SKIPPED') > 0 as flaky,
-  MAX(cpu_measured) + 0.01 as cpu
-  FROM (
-  SELECT
-    REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
-    result, cpu_measured
-  FROM
-    [grpc-testing:jenkins_test_results.aggregate_results]
-  WHERE
-    timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
-    AND platform = '""" + platform_string() + """'
-    AND NOT REGEXP_MATCH(job_name, '.*portability.*') )
-GROUP BY
-  filtered_test_name"""
-    if limit:
-        query += " limit {}".format(limit)
-    query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
-    page = bq.jobs().getQueryResults(
-        pageToken=None, **query_job['jobReference']).execute(num_retries=3)
-    test_data = [
-        BigQueryTestData(row['f'][0]['v'], row['f'][1]['v'] == 'true',
-                         float(row['f'][2]['v'])) for row in page['rows']
-    ]
-    return test_data
-
 
 def platform_string():
     return jobset.platform_string()
@@ -1575,26 +1540,10 @@ argp.add_argument('--bq_result_table',
                   type=str,
                   nargs='?',
                   help='Upload test results to a specified BQ table.')
-argp.add_argument(
-    '--auto_set_flakes',
-    default=False,
-    const=True,
-    action='store_const',
-    help=
-    'Allow repeated runs for tests that have been failing recently (based on BQ historical data).'
-)
 args = argp.parse_args()
 
 flaky_tests = set()
 shortname_to_cpu = {}
-if args.auto_set_flakes:
-    try:
-        for test in get_bqtest_data():
-            if test.flaky: flaky_tests.add(test.name)
-            if test.cpu > 0: shortname_to_cpu[test.name] = test.cpu
-    except:
-        print("Unexpected error getting flaky tests: %s" %
-              traceback.format_exc())
 
 if args.force_default_poller:
     _POLLING_STRATEGIES = {}
