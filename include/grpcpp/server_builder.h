@@ -264,8 +264,7 @@ class ServerBuilder {
   /// experimental.
   class experimental_type {
    public:
-    explicit experimental_type(ServerBuilder* builder)
-        : builder_(builder) {}
+    explicit experimental_type(ServerBuilder* builder) : builder_(builder) {}
 
     void SetInterceptorCreators(
         std::vector<std::unique_ptr<
