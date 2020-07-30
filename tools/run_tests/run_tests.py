@@ -74,6 +74,7 @@ _DEFAULT_TIMEOUT_SECONDS = 5 * 60
 _PRE_BUILD_STEP_TIMEOUT_SECONDS = 10 * 60
 
 
+# TODO: only used for updating submodule automatically...
 def run_shell_command(cmd, env=None, cwd=None):
     try:
         subprocess.check_output(cmd, shell=True, env=env, cwd=cwd)
@@ -141,6 +142,7 @@ class Config(object):
             timeout_retries=1 if flaky or args.allow_flakes else 0)
 
 
+# TODO: the "travis arg is probably not needed"
 def get_c_tests(travis, test_lang):
     out = []
     platforms_str = 'ci_platforms' if travis else 'platforms'
