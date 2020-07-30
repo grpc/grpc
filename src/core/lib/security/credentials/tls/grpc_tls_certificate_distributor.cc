@@ -43,7 +43,7 @@ grpc_tls_certificate_distributor::~grpc_tls_certificate_distributor() {
     watcher_interface->OnError(err_msg);
   }
   if (watchers_.size() > 0) {
-    gpr_log(GPR_ERROR,
+    gpr_log(GPR_INFO,
             "The grpc_tls_certificate_distributor is destructed but the "
             "watchers are not cleaned up.");
     watchers_.clear();
@@ -266,28 +266,24 @@ void grpc_tls_certificate_distributor::CertificatesUpdated(
     if (watcher_it.second.root_cert_name) {
       const auto& it =
           this->pem_root_certs_.find(*watcher_it.second.root_cert_name);
-      if (it == this->pem_root_certs_.end()) {
-        gpr_log(GPR_INFO,
-                "The root cert with name %s is watched but no certificates "
-                "with the same name exist yet.",
-                (*watcher_it.second.root_cert_name).c_str());
-      } else {
+      if (it != this->pem_root_certs_.end()) {
         updated_root_certs = absl::make_optional(it->second);
       }
+      // Having the condition "it == this->pem_root_certs_.end()" means a
+      // particular root_cert_name is watched before being pushed into
+      // pem_root_certs_. That is a valid case, so we will do nothing here.
     }
     absl::optional<PemKeyCertPairList> updated_identity_key_cert_pair =
         absl::nullopt;
     if (watcher_it.second.identity_cert_name) {
       const auto& it =
           this->pem_key_cert_pair_.find(*watcher_it.second.identity_cert_name);
-      if (it == this->pem_key_cert_pair_.end()) {
-        gpr_log(GPR_INFO,
-                "The key-cert pair(s) with name %s is watched but no "
-                "certificates with the same name exist yet.",
-                (*watcher_it.second.identity_cert_name).c_str());
-      } else {
+      if (it != this->pem_key_cert_pair_.end()) {
         updated_identity_key_cert_pair = absl::make_optional(it->second);
       }
+      // Having the condition "it == this->pem_key_cert_pair_.end()" means a
+      // particular identity_cert_name is watched before being pushed into
+      // pem_key_cert_pair_. That is a valid case, so we will do nothing here.
     }
     if (updated_root_certs || updated_identity_key_cert_pair) {
       watcher_interface->OnCertificatesChanged(updated_root_certs,
