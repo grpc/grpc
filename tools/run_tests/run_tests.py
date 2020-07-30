@@ -237,24 +237,34 @@ class CLanguage(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
+        self._make_options = []
+        self._use_cmake = True
         if self.platform == 'windows':
             _check_compiler(
                 self.args.compiler,
                 ['default', 'cmake', 'cmake_vs2015', 'cmake_vs2017'])
             _check_arch(self.args.arch, ['default', 'x64', 'x86'])
-            self._cmake_generator_option = 'Visual Studio 15 2017' if self.args.compiler == 'cmake_vs2017' else 'Visual Studio 14 2015'
-            self._cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
-            self._use_cmake = True
-            self._make_options = []
-        elif self.args.compiler == 'cmake':
-            _check_arch(self.args.arch, ['default'])
-            self._use_cmake = True
-            self._docker_distro = 'jessie'
-            self._make_options = []
+            cmake_generator_option = 'Visual Studio 15 2017' if self.args.compiler == 'cmake_vs2017' else 'Visual Studio 14 2015'
+            cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
+            self._cmake_configure_extra_args = [
+                '-G', cmake_generator_option, '-A', cmake_arch_option
+            ]
         else:
-            self._use_cmake = False
-            self._docker_distro, self._make_options = self._compiler_options(
+            if self.platform == 'linux':
+                # Allow all the known architectures. _check_arch_option has already checked that we're not doing
+                # something illegal when not running under docker.
+                _check_arch(self.args.arch, ['default', 'x64', 'x86'])
+            else:
+                _check_arch(self.args.arch, ['default'])
+
+            self._docker_distro, self._cmake_configure_extra_args = self._compiler_options(
                 self.args.use_docker, self.args.compiler)
+
+            if self.args.arch == 'x86':
+                # disable boringssl asm optimizations when on x86
+                # see https://github.com/grpc/grpc/blob/b5b8578b3f8b4a9ce61ed6677e19d546e43c5c68/tools/run_tests/artifacts/artifact_targets.py#L253
+                self._cmake_configure_extra_args.append('-DOPENSSL_NO_ASM=ON')
+
         if args.iomgr_platform == "uv":
             cflags = '-DGRPC_UV -DGRPC_CUSTOM_IOMGR_THREAD_CHECK -DGRPC_CUSTOM_SOCKET '
             try:
@@ -422,12 +432,11 @@ class CLanguage(object):
 
     def pre_build_steps(self):
         if self.platform == 'windows':
-            return [[
-                'tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
-                self._cmake_generator_option, self._cmake_arch_option
-            ]]
+            return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat'] +
+                    self._cmake_configure_extra_args]
         elif self._use_cmake:
-            return [['tools/run_tests/helper_scripts/pre_build_cmake.sh']]
+            return [['tools/run_tests/helper_scripts/pre_build_cmake.sh'] +
+                    self._cmake_configure_extra_args]
         else:
             return []
 
@@ -446,36 +455,20 @@ class CLanguage(object):
         else:
             return 'Makefile'
 
-    def _clang_make_options(self, version_suffix=''):
-        if self.args.config == 'ubsan':
-            return [
-                'CC=clang%s' % version_suffix,
-                'CXX=clang++%s' % version_suffix,
-                'LD=clang++%s' % version_suffix,
-                'LDXX=clang++%s' % version_suffix
-            ]
-
+    def _clang_cmake_configure_extra_args(self, version_suffix=''):
         return [
-            'CC=clang%s' % version_suffix,
-            'CXX=clang++%s' % version_suffix,
-            'LD=clang%s' % version_suffix,
-            'LDXX=clang++%s' % version_suffix
-        ]
-
-    def _gcc_make_options(self, version_suffix):
-        return [
-            'CC=gcc%s' % version_suffix,
-            'CXX=g++%s' % version_suffix,
-            'LD=gcc%s' % version_suffix,
-            'LDXX=g++%s' % version_suffix
+            '-DCMAKE_C_COMPILER=clang%s' % version_suffix,
+            '-DCMAKE_CXX_COMPILER=clang++%s' % version_suffix,
         ]
 
     def _compiler_options(self, use_docker, compiler):
-        """Returns docker distro and make options to use for given compiler."""
+        """Returns docker distro and cmake configure args to use for given compiler."""
         if not use_docker and not _is_use_docker_child():
-            _check_compiler(compiler, ['default'])
+            # if not running under docker, we cannot ensure the right compiler version will be used,
+            # so we only allow the non-specific choices.
+            _check_compiler(compiler, ['default', 'cmake'])
 
-        if compiler == 'gcc4.9' or compiler == 'default':
+        if compiler == 'gcc4.9' or compiler == 'default' or compiler == 'cmake':
             return ('jessie', [])
         elif compiler == 'gcc5.3':
             return ('ubuntu1604', [])
@@ -486,13 +479,17 @@ class CLanguage(object):
         elif compiler == 'gcc_musl':
             return ('alpine', [])
         elif compiler == 'clang3.5':
-            return ('jessie', self._clang_make_options(version_suffix='-3.5'))
+            return ('jessie',
+                    self._clang_cmake_configure_extra_args(
+                        version_suffix='-3.5'))
         elif compiler == 'clang3.6':
             return ('ubuntu1604',
-                    self._clang_make_options(version_suffix='-3.6'))
+                    self._clang_cmake_configure_extra_args(
+                        version_suffix='-3.6'))
         elif compiler == 'clang3.7':
             return ('ubuntu1604',
-                    self._clang_make_options(version_suffix='-3.7'))
+                    self._clang_cmake_configure_extra_args(
+                        version_suffix='-3.7'))
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -1454,10 +1451,10 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default', 'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl',
-        'clang3.5', 'clang3.6', 'clang3.7', 'python2.7',
-        'python3.5', 'python3.6', 'python3.7', 'python3.8', 'pypy', 'pypy3',
-        'python_alpine', 'all_the_cpythons', 'electron1.3', 'electron1.6',
-        'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
+        'clang3.5', 'clang3.6', 'clang3.7', 'python2.7', 'python3.5',
+        'python3.6', 'python3.7', 'python3.8', 'pypy', 'pypy3', 'python_alpine',
+        'all_the_cpythons', 'electron1.3', 'electron1.6', 'coreclr', 'cmake',
+        'cmake_vs2015', 'cmake_vs2017'
     ],
     default='default',
     help=
