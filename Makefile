@@ -5121,7 +5121,6 @@ LIBGRPC++_ERROR_DETAILS_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/support/error_details.h \
     include/grpcpp/support/error_details.h \
-    include/grpcpp/support/error_details_impl.h \
 
 LIBGRPC++_ERROR_DETAILS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_ERROR_DETAILS_SRC))))
 
