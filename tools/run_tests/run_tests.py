@@ -1264,6 +1264,7 @@ class Sanity(object):
         return []
 
     def make_targets(self):
+        # TODO: stop using Makefile in the sanity test.
         return ['run_dep_checks']
 
     def make_options(self):
