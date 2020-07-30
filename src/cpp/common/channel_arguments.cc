@@ -27,7 +27,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
-namespace grpc_impl {
+namespace grpc {
 
 ChannelArguments::ChannelArguments() {
   // This will be ignored if used on the server side.
@@ -214,4 +214,4 @@ void ChannelArguments::SetChannelArgs(grpc_channel_args* channel_args) const {
   }
 }
 
-}  // namespace grpc_impl
+}  // namespace grpc
