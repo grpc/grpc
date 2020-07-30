@@ -485,9 +485,6 @@ class CLanguage(object):
             return ('buster', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang3.4':
-            # on ubuntu1404, clang-3.4 alias doesn't exist, just use 'clang'
-            return ('ubuntu1404', self._clang_make_options())
         elif compiler == 'clang3.5':
             return ('jessie', self._clang_make_options(version_suffix='-3.5'))
         elif compiler == 'clang3.6':
@@ -1461,7 +1458,7 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default', 'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl',
-        'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0', 'python2.7',
+        'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0', 'python2.7',
         'python3.5', 'python3.6', 'python3.7', 'python3.8', 'pypy', 'pypy3',
         'python_alpine', 'all_the_cpythons', 'electron1.3', 'electron1.6',
         'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
