@@ -42,12 +42,9 @@ grpc_tls_certificate_distributor::~grpc_tls_certificate_distributor() {
         "may still be used.");
     watcher_interface->OnError(err_msg);
   }
-  if (watchers_.size() > 0) {
-    gpr_log(GPR_INFO,
-            "The grpc_tls_certificate_distributor is destructed but the "
-            "watchers are not cleaned up.");
-    watchers_.clear();
-  }
+//  if (watchers_.size() > 0) {
+//    watchers_.clear();
+//  }
   // If watch_status_ is not empty, we need to explicitly invoke the callback
   // for each certificate name to indicate that we are not able to watch those
   // certificates anymore.
