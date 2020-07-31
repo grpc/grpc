@@ -97,16 +97,16 @@ class CXXLanguage:
         self.safename = 'cxx'
 
     def client_cmd(self, args):
-        return ['bins/opt/interop_client'] + args
+        return ['cmake/build/interop_client'] + args
 
     def client_cmd_http2interop(self, args):
-        return ['bins/opt/http2_client'] + args
+        return ['cmake/build/http2_client'] + args
 
     def cloud_to_prod_env(self):
         return {}
 
     def server_cmd(self, args):
-        return ['bins/opt/interop_server'] + args
+        return ['cmake/build/interop_server'] + args
 
     def global_env(self):
         return {}
