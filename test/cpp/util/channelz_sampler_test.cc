@@ -138,7 +138,7 @@ TEST(ChannelzSamplerTest, SimpleTest) {
       gpr_log(GPR_ERROR,
               "Channelz sampler test test-runner exited with code %d",
               WEXITSTATUS(status));
-      GPR_ASSERT(0);  // log the line number of the assertion failure
+      GPR_ASSERT(0);  // log the line number of the assertion failure 
     }
   } else if (WIFSIGNALED(status)) {
     gpr_log(GPR_ERROR, "Channelz sampler test test-runner ended from signal %d",
