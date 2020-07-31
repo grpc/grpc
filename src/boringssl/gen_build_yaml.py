@@ -18,11 +18,19 @@ import os
 import sys
 import yaml
 
+run_dir = os.path.dirname(sys.argv[0])
 sources_path = os.path.abspath(
-    os.path.join(os.path.dirname(sys.argv[0]),
+    os.path.join(run_dir,
                  '../../third_party/boringssl-with-bazel/sources.json'))
-with open(sources_path, 'r') as s:
-    sources = json.load(s)
+try:
+    with open(sources_path, 'r') as s:
+        sources = json.load(s)
+except IOError:
+    sources_path = os.path.abspath(
+        os.path.join(run_dir,
+                     '../../../../third_party/openssl/boringssl/sources.json'))
+    with open(sources_path, 'r') as s:
+        sources = json.load(s)
 
 
 def map_dir(filename):
