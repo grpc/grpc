@@ -1276,7 +1276,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   const char* args_to_remove[] = {GRPC_ARG_MAX_CONNECTION_IDLE_MS,
                                   GRPC_ARG_MAX_CONNECTION_AGE_MS};
   const grpc_channel_args* server_args = grpc_channel_args_copy_and_remove(
-      server->channel_args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
+      server->core_server->channel_args(), args_to_remove,
+      GPR_ARRAY_SIZE(args_to_remove));
 
   // Add a default authority channel argument for the client
   grpc_arg default_authority_arg;
@@ -1292,8 +1293,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                            client_args);
 
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
-  server->core_server()->SetupTransport(server_transport, nullptr, server_args,
-                                        nullptr);
+  server->core_server->SetupTransport(server_transport, nullptr, server_args,
+                                      nullptr);
   grpc_channel* channel = grpc_channel_create(
       "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
 

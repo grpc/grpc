@@ -67,10 +67,11 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
   grpc_arg args_to_add[2];
   args_to_add[0] = grpc_server_credentials_to_arg(creds);
   args_to_add[1] = grpc_security_connector_to_arg(sc.get());
-  args = grpc_channel_args_copy_and_add(server->channel_args, args_to_add,
-                                        GPR_ARRAY_SIZE(args_to_add));
+  args = grpc_channel_args_copy_and_add(
+      server->core_server->channel_args(), args_to_add,
+      GPR_ARRAY_SIZE(args_to_add));
   // Add server port.
-  err = grpc_core::Chttp2ServerAddPort(server->core_server(), addr, args,
+  err = grpc_core::Chttp2ServerAddPort(server->core_server.get(), addr, args,
                                        &port_num);
 done:
   sc.reset(DEBUG_LOCATION, "server");

@@ -41,9 +41,9 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
   GPR_ASSERT(reserved == nullptr);
 
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::Server* core_server = server->core_server();
+  grpc_core::Server* core_server = server->core_server.get();
 
-  const grpc_channel_args* server_args = server->channel_args;
+  const grpc_channel_args* server_args = core_server->channel_args();
   std::string name = absl::StrCat("fd:", fd);
   grpc_endpoint* server_endpoint = grpc_tcp_create(
       grpc_fd_create(fd, name.c_str(), true), server_args, name.c_str());

@@ -1063,7 +1063,7 @@ bool Server::RegisterService(const std::string* host, grpc::Service* service) {
       has_callback_methods_ = true;
       grpc::internal::RpcServiceMethod* method_value = method.get();
       grpc::CompletionQueue* cq = CallbackCQ();
-      server_->core_server()->SetRegisteredMethodAllocator(
+      server_->core_server->SetRegisteredMethodAllocator(
           cq->cq(), method_registration_tag, [this, cq, method_value] {
             grpc_core::Server::RegisteredCallAllocation result;
             new CallbackRequest<grpc::CallbackServerContext>(this, method_value,
@@ -1104,7 +1104,7 @@ void Server::RegisterCallbackGenericService(
   generic_handler_.reset(service->Handler());
 
   grpc::CompletionQueue* cq = CallbackCQ();
-  server_->core_server()->SetBatchMethodAllocator(cq->cq(), [this, cq] {
+  server_->core_server->SetBatchMethodAllocator(cq->cq(), [this, cq] {
     grpc_core::Server::BatchCallAllocation result;
     new CallbackRequest<grpc::GenericCallbackServerContext>(this, cq, &result);
     return result;

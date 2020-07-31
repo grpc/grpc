@@ -35,20 +35,6 @@
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
-class Server;
-}  // namespace grpc_core
-
-struct grpc_server {
-  explicit grpc_server(const grpc_channel_args* args)
-      : channel_args(grpc_channel_args_copy(args)) {}
-  ~grpc_server() { grpc_channel_args_destroy(channel_args); }
-
-  grpc_core::Server* core_server();
-
-  grpc_channel_args* const channel_args;
-};
-
-namespace grpc_core {
 
 extern TraceFlag grpc_server_channel_trace;
 
@@ -101,21 +87,17 @@ class Server : public InternallyRefCounted<Server> {
     virtual void SetOnDestroyDone(grpc_closure* on_destroy_done) = 0;
   };
 
-  explicit Server(const grpc_channel_args* args);
+  Server(grpc_server* c_server, const grpc_channel_args* args);
   ~Server();
 
   void Orphan() override;
 
-  grpc_server* c_server() { return &server_; }
-
-  // Returns the offset of the grpc_server object within Server.
-  static size_t c_server_offset();
-
-  channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
-  const grpc_channel_args* channel_args() const { return server_.channel_args; }
+  grpc_server* c_server() const { return c_server_; }
+  const grpc_channel_args* channel_args() const { return channel_args_; }
   grpc_resource_user* default_resource_user() const {
     return default_resource_user_;
   }
+  channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
 
   // Do not call this before Start(). Returns the pollsets. The
   // vector itself is immutable, but the pollsets inside are mutable. The
@@ -365,9 +347,10 @@ class Server : public InternallyRefCounted<Server> {
 
   std::vector<grpc_channel*> GetChannelsLocked() const;
 
-  grpc_server server_;
-
+  grpc_server* c_server_;
+  grpc_channel_args* const channel_args_;
   grpc_resource_user* default_resource_user_ = nullptr;
+  RefCountedPtr<channelz::ServerNode> channelz_node_;
 
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;
@@ -404,10 +387,12 @@ class Server : public InternallyRefCounted<Server> {
 
   // The last time we printed a shutdown progress message.
   gpr_timespec last_shutdown_message_time_;
-
-  RefCountedPtr<channelz::ServerNode> channelz_node_;
 };
 
 }  // namespace grpc_core
+
+struct grpc_server {
+  grpc_core::OrphanablePtr<grpc_core::Server> core_server;
+};
 
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */

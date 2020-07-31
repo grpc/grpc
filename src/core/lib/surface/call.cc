@@ -478,7 +478,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
     }
   } else {
     grpc_core::channelz::ServerNode* channelz_node =
-        call->final_op.server.server->core_server()->channelz_node();
+        call->final_op.server.server->core_server->channelz_node();
     if (channelz_node != nullptr) {
       channelz_node->RecordCallStarted();
     }
@@ -760,7 +760,7 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
     *call->final_op.server.cancelled =
         error != GRPC_ERROR_NONE || !call->sent_server_trailing_metadata;
     grpc_core::channelz::ServerNode* channelz_node =
-        call->final_op.server.server->core_server()->channelz_node();
+        call->final_op.server.server->core_server->channelz_node();
     if (channelz_node != nullptr) {
       if (*call->final_op.server.cancelled ||
           reinterpret_cast<grpc_error*>(
