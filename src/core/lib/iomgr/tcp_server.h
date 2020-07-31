@@ -24,6 +24,8 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include <vector>
+
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -64,9 +66,9 @@ typedef struct grpc_tcp_server_vtable {
   grpc_error* (*create)(grpc_closure* shutdown_complete,
                         const grpc_channel_args* args,
                         grpc_tcp_server** server);
-  void (*start)(grpc_tcp_server* server, grpc_pollset** pollsets,
-                size_t pollset_count, grpc_tcp_server_cb on_accept_cb,
-                void* cb_arg);
+  void (*start)(grpc_tcp_server* server,
+                const std::vector<grpc_pollset*>* pollsets,
+                grpc_tcp_server_cb on_accept_cb, void* cb_arg);
   grpc_error* (*add_port)(grpc_tcp_server* s, const grpc_resolved_address* addr,
                           int* out_port);
   grpc_core::TcpServerFdHandler* (*create_fd_handler)(grpc_tcp_server* s);
@@ -87,8 +89,8 @@ grpc_error* grpc_tcp_server_create(grpc_closure* shutdown_complete,
                                    grpc_tcp_server** server);
 
 /* Start listening to bound ports */
-void grpc_tcp_server_start(grpc_tcp_server* server, grpc_pollset** pollsets,
-                           size_t pollset_count,
+void grpc_tcp_server_start(grpc_tcp_server* server,
+                           const std::vector<grpc_pollset*>* pollsets,
                            grpc_tcp_server_cb on_accept_cb, void* cb_arg);
 
 /* Add a port to the server, returning the newly allocated port on success, or

@@ -12,16 +12,6 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "upb_lib_descriptor",
-        actual = "@upb//:descriptor_upb_proto",
-    )
-
-    native.bind(
-        name = "upb_textformat_lib",
-        actual = "@upb//:textformat",
-    )
-
-    native.bind(
         name = "absl",
         actual = "@com_google_absl//absl",
     )
@@ -146,11 +136,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "3909329105e28cfeedcd8028865c92f1081ae2524a0ad6c09eba5d91d9ae3869",
-            strip_prefix = "boringssl-3ab047a8e377083a9b38dc908fe1612d5743a021",
+            sha256 = "5bbb2bbddf5e4e5fefd02501f930436f3f45402152d7ea9f8f27916d5cf70157",
+            strip_prefix = "boringssl-e8a935e323510419e0b37638716f6df4dcbbe6f6",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/3ab047a8e377083a9b38dc908fe1612d5743a021.tar.gz",
-                "https://github.com/google/boringssl/archive/3ab047a8e377083a9b38dc908fe1612d5743a021.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/e8a935e323510419e0b37638716f6df4dcbbe6f6.tar.gz",
+                "https://github.com/google/boringssl/archive/e8a935e323510419e0b37638716f6df4dcbbe6f6.tar.gz",
             ],
         )
 

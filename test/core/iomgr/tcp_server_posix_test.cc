@@ -172,7 +172,8 @@ static void test_no_op_with_start(void) {
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, nullptr, &s));
   LOG_TEST("test_no_op_with_start");
-  grpc_tcp_server_start(s, nullptr, 0, on_connect, nullptr);
+  std::vector<grpc_pollset*> empty_pollset;
+  grpc_tcp_server_start(s, &empty_pollset, on_connect, nullptr);
   grpc_tcp_server_unref(s);
 }
 
@@ -213,7 +214,8 @@ static void test_no_op_with_port_and_start(void) {
                  GRPC_ERROR_NONE &&
              port > 0);
 
-  grpc_tcp_server_start(s, nullptr, 0, on_connect, nullptr);
+  std::vector<grpc_pollset*> empty_pollset;
+  grpc_tcp_server_start(s, &empty_pollset, on_connect, nullptr);
 
   grpc_tcp_server_unref(s);
 }
@@ -344,7 +346,9 @@ static void test_connect(size_t num_connects,
   svr1_fd_count = grpc_tcp_server_port_fd_count(s, 1);
   GPR_ASSERT(svr1_fd_count >= 1);
 
-  grpc_tcp_server_start(s, &g_pollset, 1, on_connect, nullptr);
+  std::vector<grpc_pollset*> test_pollset;
+  test_pollset.push_back(g_pollset);
+  grpc_tcp_server_start(s, &test_pollset, on_connect, nullptr);
 
   if (dst_addrs != nullptr) {
     int ports[] = {svr_port, svr1_port};

@@ -20,9 +20,11 @@
 #include <limits.h>
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "re2/re2.h"
@@ -40,6 +42,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/transport/error_utils.h"
 
 #define GRPC_XDS_ROUTING_CHILD_RETENTION_INTERVAL_MS (15 * 60 * 1000)
 
@@ -116,8 +119,8 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     // Maintains an ordered xds route table as provided by RDS response.
     using RouteTable = std::vector<Route>;
 
-    explicit RoutePicker(RouteTable route_table,
-                         RefCountedPtr<XdsRoutingLbConfig> config)
+    RoutePicker(RouteTable route_table,
+                RefCountedPtr<XdsRoutingLbConfig> config)
         : route_table_(std::move(route_table)), config_(std::move(config)) {}
 
     PickResult Pick(PickArgs args) override;
@@ -163,6 +166,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
           const grpc_channel_args& args) override;
       void UpdateState(grpc_connectivity_state state,
+                       const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       void AddTraceEvent(TraceSeverity severity,
@@ -183,7 +187,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsRoutingLb> xds_routing_policy_;
 
     // Points to the corresponding key in XdsRoutingLb::actions_.
-    const std::string& name_;
+    const std::string name_;
 
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
@@ -218,21 +222,6 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 // XdsRoutingLb::RoutePicker
 //
 
-absl::optional<absl::string_view> GetMetadataValue(
-    const std::string& key,
-    LoadBalancingPolicy::MetadataInterface* initial_metadata) {
-  // TODO(roth): Using const auto& here trigger a warning in a macos or windows
-  // build:
-  //*(args.initial_metadata) is returning values not references.
-  GPR_DEBUG_ASSERT(initial_metadata != nullptr);
-  for (const auto p : *(initial_metadata)) {
-    if (p.first == key) {
-      return p.second;
-    }
-  }
-  return absl::nullopt;
-}
-
 bool PathMatch(
     const absl::string_view& path,
     const XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher& path_matcher) {
@@ -251,10 +240,44 @@ bool PathMatch(
   }
 }
 
+absl::optional<absl::string_view> GetMetadataValue(
+    const std::string& key,
+    LoadBalancingPolicy::MetadataInterface* initial_metadata,
+    std::string* concatenated_value) {
+  // Find all values for the specified key.
+  GPR_DEBUG_ASSERT(initial_metadata != nullptr);
+  absl::InlinedVector<absl::string_view, 1> values;
+  for (const auto p : *initial_metadata) {
+    if (p.first == key) values.push_back(p.second);
+  }
+  // If none found, no match.
+  if (values.empty()) return absl::nullopt;
+  // If exactly one found, return it as-is.
+  if (values.size() == 1) return values.front();
+  // If more than one found, concatenate the values, using
+  // *concatenated_values as a temporary holding place for the
+  // concatenated string.
+  *concatenated_value = absl::StrJoin(values, ",");
+  return *concatenated_value;
+}
+
 bool HeaderMatchHelper(
     const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher& header_matcher,
     LoadBalancingPolicy::MetadataInterface* initial_metadata) {
-  auto value = GetMetadataValue(header_matcher.name, initial_metadata);
+  std::string concatenated_value;
+  absl::optional<absl::string_view> value;
+  // Note: If we ever allow binary headers here, we still need to
+  // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
+  // they are not visible to the LB policy in grpc-go.
+  if (absl::EndsWith(header_matcher.name, "-bin") ||
+      header_matcher.name == "grpc-previous-rpc-attempts") {
+    value = absl::nullopt;
+  } else if (header_matcher.name == "content-type") {
+    value = "application/grpc";
+  } else {
+    value = GetMetadataValue(header_matcher.name, initial_metadata,
+                             &concatenated_value);
+  }
   if (!value.has_value()) {
     if (header_matcher.type == XdsApi::RdsUpdate::RdsRoute::Matchers::
                                    HeaderMatcher::HeaderMatcherType::PRESENT) {
@@ -292,11 +315,11 @@ bool HeaderMatchHelper(
 }
 
 bool HeadersMatch(
-    LoadBalancingPolicy::PickArgs args,
     const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
-        header_matchers) {
+        header_matchers,
+    LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   for (const auto& header_matcher : header_matchers) {
-    bool match = HeaderMatchHelper(header_matcher, args.initial_metadata);
+    bool match = HeaderMatchHelper(header_matcher, initial_metadata);
     if (header_matcher.invert_match) match = !match;
     if (!match) return false;
   }
@@ -314,11 +337,14 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
     // Path matching.
     if (!PathMatch(args.path, route.matchers->path_matcher)) continue;
     // Header Matching.
-    if (!HeadersMatch(args, route.matchers->header_matchers)) continue;
+    if (!HeadersMatch(route.matchers->header_matchers, args.initial_metadata)) {
+      continue;
+    }
     // Match fraction check
     if (route.matchers->fraction_per_million.has_value() &&
-        !UnderFraction(route.matchers->fraction_per_million.value()))
+        !UnderFraction(route.matchers->fraction_per_million.value())) {
       continue;
+    }
     // Found a match
     return route.picker->Pick(args);
   }
@@ -381,9 +407,10 @@ void XdsRoutingLb::UpdateLocked(UpdateArgs args) {
     const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second;
     auto it = actions_.find(name);
     if (it == actions_.end()) {
-      it = actions_.emplace(std::make_pair(name, nullptr)).first;
-      it->second = MakeOrphanable<XdsRoutingChild>(
-          Ref(DEBUG_LOCATION, "XdsRoutingChild"), it->first);
+      it = actions_
+               .emplace(name, MakeOrphanable<XdsRoutingChild>(
+                                  Ref(DEBUG_LOCATION, "XdsRoutingChild"), name))
+               .first;
     }
     it->second->UpdateLocked(config, args.addresses, args.args);
   }
@@ -440,6 +467,7 @@ void XdsRoutingLb::UpdateStateLocked() {
             ConnectivityStateName(connectivity_state));
   }
   std::unique_ptr<SubchannelPicker> picker;
+  absl::Status status;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY: {
       RoutePicker::RouteTable route_table;
@@ -469,12 +497,15 @@ void XdsRoutingLb::UpdateStateLocked() {
           absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
-      picker = absl::make_unique<TransientFailurePicker>(grpc_error_set_int(
+      grpc_error* error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "TRANSIENT_FAILURE from XdsRoutingLb"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      status = grpc_error_to_absl_status(error);
+      picker = absl::make_unique<TransientFailurePicker>(error);
   }
-  channel_control_helper()->UpdateState(connectivity_state, std::move(picker));
+  channel_control_helper()->UpdateState(connectivity_state, status,
+                                        std::move(picker));
 }
 
 //
@@ -630,13 +661,15 @@ XdsRoutingLb::XdsRoutingChild::Helper::CreateSubchannel(
 }
 
 void XdsRoutingLb::XdsRoutingChild::Helper::UpdateState(
-    grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
+    grpc_connectivity_state state, const absl::Status& status,
+    std::unique_ptr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_routing_lb %p] child %s: received update: state=%s picker=%p",
+            "[xds_routing_lb %p] child %s: received update: state=%s (%s) "
+            "picker=%p",
             xds_routing_child_->xds_routing_policy_.get(),
             xds_routing_child_->name_.c_str(), ConnectivityStateName(state),
-            picker.get());
+            status.ToString().c_str(), picker.get());
   }
   if (xds_routing_child_->xds_routing_policy_->shutting_down_) return;
   // Cache the picker in the XdsRoutingChild.

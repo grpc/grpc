@@ -24,7 +24,7 @@
 
 #include <grpc/support/log.h>
 
-namespace grpc_impl {
+namespace grpc {
 namespace load_reporter {
 namespace experimental {
 
@@ -44,4 +44,4 @@ void AddLoadReportingCost(grpc::ServerContext* ctx,
 
 }  // namespace experimental
 }  // namespace load_reporter
-}  // namespace grpc_impl
+}  // namespace grpc

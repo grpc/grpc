@@ -1126,9 +1126,8 @@ class _ChannelCallState(object):
         try:
             self.channel.close(cygrpc.StatusCode.cancelled,
                                'Channel deallocated!')
-        except (TypeError, AttributeError) as error:
-            logging.debug('Channel deallocation failed with: <%s>: %s',
-                          type(error), str(error))
+        except (TypeError, AttributeError):
+            pass
 
 
 def _run_channel_spin_thread(state):

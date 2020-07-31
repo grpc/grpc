@@ -22,6 +22,7 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
+#include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
 // In some distros, gflags is in the namespace google, and in some others,
@@ -68,6 +69,7 @@ TEST(GoldenMockFileTest, TestGeneratedMockFile) {
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   if (FLAGS_generated_file_path.empty()) {

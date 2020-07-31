@@ -17,6 +17,7 @@
  */
 
 #include <algorithm>
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <memory>
@@ -235,8 +236,8 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
     class MessageHolderImpl
         : public experimental::MessageHolder<EchoRequest, EchoResponse> {
      public:
-      MessageHolderImpl(int* request_deallocation_count,
-                        int* messages_deallocation_count)
+      MessageHolderImpl(std::atomic_int* request_deallocation_count,
+                        std::atomic_int* messages_deallocation_count)
           : request_deallocation_count_(request_deallocation_count),
             messages_deallocation_count_(messages_deallocation_count) {
         set_request(new EchoRequest);
@@ -261,8 +262,8 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
       }
 
      private:
-      int* request_deallocation_count_;
-      int* messages_deallocation_count_;
+      std::atomic_int* const request_deallocation_count_;
+      std::atomic_int* const messages_deallocation_count_;
     };
     experimental::MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
         override {
@@ -271,8 +272,8 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
                                    &messages_deallocation_count);
     }
     int allocation_count = 0;
-    int request_deallocation_count = 0;
-    int messages_deallocation_count = 0;
+    std::atomic_int request_deallocation_count{0};
+    std::atomic_int messages_deallocation_count{0};
   };
 };
 

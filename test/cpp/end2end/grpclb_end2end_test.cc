@@ -48,6 +48,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/transport/authority_override.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
@@ -236,6 +237,11 @@ class BalancerServiceImpl : public BalancerService {
 
       if (!stream->Read(&request)) {
         goto done;
+      } else {
+        if (request.has_initial_request()) {
+          grpc::internal::MutexLock lock(&mu_);
+          service_names_.push_back(request.initial_request().name());
+        }
       }
       IncreaseRequestCount();
       gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
@@ -359,6 +365,11 @@ class BalancerServiceImpl : public BalancerService {
     }
   }
 
+  std::vector<std::string> service_names() {
+    grpc::internal::MutexLock lock(&mu_);
+    return service_names_;
+  }
+
  private:
   void SendResponse(Stream* stream, const LoadBalanceResponse& response,
                     int delay_ms) {
@@ -374,6 +385,7 @@ class BalancerServiceImpl : public BalancerService {
 
   const int client_load_reporting_interval_seconds_;
   std::vector<ResponseDelayPair> responses_and_delays_;
+  std::vector<std::string> service_names_;
 
   grpc::internal::Mutex mu_;
   grpc::internal::CondVar serverlist_cond_;
@@ -543,8 +555,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
       GPR_ASSERT(lb_uri != nullptr);
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
-      grpc_arg arg =
-          grpc_core::CreateGrpclbBalancerNameArg(addr.balancer_name.c_str());
+      grpc_arg arg = grpc_core::CreateAuthorityOverrideChannelArg(
+          addr.balancer_name.c_str());
       grpc_channel_args* args =
           grpc_channel_args_copy_and_add(nullptr, &arg, 1);
       addresses.emplace_back(address.addr, address.len, args);
@@ -1380,6 +1392,27 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   // and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->service_.response_count());
+}
+
+TEST_F(SingleBalancerTest, ServiceNameFromLbPolicyConfig) {
+  constexpr char kServiceConfigWithTarget[] =
+      "{\n"
+      "  \"loadBalancingConfig\":[\n"
+      "    { \"grpclb\":{\n"
+      "      \"serviceName\":\"test_service\"\n"
+      "    }}\n"
+      "  ]\n"
+      "}";
+
+  SetNextResolutionAllBalancers(kServiceConfigWithTarget);
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
+      0);
+  // Make sure that trying to connect works without a call.
+  channel_->GetState(true /* try_to_connect */);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  EXPECT_EQ(balancers_[0]->service_.service_names().back(), "test_service");
 }
 
 class UpdatesTest : public GrpclbEnd2endTest {
