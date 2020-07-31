@@ -105,7 +105,6 @@ static void test_server_streaming(grpc_end2end_test_config config,
   int was_cancelled = 2;
   grpc_byte_buffer* request_payload_recv;
   grpc_byte_buffer* response_payload;
-  int i;
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string("hello world");
 
@@ -180,7 +179,7 @@ static void test_server_streaming(grpc_end2end_test_config config,
   cq_verify(cqv);
 
   // Server writes bunch of messages
-  for (i = 0; i < messages; i++) {
+  for (int i = 0; i < messages; i++) {
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
 
     memset(ops, 0, sizeof(ops));
@@ -221,8 +220,11 @@ static void test_server_streaming(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
   cq_verify(cqv);
 
-  // Client reads messages
-  for (i = 0; i < messages; i++) {
+  // Client keeps reading messages till it gets the status
+  bool seen_status = false;
+  CQ_MAYBE_EXPECT_COMPLETION(cqv, tag(1), true, &seen_status);
+  int i = 0;
+  while (true) {
     memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_RECV_MESSAGE;
@@ -233,14 +235,20 @@ static void test_server_streaming(grpc_end2end_test_config config,
     error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                   tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-    // The last message should be accompanied by the status
-    if (i == messages - 1) {
-      CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-    }
+    CQ_EXPECT_COMPLETION(cqv, tag(102), true);
     cq_verify(cqv);
-    GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
-    grpc_byte_buffer_destroy(request_payload_recv);
+    if (request_payload_recv == nullptr) {
+      // The transport has received the trailing metadata.
+      GPR_ASSERT(i == messages);
+      break;
+    } else {
+      GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
+      grpc_byte_buffer_destroy(request_payload_recv);
+    }
+    i++;
+  }
+  if (!seen_status) {
+    CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   }
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -263,9 +271,7 @@ static void test_server_streaming(grpc_end2end_test_config config,
 }
 
 void server_streaming(grpc_end2end_test_config config) {
-  int i;
-
-  for (i = 1; i < 10; i++) {
+  for (int i = 0; i < 10; i++) {
     test_server_streaming(config, i);
   }
 }

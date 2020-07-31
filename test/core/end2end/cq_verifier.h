@@ -49,10 +49,15 @@ void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec);
    the event. */
 void cq_expect_completion(cq_verifier* v, const char* file, int line, void* tag,
                           bool success);
+/* If the \a tag is seen, \a seen is set to true. */
+void cq_maybe_expect_completion(cq_verifier* v, const char* file, int line,
+                                void* tag, bool success, bool* seen);
 void cq_expect_completion_any_status(cq_verifier* v, const char* file, int line,
                                      void* tag);
 #define CQ_EXPECT_COMPLETION(v, tag, success) \
   cq_expect_completion(v, __FILE__, __LINE__, tag, success)
+#define CQ_MAYBE_EXPECT_COMPLETION(v, tag, success, seen) \
+  cq_maybe_expect_completion(v, __FILE__, __LINE__, tag, success, seen)
 #define CQ_EXPECT_COMPLETION_ANY_STATUS(v, tag) \
   cq_expect_completion_any_status(v, __FILE__, __LINE__, tag)
 
