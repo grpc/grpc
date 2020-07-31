@@ -537,6 +537,7 @@ Server::Server(grpc_server* c_server, const grpc_channel_args* args)
       channelz_node_(CreateChannelzNode(this, args)) {}
 
 Server::~Server() {
+  grpc_channel_args_destroy(channel_args_);
   for (size_t i = 0; i < cqs_.size(); i++) {
     GRPC_CQ_INTERNAL_UNREF(cqs_[i], "server");
   }
