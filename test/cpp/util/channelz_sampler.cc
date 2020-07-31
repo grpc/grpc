@@ -25,9 +25,7 @@
 #include <queue>
 #include <string>
 
-#include "absl/strings/str_format.h"
 #include "gflags/gflags.h"
-#include "google/protobuf/text_format.h"
 #include "grpc/grpc.h"
 #include "grpc/support/port_platform.h"
 #include "grpcpp/channel.h"
@@ -40,12 +38,14 @@
 #include "grpcpp/server.h"
 #include "grpcpp/server_builder.h"
 #include "grpcpp/server_context.h"
+#include "google/protobuf/text_format.h"
+#include "absl/strings/str_format.h"
 #include "src/core/lib/json/json.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"
-#include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "test/core/util/test_config.h"
 
 DEFINE_string(server_address, "", "channelz server address");
 DEFINE_string(custom_credentials_type, "", "custom credentials type");
@@ -54,8 +54,6 @@ DEFINE_int64(sampling_interval_seconds, 0, "sampling interval in seconds");
 DEFINE_string(output_json, "", "output filename in json format");
 
 namespace {
-using grpc::ClientContext;
-using grpc::Status;
 using grpc::channelz::v1::GetChannelRequest;
 using grpc::channelz::v1::GetChannelResponse;
 using grpc::channelz::v1::GetServerRequest;
@@ -70,6 +68,8 @@ using grpc::channelz::v1::GetSubchannelRequest;
 using grpc::channelz::v1::GetSubchannelResponse;
 using grpc::channelz::v1::GetTopChannelsRequest;
 using grpc::channelz::v1::GetTopChannelsResponse;
+using grpc::ClientContext;
+using grpc::Status;
 }  // namespace
 
 class ChannelzSampler final {
@@ -101,13 +101,11 @@ class ChannelzSampler final {
     get_channel_request.set_channel_id(channel_id);
     GetChannelResponse get_channel_response;
     ClientContext get_channel_context;
-    get_channel_context.set_deadline(
-        grpc_timeout_seconds_to_deadline(rpc_timeout_seconds_));
-    Status status = channelz_stub_->GetChannel(
-        &get_channel_context, get_channel_request, &get_channel_response);
+    get_channel_context.set_deadline(grpc_timeout_seconds_to_deadline(rpc_timeout_seconds_));
+    Status status = channelz_stub_->GetChannel(&get_channel_context, get_channel_request,
+                              &get_channel_response);
     if (!status.ok()) {
-      gpr_log(GPR_ERROR, "GetChannelRPC failed: %s",
-              get_channel_context.debug_error_string().c_str());
+      gpr_log(GPR_ERROR, "GetChannelRPC failed: %s", get_channel_context.debug_error_string().c_str());
       GPR_ASSERT(0);
     }
     return get_channel_response.channel();
@@ -119,14 +117,12 @@ class ChannelzSampler final {
     get_subchannel_request.set_subchannel_id(subchannel_id);
     GetSubchannelResponse get_subchannel_response;
     ClientContext get_subchannel_context;
-    get_subchannel_context.set_deadline(
-        grpc_timeout_seconds_to_deadline(rpc_timeout_seconds_));
+    get_subchannel_context.set_deadline(grpc_timeout_seconds_to_deadline(rpc_timeout_seconds_));
     Status status = channelz_stub_->GetSubchannel(&get_subchannel_context,
-                                                  get_subchannel_request,
-                                                  &get_subchannel_response);
+                                 get_subchannel_request,
+                                 &get_subchannel_response);
     if (!status.ok()) {
-      gpr_log(GPR_ERROR, "GetSubchannelRPC failed: %s",
-              get_subchannel_context.debug_error_string().c_str());
+      gpr_log(GPR_ERROR, "GetSubchannelRPC failed: %s", get_subchannel_context.debug_error_string().c_str());
       GPR_ASSERT(0);
     }
     return get_subchannel_response.subchannel();
@@ -138,13 +134,11 @@ class ChannelzSampler final {
     get_socket_request.set_socket_id(socket_id);
     GetSocketResponse get_socket_response;
     ClientContext get_socket_context;
-    get_socket_context.set_deadline(
-        grpc_timeout_seconds_to_deadline(rpc_timeout_seconds_));
-    Status status = channelz_stub_->GetSocket(
-        &get_socket_context, get_socket_request, &get_socket_response);
+    get_socket_context.set_deadline(grpc_timeout_seconds_to_deadline(rpc_timeout_seconds_));
+    Status status = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
+                             &get_socket_response);
     if (!status.ok()) {
-      gpr_log(GPR_ERROR, "GetSocketRPC failed: %s",
-              get_socket_context.debug_error_string().c_str());
+      gpr_log(GPR_ERROR, "GetSocketRPC failed: %s", get_socket_context.debug_error_string().c_str());
       GPR_ASSERT(0);
     }
     return get_socket_response.socket();
@@ -251,7 +245,8 @@ class ChannelzSampler final {
 
   // Set up the channelz sampler client
   // Initialize json as an array
-  void Setup(std::string custom_credentials_type, std::string server_address) {
+  void Setup(const std::string &custom_credentials_type,
+             const std::string &server_address) {
     json_ = grpc_core::Json::Array();
     rpc_timeout_seconds_ = 20;
     grpc::ChannelArguments channel_args;
@@ -272,17 +267,13 @@ class ChannelzSampler final {
       GetServersRequest get_servers_request;
       GetServersResponse get_servers_response;
       ClientContext get_servers_context;
-      get_servers_context.set_deadline(
-          grpc_timeout_seconds_to_deadline(rpc_timeout_seconds_));
+      get_servers_context.set_deadline(grpc_timeout_seconds_to_deadline(rpc_timeout_seconds_));
       get_servers_request.set_start_server_id(server_start_id);
       Status status = channelz_stub_->GetServers(
           &get_servers_context, get_servers_request, &get_servers_response);
       if (!status.ok()) {
-        gpr_log(GPR_ERROR,
-                "GetServers RPC with GetServersRequest.server_start_id=%d "
-                "failed: %s",
-                int(server_start_id),
-                get_servers_context.debug_error_string().c_str());
+        gpr_log(GPR_ERROR, "GetServers RPC with GetServersRequest.server_start_id=%d failed: %s",
+                int(server_start_id), get_servers_context.debug_error_string().c_str());
         GPR_ASSERT(0);
       }
       for (const auto& _server : get_servers_response.server()) {
@@ -325,18 +316,14 @@ class ChannelzSampler final {
       GetTopChannelsRequest get_top_channels_request;
       GetTopChannelsResponse get_top_channels_response;
       ClientContext get_top_channels_context;
-      get_top_channels_context.set_deadline(
-          grpc_timeout_seconds_to_deadline(rpc_timeout_seconds_));
+      get_top_channels_context.set_deadline(grpc_timeout_seconds_to_deadline(rpc_timeout_seconds_));
       get_top_channels_request.set_start_channel_id(channel_start_id);
-      Status status = channelz_stub_->GetTopChannels(
-          &get_top_channels_context, get_top_channels_request,
-          &get_top_channels_response);
+      Status status = channelz_stub_->GetTopChannels(&get_top_channels_context,
+                                                    get_top_channels_request,
+                                                    &get_top_channels_response);
       if (!status.ok()) {
-        gpr_log(GPR_ERROR,
-                "GetTopChannels RPC with "
-                "GetTopChannelsRequest.channel_start_id=%d failed: %s",
-                int(channel_start_id),
-                get_top_channels_context.debug_error_string().c_str());
+        gpr_log(GPR_ERROR, "GetTopChannels RPC with GetTopChannelsRequest.channel_start_id=%d failed: %s",
+                int(channel_start_id), get_top_channels_context.debug_error_string().c_str());
         GPR_ASSERT(0);
       }
       for (const auto& _topchannel : get_top_channels_response.channel()) {
@@ -450,9 +437,7 @@ class ChannelzSampler final {
   void StoreEntityInJson(std::string& id, std::string& type,
                          std::string& description) {
     std::string start, finish;
-    gpr_timespec ago = gpr_time_sub(
-        now_,
-        gpr_time_from_seconds(FLAGS_sampling_interval_seconds, GPR_TIMESPAN));
+    gpr_timespec ago = gpr_time_sub(now_, gpr_time_from_seconds(FLAGS_sampling_interval_seconds, GPR_TIMESPAN));
     std::stringstream ss;
     time_t tmp = GprTimespec2Timet(now_);
     ss << std::put_time(std::localtime(&tmp), "%F %T");
@@ -485,7 +470,9 @@ class ChannelzSampler final {
   }
 
   // Record current time
-  void RecordNow() { now_ = gpr_now(GPR_CLOCK_REALTIME); }
+  void RecordNow() {
+    now_ = gpr_now(GPR_CLOCK_REALTIME);
+  }
 
  private:
   std::unique_ptr<grpc::channelz::v1::Channelz::Stub> channelz_stub_;
@@ -505,7 +492,7 @@ class ChannelzSampler final {
 };
 
 int main(int argc, char** argv) {
-  // make sure flags can be used 
+  // make sure flags can be used
   grpc::testing::InitTest(&argc, &argv, true);
   std::ofstream output_file(FLAGS_output_json);
   for (int i = 0; i < FLAGS_sampling_times; ++i) {
@@ -513,9 +500,7 @@ int main(int argc, char** argv) {
     channelz_sampler.Setup(FLAGS_custom_credentials_type, FLAGS_server_address);
     std::cout << "Wait for sampling interval "
               << FLAGS_sampling_interval_seconds << "s..." << std::endl;
-    const gpr_timespec kDelay = gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC),
-        gpr_time_from_seconds(FLAGS_sampling_interval_seconds, GPR_TIMESPAN));
+    const gpr_timespec kDelay = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(FLAGS_sampling_interval_seconds, GPR_TIMESPAN));
     gpr_sleep_until(kDelay);
     std::cout << "##### " << i << "th sampling #####" << std::endl;
     channelz_sampler.RecordNow();

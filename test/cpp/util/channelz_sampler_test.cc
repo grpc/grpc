@@ -36,12 +36,12 @@
 #include "grpcpp/server.h"
 #include "grpcpp/server_builder.h"
 #include "grpcpp/server_context.h"
-#include "gtest/gtest.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gtest/gtest.h"
 
 namespace {
 using grpc::Channel;
@@ -69,18 +69,17 @@ class EchoServerImpl final : public grpc::testing::TestService::Service {
 };
 
 // Run client in a thread
-void RunClient(std::string client_id, gpr_event* done_ev) {
+void RunClient(const std::string &client_id, gpr_event* done_ev) {
   grpc::ChannelArguments channel_args;
   std::shared_ptr<grpc::ChannelCredentials> channel_creds =
       grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
           custom_credentials_type, &channel_args);
-  std::unique_ptr<grpc::testing::TestService::Stub> stub =
-      grpc::testing::TestService::NewStub(
+  std::unique_ptr<grpc::testing::TestService::Stub> stub
+      = grpc::testing::TestService::NewStub(
           grpc::CreateChannel(server_address, channel_creds));
   gpr_log(GPR_INFO, "Client %s is echoing!", client_id.c_str());
   while (true) {
-    if (gpr_event_wait(done_ev, grpc_timeout_seconds_to_deadline(1)) !=
-        nullptr) {
+    if (gpr_event_wait(done_ev, grpc_timeout_seconds_to_deadline(1)) != nullptr) {
       return;
     }
     grpc::testing::Empty request;
@@ -97,8 +96,7 @@ bool WaitForConnection(int wait_server_seconds) {
       grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
           custom_credentials_type, &channel_args);
   auto channel = grpc::CreateChannel(server_address, channel_creds);
-  return channel->WaitForConnected(
-      grpc_timeout_seconds_to_deadline(wait_server_seconds));
+  return channel->WaitForConnected(grpc_timeout_seconds_to_deadline(wait_server_seconds));
 }
 
 // Test the channelz sampler
@@ -138,17 +136,18 @@ TEST(ChannelzSamplerTest, SimpleTest) {
       gpr_log(GPR_ERROR,
               "Channelz sampler test test-runner exited with code %d",
               WEXITSTATUS(status));
-      GPR_ASSERT(0);  // log the line number of the assertion failure 
+      GPR_ASSERT(0);  // log the line number of the assertion failure
     }
   } else if (WIFSIGNALED(status)) {
-    gpr_log(GPR_ERROR, "Channelz sampler test test-runner ended from signal %d",
+      gpr_log(GPR_ERROR,
+            "Channelz sampler test test-runner ended from signal %d",
             WTERMSIG(status));
-    GPR_ASSERT(0);
+      GPR_ASSERT(0);
   } else {
-    gpr_log(GPR_ERROR,
+      gpr_log(GPR_ERROR,
             "Channelz sampler test test-runner ended with unknown status %d",
             status);
-    GPR_ASSERT(0);
+      GPR_ASSERT(0);
   }
 
   gpr_event_set(&done_ev1, (void*)1);
