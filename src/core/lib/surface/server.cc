@@ -1529,8 +1529,8 @@ grpc_call_error grpc_server_request_call(
       (server, call, details, request_metadata, cq_bound_to_call,
        cq_for_notification, tag));
   return server->core_server->RequestCall(call, details, request_metadata,
-                                          cq_bound_to_call,
-                                          cq_for_notification, tag);
+                                          cq_bound_to_call, cq_for_notification,
+                                          tag);
 }
 
 grpc_call_error grpc_server_request_registered_call(
