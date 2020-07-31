@@ -976,10 +976,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_authorization_engine",
     srcs = [
-        "src/core/lib/security/authorization/eval_args_util.cc",
+        "src/core/lib/security/authorization/evaluate_args.cc",
     ],
     hdrs = [
-        "src/core/lib/security/authorization/eval_args_util.h",
+        "src/core/lib/security/authorization/evaluate_args.h",
     ],
     language = "c++",
 )
