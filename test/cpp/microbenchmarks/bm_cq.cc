@@ -211,7 +211,12 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
   bool got_shutdown = false;
   ShutdownCallback shutdown_cb(&got_shutdown);
   // This test with stack-allocated completions only works for non-polling or
-  // EM-polling callback core CQs. For generality, test with non-polling.
+  // EM-polling callback core CQs because otherwise the callback could execute
+  // on  another thread after the stack objects here go out of scope. An
+  // alternative would be to synchronize between the benchmark loop and the
+  // callback, but then it would be measuring the overhead of synchronization
+  // rather than the overhead of the completion queue.
+  // For generality, test here with non-polling.
   grpc_completion_queue_attributes attr;
   attr.version = 2;
   attr.cq_completion_type = GRPC_CQ_CALLBACK;
