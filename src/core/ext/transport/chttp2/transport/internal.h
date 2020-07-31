@@ -290,7 +290,7 @@ struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
   grpc_core::RefCount refs;
   grpc_endpoint* ep;
-  char* peer_string;
+  std::string peer_string;
 
   grpc_resource_user* resource_user;
 

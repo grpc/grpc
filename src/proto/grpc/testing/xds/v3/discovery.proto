@@ -1,0 +1,122 @@
+// Copyright 2020 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.service.discovery.v3;
+
+import "src/proto/grpc/testing/xds/v3/base.proto";
+
+import "google/protobuf/any.proto";
+
+message Status {
+  // The status code, which should be an enum value of [google.rpc.Code][].
+  int32 code = 1;
+
+  // A developer-facing error message, which should be in English. Any
+  // user-facing error message should be localized and sent in the
+  // [google.rpc.Status.details][] field, or localized by the client.
+  string message = 2;
+
+  // A list of messages that carry the error details.  There is a common set of
+  // message types for APIs to use.
+  repeated google.protobuf.Any details = 3;
+}
+
+// [#protodoc-title: Common discovery API components]
+
+// A DiscoveryRequest requests a set of versioned resources of the same type for
+// a given Envoy node on some API.
+// [#next-free-field: 7]
+message DiscoveryRequest {
+  // The version_info provided in the request messages will be the version_info
+  // received with the most recent successfully processed response or empty on
+  // the first request. It is expected that no new request is sent after a
+  // response is received until the Envoy instance is ready to ACK/NACK the new
+  // configuration. ACK/NACK takes place by returning the new API config version
+  // as applied or the previous API config version respectively. Each type_url
+  // (see below) has an independent version associated with it.
+  string version_info = 1;
+
+  // The node making the request.
+  config.core.v3.Node node = 2;
+
+  // List of resources to subscribe to, e.g. list of cluster names or a route
+  // configuration name. If this is empty, all resources for the API are
+  // returned. LDS/CDS may have empty resource_names, which will cause all
+  // resources for the Envoy instance to be returned. The LDS and CDS responses
+  // will then imply a number of resources that need to be fetched via EDS/RDS,
+  // which will be explicitly enumerated in resource_names.
+  repeated string resource_names = 3;
+
+  // Type of the resource that is being requested, e.g.
+  // "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment". This is implicit
+  // in requests made via singleton xDS APIs such as CDS, LDS, etc. but is
+  // required for ADS.
+  string type_url = 4;
+
+  // nonce corresponding to DiscoveryResponse being ACK/NACKed. See above
+  // discussion on version_info and the DiscoveryResponse nonce comment. This
+  // may be empty only if 1) this is a non-persistent-stream xDS such as HTTP,
+  // or 2) the client has not yet accepted an update in this xDS stream (unlike
+  // delta, where it is populated only for new explicit ACKs).
+  string response_nonce = 5;
+
+  // This is populated when the previous :ref:`DiscoveryResponse <envoy_api_msg_service.discovery.v3.DiscoveryResponse>`
+  // failed to update configuration. The *message* field in *error_details* provides the Envoy
+  // internal exception related to the failure. It is only intended for consumption during manual
+  // debugging, the string provided is not guaranteed to be stable across Envoy versions.
+  Status error_detail = 6;
+}
+
+// [#next-free-field: 7]
+message DiscoveryResponse {
+  // The version of the response data.
+  string version_info = 1;
+
+  // The response resources. These resources are typed and depend on the API being called.
+  repeated google.protobuf.Any resources = 2;
+
+  // [#not-implemented-hide:]
+  // Canary is used to support two Envoy command line flags:
+  //
+  // * --terminate-on-canary-transition-failure. When set, Envoy is able to
+  //   terminate if it detects that configuration is stuck at canary. Consider
+  //   this example sequence of updates:
+  //   - Management server applies a canary config successfully.
+  //   - Management server rolls back to a production config.
+  //   - Envoy rejects the new production config.
+  //   Since there is no sensible way to continue receiving configuration
+  //   updates, Envoy will then terminate and apply production config from a
+  //   clean slate.
+  // * --dry-run-canary. When set, a canary response will never be applied, only
+  //   validated via a dry run.
+  bool canary = 3;
+
+  // Type URL for resources. Identifies the xDS API when muxing over ADS.
+  // Must be consistent with the type_url in the 'resources' repeated Any (if non-empty).
+  string type_url = 4;
+
+  // For gRPC based subscriptions, the nonce provides a way to explicitly ack a
+  // specific DiscoveryResponse in a following DiscoveryRequest. Additional
+  // messages may have been sent by Envoy to the management server for the
+  // previous version on the stream prior to this DiscoveryResponse, that were
+  // unprocessed at response send time. The nonce allows the management server
+  // to ignore any further DiscoveryRequests for the previous version until a
+  // DiscoveryRequest bearing the nonce. The nonce is optional and is not
+  // required for non-stream based xDS implementations.
+  string nonce = 5;
+}

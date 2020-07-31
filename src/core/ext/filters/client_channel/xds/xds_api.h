@@ -294,7 +294,7 @@ class XdsApi {
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       ClusterLoadReport>;
 
-  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
+  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap* bootstrap);
 
   // Creates an ADS request.
   // Takes ownership of \a error.
@@ -304,19 +304,25 @@ class XdsApi {
                               const std::string& nonce, grpc_error* error,
                               bool populate_node);
 
-  // Parses the ADS response and outputs the validated update for either CDS or
-  // EDS. If the response can't be parsed at the top level, \a type_url will
-  // point to an empty string; otherwise, it will point to the received data.
-  grpc_error* ParseAdsResponse(
+  // Parses an ADS response.
+  // If the response can't be parsed at the top level, the resulting
+  // type_url will be empty.
+  struct AdsParseResult {
+    grpc_error* parse_error = GRPC_ERROR_NONE;
+    std::string version;
+    std::string nonce;
+    std::string type_url;
+    absl::optional<LdsUpdate> lds_update;
+    absl::optional<RdsUpdate> rds_update;
+    CdsUpdateMap cds_update_map;
+    EdsUpdateMap eds_update_map;
+  };
+  AdsParseResult ParseAdsResponse(
       const grpc_slice& encoded_response,
       const std::string& expected_server_name,
       const std::set<absl::string_view>& expected_route_configuration_names,
       const std::set<absl::string_view>& expected_cluster_names,
-      const std::set<absl::string_view>& expected_eds_service_names,
-      absl::optional<LdsUpdate>* lds_update,
-      absl::optional<RdsUpdate>* rds_update, CdsUpdateMap* cds_update_map,
-      EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
-      std::string* type_url);
+      const std::set<absl::string_view>& expected_eds_service_names);
 
   // Creates an LRS request querying \a server_name.
   grpc_slice CreateLrsInitialRequest(const std::string& server_name);
@@ -335,7 +341,8 @@ class XdsApi {
  private:
   XdsClient* client_;
   TraceFlag* tracer_;
-  const XdsBootstrap::Node* node_;
+  const bool use_v3_;
+  const XdsBootstrap* bootstrap_;  // Do not own.
   const std::string build_version_;
   const std::string user_agent_name_;
 };

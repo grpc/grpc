@@ -23,8 +23,6 @@
 
 // Channel arg key for the list of balancer addresses.
 #define GRPC_ARG_GRPCLB_BALANCER_ADDRESSES "grpc.grpclb_balancer_addresses"
-// Channel arg key for a string indicating an address's balancer name.
-#define GRPC_ARG_ADDRESS_BALANCER_NAME "grpc.address_balancer_name"
 
 namespace grpc_core {
 
@@ -73,17 +71,6 @@ const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
     const grpc_channel_args& args) {
   return grpc_channel_args_find_pointer<const ServerAddressList>(
       &args, const_cast<char*>(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES));
-}
-
-grpc_arg CreateGrpclbBalancerNameArg(const char* balancer_name) {
-  return grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_ADDRESS_BALANCER_NAME),
-      const_cast<char*>(balancer_name));
-}
-
-const char* FindGrpclbBalancerNameInChannelArgs(const grpc_channel_args& args) {
-  return grpc_channel_args_find_string(
-      &args, const_cast<char*>(GRPC_ARG_ADDRESS_BALANCER_NAME));
 }
 
 }  // namespace grpc_core
