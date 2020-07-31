@@ -247,9 +247,6 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
                                                    expected_detail)));
   }
 
-  gpr_log(GPR_ERROR, "%s",
-          grpc_dump_slice(details, GPR_DUMP_ASCII | GPR_DUMP_HEX));
-
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_slice_unref(details);
