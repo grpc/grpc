@@ -21,6 +21,9 @@ if(gRPC_RE2_PROVIDER STREQUAL "module")
     set(RE2_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/re2)
   endif()
   if(EXISTS "${RE2_ROOT_DIR}/CMakeLists.txt")
+    # Explicitly disable BUILD_TESTING to avoid re2's CMakeLists.txt triggering https://github.com/grpc/grpc/issues/23586
+    option(BUILD_TESTING "re2.cmake explicitly disabled CTest's BUILD_TESTING option." OFF)
+
     include_directories("${RE2_ROOT_DIR}")
     add_subdirectory(${RE2_ROOT_DIR} third_party/re2)
 
