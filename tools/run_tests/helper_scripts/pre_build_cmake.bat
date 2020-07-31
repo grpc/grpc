@@ -21,7 +21,7 @@ cd cmake
 mkdir build
 cd build
 
-cmake -DgRPC_BUILD_TESTS=ON "%*" ../.. || goto :error
+cmake -DgRPC_BUILD_TESTS=ON %* ../.. || goto :error
 
 endlocal
 
