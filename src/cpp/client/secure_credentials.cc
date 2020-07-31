@@ -38,7 +38,7 @@
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/common/secure_auth_context.h"
 
-namespace grpc_impl {
+namespace grpc {
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 SecureChannelCredentials::SecureChannelCredentials(
@@ -97,7 +97,8 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
 
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
-  return WrapChannelCredentials(grpc_google_default_credentials_create());
+  return WrapChannelCredentials(
+      grpc_google_default_credentials_create(nullptr));
 }
 
 // Builds SSL Credentials given SSL specific options
@@ -387,9 +388,6 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
       c_plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr));
 }
 
-}  // namespace grpc_impl
-
-namespace grpc {
 namespace {
 void DeleteWrapper(void* wrapper, grpc_error* /*ignored*/) {
   MetadataCredentialsPluginWrapper* w =

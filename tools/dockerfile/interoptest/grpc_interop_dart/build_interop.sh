@@ -23,4 +23,5 @@ git clone /var/local/jenkins/grpc-dart /var/local/git/grpc-dart
 cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc-dart/interop
-/usr/lib/dart/bin/pub get --verbose
+# De-flake attempt: run the cmd one more time in case of transient failure
+/usr/lib/dart/bin/pub get --verbose || /usr/lib/dart/bin/pub get --verbose

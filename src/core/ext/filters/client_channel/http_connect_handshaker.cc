@@ -325,10 +325,9 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   args_ = args;
   on_handshake_done_ = on_handshake_done;
   // Log connection via proxy.
-  char* proxy_name = grpc_endpoint_get_peer(args->endpoint);
+  std::string proxy_name(grpc_endpoint_get_peer(args->endpoint));
   gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s", server_name,
-          proxy_name);
-  gpr_free(proxy_name);
+          proxy_name.c_str());
   // Construct HTTP CONNECT request.
   grpc_httpcli_request request;
   request.host = server_name;

@@ -380,3 +380,22 @@ def server_credentials_alts():
   # Options can be destroyed as deep copy was performed.
   grpc_alts_credentials_options_destroy(c_options)
   return credentials
+
+
+cdef class ComputeEngineChannelCredentials(ChannelCredentials):
+  cdef grpc_channel_credentials* _c_creds
+  cdef grpc_call_credentials* _call_creds
+
+  def __cinit__(self, CallCredentials call_creds):
+    self._c_creds = NULL
+    self._call_creds = call_creds.c()
+    if self._call_creds == NULL:
+      raise ValueError("Call credentials may not be NULL.")
+
+  cdef grpc_channel_credentials *c(self) except *:
+    self._c_creds = grpc_google_default_credentials_create(self._call_creds)
+    return self._c_creds
+
+
+def channel_credentials_compute_engine(call_creds):
+  return ComputeEngineChannelCredentials(call_creds)

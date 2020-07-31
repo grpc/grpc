@@ -84,6 +84,8 @@ class CliCall final {
   // Finish the RPC.
   Status Finish(IncomingMetadataContainer* server_trailing_metadata);
 
+  std::string peer() const { return ctx_.peer(); }
+
  private:
   std::unique_ptr<grpc::GenericStub> stub_;
   grpc_impl::ClientContext ctx_;

@@ -165,6 +165,15 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
   if (pem_private_key == Qnil && pem_cert_chain == Qnil) {
     creds = grpc_ssl_credentials_create(pem_root_certs_cstr, NULL, NULL, NULL);
   } else {
+    if (pem_private_key == Qnil) {
+      rb_raise(
+          rb_eRuntimeError,
+          "could not create a credentials because pem_private_key is NULL");
+    }
+    if (pem_cert_chain == Qnil) {
+      rb_raise(rb_eRuntimeError,
+               "could not create a credentials because pem_cert_chain is NULL");
+    }
     key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
     key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
     creds = grpc_ssl_credentials_create(pem_root_certs_cstr, &key_cert_pair,

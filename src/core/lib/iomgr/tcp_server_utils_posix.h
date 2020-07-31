@@ -82,10 +82,9 @@ struct grpc_tcp_server {
   /* shutdown callback */
   grpc_closure* shutdown_complete;
 
-  /* all pollsets interested in new connections */
-  grpc_pollset** pollsets;
-  /* number of pollsets in the pollsets array */
-  size_t pollset_count;
+  /* all pollsets interested in new connections. The object pointed at is not
+   * owned by this struct */
+  const std::vector<grpc_pollset*>* pollsets;
 
   /* next pollset to assign a channel to */
   gpr_atm next_pollset_to_assign;
