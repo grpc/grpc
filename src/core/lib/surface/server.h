@@ -205,7 +205,8 @@ class Server : public InternallyRefCounted<Server> {
 
     RefCountedPtr<Server> server_;
     grpc_channel* channel_;
-    // The index into Server::cqs_ of the associated completion queue.
+    // The index into Server::cqs_ of the CQ used as a starting point for
+    // where to publish new incoming calls.
     size_t cq_idx_;
     absl::optional<std::list<ChannelData*>::iterator> list_position_;
     // A hash-table of the methods and hosts of the registered methods.
