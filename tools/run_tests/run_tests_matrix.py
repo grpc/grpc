@@ -339,14 +339,6 @@ def _create_portability_test_jobs(extra_args=[],
                                 extra_args=extra_args,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    # TODO(zyc): Turn on this test after adding c-ares support on windows.
-    # C with the c-ares DNS resolver on Windows
-    # test_jobs += _generate_jobs(languages=['c'],
-    #                             configs=['dbg'], platforms=['windows'],
-    #                             labels=['portability', 'corelang'],
-    #                             extra_args=extra_args,
-    #                             extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
-
     test_jobs += _generate_jobs(languages=['python'],
                                 configs=['dbg'],
                                 platforms=['linux'],
