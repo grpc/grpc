@@ -506,7 +506,6 @@ class ChannelzSampler final {
 };
 
 int main(int argc, char** argv) {
-  // make sure flags can be used
   grpc::testing::InitTest(&argc, &argv, true);
   std::ofstream output_file(FLAGS_output_json);
   for (int i = 0; i < FLAGS_sampling_times; ++i) {
