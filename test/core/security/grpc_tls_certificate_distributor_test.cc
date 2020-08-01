@@ -26,6 +26,8 @@
 
 #include <queue>
 
+#include "test/core/util/test_config.h"
+
 namespace testing {
 // TlsCertificatesTestWatcher is a simple watcher implementation for testing
 // purpose.
