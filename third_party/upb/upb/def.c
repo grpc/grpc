@@ -922,6 +922,22 @@ static uint32_t upb_msglayout_place(upb_msglayout *l, size_t size) {
   return ret;
 }
 
+static int field_number_cmp(const void *p1, const void *p2) {
+  const upb_msglayout_field *f1 = p1;
+  const upb_msglayout_field *f2 = p2;
+  return f1->number - f2->number;
+}
+
+static void assign_layout_indices(const upb_msgdef *m, upb_msglayout_field *fields) {
+  int i;
+  int n = upb_msgdef_numfields(m);
+  for (i = 0; i < n; i++) {
+    upb_fielddef *f = (upb_fielddef*)upb_msgdef_itof(m, fields[i].number);
+    UPB_ASSERT(f);
+    f->layout_index = i;
+  }
+}
+
 /* This function is the dynamic equivalent of message_layout.{cc,h} in upbc.
  * It computes a dynamic layout for all of the fields in |m|. */
 static bool make_layout(const upb_symtab *symtab, const upb_msgdef *m) {
@@ -997,15 +1013,18 @@ static bool make_layout(const upb_symtab *symtab, const upb_msgdef *m) {
     field->descriptortype = upb_fielddef_descriptortype(f);
     field->label = upb_fielddef_label(f);
 
+    if (field->descriptortype == UPB_DTYPE_STRING &&
+        f->file->syntax == UPB_SYNTAX_PROTO2) {
+      /* See TableDescriptorType() in upbc/generator.cc for details and
+       * rationale. */
+      field->descriptortype = UPB_DTYPE_BYTES;
+    }
+
     if (upb_fielddef_ismap(f)) {
       field->label = _UPB_LABEL_MAP;
     } else if (upb_fielddef_packed(f)) {
       field->label = _UPB_LABEL_PACKED;
     }
-
-    /* TODO: we probably should sort the fields by field number to match the
-     * output of upbc, and to improve search speed for the table parser. */
-    f->layout_index = f->index_;
 
     if (upb_fielddef_issubmsg(f)) {
       const upb_msgdef *subm = upb_fielddef_msgsubdef(f);
@@ -1078,6 +1097,10 @@ static bool make_layout(const upb_symtab *symtab, const upb_msgdef *m) {
   /* Size of the entire structure should be a multiple of its greatest
    * alignment.  TODO: track overall alignment for real? */
   l->size = UPB_ALIGN_UP(l->size, 8);
+
+  /* Sort fields by number. */
+  qsort(fields, upb_msgdef_numfields(m), sizeof(*fields), field_number_cmp);
+  assign_layout_indices(m, fields);
 
   return true;
 }
@@ -1532,13 +1555,21 @@ static bool create_fielddef(
     f->oneof = NULL;
   }
 
-  if (google_protobuf_FieldDescriptorProto_has_options(field_proto)) {
-    options = google_protobuf_FieldDescriptorProto_options(field_proto);
-    f->lazy_ = google_protobuf_FieldOptions_lazy(options);
+  options = google_protobuf_FieldDescriptorProto_has_options(field_proto) ?
+    google_protobuf_FieldDescriptorProto_options(field_proto) : NULL;
+
+  if (options && google_protobuf_FieldOptions_has_packed(options)) {
     f->packed_ = google_protobuf_FieldOptions_packed(options);
   } else {
+    /* Repeated fields default to packed for proto3 only. */
+    f->packed_ = upb_fielddef_isprimitive(f) &&
+        f->label_ == UPB_LABEL_REPEATED && f->file->syntax == UPB_SYNTAX_PROTO3;
+  }
+
+  if (options) {
+    f->lazy_ = google_protobuf_FieldOptions_lazy(options);
+  } else {
     f->lazy_ = false;
-    f->packed_ = false;
   }
 
   return true;
