@@ -307,15 +307,15 @@ static void maybe_flush_read(stream_obj* s) {
     if (!s->state.flush_read && !s->state.rs.read_stream_closed) {
       CRONET_LOG(GPR_DEBUG, "%p: Flush read", s);
       s->state.flush_read = true;
-      null_and_maybe_free_read_buffer(s);
-      s->state.rs.read_buffer =
-          static_cast<char*>(gpr_malloc(GRPC_FLUSH_READ_SIZE));
       if (!s->state.pending_read_from_cronet) {
-        CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);
-        bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
-                                  GRPC_FLUSH_READ_SIZE);
-        s->state.pending_read_from_cronet = true;
+        null_and_maybe_free_read_buffer(s);
+        s->state.rs.read_buffer =
+            static_cast<char*>(gpr_malloc(GRPC_FLUSH_READ_SIZE));
       }
+      CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);
+      bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
+                                GRPC_FLUSH_READ_SIZE);
+      s->state.pending_read_from_cronet = true;
     }
   }
 }
