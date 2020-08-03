@@ -30,6 +30,8 @@ docker info
 
 cat /etc/issue
 
+cat /etc/docker/daemon.json
+
 # Move docker's storage location to scratch disk so we don't run out of space.
 #echo 'DOCKER_OPTS="${DOCKER_OPTS} --graph=/tmpfs/docker"' | sudo tee --append /etc/default/docker
 
