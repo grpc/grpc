@@ -735,6 +735,33 @@ cc_library(
     }),
 )
 
+upb_amalgamation(
+    name = "gen_ruby_amalgamation",
+    prefix = "ruby-",
+    outs = [
+        "ruby-upb.c",
+        "ruby-upb.h",
+    ],
+    amalgamator = ":amalgamate",
+    libs = [
+        ":upb",
+        ":descriptor_upb_proto",
+        ":reflection",
+        ":port",
+        ":json",
+    ],
+)
+
+cc_library(
+    name = "ruby_amalgamation",
+    srcs = ["ruby-upb.c"],
+    hdrs = ["ruby-upb.h"],
+    copts = select({
+        ":windows": [],
+        "//conditions:default": COPTS,
+    }),
+)
+
 # Lua ##########################################################################
 
 cc_library(
@@ -765,6 +792,7 @@ cc_test(
         "upb/bindings/lua/upb.lua",
         ":descriptor_proto_lua",
         ":test_messages_proto3_proto_lua",
+        ":test_messages_proto2_proto_lua",
         ":test_proto_lua",
         "@com_google_protobuf//:conformance_proto",
         "@com_google_protobuf//:descriptor_proto",
@@ -805,6 +833,12 @@ lua_proto_library(
     name = "test_messages_proto3_proto_lua",
     testonly = 1,
     deps = ["@com_google_protobuf//:test_messages_proto3_proto"],
+)
+
+lua_proto_library(
+    name = "test_messages_proto2_proto_lua",
+    testonly = 1,
+    deps = ["@com_google_protobuf//:test_messages_proto2_proto"],
 )
 
 # Test the CMake build #########################################################
