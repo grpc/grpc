@@ -31,7 +31,7 @@ docker info
 cat /etc/issue
 
 # Move docker's storage location to scratch disk so we don't run out of space.
-echo 'DOCKER_OPTS="${DOCKER_OPTS} --graph=/tmpfs/docker"' | sudo tee --append /etc/default/docker
+#echo 'DOCKER_OPTS="${DOCKER_OPTS} --graph=/tmpfs/docker"' | sudo tee --append /etc/default/docker
 
 # https://docs.docker.com/engine/deprecated/#-g-and---graph-flags-on-dockerd
 echo 'DOCKER_OPTS="${DOCKER_OPTS} --data-root=/tmpfs/docker"' | sudo tee --append /etc/default/docker
