@@ -36,7 +36,7 @@ cat /etc/docker/daemon.json
 #echo 'DOCKER_OPTS="${DOCKER_OPTS} --graph=/tmpfs/docker"' | sudo tee --append /etc/default/docker
 
 # https://docs.docker.com/engine/deprecated/#-g-and---graph-flags-on-dockerd
-echo 'DOCKER_OPTS="${DOCKER_OPTS} --data-root=/tmpfs/docker"' | sudo tee --append /etc/default/docker
+echo 'DOCKER_OPTS="${DOCKER_OPTS} --data-root /tmpfs/docker"' | sudo tee --append /etc/default/docker
 
 # Use container registry mirror for pulling docker images (should make downloads faster)
 # See https://cloud.google.com/container-registry/docs/using-dockerhub-mirroring
