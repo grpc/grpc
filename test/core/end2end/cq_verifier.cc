@@ -76,9 +76,9 @@ struct Expectation {
 struct cq_verifier {
   /* bound completion queue */
   grpc_completion_queue* cq;
-  /* start of expectation list */
+  /* expectation list */
   std::list<Expectation> expectations;
-  /* start of maybe expectation list */
+  /* maybe expectation list */
   std::list<Expectation> maybe_expectations;
 };
 
@@ -227,11 +227,11 @@ static void fail_no_event_received(cq_verifier* v) {
   abort();
 }
 
-static void verify_matches(const Expectation& e, grpc_event* ev) {
-  GPR_ASSERT(e.type == ev->type);
+static void verify_matches(const Expectation& e, const grpc_event& ev) {
+  GPR_ASSERT(e.type == ev.type);
   switch (e.type) {
     case GRPC_OP_COMPLETE:
-      if (e.check_success && e.success != ev->success) {
+      if (e.check_success && e.success != ev.success) {
         gpr_log(GPR_ERROR, "actual success does not match expected: %s",
                 ExpectationString(e).c_str());
         abort();
@@ -248,6 +248,32 @@ static void verify_matches(const Expectation& e, grpc_event* ev) {
   }
 }
 
+// Try to find the event in the expectations list
+bool FindExpectations(cq_verifier* v, const grpc_event& ev) {
+  for (auto e = v->expectations.begin(); e != v->expectations.end(); ++e) {
+    if (e->tag == ev.tag) {
+      verify_matches(*e, ev);
+      v->expectations.erase(e);
+      return true;
+    }
+  }
+  return false;
+}
+
+// Try to find the event in the maybe_expectations list
+bool FindMaybeExpectations(cq_verifier* v, const grpc_event& ev) {
+  for (auto e = v->maybe_expectations.begin(); e != v->maybe_expectations.end();
+       ++e) {
+    if (e->tag == ev.tag) {
+      verify_matches(*e, ev);
+      *(e->seen) = true;
+      v->maybe_expectations.erase(e);
+      return true;
+    }
+  }
+  return false;
+}
+
 void cq_verify(cq_verifier* v) {
   const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
   while (!v->expectations.empty()) {
@@ -256,25 +282,8 @@ void cq_verify(cq_verifier* v) {
       fail_no_event_received(v);
       break;
     }
-    std::list<Expectation>::iterator e;
-    for (e = v->expectations.begin(); e != v->expectations.end(); ++e) {
-      if (e->tag == ev.tag) {
-        verify_matches(*e, &ev);
-        v->expectations.erase(e);
-        break;
-      }
-    }
-    if (e != v->expectations.end()) continue;
-    for (e = v->maybe_expectations.begin(); e != v->maybe_expectations.end();
-         ++e) {
-      if (e->tag == ev.tag) {
-        verify_matches(*e, &ev);
-        *(e->seen) = true;
-        v->maybe_expectations.erase(e);
-        break;
-      }
-    }
-    if (e != v->maybe_expectations.end()) continue;
+    if (FindExpectations(v, ev)) continue;
+    if (FindMaybeExpectations(v, ev)) continue;
     gpr_log(GPR_ERROR, "cq returned unexpected event: %s",
             grpc_event_string(&ev).c_str());
     gpr_log(GPR_ERROR, "expected tags:\n%s", ExpectationsString(*v).c_str());

@@ -87,7 +87,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
  * messages and ends with a non-OK status. Client reads after server is done
  * writing, and expects to get the status after the messages. */
 static void test_server_streaming(grpc_end2end_test_config config,
-                                  int messages) {
+                                  int num_messages) {
   grpc_end2end_test_fixture f =
       begin_test(config, "test_server_streaming", nullptr, nullptr);
   grpc_call* c;
@@ -179,7 +179,7 @@ static void test_server_streaming(grpc_end2end_test_config config,
   cq_verify(cqv);
 
   // Server writes bunch of messages
-  for (int i = 0; i < messages; i++) {
+  for (int i = 0; i < num_messages; i++) {
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
 
     memset(ops, 0, sizeof(ops));
@@ -223,7 +223,7 @@ static void test_server_streaming(grpc_end2end_test_config config,
   // Client keeps reading messages till it gets the status
   bool seen_status = false;
   CQ_MAYBE_EXPECT_COMPLETION(cqv, tag(1), true, &seen_status);
-  int i = 0;
+  int num_messages_received = 0;
   while (true) {
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -239,16 +239,16 @@ static void test_server_streaming(grpc_end2end_test_config config,
     cq_verify(cqv);
     if (request_payload_recv == nullptr) {
       // The transport has received the trailing metadata.
-      GPR_ASSERT(i == messages);
       break;
-    } else {
-      GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
-      grpc_byte_buffer_destroy(request_payload_recv);
     }
-    i++;
+    GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
+    grpc_byte_buffer_destroy(request_payload_recv);
+    num_messages_received++;
   }
+  GPR_ASSERT(num_messages_received == num_messages);
   if (!seen_status) {
     CQ_EXPECT_COMPLETION(cqv, tag(1), true);
+    cq_verify(cqv);
   }
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -271,9 +271,9 @@ static void test_server_streaming(grpc_end2end_test_config config,
 }
 
 void server_streaming(grpc_end2end_test_config config) {
-  for (int i = 0; i < 10; i++) {
-    test_server_streaming(config, i);
-  }
+  test_server_streaming(config, 0);
+  test_server_streaming(config, 1);
+  test_server_streaming(config, 10);
 }
 
 void server_streaming_pre_init(void) {}
