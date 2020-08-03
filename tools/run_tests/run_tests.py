@@ -1447,8 +1447,8 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default', 'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl',
-        'clang3.6', 'clang3.7', 'python2.7', 'python3.5',
-        'python3.6', 'python3.7', 'python3.8', 'pypy', 'pypy3', 'python_alpine',
+        'clang3.6', 'clang3.7', 'python2.7', 'python3.5', 'python3.6',
+        'python3.7', 'python3.8', 'pypy', 'pypy3', 'python_alpine',
         'all_the_cpythons', 'electron1.3', 'electron1.6', 'coreclr', 'cmake',
         'cmake_vs2015', 'cmake_vs2017'
     ],
