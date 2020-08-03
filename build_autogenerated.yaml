@@ -2276,7 +2276,6 @@ libs:
   public_headers:
   - include/grpc++/support/error_details.h
   - include/grpcpp/support/error_details.h
-  - include/grpcpp/support/error_details_impl.h
   headers: []
   src:
   - src/proto/grpc/status/status.proto
