@@ -36,7 +36,7 @@ echo 'DOCKER_OPTS="${DOCKER_OPTS} --data-root=/tmpfs/docker"' | sudo tee --appen
 # Use container registry mirror for pulling docker images (should make downloads faster)
 # See https://cloud.google.com/container-registry/docs/using-dockerhub-mirroring
 echo 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=https://mirror.gcr.io"' | sudo tee --append /etc/default/docker
-sudo service docker restart
+sudo service docker restart || tail -n 100 /var/log/syslog
 
 
 
