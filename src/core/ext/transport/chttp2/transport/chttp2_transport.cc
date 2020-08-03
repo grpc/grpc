@@ -591,7 +591,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
   }
   if (t->notify_on_receive_settings != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_receive_settings,
-                            GRPC_ERROR_CANCELLED);
+                            GRPC_ERROR_REF(error));
     t->notify_on_receive_settings = nullptr;
   }
   GRPC_ERROR_UNREF(error);
