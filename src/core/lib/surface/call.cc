@@ -245,7 +245,7 @@ struct grpc_call {
     struct {
       int* cancelled;
       // backpointer to owning server if this is a server side call.
-      grpc_server* server;
+      grpc_core::Server* core_server;
     } server;
   } final_op;
   gpr_atm status_error = 0;
@@ -374,7 +374,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   } else {
     GRPC_STATS_INC_SERVER_CALLS_CREATED();
     call->final_op.server.cancelled = nullptr;
-    call->final_op.server.server = args->server;
+    call->final_op.server.core_server = args->server;
     GPR_ASSERT(args->add_initial_metadata_count == 0);
     call->send_extra_metadata_count = 0;
   }
@@ -476,11 +476,11 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
     if (channelz_channel != nullptr) {
       channelz_channel->RecordCallStarted();
     }
-  } else {
-    grpc_core::channelz::ServerNode* channelz_server =
-        grpc_server_get_channelz_node(call->final_op.server.server);
-    if (channelz_server != nullptr) {
-      channelz_server->RecordCallStarted();
+  } else if (call->final_op.server.core_server != nullptr) {
+    grpc_core::channelz::ServerNode* channelz_node =
+        call->final_op.server.core_server->channelz_node();
+    if (channelz_node != nullptr) {
+      channelz_node->RecordCallStarted();
     }
   }
 
@@ -759,15 +759,15 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
   } else {
     *call->final_op.server.cancelled =
         error != GRPC_ERROR_NONE || !call->sent_server_trailing_metadata;
-    grpc_core::channelz::ServerNode* channelz_server =
-        grpc_server_get_channelz_node(call->final_op.server.server);
-    if (channelz_server != nullptr) {
+    grpc_core::channelz::ServerNode* channelz_node =
+        call->final_op.server.core_server->channelz_node();
+    if (channelz_node != nullptr) {
       if (*call->final_op.server.cancelled ||
           reinterpret_cast<grpc_error*>(
               gpr_atm_acq_load(&call->status_error)) != GRPC_ERROR_NONE) {
-        channelz_server->RecordCallFailed();
+        channelz_node->RecordCallFailed();
       } else {
-        channelz_server->RecordCallSucceeded();
+        channelz_node->RecordCallSucceeded();
       }
     }
     GRPC_ERROR_UNREF(error);

@@ -46,8 +46,8 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_pair* sfd = static_cast<grpc_endpoint_pair*>(f->fixture_data);
   grpc_endpoint_add_to_pollset(sfd->server, grpc_cq_pollset(f->cq));
-  grpc_server_setup_transport(f->server, transport, nullptr,
-                              grpc_server_get_channel_args(f->server), nullptr);
+  f->server->core_server->SetupTransport(
+      transport, nullptr, f->server->core_server->channel_args(), nullptr);
 }
 
 typedef struct {

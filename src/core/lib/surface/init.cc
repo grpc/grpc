@@ -102,7 +102,7 @@ static void register_builtin_channel_init() {
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    append_filter, (void*)&grpc_lame_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
-                                   (void*)&grpc_server_top_filter);
+                                   (void*)&grpc_core::Server::kServerTopFilter);
 }
 
 typedef struct grpc_plugin {

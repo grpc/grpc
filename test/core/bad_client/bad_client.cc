@@ -65,8 +65,8 @@ static void set_done_write(void* arg, grpc_error* /*error*/) {
 static void server_setup_transport(void* ts, grpc_transport* transport) {
   thd_args* a = static_cast<thd_args*>(ts);
   grpc_core::ExecCtx exec_ctx;
-  grpc_server_setup_transport(a->server, transport, nullptr,
-                              grpc_server_get_channel_args(a->server), nullptr);
+  a->server->core_server->SetupTransport(
+      transport, nullptr, a->server->core_server->channel_args(), nullptr);
 }
 
 /* Sets the read_done event */
@@ -219,7 +219,7 @@ void grpc_run_bad_client_test(
   grpc_endpoint_add_to_pollset(sfd.server, grpc_cq_pollset(a.cq));
 
   /* Check a ground truth */
-  GPR_ASSERT(grpc_server_has_open_connections(a.server));
+  GPR_ASSERT(a.server->core_server->HasOpenConnections());
 
   gpr_event_init(&a.done_thd);
   a.validator = server_validator;
