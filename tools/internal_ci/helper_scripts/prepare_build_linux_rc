@@ -22,6 +22,9 @@ df -h
 
 cat /etc/default/docker
 
+# print dockerd help
+dockerd --help
+
 # before
 docker info
 
