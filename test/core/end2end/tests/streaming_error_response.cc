@@ -88,7 +88,10 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-// Client sends a request with payload, server reads then returns status.
+// Client sends a request with payload, potentially requesting status early. The
+// server reads and streams responses. The client cancels the RPC to get an
+// error status. (Server sending a non-OK status is not considered an error
+// status.)
 static void test(grpc_end2end_test_config config, bool request_status_early,
                  bool recv_message_separately) {
   grpc_call* c;

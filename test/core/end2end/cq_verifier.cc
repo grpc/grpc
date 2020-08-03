@@ -249,25 +249,15 @@ static void verify_matches(const Expectation& e, const grpc_event& ev) {
 }
 
 // Try to find the event in the expectations list
-bool FindExpectations(cq_verifier* v, const grpc_event& ev) {
-  for (auto e = v->expectations.begin(); e != v->expectations.end(); ++e) {
+bool FindExpectations(std::list<Expectation>* expectations,
+                      const grpc_event& ev) {
+  for (auto e = expectations->begin(); e != expectations->end(); ++e) {
     if (e->tag == ev.tag) {
       verify_matches(*e, ev);
-      v->expectations.erase(e);
-      return true;
-    }
-  }
-  return false;
-}
-
-// Try to find the event in the maybe_expectations list
-bool FindMaybeExpectations(cq_verifier* v, const grpc_event& ev) {
-  for (auto e = v->maybe_expectations.begin(); e != v->maybe_expectations.end();
-       ++e) {
-    if (e->tag == ev.tag) {
-      verify_matches(*e, ev);
-      *(e->seen) = true;
-      v->maybe_expectations.erase(e);
+      if (e->seen != nullptr) {
+        *(e->seen) = true;
+      }
+      expectations->erase(e);
       return true;
     }
   }
@@ -282,8 +272,8 @@ void cq_verify(cq_verifier* v) {
       fail_no_event_received(v);
       break;
     }
-    if (FindExpectations(v, ev)) continue;
-    if (FindMaybeExpectations(v, ev)) continue;
+    if (FindExpectations(&v->expectations, ev)) continue;
+    if (FindExpectations(&v->maybe_expectations, ev)) continue;
     gpr_log(GPR_ERROR, "cq returned unexpected event: %s",
             grpc_event_string(&ev).c_str());
     gpr_log(GPR_ERROR, "expected tags:\n%s", ExpectationsString(*v).c_str());
