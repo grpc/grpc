@@ -221,16 +221,12 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
     cq_verify(cqv);
   }
 
+  // Cancel the call so that the client sets up an error status.
+  grpc_call_cancel(c, nullptr);
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_FAILED_PRECONDITION;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
                                 nullptr);
@@ -261,10 +257,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
     GPR_ASSERT(response_payload2_recv != nullptr);
   }
 
-  GPR_ASSERT(status == GRPC_STATUS_FAILED_PRECONDITION);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(status == GRPC_STATUS_CANCELLED);
+  GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
