@@ -41,8 +41,8 @@ REQUIREMENTS_PATH = os.path.join(PROJECT_ROOT, 'requirements.bazel.txt')
 DOC_PATH = os.path.join(PROJECT_ROOT, 'doc/build')
 
 if "VIRTUAL_ENV" in os.environ:
-    VIRTUALENV_DIR = ''
-    PYTHON_PATH = sys.executable
+    VIRTUALENV_DIR = os.environ['VIRTUAL_ENV']
+    PYTHON_PATH = os.path.join(VIRTUALENV_DIR, 'bin', 'python')
     subprocess_arguments_list = []
 else:
     VIRTUALENV_DIR = os.path.join(SCRIPT_DIR, 'distrib_virtualenv')
@@ -63,6 +63,8 @@ for subprocess_arguments in subprocess_arguments_list:
     subprocess.check_call(args=subprocess_arguments)
 
 if not args.repo_owner or not args.doc_branch:
+    tty_width = int(os.popen('stty size', 'r').read().split()[1])
+    print('-' * tty_width)
     print('Please check generated Python doc inside doc/build')
     print(
         'To push to a GitHub repo, please provide repo owner and doc branch name'
