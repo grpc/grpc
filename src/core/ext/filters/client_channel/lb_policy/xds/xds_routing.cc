@@ -474,8 +474,9 @@ void XdsRoutingLb::UpdateStateLocked() {
       for (const auto& config_route : config_->route_table()) {
         RoutePicker::Route route;
         route.matchers = &config_route.matchers;
-        route.picker = actions_[config_route.action]->picker_wrapper();
-        if (route.picker == nullptr) {
+        auto it = actions_.find(config_route.action);
+        if (it == actions_.end() || it->second == nullptr ||
+            it->second->picker_wrapper() == nullptr) {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
             gpr_log(GPR_INFO,
                     "[xds_routing_lb %p] child %s has not yet returned a "
@@ -485,6 +486,8 @@ void XdsRoutingLb::UpdateStateLocked() {
           route.picker = MakeRefCounted<ChildPickerWrapper>(
               config_route.action, absl::make_unique<QueuePicker>(
                                        Ref(DEBUG_LOCATION, "QueuePicker")));
+        } else {
+          route.picker = it->second->picker_wrapper();
         }
         route_table.push_back(std::move(route));
       }
