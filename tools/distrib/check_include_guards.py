@@ -63,14 +63,14 @@ class GuardValidator(object):
             '...\n') + ('#endif /* {2} */'
                         if c_core_header else '#endif  // {2}')
         if not match_txt:
-            print(invalid_guards_msg_template.format(fpath, regexp.pattern,
-                                                     build_valid_guard(fpath)))
+            print(
+                invalid_guards_msg_template.format(fpath, regexp.pattern,
+                                                   build_valid_guard(fpath)))
             return fcontents
 
-        print((
-            '{}: Wrong preprocessor guards (RE {}):'
-            '\n\tFound {}, expected {}').format(fpath, regexp.pattern,
-                                                match_txt, correct))
+        print(('{}: Wrong preprocessor guards (RE {}):'
+               '\n\tFound {}, expected {}').format(fpath, regexp.pattern,
+                                                   match_txt, correct))
         if fix:
             print('Fixing {}...\n'.format(fpath))
             fixed_fcontents = re.sub(match_txt, correct, fcontents)
