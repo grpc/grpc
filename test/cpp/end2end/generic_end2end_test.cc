@@ -140,7 +140,6 @@ class GenericEnd2endTest : public ::testing::Test {
 
       delete method_name;  // Make sure that this is not needed after invocation
 
-      std::thread request_call([this]() { server_ok(4); });
       call->StartCall(tag(1));
       client_ok(1);
       std::unique_ptr<ByteBuffer> send_buffer =
@@ -155,7 +154,7 @@ class GenericEnd2endTest : public ::testing::Test {
       generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(),
                                    srv_cq_.get(), tag(4));
 
-      request_call.join();
+      verify_ok(srv_cq_.get(), 4, true);
       EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
       EXPECT_EQ(kMethodName, srv_ctx.method());
 
@@ -283,7 +282,7 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
 
     std::unique_ptr<ByteBuffer> cli_send_buffer =
         SerializeToByteBuffer(&send_request);
-    std::thread request_call([this]() { server_ok(4); });
+    // Use the same cq as server so that events can be polled in time.
     std::unique_ptr<GenericClientAsyncResponseReader> call =
         generic_stub_->PrepareUnaryCall(&cli_ctx, kMethodName,
                                         *cli_send_buffer.get(), &cli_cq_);
@@ -294,7 +293,8 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
 
     generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(),
                                  srv_cq_.get(), tag(4));
-    request_call.join();
+
+    server_ok(4);
     EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
     EXPECT_EQ(kMethodName, srv_ctx.method());
 
@@ -337,7 +337,6 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
 
   cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
   send_request.set_message("Hello");
-  std::thread request_call([this]() { server_ok(2); });
   std::unique_ptr<GenericClientAsyncReaderWriter> cli_stream =
       generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
   cli_stream->StartCall(tag(1));
@@ -345,8 +344,8 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
 
   generic_service_.RequestCall(&srv_ctx, &srv_stream, srv_cq_.get(),
                                srv_cq_.get(), tag(2));
-  request_call.join();
 
+  verify_ok(srv_cq_.get(), 2, true);
   EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
   EXPECT_EQ(kMethodName, srv_ctx.method());
 
