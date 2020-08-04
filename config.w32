@@ -143,6 +143,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\listener.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\listener_components.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\udp_listener_config.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\rbac\\v3\\rbac.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\route.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\route_components.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\scoped_route.upb.c " +
@@ -160,8 +161,12 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\envoy\\service\\load_stats\\v3\\lrs.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\service\\route\\v3\\rds.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\service\\route\\v3\\srds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\metadata.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\number.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\path.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\regex.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\string.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\value.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\metadata\\v3\\metadata.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\tracing\\v3\\custom_tag.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\v3\\http.upb.c " +
@@ -170,6 +175,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\envoy\\type\\v3\\semantic_version.upb.c " +
     "src\\core\\ext\\upb-generated\\gogoproto\\gogo.upb.c " +
     "src\\core\\ext\\upb-generated\\google\\api\\annotations.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\api\\expr\\v1alpha1\\syntax.upb.c " +
     "src\\core\\ext\\upb-generated\\google\\api\\http.upb.c " +
     "src\\core\\ext\\upb-generated\\google\\protobuf\\any.upb.c " +
     "src\\core\\ext\\upb-generated\\google\\protobuf\\descriptor.upb.c " +
@@ -929,6 +935,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\endpoint\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\listener");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\rbac");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\rbac\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\route");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\trace");
@@ -965,6 +973,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\gogoproto");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\api");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\api\\expr");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\api\\expr\\v1alpha1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\protobuf");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\rpc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src");

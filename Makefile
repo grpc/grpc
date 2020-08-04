@@ -1148,6 +1148,7 @@ alts_credentials_fuzzer: $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer
 alts_util_test: $(BINDIR)/$(CONFIG)/alts_util_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
+authorization_engine_test: $(BINDIR)/$(CONFIG)/authorization_engine_test
 backoff_test: $(BINDIR)/$(CONFIG)/backoff_test
 bad_streaming_id_bad_client_test: $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test
 badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
@@ -1525,6 +1526,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alts_util_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/authorization_engine_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
@@ -1682,6 +1684,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alts_util_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/authorization_engine_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
@@ -2124,6 +2127,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
+	$(E) "[RUN]     Testing authorization_engine_test"
+	$(Q) $(BINDIR)/$(CONFIG)/authorization_engine_test || ( echo test authorization_engine_test failed ; exit 1 )
 	$(E) "[RUN]     Testing backoff_test"
 	$(Q) $(BINDIR)/$(CONFIG)/backoff_test || ( echo test backoff_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_streaming_id_bad_client_test"
@@ -3766,6 +3771,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c \
+    src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c \
     src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c \
     src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c \
     src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c \
@@ -3783,8 +3789,12 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c \
     src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c \
     src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c \
     src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c \
     src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/http.upb.c \
@@ -3793,6 +3803,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
@@ -4410,6 +4421,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c \
+    src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c \
     src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c \
     src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c \
     src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c \
@@ -4427,8 +4439,12 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c \
     src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c \
     src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c \
     src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c \
     src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/http.upb.c \
@@ -4437,6 +4453,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
@@ -11639,6 +11656,52 @@ deps_auth_property_iterator_test: $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+AUTHORIZATION_ENGINE_TEST_SRC = \
+    src/core/lib/security/authorization/authorization_engine.cc \
+    test/core/security/authorization_engine_test.cc \
+
+AUTHORIZATION_ENGINE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(AUTHORIZATION_ENGINE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/authorization_engine_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
+
+$(BINDIR)/$(CONFIG)/authorization_engine_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/authorization_engine_test: $(PROTOBUF_DEP) $(AUTHORIZATION_ENGINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(AUTHORIZATION_ENGINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/authorization_engine_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/core/lib/security/authorization/authorization_engine.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/core/security/authorization_engine_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_authorization_engine_test: $(AUTHORIZATION_ENGINE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(AUTHORIZATION_ENGINE_TEST_OBJS:.o=.dep)
 endif
 endif
 

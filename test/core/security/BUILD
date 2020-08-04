@@ -73,6 +73,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "authorization_engine_test",
+    srcs = ["authorization_engine_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc_authorization_engine",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.cc"],
     language = "C++",
