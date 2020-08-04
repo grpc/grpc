@@ -249,7 +249,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/auth_metadata_processor.h",
     "include/grpcpp/security/credentials.h",
     "include/grpcpp/security/server_credentials.h",
-    "include/grpcpp/security/server_credentials_impl.h",
     "include/grpcpp/security/tls_credentials_options.h",
     "include/grpcpp/server.h",
     "include/grpcpp/server_impl.h",
@@ -406,7 +405,6 @@ grpc_cc_library(
     hdrs = [
         "include/grpc++/support/error_details.h",
         "include/grpcpp/support/error_details.h",
-        "include/grpcpp/support/error_details_impl.h",
     ],
     language = "c++",
     standalone = True,

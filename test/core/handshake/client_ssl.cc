@@ -198,6 +198,10 @@ static void server_thread(void* arg) {
     gpr_log(GPR_INFO, "Handshake successful.");
   }
 
+  // Send out the settings frame.
+  const char settings_frame[] = "\x00\x00\x00\x04\x00\x00\x00\x00\x00";
+  SSL_write(ssl, settings_frame, sizeof(settings_frame) - 1);
+
   // Wait until the client drops its connection.
   char buf;
   while (SSL_read(ssl, &buf, sizeof(buf)) > 0)

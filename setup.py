@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """A setup module for the GRPC Python package."""
+
+# setuptools need to be imported before distutils. Otherwise it might lead to
+# undesirable behaviors or errors.
+import setuptools
+
 from distutils import cygwinccompiler
 from distutils import extension as _extension
 from distutils import util
@@ -25,7 +30,6 @@ import shutil
 import sys
 import sysconfig
 
-import setuptools
 from setuptools.command import egg_info
 
 import subprocess

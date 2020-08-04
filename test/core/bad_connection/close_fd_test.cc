@@ -73,9 +73,8 @@ static test_ctx g_ctx;
 static void server_setup_transport(grpc_transport* transport) {
   grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_add_to_pollset(g_ctx.ep->server, grpc_cq_pollset(g_ctx.cq));
-  grpc_server_setup_transport(g_ctx.server, transport, nullptr,
-                              grpc_server_get_channel_args(g_ctx.server),
-                              nullptr);
+  g_ctx.server->core_server->SetupTransport(
+      transport, nullptr, g_ctx.server->core_server->channel_args(), nullptr);
 }
 
 static void client_setup_transport(grpc_transport* transport) {

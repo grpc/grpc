@@ -34,7 +34,6 @@
 namespace grpc_impl {
 
 class ServerCompletionQueue;
-class ServerCredentials;
 }  // namespace grpc_impl
 namespace grpc {
 
@@ -42,6 +41,7 @@ class AsyncGenericService;
 class Channel;
 class CompletionQueue;
 class GenericServerContext;
+class ServerCredentials;
 class Service;
 
 extern CoreCodegenInterface* g_core_codegen_interface;
@@ -173,7 +173,7 @@ class ServerInterface : public internal::CallHook {
   ///
   /// \warning It's an error to call this method on an already started server.
   virtual int AddListeningPort(const std::string& addr,
-                               grpc_impl::ServerCredentials* creds) = 0;
+                               ServerCredentials* creds) = 0;
 
   /// Start the server.
   ///

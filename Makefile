@@ -4941,7 +4941,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/auth_metadata_processor.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
-    include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
@@ -5118,7 +5117,6 @@ LIBGRPC++_ERROR_DETAILS_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/support/error_details.h \
     include/grpcpp/support/error_details.h \
-    include/grpcpp/support/error_details_impl.h \
 
 LIBGRPC++_ERROR_DETAILS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_ERROR_DETAILS_SRC))))
 
@@ -5628,7 +5626,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/auth_metadata_processor.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
-    include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \

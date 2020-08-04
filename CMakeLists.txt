@@ -2817,7 +2817,6 @@ foreach(_hdr
   include/grpcpp/security/auth_metadata_processor.h
   include/grpcpp/security/credentials.h
   include/grpcpp/security/server_credentials.h
-  include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
@@ -2987,7 +2986,6 @@ target_link_libraries(grpc++_error_details
 foreach(_hdr
   include/grpc++/support/error_details.h
   include/grpcpp/support/error_details.h
-  include/grpcpp/support/error_details_impl.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3506,7 +3504,6 @@ foreach(_hdr
   include/grpcpp/security/auth_metadata_processor.h
   include/grpcpp/security/credentials.h
   include/grpcpp/security/server_credentials.h
-  include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
