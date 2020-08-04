@@ -205,7 +205,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   state.call = grpc_channel_create_call(
       state.channel, nullptr, GRPC_PROPAGATE_DEFAULTS, state.cq,
       grpc_slice_from_static_string("/Service/Method"), &host,
-      n_sec_deadline(1), nullptr);
+      n_sec_deadline(5), nullptr);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -274,7 +274,7 @@ typedef struct {
 
 static void actually_poll_server(void* arg) {
   poll_args* pa = static_cast<poll_args*>(arg);
-  gpr_timespec deadline = n_sec_deadline(1);
+  gpr_timespec deadline = n_sec_deadline(5);
   while (true) {
     bool done = gpr_atm_acq_load(&state.done_atm) != 0;
     gpr_timespec time_left =
@@ -284,7 +284,7 @@ static void actually_poll_server(void* arg) {
     if (done || gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) < 0) {
       break;
     }
-    test_tcp_server_poll(pa->server, 100);
+    test_tcp_server_poll(pa->server, 1000);
   }
   gpr_event_set(pa->signal_when_done, (void*)1);
   gpr_free(pa);
