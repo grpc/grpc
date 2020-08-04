@@ -217,12 +217,12 @@ static void test_server_streaming(grpc_end2end_test_config config,
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
+  bool seen_status = false;
+  CQ_MAYBE_EXPECT_COMPLETION(cqv, tag(1), true, &seen_status);
   CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
   cq_verify(cqv);
 
   // Client keeps reading messages till it gets the status
-  bool seen_status = false;
-  CQ_MAYBE_EXPECT_COMPLETION(cqv, tag(1), true, &seen_status);
   int num_messages_received = 0;
   while (true) {
     memset(ops, 0, sizeof(ops));
