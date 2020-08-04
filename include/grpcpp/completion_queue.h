@@ -16,9 +16,9 @@
  *
  */
 
-#ifndef GRPCPP_COMPLETION_QUEUE_IMPL_H
-#define GRPCPP_COMPLETION_QUEUE_IMPL_H
+#ifndef GRPCPP_COMPLETION_QUEUE_H
+#define GRPCPP_COMPLETION_QUEUE_H
 
-#include <grpcpp/impl/codegen/completion_queue_impl.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 
-#endif  // GRPCPP_COMPLETION_QUEUE_IMPL_H
+#endif  // GRPCPP_COMPLETION_QUEUE_H

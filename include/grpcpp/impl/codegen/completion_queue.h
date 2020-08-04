@@ -284,7 +284,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   friend class ::grpc::internal::BlockingUnaryCallImpl;
 
   // Friends that need access to constructor for callback CQ
-  friend class ::grpc_impl::Channel;
+  friend class ::grpc::Channel;
 
   // For access to Register/CompleteAvalanching
   template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
@@ -382,14 +382,14 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
     }
   }
 
-  void RegisterServer(const Server* server) {
+  void RegisterServer(const ::grpc_impl::Server* server) {
     (void)server;
 #ifndef NDEBUG
     grpc::internal::MutexLock l(&server_list_mutex_);
     server_list_.push_back(server);
 #endif
   }
-  void UnregisterServer(const Server* server) {
+  void UnregisterServer(const ::grpc_impl::Server* server) {
     (void)server;
 #ifndef NDEBUG
     grpc::internal::MutexLock l(&server_list_mutex_);
@@ -412,7 +412,8 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   // NDEBUG, instantiate it in all cases since otherwise the size will be
   // inconsistent.
   mutable grpc::internal::Mutex server_list_mutex_;
-  std::list<const Server*> server_list_ /* GUARDED_BY(server_list_mutex_) */;
+  std::list<const ::grpc_impl::Server*>
+      server_list_ /* GUARDED_BY(server_list_mutex_) */;
 };
 
 /// A specific type of completion queue used by the processing of notifications

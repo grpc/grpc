@@ -131,7 +131,7 @@ class Service {
                          Message* request,
                          internal::ServerAsyncStreamingInterface* stream,
                          ::grpc::CompletionQueue* call_cq,
-                         ::grpc_impl::ServerCompletionQueue* notification_cq,
+                         ::grpc::ServerCompletionQueue* notification_cq,
                          void* tag) {
     // Typecast the index to size_t for indexing into a vector
     // while preserving the API that existed before a compiler
@@ -144,7 +144,7 @@ class Service {
       int index, ::grpc_impl::ServerContext* context,
       internal::ServerAsyncStreamingInterface* stream,
       ::grpc::CompletionQueue* call_cq,
-      ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
+      ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
     server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
                               notification_cq, tag);
@@ -154,7 +154,7 @@ class Service {
       int index, ::grpc_impl::ServerContext* context, Message* request,
       internal::ServerAsyncStreamingInterface* stream,
       ::grpc::CompletionQueue* call_cq,
-      ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
+      ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
     server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
                               notification_cq, tag, request);
@@ -163,7 +163,7 @@ class Service {
       int index, ::grpc_impl::ServerContext* context,
       internal::ServerAsyncStreamingInterface* stream,
       ::grpc::CompletionQueue* call_cq,
-      ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
+      ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
     server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
                               notification_cq, tag);

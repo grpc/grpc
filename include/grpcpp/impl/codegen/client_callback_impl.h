@@ -60,7 +60,7 @@ class CallbackUnaryCallImpl {
                         ::grpc_impl::ClientContext* context,
                         const InputMessage* request, OutputMessage* result,
                         std::function<void(::grpc::Status)> on_completion) {
-    ::grpc_::CompletionQueue* cq = channel->CallbackCQ();
+    ::grpc::CompletionQueue* cq = channel->CallbackCQ();
     GPR_CODEGEN_ASSERT(cq != nullptr);
     grpc::internal::Call call(channel->CreateCall(method, context, cq));
 

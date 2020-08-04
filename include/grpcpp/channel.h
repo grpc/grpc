@@ -25,7 +25,7 @@
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
-#include <grpcpp/impl/codegen/completion_queue_impl.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/sync.h>
@@ -37,7 +37,7 @@ namespace testing {
 class ChannelTestPeer;
 }  // namespace testing
 
-std::shared_ptr<::grpc_impl::Channel> CreateChannelInternal(
+std::shared_ptr<Channel> CreateChannelInternal(
     const std::string& host, grpc_channel* c_channel,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
@@ -87,23 +87,22 @@ class Channel final : public ::grpc::ChannelInterface,
 
   ::grpc::internal::Call CreateCall(const ::grpc::internal::RpcMethod& method,
                                     ::grpc_impl::ClientContext* context,
-                                    ::grpc_impl::CompletionQueue* cq) override;
+                                    ::grpc::CompletionQueue* cq) override;
   void PerformOpsOnCall(::grpc::internal::CallOpSetInterface* ops,
                         ::grpc::internal::Call* call) override;
   void* RegisterMethod(const char* method) override;
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                gpr_timespec deadline,
-                               ::grpc_impl::CompletionQueue* cq,
-                               void* tag) override;
+                               ::grpc::CompletionQueue* cq, void* tag) override;
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                               gpr_timespec deadline) override;
 
-  ::grpc_impl::CompletionQueue* CallbackCQ() override;
+  ::grpc::CompletionQueue* CallbackCQ() override;
 
   ::grpc::internal::Call CreateCallInternal(
       const ::grpc::internal::RpcMethod& method,
-      ::grpc_impl::ClientContext* context, ::grpc_impl::CompletionQueue* cq,
+      ::grpc_impl::ClientContext* context, ::grpc::CompletionQueue* cq,
       size_t interceptor_pos) override;
 
   const std::string host_;
@@ -116,7 +115,7 @@ class Channel final : public ::grpc::ChannelInterface,
   // with this channel (if any). It is set on the first call to CallbackCQ().
   // It is _not owned_ by the channel; ownership belongs with its internal
   // shutdown callback tag (invoked when the CQ is fully shutdown).
-  ::grpc_impl::CompletionQueue* callback_cq_ = nullptr;
+  ::grpc::CompletionQueue* callback_cq_ = nullptr;
 
   std::vector<
       std::unique_ptr<::grpc::experimental::ClientInterceptorFactoryInterface>>
