@@ -1115,8 +1115,9 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
 
 void Server::ChannelData::FinishDestroy(void* cd, grpc_error* /*error*/) {
   auto* chand = static_cast<Server::ChannelData*>(cd);
+  Server* server = chand->server_.get();
   GRPC_CHANNEL_INTERNAL_UNREF(chand->channel_, "server");
-  chand->server_->Unref();
+  server->Unref();
 }
 
 void Server::ChannelData::Destroy() {
