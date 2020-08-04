@@ -1,6 +1,6 @@
 %YAML 1.2
 --- |
-  # Copyright 2015 gRPC authors.
+  # Copyright 2020 gRPC authors.
   #
   # Licensed under the Apache License, Version 2.0 (the "License");
   # you may not use this file except in compliance with the License.
@@ -13,14 +13,7 @@
   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   # See the License for the specific language governing permissions and
   # limitations under the License.
-  
-  <%include file="../../debian_jessie_header.include"/>
-  
-  <%include file="../../apt_get_basic.include"/>
-  <%include file="../../python_deps.include"/>
-  <%include file="../../cxx_deps.include"/>
-  <%include file="../../cmake_jessie_backports.include"/>
-  <%include file="../../run_tests_addons.include"/>
-  # Define the default command.
-  CMD ["bash"]
-  
+
+  # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/grpc_version.py.template`!!!
+
+  VERSION = '${settings.python_version.pep440()}'
