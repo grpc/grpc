@@ -274,17 +274,17 @@ const upb_msglayout validate_BoolRules_msginit = {
 };
 
 static const upb_msglayout_field validate_StringRules__fields[25] = {
-  {1, UPB_SIZE(60, 64), 8, 0, 9, 1},
+  {1, UPB_SIZE(60, 64), 8, 0, 12, 1},
   {2, UPB_SIZE(8, 8), 1, 0, 4, 1},
   {3, UPB_SIZE(16, 16), 2, 0, 4, 1},
   {4, UPB_SIZE(24, 24), 3, 0, 4, 1},
   {5, UPB_SIZE(32, 32), 4, 0, 4, 1},
-  {6, UPB_SIZE(68, 80), 9, 0, 9, 1},
-  {7, UPB_SIZE(76, 96), 10, 0, 9, 1},
-  {8, UPB_SIZE(84, 112), 11, 0, 9, 1},
-  {9, UPB_SIZE(92, 128), 12, 0, 9, 1},
-  {10, UPB_SIZE(108, 160), 0, 0, 9, 3},
-  {11, UPB_SIZE(112, 168), 0, 0, 9, 3},
+  {6, UPB_SIZE(68, 80), 9, 0, 12, 1},
+  {7, UPB_SIZE(76, 96), 10, 0, 12, 1},
+  {8, UPB_SIZE(84, 112), 11, 0, 12, 1},
+  {9, UPB_SIZE(92, 128), 12, 0, 12, 1},
+  {10, UPB_SIZE(108, 160), 0, 0, 12, 3},
+  {11, UPB_SIZE(112, 168), 0, 0, 12, 3},
   {12, UPB_SIZE(120, 176), UPB_SIZE(-129, -185), 0, 8, 1},
   {13, UPB_SIZE(120, 176), UPB_SIZE(-129, -185), 0, 8, 1},
   {14, UPB_SIZE(120, 176), UPB_SIZE(-129, -185), 0, 8, 1},
@@ -296,7 +296,7 @@ static const upb_msglayout_field validate_StringRules__fields[25] = {
   {20, UPB_SIZE(48, 48), 6, 0, 4, 1},
   {21, UPB_SIZE(120, 176), UPB_SIZE(-129, -185), 0, 8, 1},
   {22, UPB_SIZE(120, 176), UPB_SIZE(-129, -185), 0, 8, 1},
-  {23, UPB_SIZE(100, 144), 13, 0, 9, 1},
+  {23, UPB_SIZE(100, 144), 13, 0, 12, 1},
   {24, UPB_SIZE(120, 176), UPB_SIZE(-129, -185), 0, 14, 1},
   {25, UPB_SIZE(56, 56), 7, 0, 8, 1},
 };
@@ -311,7 +311,7 @@ static const upb_msglayout_field validate_BytesRules__fields[13] = {
   {1, UPB_SIZE(32, 32), 4, 0, 12, 1},
   {2, UPB_SIZE(8, 8), 1, 0, 4, 1},
   {3, UPB_SIZE(16, 16), 2, 0, 4, 1},
-  {4, UPB_SIZE(40, 48), 5, 0, 9, 1},
+  {4, UPB_SIZE(40, 48), 5, 0, 12, 1},
   {5, UPB_SIZE(48, 64), 6, 0, 12, 1},
   {6, UPB_SIZE(56, 80), 7, 0, 12, 1},
   {7, UPB_SIZE(64, 96), 8, 0, 12, 1},
@@ -390,8 +390,8 @@ const upb_msglayout validate_MapRules_msginit = {
 
 static const upb_msglayout_field validate_AnyRules__fields[3] = {
   {1, UPB_SIZE(1, 1), 1, 0, 8, 1},
-  {2, UPB_SIZE(4, 8), 0, 0, 9, 3},
-  {3, UPB_SIZE(8, 16), 0, 0, 9, 3},
+  {2, UPB_SIZE(4, 8), 0, 0, 12, 3},
+  {3, UPB_SIZE(8, 16), 0, 0, 12, 3},
 };
 
 const upb_msglayout validate_AnyRules_msginit = {

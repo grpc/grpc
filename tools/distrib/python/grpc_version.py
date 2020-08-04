@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2017 gRPC authors.
+# Copyright 2020 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Builds Dart interop server and client in a base image.
-set -ex
 
-mkdir -p /var/local/git
-git clone /var/local/jenkins/grpc-dart /var/local/git/grpc-dart
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/grpc_version.py.template`!!!
 
-# copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
-
-cd /var/local/git/grpc-dart/interop
-# De-flake attempt: run the cmd one more time in case of transient failure
-/usr/lib/dart/bin/pub get --verbose || /usr/lib/dart/bin/pub get --verbose
+VERSION = '1.32.0.dev0'

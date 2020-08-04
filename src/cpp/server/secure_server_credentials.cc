@@ -92,10 +92,6 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
      status.error_message().c_str());
 }
 
-}  // namespace grpc
-
-namespace grpc {
-
 int SecureServerCredentials::AddPortToServer(const std::string& addr,
                                              grpc_server* server) {
   return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);

@@ -175,7 +175,7 @@ TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
                                            bool enable_bdp_probe)
     : t_(t),
       enable_bdp_probe_(enable_bdp_probe),
-      bdp_estimator_(t->peer_string),
+      bdp_estimator_(t->peer_string.c_str()),
       pid_controller_(grpc_core::PidController::Args()
                           .set_gain_p(4)
                           .set_gain_i(8)

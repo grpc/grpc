@@ -50,7 +50,7 @@ static const int kExpectedHandlerData = 1232323;
 
 class StringBufTesterBase {
  public:
-  static const int kFieldNumber = 3;
+  static constexpr int kFieldNumber = 3;
 
   StringBufTesterBase() : seen_(false), handler_data_val_(0) {}
 
@@ -286,7 +286,7 @@ class StartMsgTesterBase {
  public:
   // We don't need the FieldDef it will create, but the test harness still
   // requires that we provide one.
-  static const int kFieldNumber = 3;
+  static constexpr int kFieldNumber = 3;
 
   StartMsgTesterBase() : seen_(false), handler_data_val_(0) {}
 
@@ -437,7 +437,7 @@ class StartMsgTesterBoolMethodWithHandlerData : public StartMsgTesterBase {
 
 class Int32ValueTesterBase {
  public:
-  static const int kFieldNumber = 1;
+  static constexpr int kFieldNumber = 1;
 
   Int32ValueTesterBase() : seen_(false), val_(0), handler_data_val_(0) {}
 
@@ -939,6 +939,17 @@ void TestArena() {
     upb_arena_malloc(arena.ptr(), 1000000);
   }
   ASSERT(n == 0);
+
+  {
+    // Test fuse.
+    upb::Arena arena1;
+    upb::Arena arena2;
+
+    arena1.Fuse(arena2);
+
+    upb_arena_malloc(arena1.ptr(), 10000);
+    upb_arena_malloc(arena2.ptr(), 10000);
+  }
 }
 
 extern "C" {
