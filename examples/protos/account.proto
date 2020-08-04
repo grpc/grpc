@@ -1,0 +1,39 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+option go_package = "google.golang.org/grpc/grpc-wallet/grpc/examples/account";
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.account";
+option java_outer_classname = "AccoutProto";
+
+package account;
+
+service Account {
+  // GetUserInfo returns the account info (premium or not) for a token.
+  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse) {}
+}
+message GetUserInfoRequest {
+  string token = 1;
+}
+enum MembershipType {
+  UNKNOWN_MEMBERSHIP_TYPE = 0;
+  NORMAL = 1;
+  PREMIUM = 2;
+}
+message GetUserInfoResponse {
+  string name = 1;
+  MembershipType membership = 2;
+}

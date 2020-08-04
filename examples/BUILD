@@ -77,6 +77,36 @@ py_grpc_library(
     deps = [":helloworld_py_pb2"],
 )
 
+grpc_proto_library(
+    name = "wallet_proto",
+    srcs = ["protos/wallet.proto"],
+)
+
+cc_proto_library(
+    name = "wallet_cc_proto",
+    deps = [":wallet_proto"],
+)
+
+grpc_proto_library(
+    name = "stats_proto",
+    srcs = ["protos/stats.proto"],
+)
+
+cc_proto_library(
+    name = "stats_cc_proto",
+    deps = [":stats_proto"],
+)
+
+grpc_proto_library(
+    name = "account_proto",
+    srcs = ["protos/account.proto"],
+)
+
+cc_proto_library(
+    name = "account_cc_proto",
+    deps = [":account_proto"],
+)
+
 cc_binary(
     name = "greeter_client",
     srcs = ["cpp/helloworld/greeter_client.cc"],
@@ -165,6 +195,57 @@ cc_binary(
     deps = [
         ":helloworld_cc_grpc",
         "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "client",
+    srcs = ["cpp/wallet/client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        ":stats_proto",
+        ":wallet_proto",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "wallet_server",
+    srcs = ["cpp/wallet/wallet_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        ":account_proto",
+        ":stats_proto",
+        ":wallet_proto",
+        "//:grpc++",
+        "//:grpc++_reflection",
+    ],
+)
+
+cc_binary(
+    name = "stats_server",
+    srcs = ["cpp/wallet/stats_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        ":account_proto",
+        ":stats_proto",
+        "//:grpc++",
+        "//:grpc++_reflection",
+    ],
+)
+
+cc_binary(
+    name = "account_server",
+    srcs = ["cpp/wallet/account_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        ":account_proto",
+        "//:grpc++",
+        "//:grpc++_reflection",
     ],
 )
 
