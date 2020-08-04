@@ -486,6 +486,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.h
   - src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.h
   - src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.h
+  - src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.h
   - src/core/ext/upb-generated/envoy/config/route/v3/route.upb.h
   - src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h
@@ -503,8 +504,12 @@ libs:
   - src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.h
   - src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.h
   - src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.h
   - src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.h
   - src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/http.upb.h
@@ -513,6 +518,7 @@ libs:
   - src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h
   - src/core/ext/upb-generated/gogoproto/gogo.upb.h
   - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
   - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
@@ -875,6 +881,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c
   - src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c
   - src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c
+  - src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c
   - src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c
   - src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
@@ -892,8 +899,12 @@ libs:
   - src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c
   - src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c
   - src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
   - src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c
   - src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/http.upb.c
@@ -902,6 +913,7 @@ libs:
   - src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c
   - src/core/ext/upb-generated/gogoproto/gogo.upb.c
   - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
   - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
@@ -1411,6 +1423,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.h
   - src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.h
   - src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.h
+  - src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.h
   - src/core/ext/upb-generated/envoy/config/route/v3/route.upb.h
   - src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h
@@ -1428,8 +1441,12 @@ libs:
   - src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.h
   - src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.h
   - src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.h
   - src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.h
   - src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/http.upb.h
@@ -1438,6 +1455,7 @@ libs:
   - src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h
   - src/core/ext/upb-generated/gogoproto/gogo.upb.h
   - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
   - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
@@ -1735,6 +1753,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c
   - src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c
   - src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c
+  - src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c
   - src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c
   - src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
@@ -1752,8 +1771,12 @@ libs:
   - src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c
   - src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c
   - src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
   - src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c
   - src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/http.upb.c
@@ -1762,6 +1785,7 @@ libs:
   - src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c
   - src/core/ext/upb-generated/gogoproto/gogo.upb.c
   - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
   - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
@@ -4749,6 +4773,21 @@ targets:
   - address_sorting
   - upb
   uses_polling: false
+- name: authorization_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/authorization/authorization_engine.h
+  src:
+  - src/core/lib/security/authorization/authorization_engine.cc
+  - test/core/security/authorization_engine_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: backoff_test
   gtest: true
   build: test
