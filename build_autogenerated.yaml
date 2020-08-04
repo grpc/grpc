@@ -5705,6 +5705,27 @@ targets:
   - address_sorting
   - upb
   uses_polling: false
+- name: channelz_sampler_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/util/channelz_sampler_test.cc
+  deps:
+  - grpcpp_channelz
+  - grpc++_test_util
+  - grpc++_reflection
+  - grpc_test_util
+  - grpc++
+  - grpc++_test_config
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: channelz_service_test
   gtest: true
   build: test

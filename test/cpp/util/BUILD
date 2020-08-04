@@ -317,7 +317,7 @@ grpc_cc_binary(
     external_deps = [
         "gflags",
     ],
-    language = "C++",
+    language = "c++",
     deps = [
         "//:gpr",
         "//:grpc++",
