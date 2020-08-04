@@ -7189,6 +7189,7 @@ targets:
 - name: stranded_event_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
