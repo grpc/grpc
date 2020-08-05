@@ -91,7 +91,7 @@ else:
     subprocess.check_call(['git', 'checkout', '-b', doc_branch], cwd=repo_dir)
     subprocess.check_call([
         'git', 'remote', 'add', 'ssh-origin',
-        'git@github.com:%s/grpc.git' % (args.repo_owner)
+        'git@github.com:%s/grpc.git' % args.repo_owner
     ],
                           cwd=repo_dir)
     print('Updating documentation...')
