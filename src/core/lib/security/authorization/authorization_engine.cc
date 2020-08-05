@@ -23,7 +23,7 @@ namespace grpc_core {
 std::unique_ptr<AuthorizationEngine>
 AuthorizationEngine::CreateAuthorizationEngine(
     const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies) {
-  if (rbac_policies.size() < 1 || rbac_policies.size() > 2) {
+  if (rbac_policies.empty() || rbac_policies.size() > 2) {
     gpr_log(GPR_ERROR,
             "Invalid rbac policies vector. Must contain either one or two rbac "
             "policies.");
