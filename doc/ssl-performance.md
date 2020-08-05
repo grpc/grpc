@@ -7,7 +7,7 @@ As a result, we've tried hard to provide a smooth experience to our users when c
 
 ## gRPC C++: Building from Source
 
-Build system | Condition | Platform | Uses assembly optimizations
+BUILD system | Condition | Platform | Uses assembly optimizations
 ---|---|---|--
 Makefile | with OpenSSL 1.0.2 development files | all | :heavy_check_mark:
 Makefile | all other cases | all | :x:
@@ -36,6 +36,6 @@ Electron | n/a | all | :heavy_check_mark:
 ObjC | Yes | iOS | :x:
 PHP | Yes | all | Same as the `Makefile` case from above
 PHP | No | all | :x:
-Python | n/a | all | :x:
+Python | n/a | Linux, MacOS 64bit | :heavy_check_mark:
+Python | n/a | Windows and all 32bit| :x:
 Ruby | No | all | :x:
-
