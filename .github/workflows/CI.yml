@@ -14,13 +14,13 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04]
+        os: [ubuntu-16.04]
     steps:
       - name: Set env
         run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF#refs/*/v}
       - uses: actions/checkout@v2
         with:
-          repository: grpc/grpc
+          repository: kkwell/grpc
           ref: v${{ env.RELEASE_VERSION }}
           submodules: true
       - name: Build
