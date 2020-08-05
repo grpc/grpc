@@ -4,7 +4,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc.experimental.aio._base_server &#8212; gRPC Python 1.29.0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>grpc.experimental.aio._base_server &#8212; gRPC Python 1.31.0 documentation</title>
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
@@ -29,7 +30,7 @@
 
 
 
-<p class="blurb">1.29.0</p>
+<p class="blurb">1.31.0</p>
 
 
 
@@ -103,11 +104,12 @@
 <span class="sd">&quot;&quot;&quot;Abstract base classes for server-side classes.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">abc</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Sequence</span>
 
 <span class="kn">import</span> <span class="nn">grpc</span>
 
-<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">MetadataType</span><span class="p">,</span> <span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span>
+<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span>
+<span class="kn">from</span> <span class="nn">._metadata</span> <span class="kn">import</span> <span class="n">Metadata</span>
 
 
 <div class="viewcode-block" id="Server"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.Server">[docs]</a><span class="k">class</span> <span class="nc">Server</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
@@ -246,8 +248,7 @@
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
 <div class="viewcode-block" id="ServicerContext.send_initial_metadata"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.send_initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">send_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                                    <span class="n">initial_metadata</span><span class="p">:</span> <span class="n">MetadataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">send_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Sends the initial metadata value to the client.</span>
 
 <span class="sd">        This method need not be called by implementations if they have no</span>
@@ -259,7 +260,7 @@
 
 <div class="viewcode-block" id="ServicerContext.abort"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.abort">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span> <span class="nf">abort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">,</span> <span class="n">details</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-                    <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">MetadataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Raises an exception to terminate the RPC with a non-OK status.</span>
 
 <span class="sd">        The code and details passed as arguments will supercede any existing</span>
@@ -279,8 +280,7 @@
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
 <div class="viewcode-block" id="ServicerContext.set_trailing_metadata"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.set_trailing_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                                    <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">MetadataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Sends the trailing metadata for the RPC.</span>
 
 <span class="sd">        This method need not be called by implementations if they have no</span>
@@ -291,7 +291,7 @@
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
 <div class="viewcode-block" id="ServicerContext.invocation_metadata"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.invocation_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">invocation_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">invocation_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Accesses the metadata from the sent by the client.</span>
 
 <span class="sd">        Returns:</span>
@@ -340,6 +340,47 @@
 
 <span class="sd">        This method will override any compression configuration set during</span>
 <span class="sd">        server creation or set on the call.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.peer"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.peer">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">peer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Identifies the peer that invoked the RPC being serviced.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A string identifying the peer that invoked the RPC being serviced.</span>
+<span class="sd">          The string format is determined by gRPC runtime.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.peer_identities"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.peer_identities">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">peer_identities</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;Gets one or more peer identity(s).</span>
+
+<span class="sd">        Equivalent to</span>
+<span class="sd">        servicer_context.auth_context().get(servicer_context.peer_identity_key())</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          An iterable of the identities, or None if the call is not</span>
+<span class="sd">          authenticated. Each identity is returned as a raw bytes type.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.peer_identity_key"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.peer_identity_key">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">peer_identity_key</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;The auth property used to identify the peer.</span>
+
+<span class="sd">        For example, &quot;x509_common_name&quot; or &quot;x509_subject_alternative_name&quot; are</span>
+<span class="sd">        used to identify an SSL peer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          The auth property (string) that indicates the</span>
+<span class="sd">          peer identity, or None if the call is not authenticated.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.auth_context"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.ServicerContext.auth_context">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">auth_context</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;Gets the auth context for the call.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A map of strings to an iterable of bytes for each auth property.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div></div>
 </pre></div>
 
@@ -350,7 +391,7 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2018, The gRPC Authors.
+      &copy;2020, The gRPC Authors.
       
     </div>
 

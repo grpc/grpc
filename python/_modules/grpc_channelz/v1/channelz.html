@@ -4,7 +4,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc_channelz.v1.channelz &#8212; gRPC Python 1.29.0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>grpc_channelz.v1.channelz &#8212; gRPC Python 1.31.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -29,7 +30,7 @@
 
 
 
-<p class="blurb">1.29.0</p>
+<p class="blurb">1.31.0</p>
 
 
 
@@ -100,133 +101,64 @@
 <span class="c1"># limitations under the License.</span>
 <span class="sd">&quot;&quot;&quot;Channelz debug service implementation in gRPC Python.&quot;&quot;&quot;</span>
 
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">grpc</span>
-<span class="kn">from</span> <span class="nn">grpc._cython</span> <span class="kn">import</span> <span class="n">cygrpc</span>
 
-<span class="kn">import</span> <span class="nn">grpc_channelz.v1.channelz_pb2</span> <span class="k">as</span> <span class="nn">_channelz_pb2</span>
 <span class="kn">import</span> <span class="nn">grpc_channelz.v1.channelz_pb2_grpc</span> <span class="k">as</span> <span class="nn">_channelz_pb2_grpc</span>
+<span class="kn">from</span> <span class="nn">grpc_channelz.v1._servicer</span> <span class="kn">import</span> <span class="n">ChannelzServicer</span>
 
-<span class="kn">from</span> <span class="nn">google.protobuf</span> <span class="kn">import</span> <span class="n">json_format</span>
+<span class="n">_add_channelz_servicer_doc</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Add Channelz servicer to a server.</span>
 
+<span class="s2">Channelz servicer is in charge of</span>
+<span class="s2">pulling information from C-Core for entire process. It will allow the</span>
+<span class="s2">server to response to Channelz queries.</span>
 
-<div class="viewcode-block" id="ChannelzServicer"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer">[docs]</a><span class="k">class</span> <span class="nc">ChannelzServicer</span><span class="p">(</span><span class="n">_channelz_pb2_grpc</span><span class="o">.</span><span class="n">ChannelzServicer</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Servicer handling RPCs for service statuses.&quot;&quot;&quot;</span>
+<span class="s2">The Channelz statistic is enabled by default inside C-Core. Whether the</span>
+<span class="s2">statistic is enabled or not is isolated from adding Channelz servicer.</span>
+<span class="s2">That means you can query Channelz info with a Channelz-disabled channel,</span>
+<span class="s2">and you can add Channelz servicer to a Channelz-disabled server.</span>
 
-<div class="viewcode-block" id="ChannelzServicer.GetTopChannels"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetTopChannels">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">GetTopChannels</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
-                <span class="n">cygrpc</span><span class="o">.</span><span class="n">channelz_get_top_channels</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">start_channel_id</span><span class="p">),</span>
-                <span class="n">_channelz_pb2</span><span class="o">.</span><span class="n">GetTopChannelsResponse</span><span class="p">(),</span>
-            <span class="p">)</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">json_format</span><span class="o">.</span><span class="n">ParseError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
+<span class="s2">The Channelz statistic can be enabled or disabled by channel option</span>
+<span class="s2">&#39;grpc.enable_channelz&#39;. Set to 1 to enable, set to 0 to disable.</span>
 
-<div class="viewcode-block" id="ChannelzServicer.GetServers"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetServers">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">GetServers</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
-                <span class="n">cygrpc</span><span class="o">.</span><span class="n">channelz_get_servers</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">start_server_id</span><span class="p">),</span>
-                <span class="n">_channelz_pb2</span><span class="o">.</span><span class="n">GetServersResponse</span><span class="p">(),</span>
-            <span class="p">)</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">json_format</span><span class="o">.</span><span class="n">ParseError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
+<span class="s2">This is an EXPERIMENTAL API.</span>
 
-<div class="viewcode-block" id="ChannelzServicer.GetServer"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetServer">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">GetServer</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
-                <span class="n">cygrpc</span><span class="o">.</span><span class="n">channelz_get_server</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">server_id</span><span class="p">),</span>
-                <span class="n">_channelz_pb2</span><span class="o">.</span><span class="n">GetServerResponse</span><span class="p">(),</span>
-            <span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
-        <span class="k">except</span> <span class="n">json_format</span><span class="o">.</span><span class="n">ParseError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
+<span class="s2">Args:</span>
+<span class="s2">    server: A gRPC server to which Channelz service will be added.</span>
+<span class="s2">&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="ChannelzServicer.GetServerSockets"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetServerSockets">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">GetServerSockets</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
-                <span class="n">cygrpc</span><span class="o">.</span><span class="n">channelz_get_server_sockets</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">server_id</span><span class="p">,</span>
-                                                   <span class="n">request</span><span class="o">.</span><span class="n">start_socket_id</span><span class="p">,</span>
-                                                   <span class="n">request</span><span class="o">.</span><span class="n">max_results</span><span class="p">),</span>
-                <span class="n">_channelz_pb2</span><span class="o">.</span><span class="n">GetServerSocketsResponse</span><span class="p">(),</span>
-            <span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
-        <span class="k">except</span> <span class="n">json_format</span><span class="o">.</span><span class="n">ParseError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">6</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">grpc_channelz.v1</span> <span class="kn">import</span> <span class="n">_async</span> <span class="k">as</span> <span class="n">aio</span>
 
-<div class="viewcode-block" id="ChannelzServicer.GetChannel"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetChannel">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">GetChannel</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
-                <span class="n">cygrpc</span><span class="o">.</span><span class="n">channelz_get_channel</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">channel_id</span><span class="p">),</span>
-                <span class="n">_channelz_pb2</span><span class="o">.</span><span class="n">GetChannelResponse</span><span class="p">(),</span>
-            <span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
-        <span class="k">except</span> <span class="n">json_format</span><span class="o">.</span><span class="n">ParseError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
+    <span class="k">def</span> <span class="nf">add_channelz_servicer</span><span class="p">(</span><span class="n">server</span><span class="p">):</span>
 
-<div class="viewcode-block" id="ChannelzServicer.GetSubchannel"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetSubchannel">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">GetSubchannel</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
-                <span class="n">cygrpc</span><span class="o">.</span><span class="n">channelz_get_subchannel</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">subchannel_id</span><span class="p">),</span>
-                <span class="n">_channelz_pb2</span><span class="o">.</span><span class="n">GetSubchannelResponse</span><span class="p">(),</span>
-            <span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
-        <span class="k">except</span> <span class="n">json_format</span><span class="o">.</span><span class="n">ParseError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">server</span><span class="p">,</span> <span class="n">grpc</span><span class="o">.</span><span class="n">experimental</span><span class="o">.</span><span class="n">aio</span><span class="o">.</span><span class="n">Server</span><span class="p">):</span>
+            <span class="n">_channelz_pb2_grpc</span><span class="o">.</span><span class="n">add_ChannelzServicer_to_server</span><span class="p">(</span>
+                <span class="n">aio</span><span class="o">.</span><span class="n">ChannelzServicer</span><span class="p">(),</span> <span class="n">server</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_channelz_pb2_grpc</span><span class="o">.</span><span class="n">add_ChannelzServicer_to_server</span><span class="p">(</span>
+                <span class="n">ChannelzServicer</span><span class="p">(),</span> <span class="n">server</span><span class="p">)</span>
 
-<div class="viewcode-block" id="ChannelzServicer.GetSocket"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetSocket">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">GetSocket</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
-                <span class="n">cygrpc</span><span class="o">.</span><span class="n">channelz_get_socket</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">socket_id</span><span class="p">),</span>
-                <span class="n">_channelz_pb2</span><span class="o">.</span><span class="n">GetSocketResponse</span><span class="p">(),</span>
-            <span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
-        <span class="k">except</span> <span class="n">json_format</span><span class="o">.</span><span class="n">ParseError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div></div>
+    <span class="n">add_channelz_servicer</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_add_channelz_servicer_doc</span>
 
+    <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;aio&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;add_channelz_servicer&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ChannelzServicer&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
 
-<div class="viewcode-block" id="add_channelz_servicer"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.add_channelz_servicer">[docs]</a><span class="k">def</span> <span class="nf">add_channelz_servicer</span><span class="p">(</span><span class="n">server</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Add Channelz servicer to a server. Channelz servicer is in charge of</span>
-<span class="sd">    pulling information from C-Core for entire process. It will allow the</span>
-<span class="sd">    server to response to Channelz queries.</span>
+<span class="k">else</span><span class="p">:</span>
 
-<span class="sd">    The Channelz statistic is enabled by default inside C-Core. Whether the</span>
-<span class="sd">    statistic is enabled or not is isolated from adding Channelz servicer.</span>
-<span class="sd">    That means you can query Channelz info with a Channelz-disabled channel,</span>
-<span class="sd">    and you can add Channelz servicer to a Channelz-disabled server.</span>
+<div class="viewcode-block" id="add_channelz_servicer"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.add_channelz_servicer">[docs]</a>    <span class="k">def</span> <span class="nf">add_channelz_servicer</span><span class="p">(</span><span class="n">server</span><span class="p">):</span>
+        <span class="n">_channelz_pb2_grpc</span><span class="o">.</span><span class="n">add_ChannelzServicer_to_server</span><span class="p">(</span>
+            <span class="n">ChannelzServicer</span><span class="p">(),</span> <span class="n">server</span><span class="p">)</span></div>
 
-<span class="sd">    The Channelz statistic can be enabled or disabled by channel option</span>
-<span class="sd">    &#39;grpc.enable_channelz&#39;. Set to 1 to enable, set to 0 to disable.</span>
+    <span class="n">add_channelz_servicer</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_add_channelz_servicer_doc</span>
 
-<span class="sd">    This is an EXPERIMENTAL API.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">      server: grpc.Server to which Channelz service will be added.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_channelz_pb2_grpc</span><span class="o">.</span><span class="n">add_ChannelzServicer_to_server</span><span class="p">(</span><span class="n">ChannelzServicer</span><span class="p">(),</span>
-                                                      <span class="n">server</span><span class="p">)</span></div>
+    <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;add_channelz_servicer&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ChannelzServicer&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
 </pre></div>
 
           </div>
@@ -236,7 +168,7 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2018, The gRPC Authors.
+      &copy;2020, The gRPC Authors.
       
     </div>
 

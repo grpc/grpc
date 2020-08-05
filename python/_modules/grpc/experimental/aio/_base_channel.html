@@ -4,7 +4,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc.experimental.aio._base_channel &#8212; gRPC Python 1.29.0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>grpc.experimental.aio._base_channel &#8212; gRPC Python 1.31.0 documentation</title>
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
@@ -29,7 +30,7 @@
 
 
 
-<p class="blurb">1.29.0</p>
+<p class="blurb">1.31.0</p>
 
 
 
@@ -108,10 +109,9 @@
 <span class="kn">import</span> <span class="nn">grpc</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_base_call</span>
-<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="p">(</span><span class="n">DeserializingFunction</span><span class="p">,</span> <span class="n">MetadataType</span><span class="p">,</span> <span class="n">RequestIterableType</span><span class="p">,</span>
+<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="p">(</span><span class="n">DeserializingFunction</span><span class="p">,</span> <span class="n">RequestIterableType</span><span class="p">,</span>
                       <span class="n">SerializingFunction</span><span class="p">)</span>
-
-<span class="n">_IMMUTABLE_EMPTY_TUPLE</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()</span>
+<span class="kn">from</span> <span class="nn">._metadata</span> <span class="kn">import</span> <span class="n">Metadata</span>
 
 
 <div class="viewcode-block" id="UnaryUnaryMultiCallable"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.UnaryUnaryMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryMultiCallable</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
@@ -122,7 +122,7 @@
                  <span class="n">request</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
                  <span class="o">*</span><span class="p">,</span>
                  <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="n">_IMMUTABLE_EMPTY_TUPLE</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -138,7 +138,7 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
 <span class="sd">            secure Channel.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
-<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">          compression: An element of grpc.compression, e.g.</span>
 <span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
@@ -160,7 +160,7 @@
                  <span class="n">request</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
                  <span class="o">*</span><span class="p">,</span>
                  <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="n">_IMMUTABLE_EMPTY_TUPLE</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -176,7 +176,7 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
 <span class="sd">            secure Channel.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
-<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">          compression: An element of grpc.compression, e.g.</span>
 <span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
@@ -197,7 +197,7 @@
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="n">_IMMUTABLE_EMPTY_TUPLE</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -214,7 +214,7 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
 <span class="sd">            secure Channel.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
-<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">          compression: An element of grpc.compression, e.g.</span>
 <span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
@@ -235,7 +235,7 @@
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="n">_IMMUTABLE_EMPTY_TUPLE</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -252,7 +252,7 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
 <span class="sd">            secure Channel.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
-<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">          compression: An element of grpc.compression, e.g.</span>
 <span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
@@ -444,7 +444,7 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2018, The gRPC Authors.
+      &copy;2020, The gRPC Authors.
       
     </div>
 

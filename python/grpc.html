@@ -4,7 +4,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>gRPC &#8212; gRPC Python 1.29.0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gRPC &#8212; gRPC Python 1.31.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -31,7 +32,7 @@
 
 
 
-<p class="blurb">1.29.0</p>
+<p class="blurb">1.31.0</p>
 
 
 
@@ -120,8 +121,8 @@
 <span id="grpc"></span><h1>gRPC<a class="headerlink" href="#module-grpc" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="tutorial">
 <h2>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h2>
-<p>If you want to see gRPC in action first, visit the <a class="reference external" href="https://grpc.io/docs/quickstart/python.html">Python Quickstart</a>.
-Or, if you would like dive in with more extensive usage of gRPC Python, check <a class="reference external" href="https://grpc.io/docs/tutorials/basic/python.html">gRPC Basics - Python</a> out.</p>
+<p>If you want to see gRPC in action first, visit the <a class="reference external" href="https://grpc.io/docs/languages/python/quickstart">Python Quickstart</a>.
+Or, if you would like dive in with more extensive usage of gRPC Python, check <a class="reference external" href="https://grpc.io/docs/languages/python/basics">gRPC Basics - Python</a> out.</p>
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
@@ -144,7 +145,7 @@ Or, if you would like dive in with more extensive usage of gRPC Python, check <a
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target</strong> – The server address</p></li>
-<li><p><strong>options</strong> – An optional list of key-value pairs (channel args
+<li><p><strong>options</strong> – An optional list of key-value pairs (<a class="reference internal" href="glossary.html#term-channel_arguments"><span class="xref std std-term">channel_arguments</span></a>
 in gRPC Core runtime) to configure the channel.</p></li>
 <li><p><strong>compression</strong> – An optional value indicating the compression method to be
 used over the lifetime of the channel. This is an EXPERIMENTAL option.</p></li>
@@ -166,7 +167,7 @@ used over the lifetime of the channel. This is an EXPERIMENTAL option.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target</strong> – The server address.</p></li>
 <li><p><strong>credentials</strong> – A ChannelCredentials instance.</p></li>
-<li><p><strong>options</strong> – An optional list of key-value pairs (channel args
+<li><p><strong>options</strong> – An optional list of key-value pairs (<a class="reference internal" href="glossary.html#term-channel_arguments"><span class="xref std std-term">channel_arguments</span></a>
 in gRPC Core runtime) to configure the channel.</p></li>
 <li><p><strong>compression</strong> – An optional value indicating the compression method to be
 used over the lifetime of the channel. This is an EXPERIMENTAL option.</p></li>
@@ -346,7 +347,7 @@ before the server is started.</p></li>
 and optionally manipulate the incoming RPCs before handing them over to
 handlers. The interceptors are given control in the order they are
 specified. This is an EXPERIMENTAL API.</p></li>
-<li><p><strong>options</strong> – An optional list of key-value pairs (channel args in gRPC runtime)
+<li><p><strong>options</strong> – An optional list of key-value pairs (<a class="reference internal" href="glossary.html#term-channel_arguments"><span class="xref std std-term">channel_arguments</span></a> in gRPC runtime)
 to configure the channel.</p></li>
 <li><p><strong>maximum_concurrent_rpcs</strong> – The maximum number of concurrent RPCs this server
 will service before returning RESOURCE_EXHAUSTED status, or None to
@@ -472,7 +473,7 @@ grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)</p>
 <h3>Local Connection Type<a class="headerlink" href="#local-connection-type" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.LocalConnectionType">
-<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">LocalConnectionType</code><a class="reference internal" href="_modules/grpc.html#LocalConnectionType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.LocalConnectionType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">LocalConnectionType</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#LocalConnectionType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.LocalConnectionType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Types of local connection for local credential creation.</p>
 <dl class="py attribute">
 <dt id="grpc.LocalConnectionType.UDS">
@@ -612,7 +613,7 @@ ChannelConnectivity.READY.</p>
 <h3>Channel Connectivity<a class="headerlink" href="#channel-connectivity" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.ChannelConnectivity">
-<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ChannelConnectivity</code><a class="reference internal" href="_modules/grpc.html#ChannelConnectivity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ChannelConnectivity" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">ChannelConnectivity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ChannelConnectivity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ChannelConnectivity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mirrors grpc_connectivity_state in the gRPC Core.</p>
 <dl class="py attribute">
 <dt id="grpc.ChannelConnectivity.IDLE">
@@ -652,7 +653,7 @@ to recover.</p>
 <h3>gRPC Status Code<a class="headerlink" href="#grpc-status-code" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.StatusCode">
-<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">StatusCode</code><a class="reference internal" href="_modules/grpc.html#StatusCode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StatusCode" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">StatusCode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StatusCode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StatusCode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mirrors grpc_status_code in the gRPC Core.</p>
 <dl class="py attribute">
 <dt id="grpc.StatusCode.OK">
@@ -1302,8 +1303,8 @@ the service-side of the RPC.</p>
 <dl class="py attribute">
 <dt id="grpc.ClientCallDetails.wait_for_ready">
 <code class="sig-name descname">wait_for_ready</code><a class="headerlink" href="#grpc.ClientCallDetails.wait_for_ready" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is an EXPERIMENTAL argument. An optional flag t
-enable wait for ready mechanism.</p>
+<dd><p>This is an EXPERIMENTAL argument. An optional
+flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1858,7 +1859,7 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
-flag to enable wait for ready mechanism</p></li>
+flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
 <li><p><strong>compression</strong> – An element of grpc.compression, e.g.
 grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 </ul>
@@ -1889,7 +1890,7 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
-flag to enable wait for ready mechanism</p></li>
+flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
 <li><p><strong>compression</strong> – An element of grpc.compression, e.g.
 grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 </ul>
@@ -1919,7 +1920,7 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
-flag to enable wait for ready mechanism</p></li>
+flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
 <li><p><strong>compression</strong> – An element of grpc.compression, e.g.
 grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 </ul>
@@ -1956,7 +1957,7 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
-flag to enable wait for ready mechanism</p></li>
+flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
 <li><p><strong>compression</strong> – An element of grpc.compression, e.g.
 grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 </ul>
@@ -1992,7 +1993,7 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
-flag to enable wait for ready mechanism</p></li>
+flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
 <li><p><strong>compression</strong> – An element of grpc.compression, e.g.
 grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 </ul>
@@ -2023,7 +2024,7 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
-flag to enable wait for ready mechanism</p></li>
+flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
 <li><p><strong>compression</strong> – An element of grpc.compression, e.g.
 grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 </ul>
@@ -2054,7 +2055,7 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
-flag to enable wait for ready mechanism</p></li>
+flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
 <li><p><strong>compression</strong> – An element of grpc.compression, e.g.
 grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 </ul>
@@ -2091,7 +2092,7 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
-flag to enable wait for ready mechanism</p></li>
+flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
 <li><p><strong>compression</strong> – An element of grpc.compression, e.g.
 grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 </ul>
@@ -2134,7 +2135,7 @@ may be ongoing, or may have already completed.</p>
 <dd><p>Adds a function to be called at completion of the computation.</p>
 <p>The callback will be passed this Future object describing the outcome
 of the computation.  Callbacks will be invoked after the future is
-terimated, whether successfully or not.</p>
+terminated, whether successfully or not.</p>
 <p>If the computation has already completed, the callback will be called
 immediately.</p>
 <p>Exceptions raised in the callback will be logged at ERROR level, but
@@ -2310,7 +2311,7 @@ if the computation did not raise an exception.</p>
 <h3>Compression<a class="headerlink" href="#compression" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.Compression">
-<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">Compression</code><a class="reference internal" href="_modules/grpc.html#Compression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Compression" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">Compression</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Compression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Compression" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates the compression method to be used for an RPC.</p>
 <p>This enumeration is part of an EXPERIMENTAL API.</p>
 <dl class="py attribute">
@@ -2345,7 +2346,7 @@ if the computation did not raise an exception.</p>
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2018, The gRPC Authors.
+      &copy;2020, The gRPC Authors.
       
       |
       <a href="_sources/grpc.rst.txt"
