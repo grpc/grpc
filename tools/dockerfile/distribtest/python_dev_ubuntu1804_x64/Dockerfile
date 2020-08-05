@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2020 the gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update -y && apt-get install -y python python-pip
 
-# Install nvm
-RUN touch .profile
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.30.2/install.sh | bash
+RUN apt-get install -y build-essential
+RUN apt-get install -y python-dev
+
+RUN pip install virtualenv
