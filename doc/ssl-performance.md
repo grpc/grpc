@@ -7,7 +7,7 @@ As a result, we've tried hard to provide a smooth experience to our users when c
 
 ## gRPC C++: Building from Source
 
-BUILD system | Condition | Platform | Uses assembly optimizations
+Build system | Condition | Platform | Uses assembly optimizations
 ---|---|---|--
 Makefile | with OpenSSL 1.0.2 development files | all | :heavy_check_mark:
 Makefile | all other cases | all | :x:
