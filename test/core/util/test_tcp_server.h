@@ -30,7 +30,7 @@ struct test_tcp_server {
   grpc_tcp_server* tcp_server = nullptr;
   grpc_closure shutdown_complete;
   bool shutdown = false;
-  // mu is filled in by grpc_pollset_init and controlls the pollset.
+  // mu is filled in by grpc_pollset_init and controls the pollset.
   // TODO: Switch this to a Mutex once pollset_init can provide a Mutex
   gpr_mu* mu;
   std::vector<grpc_pollset*> pollset;

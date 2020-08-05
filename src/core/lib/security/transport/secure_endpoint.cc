@@ -401,9 +401,14 @@ static void endpoint_delete_from_pollset_set(grpc_endpoint* secure_ep,
   grpc_endpoint_delete_from_pollset_set(ep->wrapped_ep, pollset_set);
 }
 
-static char* endpoint_get_peer(grpc_endpoint* secure_ep) {
+static absl::string_view endpoint_get_peer(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   return grpc_endpoint_get_peer(ep->wrapped_ep);
+}
+
+static absl::string_view endpoint_get_local_address(grpc_endpoint* secure_ep) {
+  secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
+  return grpc_endpoint_get_local_address(ep->wrapped_ep);
 }
 
 static int endpoint_get_fd(grpc_endpoint* secure_ep) {
@@ -431,6 +436,7 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_destroy,
                                             endpoint_get_resource_user,
                                             endpoint_get_peer,
+                                            endpoint_get_local_address,
                                             endpoint_get_fd,
                                             endpoint_can_track_err};
 

@@ -22,6 +22,7 @@
 // Use the C histogram rather than C++ to avoid depending on proto
 #include "test/core/util/histogram.h"
 
+#include "test/core/util/test_config.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/util/test_config.h"
 
@@ -52,6 +53,7 @@ static void RunTest(RandomDistInterface&& r, int threads,
 using grpc::testing::ExpDist;
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 
   RunTest(ExpDist(10.0), 5, std::string("Exponential(10)"));

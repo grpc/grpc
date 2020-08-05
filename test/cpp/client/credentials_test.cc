@@ -34,15 +34,14 @@
 
 namespace {
 
-typedef class ::grpc_impl::experimental::TlsKeyMaterialsConfig
-    TlsKeyMaterialsConfig;
-typedef class ::grpc_impl::experimental::TlsCredentialReloadArg
+typedef class ::grpc::experimental::TlsKeyMaterialsConfig TlsKeyMaterialsConfig;
+typedef class ::grpc::experimental::TlsCredentialReloadArg
     TlsCredentialReloadArg;
-typedef struct ::grpc_impl::experimental::TlsCredentialReloadInterface
+typedef struct ::grpc::experimental::TlsCredentialReloadInterface
     TlsCredentialReloadInterface;
-typedef class ::grpc_impl::experimental::TlsServerAuthorizationCheckArg
+typedef class ::grpc::experimental::TlsServerAuthorizationCheckArg
     TlsServerAuthorizationCheckArg;
-typedef struct ::grpc_impl::experimental::TlsServerAuthorizationCheckInterface
+typedef struct ::grpc::experimental::TlsServerAuthorizationCheckInterface
     TlsServerAuthorizationCheckInterface;
 
 static void tls_credential_reload_callback(
@@ -131,7 +130,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsCppToCore) {
   options.actor_token_path = "/foo/baz";
   options.actor_token_type = "even_nicer_token_type";
   grpc_sts_credentials_options core_opts =
-      grpc_impl::experimental::StsCredentialsCppToCoreOptions(options);
+      grpc::experimental::StsCredentialsCppToCoreOptions(options);
   EXPECT_EQ(options.token_exchange_service_uri,
             core_opts.token_exchange_service_uri);
   EXPECT_EQ(options.resource, core_opts.resource);
@@ -271,8 +270,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsFromEnv) {
   gpr_unsetenv("STS_CREDENTIALS");
 }
 
-typedef class ::grpc_impl::experimental::TlsKeyMaterialsConfig
-    TlsKeyMaterialsConfig;
+typedef class ::grpc::experimental::TlsKeyMaterialsConfig TlsKeyMaterialsConfig;
 
 TEST_F(CredentialsTest, TlsKeyMaterialsConfigCppToC) {
   std::shared_ptr<TlsKeyMaterialsConfig> config(new TlsKeyMaterialsConfig());
@@ -304,9 +302,9 @@ TEST_F(CredentialsTest, TlsKeyMaterialsModifiers) {
   EXPECT_STREQ(list[0].cert_chain.c_str(), "cert_chain");
 }
 
-typedef class ::grpc_impl::experimental::TlsCredentialReloadArg
+typedef class ::grpc::experimental::TlsCredentialReloadArg
     TlsCredentialReloadArg;
-typedef class ::grpc_impl::experimental::TlsCredentialReloadConfig
+typedef class ::grpc::experimental::TlsCredentialReloadConfig
     TlsCredentialReloadConfig;
 
 TEST_F(CredentialsTest, TlsCredentialReloadArgCallback) {
@@ -433,9 +431,9 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   delete config.c_config();
 }
 
-typedef class ::grpc_impl::experimental::TlsServerAuthorizationCheckArg
+typedef class ::grpc::experimental::TlsServerAuthorizationCheckArg
     TlsServerAuthorizationCheckArg;
-typedef class ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig
+typedef class ::grpc::experimental::TlsServerAuthorizationCheckConfig
     TlsServerAuthorizationCheckConfig;
 
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
@@ -550,8 +548,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   delete config.c_config();
 }
 
-typedef class ::grpc_impl::experimental::TlsCredentialsOptions
-    TlsCredentialsOptions;
+typedef class ::grpc::experimental::TlsCredentialsOptions TlsCredentialsOptions;
 
 TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config(
@@ -681,7 +678,7 @@ TEST_F(CredentialsTest, LoadTlsChannelCredentials) {
   TlsCredentialsOptions options = TlsCredentialsOptions(
       GRPC_TLS_SERVER_VERIFICATION, nullptr, credential_reload_config,
       server_authorization_check_config);
-  std::shared_ptr<grpc_impl::ChannelCredentials> channel_credentials =
+  std::shared_ptr<grpc::ChannelCredentials> channel_credentials =
       grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }

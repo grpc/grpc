@@ -27,7 +27,9 @@ Clients should accept these arguments:
 
 *   --fail_on_failed_rpcs=BOOL
     *   If true, the client should exit with a non-zero return code if any RPCs
-        fail. Default is false.
+        fail after at least one RPC has succeeded, indicating a valid xDS config
+        was received. This accounts for any startup-related delays in receiving
+        an initial config from the load balancer. Default is false.
 *   --num_channels=CHANNELS
     *   The number of channels to create to the server.
 *   --qps=QPS

@@ -450,8 +450,8 @@ Q = @
 endif
 
 CORE_VERSION = 11.0.0
-CPP_VERSION = 1.31.0-dev
-CSHARP_VERSION = 2.31.0-dev
+CPP_VERSION = 1.32.0-dev
+CSHARP_VERSION = 2.32.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -1148,6 +1148,7 @@ alts_credentials_fuzzer: $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer
 alts_util_test: $(BINDIR)/$(CONFIG)/alts_util_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
+authorization_engine_test: $(BINDIR)/$(CONFIG)/authorization_engine_test
 backoff_test: $(BINDIR)/$(CONFIG)/backoff_test
 bad_streaming_id_bad_client_test: $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test
 badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
@@ -1273,8 +1274,6 @@ service_config_test: $(BINDIR)/$(CONFIG)/service_config_test
 settings_timeout_test: $(BINDIR)/$(CONFIG)/settings_timeout_test
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
 simple_request_bad_client_test: $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
-slice_hash_table_test: $(BINDIR)/$(CONFIG)/slice_hash_table_test
-slice_weak_hash_table_test: $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test
 ssl_server_fuzzer: $(BINDIR)/$(CONFIG)/ssl_server_fuzzer
 static_metadata_test: $(BINDIR)/$(CONFIG)/static_metadata_test
 stats_test: $(BINDIR)/$(CONFIG)/stats_test
@@ -1527,6 +1526,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alts_util_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/authorization_engine_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
@@ -1635,8 +1635,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/settings_timeout_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
-  $(BINDIR)/$(CONFIG)/slice_hash_table_test \
-  $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
   $(BINDIR)/$(CONFIG)/static_metadata_test \
   $(BINDIR)/$(CONFIG)/stats_test \
   $(BINDIR)/$(CONFIG)/status_metadata_test \
@@ -1686,6 +1684,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alts_util_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/authorization_engine_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
@@ -1794,8 +1793,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/settings_timeout_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
-  $(BINDIR)/$(CONFIG)/slice_hash_table_test \
-  $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
   $(BINDIR)/$(CONFIG)/static_metadata_test \
   $(BINDIR)/$(CONFIG)/stats_test \
   $(BINDIR)/$(CONFIG)/status_metadata_test \
@@ -2130,6 +2127,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
+	$(E) "[RUN]     Testing authorization_engine_test"
+	$(Q) $(BINDIR)/$(CONFIG)/authorization_engine_test || ( echo test authorization_engine_test failed ; exit 1 )
 	$(E) "[RUN]     Testing backoff_test"
 	$(Q) $(BINDIR)/$(CONFIG)/backoff_test || ( echo test backoff_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_streaming_id_bad_client_test"
@@ -2314,10 +2313,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/shutdown_test || ( echo test shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing simple_request_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/simple_request_bad_client_test || ( echo test simple_request_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing slice_hash_table_test"
-	$(Q) $(BINDIR)/$(CONFIG)/slice_hash_table_test || ( echo test slice_hash_table_test failed ; exit 1 )
-	$(E) "[RUN]     Testing slice_weak_hash_table_test"
-	$(Q) $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test || ( echo test slice_weak_hash_table_test failed ; exit 1 )
 	$(E) "[RUN]     Testing static_metadata_test"
 	$(Q) $(BINDIR)/$(CONFIG)/static_metadata_test || ( echo test static_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing stats_test"
@@ -2887,6 +2882,246 @@ $(GENDIR)/src/proto/grpc/testing/xds/orca_load_report_for_test.pb.cc: src/proto/
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
 $(GENDIR)/src/proto/grpc/testing/xds/orca_load_report_for_test.grpc.pb.cc: src/proto/grpc/testing/xds/orca_load_report_for_test.proto $(GENDIR)/src/proto/grpc/testing/xds/orca_load_report_for_test.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/address.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/address.pb.cc: src/proto/grpc/testing/xds/v3/address.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc: src/proto/grpc/testing/xds/v3/address.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/address.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/ads.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/ads.pb.cc: src/proto/grpc/testing/xds/v3/ads.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc: src/proto/grpc/testing/xds/v3/ads.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/ads.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc: src/proto/grpc/testing/xds/v3/base.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc: src/proto/grpc/testing/xds/v3/base.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.pb.cc: src/proto/grpc/testing/xds/v3/cluster.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc: src/proto/grpc/testing/xds/v3/cluster.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc: src/proto/grpc/testing/xds/v3/config_source.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc: src/proto/grpc/testing/xds/v3/config_source.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.pb.cc: src/proto/grpc/testing/xds/v3/discovery.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc: src/proto/grpc/testing/xds/v3/discovery.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/endpoint.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/endpoint.pb.cc: src/proto/grpc/testing/xds/v3/endpoint.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/address.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc: src/proto/grpc/testing/xds/v3/endpoint.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/endpoint.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/address.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc: src/proto/grpc/testing/xds/v3/http_connection_manager.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/route.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc: src/proto/grpc/testing/xds/v3/http_connection_manager.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/route.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/listener.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/listener.pb.cc: src/proto/grpc/testing/xds/v3/listener.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc: src/proto/grpc/testing/xds/v3/listener.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/listener.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.pb.cc: src/proto/grpc/testing/xds/v3/load_report.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/address.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc: src/proto/grpc/testing/xds/v3/load_report.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/address.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/lrs.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/lrs.pb.cc: src/proto/grpc/testing/xds/v3/lrs.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc: src/proto/grpc/testing/xds/v3/lrs.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/lrs.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc: src/proto/grpc/testing/xds/v3/percent.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc: src/proto/grpc/testing/xds/v3/percent.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/range.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/range.pb.cc: src/proto/grpc/testing/xds/v3/range.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc: src/proto/grpc/testing/xds/v3/range.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/range.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/regex.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/regex.pb.cc: src/proto/grpc/testing/xds/v3/regex.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc: src/proto/grpc/testing/xds/v3/regex.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/regex.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/route.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/route.pb.cc: src/proto/grpc/testing/xds/v3/route.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/regex.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/range.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc: src/proto/grpc/testing/xds/v3/route.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/route.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/regex.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/range.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -3513,58 +3748,62 @@ LIBGRPC_SRC = \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
     src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
-    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c \
-    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
-    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
-    src/core/ext/upb-generated/envoy/type/http.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
-    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
-    src/core/ext/upb-generated/envoy/type/percent.upb.c \
-    src/core/ext/upb-generated/envoy/type/range.upb.c \
-    src/core/ext/upb-generated/envoy/type/semantic_version.upb.c \
-    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c \
+    src/core/ext/upb-generated/envoy/config/accesslog/v3/accesslog.upb.c \
+    src/core/ext/upb-generated/envoy/config/cluster/v3/circuit_breaker.upb.c \
+    src/core/ext/upb-generated/envoy/config/cluster/v3/cluster.upb.c \
+    src/core/ext/upb-generated/envoy/config/cluster/v3/filter.upb.c \
+    src/core/ext/upb-generated/envoy/config/cluster/v3/outlier_detection.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/address.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/backoff.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/base.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c \
+    src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c \
+    src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c \
+    src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c \
+    src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c \
+    src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c \
+    src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c \
+    src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c \
+    src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/secret.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/tls.upb.c \
+    src/core/ext/upb-generated/envoy/service/cluster/v3/cds.upb.c \
+    src/core/ext/upb-generated/envoy/service/discovery/v3/ads.upb.c \
+    src/core/ext/upb-generated/envoy/service/discovery/v3/discovery.upb.c \
+    src/core/ext/upb-generated/envoy/service/endpoint/v3/eds.upb.c \
+    src/core/ext/upb-generated/envoy/service/listener/v3/lds.upb.c \
+    src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c \
+    src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c \
+    src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c \
+    src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c \
+    src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/http.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/percent.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/range.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
@@ -3582,6 +3821,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
     src/core/ext/upb-generated/udpa/annotations/status.upb.c \
+    src/core/ext/upb-generated/udpa/annotations/versioning.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/lib/avl/avl.cc \
@@ -3746,7 +3986,6 @@ LIBGRPC_SRC = \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
-    src/core/lib/security/transport/target_authority_table.cc \
     src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
     src/core/lib/slice/b64.cc \
@@ -3775,6 +4014,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
+    src/core/lib/transport/authority_override.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
@@ -4158,58 +4398,62 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
     src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/common.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/secret.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/auth/tls.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/backoff.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/event_service_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/core/socket_option.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/lds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/listener_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/listener/udp_listener_config.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/rds.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/route/route_components.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/scoped_route.upb.c \
-    src/core/ext/upb-generated/envoy/api/v2/srds.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/accesslog/v2/accesslog.upb.c \
-    src/core/ext/upb-generated/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.upb.c \
-    src/core/ext/upb-generated/envoy/config/listener/v2/api_listener.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v2/http_tracer.upb.c \
-    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
-    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
-    src/core/ext/upb-generated/envoy/type/http.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/regex.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/string.upb.c \
-    src/core/ext/upb-generated/envoy/type/metadata/v2/metadata.upb.c \
-    src/core/ext/upb-generated/envoy/type/percent.upb.c \
-    src/core/ext/upb-generated/envoy/type/range.upb.c \
-    src/core/ext/upb-generated/envoy/type/semantic_version.upb.c \
-    src/core/ext/upb-generated/envoy/type/tracing/v2/custom_tag.upb.c \
+    src/core/ext/upb-generated/envoy/config/accesslog/v3/accesslog.upb.c \
+    src/core/ext/upb-generated/envoy/config/cluster/v3/circuit_breaker.upb.c \
+    src/core/ext/upb-generated/envoy/config/cluster/v3/cluster.upb.c \
+    src/core/ext/upb-generated/envoy/config/cluster/v3/filter.upb.c \
+    src/core/ext/upb-generated/envoy/config/cluster/v3/outlier_detection.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/address.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/backoff.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/base.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c \
+    src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c \
+    src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c \
+    src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c \
+    src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c \
+    src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c \
+    src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c \
+    src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c \
+    src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/secret.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/tls.upb.c \
+    src/core/ext/upb-generated/envoy/service/cluster/v3/cds.upb.c \
+    src/core/ext/upb-generated/envoy/service/discovery/v3/ads.upb.c \
+    src/core/ext/upb-generated/envoy/service/discovery/v3/discovery.upb.c \
+    src/core/ext/upb-generated/envoy/service/endpoint/v3/eds.upb.c \
+    src/core/ext/upb-generated/envoy/service/listener/v3/lds.upb.c \
+    src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c \
+    src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c \
+    src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c \
+    src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c \
+    src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c \
+    src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/http.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/percent.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/range.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
@@ -4224,6 +4468,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
     src/core/ext/upb-generated/udpa/annotations/status.upb.c \
+    src/core/ext/upb-generated/udpa/annotations/versioning.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/lib/avl/avl.cc \
@@ -4374,6 +4619,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
+    src/core/lib/transport/authority_override.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
@@ -4631,7 +4877,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/completion_queue.h \
     include/grpcpp/completion_queue_impl.h \
     include/grpcpp/create_channel.h \
-    include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
@@ -4715,9 +4960,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
     include/grpcpp/security/credentials.h \
-    include/grpcpp/security/credentials_impl.h \
     include/grpcpp/security/server_credentials.h \
-    include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
@@ -4894,7 +5137,6 @@ LIBGRPC++_ERROR_DETAILS_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/support/error_details.h \
     include/grpcpp/support/error_details.h \
-    include/grpcpp/support/error_details_impl.h \
 
 LIBGRPC++_ERROR_DETAILS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_ERROR_DETAILS_SRC))))
 
@@ -5323,7 +5565,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/completion_queue.h \
     include/grpcpp/completion_queue_impl.h \
     include/grpcpp/create_channel.h \
-    include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
@@ -5407,9 +5648,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
     include/grpcpp/security/credentials.h \
-    include/grpcpp/security/credentials_impl.h \
     include/grpcpp/security/server_credentials.h \
-    include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
@@ -6277,6 +6516,14 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/strings/str_split.cc \
     third_party/abseil-cpp/absl/strings/string_view.cc \
     third_party/abseil-cpp/absl/strings/substitute.cc \
+    third_party/abseil-cpp/absl/synchronization/barrier.cc \
+    third_party/abseil-cpp/absl/synchronization/blocking_counter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/mutex.cc \
+    third_party/abseil-cpp/absl/synchronization/notification.cc \
     third_party/abseil-cpp/absl/time/civil_time.cc \
     third_party/abseil-cpp/absl/time/clock.cc \
     third_party/abseil-cpp/absl/time/duration.cc \
@@ -11409,6 +11656,52 @@ deps_auth_property_iterator_test: $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+AUTHORIZATION_ENGINE_TEST_SRC = \
+    src/core/lib/security/authorization/authorization_engine.cc \
+    test/core/security/authorization_engine_test.cc \
+
+AUTHORIZATION_ENGINE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(AUTHORIZATION_ENGINE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/authorization_engine_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
+
+$(BINDIR)/$(CONFIG)/authorization_engine_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/authorization_engine_test: $(PROTOBUF_DEP) $(AUTHORIZATION_ENGINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(AUTHORIZATION_ENGINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/authorization_engine_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/core/lib/security/authorization/authorization_engine.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/core/security/authorization_engine_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_authorization_engine_test: $(AUTHORIZATION_ENGINE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(AUTHORIZATION_ENGINE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -17631,92 +17924,6 @@ endif
 endif
 
 
-SLICE_HASH_TABLE_TEST_SRC = \
-    test/core/slice/slice_hash_table_test.cc \
-
-SLICE_HASH_TABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_HASH_TABLE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/slice_hash_table_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
-
-$(BINDIR)/$(CONFIG)/slice_hash_table_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/slice_hash_table_test: $(PROTOBUF_DEP) $(SLICE_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SLICE_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/slice_hash_table_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/slice/slice_hash_table_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-deps_slice_hash_table_test: $(SLICE_HASH_TABLE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(SLICE_HASH_TABLE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-SLICE_WEAK_HASH_TABLE_TEST_SRC = \
-    test/core/slice/slice_weak_hash_table_test.cc \
-
-SLICE_WEAK_HASH_TABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_WEAK_HASH_TABLE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
-
-$(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: $(PROTOBUF_DEP) $(SLICE_WEAK_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SLICE_WEAK_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/slice/slice_weak_hash_table_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-deps_slice_weak_hash_table_test: $(SLICE_WEAK_HASH_TABLE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(SLICE_WEAK_HASH_TABLE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 SSL_SERVER_FUZZER_SRC = \
     test/core/security/ssl_server_fuzzer.cc \
     test/core/util/fuzzer_corpus_test.cc \
@@ -18856,6 +19063,21 @@ XDS_END2END_TEST_SRC = \
     $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/address.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/ads.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/endpoint.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/listener.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/lrs.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/range.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/regex.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/xds/v3/route.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc \
     test/cpp/end2end/test_service_impl.cc \
     test/cpp/end2end/xds_end2end_test.cc \
 
@@ -18906,6 +19128,36 @@ $(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/lds_rds_for_test.o:  $(LIBDIR)/$(
 
 $(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/lrs_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/address.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/ads.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/base.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/cluster.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/config_source.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/discovery.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/endpoint.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/http_connection_manager.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/listener.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/load_report.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/lrs.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/percent.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/range.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/regex.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/xds/v3/route.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_service_impl.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
@@ -18917,8 +19169,8 @@ ifneq ($(NO_DEPS),true)
 -include $(XDS_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_service_impl.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_service_impl.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/address.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/ads.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/endpoint.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/listener.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/lrs.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/range.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/regex.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/route.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/address.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/ads.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/endpoint.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/listener.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/lrs.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/range.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/regex.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/route.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
 
 
 XDS_INTEROP_CLIENT_SRC = \
@@ -19958,7 +20210,6 @@ src/core/lib/security/transport/client_auth_filter.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/secure_endpoint.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/security_handshaker.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/server_auth_filter.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/target_authority_table.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/tsi_error.cc: $(OPENSSL_DEP)
 src/core/lib/security/util/json_util.cc: $(OPENSSL_DEP)
 src/core/lib/surface/init_secure.cc: $(OPENSSL_DEP)

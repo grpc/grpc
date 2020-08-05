@@ -33,7 +33,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/slice/slice_hash_table.h"
 
 namespace grpc_core {
 namespace internal {

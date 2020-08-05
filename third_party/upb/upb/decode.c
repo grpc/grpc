@@ -62,11 +62,13 @@ static const unsigned fixed64_ok = (1 << UPB_DTYPE_DOUBLE) |
                                    (1 << UPB_DTYPE_SFIXED64);
 
 /* Op: an action to be performed for a wire-type/field-type combination. */
-#define OP_SCALAR_LG2(n) (n)
-#define OP_FIXPCK_LG2(n) (n + 4)
-#define OP_VARPCK_LG2(n) (n + 8)
+#define OP_SCALAR_LG2(n) (n)      /* n in [0, 2, 3] => op in [0, 2, 3] */
 #define OP_STRING 4
-#define OP_SUBMSG 5
+#define OP_BYTES 5
+#define OP_SUBMSG 6
+/* Ops above are scalar-only. Repeated fields can use any op.  */
+#define OP_FIXPCK_LG2(n) (n + 5)  /* n in [2, 3] => op in [7, 8] */
+#define OP_VARPCK_LG2(n) (n + 9)  /* n in [0, 2, 3] => op in [9, 11, 12] */
 
 static const int8_t varint_ops[19] = {
     -1,               /* field not found */
@@ -104,7 +106,7 @@ static const int8_t delim_ops[37] = {
     OP_STRING, /* STRING */
     -1,        /* GROUP */
     OP_SUBMSG, /* MESSAGE */
-    OP_STRING, /* BYTES */
+    OP_BYTES,  /* BYTES */
     -1,        /* UINT32 */
     -1,        /* ENUM */
     -1,        /* SFIXED32 */
@@ -123,7 +125,7 @@ static const int8_t delim_ops[37] = {
     OP_STRING,        /* REPEATED STRING */
     OP_SUBMSG,        /* REPEATED GROUP */
     OP_SUBMSG,        /* REPEATED MESSAGE */
-    OP_STRING,        /* REPEATED BYTES */
+    OP_BYTES,         /* REPEATED BYTES */
     OP_VARPCK_LG2(2), /* REPEATED UINT32 */
     OP_VARPCK_LG2(2), /* REPEATED ENUM */
     OP_FIXPCK_LG2(2), /* REPEATED SFIXED32 */
@@ -143,8 +145,6 @@ typedef struct {
 
 typedef union {
   bool bool_val;
-  int32_t int32_val;
-  int64_t int64_val;
   uint32_t uint32_val;
   uint64_t uint64_val;
   upb_strview str_val;
@@ -154,6 +154,40 @@ static const char *decode_msg(upb_decstate *d, const char *ptr, upb_msg *msg,
                               const upb_msglayout *layout);
 
 UPB_NORETURN static void decode_err(upb_decstate *d) { longjmp(d->err, 1); }
+
+void decode_verifyutf8(upb_decstate *d, const char *buf, int len) {
+  static const uint8_t utf8_offset[] = {
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0,
+  };
+
+  int i, j;
+  uint8_t offset;
+
+  i = 0;
+  while (i < len) {
+    offset = utf8_offset[(uint8_t)buf[i]];
+    if (offset == 0 || i + offset > len) {
+      decode_err(d);
+    }
+    for (j = i + 1; j < i + offset; j++) {
+      if ((buf[j] & 0xc0) != 0x80) {
+        decode_err(d);
+      }
+    }
+    i += offset;
+  }
+  if (i != len) decode_err(d);
+}
 
 static bool decode_reserve(upb_decstate *d, upb_array *arr, size_t elem) {
   bool need_realloc = arr->size - arr->len < elem;
@@ -209,14 +243,21 @@ static void decode_munge(int type, wireval *val) {
       break;
     case UPB_DESCRIPTOR_TYPE_SINT32: {
       uint32_t n = val->uint32_val;
-      val->int32_val = (n >> 1) ^ -(int32_t)(n & 1);
+      val->uint32_val = (n >> 1) ^ -(int32_t)(n & 1);
       break;
     }
     case UPB_DESCRIPTOR_TYPE_SINT64: {
       uint64_t n = val->uint64_val;
-      val->int64_val = (n >> 1) ^ -(int64_t)(n & 1);
+      val->uint64_val = (n >> 1) ^ -(int64_t)(n & 1);
       break;
     }
+    case UPB_DESCRIPTOR_TYPE_INT32:
+    case UPB_DESCRIPTOR_TYPE_UINT32:
+      if (!_upb_isle()) {
+        /* The next stage will memcpy(dst, &val, 4) */
+        val->uint32_val = val->uint64_val;
+      }
+      break;
   }
 }
 
@@ -300,7 +341,10 @@ static const char *decode_toarray(upb_decstate *d, const char *ptr,
       memcpy(mem, &val, 1 << op);
       return ptr;
     case OP_STRING:
-      /* Append string. */
+      decode_verifyutf8(d, val.str_val.data, val.str_val.size);
+      /* Fallthrough. */
+    case OP_BYTES:
+      /* Append bytes. */
       mem =
           UPB_PTR_AT(_upb_array_ptr(arr), arr->len * sizeof(upb_strview), void);
       arr->len++;
@@ -389,7 +433,7 @@ static void decode_tomap(upb_decstate *d, upb_msg *msg,
   if (entry->fields[1].descriptortype == UPB_DESCRIPTOR_TYPE_MESSAGE ||
       entry->fields[1].descriptortype == UPB_DESCRIPTOR_TYPE_GROUP) {
     /* Create proactively to handle the case where it doesn't appear. */
-    ent.v.val.val = (uint64_t)_upb_msg_new(entry->submsgs[0], d->arena);
+    ent.v.val = upb_value_ptr(_upb_msg_new(entry->submsgs[0], d->arena));
   }
 
   decode_tosubmsg(d, &ent.k, layout, field, val.str_val);
@@ -434,6 +478,9 @@ static const char *decode_tomsg(upb_decstate *d, const char *ptr, upb_msg *msg,
       break;
     }
     case OP_STRING:
+      decode_verifyutf8(d, val.str_val.data, val.str_val.size);
+      /* Fallthrough. */
+    case OP_BYTES:
       memcpy(mem, &val, sizeof(upb_strview));
       break;
     case OP_SCALAR_LG2(3):
@@ -477,14 +524,16 @@ static const char *decode_msg(upb_decstate *d, const char *ptr, upb_msg *msg,
         break;
       case UPB_WIRE_TYPE_32BIT:
         if (d->limit - ptr < 4) decode_err(d);
-        memcpy(&val, ptr, 4);
+        memcpy(&val.uint32_val, ptr, 4);
+        val.uint32_val = _upb_be_swap32(val.uint32_val);
         ptr += 4;
         op = OP_SCALAR_LG2(2);
         if (((1 << field->descriptortype) & fixed32_ok) == 0) goto unknown;
         break;
       case UPB_WIRE_TYPE_64BIT:
         if (d->limit - ptr < 8) decode_err(d);
-        memcpy(&val, ptr, 8);
+        memcpy(&val.uint64_val, ptr, 8);
+        val.uint64_val = _upb_be_swap64(val.uint64_val);
         ptr += 8;
         op = OP_SCALAR_LG2(3);
         if (((1 << field->descriptortype) & fixed64_ok) == 0) goto unknown;
@@ -504,7 +553,7 @@ static const char *decode_msg(upb_decstate *d, const char *ptr, upb_msg *msg,
         break;
       }
       case UPB_WIRE_TYPE_START_GROUP:
-        val.int32_val = field_number;
+        val.uint32_val = field_number;
         op = OP_SUBMSG;
         if (field->descriptortype != UPB_DTYPE_GROUP) goto unknown;
         break;

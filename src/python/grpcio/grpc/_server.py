@@ -958,11 +958,14 @@ class _Server(grpc.Server):
         _add_generic_handlers(self._state, generic_rpc_handlers)
 
     def add_insecure_port(self, address):
-        return _add_insecure_port(self._state, _common.encode(address))
+        return _common.validate_port_binding_result(
+            address, _add_insecure_port(self._state, _common.encode(address)))
 
     def add_secure_port(self, address, server_credentials):
-        return _add_secure_port(self._state, _common.encode(address),
-                                server_credentials)
+        return _common.validate_port_binding_result(
+            address,
+            _add_secure_port(self._state, _common.encode(address),
+                             server_credentials))
 
     def start(self):
         _start(self._state)

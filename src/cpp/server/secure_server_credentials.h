@@ -28,14 +28,9 @@
 
 #include "src/cpp/server/thread_pool_interface.h"
 
-namespace grpc_impl {
-
-class SecureServerCredentials;
-}  // namespace grpc_impl
-
 namespace grpc {
 
-typedef ::grpc_impl::SecureServerCredentials SecureServerCredentials;
+class SecureServerCredentials;
 
 class AuthMetadataProcessorAyncWrapper final {
  public:
@@ -61,10 +56,6 @@ class AuthMetadataProcessorAyncWrapper final {
   std::shared_ptr<AuthMetadataProcessor> processor_;
 };
 
-}  // namespace grpc
-
-namespace grpc_impl {
-
 class SecureServerCredentials final : public ServerCredentials {
  public:
   explicit SecureServerCredentials(grpc_server_credentials* creds)
@@ -83,6 +74,6 @@ class SecureServerCredentials final : public ServerCredentials {
   std::unique_ptr<grpc::AuthMetadataProcessorAyncWrapper> processor_;
 };
 
-}  // namespace grpc_impl
+}  // namespace grpc
 
 #endif  // GRPC_INTERNAL_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H

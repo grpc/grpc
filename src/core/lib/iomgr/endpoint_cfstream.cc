@@ -34,6 +34,8 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -55,7 +57,8 @@ struct CFStreamEndpoint {
   grpc_closure read_action;
   grpc_closure write_action;
 
-  char* peer_string;
+  std::string peer_string;
+  std::string local_address;
   grpc_resource_user* resource_user;
   grpc_resource_user_slice_allocator slice_allocator;
 };
@@ -64,8 +67,7 @@ static void CFStreamFree(CFStreamEndpoint* ep) {
   CFRelease(ep->read_stream);
   CFRelease(ep->write_stream);
   CFSTREAM_HANDLE_UNREF(ep->stream_sync, "free");
-  gpr_free(ep->peer_string);
-  gpr_free(ep);
+  delete ep;
 }
 
 #ifndef NDEBUG
@@ -110,7 +112,7 @@ static grpc_error* CFStreamAnnotateError(grpc_error* src_error,
       grpc_error_set_int(src_error, GRPC_ERROR_INT_GRPC_STATUS,
                          GRPC_STATUS_UNAVAILABLE),
       GRPC_ERROR_STR_TARGET_ADDRESS,
-      grpc_slice_from_copied_string(ep->peer_string));
+      grpc_slice_from_copied_string(ep->peer_string.c_str()));
 }
 
 static void CallReadCb(CFStreamEndpoint* ep, grpc_error* error) {
@@ -124,7 +126,8 @@ static void CallReadCb(CFStreamEndpoint* ep, grpc_error* error) {
     for (i = 0; i < ep->read_slices->count; i++) {
       char* dump = grpc_dump_slice(ep->read_slices->slices[i],
                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", ep, ep->peer_string, dump);
+      gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", ep, ep->peer_string.c_str(),
+              dump);
       gpr_free(dump);
     }
   }
@@ -230,7 +233,8 @@ static void WriteAction(void* arg, grpc_error* error) {
     if (grpc_tcp_trace.enabled()) {
       grpc_slice trace_slice = grpc_slice_sub(slice, 0, write_size);
       char* dump = grpc_dump_slice(trace_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", ep, ep->peer_string, dump);
+      gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", ep, ep->peer_string.c_str(),
+              dump);
       gpr_free(dump);
       grpc_slice_unref_internal(trace_slice);
     }
@@ -309,9 +313,14 @@ grpc_resource_user* CFStreamGetResourceUser(grpc_endpoint* ep) {
   return ep_impl->resource_user;
 }
 
-char* CFStreamGetPeer(grpc_endpoint* ep) {
+absl::string_view CFStreamGetPeer(grpc_endpoint* ep) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
-  return gpr_strdup(ep_impl->peer_string);
+  return ep_impl->peer_string;
+}
+
+absl::string_view CFStreamGetLocalAddress(grpc_endpoint* ep) {
+  CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
+  return ep_impl->local_address;
 }
 
 int CFStreamGetFD(grpc_endpoint* ep) { return 0; }
@@ -332,6 +341,7 @@ static const grpc_endpoint_vtable vtable = {CFStreamRead,
                                             CFStreamDestroy,
                                             CFStreamGetResourceUser,
                                             CFStreamGetPeer,
+                                            CFStreamGetLocalAddress,
                                             CFStreamGetFD,
                                             CFStreamCanTrackErr};
 
@@ -339,8 +349,7 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
     CFReadStreamRef read_stream, CFWriteStreamRef write_stream,
     const char* peer_string, grpc_resource_quota* resource_quota,
     CFStreamHandle* stream_sync) {
-  CFStreamEndpoint* ep_impl =
-      static_cast<CFStreamEndpoint*>(gpr_malloc(sizeof(CFStreamEndpoint)));
+  CFStreamEndpoint* ep_impl = new CFStreamEndpoint;
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "CFStream endpoint:%p create readStream:%p writeStream: %p",
@@ -355,7 +364,19 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
   ep_impl->stream_sync = stream_sync;
   CFSTREAM_HANDLE_REF(ep_impl->stream_sync, "endpoint create");
 
-  ep_impl->peer_string = gpr_strdup(peer_string);
+  ep_impl->peer_string = peer_string;
+  const int* native_handle =
+      reinterpret_cast<const int*>(CFReadStreamCopyProperty(
+          ep_impl->read_stream, kCFStreamPropertySocketNativeHandle));
+  grpc_resolved_address resolved_local_addr;
+  resolved_local_addr.len = sizeof(resolved_local_addr.addr);
+  if (getsockname(*native_handle,
+                  reinterpret_cast<sockaddr*>(resolved_local_addr.addr),
+                  &resolved_local_addr.len) < 0) {
+    ep_impl->local_address = "";
+  } else {
+    ep_impl->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
+  }
   ep_impl->read_cb = nil;
   ep_impl->write_cb = nil;
   ep_impl->read_slices = nil;
