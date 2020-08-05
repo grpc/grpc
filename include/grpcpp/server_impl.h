@@ -109,7 +109,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   }
 
   /// Establish a channel for in-process communication
-  std::shared_ptr<grpc::Channel> InProcessChannel(const ChannelArguments& args);
+  std::shared_ptr<grpc::Channel> InProcessChannel(const grpc::ChannelArguments& args);
 
   /// NOTE: class experimental_type is not part of the public API of this class.
   /// TODO(yashykt): Integrate into public API when this is no longer
@@ -121,7 +121,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
     /// Establish a channel for in-process communication with client
     /// interceptors
     std::shared_ptr<grpc::Channel> InProcessChannelWithInterceptors(
-        const ChannelArguments& args,
+        const grpc::ChannelArguments& args,
         std::vector<std::unique_ptr<
             grpc::experimental::ClientInterceptorFactoryInterface>>
             interceptor_creators);
@@ -180,7 +180,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   /// \param sync_cq_timeout_msec The timeout to use when calling AsyncNext() on
   /// server completion queues passed via sync_server_cqs param.
   Server(
-      ChannelArguments* args,
+      grpc::ChannelArguments* args,
       std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
           sync_server_cqs,
       int min_pollers, int max_pollers, int sync_cq_timeout_msec,
