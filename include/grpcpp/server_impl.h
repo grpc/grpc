@@ -37,7 +37,7 @@
 #include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/security/server_credentials.h>
-#include <grpcpp/support/channel_arguments_impl.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 
@@ -81,7 +81,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
    public:
     virtual ~GlobalCallbacks() {}
     /// Called before server is created.
-    virtual void UpdateArguments(ChannelArguments* /*args*/) {}
+    virtual void UpdateArguments(grpc::ChannelArguments* /*args*/) {}
     /// Called before application callback for each synchronous server request
     virtual void PreSynchronousRequest(grpc_impl::ServerContext* context) = 0;
     /// Called after application callback for each synchronous server request
