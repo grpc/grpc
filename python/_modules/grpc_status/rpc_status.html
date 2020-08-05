@@ -4,7 +4,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc_status.rpc_status &#8212; gRPC Python 1.29.0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>grpc_status.rpc_status &#8212; gRPC Python 1.31.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -29,7 +30,7 @@
 
 
 
-<p class="blurb">1.29.0</p>
+<p class="blurb">1.31.0</p>
 
 
 
@@ -101,14 +102,12 @@
 <span class="sd">&quot;&quot;&quot;Reference implementation for status mapping in gRPC Python.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 
 <span class="kn">import</span> <span class="nn">grpc</span>
 
 <span class="kn">from</span> <span class="nn">google.rpc</span> <span class="kn">import</span> <span class="n">status_pb2</span>
-
-<span class="n">_CODE_TO_GRPC_CODE_MAPPING</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">}</span>
-
-<span class="n">_GRPC_DETAILS_METADATA_KEY</span> <span class="o">=</span> <span class="s1">&#39;grpc-status-details-bin&#39;</span>
+<span class="kn">from</span> <span class="nn">._common</span> <span class="kn">import</span> <span class="n">code_to_grpc_status_code</span><span class="p">,</span> <span class="n">GRPC_DETAILS_METADATA_KEY</span>
 
 
 <span class="k">class</span> <span class="nc">_Status</span><span class="p">(</span>
@@ -116,13 +115,6 @@
                                <span class="p">(</span><span class="s1">&#39;code&#39;</span><span class="p">,</span> <span class="s1">&#39;details&#39;</span><span class="p">,</span> <span class="s1">&#39;trailing_metadata&#39;</span><span class="p">)),</span>
         <span class="n">grpc</span><span class="o">.</span><span class="n">Status</span><span class="p">):</span>
     <span class="k">pass</span>
-
-
-<span class="k">def</span> <span class="nf">_code_to_grpc_status_code</span><span class="p">(</span><span class="n">code</span><span class="p">):</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_CODE_TO_GRPC_CODE_MAPPING</span><span class="p">[</span><span class="n">code</span><span class="p">]</span>
-    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid status code </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">code</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="from_call"><a class="viewcode-back" href="../../grpc_status.html#grpc_status.rpc_status.from_call">[docs]</a><span class="k">def</span> <span class="nf">from_call</span><span class="p">(</span><span class="n">call</span><span class="p">):</span>
@@ -143,13 +135,12 @@
     <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">trailing_metadata</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">trailing_metadata</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">_GRPC_DETAILS_METADATA_KEY</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">GRPC_DETAILS_METADATA_KEY</span><span class="p">:</span>
             <span class="n">rich_status</span> <span class="o">=</span> <span class="n">status_pb2</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">FromString</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">code</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">rich_status</span><span class="o">.</span><span class="n">code</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="s1">&#39;Code in Status proto (</span><span class="si">%s</span><span class="s1">) doesn</span><span class="se">\&#39;</span><span class="s1">t match status code (</span><span class="si">%s</span><span class="s1">)&#39;</span>
-                    <span class="o">%</span>
-                    <span class="p">(</span><span class="n">_code_to_grpc_status_code</span><span class="p">(</span><span class="n">rich_status</span><span class="o">.</span><span class="n">code</span><span class="p">),</span> <span class="n">call</span><span class="o">.</span><span class="n">code</span><span class="p">()))</span>
+                    <span class="o">%</span> <span class="p">(</span><span class="n">code_to_grpc_status_code</span><span class="p">(</span><span class="n">rich_status</span><span class="o">.</span><span class="n">code</span><span class="p">),</span> <span class="n">call</span><span class="o">.</span><span class="n">code</span><span class="p">()))</span>
             <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">details</span><span class="p">()</span> <span class="o">!=</span> <span class="n">rich_status</span><span class="o">.</span><span class="n">message</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="s1">&#39;Message in Status proto (</span><span class="si">%s</span><span class="s1">) doesn</span><span class="se">\&#39;</span><span class="s1">t match status details (</span><span class="si">%s</span><span class="s1">)&#39;</span>
@@ -170,10 +161,20 @@
 <span class="sd">    Returns:</span>
 <span class="sd">      A grpc.Status instance representing the input google.rpc.status.Status message.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_Status</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="n">_code_to_grpc_status_code</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">code</span><span class="p">),</span>
+    <span class="k">return</span> <span class="n">_Status</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="n">code_to_grpc_status_code</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">code</span><span class="p">),</span>
                    <span class="n">details</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">message</span><span class="p">,</span>
-                   <span class="n">trailing_metadata</span><span class="o">=</span><span class="p">((</span><span class="n">_GRPC_DETAILS_METADATA_KEY</span><span class="p">,</span>
+                   <span class="n">trailing_metadata</span><span class="o">=</span><span class="p">((</span><span class="n">GRPC_DETAILS_METADATA_KEY</span><span class="p">,</span>
                                        <span class="n">status</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">()),))</span></div>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;from_call&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;to_status&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">6</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_async</span> <span class="k">as</span> <span class="n">aio</span>  <span class="c1"># pylint: disable=unused-import</span>
+    <span class="n">__all__</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;aio&#39;</span><span class="p">)</span>
 </pre></div>
 
           </div>
@@ -183,7 +184,7 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2018, The gRPC Authors.
+      &copy;2020, The gRPC Authors.
       
     </div>
 

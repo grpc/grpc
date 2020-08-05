@@ -4,7 +4,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc &#8212; gRPC Python 1.29.0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>grpc &#8212; gRPC Python 1.31.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -29,7 +30,7 @@
 
 
 
-<p class="blurb">1.29.0</p>
+<p class="blurb">1.31.0</p>
 
 
 
@@ -274,7 +275,7 @@
 
 <span class="sd">        The callback will be passed this Future object describing the outcome</span>
 <span class="sd">        of the computation.  Callbacks will be invoked after the future is</span>
-<span class="sd">        terimated, whether successfully or not.</span>
+<span class="sd">        terminated, whether successfully or not.</span>
 
 <span class="sd">        If the computation has already completed, the callback will be called</span>
 <span class="sd">        immediately.</span>
@@ -501,8 +502,8 @@
 <span class="sd">      metadata: Optional :term:`metadata` to be transmitted to</span>
 <span class="sd">        the service-side of the RPC.</span>
 <span class="sd">      credentials: An optional CallCredentials for the RPC.</span>
-<span class="sd">      wait_for_ready: This is an EXPERIMENTAL argument. An optional flag t</span>
-<span class="sd">        enable wait for ready mechanism.</span>
+<span class="sd">      wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">      compression: An element of grpc.compression, e.g.</span>
 <span class="sd">        grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 <span class="sd">    &quot;&quot;&quot;</span></div>
@@ -777,7 +778,7 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
 <span class="sd">            secure Channel.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
-<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">          compression: An element of grpc.compression, e.g.</span>
 <span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
@@ -810,7 +811,7 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
 <span class="sd">            secure Channel.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
-<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">          compression: An element of grpc.compression, e.g.</span>
 <span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
@@ -843,7 +844,7 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
 <span class="sd">            secure Channel.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
-<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">          compression: An element of grpc.compression, e.g.</span>
 <span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
@@ -879,7 +880,7 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
 <span class="sd">            secure Channel.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
-<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">          compression: An element of grpc.compression, e.g.</span>
 <span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
@@ -915,7 +916,7 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
 <span class="sd">            secure Channel.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
-<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">          compression: An element of grpc.compression, e.g.</span>
 <span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
@@ -949,7 +950,7 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
 <span class="sd">            secure Channel.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
-<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">          compression: An element of grpc.compression, e.g.</span>
 <span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
@@ -982,7 +983,7 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
 <span class="sd">            secure Channel.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
-<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">          compression: An element of grpc.compression, e.g.</span>
 <span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
@@ -1018,7 +1019,7 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC. Only valid for</span>
 <span class="sd">            secure Channel.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
-<span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">            flag to enable :term:`wait_for_ready` mechanism.</span>
 <span class="sd">          compression: An element of grpc.compression, e.g.</span>
 <span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
@@ -1920,6 +1921,41 @@
         <span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_credentials_local</span><span class="p">(</span><span class="n">local_connect_type</span><span class="o">.</span><span class="n">value</span><span class="p">))</span></div>
 
 
+<span class="k">def</span> <span class="nf">alts_channel_credentials</span><span class="p">(</span><span class="n">service_accounts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a ChannelCredentials for use with an ALTS-enabled Channel.</span>
+
+<span class="sd">    This is an EXPERIMENTAL API.</span>
+<span class="sd">    ALTS credentials API can only be used in GCP environment as it relies on</span>
+<span class="sd">    handshaker service being available. For more info about ALTS see</span>
+<span class="sd">    https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      service_accounts: A list of server identities accepted by the client.</span>
+<span class="sd">        If target service accounts are provided and none of them matches the</span>
+<span class="sd">        peer identity of the server, handshake will fail. The arg can be empty</span>
+<span class="sd">        if the client does not have any information about trusted server</span>
+<span class="sd">        identity.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">      A ChannelCredentials for use with an ALTS-enabled Channel</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">channel_credentials_alts</span><span class="p">(</span><span class="n">service_accounts</span> <span class="ow">or</span> <span class="p">[]))</span>
+
+
+<span class="k">def</span> <span class="nf">alts_server_credentials</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Creates a ServerCredentials for use with an ALTS-enabled connection.</span>
+
+<span class="sd">    This is an EXPERIMENTAL API.</span>
+<span class="sd">    ALTS credentials API can only be used in GCP environment as it relies on</span>
+<span class="sd">    handshaker service being available. For more info about ALTS see</span>
+<span class="sd">    https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A ServerCredentials for use with an ALTS-enabled Server</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_credentials_alts</span><span class="p">())</span>
+
+
 <div class="viewcode-block" id="channel_ready_future"><a class="viewcode-back" href="../grpc.html#grpc.channel_ready_future">[docs]</a><span class="k">def</span> <span class="nf">channel_ready_future</span><span class="p">(</span><span class="n">channel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Creates a Future that tracks when a Channel is ready.</span>
 
@@ -1944,7 +1980,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">      target: The server address</span>
-<span class="sd">      options: An optional list of key-value pairs (channel args</span>
+<span class="sd">      options: An optional list of key-value pairs (:term:`channel_arguments`</span>
 <span class="sd">        in gRPC Core runtime) to configure the channel.</span>
 <span class="sd">      compression: An optional value indicating the compression method to be</span>
 <span class="sd">        used over the lifetime of the channel. This is an EXPERIMENTAL option.</span>
@@ -1965,7 +2001,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">      target: The server address.</span>
 <span class="sd">      credentials: A ChannelCredentials instance.</span>
-<span class="sd">      options: An optional list of key-value pairs (channel args</span>
+<span class="sd">      options: An optional list of key-value pairs (:term:`channel_arguments`</span>
 <span class="sd">        in gRPC Core runtime) to configure the channel.</span>
 <span class="sd">      compression: An optional value indicating the compression method to be</span>
 <span class="sd">        used over the lifetime of the channel. This is an EXPERIMENTAL option.</span>
@@ -2029,7 +2065,7 @@
 <span class="sd">        and optionally manipulate the incoming RPCs before handing them over to</span>
 <span class="sd">        handlers. The interceptors are given control in the order they are</span>
 <span class="sd">        specified. This is an EXPERIMENTAL API.</span>
-<span class="sd">      options: An optional list of key-value pairs (channel args in gRPC runtime)</span>
+<span class="sd">      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC runtime)</span>
 <span class="sd">        to configure the channel.</span>
 <span class="sd">      maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server</span>
 <span class="sd">        will service before returning RESOURCE_EXHAUSTED status, or None to</span>
@@ -2123,6 +2159,8 @@
     <span class="s1">&#39;composite_channel_credentials&#39;</span><span class="p">,</span>
     <span class="s1">&#39;local_channel_credentials&#39;</span><span class="p">,</span>
     <span class="s1">&#39;local_server_credentials&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;alts_channel_credentials&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;alts_server_credentials&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ssl_server_credentials&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ssl_server_certificate_configuration&#39;</span><span class="p">,</span>
     <span class="s1">&#39;dynamic_ssl_server_credentials&#39;</span><span class="p">,</span>
@@ -2160,7 +2198,7 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2018, The gRPC Authors.
+      &copy;2020, The gRPC Authors.
       
     </div>
 

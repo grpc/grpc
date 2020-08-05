@@ -4,7 +4,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc.experimental.aio._call &#8212; gRPC Python 1.29.0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>grpc.experimental.aio._call &#8212; gRPC Python 1.31.0 documentation</title>
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
@@ -29,7 +30,7 @@
 
 
 
-<p class="blurb">1.29.0</p>
+<p class="blurb">1.31.0</p>
 
 
 
@@ -114,9 +115,10 @@
 <span class="kn">from</span> <span class="nn">grpc._cython</span> <span class="kn">import</span> <span class="n">cygrpc</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_base_call</span>
-<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="p">(</span><span class="n">DeserializingFunction</span><span class="p">,</span> <span class="n">DoneCallbackType</span><span class="p">,</span> <span class="n">MetadataType</span><span class="p">,</span>
-                      <span class="n">MetadatumType</span><span class="p">,</span> <span class="n">RequestIterableType</span><span class="p">,</span> <span class="n">RequestType</span><span class="p">,</span>
-                      <span class="n">ResponseType</span><span class="p">,</span> <span class="n">SerializingFunction</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">._metadata</span> <span class="kn">import</span> <span class="n">Metadata</span>
+<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="p">(</span><span class="n">DeserializingFunction</span><span class="p">,</span> <span class="n">DoneCallbackType</span><span class="p">,</span> <span class="n">MetadatumType</span><span class="p">,</span>
+                      <span class="n">RequestIterableType</span><span class="p">,</span> <span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">,</span>
+                      <span class="n">SerializingFunction</span><span class="p">)</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="s1">&#39;AioRpcError&#39;</span><span class="p">,</span> <span class="s1">&#39;Call&#39;</span><span class="p">,</span> <span class="s1">&#39;UnaryUnaryCall&#39;</span><span class="p">,</span> <span class="s1">&#39;UnaryStreamCall&#39;</span>
 
@@ -124,6 +126,7 @@
 <span class="n">_GC_CANCELLATION_DETAILS</span> <span class="o">=</span> <span class="s1">&#39;Cancelled upon garbage collection!&#39;</span>
 <span class="n">_RPC_ALREADY_FINISHED_DETAILS</span> <span class="o">=</span> <span class="s1">&#39;RPC already finished.&#39;</span>
 <span class="n">_RPC_HALF_CLOSED_DETAILS</span> <span class="o">=</span> <span class="s1">&#39;RPC is half closed after calling &quot;done_writing&quot;.&#39;</span>
+<span class="n">_API_STYLE_ERROR</span> <span class="o">=</span> <span class="s1">&#39;The iterator and read/write APIs may not be mixed on a single RPC.&#39;</span>
 
 <span class="n">_OK_CALL_REPRESENTATION</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;&lt;</span><span class="si">{}</span><span class="s1"> of RPC that terminated with:</span><span class="se">\n</span><span class="s1">&#39;</span>
                            <span class="s1">&#39;</span><span class="se">\t</span><span class="s1">status = </span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span>
@@ -146,22 +149,17 @@
 <span class="sd">    determined. Hence, its methods no longer needs to be coroutines.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># TODO(https://github.com/grpc/grpc/issues/20144) Metadata</span>
-    <span class="c1"># type returned by `initial_metadata` and `trailing_metadata`</span>
-    <span class="c1"># and also taken in the constructor needs to be revisit and make</span>
-    <span class="c1"># it more specific.</span>
-
     <span class="n">_code</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span>
     <span class="n">_details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-    <span class="n">_initial_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span>
-    <span class="n">_trailing_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span>
+    <span class="n">_initial_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span>
+    <span class="n">_trailing_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span>
     <span class="n">_debug_error_string</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">code</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">,</span>
+                 <span class="n">initial_metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">,</span>
+                 <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">,</span>
                  <span class="n">details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                 <span class="n">initial_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                 <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">debug_error_string</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Constructor.</span>
 
@@ -196,7 +194,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_details</span></div>
 
-<div class="viewcode-block" id="AioRpcError.initial_metadata"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.AioRpcError.initial_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]:</span>
+<div class="viewcode-block" id="AioRpcError.initial_metadata"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.AioRpcError.initial_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Accesses the initial metadata sent by the server.</span>
 
 <span class="sd">        Returns:</span>
@@ -204,7 +202,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_metadata</span></div>
 
-<div class="viewcode-block" id="AioRpcError.trailing_metadata"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.AioRpcError.trailing_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]:</span>
+<div class="viewcode-block" id="AioRpcError.trailing_metadata"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.AioRpcError.trailing_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Accesses the trailing metadata sent by the server.</span>
 
 <span class="sd">        Returns:</span>
@@ -233,14 +231,14 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_repr</span><span class="p">()</span></div>
 
 
-<span class="k">def</span> <span class="nf">_create_rpc_error</span><span class="p">(</span><span class="n">initial_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">],</span>
+<span class="k">def</span> <span class="nf">_create_rpc_error</span><span class="p">(</span><span class="n">initial_metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">,</span>
                       <span class="n">status</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioRpcStatus</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AioRpcError</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">AioRpcError</span><span class="p">(</span>
         <span class="n">_common</span><span class="o">.</span><span class="n">CYGRPC_STATUS_CODE_TO_STATUS_CODE</span><span class="p">[</span><span class="n">status</span><span class="o">.</span><span class="n">code</span><span class="p">()],</span>
-        <span class="n">status</span><span class="o">.</span><span class="n">details</span><span class="p">(),</span>
-        <span class="n">initial_metadata</span><span class="p">,</span>
-        <span class="n">status</span><span class="o">.</span><span class="n">trailing_metadata</span><span class="p">(),</span>
-        <span class="n">status</span><span class="o">.</span><span class="n">debug_error_string</span><span class="p">(),</span>
+        <span class="n">Metadata</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="n">initial_metadata</span><span class="p">),</span>
+        <span class="n">Metadata</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">trailing_metadata</span><span class="p">()),</span>
+        <span class="n">details</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">details</span><span class="p">(),</span>
+        <span class="n">debug_error_string</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">debug_error_string</span><span class="p">(),</span>
     <span class="p">)</span>
 
 
@@ -256,7 +254,7 @@
     <span class="n">_request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span>
     <span class="n">_response_deserializer</span><span class="p">:</span> <span class="n">DeserializingFunction</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cython_call</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">_AioCall</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">MetadataType</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cython_call</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">_AioCall</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">,</span>
                  <span class="n">request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span><span class="p">,</span>
                  <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">DeserializingFunction</span><span class="p">,</span>
                  <span class="n">loop</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">AbstractEventLoop</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -296,11 +294,14 @@
     <span class="k">def</span> <span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">time_remaining</span><span class="p">()</span>
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MetadataType</span><span class="p">:</span>
-        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">initial_metadata</span><span class="p">()</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
+        <span class="n">raw_metadata_tuple</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">initial_metadata</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">Metadata</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="n">raw_metadata_tuple</span><span class="p">)</span>
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MetadataType</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">status</span><span class="p">())</span><span class="o">.</span><span class="n">trailing_metadata</span><span class="p">()</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
+        <span class="n">raw_metadata_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="k">await</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">status</span><span class="p">())</span><span class="o">.</span><span class="n">trailing_metadata</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">Metadata</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="n">raw_metadata_tuple</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span> <span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">:</span>
         <span class="n">cygrpc_code</span> <span class="o">=</span> <span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">status</span><span class="p">())</span><span class="o">.</span><span class="n">code</span><span class="p">()</span>
@@ -391,8 +392,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_style</span> <span class="ow">is</span> <span class="n">_APIStyle</span><span class="o">.</span><span class="n">UNKNOWN</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_response_style</span> <span class="o">=</span> <span class="n">style</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_style</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">style</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">UsageError</span><span class="p">(</span>
-                <span class="s1">&#39;Please don</span><span class="se">\&#39;</span><span class="s1">t mix two styles of API for streaming responses&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">UsageError</span><span class="p">(</span><span class="n">_API_STYLE_ERROR</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">cancel</span><span class="p">():</span>
@@ -406,6 +406,9 @@
         <span class="k">while</span> <span class="n">message</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">EOF</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">message</span>
             <span class="n">message</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">()</span>
+
+        <span class="c1"># If the read operation failed, Core should explain why.</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raise_for_status</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="fm">__aiter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterable</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_style</span><span class="p">(</span><span class="n">_APIStyle</span><span class="o">.</span><span class="n">ASYNC_GENERATOR</span><span class="p">)</span>
@@ -467,8 +470,7 @@
 
     <span class="k">def</span> <span class="nf">_raise_for_different_style</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">style</span><span class="p">:</span> <span class="n">_APIStyle</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_style</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">style</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">UsageError</span><span class="p">(</span>
-                <span class="s1">&#39;Please don</span><span class="se">\&#39;</span><span class="s1">t mix two styles of API for streaming requests&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">UsageError</span><span class="p">(</span><span class="n">_API_STYLE_ERROR</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">cancel</span><span class="p">():</span>
@@ -485,7 +487,8 @@
                                         <span class="n">request_iterator</span><span class="p">:</span> <span class="n">RequestIterableType</span>
                                        <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isasyncgen</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isasyncgen</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span>
+                    <span class="n">request_iterator</span><span class="p">,</span> <span class="s1">&#39;__aiter__&#39;</span><span class="p">):</span>
                 <span class="k">async</span> <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">request_iterator</span><span class="p">:</span>
                     <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -512,7 +515,6 @@
 
         <span class="n">serialized_request</span> <span class="o">=</span> <span class="n">_common</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">request</span><span class="p">,</span>
                                                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">)</span>
-
         <span class="k">try</span><span class="p">:</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">send_serialized_message</span><span class="p">(</span><span class="n">serialized_request</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
@@ -562,7 +564,7 @@
 
     <span class="c1"># pylint: disable=too-many-arguments</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span> <span class="n">deadline</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
-                 <span class="n">metadata</span><span class="p">:</span> <span class="n">MetadataType</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">],</span>
                  <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">channel</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioChannel</span><span class="p">,</span>
                  <span class="n">method</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span><span class="p">,</span>
@@ -611,7 +613,7 @@
 
     <span class="c1"># pylint: disable=too-many-arguments</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span> <span class="n">deadline</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
-                 <span class="n">metadata</span><span class="p">:</span> <span class="n">MetadataType</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">],</span>
                  <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">channel</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioChannel</span><span class="p">,</span>
                  <span class="n">method</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span><span class="p">,</span>
@@ -651,7 +653,7 @@
 
     <span class="c1"># pylint: disable=too-many-arguments</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">],</span>
-                 <span class="n">deadline</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">MetadataType</span><span class="p">,</span>
+                 <span class="n">deadline</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">],</span>
                  <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">channel</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioChannel</span><span class="p">,</span>
                  <span class="n">method</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span><span class="p">,</span>
@@ -689,7 +691,7 @@
 
     <span class="c1"># pylint: disable=too-many-arguments</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">],</span>
-                 <span class="n">deadline</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">MetadataType</span><span class="p">,</span>
+                 <span class="n">deadline</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">],</span>
                  <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">channel</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioChannel</span><span class="p">,</span>
                  <span class="n">method</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span><span class="p">,</span>
@@ -724,7 +726,7 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2018, The gRPC Authors.
+      &copy;2020, The gRPC Authors.
       
     </div>
 

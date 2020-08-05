@@ -4,7 +4,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc_reflection.v1alpha.reflection &#8212; gRPC Python 1.29.0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>grpc_reflection.v1alpha.reflection &#8212; gRPC Python 1.31.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -29,7 +30,7 @@
 
 
 
-<p class="blurb">1.29.0</p>
+<p class="blurb">1.31.0</p>
 
 
 
@@ -100,99 +101,20 @@
 <span class="c1"># limitations under the License.</span>
 <span class="sd">&quot;&quot;&quot;Reference implementation for reflection in gRPC Python.&quot;&quot;&quot;</span>
 
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">grpc</span>
-<span class="kn">from</span> <span class="nn">google.protobuf</span> <span class="kn">import</span> <span class="n">descriptor_pb2</span>
-<span class="kn">from</span> <span class="nn">google.protobuf</span> <span class="kn">import</span> <span class="n">descriptor_pool</span>
 
 <span class="kn">from</span> <span class="nn">grpc_reflection.v1alpha</span> <span class="kn">import</span> <span class="n">reflection_pb2</span> <span class="k">as</span> <span class="n">_reflection_pb2</span>
 <span class="kn">from</span> <span class="nn">grpc_reflection.v1alpha</span> <span class="kn">import</span> <span class="n">reflection_pb2_grpc</span> <span class="k">as</span> <span class="n">_reflection_pb2_grpc</span>
 
-<span class="n">_POOL</span> <span class="o">=</span> <span class="n">descriptor_pool</span><span class="o">.</span><span class="n">Default</span><span class="p">()</span>
+<span class="kn">from</span> <span class="nn">grpc_reflection.v1alpha._base</span> <span class="kn">import</span> <span class="n">BaseReflectionServicer</span>
+
 <span class="n">SERVICE_NAME</span> <span class="o">=</span> <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">DESCRIPTOR</span><span class="o">.</span><span class="n">services_by_name</span><span class="p">[</span>
     <span class="s1">&#39;ServerReflection&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">full_name</span>
 
 
-<span class="k">def</span> <span class="nf">_not_found_error</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ServerReflectionResponse</span><span class="p">(</span>
-        <span class="n">error_response</span><span class="o">=</span><span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ErrorResponse</span><span class="p">(</span>
-            <span class="n">error_code</span><span class="o">=</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-            <span class="n">error_message</span><span class="o">=</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span>
-        <span class="p">))</span>
-
-
-<span class="k">def</span> <span class="nf">_file_descriptor_response</span><span class="p">(</span><span class="n">descriptor</span><span class="p">):</span>
-    <span class="n">proto</span> <span class="o">=</span> <span class="n">descriptor_pb2</span><span class="o">.</span><span class="n">FileDescriptorProto</span><span class="p">()</span>
-    <span class="n">descriptor</span><span class="o">.</span><span class="n">CopyToProto</span><span class="p">(</span><span class="n">proto</span><span class="p">)</span>
-    <span class="n">serialized_proto</span> <span class="o">=</span> <span class="n">proto</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ServerReflectionResponse</span><span class="p">(</span>
-        <span class="n">file_descriptor_response</span><span class="o">=</span><span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">FileDescriptorResponse</span><span class="p">(</span>
-            <span class="n">file_descriptor_proto</span><span class="o">=</span><span class="p">(</span><span class="n">serialized_proto</span><span class="p">,)),)</span>
-
-
-<div class="viewcode-block" id="ReflectionServicer"><a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.reflection.ReflectionServicer">[docs]</a><span class="k">class</span> <span class="nc">ReflectionServicer</span><span class="p">(</span><span class="n">_reflection_pb2_grpc</span><span class="o">.</span><span class="n">ServerReflectionServicer</span><span class="p">):</span>
+<div class="viewcode-block" id="ReflectionServicer"><a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.reflection.ReflectionServicer">[docs]</a><span class="k">class</span> <span class="nc">ReflectionServicer</span><span class="p">(</span><span class="n">BaseReflectionServicer</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Servicer handling RPCs for service statuses.&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_names</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Constructor.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">      service_names: Iterable of fully-qualified service names available.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_service_names</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">service_names</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">_POOL</span> <span class="k">if</span> <span class="n">pool</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">pool</span>
-
-    <span class="k">def</span> <span class="nf">_file_by_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">descriptor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">FindFileByName</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_not_found_error</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_file_descriptor_response</span><span class="p">(</span><span class="n">descriptor</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_file_containing_symbol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fully_qualified_name</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">descriptor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">FindFileContainingSymbol</span><span class="p">(</span>
-                <span class="n">fully_qualified_name</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_not_found_error</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_file_descriptor_response</span><span class="p">(</span><span class="n">descriptor</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_file_containing_extension</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">containing_type</span><span class="p">,</span> <span class="n">extension_number</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">message_descriptor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">FindMessageTypeByName</span><span class="p">(</span>
-                <span class="n">containing_type</span><span class="p">)</span>
-            <span class="n">extension_descriptor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">FindExtensionByNumber</span><span class="p">(</span>
-                <span class="n">message_descriptor</span><span class="p">,</span> <span class="n">extension_number</span><span class="p">)</span>
-            <span class="n">descriptor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">FindFileContainingSymbol</span><span class="p">(</span>
-                <span class="n">extension_descriptor</span><span class="o">.</span><span class="n">full_name</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_not_found_error</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_file_descriptor_response</span><span class="p">(</span><span class="n">descriptor</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_all_extension_numbers_of_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">containing_type</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">message_descriptor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">FindMessageTypeByName</span><span class="p">(</span>
-                <span class="n">containing_type</span><span class="p">)</span>
-            <span class="n">extension_numbers</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-                <span class="nb">sorted</span><span class="p">(</span><span class="n">extension</span><span class="o">.</span><span class="n">number</span> <span class="k">for</span> <span class="n">extension</span> <span class="ow">in</span>
-                       <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">FindAllExtensions</span><span class="p">(</span><span class="n">message_descriptor</span><span class="p">)))</span>
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_not_found_error</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ServerReflectionResponse</span><span class="p">(</span>
-                <span class="n">all_extension_numbers_response</span><span class="o">=</span><span class="n">_reflection_pb2</span><span class="o">.</span>
-                <span class="n">ExtensionNumberResponse</span><span class="p">(</span>
-                    <span class="n">base_type_name</span><span class="o">=</span><span class="n">message_descriptor</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span>
-                    <span class="n">extension_number</span><span class="o">=</span><span class="n">extension_numbers</span><span class="p">))</span>
-
-    <span class="k">def</span> <span class="nf">_list_services</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ServerReflectionResponse</span><span class="p">(</span>
-            <span class="n">list_services_response</span><span class="o">=</span><span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ListServiceResponse</span><span class="p">(</span><span class="n">service</span><span class="o">=</span><span class="p">[</span>
-                <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ServiceResponse</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">service_name</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">service_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_service_names</span>
-            <span class="p">]))</span>
 
 <div class="viewcode-block" id="ReflectionServicer.ServerReflectionInfo"><a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo">[docs]</a>    <span class="k">def</span> <span class="nf">ServerReflectionInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="c1"># pylint: disable=unused-argument</span>
@@ -220,16 +142,48 @@
                     <span class="p">))</span></div></div>
 
 
-<div class="viewcode-block" id="enable_server_reflection"><a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.reflection.enable_server_reflection">[docs]</a><span class="k">def</span> <span class="nf">enable_server_reflection</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">server</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Enables server reflection on a server.</span>
+<span class="n">_enable_server_reflection_doc</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Enables server reflection on a server.</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">      service_names: Iterable of fully-qualified service names available.</span>
-<span class="sd">      server: grpc.Server to which reflection service will be added.</span>
-<span class="sd">      pool: DescriptorPool object to use (descriptor_pool.Default() if None).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_reflection_pb2_grpc</span><span class="o">.</span><span class="n">add_ServerReflectionServicer_to_server</span><span class="p">(</span>
-        <span class="n">ReflectionServicer</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="n">pool</span><span class="p">),</span> <span class="n">server</span><span class="p">)</span></div>
+<span class="s2">Args:</span>
+<span class="s2">    service_names: Iterable of fully-qualified service names available.</span>
+<span class="s2">    server: grpc.Server to which reflection service will be added.</span>
+<span class="s2">    pool: DescriptorPool object to use (descriptor_pool.Default() if None).</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">6</span><span class="p">:</span>
+    <span class="c1"># Exposes AsyncReflectionServicer as public API.</span>
+    <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_async</span> <span class="k">as</span> <span class="n">aio</span>
+    <span class="kn">from</span> <span class="nn">grpc.experimental</span> <span class="kn">import</span> <span class="n">aio</span> <span class="k">as</span> <span class="n">grpc_aio</span>  <span class="c1"># pylint: disable=ungrouped-imports</span>
+
+    <span class="k">def</span> <span class="nf">enable_server_reflection</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">server</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">server</span><span class="p">,</span> <span class="n">grpc_aio</span><span class="o">.</span><span class="n">Server</span><span class="p">):</span>
+            <span class="n">_reflection_pb2_grpc</span><span class="o">.</span><span class="n">add_ServerReflectionServicer_to_server</span><span class="p">(</span>
+                <span class="n">aio</span><span class="o">.</span><span class="n">ReflectionServicer</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="n">pool</span><span class="p">),</span> <span class="n">server</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_reflection_pb2_grpc</span><span class="o">.</span><span class="n">add_ServerReflectionServicer_to_server</span><span class="p">(</span>
+                <span class="n">ReflectionServicer</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="n">pool</span><span class="p">),</span> <span class="n">server</span><span class="p">)</span>
+
+    <span class="n">enable_server_reflection</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_enable_server_reflection_doc</span>
+
+    <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;SERVICE_NAME&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ReflectionServicer&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;enable_server_reflection&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;aio&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+<span class="k">else</span><span class="p">:</span>
+
+<div class="viewcode-block" id="enable_server_reflection"><a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.reflection.enable_server_reflection">[docs]</a>    <span class="k">def</span> <span class="nf">enable_server_reflection</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">server</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">_reflection_pb2_grpc</span><span class="o">.</span><span class="n">add_ServerReflectionServicer_to_server</span><span class="p">(</span>
+            <span class="n">ReflectionServicer</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="n">pool</span><span class="p">),</span> <span class="n">server</span><span class="p">)</span></div>
+
+    <span class="n">enable_server_reflection</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_enable_server_reflection_doc</span>
+
+    <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;SERVICE_NAME&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ReflectionServicer&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;enable_server_reflection&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
 </pre></div>
 
           </div>
@@ -239,7 +193,7 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2018, The gRPC Authors.
+      &copy;2020, The gRPC Authors.
       
     </div>
 

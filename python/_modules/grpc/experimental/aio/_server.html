@@ -4,7 +4,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>grpc.experimental.aio._server &#8212; gRPC Python 1.29.0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>grpc.experimental.aio._server &#8212; gRPC Python 1.31.0 documentation</title>
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
@@ -29,7 +30,7 @@
 
 
 
-<p class="blurb">1.29.0</p>
+<p class="blurb">1.31.0</p>
 
 
 
@@ -102,7 +103,6 @@
 <span class="c1"># limitations under the License.</span>
 <span class="sd">&quot;&quot;&quot;Server-side implementation of gRPC Asyncio Python.&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">asyncio</span>
 <span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">Executor</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
 
@@ -130,7 +130,7 @@
                  <span class="n">options</span><span class="p">:</span> <span class="n">ChannelArgumentType</span><span class="p">,</span>
                  <span class="n">maximum_concurrent_rpcs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
                  <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">get_working_loop</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">interceptors</span><span class="p">:</span>
             <span class="n">invalid_interceptors</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="n">interceptor</span> <span class="k">for</span> <span class="n">interceptor</span> <span class="ow">in</span> <span class="n">interceptors</span>
@@ -252,10 +252,11 @@
 <span class="sd">        be safe to slightly extend the underlying Cython object&#39;s life span.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_server&#39;</span><span class="p">):</span>
-            <span class="n">cygrpc</span><span class="o">.</span><span class="n">schedule_coro_threadsafe</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">is_running</span><span class="p">():</span>
+                <span class="n">cygrpc</span><span class="o">.</span><span class="n">schedule_coro_threadsafe</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+                <span class="p">)</span>
 
 
 <div class="viewcode-block" id="server"><a class="viewcode-back" href="../../../../grpc_asyncio.html#grpc.experimental.aio.server">[docs]</a><span class="k">def</span> <span class="nf">server</span><span class="p">(</span><span class="n">migration_thread_pool</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Executor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -276,7 +277,7 @@
 <span class="sd">        and optionally manipulate the incoming RPCs before handing them over to</span>
 <span class="sd">        handlers. The interceptors are given control in the order they are</span>
 <span class="sd">        specified. This is an EXPERIMENTAL API.</span>
-<span class="sd">      options: An optional list of key-value pairs (channel args in gRPC runtime)</span>
+<span class="sd">      options: An optional list of key-value pairs (:term:`channel_arguments` in gRPC runtime)</span>
 <span class="sd">        to configure the channel.</span>
 <span class="sd">      maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server</span>
 <span class="sd">        will service before returning RESOURCE_EXHAUSTED status, or None to</span>
@@ -302,7 +303,7 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2018, The gRPC Authors.
+      &copy;2020, The gRPC Authors.
       
     </div>
 

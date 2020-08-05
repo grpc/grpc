@@ -1,11 +1,11 @@
 
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Index &#8212; gRPC Python 1.29.0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index &#8212; gRPC Python 1.31.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.29.0</p>
+<p class="blurb">1.31.0</p>
 
 
 
@@ -180,22 +180,20 @@
 </li>
       <li><a href="grpc_channelz.html#grpc_channelz.v1.channelz.add_channelz_servicer">add_channelz_servicer() (in module grpc_channelz.v1.channelz)</a>
 </li>
-      <li><a href="grpc_asyncio.html#grpc.experimental.aio.InterceptedUnaryUnaryCall.add_done_callback">add_done_callback() (grpc.experimental.aio.InterceptedUnaryUnaryCall method)</a>
+      <li><a href="grpc_asyncio.html#grpc.experimental.aio.RpcContext.add_done_callback">add_done_callback() (grpc.experimental.aio.RpcContext method)</a>
 
       <ul>
-        <li><a href="grpc_asyncio.html#grpc.experimental.aio.RpcContext.add_done_callback">(grpc.experimental.aio.RpcContext method)</a>
-</li>
         <li><a href="grpc.html#grpc.Future.add_done_callback">(grpc.Future method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc_asyncio.html#grpc.experimental.aio.Server.add_generic_rpc_handlers">add_generic_rpc_handlers() (grpc.experimental.aio.Server method)</a>
 
       <ul>
         <li><a href="grpc.html#grpc.Server.add_generic_rpc_handlers">(grpc.Server method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc_asyncio.html#grpc.experimental.aio.Server.add_insecure_port">add_insecure_port() (grpc.experimental.aio.Server method)</a>
 
       <ul>
@@ -212,8 +210,12 @@
 </li>
       <li><a href="grpc.html#grpc.StatusCode.ALREADY_EXISTS">ALREADY_EXISTS (grpc.StatusCode attribute)</a>
 </li>
-      <li><a href="grpc.html#grpc.ServicerContext.auth_context">auth_context() (grpc.ServicerContext method)</a>
+      <li><a href="grpc_asyncio.html#grpc.experimental.aio.ServicerContext.auth_context">auth_context() (grpc.experimental.aio.ServicerContext method)</a>
+
+      <ul>
+        <li><a href="grpc.html#grpc.ServicerContext.auth_context">(grpc.ServicerContext method)</a>
 </li>
+      </ul></li>
       <li><a href="grpc.html#grpc.AuthMetadataContext">AuthMetadataContext (class in grpc)</a>
 </li>
       <li><a href="grpc.html#grpc.AuthMetadataPlugin">AuthMetadataPlugin (class in grpc)</a>
@@ -246,11 +248,9 @@
 </li>
       <li><a href="grpc.html#grpc.CallCredentials">CallCredentials (class in grpc)</a>
 </li>
-      <li><a href="grpc_asyncio.html#grpc.experimental.aio.InterceptedUnaryUnaryCall.cancel">cancel() (grpc.experimental.aio.InterceptedUnaryUnaryCall method)</a>
+      <li><a href="grpc_asyncio.html#grpc.experimental.aio.RpcContext.cancel">cancel() (grpc.experimental.aio.RpcContext method)</a>
 
       <ul>
-        <li><a href="grpc_asyncio.html#grpc.experimental.aio.RpcContext.cancel">(grpc.experimental.aio.RpcContext method)</a>
-</li>
         <li><a href="grpc.html#grpc.Future.cancel">(grpc.Future method)</a>
 </li>
         <li><a href="grpc.html#grpc.RpcContext.cancel">(grpc.RpcContext method)</a>
@@ -266,11 +266,9 @@
       </ul></li>
       <li><a href="grpc.html#grpc.StatusCode.CANCELLED">CANCELLED (grpc.StatusCode attribute)</a>
 </li>
-      <li><a href="grpc_asyncio.html#grpc.experimental.aio.InterceptedUnaryUnaryCall.cancelled">cancelled() (grpc.experimental.aio.InterceptedUnaryUnaryCall method)</a>
+      <li><a href="grpc_asyncio.html#grpc.experimental.aio.RpcContext.cancelled">cancelled() (grpc.experimental.aio.RpcContext method)</a>
 
       <ul>
-        <li><a href="grpc_asyncio.html#grpc.experimental.aio.RpcContext.cancelled">(grpc.experimental.aio.RpcContext method)</a>
-</li>
         <li><a href="grpc.html#grpc.Future.cancelled">(grpc.Future method)</a>
 </li>
         <li><a href="grpc_testing.html#grpc_testing.StreamStreamChannelRpc.cancelled">(grpc_testing.StreamStreamChannelRpc method)</a>
@@ -293,6 +291,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc_testing.html#grpc_testing.channel">channel() (in module grpc_testing)</a>
+</li>
+      <li><a href="glossary.html#term-channel_arguments"><strong>channel_arguments</strong></a>
 </li>
       <li><a href="grpc_asyncio.html#grpc.experimental.aio.Channel.channel_ready">channel_ready() (grpc.experimental.aio.Channel method)</a>
 </li>
@@ -324,8 +324,6 @@
         <li><a href="grpc_asyncio.html#grpc.experimental.aio.AioRpcError.code">(grpc.experimental.aio.AioRpcError method)</a>
 </li>
         <li><a href="grpc_asyncio.html#grpc.experimental.aio.Call.code">(grpc.experimental.aio.Call method)</a>
-</li>
-        <li><a href="grpc_asyncio.html#grpc.experimental.aio.InterceptedUnaryUnaryCall.code">(grpc.experimental.aio.InterceptedUnaryUnaryCall method)</a>
 </li>
       </ul></li>
       <li><a href="grpc.html#grpc.composite_call_credentials">composite_call_credentials() (in module grpc)</a>
@@ -363,8 +361,6 @@
 </li>
         <li><a href="grpc_asyncio.html#grpc.experimental.aio.Call.details">(grpc.experimental.aio.Call method)</a>
 </li>
-        <li><a href="grpc_asyncio.html#grpc.experimental.aio.InterceptedUnaryUnaryCall.details">(grpc.experimental.aio.InterceptedUnaryUnaryCall method)</a>
-</li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -374,11 +370,9 @@
         <li><a href="grpc.html#grpc.ServicerContext.disable_next_message_compression">(grpc.ServicerContext method)</a>
 </li>
       </ul></li>
-      <li><a href="grpc_asyncio.html#grpc.experimental.aio.InterceptedUnaryUnaryCall.done">done() (grpc.experimental.aio.InterceptedUnaryUnaryCall method)</a>
+      <li><a href="grpc_asyncio.html#grpc.experimental.aio.RpcContext.done">done() (grpc.experimental.aio.RpcContext method)</a>
 
       <ul>
-        <li><a href="grpc_asyncio.html#grpc.experimental.aio.RpcContext.done">(grpc.experimental.aio.RpcContext method)</a>
-</li>
         <li><a href="grpc.html#grpc.Future.done">(grpc.Future method)</a>
 </li>
       </ul></li>
@@ -518,16 +512,12 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.html#grpc.ChannelConnectivity.IDLE">IDLE (grpc.ChannelConnectivity attribute)</a>
 </li>
-      <li><a href="grpc_asyncio.html#grpc.experimental.aio.init_grpc_aio">init_grpc_aio() (in module grpc.experimental.aio)</a>
-</li>
       <li><a href="grpc.html#grpc.Call.initial_metadata">initial_metadata() (grpc.Call method)</a>
 
       <ul>
         <li><a href="grpc_asyncio.html#grpc.experimental.aio.AioRpcError.initial_metadata">(grpc.experimental.aio.AioRpcError method)</a>
 </li>
         <li><a href="grpc_asyncio.html#grpc.experimental.aio.Call.initial_metadata">(grpc.experimental.aio.Call method)</a>
-</li>
-        <li><a href="grpc_asyncio.html#grpc.experimental.aio.InterceptedUnaryUnaryCall.initial_metadata">(grpc.experimental.aio.InterceptedUnaryUnaryCall method)</a>
 </li>
         <li><a href="grpc_testing.html#grpc_testing.StreamStreamServerRpc.initial_metadata">(grpc_testing.StreamStreamServerRpc method)</a>
 </li>
@@ -550,10 +540,10 @@
 </li>
       <li><a href="grpc.html#grpc.StreamStreamClientInterceptor.intercept_stream_stream">intercept_stream_stream() (grpc.StreamStreamClientInterceptor method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.html#grpc.StreamUnaryClientInterceptor.intercept_stream_unary">intercept_stream_unary() (grpc.StreamUnaryClientInterceptor method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.html#grpc.UnaryStreamClientInterceptor.intercept_unary_stream">intercept_unary_stream() (grpc.UnaryStreamClientInterceptor method)</a>
 </li>
       <li><a href="grpc_asyncio.html#grpc.experimental.aio.UnaryUnaryClientInterceptor.intercept_unary_unary">intercept_unary_unary() (grpc.experimental.aio.UnaryUnaryClientInterceptor method)</a>
@@ -675,14 +665,26 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="grpc.html#grpc.ServicerContext.peer">peer() (grpc.ServicerContext method)</a>
+      <li><a href="grpc_asyncio.html#grpc.experimental.aio.ServicerContext.peer">peer() (grpc.experimental.aio.ServicerContext method)</a>
+
+      <ul>
+        <li><a href="grpc.html#grpc.ServicerContext.peer">(grpc.ServicerContext method)</a>
 </li>
-      <li><a href="grpc.html#grpc.ServicerContext.peer_identities">peer_identities() (grpc.ServicerContext method)</a>
+      </ul></li>
+      <li><a href="grpc_asyncio.html#grpc.experimental.aio.ServicerContext.peer_identities">peer_identities() (grpc.experimental.aio.ServicerContext method)</a>
+
+      <ul>
+        <li><a href="grpc.html#grpc.ServicerContext.peer_identities">(grpc.ServicerContext method)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="grpc.html#grpc.ServicerContext.peer_identity_key">peer_identity_key() (grpc.ServicerContext method)</a>
+      <li><a href="grpc_asyncio.html#grpc.experimental.aio.ServicerContext.peer_identity_key">peer_identity_key() (grpc.experimental.aio.ServicerContext method)</a>
+
+      <ul>
+        <li><a href="grpc.html#grpc.ServicerContext.peer_identity_key">(grpc.ServicerContext method)</a>
 </li>
+      </ul></li>
       <li><a href="grpc.html#grpc.StatusCode.PERMISSION_DENIED">PERMISSION_DENIED (grpc.StatusCode attribute)</a>
 </li>
   </ul></td>
@@ -998,8 +1000,6 @@
 </li>
         <li><a href="grpc_asyncio.html#grpc.experimental.aio.Call.trailing_metadata">(grpc.experimental.aio.Call method)</a>
 </li>
-        <li><a href="grpc_asyncio.html#grpc.experimental.aio.InterceptedUnaryUnaryCall.trailing_metadata">(grpc.experimental.aio.InterceptedUnaryUnaryCall method)</a>
-</li>
       </ul></li>
       <li><a href="grpc.html#grpc.ChannelConnectivity.TRANSIENT_FAILURE">TRANSIENT_FAILURE (grpc.ChannelConnectivity attribute)</a>
 </li>
@@ -1084,13 +1084,13 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc_asyncio.html#grpc.experimental.aio.Call.wait_for_connection">wait_for_connection() (grpc.experimental.aio.Call method)</a>
+</li>
+      <li><a href="glossary.html#term-wait_for_ready"><strong>wait_for_ready</strong></a>
 
       <ul>
-        <li><a href="grpc_asyncio.html#grpc.experimental.aio.InterceptedUnaryUnaryCall.wait_for_connection">(grpc.experimental.aio.InterceptedUnaryUnaryCall method)</a>
+        <li><a href="grpc.html#grpc.ClientCallDetails.wait_for_ready">(grpc.ClientCallDetails attribute)</a>
 </li>
       </ul></li>
-      <li><a href="grpc.html#grpc.ClientCallDetails.wait_for_ready">wait_for_ready (grpc.ClientCallDetails attribute)</a>
-</li>
       <li><a href="grpc_asyncio.html#grpc.experimental.aio.Channel.wait_for_state_change">wait_for_state_change() (grpc.experimental.aio.Channel method)</a>
 </li>
       <li><a href="grpc_asyncio.html#grpc.experimental.aio.Server.wait_for_termination">wait_for_termination() (grpc.experimental.aio.Server method)</a>
@@ -1129,7 +1129,7 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2018, The gRPC Authors.
+      &copy;2020, The gRPC Authors.
       
     </div>
 
