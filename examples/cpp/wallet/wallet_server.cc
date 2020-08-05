@@ -93,6 +93,8 @@ class WalletServiceImpl final : public Wallet::Service {
                 << std::endl;
     }
     user_ = response.name();
+    // User requested premium service, but the user is not a premium user,
+    // reject the request.
     if (membership_ == "premium" &&
         response.membership() != MembershipType::PREMIUM) {
       std::cout << "token: " << token_ << ", name: " << user_
@@ -112,7 +114,8 @@ class WalletServiceImpl final : public Wallet::Service {
   Status FetchBalance(ServerContext* context, const BalanceRequest* request,
                       BalanceResponse* response) override {
     if (!ObtainAndValidateUserAndMembership(context)) {
-      return Status(StatusCode::UNAUTHENTICATED, "membership auth failed");
+      return Status(StatusCode::UNAUTHENTICATED,
+                    "membership authentication failed");
     }
     context->AddInitialMetadata("hostname", hostname_);
     ClientContext stats_context;
@@ -120,6 +123,7 @@ class WalletServiceImpl final : public Wallet::Service {
     stats_context.AddMetadata("membership", membership_);
     PriceRequest stats_request;
     PriceResponse stats_response;
+    // Call Stats Server to fetch the price to calculate the balance.
     Status stats_status =
         stats_stub_->FetchPrice(&stats_context, stats_request, &stats_response);
     if (stats_status.ok()) {
@@ -152,7 +156,8 @@ class WalletServiceImpl final : public Wallet::Service {
   Status WatchBalance(ServerContext* context, const BalanceRequest* request,
                       ServerWriter<BalanceResponse>* writer) override {
     if (!ObtainAndValidateUserAndMembership(context)) {
-      return Status(StatusCode::UNAUTHENTICATED, "membership auth failed");
+      return Status(StatusCode::UNAUTHENTICATED,
+                    "membership authentication failed");
     }
     context->AddInitialMetadata("hostname", hostname_);
     ClientContext stats_context;
@@ -160,6 +165,10 @@ class WalletServiceImpl final : public Wallet::Service {
     stats_context.AddMetadata("membership", membership_);
     PriceRequest stats_request;
     PriceResponse stats_response;
+    // Open a streaming price watching with Stats Server.
+    // Every time a response
+    // is received, use the price to calculate the balance.
+    // Send every updated balance in a stream back to the client.
     std::unique_ptr<ClientReader<PriceResponse>> stats_reader(
         stats_stub_->WatchPrice(&stats_context, stats_request));
     while (stats_reader->Read(&stats_response)) {
@@ -212,32 +221,31 @@ void RunServer(const std::string& port, const std::string& account_server,
   }
   std::string hostname(base_hostname);
   hostname += hostname_suffix;
-  // Prepare Wallet Server and provide it with Stats and Account Client
   std::string server_address("0.0.0.0:");
   server_address += port;
   WalletServiceImpl service;
   service.SetHostName(hostname);
   service.SetV1Behavior(v1_behavior);
-  // Instantiate a stats server client.
+  grpc::EnableDefaultHealthCheckService(true);
+  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
+  // Instantiate the client stubs.  It requires a channel, out of which the
+  // actual RPCs are created.  The channel models a connection to an endpoint
+  // (Stats Server and Account Server in this case).  We indicate that the
+  // channel isn't authenticated (use of InsecureChannelCredentials()).
   ChannelArguments args;
-  args.SetLoadBalancingPolicyName("round_robin");
   service.SetStatsClientStub(Stats::NewStub(grpc::CreateCustomChannel(
       stats_server, grpc::InsecureChannelCredentials(), args)));
   service.SetAccountClientStub(Account::NewStub(grpc::CreateCustomChannel(
       account_server, grpc::InsecureChannelCredentials(), args)));
-
-  grpc::EnableDefaultHealthCheckService(true);
-  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
-  ServerBuilder builder;
   // Listen on the given address without any authentication mechanism.
   std::cout << "Wallet server listening on " << server_address << std::endl;
+  ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case it corresponds to an *synchronous* service.
   builder.RegisterService(&service);
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
-
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
   server->Wait();
@@ -254,10 +262,8 @@ int main(int argc, char** argv) {
   std::string arg_str_stats_server("--stats_server");
   std::string arg_str_hostname_suffix("--hostname_suffix");
   std::string arg_str_v1_behavior("--v1_behavior");
-
   for (int i = 1; i < argc; ++i) {
     std::string arg_val = argv[i];
-    std::cout << "arg " << i << " is " << arg_val << std::endl;
     size_t start_pos = arg_val.find(arg_str_port);
     if (start_pos != std::string::npos) {
       start_pos += arg_str_port.size();
@@ -328,13 +334,11 @@ int main(int argc, char** argv) {
       }
     }
   }
-
-  std::cout << "port: " << port << ", account_server: " << account_server
+  std::cout << "Wallet Server arguments: port: " << port
+            << ", account_server: " << account_server
             << ", stats_server: " << stats_server
             << ", hostname_suffix: " << hostname_suffix
             << ", v1_behavior: " << v1_behavior << std::endl;
-  std::cout << "==========" << std::endl;
   RunServer(port, account_server, stats_server, hostname_suffix, v1_behavior);
-
   return 0;
 }

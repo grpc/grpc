@@ -74,19 +74,17 @@ void RunServer(const std::string& port, const std::string& hostname_suffix) {
   server_address += port;
   AccountServiceImpl service;
   service.SetHostName(hostname);
-
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
-  ServerBuilder builder;
   // Listen on the given address without any authentication mechanism.
+  std::cout << "Account Server listening on " << server_address << std::endl;
+  ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case it corresponds to an *synchronous* service.
   builder.RegisterService(&service);
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Account server listening on " << server_address << std::endl;
-
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
   server->Wait();
@@ -97,10 +95,8 @@ int main(int argc, char** argv) {
   std::string hostname_suffix = "";
   std::string arg_str_port("--port");
   std::string arg_str_hostname_suffix("--hostname_suffix");
-
   for (int i = 1; i < argc; ++i) {
     std::string arg_val = argv[i];
-    std::cout << "arg " << i << " is " << arg_val << std::endl;
     size_t start_pos = arg_val.find(arg_str_port);
     if (start_pos != std::string::npos) {
       start_pos += arg_str_port.size();
@@ -125,11 +121,8 @@ int main(int argc, char** argv) {
       }
     }
   }
-
-  std::cout << "port: " << port << ", hostname_suffix: " << hostname_suffix
-            << std::endl;
-  std::cout << "==========" << std::endl;
+  std::cout << "Account Server arguments: port: " << port
+            << ", hostname_suffix: " << hostname_suffix << std::endl;
   RunServer(port, hostname_suffix);
-
   return 0;
 }

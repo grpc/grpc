@@ -109,9 +109,7 @@ class WalletClient {
       }
     }
     Status status = reader->Finish();
-    if (status.ok()) {
-      std::cout << "Watch balance success!" << std::endl;
-    } else {
+    if (!status.ok()) {
       std::cout << status.error_code() << ": " << status.error_message()
                 << std::endl;
     }
@@ -179,9 +177,7 @@ class StatsClient {
       std::cout << "grpc-coin price: " << response.price() << std::endl;
     }
     Status status = reader->Finish();
-    if (status.ok()) {
-      std::cout << "Watch price success!" << std::endl;
-    } else {
+    if (!status.ok()) {
       std::cout << status.error_code() << ": " << status.error_message()
                 << std::endl;
     }
@@ -205,10 +201,8 @@ int main(int argc, char** argv) {
   std::string arg_str_user("--user");
   std::string arg_str_watch("--watch");
   std::string arg_str_unary_watch("--unary_watch");
-
   for (int i = 1; i < argc; ++i) {
     std::string arg_val = argv[i];
-    std::cout << "arg " << i << " is " << arg_val << std::endl;
     size_t start_pos = arg_val.find(arg_command_balance);
     if (start_pos != std::string::npos) {
       command = "balance";
@@ -299,19 +293,16 @@ int main(int argc, char** argv) {
       }
     }
   }
-  std::cout << "command: " << command << ", wallet_server: " << wallet_server
+  std::cout << "Client arguments: command: " << command
+            << ", wallet_server: " << wallet_server
             << ", stats_server: " << stats_server << ", user: " << user
             << ", watch: " << watch << " ,unary_watch: " << unary_watch
             << std::endl;
-  std::cout << "==========" << std::endl;
-
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created. This channel models a connection to an endpoint (in this case,
-  // localhost at port 50051). We indicate that the channel isn't authenticated
-  // (use of InsecureChannelCredentials()).
+  // Instantiate the client.  It requires a channel, out of which the actual
+  // RPCs are created.  The channel models a connection to an endpoint (Stats
+  // Server or Wallet Server in this case).  We indicate that the channel isn't
+  // authenticated (use of InsecureChannelCredentials()).
   ChannelArguments args;
-  // Set the load balancing policy for the channel.
-  args.SetLoadBalancingPolicyName("round_robin");
   if (command == "price") {
     StatsClient stats(grpc::CreateCustomChannel(
         stats_server, grpc::InsecureChannelCredentials(), args));
@@ -329,6 +320,5 @@ int main(int argc, char** argv) {
       wallet.FetchBalance(user);
     }
   }
-  std::cout << "exit success" << std::endl;
   return 0;
 }

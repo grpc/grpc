@@ -68,6 +68,8 @@ class StatsServiceImpl final : public Stats::Service {
       else if (iter->first == "membership")
         membership_ = std::string(iter->second.data(), iter->second.size());
     }
+    // Stats server started with --premium_only flag, but metadata says this is
+    // from a non-premium request, reject it.
     if (premium_only_ && membership_ != "premium") {
       std::cout << "requested membership is non-premium but his this an "
                    "premium-only server"
@@ -93,6 +95,8 @@ class StatsServiceImpl final : public Stats::Service {
                 << std::endl;
     }
     user_ = response.name();
+    // User requested premium service, but the user is not a premium user,
+    // reject the request.
     if (membership_ == "premium" &&
         response.membership() != MembershipType::PREMIUM) {
       std::cout << "token: " << token_ << ", name: " << user_
@@ -112,7 +116,8 @@ class StatsServiceImpl final : public Stats::Service {
   Status FetchPrice(ServerContext* context, const PriceRequest* request,
                     PriceResponse* response) override {
     if (!ObtainAndValidateUserAndMembership(context)) {
-      return Status(StatusCode::UNAUTHENTICATED, "membership auth failed");
+      return Status(StatusCode::UNAUTHENTICATED,
+                    "membership authentication failed");
     }
     context->AddInitialMetadata("hostname", hostname_);
     response->set_price(sin(time(0) * 1000 / 173) * 1000 + 10000);
@@ -122,7 +127,8 @@ class StatsServiceImpl final : public Stats::Service {
   Status WatchPrice(ServerContext* context, const PriceRequest* request,
                     ServerWriter<PriceResponse>* writer) override {
     if (!ObtainAndValidateUserAndMembership(context)) {
-      return Status(StatusCode::UNAUTHENTICATED, "membership auth failed");
+      return Status(StatusCode::UNAUTHENTICATED,
+                    "membership authtication failed");
     }
     context->AddInitialMetadata("hostname", hostname_);
     while (true) {
@@ -154,30 +160,29 @@ void RunServer(const std::string& port, const std::string& account_server,
   }
   std::string hostname(base_hostname);
   hostname += hostname_suffix;
-  // Prepare Wallet Server and provide it with Stats and Account Client
   std::string server_address("0.0.0.0:");
   server_address += port;
   StatsServiceImpl service;
   service.SetHostName(hostname);
   service.SetPremiumOnly(premium_only);
-  // Instantiate an account server client.
-  ChannelArguments args;
-  args.SetLoadBalancingPolicyName("round_robin");
-  service.SetAccountClientStub(Account::NewStub(grpc::CreateCustomChannel(
-      account_server, grpc::InsecureChannelCredentials(), args)));
-
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
-  ServerBuilder builder;
+  // Instantiate the client stub.  It requires a channel, out of which the
+  // actual RPCs are created.  The channel models a connection to an endpoint
+  // (Account Server in this case).  We indicate that the channel isn't
+  // authenticated (use of InsecureChannelCredentials()).
+  ChannelArguments args;
+  service.SetAccountClientStub(Account::NewStub(grpc::CreateCustomChannel(
+      account_server, grpc::InsecureChannelCredentials(), args)));
   // Listen on the given address without any authentication mechanism.
-  std::cout << "Stats server listening on " << server_address << std::endl;
+  std::cout << "Stats Server listening on " << server_address << std::endl;
+  ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case it corresponds to an *synchronous* service.
   builder.RegisterService(&service);
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
-
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
   server->Wait();
@@ -192,10 +197,8 @@ int main(int argc, char** argv) {
   std::string arg_str_account_server("--account_server");
   std::string arg_str_hostname_suffix("--hostname_suffix");
   std::string arg_str_premium_only("--premium_only");
-
   for (int i = 1; i < argc; ++i) {
     std::string arg_val = argv[i];
-    std::cout << "arg " << i << " is " << arg_val << std::endl;
     size_t start_pos = arg_val.find(arg_str_port);
     if (start_pos != std::string::npos) {
       start_pos += arg_str_port.size();
@@ -254,12 +257,10 @@ int main(int argc, char** argv) {
       }
     }
   }
-
-  std::cout << "port: " << port << ", account_server: " << account_server
+  std::cout << "Stats Server arguments: port: " << port
+            << ", account_server: " << account_server
             << ", hostname_suffix: " << hostname_suffix
             << ", premium_only: " << premium_only << std::endl;
-  std::cout << "==========" << std::endl;
   RunServer(port, account_server, hostname_suffix, premium_only);
-
   return 0;
 }
