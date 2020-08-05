@@ -1108,7 +1108,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       }
       ConnectivityStateChange state_change = PopConnectivityStateChange();
       absl::optional<absl::Cord> keepalive_throttling =
-          state_change.status.GetPayload(grpc_core::keepalive_throttling_key);
+          state_change.status.GetPayload(grpc_core::kKeepaliveThrottlingKey);
       if (keepalive_throttling.has_value()) {
         int new_keepalive_time = -1;
         if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),

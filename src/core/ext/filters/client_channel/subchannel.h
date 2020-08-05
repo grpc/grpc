@@ -228,7 +228,9 @@ class Subchannel {
   static Subchannel* Create(OrphanablePtr<SubchannelConnector> connector,
                             const grpc_channel_args* args);
 
-  // Throttle keepalive time
+  // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
+  // is larger than the subchannel's current keepalive time. The updated value
+  // would have an affect when the subchannel creates a new ConnectedSubchannel.
   void ThrottleKeepaliveTime(int new_keepalive_time);
 
   // Strong and weak refcounting.

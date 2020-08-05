@@ -237,7 +237,7 @@ static void verify_matches(expectation* e, grpc_event* ev) {
   }
 }
 
-void cq_verify_custom_timeout(cq_verifier* v, int timeout_sec) {
+void cq_verify(cq_verifier* v, int timeout_sec) {
   const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(timeout_sec);
   while (v->first_expectation != nullptr) {
     grpc_event ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
@@ -265,8 +265,6 @@ void cq_verify_custom_timeout(cq_verifier* v, int timeout_sec) {
     }
   }
 }
-
-void cq_verify(cq_verifier* v) { cq_verify_custom_timeout(v, 10); }
 
 void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
   gpr_timespec deadline =

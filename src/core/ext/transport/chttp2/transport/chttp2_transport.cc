@@ -1103,7 +1103,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             ? GRPC_MILLIS_INF_FUTURE
             : static_cast<grpc_millis>(current_keepalive_time_ms *
                                        KEEPALIVE_TIME_BACKOFF_MULTIPLIER);
-    status.SetPayload(grpc_core::keepalive_throttling_key,
+    status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
                       absl::Cord(std::to_string(t->keepalive_time)));
   }
   // lie: use transient failure from the transport to indicate goaway has been
