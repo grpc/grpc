@@ -16,11 +16,12 @@ jobs:
     name: set up env
     runs-on: ubuntu-16.04
     steps:
+      - uses: actions/checkout@v2
       - name: Checkout
         uses: ./
         with:
           grpc-version: v1.30.2
-        
+
       - name: update libs
         env:
           MY_VAR: My test
@@ -32,6 +33,10 @@ jobs:
           sudo apt-get install cmake
           sudo apt-get install libgflags-dev
           sudo apt-get install clang-5.0 libc++-dev
+          
+      - name: Verify gRPC
+        run: |
+          svn export https://github.com/grpc/grpc/tags/v1.30.2  
           
       - name: Submodule update --init
         run: |
