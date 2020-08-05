@@ -5,50 +5,47 @@ name: build gRPC ubuntu16.04
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+  workflow_dispatch:
+#   push:
+#     branches: [ master ]
+#   pull_request:
+#     branches: [ master ]
 jobs:
-  install:
-    name: set up env
-    runs-on: ubuntu-16.04
+  build:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-16.04, ubuntu-18.04]
     steps:
+      - name: Set env
+        run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF#refs/*/v}
       - uses: actions/checkout@v2
-      - name: Checkout
-        uses: ./
         with:
-          grpc-version: v1.30.2
-
-      - name: update libs
-        env:
-          MY_VAR: My test
+          repository: grpc/grpc
+          ref: v${{ env.RELEASE_VERSION }}
+          submodules: true
+      - name: Build
         run: |
-          echo $MY_VAR
-          echo Install 1,
-          echo $PATH
-          sudo apt-get install build-essential autoconf libtool pkg-config
-          sudo apt-get install cmake
-          sudo apt-get install libgflags-dev
-          sudo apt-get install clang-5.0 libc++-dev
-          
-      - name: Verify gRPC
-        run: |
-          svn export https://github.com/grpc/grpc/tags/v1.30.2  
-          
-      - name: Submodule update --init
-        run: |
-          echo Submodule update --init
-          echo $PATH
-          cd grpc
-          git submodule update --init
-          
-      - name: build start
-        run: |
-          echo build start:$PATH
+          mkdir -p ${{ runner.tool_cache }}/grpc/${{ env.RELEASE_VERSION }}/x64
           mkdir -p cmake/build
           cd cmake/build
-          cmake ../..
-          make
+          cmake -DgRPC_INSTALL=ON -DgRPC_SSL_PROVIDER=package \
+            -DgRPC_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_INSTALL_PREFIX=${{ runner.tool_cache }}/grpc/${{ env.RELEASE_VERSION }}/x64 ../..
+          make -j 2
+          make install
+      - name: Echo version
+        run: |
+          echo ${{ github.ref }}
+          ${{ runner.tool_cache }}/grpc/${{ env.RELEASE_VERSION }}/x64/bin/protoc --version
+      - name: Make tarball
+        run: |
+          tar -C ${{ runner.tool_cache }}/grpc/${{ env.RELEASE_VERSION }}/x64 -zcf grpc-${{ env.RELEASE_VERSION }}-${{ matrix.os }}-x64.tar.gz .
+      - name: Upload tarball to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: grpc-${{ env.RELEASE_VERSION }}-${{ matrix.os }}-x64.tar.gz
+          tag: ${{ github.ref }}
