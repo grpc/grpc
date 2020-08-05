@@ -17,7 +17,9 @@ jobs:
     runs-on: ubuntu-16.04
     steps:
       - name: Checkout
-        uses: action/checkout@v1.30.2
+        uses: action/checkout@v2
+        with:
+          ref: v1.30.2
         
       - name: update libs
         env:
