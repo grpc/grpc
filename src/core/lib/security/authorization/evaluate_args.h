@@ -19,8 +19,6 @@
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
 
-#include <map>
-
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -28,27 +26,25 @@
 namespace grpc_core {
 
 class EvaluateArgs {
-  public:
-    EvaluateArgs(
-      grpc_metadata_batch* metadata,
-      grpc_auth_context* auth_context,
-      grpc_endpoint* endpoint);
+ public:
+  EvaluateArgs(grpc_metadata_batch* metadata, grpc_auth_context* auth_context,
+               grpc_endpoint* endpoint);
 
-    absl::string_view get_path_from_metadata();
-    absl::string_view get_host_from_metadata();
-    absl::string_view get_method_from_metadata();
-    std::multimap<absl::string_view, absl::string_view> get_headers_from_metadata();
-    absl::string_view get_spiffe_id_from_auth_context();
-    absl::string_view get_cert_server_name_from_auth_context();
+    absl::string_view GetPath());
+    absl::string_view GetHost();
+    absl::string_view GetMethod();
+    std::multimap<absl::string_view, absl::string_view> GetHeaders();
+    absl::string_view GetSpiffeId();
+    absl::string_view GetCertServerName();
 
     // TODO: Add a getter function for source.principal
 
-  private:
+   private:
     grpc_metadata_batch* metadata_;
     grpc_auth_context* auth_context_;
     grpc_endpoint* endpoint_;
 };
 
-} // namespace grpc_core 
+}  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
