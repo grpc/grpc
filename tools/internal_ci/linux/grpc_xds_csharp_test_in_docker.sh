@@ -48,9 +48,14 @@ touch "$TOOLS_DIR"/src/proto/grpc/testing/__init__.py
 
 python tools/run_tests/run_tests.py -l csharp -c opt --build_only
 
+# Test cases "path_matching" and "header_matching" are not included in "all",
+# because not all interop clients in all languages support these new tests.
+#
+# TODO(jtattermusch): remove "path_matching" and "header_matching" from
+# --test_case after they are added into "all".
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_routing_lb,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
-    --test_case=all \
+    --test_case="all,path_matching,header_matching" \
     --project_id=grpc-testing \
     --source_image=projects/grpc-testing/global/images/xds-test-server \
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
