@@ -48,6 +48,7 @@ class ServerCompletionQueue;
 namespace grpc {
 
 class AsyncGenericService;
+class ResourceQuota;
 class ServerCredentials;
 class Service;
 namespace testing {
@@ -85,6 +86,9 @@ class ExternalConnectionAcceptor {
 };
 
 }  // namespace experimental
+}  // namespace grpc
+
+namespace grpc {
 
 /// A builder class for the creation and startup of \a grpc::Server instances.
 class ServerBuilder {
