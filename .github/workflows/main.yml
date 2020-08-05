@@ -6,48 +6,42 @@ name: build gRPC ubuntu16.04
 # events but only for the master branch
 on:
   push:
-    branches: [ v1.30.2 ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  install:
+    name: set up env
     runs-on: ubuntu-16.04
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - name: Checkout v1.30.2
-      uses: actions/checkout@v1.30.2
-
-    # Runs a single command using the runners shell
-    - name: Installing system libs
-      shell: bash
-      run: |
-        echo Install 1,
-        echo $PATH
-        sudo apt-get install build-essential autoconf libtool pkg-config
-        sudo apt-get install cmake
-        sudo apt-get install libgflags-dev
-        sudo apt-get install clang-5.0 libc++-dev
-
-    # Runs a set of commands using the runners shell
-    - name: Submodule update --init
-      shell: bash
-      run: |
-        echo Submodule update --init,
-        echo $PATH
-        cd grpc
-        git submodule update --init
+      - name: Checkout
+        uses: action/checkout@v1.30.2
         
-    - name: build start
-      shell: bash
-      run: |
-        echo build start:$PATH
-        mkdir -p cmake/build
-        cd cmake/build
-        cmake ../..
-        make
+      - name: update libs
+        env:
+          MY_VAR: My test
+        run: |
+          echo $MY_VAR
+          echo Install 1,
+          echo $PATH
+          sudo apt-get install build-essential autoconf libtool pkg-config
+          sudo apt-get install cmake
+          sudo apt-get install libgflags-dev
+          sudo apt-get install clang-5.0 libc++-dev
+          
+      - name: Submodule update --init
+        run: |
+          echo Submodule update --init
+          echo $PATH
+          cd grpc
+          git submodule update --init
+          
+      - name: build start
+        run: |
+          echo build start:$PATH
+          mkdir -p cmake/build
+          cd cmake/build
+          cmake ../..
+          make
