@@ -48,6 +48,16 @@ describe 'Code Generation Options' do
       expect(services[:NestedMessageTest].output).to eq(RPC::Test::New::Package::Options::Bar::Baz)
     end
   end
+
+  it 'should generate when package and service has same name' do
+    with_protos(%w[grpc/testing/same_package_service_name.proto]) do
+      expect { TaskPlanner::TaskPlanner::Service }.to raise_error(NameError)
+      expect(require('grpc/testing/same_package_service_name_services_pb')).to be_truthy
+      expect { TaskPlanner::TaskPlanner::Service }.to_not raise_error
+      expect { TaskPlanner::HealthRequest }.to_not raise_error
+      expect { TaskPlanner::Status }.to_not raise_error
+    end
+  end
 end
 
 def with_protos(file_paths)

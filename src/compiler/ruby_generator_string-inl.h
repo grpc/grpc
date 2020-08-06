@@ -117,31 +117,8 @@ inline std::string RubyPackage(const grpc::protobuf::FileDescriptor* file) {
 
 // RubyTypeOf updates a proto type to the required ruby equivalent.
 inline std::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor) {
-  std::string proto_type = descriptor->full_name();
-  if (descriptor->file()->options().has_ruby_package()) {
-    // remove the leading package if present
-    ReplacePrefix(&proto_type, descriptor->file()->package(), "");
-    ReplacePrefix(&proto_type, ".", "");  // remove the leading . (no package)
-    proto_type = RubyPackage(descriptor->file()) + "." + proto_type;
-  }
-  std::string res(proto_type);
-  if (res.find('.') == std::string::npos) {
-    return res;
-  } else {
-    std::vector<std::string> prefixes_and_type = Split(res, '.');
-    res.clear();
-    for (unsigned int i = 0; i < prefixes_and_type.size(); ++i) {
-      if (i != 0) {
-        res += "::";  // switch '.' to the ruby module delim
-      }
-      if (i < prefixes_and_type.size() - 1) {
-        res += Modularize(prefixes_and_type[i]);  // capitalize pkgs
-      } else {
-        res += prefixes_and_type[i];
-      }
-    }
-    return res;
-  }
+  return "::Google::Protobuf::DescriptorPool.generated_pool.lookup(\"" +
+         descriptor->full_name() + "\").msgclass";
 }
 
 }  // namespace grpc_ruby_generator

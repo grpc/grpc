@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package task_planner;
+
+service TaskPlanner {
+  rpc Health(HealthRequest) returns (Status);
+}
+
+// Requests/Response
+message Status {
+  string msg = 1;
+}
+
+message HealthRequest {}
+
