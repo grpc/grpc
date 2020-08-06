@@ -186,3 +186,10 @@ Compression
 ^^^^^^^^^^^
 
 .. autoclass:: Compression
+
+Runtime Protobuf Parsing
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: protos
+.. autofunction:: services
+.. autofunction:: protos_and_services

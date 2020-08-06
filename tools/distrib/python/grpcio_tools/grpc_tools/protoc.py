@@ -53,12 +53,14 @@ if sys.version_info[0] > 2:
         return ".".join(components[:-1] + [proto_base_name + suffix])
 
     def _protos(protobuf_path):
+        """Returns a gRPC module generated from the indicated proto file."""
         module_name = _proto_file_to_module_name(_PROTO_MODULE_SUFFIX,
                                                  protobuf_path)
         module = importlib.import_module(module_name)
         return module
 
     def _services(protobuf_path):
+        """Returns a module generated from the indicated proto file."""
         _protos(protobuf_path)
         module_name = _proto_file_to_module_name(_SERVICE_MODULE_SUFFIX,
                                                  protobuf_path)
@@ -66,8 +68,8 @@ if sys.version_info[0] > 2:
         return module
 
     def _protos_and_services(protobuf_path):
-        return (_protos(protobuf_path),
-                _services(protobuf_path))
+        """Returns two modules, corresponding to _pb2.py and _pb2_grpc.py files."""
+        return (_protos(protobuf_path), _services(protobuf_path))
 
     _proto_code_cache = {}
     _proto_code_cache_lock = threading.RLock()
