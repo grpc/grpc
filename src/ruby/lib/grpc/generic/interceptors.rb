@@ -160,7 +160,7 @@ module GRPC
     end
 
     ##
-    # Intercept the call and fire out to interceptors in a FIFO execution.
+    # Intercept the call and fire out to interceptors in a LIFO execution.
     # This is an EXPERIMENTAL API.
     #
     # @param [Symbol] type The request type
