@@ -29,12 +29,9 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
-namespace grpc_impl {
+namespace grpc {
 
 class Channel;
-}  // namespace grpc_impl
-
-namespace grpc {
 
 class SecureChannelCredentials final : public ChannelCredentials {
  public:

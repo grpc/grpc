@@ -49,7 +49,7 @@ class BlockingUnaryCallImpl {
   BlockingUnaryCallImpl(ChannelInterface* channel, const RpcMethod& method,
                         grpc_impl::ClientContext* context,
                         const InputMessage& request, OutputMessage* result) {
-    ::grpc_impl::CompletionQueue cq(grpc_completion_queue_attributes{
+    ::grpc::CompletionQueue cq(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
         nullptr});  // Pluckable completion queue
     ::grpc::internal::Call call(channel->CreateCall(method, context, &cq));

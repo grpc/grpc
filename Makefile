@@ -4872,10 +4872,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/alarm.h \
     include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
-    include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
-    include/grpcpp/completion_queue_impl.h \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
@@ -4905,7 +4903,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
-    include/grpcpp/impl/codegen/completion_queue_impl.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/config_protobuf.h \
@@ -5559,10 +5556,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/alarm.h \
     include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
-    include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
-    include/grpcpp/completion_queue_impl.h \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
@@ -5592,7 +5587,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
-    include/grpcpp/impl/codegen/completion_queue_impl.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/config_protobuf.h \
