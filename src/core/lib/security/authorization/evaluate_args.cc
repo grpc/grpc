@@ -22,7 +22,7 @@
 
 namespace grpc_core {
 
-absl::string_view EvaluateArgs::GetPath() {
+absl::string_view EvaluateArgs::GetPath() const {
   absl::string_view path;
   if (metadata_ != nullptr && metadata_->idx.named.path != nullptr) {
     grpc_linked_mdelem* elem = metadata_->idx.named.path;
@@ -32,7 +32,7 @@ absl::string_view EvaluateArgs::GetPath() {
   return path;
 }
 
-absl::string_view EvaluateArgs::GetHost() {
+absl::string_view EvaluateArgs::GetHost() const {
   absl::string_view host;
   if (metadata_ != nullptr && metadata_->idx.named.host != nullptr) {
     grpc_linked_mdelem* elem = metadata_->idx.named.host;
@@ -42,7 +42,7 @@ absl::string_view EvaluateArgs::GetHost() {
   return host;
 }
 
-absl::string_view EvaluateArgs::GetMethod()) {
+absl::string_view EvaluateArgs::GetMethod() const {
   absl::string_view method;
   if (metadata_ != nullptr && metadata_->idx.named.method != nullptr) {
     grpc_linked_mdelem* elem = metadata_->idx.named.method;
@@ -52,7 +52,8 @@ absl::string_view EvaluateArgs::GetMethod()) {
   return method;
 }
 
-std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders() {
+std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
+    const {
   std::multimap<absl::string_view, absl::string_view> grpc_metadata;
   if (metadata_ == nullptr) {
     return grpc_metadata;
@@ -65,7 +66,7 @@ std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders() {
   }
 }
 
-absl::string_view EvaluateArgs::GetSpiffeId() {
+absl::string_view EvaluateArgs::GetSpiffeId() const {
   absl::string_view spiffe_id;
   if (auth_context_ == nullptr) {
     return spiffe_id;
@@ -84,7 +85,7 @@ absl::string_view EvaluateArgs::GetSpiffeId() {
   return spiffe_id;
 }
 
-absl::string_view EvaluateArgs::GetCertServerName() {
+absl::string_view EvaluateArgs::GetCertServerName() const {
   absl::string_view name;
   if (auth_context_ == nullptr) {
     return name;

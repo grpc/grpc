@@ -30,19 +30,19 @@ class EvaluateArgs {
   EvaluateArgs(grpc_metadata_batch* metadata, grpc_auth_context* auth_context,
                grpc_endpoint* endpoint);
 
-    absl::string_view GetPath());
-    absl::string_view GetHost();
-    absl::string_view GetMethod();
-    std::multimap<absl::string_view, absl::string_view> GetHeaders();
-    absl::string_view GetSpiffeId();
-    absl::string_view GetCertServerName();
+  absl::string_view GetPath() const;
+  absl::string_view GetHost() const;
+  absl::string_view GetMethod() const;
+  std::multimap<absl::string_view, absl::string_view> GetHeaders() const;
+  absl::string_view GetSpiffeId() const;
+  absl::string_view GetCertServerName() const;
 
-    // TODO: Add a getter function for source.principal
+  // TODO: Add a getter function for source.principal
 
-   private:
-    grpc_metadata_batch* metadata_;
-    grpc_auth_context* auth_context_;
-    grpc_endpoint* endpoint_;
+ private:
+  grpc_metadata_batch* metadata_;
+  grpc_auth_context* auth_context_;
+  grpc_endpoint* endpoint_;
 };
 
 }  // namespace grpc_core
