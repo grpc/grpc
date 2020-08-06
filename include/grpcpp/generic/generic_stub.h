@@ -29,9 +29,10 @@
 #include <grpcpp/support/client_callback_impl.h>
 #include <grpcpp/support/status.h>
 
-namespace grpc {
-
+namespace grpc_impl {
 class CompletionQueue;
+}  // namespace grpc_impl
+namespace grpc {
 
 typedef ::grpc_impl::ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericClientAsyncReaderWriter;
@@ -54,7 +55,7 @@ class TemplatedGenericStub final {
   std::unique_ptr<
       ::grpc_impl::ClientAsyncReaderWriter<RequestType, ResponseType>>
   PrepareCall(ClientContext* context, const std::string& method,
-              ::grpc::CompletionQueue* cq) {
+              ::grpc_impl::CompletionQueue* cq) {
     return CallInternal(channel_.get(), context, method, cq, false, nullptr);
   }
 
@@ -64,7 +65,8 @@ class TemplatedGenericStub final {
   /// succeeded (i.e. the call won't proceed if the return value is nullptr).
   std::unique_ptr<::grpc_impl::ClientAsyncResponseReader<ResponseType>>
   PrepareUnaryCall(ClientContext* context, const std::string& method,
-                   const RequestType& request, ::grpc::CompletionQueue* cq) {
+                   const RequestType& request,
+                   ::grpc_impl::CompletionQueue* cq) {
     return std::unique_ptr<
         ::grpc_impl::ClientAsyncResponseReader<ResponseType>>(
         grpc_impl::internal::ClientAsyncResponseReaderFactory<
@@ -84,7 +86,7 @@ class TemplatedGenericStub final {
   std::unique_ptr<
       ::grpc_impl::ClientAsyncReaderWriter<RequestType, ResponseType>>
   Call(ClientContext* context, const std::string& method,
-       ::grpc::CompletionQueue* cq, void* tag) {
+       ::grpc_impl::CompletionQueue* cq, void* tag) {
     return CallInternal(channel_.get(), context, method, cq, true, tag);
   }
 
@@ -203,7 +205,7 @@ class TemplatedGenericStub final {
   std::unique_ptr<
       ::grpc_impl::ClientAsyncReaderWriter<RequestType, ResponseType>>
   CallInternal(grpc::ChannelInterface* channel, ClientContext* context,
-               const std::string& method, ::grpc::CompletionQueue* cq,
+               const std::string& method, ::grpc_impl::CompletionQueue* cq,
                bool start, void* tag) {
     return std::unique_ptr<
         ::grpc_impl::ClientAsyncReaderWriter<RequestType, ResponseType>>(
