@@ -62,6 +62,7 @@ static void RunQPS() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 
   grpc::testing::RunQPS();

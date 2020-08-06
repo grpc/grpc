@@ -1,0 +1,44 @@
+From 365843bfe0bfc3f1c1b11e81e24ac7b6c7942bdf Mon Sep 17 00:00:00 2001
+From: Lars Kanis <lars@greiz-reinsdorf.de>
+Date: Fri, 27 Dec 2019 18:18:59 +0100
+Subject: [PATCH] Fix determining of ruby versions in "rake native gem"
+
+"rake native gem" without "cross" didn't set the ruby version constraint.
+Instead it failed with NoMethodError like so:
+
+/ffi $ rake native gem
+no configuration section for specified version of Ruby (rbconfig-i386-mingw32-2.6.3)
+no configuration section for specified version of Ruby (rbconfig-x64-mingw32-2.6.3)
+install -c build/x86_64-linux/ffi_c/2.6.3/ffi_c.so lib/ffi_c.so
+cp build/x86_64-linux/ffi_c/2.6.3/ffi_c.so build/x86_64-linux/stage/lib/ffi_c.so
+rake aborted!
+NoMethodError: undefined method `split' for nil:NilClass
+/home/lars/.rvm/gems/ruby-2.6.3/gems/rake-compiler-1.0.9/lib/rake/extensiontask.rb:515:in `ruby_api_version'
+/home/lars/.rvm/gems/ruby-2.6.3/gems/rake-compiler-1.0.9/lib/rake/extensiontask.rb:262:in `block in define_native_tasks'
+/home/lars/.rvm/gems/ruby-2.6.3/gems/rake-12.3.3/exe/rake:27:in `<top (required)>'
+/home/lars/.rvm/gems/ruby-2.6.3/bin/ruby_executable_hooks:24:in `eval'
+/home/lars/.rvm/gems/ruby-2.6.3/bin/ruby_executable_hooks:24:in `<main>'
+Tasks: TOP => native => native:x86_64-linux => native:ffi:x86_64-linux
+(See full trace by running task with --trace)
+---
+ lib/rake/extensiontask.rb | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/lib/rake/extensiontask.rb b/lib/rake/extensiontask.rb
+index d85b1a3..cb1ea12 100644
+--- a/lib/rake/extensiontask.rb
++++ b/lib/rake/extensiontask.rb
+@@ -242,6 +242,10 @@ Java extension should be preferred.
+       # lib_path
+       lib_path = lib_dir
+
++      # Update compiled platform/version combinations
++      ruby_versions = (@ruby_versions_per_platform[platf] ||= [])
++      ruby_versions << ruby_ver
++
+       # create 'native:gem_name' and chain it to 'native' task
+       unless Rake::Task.task_defined?("native:#{@gem_spec.name}:#{platf}")
+         task "native:#{@gem_spec.name}:#{platf}" do |t|
+--
+2.20.1
+

@@ -37,7 +37,7 @@
 #include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/security/server_credentials.h>
-#include <grpcpp/support/channel_arguments_impl.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 
@@ -81,7 +81,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
    public:
     virtual ~GlobalCallbacks() {}
     /// Called before server is created.
-    virtual void UpdateArguments(ChannelArguments* /*args*/) {}
+    virtual void UpdateArguments(grpc::ChannelArguments* /*args*/) {}
     /// Called before application callback for each synchronous server request
     virtual void PreSynchronousRequest(grpc_impl::ServerContext* context) = 0;
     /// Called after application callback for each synchronous server request
@@ -109,7 +109,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   }
 
   /// Establish a channel for in-process communication
-  std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
+  std::shared_ptr<Channel> InProcessChannel(const grpc::ChannelArguments& args);
 
   /// NOTE: class experimental_type is not part of the public API of this class.
   /// TODO(yashykt): Integrate into public API when this is no longer
@@ -121,7 +121,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
     /// Establish a channel for in-process communication with client
     /// interceptors
     std::shared_ptr<Channel> InProcessChannelWithInterceptors(
-        const ChannelArguments& args,
+        const grpc::ChannelArguments& args,
         std::vector<std::unique_ptr<
             grpc::experimental::ClientInterceptorFactoryInterface>>
             interceptor_creators);
@@ -179,7 +179,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   ///
   /// \param sync_cq_timeout_msec The timeout to use when calling AsyncNext() on
   /// server completion queues passed via sync_server_cqs param.
-  Server(ChannelArguments* args,
+  Server(grpc::ChannelArguments* args,
          std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
              sync_server_cqs,
          int min_pollers, int max_pollers, int sync_cq_timeout_msec,

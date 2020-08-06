@@ -13,24 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-import shutil
-import sys
+import json
 import os
+import sys
 import yaml
 
-sys.dont_write_bytecode = True
-
-boring_ssl_root = os.path.abspath(
-    os.path.join(os.path.dirname(sys.argv[0]),
-                 '../../third_party/boringssl-with-bazel/src'))
-sys.path.append(os.path.join(boring_ssl_root, 'util'))
-
+run_dir = os.path.dirname(sys.argv[0])
+sources_path = os.path.abspath(
+    os.path.join(run_dir,
+                 '../../third_party/boringssl-with-bazel/sources.json'))
 try:
-    import generate_build_files
-except ImportError:
-    print(yaml.dump({}))
-    sys.exit()
+    with open(sources_path, 'r') as s:
+        sources = json.load(s)
+except IOError:
+    sources_path = os.path.abspath(
+        os.path.join(run_dir,
+                     '../../../../third_party/openssl/boringssl/sources.json'))
+    with open(sources_path, 'r') as s:
+        sources = json.load(s)
 
 
 def map_dir(filename):
@@ -38,18 +38,23 @@ def map_dir(filename):
 
 
 class Grpc(object):
-    """Implements a "platform" in the sense of boringssl's generate_build_files.py"""
-    yaml = None
+    """Adapter for boring-SSL json sources files. """
 
-    def WriteFiles(self, files, asm_outputs):
+    def __init__(self, sources):
+        self.yaml = None
+        self.WriteFiles(sources)
+
+    def WriteFiles(self, files):
         test_binaries = ['ssl_test', 'crypto_test']
-
+        asm_outputs = {
+            key: value for key, value in files.items() if any(
+                f.endswith(".S") or f.endswith(".asm") for f in value)
+        }
         self.yaml = {
             '#':
                 'generated with src/boringssl/gen_build_yaml.py',
             'raw_boringssl_build_output_for_debugging': {
                 'files': files,
-                'asm_outputs': asm_outputs,
             },
             'libs': [
                 {
@@ -64,6 +69,10 @@ class Grpc(object):
                     'src':
                         sorted(
                             map_dir(f) for f in files['ssl'] + files['crypto']),
+                    'asm_src': {
+                        k: [map_dir(f) for f in value
+                           ] for k, value in asm_outputs.items()
+                    },
                     'headers':
                         sorted(
                             map_dir(f)
@@ -120,29 +129,5 @@ class Grpc(object):
         }
 
 
-os.chdir(os.path.dirname(sys.argv[0]))
-os.mkdir('src')
-try:
-    for f in os.listdir(boring_ssl_root):
-        os.symlink(os.path.join(boring_ssl_root, f), os.path.join('src', f))
-
-    grpc_platform = Grpc()
-    # We use a hack to run boringssl's util/generate_build_files.py as part of this script.
-    # The call will populate "grpc_platform" with boringssl's source file metadata.
-    # As a side effect this script generates err_data.c and crypto_test_data.cc (requires golang)
-    # Both of these files are already available under third_party/boringssl-with-bazel
-    # so we don't need to generate them again, but there's no option to disable that behavior.
-    # - crypto_test_data.cc is required to run boringssl_crypto_test but we already
-    #   use the copy under third_party/boringssl-with-bazel so we just delete it
-    # - err_data.c is already under third_party/boringssl-with-bazel so we just delete it
-    generate_build_files.main([grpc_platform])
-
-    print(yaml.dump(grpc_platform.yaml))
-
-finally:
-    # we don't want err_data.c and crypto_test_data.cc (see comment above)
-    if os.path.exists('err_data.c'):
-        os.remove('err_data.c')
-    if os.path.exists('crypto_test_data.cc'):
-        os.remove('crypto_test_data.cc')
-    shutil.rmtree('src')
+grpc_platform = Grpc(sources)
+print(yaml.dump(grpc_platform.yaml))

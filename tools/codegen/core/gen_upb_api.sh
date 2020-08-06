@@ -36,59 +36,59 @@ UPB_PLUGIN=$PWD/bazel-bin/external/upb/protoc-gen-upb
 proto_files=( \
   "envoy/annotations/deprecation.proto" \
   "envoy/annotations/resource.proto" \
-  "envoy/api/v2/auth/cert.proto" \
-  "envoy/api/v2/auth/common.proto" \
-  "envoy/api/v2/auth/secret.proto" \
-  "envoy/api/v2/auth/tls.proto" \
-  "envoy/api/v2/cds.proto" \
-  "envoy/api/v2/cluster.proto" \
-  "envoy/api/v2/cluster/circuit_breaker.proto" \
-  "envoy/api/v2/cluster/filter.proto" \
-  "envoy/api/v2/cluster/outlier_detection.proto" \
-  "envoy/api/v2/core/address.proto" \
-  "envoy/api/v2/core/base.proto" \
-  "envoy/api/v2/core/backoff.proto" \
-  "envoy/api/v2/core/config_source.proto" \
-  "envoy/api/v2/core/event_service_config.proto" \
-  "envoy/api/v2/core/grpc_service.proto" \
-  "envoy/api/v2/core/health_check.proto" \
-  "envoy/api/v2/core/http_uri.proto" \
-  "envoy/api/v2/core/protocol.proto" \
-  "envoy/api/v2/core/socket_option.proto" \
-  "envoy/api/v2/cluster.proto" \
-  "envoy/api/v2/discovery.proto" \
-  "envoy/api/v2/eds.proto" \
-  "envoy/api/v2/endpoint.proto" \
-  "envoy/api/v2/endpoint/endpoint.proto" \
-  "envoy/api/v2/endpoint/endpoint_components.proto" \
-  "envoy/api/v2/endpoint/load_report.proto" \
-  "envoy/api/v2/lds.proto" \
-  "envoy/api/v2/listener.proto" \
-  "envoy/api/v2/listener/listener.proto" \
-  "envoy/api/v2/listener/listener_components.proto" \
-  "envoy/api/v2/rds.proto" \
-  "envoy/api/v2/route.proto" \
-  "envoy/api/v2/route/route.proto" \
-  "envoy/api/v2/route/route_components.proto" \
-  "envoy/api/v2/srds.proto" \
-  "envoy/api/v2/scoped_route.proto" \
-  "envoy/config/listener/v2/api_listener.proto" \
-  "envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto" \
-  "envoy/config/filter/accesslog/v2/accesslog.proto" \
-  "envoy/config/rbac/v2/rbac.proto" \
-  "envoy/config/trace/v2/http_tracer.proto" \
-  "envoy/service/discovery/v2/ads.proto" \
-  "envoy/service/load_stats/v2/lrs.proto" \
-  "envoy/type/http.proto" \
-  "envoy/type/matcher/regex.proto" \
-  "envoy/api/v2/listener/udp_listener_config.proto" \
-  "envoy/type/matcher/path.proto" \
-  "envoy/type/matcher/string.proto" \
-  "envoy/type/metadata/v2/metadata.proto" \
-  "envoy/type/percent.proto" \
-  "envoy/type/range.proto" \
-  "envoy/type/semantic_version.proto" \
-  "envoy/type/tracing/v2/custom_tag.proto" \
+  "envoy/config/accesslog/v3/accesslog.proto" \
+  "envoy/config/cluster/v3/circuit_breaker.proto" \
+  "envoy/config/cluster/v3/cluster.proto" \
+  "envoy/config/cluster/v3/filter.proto" \
+  "envoy/config/cluster/v3/outlier_detection.proto" \
+  "envoy/config/core/v3/address.proto" \
+  "envoy/config/core/v3/backoff.proto" \
+  "envoy/config/core/v3/base.proto" \
+  "envoy/config/core/v3/config_source.proto" \
+  "envoy/config/core/v3/event_service_config.proto" \
+  "envoy/config/core/v3/grpc_service.proto" \
+  "envoy/config/core/v3/health_check.proto" \
+  "envoy/config/core/v3/http_uri.proto" \
+  "envoy/config/core/v3/protocol.proto" \
+  "envoy/config/core/v3/proxy_protocol.proto" \
+  "envoy/config/core/v3/socket_option.proto" \
+  "envoy/config/endpoint/v3/endpoint.proto" \
+  "envoy/config/endpoint/v3/endpoint_components.proto" \
+  "envoy/config/endpoint/v3/load_report.proto" \
+  "envoy/config/listener/v3/api_listener.proto" \
+  "envoy/config/listener/v3/listener.proto" \
+  "envoy/config/listener/v3/listener_components.proto" \
+  "envoy/config/listener/v3/udp_listener_config.proto" \
+  "envoy/config/rbac/v3/rbac.proto" \
+  "envoy/config/route/v3/route.proto" \
+  "envoy/config/route/v3/route_components.proto" \
+  "envoy/config/route/v3/scoped_route.proto" \
+  "envoy/config/trace/v3/http_tracer.proto" \
+  "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto" \
+  "envoy/extensions/transport_sockets/tls/v3/cert.proto" \
+  "envoy/extensions/transport_sockets/tls/v3/common.proto" \
+  "envoy/extensions/transport_sockets/tls/v3/secret.proto" \
+  "envoy/extensions/transport_sockets/tls/v3/tls.proto" \
+  "envoy/service/cluster/v3/cds.proto" \
+  "envoy/service/discovery/v3/ads.proto" \
+  "envoy/service/discovery/v3/discovery.proto" \
+  "envoy/service/endpoint/v3/eds.proto" \
+  "envoy/service/listener/v3/lds.proto" \
+  "envoy/service/load_stats/v3/lrs.proto" \
+  "envoy/service/route/v3/rds.proto" \
+  "envoy/service/route/v3/srds.proto" \
+  "envoy/type/matcher/v3/metadata.proto" \
+  "envoy/type/matcher/v3/number.proto" \
+  "envoy/type/matcher/v3/path.proto" \
+  "envoy/type/matcher/v3/regex.proto" \
+  "envoy/type/matcher/v3/string.proto" \
+  "envoy/type/matcher/v3/value.proto" \
+  "envoy/type/metadata/v3/metadata.proto" \
+  "envoy/type/tracing/v3/custom_tag.proto" \
+  "envoy/type/v3/http.proto" \
+  "envoy/type/v3/percent.proto" \
+  "envoy/type/v3/range.proto" \
+  "envoy/type/v3/semantic_version.proto" \
   "gogoproto/gogo.proto" \
   "google/api/annotations.proto" \
   "google/api/expr/v1alpha1/syntax.proto" \
@@ -110,6 +110,7 @@ proto_files=( \
   "udpa/annotations/migrate.proto" \
   "udpa/annotations/sensitive.proto" \
   "udpa/annotations/status.proto" \
+  "udpa/annotations/versioning.proto" \
   "validate/validate.proto")
 
 for i in "${proto_files[@]}"
@@ -126,3 +127,6 @@ do
     --upb_out=$UPB_OUTPUT_DIR \
     --plugin=protoc-gen-upb=$UPB_PLUGIN
 done
+
+find $UPB_OUTPUT_DIR -name "*.upbdefs.c" -type f -delete
+find $UPB_OUTPUT_DIR -name "*.upbdefs.h" -type f -delete

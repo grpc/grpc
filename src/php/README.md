@@ -51,15 +51,15 @@ Clone this repository at the [latest stable release tag](https://github.com/grpc
 
 ```sh
 $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
+$ cd grpc
 ```
 
-#### Build and install the gRPC C core library
+#### Build the gRPC C core library
 
 ```sh
-$ cd grpc
 $ git submodule update --init
 $ EXTRA_DEFINES=GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK make
-$ [sudo] make install
+$ make
 ```
 
 #### Build and install the `grpc` extension
@@ -67,9 +67,10 @@ $ [sudo] make install
 Compile the `grpc` extension from source
 
 ```sh
-$ cd grpc/src/php/ext/grpc
+$ grpc_root="$(pwd)"
+$ cd src/php/ext/grpc
 $ phpize
-$ ./configure
+$ ./configure --enable-grpc="${grpc_root}"
 $ make
 $ [sudo] make install
 ```

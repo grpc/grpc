@@ -238,7 +238,7 @@ class ChannelNode : public BaseNode {
 // Handles channelz bookkeeping for servers
 class ServerNode : public BaseNode {
  public:
-  ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
+  explicit ServerNode(size_t channel_tracer_max_nodes);
 
   ~ServerNode() override;
 

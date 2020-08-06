@@ -123,6 +123,19 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
   }
 }
 
+absl::Status grpc_error_to_absl_status(grpc_error* error) {
+  grpc_status_code status;
+  // TODO(yashykt): This should be updated once we decide on how to use the
+  // absl::Status payload to capture all the contents of grpc_error.
+  grpc_slice message;
+  grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status, &message,
+                        nullptr /* http_error */, nullptr /* error_string */);
+  return absl::Status(static_cast<absl::StatusCode>(status),
+                      absl::string_view(reinterpret_cast<const char*>(
+                                            GRPC_SLICE_START_PTR(message)),
+                                        GRPC_SLICE_LENGTH(message)));
+}
+
 bool grpc_error_has_clear_grpc_status(grpc_error* error) {
   intptr_t unused;
   if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &unused)) {

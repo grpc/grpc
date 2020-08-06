@@ -335,7 +335,8 @@ static void test_channel_args_compression_algorithm_states(void) {
   grpc_channel_args_destroy(ch_args);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_compression_algorithm_parse();
   test_compression_algorithm_name();
@@ -344,6 +345,5 @@ int main(int /*argc*/, char** /*argv*/) {
   test_channel_args_set_compression_algorithm();
   test_channel_args_compression_algorithm_states();
   grpc_shutdown();
-
   return 0;
 }

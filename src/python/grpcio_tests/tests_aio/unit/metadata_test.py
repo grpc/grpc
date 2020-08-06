@@ -281,6 +281,16 @@ class TestMetadata(AioTestBase):
         self.assertEqual(_TRAILING_METADATA, await call.trailing_metadata())
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
+    async def test_compatibility_with_tuple(self):
+        metadata_obj = aio.Metadata(('key', '42'), ('key-2', 'value'))
+        self.assertEqual(metadata_obj, tuple(metadata_obj))
+        self.assertEqual(tuple(metadata_obj), metadata_obj)
+
+        expected_sum = tuple(metadata_obj) + (('third', '3'),)
+        self.assertEqual(expected_sum, metadata_obj + (('third', '3'),))
+        self.assertEqual(expected_sum, metadata_obj + aio.Metadata(
+            ('third', '3')))
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

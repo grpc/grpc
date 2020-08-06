@@ -98,8 +98,12 @@ static void me_destroy(grpc_endpoint* ep) {
   gpr_free(m);
 }
 
-static char* me_get_peer(grpc_endpoint* /*ep*/) {
-  return gpr_strdup("fake:mock_endpoint");
+static absl::string_view me_get_peer(grpc_endpoint* /*ep*/) {
+  return "fake:mock_endpoint";
+}
+
+static absl::string_view me_get_local_address(grpc_endpoint* /*ep*/) {
+  return "fake:mock_endpoint";
 }
 
 static grpc_resource_user* me_get_resource_user(grpc_endpoint* ep) {
@@ -120,6 +124,7 @@ static const grpc_endpoint_vtable vtable = {me_read,
                                             me_destroy,
                                             me_get_resource_user,
                                             me_get_peer,
+                                            me_get_local_address,
                                             me_get_fd,
                                             me_can_track_err};
 

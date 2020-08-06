@@ -91,7 +91,11 @@ void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state,
     gpr_log(GPR_INFO, "HealthCheckClient %p: setting state=%s reason=%s", this,
             ConnectivityStateName(state), reason);
   }
-  if (watcher_ != nullptr) watcher_->Notify(state);
+  if (watcher_ != nullptr)
+    watcher_->Notify(state,
+                     state == GRPC_CHANNEL_TRANSIENT_FAILURE
+                         ? absl::Status(absl::StatusCode::kUnavailable, reason)
+                         : absl::Status());
 }
 
 void HealthCheckClient::Orphan() {

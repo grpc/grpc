@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -55,6 +56,9 @@ class XdsBootstrap {
   struct XdsServer {
     std::string server_uri;
     absl::InlinedVector<ChannelCreds, 1> channel_creds;
+    std::set<std::string> server_features;
+
+    bool ShouldUseV3() const;
   };
 
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
@@ -76,6 +80,7 @@ class XdsBootstrap {
   grpc_error* ParseXdsServer(Json* json, size_t idx);
   grpc_error* ParseChannelCredsArray(Json* json, XdsServer* server);
   grpc_error* ParseChannelCreds(Json* json, size_t idx, XdsServer* server);
+  grpc_error* ParseServerFeaturesArray(Json* json, XdsServer* server);
   grpc_error* ParseNode(Json* json);
   grpc_error* ParseLocality(Json* json);
 

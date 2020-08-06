@@ -65,8 +65,10 @@ CONFIG = [
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
     '/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats',
+    '/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats',
     '/grpc.health.v1.Health/Watch',
     '/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources',
+    '/envoy.service.discovery.v3.AggregatedDiscoveryService/StreamAggregatedResources',
     # compression algorithm names
     'deflate',
     'gzip',

@@ -1,0 +1,29 @@
+From 13e33405d4e51a52402e1e37e7e2df7f1f32892d Mon Sep 17 00:00:00 2001
+From: Lars Kanis <lars@greiz-reinsdorf.de>
+Date: Thu, 26 Dec 2019 19:18:02 +0100
+Subject: [PATCH 2/2] Strip cross built shared library files while linking
+
+The .so files of extensions are often stripped after compilation per task in a Rakefile.
+However this can be omitted, if the cross ruby version is built with stripping enabled.
+Stripping the files a second time doesn't make a difference then.
+---
+ tasks/bin/cross-ruby.rake | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/tasks/bin/cross-ruby.rake b/tasks/bin/cross-ruby.rake
+index 2a73be7..a9eb16b 100644
+--- a/tasks/bin/cross-ruby.rake
++++ b/tasks/bin/cross-ruby.rake
+@@ -115,7 +115,8 @@ file "#{build_dir}/Makefile" => [build_dir, source_dir] do |t|
+     "--build=#{RUBY_BUILD}",
+     '--enable-shared',
+     '--disable-install-doc',
+-    '--with-ext='
++    '--with-ext=',
++    'LDFLAGS=-pipe -s',
+   ]
+ 
+   # Force Winsock2 for Ruby 1.8, 1.9 defaults to it
+-- 
+2.20.1
+

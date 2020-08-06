@@ -14,8 +14,8 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 11.0.0
   csharp_major_version: 2
-  g_stands_for: galore
-  version: 1.31.0-dev
+  g_stands_for: giggle
+  version: 1.32.0-dev
 targets:
 - name: check_epollexclusive
   build: tool
@@ -224,6 +224,7 @@ php_config_m4:
   - grpc
   - address_sorting
   - boringssl
+  - re2
   - z
   headers:
   - src/php/ext/grpc/byte_buffer.h
@@ -263,4 +264,5 @@ ruby_gem:
   - address_sorting
   - ares
   - boringssl
+  - re2
   - z

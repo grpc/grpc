@@ -26,7 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "grpcpp/security/credentials_impl.h"
+#include "grpcpp/security/credentials.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -36,10 +36,9 @@
 #include "test/core/util/cmdline.h"
 
 static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
-  grpc_impl::experimental::StsCredentialsOptions options;
+  grpc::experimental::StsCredentialsOptions options;
   if (strlen(json_file_path) == 0) {
-    auto status =
-        grpc_impl::experimental::StsCredentialsOptionsFromEnv(&options);
+    auto status = grpc::experimental::StsCredentialsOptionsFromEnv(&options);
     if (!status.ok()) {
       gpr_log(GPR_ERROR, "%s", status.error_message().c_str());
       return nullptr;
@@ -48,7 +47,7 @@ static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
     grpc_slice sts_options_slice;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "load_file", grpc_load_file(json_file_path, 1, &sts_options_slice)));
-    auto status = grpc_impl::experimental::StsCredentialsOptionsFromJson(
+    auto status = grpc::experimental::StsCredentialsOptionsFromJson(
         reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(sts_options_slice)),
         &options);
     gpr_slice_unref(sts_options_slice);
@@ -58,7 +57,7 @@ static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
     }
   }
   grpc_sts_credentials_options opts =
-      grpc_impl::experimental::StsCredentialsCppToCoreOptions(options);
+      grpc::experimental::StsCredentialsCppToCoreOptions(options);
   grpc_call_credentials* result = grpc_sts_credentials_create(&opts, nullptr);
   return result;
 }

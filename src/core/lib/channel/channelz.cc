@@ -283,7 +283,7 @@ void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
 // ServerNode
 //
 
-ServerNode::ServerNode(grpc_server* /*server*/, size_t channel_tracer_max_nodes)
+ServerNode::ServerNode(size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kServer, ""), trace_(channel_tracer_max_nodes) {}
 
 ServerNode::~ServerNode() {}
@@ -310,27 +310,26 @@ void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {
 
 std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
                                             intptr_t max_results) {
+  GPR_ASSERT(start_socket_id >= 0);
+  GPR_ASSERT(max_results >= 0);
   // If user does not set max_results, we choose 500.
   size_t pagination_limit = max_results == 0 ? 500 : max_results;
   Json::Object object;
   {
     MutexLock lock(&child_mu_);
     size_t sockets_rendered = 0;
-    if (!child_sockets_.empty()) {
-      // Create list of socket refs.
-      Json::Array array;
-      const size_t limit = GPR_MIN(child_sockets_.size(), pagination_limit);
-      for (auto it = child_sockets_.lower_bound(start_socket_id);
-           it != child_sockets_.end() && sockets_rendered < limit;
-           ++it, ++sockets_rendered) {
-        array.emplace_back(Json::Object{
-            {"socketId", std::to_string(it->first)},
-            {"name", it->second->name()},
-        });
-      }
-      object["socketRef"] = std::move(array);
+    // Create list of socket refs.
+    Json::Array array;
+    auto it = child_sockets_.lower_bound(start_socket_id);
+    for (; it != child_sockets_.end() && sockets_rendered < pagination_limit;
+         ++it, ++sockets_rendered) {
+      array.emplace_back(Json::Object{
+          {"socketId", std::to_string(it->first)},
+          {"name", it->second->name()},
+      });
     }
-    if (sockets_rendered == child_sockets_.size()) object["end"] = true;
+    object["socketRef"] = std::move(array);
+    if (it == child_sockets_.end()) object["end"] = true;
   }
   Json json = std::move(object);
   return json.Dump();
