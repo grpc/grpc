@@ -238,7 +238,7 @@ static bool read_channel_args(grpc_chttp2_transport* t,
   bool channelz_enabled = GRPC_ENABLE_CHANNELZ_DEFAULT;
   size_t i;
   int j;
-
+  bool min_sent_ping_interval_explicitly_set = false;
   for (i = 0; i < channel_args->num_args; i++) {
     if (0 == strcmp(channel_args->args[i].key,
                     GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER)) {
@@ -275,6 +275,7 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     } else if (0 ==
                strcmp(channel_args->args[i].key,
                       GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS)) {
+      min_sent_ping_interval_explicitly_set = true;
       t->ping_policy.min_sent_ping_interval_without_data =
           grpc_channel_arg_get_integer(
               &channel_args->args[i],
@@ -375,6 +376,12 @@ static bool read_channel_args(grpc_chttp2_transport* t,
         }
       }
     }
+  }
+  // If GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS is not explicitly
+  // set, use the lower of the current default value and the keepalive time.
+  if (!min_sent_ping_interval_explicitly_set) {
+    t->ping_policy.min_sent_ping_interval_without_data = std::min(
+        t->ping_policy.min_sent_ping_interval_without_data, t->keepalive_time);
   }
   if (channelz_enabled) {
     t->channelz_socket =
