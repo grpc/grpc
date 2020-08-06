@@ -212,6 +212,8 @@ module GRPC
     # * interceptors:
     # An array of GRPC::ServerInterceptor objects that will be used for
     # intercepting server handlers to provide extra functionality.
+    # Interceptors are applied in LIFO order, so the last interceptor
+    # in the array is the first to be executed on a call.
     # Interceptors are an EXPERIMENTAL API.
     #
     def initialize(pool_size: DEFAULT_POOL_SIZE,
