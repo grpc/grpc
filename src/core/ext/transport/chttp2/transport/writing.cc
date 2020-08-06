@@ -611,7 +611,6 @@ class StreamWriteContext {
       *s_->sent_trailing_metadata_op = true;
       s_->sent_trailing_metadata_op = nullptr;
     }
-    s_->sent_trailing_metadata = true;
     s_->eos_sent = true;
 
     if (!t_->is_client && !s_->read_closed) {

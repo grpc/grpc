@@ -2080,7 +2080,7 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     // The server should always send trailers on cancellation. If it has already
     // sent trailers, there is no action to be taken here since the stream would
     // already be closed for both reading and writing.
-    if (!s->sent_trailing_metadata) {
+    if (!s->write_closed) {
       close_from_api(t, s, due_to_error);
     }
     return;

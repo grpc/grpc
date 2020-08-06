@@ -615,7 +615,6 @@ struct grpc_chttp2_stream {
   int64_t received_bytes = 0;
 
   bool sent_initial_metadata = false;
-  bool sent_trailing_metadata = false;
 
   grpc_core::PolymorphicManualConstructor<
       grpc_core::chttp2::StreamFlowControlBase,
