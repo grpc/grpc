@@ -1,12 +1,12 @@
 /*
  *
- * Copyright 2020 gRPC authors.
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -52,6 +52,9 @@ using wallet::Wallet;
 
 class WalletServiceImpl final : public Wallet::Service {
  public:
+  WalletServiceImpl(const std::string& hostname, const bool v1_behavior)
+      : hostname_(hostname), v1_behavior_(v1_behavior) {}
+
   void SetStatsClientStub(std::unique_ptr<Stats::Stub> stub) {
     stats_stub_ = std::move(stub);
   }
@@ -59,10 +62,6 @@ class WalletServiceImpl final : public Wallet::Service {
   void SetAccountClientStub(std::unique_ptr<Account::Stub> stub) {
     account_stub_ = std::move(stub);
   }
-
-  void SetHostName(const std::string& hostname) { hostname_ = hostname; }
-
-  void SetV1Behavior(const bool v1_behavior) { v1_behavior_ = v1_behavior; }
 
  private:
   bool ObtainAndValidateUserAndMembership(ServerContext* server_context) {
@@ -111,6 +110,22 @@ class WalletServiceImpl final : public Wallet::Service {
     return true;
   }
 
+  int ObtainAndBuildPerAddressResponse(const int price,
+                                       const BalanceRequest* request,
+                                       BalanceResponse* response) {
+    int total_balance = 0;
+    for (auto& address_entry : user_coin_map_[user_]) {
+      int per_address_balance = address_entry.second * price;
+      total_balance += per_address_balance;
+      if (!v1_behavior_ && request->include_balance_per_address()) {
+        auto* address = response->add_addresses();
+        address->set_address(address_entry.first);
+        address->set_balance(per_address_balance);
+      }
+    }
+    return total_balance;
+  }
+
   Status FetchBalance(ServerContext* context, const BalanceRequest* request,
                       BalanceResponse* response) override {
     if (!ObtainAndValidateUserAndMembership(context)) {
@@ -140,16 +155,9 @@ class WalletServiceImpl final : public Wallet::Service {
       std::cout << stats_status.error_code() << ": "
                 << stats_status.error_message() << std::endl;
     }
-    int total_per_user = 0;
-    for (auto& address_entry : user_coin_map_[user_]) {
-      if (!v1_behavior_ && request->include_balance_per_address()) {
-        auto* address = response->add_addresses();
-        address->set_address(address_entry.first);
-        address->set_balance(address_entry.second * stats_response.price());
-      }
-      total_per_user += address_entry.second;
-    }
-    response->set_balance(total_per_user * stats_response.price());
+    int total_balance = ObtainAndBuildPerAddressResponse(stats_response.price(),
+                                                         request, response);
+    response->set_balance(total_balance);
     return Status::OK;
   }
 
@@ -171,27 +179,25 @@ class WalletServiceImpl final : public Wallet::Service {
     // Send every updated balance in a stream back to the client.
     std::unique_ptr<ClientReader<PriceResponse>> stats_reader(
         stats_stub_->WatchPrice(&stats_context, stats_request));
+    bool first_read = true;
     while (stats_reader->Read(&stats_response)) {
-      auto metadata_hostname =
-          stats_context.GetServerInitialMetadata().find("hostname");
-      if (metadata_hostname != stats_context.GetServerInitialMetadata().end()) {
-        std::cout << "server host: "
-                  << std::string(metadata_hostname->second.data(),
-                                 metadata_hostname->second.length())
-                  << std::endl;
+      if (first_read) {
+        auto metadata_hostname =
+            stats_context.GetServerInitialMetadata().find("hostname");
+        if (metadata_hostname !=
+            stats_context.GetServerInitialMetadata().end()) {
+          std::cout << "server host: "
+                    << std::string(metadata_hostname->second.data(),
+                                   metadata_hostname->second.length())
+                    << std::endl;
+        }
+        first_read = false;
       }
       std::cout << "grpc-coin price: " << stats_response.price() << std::endl;
       BalanceResponse response;
-      int total_per_user = 0;
-      for (auto& address_entry : user_coin_map_[user_]) {
-        if (!v1_behavior_ && request->include_balance_per_address()) {
-          auto* address = response.add_addresses();
-          address->set_address(address_entry.first);
-          address->set_balance(address_entry.second * stats_response.price());
-        }
-        total_per_user += address_entry.second;
-      }
-      response.set_balance(total_per_user * stats_response.price());
+      int total_balance = ObtainAndBuildPerAddressResponse(
+          stats_response.price(), request, &response);
+      response.set_balance(total_balance);
       if (!writer->Write(response)) {
         break;
       }
@@ -216,16 +222,13 @@ void RunServer(const std::string& port, const std::string& account_server,
                const std::string& hostname_suffix, const bool v1_behavior) {
   char base_hostname[256];
   if (gethostname(base_hostname, 256) != 0) {
-    std::cout << "unable to get host name" << std::endl;
-    return;
+    sprintf(base_hostname, "%s-%d", "generated", rand() % 1000);
   }
   std::string hostname(base_hostname);
   hostname += hostname_suffix;
   std::string server_address("0.0.0.0:");
   server_address += port;
-  WalletServiceImpl service;
-  service.SetHostName(hostname);
-  service.SetV1Behavior(v1_behavior);
+  WalletServiceImpl service(hostname, v1_behavior);
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   // Instantiate the client stubs.  It requires a channel, out of which the
@@ -272,7 +275,7 @@ int main(int argc, char** argv) {
         continue;
       } else {
         std::cout << "The only correct argument syntax is --port=" << std::endl;
-        return 0;
+        return 1;
       }
     }
     start_pos = arg_val.find(arg_str_account_server);
@@ -284,7 +287,7 @@ int main(int argc, char** argv) {
       } else {
         std::cout << "The only correct argument syntax is --account_server="
                   << std::endl;
-        return 0;
+        return 1;
       }
     }
     start_pos = arg_val.find(arg_str_stats_server);
@@ -296,7 +299,7 @@ int main(int argc, char** argv) {
       } else {
         std::cout << "The only correct argument syntax is --stats_server="
                   << std::endl;
-        return 0;
+        return 1;
       }
     }
     start_pos = arg_val.find(arg_str_hostname_suffix);
@@ -308,7 +311,7 @@ int main(int argc, char** argv) {
       } else {
         std::cout << "The only correct argument syntax is --hostname_suffix="
                   << std::endl;
-        return 0;
+        return 1;
       }
     }
     start_pos = arg_val.find(arg_str_v1_behavior);
@@ -325,12 +328,12 @@ int main(int argc, char** argv) {
           std::cout << "The only correct value for argument --v1_behavior is "
                        "true or false"
                     << std::endl;
-          return 0;
+          return 1;
         }
       } else {
         std::cout << "The only correct argument syntax is --v1_behavior="
                   << std::endl;
-        return 0;
+        return 1;
       }
     }
   }

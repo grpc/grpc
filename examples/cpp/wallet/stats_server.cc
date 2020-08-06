@@ -1,12 +1,12 @@
 /*
  *
- * Copyright 2020 gRPC authors.
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -50,13 +50,12 @@ using stats::Stats;
 
 class StatsServiceImpl final : public Stats::Service {
  public:
+  StatsServiceImpl(const std::string& hostname, const bool premium_only)
+      : hostname_(hostname), premium_only_(premium_only) {}
+
   void SetAccountClientStub(std::unique_ptr<Account::Stub> stub) {
     account_stub_ = std::move(stub);
   }
-
-  void SetHostName(const std::string& hostname) { hostname_ = hostname; }
-
-  void SetPremiumOnly(const bool premium_only) { premium_only_ = premium_only; }
 
  private:
   bool ObtainAndValidateUserAndMembership(ServerContext* server_context) {
@@ -155,16 +154,13 @@ void RunServer(const std::string& port, const std::string& account_server,
                const std::string& hostname_suffix, const bool premium_only) {
   char base_hostname[256];
   if (gethostname(base_hostname, 256) != 0) {
-    std::cout << "unable to get host name" << std::endl;
-    return;
+    sprintf(base_hostname, "%s-%d", "generated", rand() % 1000);
   }
   std::string hostname(base_hostname);
   hostname += hostname_suffix;
   std::string server_address("0.0.0.0:");
   server_address += port;
-  StatsServiceImpl service;
-  service.SetHostName(hostname);
-  service.SetPremiumOnly(premium_only);
+  StatsServiceImpl service(hostname, premium_only);
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   // Instantiate the client stub.  It requires a channel, out of which the
@@ -207,7 +203,7 @@ int main(int argc, char** argv) {
         continue;
       } else {
         std::cout << "The only correct argument syntax is --port=" << std::endl;
-        return 0;
+        return 1;
       }
     }
     start_pos = arg_val.find(arg_str_account_server);
@@ -219,7 +215,7 @@ int main(int argc, char** argv) {
       } else {
         std::cout << "The only correct argument syntax is --account_server="
                   << std::endl;
-        return 0;
+        return 1;
       }
     }
     start_pos = arg_val.find(arg_str_hostname_suffix);
@@ -231,7 +227,7 @@ int main(int argc, char** argv) {
       } else {
         std::cout << "The only correct argument syntax is --hostname_suffix="
                   << std::endl;
-        return 0;
+        return 1;
       }
     }
     start_pos = arg_val.find(arg_str_premium_only);
@@ -248,12 +244,12 @@ int main(int argc, char** argv) {
           std::cout << "The only correct value for argument --premium_only is "
                        "true or false"
                     << std::endl;
-          return 0;
+          return 1;
         }
       } else {
         std::cout << "The only correct argument syntax is --premium_only="
                   << std::endl;
-        return 0;
+        return 1;
       }
     }
   }

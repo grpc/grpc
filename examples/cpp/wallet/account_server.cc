@@ -1,12 +1,12 @@
 /*
  *
- * Copyright 2020 gRPC authors.
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,10 +35,12 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+using grpc::StatusCode;
 
 class AccountServiceImpl final : public Account::Service {
  public:
-  void SetHostName(const std::string& hostname) { hostname_ = hostname; }
+  explicit AccountServiceImpl(const std::string& hostname)
+      : hostname_(hostname) {}
 
  private:
   Status GetUserInfo(ServerContext* context, const GetUserInfoRequest* request,
@@ -52,9 +54,7 @@ class AccountServiceImpl final : public Account::Service {
       response->set_name("Bob");
       response->set_membership(MembershipType::NORMAL);
     } else {
-      std::cout << "Default to Bob" << std::endl;
-      response->set_name("Bob");
-      response->set_membership(MembershipType::NORMAL);
+      return Status(StatusCode::NOT_FOUND, "user not found");
     }
     return Status::OK;
   }
@@ -63,17 +63,16 @@ class AccountServiceImpl final : public Account::Service {
 };
 
 void RunServer(const std::string& port, const std::string& hostname_suffix) {
+  std::string hostname;
   char base_hostname[256];
   if (gethostname(base_hostname, 256) != 0) {
-    std::cout << "unable to get host name" << std::endl;
-    return;
+    sprintf(base_hostname, "%s-%d", "generated", rand() % 1000);
   }
-  std::string hostname(base_hostname);
+  hostname = std::string(base_hostname);
   hostname += hostname_suffix;
   std::string server_address("0.0.0.0:");
   server_address += port;
-  AccountServiceImpl service;
-  service.SetHostName(hostname);
+  AccountServiceImpl service(hostname);
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   // Listen on the given address without any authentication mechanism.
@@ -105,7 +104,7 @@ int main(int argc, char** argv) {
         continue;
       } else {
         std::cout << "The only correct argument syntax is --port=" << std::endl;
-        return 0;
+        return 1;
       }
     }
     start_pos = arg_val.find(arg_str_hostname_suffix);
@@ -117,7 +116,7 @@ int main(int argc, char** argv) {
       } else {
         std::cout << "The only correct argument syntax is --hostname_suffix="
                   << std::endl;
-        return 0;
+        return 1;
       }
     }
   }

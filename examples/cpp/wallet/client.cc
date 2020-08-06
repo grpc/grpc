@@ -1,12 +1,12 @@
 /*
  *
- * Copyright 2020 gRPC authors.
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include <grpcpp/grpcpp.h>
 
@@ -91,14 +92,18 @@ class WalletClient {
     }
     std::unique_ptr<ClientReader<BalanceResponse> > reader(
         stub_->WatchBalance(&context, request));
+    bool first_read = true;
     while (reader->Read(&response)) {
-      auto metadata_hostname =
-          context.GetServerInitialMetadata().find("hostname");
-      if (metadata_hostname != context.GetServerInitialMetadata().end()) {
-        std::cout << "server host: "
-                  << std::string(metadata_hostname->second.data(),
-                                 metadata_hostname->second.length())
-                  << std::endl;
+      if (first_read) {
+        auto metadata_hostname =
+            context.GetServerInitialMetadata().find("hostname");
+        if (metadata_hostname != context.GetServerInitialMetadata().end()) {
+          std::cout << "server host: "
+                    << std::string(metadata_hostname->second.data(),
+                                   metadata_hostname->second.length())
+                    << std::endl;
+        }
+        first_read = false;
       }
       std::cout << "user: " << user
                 << " total grpc-coin balance: " << response.balance()
@@ -165,14 +170,18 @@ class StatsClient {
     }
     std::unique_ptr<ClientReader<PriceResponse> > reader(
         stub_->WatchPrice(&context, request));
+    bool first_read = true;
     while (reader->Read(&response)) {
-      auto metadata_hostname =
-          context.GetServerInitialMetadata().find("hostname");
-      if (metadata_hostname != context.GetServerInitialMetadata().end()) {
-        std::cout << "server host: "
-                  << std::string(metadata_hostname->second.data(),
-                                 metadata_hostname->second.length())
-                  << std::endl;
+      if (first_read) {
+        auto metadata_hostname =
+            context.GetServerInitialMetadata().find("hostname");
+        if (metadata_hostname != context.GetServerInitialMetadata().end()) {
+          std::cout << "server host: "
+                    << std::string(metadata_hostname->second.data(),
+                                   metadata_hostname->second.length())
+                    << std::endl;
+        }
+        first_read = false;
       }
       std::cout << "grpc-coin price: " << response.price() << std::endl;
     }
@@ -222,7 +231,7 @@ int main(int argc, char** argv) {
       } else {
         std::cout << "The only correct argument syntax is --wallet_server="
                   << std::endl;
-        return 0;
+        return 1;
       }
     }
     start_pos = arg_val.find(arg_str_stats_server);
@@ -234,7 +243,7 @@ int main(int argc, char** argv) {
       } else {
         std::cout << "The only correct argument syntax is --stats_server="
                   << std::endl;
-        return 0;
+        return 1;
       }
     }
     start_pos = arg_val.find(arg_str_user);
@@ -245,7 +254,7 @@ int main(int argc, char** argv) {
         continue;
       } else {
         std::cout << "The only correct argument syntax is --user=" << std::endl;
-        return 0;
+        return 1;
       }
     }
     start_pos = arg_val.find(arg_str_watch);
@@ -262,12 +271,12 @@ int main(int argc, char** argv) {
           std::cout
               << "The only correct value for argument --watch is true or false"
               << std::endl;
-          return 0;
+          return 1;
         }
       } else {
         std::cout << "The only correct argument syntax is --watch="
                   << std::endl;
-        return 0;
+        return 1;
       }
     }
     start_pos = arg_val.find(arg_str_unary_watch);
@@ -275,6 +284,17 @@ int main(int argc, char** argv) {
       start_pos += arg_str_unary_watch.size();
       if (arg_val[start_pos] == '=') {
         if (arg_val.substr(start_pos + 1) == "true") {
+          if (command != "balance") {
+            std::cout << "The argument --unary_watch is only applicable to "
+                         "command balance"
+                      << std::endl;
+            return 1;
+          } else if (watch == true) {
+            std::cout << "The argument --unary_watch is only applicable if "
+                         "--watch is set to false"
+                      << std::endl;
+            return 1;
+          }
           unary_watch = true;
           continue;
         } else if (arg_val.substr(start_pos + 1) == "false") {
@@ -284,12 +304,12 @@ int main(int argc, char** argv) {
           std::cout << "The only correct value for argument --unary_watch is "
                        "true or false"
                     << std::endl;
-          return 0;
+          return 1;
         }
       } else {
         std::cout << "The only correct argument syntax is --unary_watch="
                   << std::endl;
-        return 0;
+        return 1;
       }
     }
   }
@@ -317,7 +337,11 @@ int main(int argc, char** argv) {
     if (watch) {
       wallet.WatchBalance(user);
     } else {
-      wallet.FetchBalance(user);
+      while (true) {
+        wallet.FetchBalance(user);
+        if (!unary_watch) break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      }
     }
   }
   return 0;
