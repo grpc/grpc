@@ -22,7 +22,7 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 
-#include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

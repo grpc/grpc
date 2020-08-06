@@ -16,14 +16,14 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CHANNEL_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CHANNEL_H
+#ifndef GRPC_CORE_EXT_XDS_XDS_CHANNEL_H
+#define GRPC_CORE_EXT_XDS_XDS_CHANNEL_H
 
 #include <grpc/support/port_platform.h>
 
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
@@ -42,5 +42,5 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CHANNEL_H \
+#endif /* GRPC_CORE_EXT_XDS_XDS_CHANNEL_H \
         */

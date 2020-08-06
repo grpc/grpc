@@ -39,7 +39,7 @@ namespace grpc_core {
 // args when a subchannel is created for this address.
 class ServerAddress {
  public:
-  // Base clas for resolver-supplied attributes.
+  // Base class for resolver-supplied attributes.
   // Unlike channel args, these attributes don't affect subchannel
   // uniqueness or behavior.  They are for use by LB policies only.
   class AttributeInterface {

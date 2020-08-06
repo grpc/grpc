@@ -1449,11 +1449,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/service_config_parser.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
-  src/core/ext/filters/client_channel/xds/xds_api.cc
-  src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
-  src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
-  src/core/ext/filters/client_channel/xds/xds_client.cc
-  src/core/ext/filters/client_channel/xds/xds_client_stats.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/http/client/http_client_filter.cc
@@ -1579,6 +1574,11 @@ add_library(grpc
   src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/xds/xds_api.cc
+  src/core/ext/xds/xds_bootstrap.cc
+  src/core/ext/xds/xds_channel_secure.cc
+  src/core/ext/xds/xds_client.cc
+  src/core/ext/xds/xds_client_stats.cc
   src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
@@ -2133,11 +2133,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/service_config_parser.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
-  src/core/ext/filters/client_channel/xds/xds_api.cc
-  src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
-  src/core/ext/filters/client_channel/xds/xds_channel.cc
-  src/core/ext/filters/client_channel/xds/xds_client.cc
-  src/core/ext/filters/client_channel/xds/xds_client_stats.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/http/client/http_client_filter.cc
@@ -2258,6 +2253,11 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/xds/xds_api.cc
+  src/core/ext/xds/xds_bootstrap.cc
+  src/core/ext/xds/xds_channel.cc
+  src/core/ext/xds/xds_client.cc
+  src/core/ext/xds/xds_client_stats.cc
   src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
