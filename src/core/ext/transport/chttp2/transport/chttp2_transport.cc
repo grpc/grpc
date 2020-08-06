@@ -2076,9 +2076,13 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
 
 void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                                grpc_error* due_to_error) {
-  if (!t->is_client && !s->sent_trailing_metadata &&
-      grpc_error_has_clear_grpc_status(due_to_error)) {
-    close_from_api(t, s, due_to_error);
+  if (!t->is_client) {
+    // The server should always send trailers on cancellation. If it has already
+    // sent trailers, there is no action to be taken here since the stream would
+    // already be closed for both reading and writing.
+    if (!s->sent_trailing_metadata) {
+      close_from_api(t, s, due_to_error);
+    }
     return;
   }
 
