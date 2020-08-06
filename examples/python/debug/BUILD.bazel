@@ -23,8 +23,8 @@ py_binary(
     ],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        "//tools/distrib/python/grpcio_tools:grpc_tools",
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )
 
@@ -32,10 +32,10 @@ py_binary(
     name = "send_message",
     testonly = 1,
     srcs = ["send_message.py"],
-    python_version = "PY3",
     data = [
         "//examples:protos/helloworld.proto",
     ],
+    python_version = "PY3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
@@ -56,16 +56,16 @@ py_binary(
 py_test(
     name = "_debug_example_test",
     srcs = ["test/_debug_example_test.py"],
-    python_version = "PY3",
     data = [
         "//examples:protos/helloworld.proto",
     ],
+    python_version = "PY3",
     deps = [
         ":debug_server",
         ":get_stats",
         ":send_message",
         "//src/python/grpcio/grpc:grpcio",
-        "//tools/distrib/python/grpcio_tools:grpc_tools",
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )

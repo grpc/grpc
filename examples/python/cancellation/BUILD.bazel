@@ -21,11 +21,11 @@ package(default_testonly = 1)
 py_binary(
     name = "client",
     srcs = ["client.py"],
-    python_version = "PY3",
-    srcs_version = "PY2AND3",
     data = [
         "hash_name.proto",
     ],
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
@@ -36,10 +36,10 @@ py_binary(
 py_library(
     name = "search",
     srcs = ["search.py"],
-    srcs_version = "PY2AND3",
     data = [
         "hash_name.proto",
     ],
+    srcs_version = "PY2AND3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
@@ -49,11 +49,11 @@ py_library(
 py_binary(
     name = "server",
     srcs = ["server.py"],
-    python_version = "PY3",
-    srcs_version = "PY2AND3",
     data = [
         "hash_name.proto",
     ],
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",

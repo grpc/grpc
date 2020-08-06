@@ -15,11 +15,11 @@
 py_binary(
     name = "server",
     srcs = ["server.py"],
-    python_version = "PY3",
-    srcs_version = "PY2AND3",
     data = [
         "//examples:protos/helloworld.proto",
     ],
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
@@ -29,11 +29,11 @@ py_binary(
 py_binary(
     name = "client",
     srcs = ["client.py"],
-    python_version = "PY3",
-    srcs_version = "PY2AND3",
     data = [
         "//examples:protos/helloworld.proto",
     ],
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",

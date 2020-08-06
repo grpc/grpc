@@ -20,12 +20,12 @@ py_binary(
     name = "client",
     testonly = 1,
     srcs = ["client.py"],
+    data = [
+        "prime.proto",
+    ],
     imports = ["."],
     python_version = "PY3",
     srcs_version = "PY3",
-    data = [
-      "prime.proto"
-    ],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
@@ -36,12 +36,12 @@ py_binary(
     name = "server",
     testonly = 1,
     srcs = ["server.py"],
+    data = [
+        "prime.proto",
+    ],
     imports = ["."],
     python_version = "PY3",
     srcs_version = "PY3",
-    data = [
-      "prime.proto"
-    ],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",

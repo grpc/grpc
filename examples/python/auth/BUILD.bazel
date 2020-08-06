@@ -33,10 +33,10 @@ py_binary(
     name = "customized_auth_client",
     testonly = 1,
     srcs = ["customized_auth_client.py"],
-    python_version = "PY3",
     data = [
         "//examples:protos/helloworld.proto",
     ],
+    python_version = "PY3",
     deps = [
         ":_credentials",
         "//src/python/grpcio/grpc:grpcio",
@@ -48,10 +48,10 @@ py_binary(
     name = "customized_auth_server",
     testonly = 1,
     srcs = ["customized_auth_server.py"],
-    python_version = "PY3",
     data = [
         "//examples:protos/helloworld.proto",
     ],
+    python_version = "PY3",
     deps = [
         ":_credentials",
         "//src/python/grpcio/grpc:grpcio",

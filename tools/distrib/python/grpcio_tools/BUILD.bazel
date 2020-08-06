@@ -13,9 +13,9 @@
 # limitations under the License.
 
 package(default_visibility = [
+    "//examples/python:__subpackages__",
     "//src/python:__subpackages__",
     "//tools/distrib/python/grpcio_tools:__subpackages__",
-    "//examples/python:__subpackages__",
 ])
 
 load("//bazel:cython_library.bzl", "pyx_library")
@@ -43,11 +43,11 @@ py_library(
         "grpc_tools/__init__.py",
         "grpc_tools/protoc.py",
     ],
+    imports = ["."],
     srcs_version = "PY2AND3",
     deps = [
         ":cyprotoc",
         "//src/python/grpcio/grpc:grpcio",
         "@com_google_protobuf//:protobuf_python",
     ],
-    imports=["."],
 )

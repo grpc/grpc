@@ -21,7 +21,7 @@ py_binary(
         "server.py",
     ],
     data = [
-        "demo.proto"
+        "demo.proto",
     ],
     main = "alts_server.py",
     python_version = "PY3",
@@ -39,7 +39,7 @@ py_binary(
         "client.py",
     ],
     data = [
-        "demo.proto"
+        "demo.proto",
     ],
     main = "alts_client.py",
     python_version = "PY3",

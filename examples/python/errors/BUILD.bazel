@@ -23,8 +23,8 @@ py_library(
     ],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        "//tools/distrib/python/grpcio_tools:grpc_tools",
         "//src/python/grpcio_status/grpc_status",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
         requirement("googleapis-common-protos"),
     ],
 )
@@ -50,18 +50,18 @@ py_test(
     name = "test/_error_handling_example_test",
     size = "small",
     srcs = ["test/_error_handling_example_test.py"],
+    data = [
+        "//examples:protos/helloworld.proto",
+    ],
     imports = [
         "../../../src/python/grpcio_status",
         "../../../src/python/grpcio_tests",
     ],
     python_version = "PY3",
-    data = [
-        "//examples:protos/helloworld.proto",
-    ],
     deps = [
         ":client",
         ":server",
-        "//tools/distrib/python/grpcio_tools:grpc_tools",
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )
