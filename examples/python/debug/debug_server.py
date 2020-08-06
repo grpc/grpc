@@ -51,8 +51,8 @@ class FaultInjectGreeter(services.GreeterServicer):
 
 def create_server(addr, failure_rate):
     server = grpc.server(futures.ThreadPoolExecutor())
-    services.add_GreeterServicer_to_server(
-        FaultInjectGreeter(failure_rate), server)
+    services.add_GreeterServicer_to_server(FaultInjectGreeter(failure_rate),
+                                           server)
 
     # Add Channelz Servicer to the gRPC server
     channelz.add_channelz_servicer(server)

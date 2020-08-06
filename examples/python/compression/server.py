@@ -66,8 +66,7 @@ def run_server(server_compression, no_compress_every_n, port):
     server = grpc.server(futures.ThreadPoolExecutor(),
                          compression=server_compression,
                          options=(('grpc.so_reuseport', 1),))
-    services.add_GreeterServicer_to_server(
-        Greeter(no_compress_every_n), server)
+    services.add_GreeterServicer_to_server(Greeter(no_compress_every_n), server)
     address = '{}:{}'.format(_SERVER_HOST, port)
     server.add_insecure_port(address)
     server.start()
