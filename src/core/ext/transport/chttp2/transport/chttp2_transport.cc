@@ -2083,6 +2083,7 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     if (!s->write_closed) {
       close_from_api(t, s, due_to_error);
     }
+    GRPC_ERROR_UNREF(due_to_error);
     return;
   }
 
