@@ -45,6 +45,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resource_quota.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -56,20 +57,23 @@ namespace {
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
   static grpc_error* Create(Server* server, const char* addr,
-                            grpc_channel_args* args, int* port_num);
+                            const grpc_channel_args* args, int* port_num);
 
   static grpc_error* CreateWithAcceptor(Server* server, const char* name,
-                                        grpc_channel_args* args);
+                                        const grpc_channel_args* args);
 
   // Do not instantiate directly.  Use one of the factory methods above.
-  Chttp2ServerListener(Server* server, grpc_channel_args* args);
-  ~Chttp2ServerListener();
+  explicit Chttp2ServerListener(Server* server);
 
   void Start(Server* server,
              const std::vector<grpc_pollset*>* pollsets) override;
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return channelz_listen_socket_.get();
+  }
+
+  const std::vector<std::string>& listening_addresses() const override {
+    return listening_addresses_;
   }
 
   void SetOnDestroyDone(grpc_closure* on_destroy_done) override;
@@ -83,7 +87,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
                     grpc_pollset* accepting_pollset,
                     grpc_tcp_server_acceptor* acceptor,
                     RefCountedPtr<HandshakeManager> handshake_mgr,
-                    grpc_channel_args* args, grpc_endpoint* endpoint);
+                    const grpc_channel_args* args, grpc_endpoint* endpoint);
 
     ~ConnectionState();
 
@@ -117,8 +121,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
                               grpc_closure* destroy_done);
 
   Server* const server_;
-  grpc_channel_args* const args_;
   grpc_tcp_server* tcp_server_;
+  std::vector<std::string> listening_addresses_;
   Mutex mu_;
   bool shutdown_ = true;
   grpc_closure tcp_server_shutdown_complete_;
@@ -141,8 +145,8 @@ grpc_millis GetConnectionDeadline(const grpc_channel_args* args) {
 Chttp2ServerListener::ConnectionState::ConnectionState(
     Chttp2ServerListener* listener, grpc_pollset* accepting_pollset,
     grpc_tcp_server_acceptor* acceptor,
-    RefCountedPtr<HandshakeManager> handshake_mgr, grpc_channel_args* args,
-    grpc_endpoint* endpoint)
+    RefCountedPtr<HandshakeManager> handshake_mgr,
+    const grpc_channel_args* args, grpc_endpoint* endpoint)
     : listener_(listener),
       accepting_pollset_(accepting_pollset),
       acceptor_(acceptor),
@@ -268,7 +272,7 @@ void Chttp2ServerListener::ConnectionState::OnHandshakeDone(void* arg,
 //
 
 grpc_error* Chttp2ServerListener::Create(Server* server, const char* addr,
-                                         grpc_channel_args* args,
+                                         const grpc_channel_args* args,
                                          int* port_num) {
   std::vector<grpc_error*> error_list;
   grpc_resolved_addresses* resolved = nullptr;
@@ -281,7 +285,7 @@ grpc_error* Chttp2ServerListener::Create(Server* server, const char* addr,
     grpc_error* error = grpc_blocking_resolve_address(addr, "https", &resolved);
     if (error != GRPC_ERROR_NONE) return error;
     // Create Chttp2ServerListener.
-    listener = new Chttp2ServerListener(server, args);
+    listener = new Chttp2ServerListener(server);
     error = grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
                                    args, &listener->tcp_server_);
     if (error != GRPC_ERROR_NONE) return error;
@@ -298,6 +302,8 @@ grpc_error* Chttp2ServerListener::Create(Server* server, const char* addr,
           GPR_ASSERT(*port_num == port_temp);
         }
       }
+      listener->listening_addresses_.emplace_back(
+          grpc_sockaddr_to_string(&resolved->addrs[i], false));
     }
     if (error_list.size() == resolved->naddrs) {
       std::string msg =
@@ -337,8 +343,6 @@ grpc_error* Chttp2ServerListener::Create(Server* server, const char* addr,
       } else {
         delete listener;
       }
-    } else {
-      grpc_channel_args_destroy(args);
     }
     *port_num = 0;
   }
@@ -348,10 +352,9 @@ grpc_error* Chttp2ServerListener::Create(Server* server, const char* addr,
   return error;
 }
 
-grpc_error* Chttp2ServerListener::CreateWithAcceptor(Server* server,
-                                                     const char* name,
-                                                     grpc_channel_args* args) {
-  Chttp2ServerListener* listener = new Chttp2ServerListener(server, args);
+grpc_error* Chttp2ServerListener::CreateWithAcceptor(
+    Server* server, const char* name, const grpc_channel_args* args) {
+  Chttp2ServerListener* listener = new Chttp2ServerListener(server);
   grpc_error* error = grpc_tcp_server_create(
       &listener->tcp_server_shutdown_complete_, args, &listener->tcp_server_);
   if (error != GRPC_ERROR_NONE) {
@@ -366,15 +369,10 @@ grpc_error* Chttp2ServerListener::CreateWithAcceptor(Server* server,
   return GRPC_ERROR_NONE;
 }
 
-Chttp2ServerListener::Chttp2ServerListener(Server* server,
-                                           grpc_channel_args* args)
-    : server_(server), args_(args) {
+Chttp2ServerListener::Chttp2ServerListener(Server* server)
+    : server_(server) {
   GRPC_CLOSURE_INIT(&tcp_server_shutdown_complete_, TcpServerShutdownComplete,
                     this, grpc_schedule_on_exec_ctx);
-}
-
-Chttp2ServerListener::~Chttp2ServerListener() {
-  grpc_channel_args_destroy(args_);
 }
 
 /* Server callback: start listening on our ports */
@@ -423,7 +421,8 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   }
   // Deletes itself when done.
   new ConnectionState(self, accepting_pollset, acceptor,
-                      std::move(handshake_mgr), self->args_, tcp);
+                      std::move(handshake_mgr), self->server_->channel_args(),
+                      tcp);
 }
 
 void Chttp2ServerListener::TcpServerShutdownComplete(void* arg,
@@ -470,7 +469,7 @@ void Chttp2ServerListener::Orphan() {
 //
 
 grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
-                                grpc_channel_args* args, int* port_num) {
+                                const grpc_channel_args* args, int* port_num) {
   if (strncmp(addr, "external:", 9) == 0) {
     return grpc_core::Chttp2ServerListener::CreateWithAcceptor(server, addr,
                                                                args);

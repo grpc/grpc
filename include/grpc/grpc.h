@@ -447,6 +447,20 @@ GRPCAPI void grpc_server_cancel_all_calls(grpc_server* server);
     one call to grpc_server_shutdown_and_notify must have been made). */
 GRPCAPI void grpc_server_destroy(grpc_server* server);
 
+/** EXPERIMENTAL.  Creates an xDS config fetcher to be used with a server. */
+// FIXME: need some mechanism for application to get status callbacks
+GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
+    grpc_server* server);
+
+/** EXPERIMENTAL.  Destroys a config fetcher. */
+GRPCAPI void grpc_server_config_fetcher_destroy(
+    grpc_server_config_fetcher* config_fetcher);
+
+/** EXPERIMENTAL.  Sets the server's config fetcher.  Takes ownership.
+    Must be called before grpc_server_start(). */
+GRPCAPI void grpc_server_set_config_fetcher(
+    grpc_server* server, grpc_server_config_fetcher* config_fetcher);
+
 /** Enable or disable a tracer.
 
     Tracers (usually controlled by the environment variable GRPC_TRACE)

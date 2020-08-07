@@ -29,9 +29,8 @@
 namespace grpc_core {
 
 /// Adds a port to \a server.  Sets \a port_num to the port number.
-/// Takes ownership of \a args.
 grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
-                                grpc_channel_args* args, int* port_num);
+                                const grpc_channel_args* args, int* port_num);
 
 }  // namespace grpc_core
 

@@ -80,6 +80,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
+// FIXME: change API to allow ServiceConfigWatcher to be started later,
+// so that we can use this in the gRPC server
   XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
             grpc_pollset_set* interested_parties, absl::string_view server_name,
             std::unique_ptr<ServiceConfigWatcherInterface> watcher,

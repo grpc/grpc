@@ -64,6 +64,9 @@ typedef struct grpc_channel grpc_channel;
 /** A server listens to some port and responds to request calls */
 typedef struct grpc_server grpc_server;
 
+/** A config fetcher, used by the server before it starts listening */
+typedef struct grpc_server_config_fetcher grpc_server_config_fetcher;
+
 /** A Call represents an RPC. When created, it is in a configuration state
     allowing properties to be set until it is invoked. After invoke, the Call
     can have messages written to it and read from it. */
