@@ -336,7 +336,6 @@ GRPCAPI grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved);
     Can be called multiple times, from any thread.
     If a status has not been received for the call, set it to the status code
     and description passed in.
-    If called on the server, this status would also be sent to the client.
     Note that \a description doesn't need be a static string. It
     doesn't need to be alive after the call to grpc_call_cancel_with_status
     completes. */
