@@ -2831,6 +2831,26 @@ grpc_cc_library(
     ],
 )
 
+# Once upb code-gen issue is resolved, replace meshca_upb with this.
+# meshca_upb_proto_library(
+#     name = "meshca_upb",
+#     deps = ["//src/proto/grpc/tls/provider/meshca:meshca_proto"],
+# )
+
+grpc_cc_library(
+    name = "meshca_upb",
+    srcs = [
+        "src/core/ext/upb-generated/src/proto/grpc/tls/provider/meshca/meshca.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/src/proto/grpc/tls/provider/meshca/meshca.upb.h",
+    ],
+    deps = [
+        "google_api_upb",
+    ],
+    language = "c++",
+)
+
 # Once upb code-gen issue is resolved, replace alts_upb with this.
 # grpc_upb_proto_library(
 #     name = "alts_upb",
