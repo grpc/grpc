@@ -77,7 +77,7 @@ class ClientAsyncResponseReaderFactory {
   /// used to send to the server when starting the call.
   template <class W>
   static ClientAsyncResponseReader<R>* Create(
-      ::grpc::ChannelInterface* channel, ::grpc_impl::CompletionQueue* cq,
+      ::grpc::ChannelInterface* channel, ::grpc::CompletionQueue* cq,
       const ::grpc::internal::RpcMethod& method,
       ::grpc_impl::ClientContext* context, const W& request, bool start) {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);

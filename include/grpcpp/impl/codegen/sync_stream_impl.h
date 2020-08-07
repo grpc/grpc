@@ -21,7 +21,7 @@
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/client_context_impl.h>
-#include <grpcpp/impl/codegen/completion_queue_impl.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/server_context_impl.h>
 #include <grpcpp/impl/codegen/service_type.h>
@@ -232,7 +232,7 @@ class ClientReader final : public ClientReaderInterface<R> {
  private:
   friend class internal::ClientReaderFactory<R>;
   ::grpc_impl::ClientContext* context_;
-  ::grpc_impl::CompletionQueue cq_;
+  ::grpc::CompletionQueue cq_;
   ::grpc::internal::Call call_;
 
   /// Block to create a stream and write the initial metadata and \a request
@@ -400,7 +400,7 @@ class ClientWriter : public ClientWriterInterface<W> {
                               ::grpc::internal::CallOpGenericRecvMessage,
                               ::grpc::internal::CallOpClientRecvStatus>
       finish_ops_;
-  ::grpc_impl::CompletionQueue cq_;
+  ::grpc::CompletionQueue cq_;
   ::grpc::internal::Call call_;
 };
 
@@ -544,7 +544,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   friend class internal::ClientReaderWriterFactory<W, R>;
 
   ::grpc_impl::ClientContext* context_;
-  ::grpc_impl::CompletionQueue cq_;
+  ::grpc::CompletionQueue cq_;
   ::grpc::internal::Call call_;
 
   /// Block to create a stream and write the initial metadata and \a request

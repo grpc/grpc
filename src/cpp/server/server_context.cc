@@ -27,7 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/codegen/completion_queue_impl.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/time.h>
 
@@ -89,7 +89,7 @@ class ServerContextBase::CompletionOp final
 
   bool FinalizeResult(void** tag, bool* status) override;
 
-  bool CheckCancelled(CompletionQueue* cq) {
+  bool CheckCancelled(grpc::CompletionQueue* cq) {
     cq->TryPluck(this);
     return CheckCancelledNoPluck();
   }
