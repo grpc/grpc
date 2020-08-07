@@ -2845,10 +2845,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/upb-generated/src/proto/grpc/tls/provider/meshca/meshca.upb.h",
     ],
+    language = "c++",
     deps = [
         "google_api_upb",
     ],
-    language = "c++",
 )
 
 # Once upb code-gen issue is resolved, replace alts_upb with this.
