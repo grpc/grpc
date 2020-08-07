@@ -50,6 +50,7 @@ struct census_context;
 
 namespace grpc_impl {
 class ClientContext;
+class CompletionQueue;
 class Server;
 template <class W, class R>
 class ServerAsyncReader;
@@ -94,7 +95,6 @@ class ErrorMethodHandler;
 
 }  // namespace grpc_impl
 namespace grpc {
-class CompletionQueue;
 class GenericServerContext;
 class ServerInterface;
 
@@ -426,7 +426,7 @@ class ServerContextBase {
 
   gpr_timespec deadline_;
   grpc_call* call_;
-  ::grpc::CompletionQueue* cq_;
+  ::grpc_impl::CompletionQueue* cq_;
   bool sent_initial_metadata_;
   mutable std::shared_ptr<const ::grpc::AuthContext> auth_context_;
   mutable ::grpc::internal::MetadataMap client_metadata_;

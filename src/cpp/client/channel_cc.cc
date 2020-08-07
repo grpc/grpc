@@ -41,7 +41,11 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/completion_queue.h"
 
-namespace grpc {
+void ::grpc::experimental::ChannelResetConnectionBackoff(Channel* channel) {
+  grpc_impl::experimental::ChannelResetConnectionBackoff(channel);
+}
+
+namespace grpc_impl {
 
 static ::grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 Channel::Channel(const std::string& host, grpc_channel* channel,
@@ -63,7 +67,8 @@ Channel::~Channel() {
 namespace {
 
 inline grpc_slice SliceFromArray(const char* arr, size_t len) {
-  return g_core_codegen_interface->grpc_slice_from_copied_buffer(arr, len);
+  return ::grpc::g_core_codegen_interface->grpc_slice_from_copied_buffer(arr,
+                                                                         len);
 }
 
 std::string GetChannelInfoField(grpc_channel* channel,
@@ -249,4 +254,4 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
   return callback_cq_;
 }
 
-}  // namespace grpc
+}  // namespace grpc_impl

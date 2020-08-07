@@ -26,8 +26,12 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 
-namespace grpc {
+namespace grpc_impl {
+
 class Channel;
+}
+
+namespace grpc {
 
 namespace testing {
 

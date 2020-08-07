@@ -40,7 +40,7 @@ class DelegatingChannel : public ::grpc::ChannelInterface {
  private:
   internal::Call CreateCall(const internal::RpcMethod& method,
                             ClientContext* context,
-                            ::grpc::CompletionQueue* cq) final {
+                            ::grpc_impl::CompletionQueue* cq) final {
     return delegate_channel()->CreateCall(method, context, cq);
   }
 
@@ -55,7 +55,7 @@ class DelegatingChannel : public ::grpc::ChannelInterface {
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                gpr_timespec deadline,
-                               ::grpc::CompletionQueue* cq,
+                               ::grpc_impl::CompletionQueue* cq,
                                void* tag) override {
     delegate_channel()->NotifyOnStateChangeImpl(last_observed, deadline, cq,
                                                 tag);
@@ -68,13 +68,13 @@ class DelegatingChannel : public ::grpc::ChannelInterface {
 
   internal::Call CreateCallInternal(const internal::RpcMethod& method,
                                     ClientContext* context,
-                                    ::grpc::CompletionQueue* cq,
+                                    ::grpc_impl::CompletionQueue* cq,
                                     size_t interceptor_pos) final {
     return delegate_channel()->CreateCallInternal(method, context, cq,
                                                   interceptor_pos);
   }
 
-  ::grpc::CompletionQueue* CallbackCQ() final {
+  ::grpc_impl::CompletionQueue* CallbackCQ() final {
     return delegate_channel()->CallbackCQ();
   }
 

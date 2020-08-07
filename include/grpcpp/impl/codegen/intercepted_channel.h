@@ -21,8 +21,11 @@
 
 #include <grpcpp/impl/codegen/channel_interface.h>
 
-namespace grpc {
+namespace grpc_impl {
 class CompletionQueue;
+}
+
+namespace grpc {
 
 namespace internal {
 
@@ -47,7 +50,7 @@ class InterceptedChannel : public ChannelInterface {
       : channel_(channel), interceptor_pos_(pos) {}
 
   Call CreateCall(const RpcMethod& method, ::grpc_impl::ClientContext* context,
-                  ::grpc::CompletionQueue* cq) override {
+                  ::grpc_impl::CompletionQueue* cq) override {
     return channel_->CreateCallInternal(method, context, cq, interceptor_pos_);
   }
 
@@ -60,7 +63,7 @@ class InterceptedChannel : public ChannelInterface {
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                gpr_timespec deadline,
-                               ::grpc::CompletionQueue* cq,
+                               ::grpc_impl::CompletionQueue* cq,
                                void* tag) override {
     return channel_->NotifyOnStateChangeImpl(last_observed, deadline, cq, tag);
   }
@@ -69,7 +72,7 @@ class InterceptedChannel : public ChannelInterface {
     return channel_->WaitForStateChangeImpl(last_observed, deadline);
   }
 
-  ::grpc::CompletionQueue* CallbackCQ() override {
+  ::grpc_impl::CompletionQueue* CallbackCQ() override {
     return channel_->CallbackCQ();
   }
 
