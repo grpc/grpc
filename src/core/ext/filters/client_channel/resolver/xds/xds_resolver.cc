@@ -28,8 +28,6 @@ namespace grpc_core {
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
-const char* kCallAttributeDeadline = "deadline";
-
 namespace {
 
 //
@@ -86,15 +84,7 @@ class XdsResolver : public Resolver {
   class XdsConfigSelector : public ConfigSelector {
    public:
     CallConfig GetCallConfig(GetCallConfigArgs args) override {
-      char* deadline_str = static_cast<char*>(
-          args.arena->Alloc(GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE));
-      grpc_http2_encode_timeout(
-          args.initial_metadata->deadline - grpc_core::ExecCtx::Get()->Now(),
-          deadline_str);
-      CallConfig call_config;
-      call_config.call_attributes[kCallAttributeDeadline] =
-          absl::string_view(deadline_str);
-      return call_config;
+      return CallConfig();
     }
   };
 

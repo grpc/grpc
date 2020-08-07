@@ -67,25 +67,17 @@
 #include "src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 
+#include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-// TODO(dgq): Other scenarios in need of testing:
-// - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).
-// - Test reception of invalid serverlist
-// - Test against a non-LB server.
-// - Random LB server closing the stream unexpectedly.
-//
-// Findings from end to end testing to be covered here:
-// - Handling of LB servers restart, including reconnection after backing-off
-//   retries.
-// - Destruction of load balanced channel (and therefore of xds instance)
-//   while:
-//   1) the internal LB call is still active. This should work by virtue
-//   of the weak reference the LB call holds. The call should be terminated as
-//   part of the xds shutdown process.
-//   2) the retry timer is active. Again, the weak reference it holds should
-//   prevent a premature call to \a glb_destroy.
 
 namespace grpc {
 namespace testing {
@@ -93,27 +85,31 @@ namespace {
 
 using std::chrono::system_clock;
 
-using ::envoy::api::v2::Cluster;
-using ::envoy::api::v2::ClusterLoadAssignment;
-using ::envoy::api::v2::DiscoveryRequest;
-using ::envoy::api::v2::DiscoveryResponse;
-using ::envoy::api::v2::FractionalPercent;
-using ::envoy::api::v2::HttpConnectionManager;
-using ::envoy::api::v2::Listener;
-using ::envoy::api::v2::RouteConfiguration;
-using ::envoy::service::discovery::v2::AggregatedDiscoveryService;
-using ::envoy::service::load_stats::v2::ClusterStats;
-using ::envoy::service::load_stats::v2::LoadReportingService;
-using ::envoy::service::load_stats::v2::LoadStatsRequest;
-using ::envoy::service::load_stats::v2::LoadStatsResponse;
-using ::envoy::service::load_stats::v2::UpstreamLocalityStats;
+using ::envoy::config::cluster::v3::Cluster;
+using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
+using ::envoy::config::endpoint::v3::HealthStatus;
+using ::envoy::config::listener::v3::Listener;
+using ::envoy::config::route::v3::RouteConfiguration;
+using ::envoy::extensions::filters::network::http_connection_manager::v3::
+    HttpConnectionManager;
+using ::envoy::type::v3::FractionalPercent;
 
-constexpr char kLdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Listener";
+constexpr char kLdsTypeUrl[] =
+    "type.googleapis.com/envoy.config.listener.v3.Listener";
 constexpr char kRdsTypeUrl[] =
-    "type.googleapis.com/envoy.api.v2.RouteConfiguration";
-constexpr char kCdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
+    "type.googleapis.com/envoy.config.route.v3.RouteConfiguration";
+constexpr char kCdsTypeUrl[] =
+    "type.googleapis.com/envoy.config.cluster.v3.Cluster";
 constexpr char kEdsTypeUrl[] =
+    "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment";
+
+constexpr char kLdsV2TypeUrl[] = "type.googleapis.com/envoy.api.v2.Listener";
+constexpr char kRdsV2TypeUrl[] =
+    "type.googleapis.com/envoy.api.v2.RouteConfiguration";
+constexpr char kCdsV2TypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
+constexpr char kEdsV2TypeUrl[] =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
+
 constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
 constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
 constexpr char kLbDropType[] = "lb";
@@ -122,7 +118,34 @@ constexpr char kDefaultResourceName[] = "application_target_name";
 constexpr int kDefaultLocalityWeight = 3;
 constexpr int kDefaultLocalityPriority = 0;
 
-constexpr char kBootstrapFile[] =
+constexpr char kBootstrapFileV3[] =
+    "{\n"
+    "  \"xds_servers\": [\n"
+    "    {\n"
+    "      \"server_uri\": \"fake:///lb\",\n"
+    "      \"channel_creds\": [\n"
+    "        {\n"
+    "          \"type\": \"fake\"\n"
+    "        }\n"
+    "      ],\n"
+    "      \"server_features\": [\"xds_v3\"]\n"
+    "    }\n"
+    "  ],\n"
+    "  \"node\": {\n"
+    "    \"id\": \"xds_end2end_test\",\n"
+    "    \"cluster\": \"test\",\n"
+    "    \"metadata\": {\n"
+    "      \"foo\": \"bar\"\n"
+    "    },\n"
+    "    \"locality\": {\n"
+    "      \"region\": \"corp\",\n"
+    "      \"zone\": \"svl\",\n"
+    "      \"subzone\": \"mp3\"\n"
+    "    }\n"
+    "  }\n"
+    "}\n";
+
+constexpr char kBootstrapFileV2[] =
     "{\n"
     "  \"xds_servers\": [\n"
     "    {\n"
@@ -164,15 +187,20 @@ constexpr char kBootstrapFileBad[] =
     "  }\n"
     "}\n";
 
-char* g_bootstrap_file;
+char* g_bootstrap_file_v3;
+char* g_bootstrap_file_v2;
 char* g_bootstrap_file_bad;
 
 void WriteBootstrapFiles() {
   char* bootstrap_file;
-  FILE* out = gpr_tmpfile("xds_bootstrap", &bootstrap_file);
-  fputs(kBootstrapFile, out);
+  FILE* out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file);
+  fputs(kBootstrapFileV3, out);
   fclose(out);
-  g_bootstrap_file = bootstrap_file;
+  g_bootstrap_file_v3 = bootstrap_file;
+  out = gpr_tmpfile("xds_bootstrap_v2", &bootstrap_file);
+  fputs(kBootstrapFileV2, out);
+  fclose(out);
+  g_bootstrap_file_v2 = bootstrap_file;
   out = gpr_tmpfile("xds_bootstrap_bad", &bootstrap_file);
   fputs(kBootstrapFileBad, out);
   fclose(out);
@@ -232,8 +260,6 @@ class CountedService : public ServiceType {
   size_t response_count_ = 0;
 };
 
-using LrsService = CountedService<LoadReportingService::Service>;
-
 const char g_kCallCredsMdKey[] = "Balancer should not ...";
 const char g_kCallCredsMdValue[] = "... receive me";
 
@@ -292,7 +318,10 @@ class BackendServiceImpl
 class ClientStats {
  public:
   struct LocalityStats {
+    LocalityStats() {}
+
     // Converts from proto message class.
+    template <class UpstreamLocalityStats>
     LocalityStats(const UpstreamLocalityStats& upstream_locality_stats)
         : total_successful_requests(
               upstream_locality_stats.total_successful_requests()),
@@ -302,13 +331,24 @@ class ClientStats {
           total_issued_requests(
               upstream_locality_stats.total_issued_requests()) {}
 
-    uint64_t total_successful_requests;
-    uint64_t total_requests_in_progress;
-    uint64_t total_error_requests;
-    uint64_t total_issued_requests;
+    LocalityStats& operator+=(const LocalityStats& other) {
+      total_successful_requests += other.total_successful_requests;
+      total_requests_in_progress += other.total_requests_in_progress;
+      total_error_requests += other.total_error_requests;
+      total_issued_requests += other.total_issued_requests;
+      return *this;
+    }
+
+    uint64_t total_successful_requests = 0;
+    uint64_t total_requests_in_progress = 0;
+    uint64_t total_error_requests = 0;
+    uint64_t total_issued_requests = 0;
   };
 
+  ClientStats() {}
+
   // Converts from proto message class.
+  template <class ClusterStats>
   explicit ClientStats(const ClusterStats& cluster_stats)
       : cluster_name_(cluster_stats.cluster_name()),
         total_dropped_requests_(cluster_stats.total_dropped_requests()) {
@@ -366,15 +406,25 @@ class ClientStats {
     return iter->second;
   }
 
+  ClientStats& operator+=(const ClientStats& other) {
+    for (const auto& p : other.locality_stats_) {
+      locality_stats_[p.first] += p.second;
+    }
+    total_dropped_requests_ += other.total_dropped_requests_;
+    for (const auto& p : other.dropped_requests_) {
+      dropped_requests_[p.first] += p.second;
+    }
+    return *this;
+  }
+
  private:
   std::string cluster_name_;
   std::map<std::string, LocalityStats> locality_stats_;
-  uint64_t total_dropped_requests_;
+  uint64_t total_dropped_requests_ = 0;
   std::map<std::string, uint64_t> dropped_requests_;
 };
 
-class AdsServiceImpl : public AggregatedDiscoveryService::Service,
-                       public std::enable_shared_from_this<AdsServiceImpl> {
+class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
  public:
   struct ResponseState {
     enum State { NOT_SENT, SENT, ACKED, NACKED };
@@ -387,7 +437,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       Locality(const std::string& sub_zone, std::vector<int> ports,
                int lb_weight = kDefaultLocalityWeight,
                int priority = kDefaultLocalityPriority,
-               std::vector<envoy::api::v2::HealthStatus> health_statuses = {})
+               std::vector<HealthStatus> health_statuses = {})
           : sub_zone(std::move(sub_zone)),
             ports(std::move(ports)),
             lb_weight(lb_weight),
@@ -398,7 +448,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       std::vector<int> ports;
       int lb_weight;
       int priority;
-      std::vector<envoy::api::v2::HealthStatus> health_statuses;
+      std::vector<HealthStatus> health_statuses;
     };
 
     EdsResourceArgs() = default;
@@ -411,9 +461,9 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
         FractionalPercent::MILLION;
   };
 
-  using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
-
-  AdsServiceImpl(bool enable_load_reporting) {
+  explicit AdsServiceImpl(bool enable_load_reporting)
+      : v2_rpc_service_(this, /*is_v2=*/true),
+        v3_rpc_service_(this, /*is_v2=*/false) {
     // Construct RDS response data.
     default_route_config_.set_name(kDefaultResourceName);
     auto* virtual_host = default_route_config_.add_virtual_hosts();
@@ -427,206 +477,28 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
     SetLdsResource(default_listener_);
     // Construct CDS response data.
     default_cluster_.set_name(kDefaultResourceName);
-    default_cluster_.set_type(envoy::api::v2::Cluster::EDS);
+    default_cluster_.set_type(Cluster::EDS);
     default_cluster_.mutable_eds_cluster_config()
         ->mutable_eds_config()
         ->mutable_ads();
-    default_cluster_.set_lb_policy(envoy::api::v2::Cluster::ROUND_ROBIN);
+    default_cluster_.set_lb_policy(Cluster::ROUND_ROBIN);
     if (enable_load_reporting) {
       default_cluster_.mutable_lrs_server()->mutable_self();
     }
     SetCdsResource(default_cluster_);
   }
 
-  Status StreamAggregatedResources(ServerContext* context,
-                                   Stream* stream) override {
-    gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
-    // Resources (type/name pairs) that have changed since the client
-    // subscribed to them.
-    UpdateQueue update_queue;
-    // Resources that the client will be subscribed to keyed by resource type
-    // url.
-    SubscriptionMap subscription_map;
-    [&]() {
-      {
-        grpc_core::MutexLock lock(&ads_mu_);
-        if (ads_done_) return;
-      }
-      // Balancer shouldn't receive the call credentials metadata.
-      EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
-                context->client_metadata().end());
-      // Current Version map keyed by resource type url.
-      std::map<std::string, int> resource_type_version;
-      // Creating blocking thread to read from stream.
-      std::deque<DiscoveryRequest> requests;
-      bool stream_closed = false;
-      // Take a reference of the AdsServiceImpl object, reference will go
-      // out of scope after the reader thread is joined.
-      std::shared_ptr<AdsServiceImpl> ads_service_impl = shared_from_this();
-      std::thread reader(std::bind(&AdsServiceImpl::BlockingRead, this, stream,
-                                   &requests, &stream_closed));
-      // Main loop to look for requests and updates.
-      while (true) {
-        // Look for new requests and and decide what to handle.
-        absl::optional<DiscoveryResponse> response;
-        // Boolean to keep track if the loop received any work to do: a request
-        // or an update; regardless whether a response was actually sent out.
-        bool did_work = false;
-        {
-          grpc_core::MutexLock lock(&ads_mu_);
-          if (stream_closed) break;
-          if (!requests.empty()) {
-            DiscoveryRequest request = std::move(requests.front());
-            requests.pop_front();
-            did_work = true;
-            gpr_log(GPR_INFO,
-                    "ADS[%p]: Received request for type %s with content %s",
-                    this, request.type_url().c_str(),
-                    request.DebugString().c_str());
-            // Identify ACK and NACK by looking for version information and
-            // comparing it to nonce (this server ensures they are always set to
-            // the same in a response.)
-            if (!request.response_nonce().empty()) {
-              resource_type_response_state_[request.type_url()].state =
-                  (!request.version_info().empty() &&
-                   request.version_info() == request.response_nonce())
-                      ? ResponseState::ACKED
-                      : ResponseState::NACKED;
-            }
-            if (request.has_error_detail()) {
-              resource_type_response_state_[request.type_url()].error_message =
-                  request.error_detail().message();
-            }
-            // As long as the test did not tell us to ignore this type of
-            // request, we will loop through all resources to:
-            // 1. subscribe if necessary
-            // 2. update if necessary
-            // 3. unsubscribe if necessary
-            if (resource_types_to_ignore_.find(request.type_url()) ==
-                resource_types_to_ignore_.end()) {
-              auto& subscription_name_map =
-                  subscription_map[request.type_url()];
-              auto& resource_name_map = resource_map_[request.type_url()];
-              std::set<std::string> resources_in_current_request;
-              std::set<std::string> resources_added_to_response;
-              for (const std::string& resource_name :
-                   request.resource_names()) {
-                resources_in_current_request.emplace(resource_name);
-                auto& subscription_state = subscription_name_map[resource_name];
-                auto& resource_state = resource_name_map[resource_name];
-                MaybeSubscribe(request.type_url(), resource_name,
-                               &subscription_state, &resource_state,
-                               &update_queue);
-                if (ClientNeedsResourceUpdate(resource_state,
-                                              &subscription_state)) {
-                  gpr_log(
-                      GPR_INFO,
-                      "ADS[%p]: Sending update for type=%s name=%s version=%d",
-                      this, request.type_url().c_str(), resource_name.c_str(),
-                      resource_state.version);
-                  resources_added_to_response.emplace(resource_name);
-                  if (!response.has_value()) response.emplace();
-                  if (resource_state.resource.has_value()) {
-                    response->add_resources()->CopyFrom(
-                        resource_state.resource.value());
-                  }
-                }
-              }
-              // Process unsubscriptions for any resource no longer
-              // present in the request's resource list.
-              ProcessUnsubscriptions(
-                  request.type_url(), resources_in_current_request,
-                  &subscription_name_map, &resource_name_map);
-              // Send response if needed.
-              if (!resources_added_to_response.empty()) {
-                CompleteBuildingDiscoveryResponse(
-                    request.type_url(),
-                    ++resource_type_version[request.type_url()],
-                    subscription_name_map, resources_added_to_response,
-                    &response.value());
-              }
-            }
-          }
-        }
-        if (response.has_value()) {
-          gpr_log(GPR_INFO, "ADS[%p]: Sending response: %s", this,
-                  response->DebugString().c_str());
-          stream->Write(response.value());
-        }
-        response.reset();
-        // Look for updates and decide what to handle.
-        {
-          grpc_core::MutexLock lock(&ads_mu_);
-          if (!update_queue.empty()) {
-            const std::string resource_type =
-                std::move(update_queue.front().first);
-            const std::string resource_name =
-                std::move(update_queue.front().second);
-            update_queue.pop_front();
-            did_work = true;
-            gpr_log(GPR_INFO, "ADS[%p]: Received update for type=%s name=%s",
-                    this, resource_type.c_str(), resource_name.c_str());
-            auto& subscription_name_map = subscription_map[resource_type];
-            auto& resource_name_map = resource_map_[resource_type];
-            auto it = subscription_name_map.find(resource_name);
-            if (it != subscription_name_map.end()) {
-              SubscriptionState& subscription_state = it->second;
-              ResourceState& resource_state = resource_name_map[resource_name];
-              if (ClientNeedsResourceUpdate(resource_state,
-                                            &subscription_state)) {
-                gpr_log(
-                    GPR_INFO,
-                    "ADS[%p]: Sending update for type=%s name=%s version=%d",
-                    this, resource_type.c_str(), resource_name.c_str(),
-                    resource_state.version);
-                response.emplace();
-                if (resource_state.resource.has_value()) {
-                  response->add_resources()->CopyFrom(
-                      resource_state.resource.value());
-                }
-                CompleteBuildingDiscoveryResponse(
-                    resource_type, ++resource_type_version[resource_type],
-                    subscription_name_map, {resource_name}, &response.value());
-              }
-            }
-          }
-        }
-        if (response.has_value()) {
-          gpr_log(GPR_INFO, "ADS[%p]: Sending update response: %s", this,
-                  response->DebugString().c_str());
-          stream->Write(response.value());
-        }
-        // If we didn't find anything to do, delay before the next loop
-        // iteration; otherwise, check whether we should exit and then
-        // immediately continue.
-        gpr_timespec deadline =
-            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10);
-        {
-          grpc_core::MutexLock lock(&ads_mu_);
-          if (!ads_cond_.WaitUntil(&ads_mu_, [this] { return ads_done_; },
-                                   deadline))
-            break;
-        }
-      }
-      reader.join();
-    }();
-    // Clean up any subscriptions that were still active when the call finished.
-    {
-      grpc_core::MutexLock lock(&ads_mu_);
-      for (auto& p : subscription_map) {
-        const std::string& type_url = p.first;
-        SubscriptionNameMap& subscription_name_map = p.second;
-        for (auto& q : subscription_name_map) {
-          const std::string& resource_name = q.first;
-          SubscriptionState& subscription_state = q.second;
-          ResourceState& resource_state =
-              resource_map_[type_url][resource_name];
-          resource_state.subscriptions.erase(&subscription_state);
-        }
-      }
-    }
-    gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources done", this);
-    return Status::OK;
+  bool seen_v2_client() const { return seen_v2_client_; }
+  bool seen_v3_client() const { return seen_v3_client_; }
+
+  ::envoy::service::discovery::v2::AggregatedDiscoveryService::Service*
+  v2_rpc_service() {
+    return &v2_rpc_service_;
+  }
+
+  ::envoy::service::discovery::v3::AggregatedDiscoveryService::Service*
+  v3_rpc_service() {
+    return &v3_rpc_service_;
   }
 
   Listener default_listener() const { return default_listener_; }
@@ -760,8 +632,7 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
         const int& port = locality.ports[i];
         auto* lb_endpoints = endpoints->add_lb_endpoints();
         if (locality.health_statuses.size() > i &&
-            locality.health_statuses[i] !=
-                envoy::api::v2::HealthStatus::UNKNOWN) {
+            locality.health_statuses[i] != HealthStatus::UNKNOWN) {
           lb_endpoints->set_health_status(locality.health_statuses[i]);
         }
         auto* endpoint = lb_endpoints->mutable_endpoint();
@@ -833,34 +704,323 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
       std::map<std::string /* resource_name */, ResourceState>;
   using ResourceMap = std::map<std::string /* type_url */, ResourceNameMap>;
 
-  // Starting a thread to do blocking read on the stream until cancel.
-  void BlockingRead(Stream* stream, std::deque<DiscoveryRequest>* requests,
-                    bool* stream_closed) {
-    DiscoveryRequest request;
-    bool seen_first_request = false;
-    while (stream->Read(&request)) {
-      if (!seen_first_request) {
-        EXPECT_TRUE(request.has_node());
-        ASSERT_FALSE(request.node().client_features().empty());
-        EXPECT_EQ(request.node().client_features(0),
-                  "envoy.lb.does_not_support_overprovisioning");
-        seen_first_request = true;
+  template <class RpcApi, class DiscoveryRequest, class DiscoveryResponse>
+  class RpcService : public RpcApi::Service {
+   public:
+    using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
+
+    RpcService(AdsServiceImpl* parent, bool is_v2)
+        : parent_(parent), is_v2_(is_v2) {}
+
+    Status StreamAggregatedResources(ServerContext* context,
+                                     Stream* stream) override {
+      gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
+      if (is_v2_) {
+        parent_->seen_v2_client_ = true;
+      } else {
+        parent_->seen_v3_client_ = true;
       }
+      // Resources (type/name pairs) that have changed since the client
+      // subscribed to them.
+      UpdateQueue update_queue;
+      // Resources that the client will be subscribed to keyed by resource type
+      // url.
+      SubscriptionMap subscription_map;
+      [&]() {
+        {
+          grpc_core::MutexLock lock(&parent_->ads_mu_);
+          if (parent_->ads_done_) return;
+        }
+        // Balancer shouldn't receive the call credentials metadata.
+        EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
+                  context->client_metadata().end());
+        // Current Version map keyed by resource type url.
+        std::map<std::string, int> resource_type_version;
+        // Creating blocking thread to read from stream.
+        std::deque<DiscoveryRequest> requests;
+        bool stream_closed = false;
+        // Take a reference of the AdsServiceImpl object, reference will go
+        // out of scope after the reader thread is joined.
+        std::shared_ptr<AdsServiceImpl> ads_service_impl =
+            parent_->shared_from_this();
+        std::thread reader(std::bind(&RpcService::BlockingRead, this, stream,
+                                     &requests, &stream_closed));
+        // Main loop to look for requests and updates.
+        while (true) {
+          // Look for new requests and and decide what to handle.
+          absl::optional<DiscoveryResponse> response;
+          // Boolean to keep track if the loop received any work to do: a
+          // request or an update; regardless whether a response was actually
+          // sent out.
+          bool did_work = false;
+          {
+            grpc_core::MutexLock lock(&parent_->ads_mu_);
+            if (stream_closed) break;
+            if (!requests.empty()) {
+              DiscoveryRequest request = std::move(requests.front());
+              requests.pop_front();
+              did_work = true;
+              gpr_log(GPR_INFO,
+                      "ADS[%p]: Received request for type %s with content %s",
+                      this, request.type_url().c_str(),
+                      request.DebugString().c_str());
+              const std::string v3_resource_type =
+                  TypeUrlToV3(request.type_url());
+              // Identify ACK and NACK by looking for version information and
+              // comparing it to nonce (this server ensures they are always set
+              // to the same in a response.)
+              if (!request.response_nonce().empty()) {
+                parent_->resource_type_response_state_[v3_resource_type].state =
+                    (!request.version_info().empty() &&
+                     request.version_info() == request.response_nonce())
+                        ? ResponseState::ACKED
+                        : ResponseState::NACKED;
+              }
+              if (request.has_error_detail()) {
+                parent_->resource_type_response_state_[v3_resource_type]
+                    .error_message = request.error_detail().message();
+              }
+              // As long as the test did not tell us to ignore this type of
+              // request, we will loop through all resources to:
+              // 1. subscribe if necessary
+              // 2. update if necessary
+              // 3. unsubscribe if necessary
+              if (parent_->resource_types_to_ignore_.find(v3_resource_type) ==
+                  parent_->resource_types_to_ignore_.end()) {
+                auto& subscription_name_map =
+                    subscription_map[v3_resource_type];
+                auto& resource_name_map =
+                    parent_->resource_map_[v3_resource_type];
+                std::set<std::string> resources_in_current_request;
+                std::set<std::string> resources_added_to_response;
+                for (const std::string& resource_name :
+                     request.resource_names()) {
+                  resources_in_current_request.emplace(resource_name);
+                  auto& subscription_state =
+                      subscription_name_map[resource_name];
+                  auto& resource_state = resource_name_map[resource_name];
+                  parent_->MaybeSubscribe(v3_resource_type, resource_name,
+                                          &subscription_state, &resource_state,
+                                          &update_queue);
+                  if (ClientNeedsResourceUpdate(resource_state,
+                                                &subscription_state)) {
+                    gpr_log(GPR_INFO,
+                            "ADS[%p]: Sending update for type=%s name=%s "
+                            "version=%d",
+                            this, request.type_url().c_str(),
+                            resource_name.c_str(), resource_state.version);
+                    resources_added_to_response.emplace(resource_name);
+                    if (!response.has_value()) response.emplace();
+                    if (resource_state.resource.has_value()) {
+                      auto* resource = response->add_resources();
+                      resource->CopyFrom(resource_state.resource.value());
+                      if (is_v2_) {
+                        resource->set_type_url(request.type_url());
+                      }
+                    }
+                  }
+                }
+                // Process unsubscriptions for any resource no longer
+                // present in the request's resource list.
+                parent_->ProcessUnsubscriptions(
+                    v3_resource_type, resources_in_current_request,
+                    &subscription_name_map, &resource_name_map);
+                // Send response if needed.
+                if (!resources_added_to_response.empty()) {
+                  CompleteBuildingDiscoveryResponse(
+                      v3_resource_type, request.type_url(),
+                      ++resource_type_version[v3_resource_type],
+                      subscription_name_map, resources_added_to_response,
+                      &response.value());
+                }
+              }
+            }
+          }
+          if (response.has_value()) {
+            gpr_log(GPR_INFO, "ADS[%p]: Sending response: %s", this,
+                    response->DebugString().c_str());
+            stream->Write(response.value());
+          }
+          response.reset();
+          // Look for updates and decide what to handle.
+          {
+            grpc_core::MutexLock lock(&parent_->ads_mu_);
+            if (!update_queue.empty()) {
+              const std::string resource_type =
+                  std::move(update_queue.front().first);
+              const std::string resource_name =
+                  std::move(update_queue.front().second);
+              update_queue.pop_front();
+              const std::string v2_resource_type = TypeUrlToV2(resource_type);
+              did_work = true;
+              gpr_log(GPR_INFO, "ADS[%p]: Received update for type=%s name=%s",
+                      this, resource_type.c_str(), resource_name.c_str());
+              auto& subscription_name_map = subscription_map[resource_type];
+              auto& resource_name_map = parent_->resource_map_[resource_type];
+              auto it = subscription_name_map.find(resource_name);
+              if (it != subscription_name_map.end()) {
+                SubscriptionState& subscription_state = it->second;
+                ResourceState& resource_state =
+                    resource_name_map[resource_name];
+                if (ClientNeedsResourceUpdate(resource_state,
+                                              &subscription_state)) {
+                  gpr_log(
+                      GPR_INFO,
+                      "ADS[%p]: Sending update for type=%s name=%s version=%d",
+                      this, resource_type.c_str(), resource_name.c_str(),
+                      resource_state.version);
+                  response.emplace();
+                  if (resource_state.resource.has_value()) {
+                    auto* resource = response->add_resources();
+                    resource->CopyFrom(resource_state.resource.value());
+                    if (is_v2_) {
+                      resource->set_type_url(v2_resource_type);
+                    }
+                  }
+                  CompleteBuildingDiscoveryResponse(
+                      resource_type, v2_resource_type,
+                      ++resource_type_version[resource_type],
+                      subscription_name_map, {resource_name},
+                      &response.value());
+                }
+              }
+            }
+          }
+          if (response.has_value()) {
+            gpr_log(GPR_INFO, "ADS[%p]: Sending update response: %s", this,
+                    response->DebugString().c_str());
+            stream->Write(response.value());
+          }
+          // If we didn't find anything to do, delay before the next loop
+          // iteration; otherwise, check whether we should exit and then
+          // immediately continue.
+          gpr_timespec deadline =
+              grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10);
+          {
+            grpc_core::MutexLock lock(&parent_->ads_mu_);
+            if (!parent_->ads_cond_.WaitUntil(
+                    &parent_->ads_mu_, [this] { return parent_->ads_done_; },
+                    deadline)) {
+              break;
+            }
+          }
+        }
+        reader.join();
+      }();
+      // Clean up any subscriptions that were still active when the call
+      // finished.
       {
-        grpc_core::MutexLock lock(&ads_mu_);
-        requests->emplace_back(std::move(request));
+        grpc_core::MutexLock lock(&parent_->ads_mu_);
+        for (auto& p : subscription_map) {
+          const std::string& type_url = p.first;
+          SubscriptionNameMap& subscription_name_map = p.second;
+          for (auto& q : subscription_name_map) {
+            const std::string& resource_name = q.first;
+            SubscriptionState& subscription_state = q.second;
+            ResourceState& resource_state =
+                parent_->resource_map_[type_url][resource_name];
+            resource_state.subscriptions.erase(&subscription_state);
+          }
+        }
+      }
+      gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources done", this);
+      return Status::OK;
+    }
+
+   private:
+    static std::string TypeUrlToV2(const std::string& resource_type) {
+      if (resource_type == kLdsTypeUrl) return kLdsV2TypeUrl;
+      if (resource_type == kRdsTypeUrl) return kRdsV2TypeUrl;
+      if (resource_type == kCdsTypeUrl) return kCdsV2TypeUrl;
+      if (resource_type == kEdsTypeUrl) return kEdsV2TypeUrl;
+      return resource_type;
+    }
+
+    static std::string TypeUrlToV3(const std::string& resource_type) {
+      if (resource_type == kLdsV2TypeUrl) return kLdsTypeUrl;
+      if (resource_type == kRdsV2TypeUrl) return kRdsTypeUrl;
+      if (resource_type == kCdsV2TypeUrl) return kCdsTypeUrl;
+      if (resource_type == kEdsV2TypeUrl) return kEdsTypeUrl;
+      return resource_type;
+    }
+
+    // Starting a thread to do blocking read on the stream until cancel.
+    void BlockingRead(Stream* stream, std::deque<DiscoveryRequest>* requests,
+                      bool* stream_closed) {
+      DiscoveryRequest request;
+      bool seen_first_request = false;
+      while (stream->Read(&request)) {
+        if (!seen_first_request) {
+          EXPECT_TRUE(request.has_node());
+          ASSERT_FALSE(request.node().client_features().empty());
+          EXPECT_EQ(request.node().client_features(0),
+                    "envoy.lb.does_not_support_overprovisioning");
+          CheckBuildVersion(request);
+          seen_first_request = true;
+        }
+        {
+          grpc_core::MutexLock lock(&parent_->ads_mu_);
+          requests->emplace_back(std::move(request));
+        }
+      }
+      gpr_log(GPR_INFO, "ADS[%p]: Null read, stream closed", this);
+      grpc_core::MutexLock lock(&parent_->ads_mu_);
+      *stream_closed = true;
+    }
+
+    static void CheckBuildVersion(
+        const ::envoy::api::v2::DiscoveryRequest& request) {
+      EXPECT_FALSE(request.node().build_version().empty());
+    }
+
+    static void CheckBuildVersion(
+        const ::envoy::service::discovery::v3::DiscoveryRequest& request) {}
+
+    // Completing the building a DiscoveryResponse by adding common information
+    // for all resources and by adding all subscribed resources for LDS and CDS.
+    void CompleteBuildingDiscoveryResponse(
+        const std::string& resource_type, const std::string& v2_resource_type,
+        const int version, const SubscriptionNameMap& subscription_name_map,
+        const std::set<std::string>& resources_added_to_response,
+        DiscoveryResponse* response) {
+      auto& response_state =
+          parent_->resource_type_response_state_[resource_type];
+      if (response_state.state == ResponseState::NOT_SENT) {
+        response_state.state = ResponseState::SENT;
+      }
+      response->set_type_url(is_v2_ ? v2_resource_type : resource_type);
+      response->set_version_info(absl::StrCat(version));
+      response->set_nonce(absl::StrCat(version));
+      if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
+        // For LDS and CDS we must send back all subscribed resources
+        // (even the unchanged ones)
+        for (const auto& p : subscription_name_map) {
+          const std::string& resource_name = p.first;
+          if (resources_added_to_response.find(resource_type) ==
+              resources_added_to_response.end()) {
+            const ResourceState& resource_state =
+                parent_->resource_map_[resource_type][resource_name];
+            if (resource_state.resource.has_value()) {
+              auto* resource = response->add_resources();
+              resource->CopyFrom(resource_state.resource.value());
+              if (is_v2_) {
+                resource->set_type_url(v2_resource_type);
+              }
+            }
+          }
+        }
       }
     }
-    gpr_log(GPR_INFO, "ADS[%p]: Null read, stream closed", this);
-    grpc_core::MutexLock lock(&ads_mu_);
-    *stream_closed = true;
-  }
+
+    AdsServiceImpl* parent_;
+    const bool is_v2_;
+  };
 
   // Checks whether the client needs to receive a newer version of
   // the resource.  If so, updates subscription_state->current_version and
   // returns true.
-  bool ClientNeedsResourceUpdate(const ResourceState& resource_state,
-                                 SubscriptionState* subscription_state) {
+  static bool ClientNeedsResourceUpdate(const ResourceState& resource_state,
+                                        SubscriptionState* subscription_state) {
     if (subscription_state->current_version < resource_state.version) {
       subscription_state->current_version = resource_state.version;
       return true;
@@ -916,37 +1076,17 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
     }
   }
 
-  // Completing the building a DiscoveryResponse by adding common information
-  // for all resources and by adding all subscribed resources for LDS and CDS.
-  void CompleteBuildingDiscoveryResponse(
-      const std::string& resource_type, const int version,
-      const SubscriptionNameMap& subscription_name_map,
-      const std::set<std::string>& resources_added_to_response,
-      DiscoveryResponse* response) {
-    auto& response_state = resource_type_response_state_[resource_type];
-    if (response_state.state == ResponseState::NOT_SENT) {
-      response_state.state = ResponseState::SENT;
-    }
-    response->set_type_url(resource_type);
-    response->set_version_info(absl::StrCat(version));
-    response->set_nonce(absl::StrCat(version));
-    if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
-      // For LDS and CDS we must send back all subscribed resources
-      // (even the unchanged ones)
-      for (const auto& p : subscription_name_map) {
-        const std::string& resource_name = p.first;
-        if (resources_added_to_response.find(resource_name) ==
-            resources_added_to_response.end()) {
-          const ResourceState& resource_state =
-              resource_map_[resource_type][resource_name];
-          if (resource_state.resource.has_value()) {
-            response->add_resources()->CopyFrom(
-                resource_state.resource.value());
-          }
-        }
-      }
-    }
-  }
+  RpcService<::envoy::service::discovery::v2::AggregatedDiscoveryService,
+             ::envoy::api::v2::DiscoveryRequest,
+             ::envoy::api::v2::DiscoveryResponse>
+      v2_rpc_service_;
+  RpcService<::envoy::service::discovery::v3::AggregatedDiscoveryService,
+             ::envoy::service::discovery::v3::DiscoveryRequest,
+             ::envoy::service::discovery::v3::DiscoveryResponse>
+      v3_rpc_service_;
+
+  std::atomic_bool seen_v2_client_{false};
+  std::atomic_bool seen_v3_client_{false};
 
   grpc_core::CondVar ads_cond_;
   // Protect the members below.
@@ -966,66 +1106,31 @@ class AdsServiceImpl : public AggregatedDiscoveryService::Service,
   ResourceMap resource_map_;
 };
 
-class LrsServiceImpl : public LrsService,
-                       public std::enable_shared_from_this<LrsServiceImpl> {
+class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
  public:
-  using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
-
   explicit LrsServiceImpl(int client_load_reporting_interval_seconds)
-      : client_load_reporting_interval_seconds_(
+      : v2_rpc_service_(this),
+        v3_rpc_service_(this),
+        client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
         cluster_names_({kDefaultResourceName}) {}
 
-  Status StreamLoadStats(ServerContext* /*context*/, Stream* stream) override {
-    gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
-    GPR_ASSERT(client_load_reporting_interval_seconds_ > 0);
-    // Take a reference of the LrsServiceImpl object, reference will go
-    // out of scope after this method exits.
-    std::shared_ptr<LrsServiceImpl> lrs_service_impl = shared_from_this();
-    // Read initial request.
-    LoadStatsRequest request;
-    if (stream->Read(&request)) {
-      IncreaseRequestCount();  // Only for initial request.
-      // Verify server name set in metadata.
-      auto it =
-          request.node().metadata().fields().find("PROXYLESS_CLIENT_HOSTNAME");
-      GPR_ASSERT(it != request.node().metadata().fields().end());
-      EXPECT_EQ(it->second.string_value(), kDefaultResourceName);
-      // Verify client features.
-      EXPECT_THAT(request.node().client_features(),
-                  ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
-      // Send initial response.
-      LoadStatsResponse response;
-      if (send_all_clusters_) {
-        response.set_send_all_clusters(true);
-      } else {
-        for (const std::string& cluster_name : cluster_names_) {
-          response.add_clusters(cluster_name);
-        }
-      }
-      response.mutable_load_reporting_interval()->set_seconds(
-          client_load_reporting_interval_seconds_);
-      stream->Write(response);
-      IncreaseResponseCount();
-      // Wait for report.
-      request.Clear();
-      while (stream->Read(&request)) {
-        gpr_log(GPR_INFO, "LRS[%p]: received client load report message: %s",
-                this, request.DebugString().c_str());
-        std::vector<ClientStats> stats;
-        for (const auto& cluster_stats : request.cluster_stats()) {
-          stats.emplace_back(cluster_stats);
-        }
-        grpc_core::MutexLock lock(&load_report_mu_);
-        result_queue_.emplace_back(std::move(stats));
-        if (load_report_cond_ != nullptr) load_report_cond_->Signal();
-      }
-      // Wait until notified done.
-      grpc_core::MutexLock lock(&lrs_mu_);
-      lrs_cv_.WaitUntil(&lrs_mu_, [this] { return lrs_done_; });
-    }
-    gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats done", this);
-    return Status::OK;
+  ::envoy::service::load_stats::v2::LoadReportingService::Service*
+  v2_rpc_service() {
+    return &v2_rpc_service_;
+  }
+
+  ::envoy::service::load_stats::v3::LoadReportingService::Service*
+  v3_rpc_service() {
+    return &v3_rpc_service_;
+  }
+
+  size_t request_count() {
+    return v2_rpc_service_.request_count() + v3_rpc_service_.request_count();
+  }
+
+  size_t response_count() {
+    return v2_rpc_service_.response_count() + v3_rpc_service_.response_count();
   }
 
   // Must be called before the LRS call is started.
@@ -1069,12 +1174,90 @@ class LrsServiceImpl : public LrsService,
   }
 
  private:
+  template <class RpcApi, class LoadStatsRequest, class LoadStatsResponse>
+  class RpcService : public CountedService<typename RpcApi::Service> {
+   public:
+    using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
+
+    explicit RpcService(LrsServiceImpl* parent) : parent_(parent) {}
+
+    Status StreamLoadStats(ServerContext* /*context*/,
+                           Stream* stream) override {
+      gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
+      GPR_ASSERT(parent_->client_load_reporting_interval_seconds_ > 0);
+      // Take a reference of the LrsServiceImpl object, reference will go
+      // out of scope after this method exits.
+      std::shared_ptr<LrsServiceImpl> lrs_service_impl =
+          parent_->shared_from_this();
+      // Read initial request.
+      LoadStatsRequest request;
+      if (stream->Read(&request)) {
+        CountedService<typename RpcApi::Service>::IncreaseRequestCount();
+        // Verify server name set in metadata.
+        auto it = request.node().metadata().fields().find(
+            "PROXYLESS_CLIENT_HOSTNAME");
+        GPR_ASSERT(it != request.node().metadata().fields().end());
+        EXPECT_EQ(it->second.string_value(), kDefaultResourceName);
+        // Verify client features.
+        EXPECT_THAT(
+            request.node().client_features(),
+            ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
+        // Send initial response.
+        LoadStatsResponse response;
+        if (parent_->send_all_clusters_) {
+          response.set_send_all_clusters(true);
+        } else {
+          for (const std::string& cluster_name : parent_->cluster_names_) {
+            response.add_clusters(cluster_name);
+          }
+        }
+        response.mutable_load_reporting_interval()->set_seconds(
+            parent_->client_load_reporting_interval_seconds_);
+        stream->Write(response);
+        CountedService<typename RpcApi::Service>::IncreaseResponseCount();
+        // Wait for report.
+        request.Clear();
+        while (stream->Read(&request)) {
+          gpr_log(GPR_INFO, "LRS[%p]: received client load report message: %s",
+                  this, request.DebugString().c_str());
+          std::vector<ClientStats> stats;
+          for (const auto& cluster_stats : request.cluster_stats()) {
+            stats.emplace_back(cluster_stats);
+          }
+          grpc_core::MutexLock lock(&parent_->load_report_mu_);
+          parent_->result_queue_.emplace_back(std::move(stats));
+          if (parent_->load_report_cond_ != nullptr) {
+            parent_->load_report_cond_->Signal();
+          }
+        }
+        // Wait until notified done.
+        grpc_core::MutexLock lock(&parent_->lrs_mu_);
+        parent_->lrs_cv_.WaitUntil(&parent_->lrs_mu_,
+                                   [this] { return parent_->lrs_done_; });
+      }
+      gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats done", this);
+      return Status::OK;
+    }
+
+   private:
+    LrsServiceImpl* parent_;
+  };
+
   void NotifyDoneWithLrsCallLocked() {
     if (!lrs_done_) {
       lrs_done_ = true;
       lrs_cv_.Broadcast();
     }
   }
+
+  RpcService<::envoy::service::load_stats::v2::LoadReportingService,
+             ::envoy::service::load_stats::v2::LoadStatsRequest,
+             ::envoy::service::load_stats::v2::LoadStatsResponse>
+      v2_rpc_service_;
+  RpcService<::envoy::service::load_stats::v3::LoadReportingService,
+             ::envoy::service::load_stats::v3::LoadStatsRequest,
+             ::envoy::service::load_stats::v3::LoadStatsResponse>
+      v3_rpc_service_;
 
   const int client_load_reporting_interval_seconds_;
   bool send_all_clusters_ = false;
@@ -1092,17 +1275,20 @@ class LrsServiceImpl : public LrsService,
 class TestType {
  public:
   TestType(bool use_xds_resolver, bool enable_load_reporting,
-           bool enable_rds_testing = false)
+           bool enable_rds_testing = false, bool use_v2 = false)
       : use_xds_resolver_(use_xds_resolver),
         enable_load_reporting_(enable_load_reporting),
-        enable_rds_testing_(enable_rds_testing) {}
+        enable_rds_testing_(enable_rds_testing),
+        use_v2_(use_v2) {}
 
   bool use_xds_resolver() const { return use_xds_resolver_; }
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
+  bool use_v2() const { return use_v2_; }
 
   std::string AsString() const {
     std::string retval = (use_xds_resolver_ ? "XdsResolver" : "FakeResolver");
+    retval += (use_v2_ ? "V2" : "V3");
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
     return retval;
@@ -1112,6 +1298,7 @@ class TestType {
   const bool use_xds_resolver_;
   const bool enable_load_reporting_;
   const bool enable_rds_testing_;
+  const bool use_v2_;
 };
 
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
@@ -1137,7 +1324,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   static void TearDownTestCase() { grpc_shutdown(); }
 
   void SetUp() override {
-    gpr_setenv("GRPC_XDS_BOOTSTRAP", g_bootstrap_file);
+    gpr_setenv("GRPC_XDS_EXPERIMENTAL_V3_SUPPORT", "true");
+    gpr_setenv("GRPC_XDS_BOOTSTRAP",
+               GetParam().use_v2() ? g_bootstrap_file_v2 : g_bootstrap_file_v3);
     g_port_saver->Reset();
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
@@ -1662,8 +1851,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
    private:
     void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(ads_service_.get());
-      builder->RegisterService(lrs_service_.get());
+      builder->RegisterService(ads_service_->v2_rpc_service());
+      builder->RegisterService(ads_service_->v3_rpc_service());
+      builder->RegisterService(lrs_service_->v2_rpc_service());
+      builder->RegisterService(lrs_service_->v3_rpc_service());
     }
 
     void StartAllServices() override {
@@ -1760,7 +1951,7 @@ TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
        GetBackendPorts(),
        kDefaultLocalityWeight,
        kDefaultLocalityPriority,
-       {envoy::api::v2::HealthStatus::DRAINING}},
+       {HealthStatus::DRAINING}},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args));
@@ -2011,26 +2202,6 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
       AdsServiceImpl::BuildEdsResource(args));
   // We need to wait for all backends to come online.
   WaitForAllBackends();
-}
-
-TEST_P(XdsResolverOnlyTest, DefaultRouteCaseInsensitive) {
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_match()
-      ->mutable_case_sensitive()
-      ->set_value(false);
-  balancers_[0]->ads_service()->SetLdsResource(
-      AdsServiceImpl::BuildListener(route_config));
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args));
-  CheckRpcSendOk(5, RpcOptions().set_wait_for_ready(true));
 }
 
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
@@ -2297,6 +2468,11 @@ TEST_P(LdsRdsTest, Vanilla) {
   (void)SendRpc();
   EXPECT_EQ(RouteConfigurationResponseState(0).state,
             AdsServiceImpl::ResponseState::ACKED);
+  // Make sure we actually used the RPC service for the right version of xDS.
+  EXPECT_EQ(balancers_[0]->ads_service()->seen_v2_client(),
+            GetParam().use_v2());
+  EXPECT_NE(balancers_[0]->ads_service()->seen_v3_client(),
+            GetParam().use_v2());
 }
 
 // Tests that we go into TRANSIENT_FAILURE if the Listener is removed.
@@ -2379,50 +2555,9 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that LDS client should send a NACK if route match has non-empty prefix
-// as the only route (default) in the LDS response.
-TEST_P(LdsRdsTest, RouteMatchHasNonemptyPrefix) {
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_match()
-      ->set_prefix("/nonempty_prefix/");
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Default route must have empty prefix.");
-}
-
-// Tests that LDS client should send a NACK if route match has path specifier
-// besides prefix as the only route (default) in the LDS response.
-TEST_P(LdsRdsTest, RouteMatchHasUnsupportedSpecifier) {
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_match()
-      ->set_path("");
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "No prefix field found in Default RouteMatch.");
-}
-
 // Tests that LDS client should send a NACK if route match has a case_sensitive
 // set to false.
 TEST_P(LdsRdsTest, RouteMatchHasCaseSensitiveFalse) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2435,12 +2570,10 @@ TEST_P(LdsRdsTest, RouteMatchHasCaseSensitiveFalse) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "case_sensitive if set must be set to true.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should ignore route which has query_parameters.
 TEST_P(LdsRdsTest, RouteMatchHasQueryParameters) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2453,13 +2586,11 @@ TEST_P(LdsRdsTest, RouteMatchHasQueryParameters) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "No valid routes specified.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a ACK if route match has a prefix
 // that is either empty or a single slash
 TEST_P(LdsRdsTest, RouteMatchHasValidPrefixEmptyOrSingleSlash) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2473,13 +2604,11 @@ TEST_P(LdsRdsTest, RouteMatchHasValidPrefixEmptyOrSingleSlash) {
   (void)SendRpc();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should ignore route which has a path
 // prefix string does not start with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2491,13 +2620,11 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "No valid routes specified.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should ignore route which has a prefix
 // string with more than 2 slashes.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2509,13 +2636,11 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "No valid routes specified.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should ignore route which has a prefix
 // string "//".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixDoubleSlash) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2527,13 +2652,11 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixDoubleSlash) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "No valid routes specified.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should ignore route which has path
 // but it's empty.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2545,13 +2668,11 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "No valid routes specified.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should ignore route which has path
 // string does not start with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2563,13 +2684,11 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "No valid routes specified.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should ignore route which has path
 // string that has too many slashes; for example, ends with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathTooManySlashes) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2581,13 +2700,11 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathTooManySlashes) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "No valid routes specified.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should ignore route which has path
 // string that has only 1 slash: missing "/" between service and method.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathOnlyOneSlash) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2599,13 +2716,11 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathOnlyOneSlash) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "No valid routes specified.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should ignore route which has path
 // string that is missing service.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2617,13 +2732,11 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "No valid routes specified.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should ignore route which has path
 // string that is missing method.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2635,12 +2748,10 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message, "No valid routes specified.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Test that LDS client should reject route which has invalid path regex.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2655,7 +2766,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "Invalid regex string specified in path matcher.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client should send a NACK if route has an action other than
@@ -2673,27 +2783,7 @@ TEST_P(LdsRdsTest, RouteHasNoRouteAction) {
   EXPECT_EQ(response_state.error_message, "No RouteAction found in route.");
 }
 
-// Tests that LDS client should send a NACK if route has a
-// cluster_specifier other than cluster or weighted_clusters in the LDS
-// response.
-TEST_P(LdsRdsTest, RouteActionUnsupportedClusterSpecifier) {
-  RouteConfiguration route_config =
-      balancers_[0]->ads_service()->default_route_config();
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_cluster_header();
-  SetRouteConfiguration(0, route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "Default route action is ignored.");
-}
-
 TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -2710,11 +2800,9 @@ TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "RouteAction cluster contains empty cluster name.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const size_t kWeight75 = 75;
   const char* kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config =
@@ -2740,11 +2828,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "RouteAction weighted_cluster has incorrect total weight");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const size_t kWeight75 = 75;
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2770,11 +2856,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   EXPECT_EQ(
       response_state.error_message,
       "RouteAction weighted_cluster cluster contains empty cluster name.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const size_t kWeight75 = 75;
   const char* kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config =
@@ -2799,11 +2883,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "RouteAction weighted_cluster cluster missing weight");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2821,11 +2903,9 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
             "Invalid regex string specified in header matcher.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -2845,7 +2925,6 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
   EXPECT_EQ(response_state.error_message,
             "Invalid range header matcher specifier specified: end "
             "cannot be smaller than start.");
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 // Tests that LDS client times out when no response received.
@@ -2864,7 +2943,6 @@ TEST_P(LdsRdsTest, Timeout) {
 // Tests that LDS client should choose the default route (with no matching
 // specified) after unable to find a match with previous routes.
 TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumEcho1Rpcs = 10;
@@ -2934,11 +3012,9 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(kNumEcho2Rpcs, backends_[3]->backend_service2()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumEcho1Rpcs = 10;
@@ -3003,11 +3079,9 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(kNumEcho2Rpcs, backends_[3]->backend_service2()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumEcho1Rpcs = 10;
@@ -3074,11 +3148,9 @@ TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(kNumEcho2Rpcs, backends_[3]->backend_service2()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const size_t kNumEcho1Rpcs = 1000;
@@ -3160,7 +3232,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
                                              (1 - kErrorToleranceSmallLoad)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
                                              (1 + kErrorToleranceSmallLoad))));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
@@ -3239,7 +3310,6 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "anew_cluster_2";
   const char* kNewCluster3Name = "new_cluster_3";
@@ -3366,11 +3436,9 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
                                              (1 - kErrorTolerance)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
                                              (1 + kErrorTolerance))));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "anew_cluster_2";
   const char* kNewCluster3Name = "new_cluster_3";
@@ -3526,11 +3594,9 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
                                              (1 - kErrorToleranceSmallLoad)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
                                              (1 + kErrorToleranceSmallLoad))));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const size_t kNumEcho1Rpcs = 100;
   const size_t kNumEchoRpcs = 5;
@@ -3558,7 +3624,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   auto* header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("header1");
-  header_matcher1->set_exact_match("POST");
+  header_matcher1->set_exact_match("POST,PUT,GET");
   auto* header_matcher2 = route1->mutable_match()->add_headers();
   header_matcher2->set_name("header2");
   header_matcher2->mutable_safe_regex_match()->set_regex("[a-z]*");
@@ -3582,9 +3648,10 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, route_config);
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"header1", "POST"},      {"header2", "blah"},
-      {"header3", "1"},         {"header5", "/grpc.testing.EchoTest1Service/"},
-      {"header6", "grpc.java"},
+      {"header1", "POST"}, {"header2", "blah"},
+      {"header3", "1"},    {"header5", "/grpc.testing.EchoTest1Service/"},
+      {"header1", "PUT"},  {"header6", "grpc.java"},
+      {"header1", "GET"},
   };
   const auto header_match_rpc_options = RpcOptions()
                                             .set_rpc_service(SERVICE_ECHO1)
@@ -3604,11 +3671,119 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
+}
+
+TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
+  const char* kNewCluster1Name = "new_cluster_1";
+  const size_t kNumEchoRpcs = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  // Populating Route Configurations for LDS.
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("");
+  auto* header_matcher1 = route1->mutable_match()->add_headers();
+  header_matcher1->set_name("content-type");
+  header_matcher1->set_exact_match("notapplication/grpc");
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  auto* header_matcher2 = default_route->mutable_match()->add_headers();
+  header_matcher2->set_name("content-type");
+  header_matcher2->set_exact_match("application/grpc");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
+  // Make sure the backend is up.
+  WaitForAllBackends(0, 1);
+  // Send RPCs.
+  CheckRpcSendOk(kNumEchoRpcs);
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+}
+
+TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const size_t kNumEchoRpcs = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster2.set_name(kNewCluster2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Populating Route Configurations for LDS.
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("");
+  auto* header_matcher1 = route1->mutable_match()->add_headers();
+  header_matcher1->set_name("grpc-foo-bin");
+  header_matcher1->set_present_match(true);
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  auto route2 = route_config.mutable_virtual_hosts(0)->add_routes();
+  route2->mutable_match()->set_prefix("");
+  auto* header_matcher2 = route2->mutable_match()->add_headers();
+  header_matcher2->set_name("grpc-previous-rpc-attempts");
+  header_matcher2->set_present_match(true);
+  route2->mutable_route()->set_cluster(kNewCluster2Name);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultResourceName);
+  SetRouteConfiguration(0, route_config);
+  // Send headers which will mismatch each route
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"grpc-foo-bin", "grpc-foo-bin"},
+      {"grpc-previous-rpc-attempts", "grpc-previous-rpc-attempts"},
+  };
+  WaitForAllBackends(0, 1);
+  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_metadata(metadata));
+  // Verify that only the default backend got RPCs since all previous routes
+  // were mismatched.
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const size_t kNumRpcs = 1000;
   SetNextResolution({});
@@ -3658,11 +3833,9 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
                   ::testing::Le(kNumRpcs * 25 / 100 * (1 + kErrorTolerance))));
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ROUTING", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewCluster3Name = "new_cluster_3";
@@ -3729,9 +3902,10 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   SetRouteConfiguration(0, route_config);
   // Send headers which will mismatch each route
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"header1", "POST1"},
+      {"header1", "POST"},
       {"header2", "1000"},
       {"header3", "123"},
+      {"header1", "GET"},
   };
   WaitForAllBackends(0, 1);
   CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_metadata(metadata));
@@ -3751,7 +3925,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ROUTING");
 }
 
 using CdsTest = BasicTest;
@@ -3769,7 +3942,7 @@ TEST_P(CdsTest, Vanilla) {
 // is other than EDS.
 TEST_P(CdsTest, WrongClusterType) {
   auto cluster = balancers_[0]->ads_service()->default_cluster();
-  cluster.set_type(envoy::api::v2::Cluster::STATIC);
+  cluster.set_type(Cluster::STATIC);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -3799,7 +3972,7 @@ TEST_P(CdsTest, WrongEdsConfig) {
 // other than ROUND_ROBIN.
 TEST_P(CdsTest, WrongLbPolicy) {
   auto cluster = balancers_[0]->ads_service()->default_cluster();
-  cluster.set_lb_policy(envoy::api::v2::Cluster::LEAST_REQUEST);
+  cluster.set_lb_policy(Cluster::LEAST_REQUEST);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5034,12 +5207,18 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
           ::testing::Ge(KDropRateForLbAndThrottle * (1 - kErrorTolerance)),
           ::testing::Le(KDropRateForLbAndThrottle * (1 + kErrorTolerance))));
   // Check client stats.
-  std::vector<ClientStats> load_report =
-      balancers_[0]->lrs_service()->WaitForLoadReport();
-  ASSERT_EQ(load_report.size(), 1UL);
-  ClientStats& client_stats = load_report.front();
-  EXPECT_EQ(num_drops, client_stats.total_dropped_requests());
   const size_t total_rpc = num_warmup + kNumRpcs;
+  ClientStats client_stats;
+  do {
+    std::vector<ClientStats> load_reports =
+        balancers_[0]->lrs_service()->WaitForLoadReport();
+    for (const auto& load_report : load_reports) {
+      client_stats += load_report;
+    }
+  } while (client_stats.total_issued_requests() +
+               client_stats.total_dropped_requests() <
+           total_rpc);
+  EXPECT_EQ(num_drops, client_stats.total_dropped_requests());
   EXPECT_THAT(
       client_stats.dropped_requests(kLbDropType),
       ::testing::AllOf(
@@ -5082,7 +5261,9 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, LdsRdsTest,
                          ::testing::Values(TestType(true, false),
                                            TestType(true, true),
                                            TestType(true, false, true),
-                                           TestType(true, true, true)),
+                                           TestType(true, true, true),
+                                           // Also test with xDS v2.
+                                           TestType(true, true, true, true)),
                          &TestTypeName);
 
 // CDS depends on XdsResolver.

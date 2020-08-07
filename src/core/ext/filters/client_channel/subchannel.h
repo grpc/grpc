@@ -39,7 +39,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 
-// Channel arg containing a grpc_resolved_address to connect to.
+// Channel arg containing a URI indicating the address to connect to.
 #define GRPC_ARG_SUBCHANNEL_ADDRESS "grpc.subchannel_address"
 
 // For debugging refcounting.
@@ -182,6 +182,7 @@ class Subchannel {
    public:
     struct ConnectivityStateChange {
       grpc_connectivity_state state;
+      absl::Status status;
       RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     };
 
@@ -306,7 +307,8 @@ class Subchannel {
     void RemoveWatcherLocked(ConnectivityStateWatcherInterface* watcher);
 
     // Notifies all watchers in the list about a change to state.
-    void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state);
+    void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state,
+                      const absl::Status& status);
 
     void Clear() { watchers_.clear(); }
 
@@ -339,7 +341,8 @@ class Subchannel {
                              ConnectivityStateWatcherInterface* watcher);
 
     // Notifies the watcher when the subchannel's state changes.
-    void NotifyLocked(grpc_connectivity_state state);
+    void NotifyLocked(grpc_connectivity_state state,
+                      const absl::Status& status);
 
     grpc_connectivity_state CheckConnectivityStateLocked(
         Subchannel* subchannel, const char* health_check_service_name);
@@ -357,7 +360,8 @@ class Subchannel {
   class AsyncWatcherNotifierLocked;
 
   // Sets the subchannel's connectivity state to \a state.
-  void SetConnectivityStateLocked(grpc_connectivity_state state);
+  void SetConnectivityStateLocked(grpc_connectivity_state state,
+                                  const absl::Status& status);
 
   // Methods for connection.
   void MaybeStartConnectingLocked();
@@ -400,6 +404,7 @@ class Subchannel {
 
   // Connectivity state tracking.
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  absl::Status status_;
   // The list of watchers without a health check service name.
   ConnectivityStateWatcherList watcher_list_;
   // The map of watchers with health check service names.

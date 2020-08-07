@@ -25,6 +25,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/server.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
@@ -34,7 +35,7 @@ typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
 
 typedef struct grpc_call_create_args {
   grpc_channel* channel;
-  grpc_server* server;
+  grpc_core::Server* server;
 
   grpc_call* parent;
   uint32_t propagation_mask;

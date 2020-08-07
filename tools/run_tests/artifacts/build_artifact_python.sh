@@ -52,7 +52,8 @@ clean_non_source_files() {
   find . -type f \
     | grep -v '\.c$' | grep -v '\.cc$' | grep -v '\.cpp$' \
     | grep -v '\.h$' | grep -v '\.hh$' | grep -v '\.inc$' \
-    | grep -v '\.s$' | grep -v '\.py$' \
+    | grep -v '\.s$' | grep -v '\.py$' | grep -v '\.hpp$' \
+    | grep -v '\.S$' | grep -v '\.asm$'                   \
     | while read -r file; do
       rm -f "$file" || true
     done

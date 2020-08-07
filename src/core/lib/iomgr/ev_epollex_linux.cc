@@ -67,10 +67,6 @@
 //#define GRPC_EPOLLEX_CREATE_WORKERS_ON_HEAP 1
 
 #define MAX_EPOLL_EVENTS 100
-// TODO(juanlishen): We use a greater-than-one value here as a workaround fix to
-// a keepalive ping timeout issue. We may want to revert https://github
-// .com/grpc/grpc/pull/14943 once we figure out the root cause.
-#define MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL 16
 #define MAX_FDS_IN_CACHE 32
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_pollable_refcount(false,
@@ -873,8 +869,6 @@ static grpc_error* pollable_process_events(grpc_pollset* pollset,
       (pollable_obj->event_count - pollable_obj->event_cursor) / worker_count;
   if (handle_count == 0) {
     handle_count = 1;
-  } else if (handle_count > MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL) {
-    handle_count = MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL;
   }
   grpc_error* error = GRPC_ERROR_NONE;
   for (int i = 0; (drain || i < handle_count) &&

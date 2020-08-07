@@ -159,6 +159,7 @@ void destroy_grpc_channels() {
     wrapped_channel.wrapper = le->channel;
     grpc_channel_wrapper *channel = wrapped_channel.wrapper;
     grpc_channel_destroy(channel->wrapped);
+    channel->wrapped = NULL;
   PHP_GRPC_HASH_FOREACH_END()
 }
 
