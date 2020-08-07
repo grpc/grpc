@@ -6,14 +6,14 @@ proto_library(
     name = "simplest_proto",
     testonly = True,
     srcs = ["simplest.proto"],
-    strip_import_prefix = "/tools/distrib/python/grpcio_tools/",
+    strip_import_prefix = "/tools/distrib/python/grpcio_tools/grpc_tools/test/",
 )
 
 proto_library(
     name = "complicated_proto",
     testonly = True,
     srcs = ["complicated.proto"],
-    strip_import_prefix = "/tools/distrib/python/grpcio_tools/",
+    strip_import_prefix = "/tools/distrib/python/grpcio_tools/grpc_tools/test/",
     deps = [":simplest_proto"],
 )
 

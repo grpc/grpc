@@ -40,7 +40,7 @@ def _run_in_subprocess(test_case):
 def _augmented_syspath(new_paths):
     original_sys_path = sys.path
     if new_paths is not None:
-        sys.path = sys.path + list(new_paths)
+        sys.path = list(new_paths) + sys.path
     try:
         yield
     finally:
@@ -49,31 +49,36 @@ def _augmented_syspath(new_paths):
 
 def _test_import_protos():
     from grpc_tools import protoc
-    with _augmented_syspath(("tools/distrib/python/grpcio_tools/",)):
-        protos = protoc._protos("grpc_tools/test/simple.proto")
+    with _augmented_syspath(
+        ("tools/distrib/python/grpcio_tools/grpc_tools/test/",)):
+        protos = protoc._protos("simple.proto")
         assert protos.SimpleMessage is not None
 
 
 def _test_import_services():
     from grpc_tools import protoc
-    with _augmented_syspath(("tools/distrib/python/grpcio_tools/",)):
-        protos = protoc._protos("grpc_tools/test/simple.proto")
-        services = protoc._services("grpc_tools/test/simple.proto")
+    with _augmented_syspath(
+        ("tools/distrib/python/grpcio_tools/grpc_tools/test/",)):
+        protos = protoc._protos("simple.proto")
+        services = protoc._services("simple.proto")
         assert services.SimpleMessageServiceStub is not None
 
 
 def _test_import_services_without_protos():
     from grpc_tools import protoc
-    services = protoc._services("grpc_tools/test/simple.proto")
-    assert services.SimpleMessageServiceStub is not None
+    with _augmented_syspath(
+        ("tools/distrib/python/grpcio_tools/grpc_tools/test/",)):
+        services = protoc._services("simple.proto")
+        assert services.SimpleMessageServiceStub is not None
 
 
 def _test_proto_module_imported_once():
     from grpc_tools import protoc
-    with _augmented_syspath(("tools/distrib/python/grpcio_tools/",)):
-        protos = protoc._protos("grpc_tools/test/simple.proto")
-        services = protoc._services("grpc_tools/test/simple.proto")
-        complicated_protos = protoc._protos("grpc_tools/test/complicated.proto")
+    with _augmented_syspath(
+        ("tools/distrib/python/grpcio_tools/grpc_tools/test/",)):
+        protos = protoc._protos("simple.proto")
+        services = protoc._services("simple.proto")
+        complicated_protos = protoc._protos("complicated.proto")
         simple_message = protos.SimpleMessage()
         complicated_message = complicated_protos.ComplicatedMessage()
         assert (simple_message.simpler_message.simplest_message.__class__ is
@@ -81,10 +86,11 @@ def _test_proto_module_imported_once():
 
 
 def _test_static_dynamic_combo():
-    from grpc_tools.test import complicated_pb2
-    from grpc_tools import protoc
-    with _augmented_syspath(("tools/distrib/python/grpcio_tools/",)):
-        protos = protoc._protos("grpc_tools/test/simple.proto")
+    with _augmented_syspath(
+        ("tools/distrib/python/grpcio_tools/grpc_tools/test/",)):
+        from grpc_tools import protoc
+        import complicated_pb2
+        protos = protoc._protos("simple.proto")
         static_message = complicated_pb2.ComplicatedMessage()
         dynamic_message = protos.SimpleMessage()
         assert (dynamic_message.simpler_message.simplest_message.__class__ is
@@ -93,8 +99,7 @@ def _test_static_dynamic_combo():
 
 def _test_combined_import():
     from grpc_tools import protoc
-    protos, services = protoc._protos_and_services(
-        "grpc_tools/test/simple.proto")
+    protos, services = protoc._protos_and_services("simple.proto")
     assert protos.SimpleMessage is not None
     assert services.SimpleMessageServiceStub is not None
 
@@ -102,7 +107,7 @@ def _test_combined_import():
 def _test_syntax_errors():
     from grpc_tools import protoc
     try:
-        protos = protoc._protos("grpc_tools/test/flawed.proto")
+        protos = protoc._protos("flawed.proto")
     except Exception as e:
         error_str = str(e)
         assert "flawed.proto" in error_str

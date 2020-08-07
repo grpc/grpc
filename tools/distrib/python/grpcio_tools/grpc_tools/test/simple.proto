@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package grpc_tools.test.simple;
+package simple;
 
-import "grpc_tools/test/simpler.proto";
+import "simpler.proto";
 
 message SimpleMessage {
   string msg = 1;
@@ -10,7 +10,7 @@ message SimpleMessage {
     bool personal = 2;
     bool business = 3;
   };
-  grpc_tools.test.simpler.SimplerMessage simpler_message = 4;
+  simpler.SimplerMessage simpler_message = 4;
 };
 
 message SimpleMessageRequest {

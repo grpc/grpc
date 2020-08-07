@@ -24,6 +24,8 @@ from grpc_tools import _protoc_compiler
 _PROTO_MODULE_SUFFIX = "_pb2"
 _SERVICE_MODULE_SUFFIX = "_pb2_grpc"
 
+_DISABLE_DYNAMIC_STUBS = "GRPC_PYTHON_DISABLE_DYNAMIC_STUBS"
+
 
 def main(command_arguments):
     """Run the protocol buffer compiler with the given command-line arguments.
@@ -42,6 +44,21 @@ if sys.version_info[0] > 2:
     import importlib.machinery
     import threading
 
+    _FINDERS_INSTALLED = False
+    _FINDERS_INSTALLED_LOCK = threading.Lock()
+
+    def _maybe_install_proto_finders():
+        global _FINDERS_INSTALLED
+        with _FINDERS_INSTALLED_LOCK:
+            if not _FINDERS_INSTALLED:
+                sys.meta_path.extend([
+                    ProtoFinder(_PROTO_MODULE_SUFFIX,
+                                _protoc_compiler.get_protos),
+                    ProtoFinder(_SERVICE_MODULE_SUFFIX,
+                                _protoc_compiler.get_services)
+                ])
+                _FINDERS_INSTALLED = True
+
     def _module_name_to_proto_file(suffix, module_name):
         components = module_name.split(".")
         proto_name = components[-1][:-1 * len(suffix)]
@@ -54,6 +71,7 @@ if sys.version_info[0] > 2:
 
     def _protos(protobuf_path):
         """Returns a gRPC module generated from the indicated proto file."""
+        _maybe_install_proto_finders()
         module_name = _proto_file_to_module_name(_PROTO_MODULE_SUFFIX,
                                                  protobuf_path)
         module = importlib.import_module(module_name)
@@ -61,6 +79,7 @@ if sys.version_info[0] > 2:
 
     def _services(protobuf_path):
         """Returns a module generated from the indicated proto file."""
+        _maybe_install_proto_finders()
         _protos(protobuf_path)
         module_name = _proto_file_to_module_name(_SERVICE_MODULE_SUFFIX,
                                                  protobuf_path)
@@ -137,10 +156,10 @@ if sys.version_info[0] > 2:
                         ProtoLoader(self._suffix, self._codegen_fn, fullname,
                                     filepath, search_path))
 
-    sys.meta_path.extend([
-        ProtoFinder(_PROTO_MODULE_SUFFIX, _protoc_compiler.get_protos),
-        ProtoFinder(_SERVICE_MODULE_SUFFIX, _protoc_compiler.get_services)
-    ])
+    # NOTE(rbellevi): We provide an environment variable that enables users to completely
+    # disable this behavior if it is not desired, e.g. for performance reasons.
+    if not os.getenv(_DISABLE_DYNAMIC_STUBS):
+        _maybe_install_proto_finders()
 
 if __name__ == '__main__':
     proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')

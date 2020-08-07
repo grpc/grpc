@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-package grpc_tools.test.simpler;
+package simpler;
 
-import "grpc_tools/test/simplest.proto";
+import "simplest.proto";
 
 message SimplerMessage {
   int64 do_i_even_exist = 1;
-  grpc_tools.test.simplest.SimplestMessage simplest_message = 2;
+  simplest.SimplestMessage simplest_message = 2;
 };
 
