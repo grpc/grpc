@@ -970,17 +970,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_authorization_engine",
-    srcs = [
-        "src/core/lib/security/authorization/evaluate_args.cc",
-    ],
-    hdrs = [
-        "src/core/lib/security/authorization/evaluate_args.h",
-    ],
-    language = "c++",
-)
-
-grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/surface/lame_client.cc",
@@ -1868,9 +1857,11 @@ grpc_cc_library(
     name = "grpc_authorization_engine",
     srcs = [
         "src/core/lib/security/authorization/authorization_engine.cc",
+        "src/core/lib/security/authorization/evaluate_args.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
+        "src/core/lib/security/authorization/evaluate_args.h",
     ],
     language = "c++",
     deps = [
