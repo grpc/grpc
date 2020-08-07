@@ -1864,6 +1864,7 @@ grpc_cc_library(
         "src/core/lib/security/authorization/evaluate_args.h",
     ],
     language = "c++",
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "envoy_ads_upb",
         "google_api_upb",

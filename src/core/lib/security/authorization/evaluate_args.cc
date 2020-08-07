@@ -16,6 +16,8 @@
 //
 //
 
+#include <map>
+
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
 #include "src/core/lib/slice/slice_utils.h"
@@ -54,15 +56,15 @@ absl::string_view EvaluateArgs::GetMethod() const {
 
 std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
     const {
-  std::multimap<absl::string_view, absl::string_view> grpc_metadata;
+  std::multimap<absl::string_view, absl::string_view> headers;
   if (metadata_ == nullptr) {
-    return grpc_metadata;
+    return headers;
   }
   for (grpc_linked_mdelem* elem = metadata_->list.head; elem != nullptr;
        elem = elem->next) {
     const grpc_slice& key = GRPC_MDKEY(elem->md);
     const grpc_slice& val = GRPC_MDVALUE(elem->md);
-    grpc_metadata.emplace(StringViewFromSlice(key), StringViewFromSlice(val));
+    headers.emplace(StringViewFromSlice(key), StringViewFromSlice(val));
   }
 }
 
