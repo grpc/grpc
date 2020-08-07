@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_API_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_API_H
+#ifndef GRPC_CORE_EXT_XDS_XDS_API_H
+#define GRPC_CORE_EXT_XDS_XDS_API_H
 
 #include <grpc/support/port_platform.h>
 
@@ -27,13 +27,13 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
+#include "re2/re2.h"
 
 #include <grpc/slice_buffer.h>
 
-#include "re2/re2.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
-#include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_client_stats.h"
 
 namespace grpc_core {
 
@@ -349,4 +349,4 @@ class XdsApi {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_API_H */
+#endif /* GRPC_CORE_EXT_XDS_XDS_API_H */

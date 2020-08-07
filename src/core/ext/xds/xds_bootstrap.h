@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_BOOTSTRAP_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_BOOTSTRAP_H
+#ifndef GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
+#define GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
 
 #include <grpc/support/port_platform.h>
 
@@ -90,4 +90,4 @@ class XdsBootstrap {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_BOOTSTRAP_H */
+#endif /* GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H */

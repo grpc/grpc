@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CLIENT_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CLIENT_H
+#ifndef GRPC_CORE_EXT_XDS_XDS_CLIENT_H
+#define GRPC_CORE_EXT_XDS_XDS_CLIENT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,9 +25,9 @@
 #include "absl/types/optional.h"
 
 #include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/client_channel/xds/xds_api.h"
-#include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
-#include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_api.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -306,4 +306,4 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CLIENT_H */
+#endif /* GRPC_CORE_EXT_XDS_XDS_CLIENT_H */
