@@ -932,7 +932,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
         xds_client()->lds_result_->rds_update.value(), &service_config);
     if (error == GRPC_ERROR_NONE) {
       xds_client()->service_config_watcher_->OnServiceConfigChanged(
-          std::move(service_config));
+          std::move(service_config),
+          xds_client()->lds_result_->rds_update.value());
     } else {
       xds_client()->service_config_watcher_->OnError(error);
     }
@@ -984,7 +985,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
       xds_client()->rds_result_.value(), &service_config);
   if (error == GRPC_ERROR_NONE) {
     xds_client()->service_config_watcher_->OnServiceConfigChanged(
-        std::move(service_config));
+        std::move(service_config), xds_client()->rds_result_.value());
   } else {
     xds_client()->service_config_watcher_->OnError(error);
   }
