@@ -81,6 +81,7 @@ class TestTarget < Grpc::Testing::LoadBalancerStatsService::Service
     watcher = {}
     $watchers_mutex.synchronize do
       watcher = {
+        "rpcs_by_method" => Hash.new(),
         "rpcs_by_peer" => Hash.new(0),
         "rpcs_needed" => req['num_rpcs'],
         "no_remote_peer" => 0
@@ -95,17 +96,45 @@ class TestTarget < Grpc::Testing::LoadBalancerStatsService::Service
       end
       $watchers.delete_at($watchers.index(watcher))
     end
+    # convert results into proper proto object
+    rpcs_by_method = {}
+    watcher['rpcs_by_method'].each do | rpc_name, rpcs_by_peer |
+      rpcs_by_method[rpc_name] = LoadBalancerStatsResponse::RpcsByPeer.new(
+        rpcs_by_peer: rpcs_by_peer
+      )
+    end
     LoadBalancerStatsResponse.new(
+      rpcs_by_method: rpcs_by_method,
       rpcs_by_peer: watcher['rpcs_by_peer'],
       num_failures: watcher['no_remote_peer'] + watcher['rpcs_needed']
     );
   end
 end
 
+# execute 1 RPC and return remote hostname
+def execute_rpc(op, fail_on_failed_rpcs)
+  remote_peer = ""
+  begin
+    op.execute
+    if op.metadata.key?('hostname')
+      remote_peer = op.metadata['hostname']
+    end
+  rescue GRPC::BadStatus => e
+    GRPC.logger.info("ruby xds: rpc failed:|#{e.message}|, " \
+                     "this may or may not be expected")
+    if fail_on_failed_rpcs
+      raise e
+    end
+  end
+  remote_peer
+end
+
 # send 1 rpc every 1/qps second
-def run_test_loop(stub, target_seconds_between_rpcs, fail_on_failed_rpcs)
+def run_test_loop(stub, target_seconds_between_rpcs, fail_on_failed_rpcs,
+                  rpcs_to_send, metadata_to_send)
   include Grpc::Testing
-  req = SimpleRequest.new()
+  simple_req = SimpleRequest.new()
+  empty_req = Empty.new()
   target_next_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   while !$shutdown
     now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
@@ -121,25 +150,42 @@ def run_test_loop(stub, target_seconds_between_rpcs, fail_on_failed_rpcs)
       target_next_start += target_seconds_between_rpcs
       sleep(sleep_seconds)
     end
-    begin
-      deadline = GRPC::Core::TimeConsts::from_relative_time(30) # 30 seconds
-      resp = stub.unary_call(req, deadline: deadline)
-      remote_peer = resp.hostname
-    rescue GRPC::BadStatus => e
-      remote_peer = ""
-      GRPC.logger.info("ruby xds: rpc failed:|#{e.message}|, " \
-                       "this may or may not be expected")
-      if fail_on_failed_rpcs
-        raise e
+    deadline = GRPC::Core::TimeConsts::from_relative_time(30) # 30 seconds
+    results = {}
+    rpcs_to_send.each do |rpc|
+      metadata = metadata_to_send.key?(rpc) ? metadata_to_send[rpc] : {}
+      if rpc == 'UnaryCall'
+        op = stub.unary_call(simple_req,
+                             metadata: metadata,
+                             deadline: deadline,
+                             return_op: true)
+      elsif rpc == 'EmptyCall'
+        op = stub.empty_call(empty_req,
+                             metadata: metadata,
+                             deadline: deadline,
+                             return_op: true)
+      else
+        raise "Unsupported rpc %s" % [rpc]
       end
+      results[rpc] = execute_rpc(op, fail_on_failed_rpcs)
     end
     $watchers_mutex.synchronize do
       $watchers.each do |watcher|
+        # this is counted once when each group of all rpcs_to_send were done
         watcher['rpcs_needed'] -= 1
-        if remote_peer.strip.empty?
-          watcher['no_remote_peer'] += 1
-        else
-          watcher['rpcs_by_peer'][remote_peer] += 1
+        results.each do | rpc_name, remote_peer |
+          if remote_peer.strip.empty?
+            # error is counted per individual RPC
+            watcher['no_remote_peer'] += 1
+          else
+            if not watcher['rpcs_by_method'].key?(rpc_name)
+              watcher['rpcs_by_method'][rpc_name] = Hash.new(0)
+            end
+            # increment the remote hostname distribution histogram
+            # both by overall, and broken down per RPC
+            watcher['rpcs_by_method'][rpc_name][remote_peer] +=  1
+            watcher['rpcs_by_peer'][remote_peer] += 1
+          end
         end
       end
       $watchers_cv.broadcast
@@ -149,6 +195,7 @@ end
 
 # Args is used to hold the command line info.
 Args = Struct.new(:fail_on_failed_rpcs, :num_channels,
+                  :rpc, :metadata,
                   :server, :stats_port, :qps)
 
 # validates the command line options, returning them as a Hash.
@@ -156,12 +203,20 @@ def parse_args
   args = Args.new
   args['fail_on_failed_rpcs'] = false
   args['num_channels'] = 1
+  args['rpc'] = 'UnaryCall'
+  args['metadata'] = ''
   OptionParser.new do |opts|
     opts.on('--fail_on_failed_rpcs BOOL', ['false', 'true']) do |v|
       args['fail_on_failed_rpcs'] = v == 'true'
     end
     opts.on('--num_channels CHANNELS', 'number of channels') do |v|
       args['num_channels'] = v.to_i
+    end
+    opts.on('--rpc RPCS_TO_SEND', 'list of RPCs to send') do |v|
+      args['rpc'] = v
+    end
+    opts.on('--metadata METADATA_TO_SEND', 'metadata to send per RPC') do |v|
+      args['metadata'] = v
     end
     opts.on('--server SERVER_HOST', 'server hostname') do |v|
       GRPC.logger.info("ruby xds: server address is #{v}")
@@ -195,11 +250,40 @@ def main
   # The client just sends unary rpcs continuously in a regular interval
   stub = create_stub(opts)
   target_seconds_between_rpcs = (1.0 / opts['qps'].to_f)
+  rpcs_to_send = []
+  if opts['rpc']
+    rpcs_to_send = opts['rpc'].split(',')
+  end
+  # Convert 'metadata' input in the form of
+  #   rpc1:k1:v1,rpc2:k2:v2,rpc1:k3:v3
+  # into
+  #   {
+  #     'rpc1' => {
+  #       'k1' => 'v1',
+  #       'k3' => 'v3',
+  #     },
+  #     'rpc2' => {
+  #       'k2' => 'v2'
+  #     },
+  #   }
+  metadata_to_send = {}
+  if opts['metadata']
+    metadata_entries = opts['metadata'].split(',')
+    metadata_entries.each do |e|
+      (rpc_name, metadata_key, metadata_value) = e.split(':')
+      # initialize if we haven't seen this rpc_name yet
+      if !metadata_to_send.key?(rpc_name)
+        metadata_to_send[rpc_name] = {}
+      end
+      metadata_to_send[rpc_name][metadata_key] = metadata_value
+    end
+  end
   client_threads = Array.new
   opts['num_channels'].times {
     client_threads << Thread.new {
       run_test_loop(stub, target_seconds_between_rpcs,
-                    opts['fail_on_failed_rpcs'])
+                    opts['fail_on_failed_rpcs'],
+                    rpcs_to_send, metadata_to_send)
     }
   }
 
