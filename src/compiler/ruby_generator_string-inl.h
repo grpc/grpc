@@ -25,6 +25,8 @@
 #include <sstream>
 #include <vector>
 
+#include <iostream>
+
 using std::getline;
 using std::transform;
 
@@ -116,7 +118,8 @@ inline std::string RubyPackage(const grpc::protobuf::FileDescriptor* file) {
 }
 
 // RubyTypeOf updates a proto type to the required ruby equivalent.
-inline std::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor) {
+inline std::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor,
+                              const std::string& package) {
   std::string proto_type = descriptor->full_name();
   if (descriptor->file()->options().has_ruby_package()) {
     // remove the leading package if present
@@ -124,7 +127,9 @@ inline std::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor) {
     ReplacePrefix(&proto_type, ".", "");  // remove the leading . (no package)
     proto_type = RubyPackage(descriptor->file()) + "." + proto_type;
   }
-  std::string res("." + proto_type);
+  ReplacePrefix(&proto_type, package, "");
+  ReplacePrefix(&proto_type, ".", "");
+  std::string res(proto_type);
   if (res.find('.') == std::string::npos) {
     return res;
   } else {
