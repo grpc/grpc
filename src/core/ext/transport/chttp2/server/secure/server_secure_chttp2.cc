@@ -70,9 +70,11 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
   args =
       grpc_channel_args_copy_and_add(server->core_server->channel_args(),
                                      args_to_add, GPR_ARRAY_SIZE(args_to_add));
+// FIXME: this is not going to work -- server can have multiple
+// listeners, each with different creds and security connector
   server->core_server->set_channel_args(args);
   // Add server port.
-  err = grpc_core::Chttp2ServerAddPort(server->core_server.get(), addr, args,
+  err = grpc_core::Chttp2ServerAddPort(server->core_server.get(), addr,
                                        &port_num);
 done:
   sc.reset(DEBUG_LOCATION, "server");

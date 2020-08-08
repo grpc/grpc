@@ -56,11 +56,8 @@ namespace {
 
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
-  static grpc_error* Create(Server* server, const char* addr,
-                            const grpc_channel_args* args, int* port_num);
-
-  static grpc_error* CreateWithAcceptor(Server* server, const char* name,
-                                        const grpc_channel_args* args);
+  static grpc_error* Create(Server* server, const char* addr, int* port_num);
+  static grpc_error* CreateWithAcceptor(Server* server, const char* name);
 
   // Do not instantiate directly.  Use one of the factory methods above.
   explicit Chttp2ServerListener(Server* server);
@@ -272,11 +269,11 @@ void Chttp2ServerListener::ConnectionState::OnHandshakeDone(void* arg,
 //
 
 grpc_error* Chttp2ServerListener::Create(Server* server, const char* addr,
-                                         const grpc_channel_args* args,
                                          int* port_num) {
   std::vector<grpc_error*> error_list;
   grpc_resolved_addresses* resolved = nullptr;
   Chttp2ServerListener* listener = nullptr;
+  const grpc_channel_args* args = server->channel_args();
   // The bulk of this method is inside of a lambda to make cleanup
   // easier without using goto.
   grpc_error* error = [&]() {
@@ -352,8 +349,9 @@ grpc_error* Chttp2ServerListener::Create(Server* server, const char* addr,
   return error;
 }
 
-grpc_error* Chttp2ServerListener::CreateWithAcceptor(
-    Server* server, const char* name, const grpc_channel_args* args) {
+grpc_error* Chttp2ServerListener::CreateWithAcceptor(Server* server,
+                                                     const char* name) {
+  const grpc_channel_args* args = server->channel_args();
   Chttp2ServerListener* listener = new Chttp2ServerListener(server);
   grpc_error* error = grpc_tcp_server_create(
       &listener->tcp_server_shutdown_complete_, args, &listener->tcp_server_);
@@ -469,12 +467,11 @@ void Chttp2ServerListener::Orphan() {
 //
 
 grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
-                                const grpc_channel_args* args, int* port_num) {
+                                int* port_num) {
   if (strncmp(addr, "external:", 9) == 0) {
-    return grpc_core::Chttp2ServerListener::CreateWithAcceptor(server, addr,
-                                                               args);
+    return grpc_core::Chttp2ServerListener::CreateWithAcceptor(server, addr);
   }
-  return grpc_core::Chttp2ServerListener::Create(server, addr, args, port_num);
+  return grpc_core::Chttp2ServerListener::Create(server, addr, port_num);
 }
 
 }  // namespace grpc_core

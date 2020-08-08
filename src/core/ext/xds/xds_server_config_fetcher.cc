@@ -72,6 +72,7 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "could not create xds config fetcher: %s",
             grpc_error_string(error));
+    GRPC_ERROR_UNREF(error);
     return nullptr;
   }
   return config_fetcher.release();
