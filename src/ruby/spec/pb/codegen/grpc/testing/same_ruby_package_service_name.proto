@@ -14,9 +14,11 @@
 
 syntax = "proto3";
 
-package same_name;
+package other_name;
 
-service SameName {
+option ruby_package = "SameName2";
+
+service SameName2 {
   rpc Health(Request) returns (Status);
 }
 

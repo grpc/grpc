@@ -50,12 +50,22 @@ describe 'Code Generation Options' do
   end
 
   it 'should generate when package and service has same name' do
-    with_protos(%w[grpc/testing/same_package_service_name.proto]) do
-      expect { TaskPlanner::TaskPlanner::Service }.to raise_error(NameError)
+    with_protos(['grpc/testing/same_package_service_name.proto']) do
+      expect { SameName::SameName::Service }.to raise_error(NameError)
       expect(require('grpc/testing/same_package_service_name_services_pb')).to be_truthy
-      expect { TaskPlanner::TaskPlanner::Service }.to_not raise_error
-      expect { TaskPlanner::HealthRequest }.to_not raise_error
-      expect { TaskPlanner::Status }.to_not raise_error
+      expect { SameName::SameName::Service }.to_not raise_error
+      expect { SameName::Request }.to_not raise_error
+      expect { SameName::Status }.to_not raise_error
+    end
+  end
+
+  it 'should generate when ruby_package and service has same name' do
+    with_protos(['grpc/testing/same_ruby_package_service_name.proto']) do
+      expect { SameName2::SameName2::Service }.to raise_error(NameError)
+      expect(require('grpc/testing/same_ruby_package_service_name_services_pb')).to be_truthy
+      expect { SameName2::SameName2::Service }.to_not raise_error
+      expect { SameName2::Request }.to_not raise_error
+      expect { SameName2::Status }.to_not raise_error
     end
   end
 end
