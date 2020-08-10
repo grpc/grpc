@@ -124,8 +124,8 @@ def _test_syntax_errors():
     except Exception as e:
         error_str = str(e)
         assert "flawed.proto" in error_str
-        assert "3:23" in error_str
-        assert "7:23" in error_str
+        assert "17:23" in error_str
+        assert "21:23" in error_str
     else:
         assert False, "Compile error expected. None occurred."
 
