@@ -29,13 +29,13 @@
 #include <grpcpp/impl/codegen/status.h>
 
 namespace grpc {
+class Channel;
 namespace internal {
 class RpcMethod;
 }  // namespace internal
 }  // namespace grpc
 
 namespace grpc_impl {
-class Channel;
 class ClientContext;
 
 namespace internal {
@@ -60,7 +60,7 @@ class CallbackUnaryCallImpl {
                         ::grpc_impl::ClientContext* context,
                         const InputMessage* request, OutputMessage* result,
                         std::function<void(::grpc::Status)> on_completion) {
-    ::grpc_impl::CompletionQueue* cq = channel->CallbackCQ();
+    ::grpc::CompletionQueue* cq = channel->CallbackCQ();
     GPR_CODEGEN_ASSERT(cq != nullptr);
     grpc::internal::Call call(channel->CreateCall(method, context, cq));
 

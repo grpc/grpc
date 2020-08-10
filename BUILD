@@ -220,10 +220,8 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/alarm.h",
     "include/grpcpp/alarm_impl.h",
     "include/grpcpp/channel.h",
-    "include/grpcpp/channel_impl.h",
     "include/grpcpp/client_context.h",
     "include/grpcpp/completion_queue.h",
-    "include/grpcpp/completion_queue_impl.h",
     "include/grpcpp/create_channel.h",
     "include/grpcpp/create_channel_posix.h",
     "include/grpcpp/ext/health_check_service_server_builder_option.h",
@@ -1289,9 +1287,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_xds_api_header",
     hdrs = [
-        "src/core/ext/filters/client_channel/xds/xds_api.h",
-        "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
-        "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
+        "src/core/ext/xds/xds_api.h",
+        "src/core/ext/xds/xds_bootstrap.h",
+        "src/core/ext/xds/xds_client_stats.h",
     ],
     external_deps = [
         "upb_lib",
@@ -1306,16 +1304,16 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
-        "src/core/ext/filters/client_channel/xds/xds_api.cc",
-        "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
-        "src/core/ext/filters/client_channel/xds/xds_channel.cc",
-        "src/core/ext/filters/client_channel/xds/xds_client.cc",
-        "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
+        "src/core/ext/xds/xds_api.cc",
+        "src/core/ext/xds/xds_bootstrap.cc",
+        "src/core/ext/xds/xds_channel.cc",
+        "src/core/ext/xds/xds_client.cc",
+        "src/core/ext/xds/xds_client_stats.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/xds/xds_channel.h",
-        "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
-        "src/core/ext/filters/client_channel/xds/xds_client.h",
+        "src/core/ext/xds/xds_channel.h",
+        "src/core/ext/xds/xds_channel_args.h",
+        "src/core/ext/xds/xds_client.h",
     ],
     language = "c++",
     deps = [
@@ -1329,16 +1327,16 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_xds_client_secure",
     srcs = [
-        "src/core/ext/filters/client_channel/xds/xds_api.cc",
-        "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
-        "src/core/ext/filters/client_channel/xds/xds_channel_secure.cc",
-        "src/core/ext/filters/client_channel/xds/xds_client.cc",
-        "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
+        "src/core/ext/xds/xds_api.cc",
+        "src/core/ext/xds/xds_bootstrap.cc",
+        "src/core/ext/xds/xds_channel_secure.cc",
+        "src/core/ext/xds/xds_client.cc",
+        "src/core/ext/xds/xds_client_stats.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/xds/xds_channel.h",
-        "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
-        "src/core/ext/filters/client_channel/xds/xds_client.h",
+        "src/core/ext/xds/xds_channel.h",
+        "src/core/ext/xds/xds_channel_args.h",
+        "src/core/ext/xds/xds_client.h",
     ],
     language = "c++",
     deps = [
@@ -1810,7 +1808,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
-        "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
+        "src/core/ext/xds/xds_channel_args.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
@@ -1862,6 +1860,8 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/mock_cel/activation.h",
+        "src/core/lib/security/authorization/mock_cel/cel_value.h",
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
@@ -2262,7 +2262,6 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/client_interceptor.h",
         "include/grpcpp/impl/codegen/client_unary_call.h",
         "include/grpcpp/impl/codegen/completion_queue.h",
-        "include/grpcpp/impl/codegen/completion_queue_impl.h",
         "include/grpcpp/impl/codegen/completion_queue_tag.h",
         "include/grpcpp/impl/codegen/config.h",
         "include/grpcpp/impl/codegen/core_codegen_interface.h",

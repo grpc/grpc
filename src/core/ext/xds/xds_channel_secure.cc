@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/xds/xds_channel.h"
+#include "src/core/ext/xds/xds_channel.h"
 
 #include <string.h>
 
@@ -28,8 +28,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"

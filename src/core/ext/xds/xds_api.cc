@@ -35,7 +35,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/xds/xds_api.h"
+#include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"

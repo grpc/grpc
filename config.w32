@@ -66,11 +66,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\service_config_parser.cc " +
     "src\\core\\ext\\filters\\client_channel\\subchannel.cc " +
     "src\\core\\ext\\filters\\client_channel\\subchannel_pool_interface.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_api.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_bootstrap.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_channel_secure.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_client.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_client_stats.cc " +
     "src\\core\\ext\\filters\\client_idle\\client_idle_filter.cc " +
     "src\\core\\ext\\filters\\deadline\\deadline_filter.cc " +
     "src\\core\\ext\\filters\\http\\client\\http_client_filter.cc " +
@@ -196,6 +191,11 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\udpa\\annotations\\versioning.upb.c " +
     "src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1\\orca_load_report.upb.c " +
     "src\\core\\ext\\upb-generated\\validate\\validate.upb.c " +
+    "src\\core\\ext\\xds\\xds_api.cc " +
+    "src\\core\\ext\\xds\\xds_bootstrap.cc " +
+    "src\\core\\ext\\xds\\xds_channel_secure.cc " +
+    "src\\core\\ext\\xds\\xds_client.cc " +
+    "src\\core\\ext\\xds\\xds_client_stats.cc " +
     "src\\core\\lib\\avl\\avl.cc " +
     "src\\core\\lib\\backoff\\backoff.cc " +
     "src\\core\\lib\\channel\\channel_args.cc " +
@@ -900,7 +900,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\fake");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\sockaddr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\xds");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_idle");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\deadline");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\http");
@@ -991,6 +990,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data\\orca");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\validate");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\avl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\backoff");

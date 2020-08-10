@@ -80,9 +80,8 @@ class AsyncGenericService final {
 
   void RequestCall(GenericServerContext* ctx,
                    GenericServerAsyncReaderWriter* reader_writer,
-                   ::grpc_impl::CompletionQueue* call_cq,
-                   ::grpc_impl::ServerCompletionQueue* notification_cq,
-                   void* tag);
+                   ::grpc::CompletionQueue* call_cq,
+                   ::grpc::ServerCompletionQueue* notification_cq, void* tag);
 
  private:
   friend class grpc_impl::Server;

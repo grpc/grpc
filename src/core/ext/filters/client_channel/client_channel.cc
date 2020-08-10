@@ -28,6 +28,7 @@
 
 #include <set>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
@@ -1683,8 +1684,9 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
                       ? new_args
                       : grpc_channel_args_copy(args->channel_args);
   if (!ResolverRegistry::IsValidTarget(target_uri_.get())) {
-    *error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("the target uri is not valid.");
+    std::string error_message =
+        absl::StrCat("the target uri is not valid: ", target_uri_.get());
+    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message.c_str());
     return;
   }
   *error = GRPC_ERROR_NONE;

@@ -35,7 +35,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/xds/xds_api.h"
+#include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"

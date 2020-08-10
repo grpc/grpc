@@ -3694,11 +3694,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/service_config_parser.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
-    src/core/ext/filters/client_channel/xds/xds_api.cc \
-    src/core/ext/filters/client_channel/xds/xds_bootstrap.cc \
-    src/core/ext/filters/client_channel/xds/xds_channel_secure.cc \
-    src/core/ext/filters/client_channel/xds/xds_client.cc \
-    src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
@@ -3824,6 +3819,11 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/udpa/annotations/versioning.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
+    src/core/ext/xds/xds_api.cc \
+    src/core/ext/xds/xds_bootstrap.cc \
+    src/core/ext/xds/xds_channel_secure.cc \
+    src/core/ext/xds/xds_client.cc \
+    src/core/ext/xds/xds_client_stats.cc \
     src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
@@ -4346,11 +4346,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/service_config_parser.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
-    src/core/ext/filters/client_channel/xds/xds_api.cc \
-    src/core/ext/filters/client_channel/xds/xds_bootstrap.cc \
-    src/core/ext/filters/client_channel/xds/xds_channel.cc \
-    src/core/ext/filters/client_channel/xds/xds_client.cc \
-    src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
@@ -4471,6 +4466,11 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/udpa/annotations/versioning.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
+    src/core/ext/xds/xds_api.cc \
+    src/core/ext/xds/xds_bootstrap.cc \
+    src/core/ext/xds/xds_channel.cc \
+    src/core/ext/xds/xds_client.cc \
+    src/core/ext/xds/xds_client_stats.cc \
     src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
@@ -4872,10 +4872,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/alarm.h \
     include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
-    include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
-    include/grpcpp/completion_queue_impl.h \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
@@ -4905,7 +4903,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
-    include/grpcpp/impl/codegen/completion_queue_impl.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/config_protobuf.h \
@@ -5559,10 +5556,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/alarm.h \
     include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
-    include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
-    include/grpcpp/completion_queue_impl.h \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
@@ -5592,7 +5587,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
-    include/grpcpp/impl/codegen/completion_queue_impl.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/config_protobuf.h \
@@ -20162,12 +20156,12 @@ ifneq ($(OPENSSL_DEP),)
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/xds/xds_channel_secure.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c: $(OPENSSL_DEP)
+src/core/ext/xds/xds_channel_secure.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)

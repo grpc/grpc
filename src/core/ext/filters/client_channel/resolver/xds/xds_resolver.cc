@@ -20,7 +20,7 @@
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/filters/client_channel/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
