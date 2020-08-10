@@ -18,8 +18,6 @@
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
-#include <map>
-
 #include "src/core/lib/slice/slice_utils.h"
 
 namespace grpc_core {
