@@ -20,6 +20,7 @@
 
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
+#include "absl/functional/bind_front.h"
 #include "absl/strings/match.h"
 #include "re2/re2.h"
 
@@ -75,6 +76,10 @@ class XdsResolver : public Resolver {
   }
 
  private:
+  struct ClusterState {
+    int refcount = 0;
+  };
+
   class ServiceConfigWatcher : public XdsClient::ServiceConfigWatcherInterface {
    public:
     explicit ServiceConfigWatcher(RefCountedPtr<XdsResolver> resolver)
@@ -90,8 +95,15 @@ class XdsResolver : public Resolver {
 
   class XdsConfigSelector : public ConfigSelector {
    public:
-    explicit XdsConfigSelector(const XdsApi::RdsUpdate& rds_update) {
+    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
+                               const XdsApi::RdsUpdate& rds_update)
+        : resolver_(std::move(resolver)) {
       for (const auto& update : rds_update.routes) {
+        // todo@ donna weighted target name
+        // Keep a set of actions from this update and take a reference for every
+        // cluster. Ref count will be unset in the destructor.
+        actions_.emplace(update.cluster_name);
+        resolver_->cluster_state_map_[update.cluster_name].refcount++;
         XdsApi::RdsUpdate::RdsRoute route;
         route.matchers.path_matcher.type = update.matchers.path_matcher.type;
         route.matchers.path_matcher.string_matcher =
@@ -108,7 +120,7 @@ class XdsResolver : public Resolver {
         route_table_.routes.emplace_back(std::move(route));
       }
       gpr_log(GPR_INFO,
-              "DONNAA NEW: RDS update passed in;  RouteConfiguration contains "
+              "DONNAA: RDS update passed in;  RouteConfiguration contains "
               "%" PRIuPTR
               " routes to build the route_table_ for XdsConfigSelector",
               route_table_.routes.size());
@@ -116,6 +128,30 @@ class XdsResolver : public Resolver {
         gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
                 route_table_.routes[i].ToString().c_str());
       }
+      for (const auto& state : resolver_->cluster_state_map_) {
+        gpr_log(GPR_INFO,
+                "DONNAAA: constructor: cluster %s and count %d", state.first.c_str(), state.second.refcount);
+      }
+    }
+
+    ~XdsConfigSelector() {
+      for (const auto& action: actions_) {
+        resolver_->cluster_state_map_[action].refcount--;
+        if (resolver_->cluster_state_map_[action].refcount == 0) {
+          resolver_->cluster_state_map_.erase(action);
+        }
+      }
+      for (const auto& state : resolver_->cluster_state_map_) {
+        gpr_log(GPR_INFO,
+                "DONNAAA: destructor: cluster %s and count %d", state.first.c_str(), state.second.refcount);
+      }
+    }
+
+    void OnCallCommited(const std::string& routing_action)
+    {
+      gpr_log(GPR_INFO,
+                "DONNAAA: OnCallCommitted");
+      resolver_->cluster_state_map_[routing_action].refcount--;
     }
 
     CallConfig GetCallConfig(GetCallConfigArgs args) override {
@@ -127,7 +163,7 @@ class XdsResolver : public Resolver {
           gpr_log(GPR_INFO, "donna stack trace:[%s]", out);
         }
       }*/
-      gpr_log(GPR_INFO, "DONNAA NEW path is %s",
+      /*gpr_log(GPR_INFO, "DONNAA NEW path is %s",
               GRPC_SLICE_START_PTR(*(args.path)));
       for (grpc_linked_mdelem* md = args.initial_metadata->list.head;
            md != nullptr; md = md->next) {
@@ -136,16 +172,16 @@ class XdsResolver : public Resolver {
         gpr_log(GPR_INFO, "key[%s]: value[%s]", key, value);
         gpr_free(key);
         gpr_free(value);
-      }
+      }*/
       for (size_t i = 0; i < route_table_.routes.size(); ++i) {
-        gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
-                route_table_.routes[i].matchers.ToString().c_str());
-        gpr_log(GPR_INFO, "Route action %s",
-                route_table_.routes[i].cluster_name.c_str());
+        //gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
+        //        route_table_.routes[i].matchers.ToString().c_str());
+        //gpr_log(GPR_INFO, "Route action %s",
+        //        route_table_.routes[i].cluster_name.c_str());
         if (absl::StartsWith(
                 StringViewFromSlice(*args.path),
                 route_table_.routes[i].matchers.path_matcher.string_matcher)) {
-          gpr_log(GPR_INFO, "DONNAA NEW match action found: %s",
+          gpr_log(GPR_INFO, "DONNAA match action found: %s",
                   route_table_.routes[i].cluster_name.c_str());
           char* routing_action_str = static_cast<char*>(args.arena->Alloc(
               route_table_.routes[i].cluster_name.size() + 1));
@@ -154,6 +190,8 @@ class XdsResolver : public Resolver {
           CallConfig call_config;
           call_config.call_attributes[kCallAttributeRoutingAction] =
               absl::string_view(routing_action_str);
+          call_config.on_call_committed = absl::bind_front(&XdsResolver::XdsConfigSelector::OnCallCommited, this, route_table_.routes[i].cluster_name); 
+          resolver_->cluster_state_map_[route_table_.routes[i].cluster_name].refcount++;
           return call_config;
         }
       }
@@ -161,13 +199,16 @@ class XdsResolver : public Resolver {
     }
 
    private:
+    RefCountedPtr<XdsResolver> resolver_;
     XdsApi::RdsUpdate route_table_;
+    std::set<std::string> actions_;
   };
 
   std::string server_name_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
+  std::map<std::string /* cluster_name */, ClusterState> cluster_state_map_;
 };
 
 void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
@@ -178,9 +219,8 @@ void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated service config: %s",
             resolver_.get(), service_config->json_string().c_str());
   }
-
   RefCountedPtr<XdsConfigSelector> config_selector =
-      MakeRefCounted<XdsConfigSelector>(rds_update);
+      MakeRefCounted<XdsConfigSelector>(resolver_, rds_update);
   grpc_arg new_args[] = {
       resolver_->xds_client_->MakeChannelArg(),
       config_selector->MakeChannelArg(),

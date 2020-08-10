@@ -1757,6 +1757,7 @@ grpc_cc_library(
     external_deps = [
         "absl/debugging:stacktrace",
         "absl/debugging:symbolize",
+        "absl/functional:bind_front",
     ],
     deps = [
         "grpc_base",
@@ -1771,6 +1772,11 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
     language = "c++",
+    external_deps = [
+        "absl/debugging:stacktrace",
+        "absl/debugging:symbolize",
+        "absl/functional:bind_front",
+    ],
     deps = [
         "grpc_base",
         "grpc_client_channel",
