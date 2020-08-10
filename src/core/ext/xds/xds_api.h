@@ -132,7 +132,8 @@ class XdsApi {
       std::string ToString() const;
     };
 
-    std::vector<RdsRoute> routes;
+// FIXME: does this make sense?
+    std::map<std::string /*domain*/, std::vector<RdsRoute>> routes;
 
     bool operator==(const RdsUpdate& other) const {
       return routes == other.routes;
@@ -309,14 +310,14 @@ class XdsApi {
     std::string version;
     std::string nonce;
     std::string type_url;
-    absl::optional<LdsUpdate> lds_update;
-    absl::optional<RdsUpdate> rds_update;
+    LdsUpdateMap lds_update_map;
+    RdsUpdateMap rds_update_map;
     CdsUpdateMap cds_update_map;
     EdsUpdateMap eds_update_map;
   };
   AdsParseResult ParseAdsResponse(
       const grpc_slice& encoded_response,
-      const std::string& expected_server_name,
+      const std::set<absl::string_view>& expected_listener_names,
       const std::set<absl::string_view>& expected_route_configuration_names,
       const std::set<absl::string_view>& expected_cluster_names,
       const std::set<absl::string_view>& expected_eds_service_names);

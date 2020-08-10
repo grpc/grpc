@@ -79,12 +79,27 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
   XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
-            grpc_pollset_set* interested_parties, absl::string_view server_name,
-            std::unique_ptr<ListenerWatcherInterface> watcher,
+            grpc_pollset_set* interested_parties,
+// FIXME: remove these params
+absl::string_view server_name,
+std::unique_ptr<ListenerWatcherInterface> watcher,
             const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
 
   void Orphan() override;
+
+  // Start and cancel listener data watch for a listener.
+  // The XdsClient takes ownership of the watcher, but the caller may
+  // keep a raw pointer to the watcher, which may be used only for
+  // cancellation.  (Because the caller does not own the watcher, the
+  // pointer must not be used for any other purpose.)
+  // If the caller is going to start a new watch after cancelling the
+  // old one, it should set delay_unsubscription to true.
+  void WatchListenerData(absl::string_view listener_name,
+                         std::unique_ptr<ListenerWatcherInterface> watcher);
+  void CancelListenerDataWatch(absl::string_view listener_name,
+                               ListenerWatcherInterface* watcher,
+                               bool delay_unsubscription = false);
 
   // Start and cancel cluster data watch for a cluster.
   // The XdsClient takes ownership of the watcher, but the caller may
@@ -200,6 +215,21 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
   };
 
+  struct ListenerState {
+    std::map<ListenerWatcherInterface*,
+             std::unique_ptr<ListenerWatcherInterface>>
+        watchers;
+    // The latest data seen from LDS.
+    absl::optional<XdsApi::LdsUpdate> update;
+  };
+
+  struct RouteConfigState {
+    // Names of listeners that refer to this route config.
+    std::set<std::string> listener_names;
+    // The latest data seen from RDS.
+    absl::optional<XdsApi::RdsUpdate> update;
+  };
+
   struct ClusterState {
     std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
         watchers;
@@ -229,6 +259,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     grpc_millis last_report_time = ExecCtx::Get()->Now();
   };
 
+  absl::optional<XdsApi::RdsUpdate> WatchRouteConfigData(
+      absl::string_view route_config_name, const std::string& listener_name);
+  void CancelRouteConfigDataWatch(absl::string_view route_config_name,
+                                  const std::string& listener_name,
+                                  bool delay_unsubscription = false);
+
   // Sends an error notification to all watchers.
   void NotifyOnError(grpc_error* error);
 
@@ -250,19 +286,20 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   std::unique_ptr<XdsBootstrap> bootstrap_;
   XdsApi api_;
 
-  const std::string server_name_;
-  std::unique_ptr<ListenerWatcherInterface> listener_watcher_;
-
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
 
-  absl::optional<XdsApi::LdsUpdate> lds_result_;
-  absl::optional<XdsApi::RdsUpdate> rds_result_;
-
+  // One entry for each watched LDS resource.
+  std::map<std::string /*listener_name*/, ListenerState> listener_map_;
+  // One entry for each watched RDS resource.
+  std::map<std::string /*route_config_name*/, RouteConfigState>
+      route_config_map_;
   // One entry for each watched CDS resource.
   std::map<std::string /*cluster_name*/, ClusterState> cluster_map_;
   // One entry for each watched EDS resource.
   std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_;
+
+  // Load report data.
   std::map<
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       LoadReportState>

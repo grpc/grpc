@@ -1983,7 +1983,8 @@ std::string TypeUrlInternalToExternal(absl::string_view type_url) {
 }  // namespace
 
 XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
-    const grpc_slice& encoded_response, const std::string& expected_server_name,
+    const grpc_slice& encoded_response,
+    const std::set<absl::string_view>& expected_listener_names,
     const std::set<absl::string_view>& expected_route_configuration_names,
     const std::set<absl::string_view>& expected_cluster_names,
     const std::set<absl::string_view>& expected_eds_service_names) {
@@ -2015,12 +2016,16 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   // Parse the response according to the resource type.
   if (IsLds(result.type_url)) {
     result.parse_error =
-        LdsResponseParse(client_, tracer_, response, expected_server_name,
-                         &result.lds_update, arena.ptr());
+        LdsResponseParse(client_, tracer_, response, expected_listener_names,
+                         &result.lds_update_map, arena.ptr());
   } else if (IsRds(result.type_url)) {
+// FIXME: how do we know which domain names to use when parsing RDS update?
+// (would it help to have a separate RDS watcher frm the xds resolver?
+// not sure if that would really help with this.)
     result.parse_error = RdsResponseParse(
-        client_, tracer_, response, expected_server_name,
-        expected_route_configuration_names, &result.rds_update, arena.ptr());
+        client_, tracer_, response, expected_listener_names,
+        expected_route_configuration_names, &result.rds_update_map,
+        arena.ptr());
   } else if (IsCds(result.type_url)) {
     result.parse_error =
         CdsResponseParse(client_, tracer_, response, expected_cluster_names,

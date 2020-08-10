@@ -66,6 +66,10 @@ class XdsResolver : public Resolver {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[xds_resolver %p] shutting down", this);
     }
+    if (listener_watcher_ != nullptr) {
+      xds_client_->CancelListenerDataWatch(server_name_, listener_watcher_,
+                                           /*delay_unsubscription=*/false);
+    }
     xds_client_.reset();
   }
 
@@ -107,6 +111,7 @@ class XdsResolver : public Resolver {
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
+  XdsClient::ListenerWatcherInterface* listener_watcher_ = nullptr;
   RefCountedPtr<XdsConfigSelector> config_selector_;
 
   // 2-level map to store WeightedCluster action names.
@@ -190,8 +195,7 @@ void XdsResolver::ListenerWatcher::OnResourceDoesNotExist() {
 void XdsResolver::StartLocked() {
   grpc_error* error = GRPC_ERROR_NONE;
   xds_client_ = MakeOrphanable<XdsClient>(
-      work_serializer(), interested_parties_, server_name_,
-      absl::make_unique<ListenerWatcher>(Ref()), *args_, &error);
+      work_serializer(), interested_parties_, *args_, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
@@ -199,6 +203,9 @@ void XdsResolver::StartLocked() {
             grpc_error_string(error));
     result_handler()->ReturnError(error);
   }
+  auto watcher = absl::make_unique<ListenerWatcher>(Ref());
+  listener_watcher_ = watcher.get();
+  xds_client_->WatchListenerData(server_name_, std::move(watcher));
 }
 
 std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
