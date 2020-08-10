@@ -62,7 +62,9 @@ if sys.version_info[0] > 2:
     def _module_name_to_proto_file(suffix, module_name):
         components = module_name.split(".")
         proto_name = components[-1][:-1 * len(suffix)]
-        return os.path.sep.join(components[:-1] + [proto_name + ".proto"])
+        # NOTE(rbellevi): The Protobuf library expects this path to use
+        # forward slashes on every platform.
+        return "/".join(components[:-1] + [proto_name + ".proto"])
 
     def _proto_file_to_module_name(suffix, proto_file):
         components = proto_file.split(os.path.sep)

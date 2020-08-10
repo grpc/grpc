@@ -105,7 +105,7 @@ if sys.version_info[0] < 3:
     protos_and_services = _interpreter_version_protos_and_services
 else:
     try:
-        import grpc_tool  # pylint: disable=unused-import
+        import grpc_tools  # pylint: disable=unused-import
     except ImportError as e:
         # NOTE: It's possible that we're encountering a transitive ImportError, so
         # we check for that and re-raise if so.

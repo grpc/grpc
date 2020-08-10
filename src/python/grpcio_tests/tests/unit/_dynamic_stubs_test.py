@@ -13,12 +13,13 @@
 # limitations under the License.
 """Test of dynamic stub import API."""
 
-import unittest
-import logging
 import contextlib
-import sys
-import multiprocessing
 import functools
+import logging
+import multiprocessing
+import os
+import sys
+import unittest
 
 
 @contextlib.contextmanager
@@ -39,11 +40,10 @@ def _grpc_tools_unimportable():
         sys.path = original_sys_path
 
 
-# TODO: Dedupe with grpc_tools test?
-def _wrap_in_subprocess(error_queue, fn):
+def _collect_errors(fn):
 
     @functools.wraps(fn)
-    def _wrapped():
+    def _wrapped(error_queue):
         try:
             fn()
         except Exception as e:
@@ -55,8 +55,7 @@ def _wrap_in_subprocess(error_queue, fn):
 
 def _run_in_subprocess(test_case):
     error_queue = multiprocessing.Queue()
-    wrapped_case = _wrap_in_subprocess(error_queue, test_case)
-    proc = multiprocessing.Process(target=wrapped_case)
+    proc = multiprocessing.Process(target=test_case, args=(error_queue,))
     proc.start()
     proc.join()
     if not error_queue.empty():
@@ -77,17 +76,19 @@ def _assert_unimplemented(msg_substr):
         assert False, "Did not raise NotImplementedError"
 
 
+@_collect_errors
 def _test_sunny_day():
     if sys.version_info[0] == 3:
         import grpc
         protos, services = grpc.protos_and_services(
-            "tests/unit/data/foo/bar.proto")
+            os.path.join("tests", "unit", "data", "foo", "bar.proto"))
         assert protos.BarMessage is not None
         assert services.BarStub is not None
     else:
         _assert_unimplemented("Python 3")
 
 
+@_collect_errors
 def _test_grpc_tools_unimportable():
     with _grpc_tools_unimportable():
         if sys.version_info[0] == 3:
