@@ -103,7 +103,10 @@ class XdsResolver : public Resolver {
         // Keep a set of actions from this update and take a reference for every
         // cluster. Ref count will be unset in the destructor.
         actions_.emplace(update.cluster_name);
-        resolver_->cluster_state_map_[update.cluster_name].refcount++;
+        {
+          MutexLock lock(&resolver_->cluster_state_map_mu_);
+          resolver_->cluster_state_map_[update.cluster_name].refcount++;
+        }
         /*void *stack[128];
         int size = absl::GetStackTrace(stack, 128, 1);
         for (int i = 0; i < size; ++i) {
@@ -136,13 +139,17 @@ class XdsResolver : public Resolver {
         gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
                 route_table_.routes[i].ToString().c_str());
       }
-      for (const auto& state : resolver_->cluster_state_map_) {
-        gpr_log(GPR_INFO, "DONNAAA: constructor: cluster %s and count %d",
-                state.first.c_str(), state.second.refcount);
+      {
+        MutexLock lock(&resolver_->cluster_state_map_mu_);
+        for (const auto& state : resolver_->cluster_state_map_) {
+          gpr_log(GPR_INFO, "DONNAAA: constructor: cluster %s and count %d",
+                  state.first.c_str(), state.second.refcount);
+        }
       }
     }
 
     ~XdsConfigSelector() {
+      MutexLock lock(&resolver_->cluster_state_map_mu_);
       for (const auto& action : actions_) {
         resolver_->cluster_state_map_[action].refcount--;
         /*void *stack[128];
@@ -165,6 +172,7 @@ class XdsResolver : public Resolver {
 
     void OnCallCommited(const std::string& routing_action) {
       gpr_log(GPR_INFO, "DONNAAA: OnCallCommitted");
+      MutexLock lock(&resolver_->cluster_state_map_mu_);
       resolver_->cluster_state_map_[routing_action].refcount--;
       /*void *stack[128];
       int size = absl::GetStackTrace(stack, 128, 1);
@@ -207,8 +215,11 @@ class XdsResolver : public Resolver {
           call_config.on_call_committed =
               absl::bind_front(&XdsResolver::XdsConfigSelector::OnCallCommited,
                                this, route_table_.routes[i].cluster_name);
-          resolver_->cluster_state_map_[route_table_.routes[i].cluster_name]
-              .refcount++;
+          {
+            MutexLock lock(&resolver_->cluster_state_map_mu_);
+            resolver_->cluster_state_map_[route_table_.routes[i].cluster_name]
+                .refcount++;
+          }
           /*void *stack[128];
           int size = absl::GetStackTrace(stack, 128, 1);
           for (int i = 0; i < size; ++i) {
@@ -234,6 +245,7 @@ class XdsResolver : public Resolver {
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
   std::map<std::string /* cluster_name */, ClusterState> cluster_state_map_;
+  Mutex cluster_state_map_mu_;  // protects the cluster state map.
 };
 
 void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
