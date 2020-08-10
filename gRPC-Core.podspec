@@ -175,6 +175,7 @@ Pod::Spec.new do |s|
     ss.dependency 'BoringSSL-GRPC', '0.0.11'
     abseil_version = '1.20200225.0'
     ss.dependency 'abseil/base/base', abseil_version
+    ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
@@ -842,6 +843,12 @@ Pod::Spec.new do |s|
                       'src/core/lib/profiling/basic_timers.cc',
                       'src/core/lib/profiling/stap_timers.cc',
                       'src/core/lib/profiling/timers.h',
+                      'src/core/lib/security/authorization/authorization_engine.cc',
+                      'src/core/lib/security/authorization/authorization_engine.h',
+                      'src/core/lib/security/authorization/evaluate_args.cc',
+                      'src/core/lib/security/authorization/evaluate_args.h',
+                      'src/core/lib/security/authorization/mock_cel/activation.h',
+                      'src/core/lib/security/authorization/mock_cel/cel_value.h',
                       'src/core/lib/security/context/security_context.cc',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.cc',
@@ -1412,6 +1419,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/work_serializer.h',
                               'src/core/lib/json/json.h',
                               'src/core/lib/profiling/timers.h',
+                              'src/core/lib/security/authorization/authorization_engine.h',
+                              'src/core/lib/security/authorization/evaluate_args.h',
+                              'src/core/lib/security/authorization/mock_cel/activation.h',
+                              'src/core/lib/security/authorization/mock_cel/cel_value.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -1672,6 +1683,8 @@ Pod::Spec.new do |s|
                       'test/core/util/cmdline.h',
                       'test/core/util/debugger_macros.cc',
                       'test/core/util/debugger_macros.h',
+                      'test/core/util/eval_args_mock_endpoint.cc',
+                      'test/core/util/eval_args_mock_endpoint.h',
                       'test/core/util/fuzzer_util.cc',
                       'test/core/util/fuzzer_util.h',
                       'test/core/util/grpc_profiler.cc',

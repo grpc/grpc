@@ -436,6 +436,7 @@
         'absl/strings:strings',
         'absl/status:status',
         'absl/container:inlined_vector',
+        'absl/container:flat_hash_set',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
@@ -751,6 +752,8 @@
         'src/core/lib/iomgr/work_serializer.cc',
         'src/core/lib/json/json_reader.cc',
         'src/core/lib/json/json_writer.cc',
+        'src/core/lib/security/authorization/authorization_engine.cc',
+        'src/core/lib/security/authorization/evaluate_args.cc',
         'src/core/lib/security/context/security_context.cc',
         'src/core/lib/security/credentials/alts/alts_credentials.cc',
         'src/core/lib/security/credentials/alts/check_gcp_environment.cc',
@@ -888,6 +891,7 @@
       'sources': [
         'test/core/util/cmdline.cc',
         'test/core/util/debugger_macros.cc',
+        'test/core/util/eval_args_mock_endpoint.cc',
         'test/core/util/fuzzer_util.cc',
         'test/core/util/grpc_profiler.cc',
         'test/core/util/histogram.cc',
@@ -920,6 +924,7 @@
       'sources': [
         'test/core/util/cmdline.cc',
         'test/core/util/debugger_macros.cc',
+        'test/core/util/eval_args_mock_endpoint.cc',
         'test/core/util/fuzzer_util.cc',
         'test/core/util/grpc_profiler.cc',
         'test/core/util/histogram.cc',
