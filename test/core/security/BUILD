@@ -96,6 +96,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "evaluate_args_test",
+    srcs = ["evaluate_args_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc_authorization_engine",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
     name = "json_token_test",
     srcs = ["json_token_test.cc"],
     language = "C++",

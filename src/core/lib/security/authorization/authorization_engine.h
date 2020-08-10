@@ -24,11 +24,27 @@
 #include <string>
 #include <vector>
 
-#include "src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.h"
-#include "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h"
+#include "absl/container/flat_hash_set.h"
 #include "upb/upb.hpp"
 
+#include "src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.h"
+#include "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h"
+#include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/lib/security/authorization/mock_cel/activation.h"
+
 namespace grpc_core {
+
+// Symbols for traversing Envoy Attributes
+constexpr absl::string_view kUrlPath = "url_path";
+constexpr absl::string_view kHost = "host";
+constexpr absl::string_view kMethod = "method";
+constexpr absl::string_view kHeaders = "headers";
+constexpr absl::string_view kSourceAddress = "source_address";
+constexpr absl::string_view kSourcePort = "source_port";
+constexpr absl::string_view kDestinationAddress = "destination_address";
+constexpr absl::string_view kDestinationPort = "destination_port";
+constexpr absl::string_view kSpiffeId = "spiffe_id";
+constexpr absl::string_view kCertServerName = "cert_server_name";
 
 // AuthorizationEngine makes an AuthorizationDecision to ALLOW or DENY the
 // current action based on the condition fields in provided RBAC policies.
@@ -62,11 +78,17 @@ class AuthorizationEngine {
     kDeny,
   };
 
+  std::unique_ptr<google::api::expr::runtime::Activation> CreateActivation(
+      const EvaluateArgs& args);
+
   std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
       deny_if_matched_;
   std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
       allow_if_matched_;
   upb::Arena arena_;
+  absl::flat_hash_set<std::string> envoy_attributes_;
+  absl::flat_hash_set<std::string> header_keys_;
+  std::unique_ptr<google::api::expr::runtime::CelMap> headers_;
 };
 
 }  // namespace grpc_core

@@ -1201,6 +1201,7 @@ libs:
   headers:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
+  - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -1220,6 +1221,7 @@ libs:
   src:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
+  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1250,6 +1252,7 @@ libs:
   headers:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
+  - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -1269,6 +1272,7 @@ libs:
   src:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
+  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -4777,10 +4781,12 @@ targets:
   language: c++
   headers:
   - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/mock_cel/activation.h
   - src/core/lib/security/authorization/mock_cel/cel_value.h
   src:
   - src/core/lib/security/authorization/authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
   - test/core/security/authorization_engine_test.cc
   deps:
   - grpc_test_util
@@ -4788,6 +4794,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/container:flat_hash_set
 - name: backoff_test
   gtest: true
   build: test
@@ -5819,6 +5826,26 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: evaluate_args_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/mock_cel/activation.h
+  - src/core/lib/security/authorization/mock_cel/cel_value.h
+  src:
+  - src/core/lib/security/authorization/authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - test/core/security/evaluate_args_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  - absl/container:flat_hash_set
 - name: eventmanager_libuv_test
   gtest: true
   build: test
@@ -7506,6 +7533,7 @@ targets:
   headers:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
+  - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -7528,6 +7556,7 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
+  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
