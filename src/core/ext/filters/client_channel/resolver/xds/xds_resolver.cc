@@ -20,6 +20,8 @@
 
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
+#include "absl/strings/match.h"
+#include "re2/re2.h"
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
@@ -31,6 +33,8 @@
 namespace grpc_core {
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
+
+const char* kCallAttributeRoutingAction = "routing_action";
 
 namespace {
 
@@ -86,27 +90,31 @@ class XdsResolver : public Resolver {
 
   class XdsConfigSelector : public ConfigSelector {
    public:
-    struct Route {
-      // TODO @donnadionne: this needs to be a copy i think
-      const XdsApi::RdsUpdate::RdsRoute::Matchers* matchers;
-      std::string action;
-      // TODO @donnadionne: add weighted target case
-    };
-    using RouteTable = std::vector<Route>;
-
     explicit XdsConfigSelector(const XdsApi::RdsUpdate& rds_update) {
+      for (const auto& update : rds_update.routes) {
+        XdsApi::RdsUpdate::RdsRoute route;
+        route.matchers.path_matcher.type = update.matchers.path_matcher.type;
+        route.matchers.path_matcher.string_matcher =
+            update.matchers.path_matcher.string_matcher;
+        if (route.matchers.path_matcher.type ==
+            XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::
+                PathMatcherType::REGEX) {
+          route.matchers.path_matcher.regex_matcher = absl::make_unique<RE2>(
+              update.matchers.path_matcher.regex_matcher->pattern());
+        }
+        // todo@ donnadionne header matchers
+        route.cluster_name = update.cluster_name;
+        // todo@ donnadionne weighted clusters.
+        route_table_.routes.emplace_back(std::move(route));
+      }
       gpr_log(GPR_INFO,
               "DONNAA NEW: RDS update passed in;  RouteConfiguration contains "
               "%" PRIuPTR
               " routes to build the route_table_ for XdsConfigSelector",
-              rds_update.routes.size());
-      for (size_t i = 0; i < rds_update.routes.size(); ++i) {
+              route_table_.routes.size());
+      for (size_t i = 0; i < route_table_.routes.size(); ++i) {
         gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
-                rds_update.routes[i].ToString().c_str());
-        XdsConfigSelector::Route route;
-        route.matchers = &rds_update.routes[i].matchers;
-        route.action = rds_update.routes[i].cluster_name;
-        route_table_.push_back(std::move(route));
+                route_table_.routes[i].ToString().c_str());
       }
     }
 
@@ -118,32 +126,42 @@ class XdsResolver : public Resolver {
         if (absl::Symbolize(stack[i], out, 256)) {
           gpr_log(GPR_INFO, "donna stack trace:[%s]", out);
         }
-      }
-      gpr_log(GPR_INFO,
-              "DONNAA NEW path is %s", GRPC_SLICE_START_PTR(*(args.path)));
-      for (grpc_linked_mdelem* md = args.initial_metadata->list.head; md != nullptr;
-       md = md->next) {
+      }*/
+      gpr_log(GPR_INFO, "DONNAA NEW path is %s",
+              GRPC_SLICE_START_PTR(*(args.path)));
+      for (grpc_linked_mdelem* md = args.initial_metadata->list.head;
+           md != nullptr; md = md->next) {
         char* key = grpc_slice_to_c_string(GRPC_MDKEY(md->md));
         char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md->md));
         gpr_log(GPR_INFO, "key[%s]: value[%s]", key, value);
         gpr_free(key);
         gpr_free(value);
       }
-      gpr_log(
-          GPR_INFO,
-          "DONNAA NEW: XdsConfigSelector::GetCallConfigroute route_table_ has "
-          "%" PRIuPTR " routes; I can do my matching here!!!",
-          route_table_.size());
-      for (size_t i = 0; i < route_table_.size(); ++i) {
-        //gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
-        //        route_table_[i].matchers->ToString().c_str());
-        gpr_log(GPR_INFO, "Route action %s", route_table_[i].action.c_str());
-      }*/
+      for (size_t i = 0; i < route_table_.routes.size(); ++i) {
+        gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
+                route_table_.routes[i].matchers.ToString().c_str());
+        gpr_log(GPR_INFO, "Route action %s",
+                route_table_.routes[i].cluster_name.c_str());
+        if (absl::StartsWith(
+                StringViewFromSlice(*args.path),
+                route_table_.routes[i].matchers.path_matcher.string_matcher)) {
+          gpr_log(GPR_INFO, "DONNAA NEW match action found: %s",
+                  route_table_.routes[i].cluster_name.c_str());
+          char* routing_action_str = static_cast<char*>(args.arena->Alloc(
+              route_table_.routes[i].cluster_name.size() + 1));
+          strcpy(routing_action_str,
+                 route_table_.routes[i].cluster_name.c_str());
+          CallConfig call_config;
+          call_config.call_attributes[kCallAttributeRoutingAction] =
+              absl::string_view(routing_action_str);
+          return call_config;
+        }
+      }
       return CallConfig();
     }
 
-  private:
-    RouteTable route_table_;
+   private:
+    XdsApi::RdsUpdate route_table_;
   };
 
   std::string server_name_;
@@ -161,7 +179,8 @@ void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
             resolver_.get(), service_config->json_string().c_str());
   }
 
-  RefCountedPtr<XdsConfigSelector> config_selector = MakeRefCounted<XdsConfigSelector>(rds_update);
+  RefCountedPtr<XdsConfigSelector> config_selector =
+      MakeRefCounted<XdsConfigSelector>(rds_update);
   grpc_arg new_args[] = {
       resolver_->xds_client_->MakeChannelArg(),
       config_selector->MakeChannelArg(),
