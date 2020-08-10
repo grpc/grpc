@@ -20,6 +20,18 @@
 
 namespace grpc_core {
 
+// Symbols for traversing Envoy Attributes
+constexpr absl::string_view AuthorizationEngine::kUrlPath_;
+constexpr absl::string_view AuthorizationEngine::kHost_;
+constexpr absl::string_view AuthorizationEngine::kMethod_;
+constexpr absl::string_view AuthorizationEngine::kHeaders_;
+constexpr absl::string_view AuthorizationEngine::kSourceAddress_;
+constexpr absl::string_view AuthorizationEngine::kSourcePort_;
+constexpr absl::string_view AuthorizationEngine::kDestinationAddress_;
+constexpr absl::string_view AuthorizationEngine::kDestinationPort_;
+constexpr absl::string_view AuthorizationEngine::kSpiffeId_;
+constexpr absl::string_view AuthorizationEngine::kCertServerName_;
+
 std::unique_ptr<AuthorizationEngine>
 AuthorizationEngine::CreateAuthorizationEngine(
     const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies) {
@@ -72,6 +84,105 @@ AuthorizationEngine::AuthorizationEngine(
       }
     }
   }
+}
+
+std::unique_ptr<google::api::expr::runtime::Activation>
+AuthorizationEngine::CreateActivation(const EvaluateArgs& args) {
+  std::unique_ptr<google::api::expr::runtime::Activation> activation;
+  for (const auto& elem : envoy_attributes_) {
+    if (elem == kUrlPath_) {
+      absl::string_view url_path(args.Path());
+      if (url_path != "") {
+        activation->InsertValue(
+            kUrlPath_,
+            google::api::expr::runtime::CelValue::CreateStringView(url_path));
+      }
+    } else if (elem == kHost_) {
+      absl::string_view host(args.Host());
+      if (host != "") {
+        activation->InsertValue(
+            kHost_,
+            google::api::expr::runtime::CelValue::CreateStringView(host));
+      }
+    } else if (elem == kMethod_) {
+      absl::string_view method(args.Method());
+      if (method != "") {
+        activation->InsertValue(
+            kMethod_,
+            google::api::expr::runtime::CelValue::CreateStringView(method));
+      }
+    } else if (elem == kHeaders_) {
+      std::multimap<absl::string_view, absl::string_view> headers =
+          args.Headers();
+      std::vector<std::pair<google::api::expr::runtime::CelValue,
+                            google::api::expr::runtime::CelValue>>
+          header_items;
+      for (const auto& header_key : header_keys_) {
+        auto header_item = headers.find(header_key);
+        if (header_item != headers.end()) {
+          header_items.push_back(
+              std::pair<google::api::expr::runtime::CelValue,
+                        google::api::expr::runtime::CelValue>(
+                  google::api::expr::runtime::CelValue::CreateStringView(
+                      header_key),
+                  google::api::expr::runtime::CelValue::CreateStringView(
+                      header_item->second)));
+        }
+      }
+      headers_ = google::api::expr::runtime::ContainerBackedMapImpl::Create(
+          absl::Span<std::pair<google::api::expr::runtime::CelValue,
+                               google::api::expr::runtime::CelValue>>(
+              header_items));
+      activation->InsertValue(
+          kHeaders_,
+          google::api::expr::runtime::CelValue::CreateMap(headers_.get()));
+    } else if (elem == kSourceAddress_) {
+      absl::string_view source_address(args.SourceAddress());
+      if (source_address != "") {
+        activation->InsertValue(
+            kSourceAddress_,
+            google::api::expr::runtime::CelValue::CreateStringView(
+                source_address));
+      }
+    } else if (elem == kSourcePort_) {
+      activation->InsertValue(
+          kSourcePort_,
+          google::api::expr::runtime::CelValue::CreateInt64(args.SourcePort()));
+    } else if (elem == kDestinationAddress_) {
+      absl::string_view destination_address(args.DestinationAddress());
+      if (destination_address != "") {
+        activation->InsertValue(
+            kDestinationAddress_,
+            google::api::expr::runtime::CelValue::CreateStringView(
+                destination_address));
+      }
+    } else if (elem == kDestinationPort_) {
+      activation->InsertValue(kDestinationPort_,
+                              google::api::expr::runtime::CelValue::CreateInt64(
+                                  args.DestinationPort()));
+    } else if (elem == kSpiffeId_) {
+      absl::string_view spiffe_id(args.SpiffeID());
+      if (spiffe_id != "") {
+        activation->InsertValue(
+            kSpiffeId_,
+            google::api::expr::runtime::CelValue::CreateStringView(spiffe_id));
+      }
+    } else if (elem == kCertServerName_) {
+      absl::string_view cert_server_name(args.CertServerName());
+      if (cert_server_name != "") {
+        activation->InsertValue(
+            kCertServerName_,
+            google::api::expr::runtime::CelValue::CreateStringView(
+                cert_server_name));
+      }
+    } else {
+      gpr_log(GPR_ERROR,
+              "Error: Authorization engine does not support evaluating "
+              "attribute %s.",
+              elem.c_str());
+    }
+  }
+  return activation;
 }
 
 }  // namespace grpc_core

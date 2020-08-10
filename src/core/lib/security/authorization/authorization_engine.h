@@ -24,9 +24,13 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_set.h"
+#include "upb/upb.hpp"
+
 #include "src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.h"
 #include "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h"
-#include "upb/upb.hpp"
+#include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/lib/security/authorization/mock_cel/activation.h"
 
 namespace grpc_core {
 
@@ -62,11 +66,30 @@ class AuthorizationEngine {
     kDeny,
   };
 
+  // Symbols for traversing Envoy Attributes
+  static constexpr absl::string_view kUrlPath_ = "url_path";
+  static constexpr absl::string_view kHost_ = "host";
+  static constexpr absl::string_view kMethod_ = "method";
+  static constexpr absl::string_view kHeaders_ = "headers";
+  static constexpr absl::string_view kSourceAddress_ = "source_address";
+  static constexpr absl::string_view kSourcePort_ = "source_port";
+  static constexpr absl::string_view kDestinationAddress_ =
+      "destination_address";
+  static constexpr absl::string_view kDestinationPort_ = "destination_port";
+  static constexpr absl::string_view kSpiffeId_ = "spiffe_id";
+  static constexpr absl::string_view kCertServerName_ = "cert_server_name";
+
+  std::unique_ptr<google::api::expr::runtime::Activation> CreateActivation(
+      const EvaluateArgs& args);
+
   std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
       deny_if_matched_;
   std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
       allow_if_matched_;
   upb::Arena arena_;
+  absl::flat_hash_set<std::string> envoy_attributes_;
+  absl::flat_hash_set<std::string> header_keys_;
+  std::unique_ptr<google::api::expr::runtime::CelMap> headers_;
 };
 
 }  // namespace grpc_core
