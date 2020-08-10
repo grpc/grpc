@@ -1869,6 +1869,7 @@ grpc_cc_library(
         "envoy_ads_upb",
         "google_api_upb",
         "grpc_base",
+        "grpc_secure",
     ],
 )
 

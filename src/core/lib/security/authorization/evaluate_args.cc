@@ -16,9 +16,9 @@
 //
 //
 
-#include <map>
-
 #include "src/core/lib/security/authorization/evaluate_args.h"
+
+#include <map>
 
 #include "src/core/lib/slice/slice_utils.h"
 
@@ -66,6 +66,7 @@ std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
     const grpc_slice& val = GRPC_MDVALUE(elem->md);
     headers.emplace(StringViewFromSlice(key), StringViewFromSlice(val));
   }
+  return headers;
 }
 
 absl::string_view EvaluateArgs::GetSpiffeId() const {
