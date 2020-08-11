@@ -28,170 +28,181 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
-/* TLS certificate distributor. */
+// TLS certificate distributor.
 struct grpc_tls_certificate_distributor
     : public grpc_core::RefCounted<grpc_tls_certificate_distributor> {
  public:
   typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
 
-  /* Interface for watching TLS certificates update. */
+  // Interface for watching TLS certificates update.
   class TlsCertificatesWatcherInterface {
    public:
     virtual ~TlsCertificatesWatcherInterface() = default;
-    /**
-     * OnCertificatesChanged describes the actions the implementer will take
-     * when the root or identity certificates are updated. Setting to
-     * absl::nullopt indicates no corresponding contents for root_certs or
-     * key_cert_pairs. Note that we will send updates of the latest contents on
-     * both root and identity certificates, even when only one side of it got
-     * updated.
-     *
-     * @param root_certs the contents of the reloaded root certs.
-     * @param key_cert_pairs the contents of the reloaded identity key-cert
-     * pairs.
-     */
+
+    // Handles the delivery of the updated root and identity certificates.
+    // Setting to absl::nullopt indicates no corresponding contents for
+    // root_certs or key_cert_pairs. Note that we will send updates of the
+    // latest contents on both root and identity certificates, even when only
+    // one side of it got updated.
+    //
+    // @param root_certs the contents of the reloaded root certs.
+    // @param key_cert_pairs the contents of the reloaded identity key-cert
+    // pairs.
     virtual void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
         absl::optional<PemKeyCertPairList> key_cert_pairs) = 0;
-    /**
-     * OnError describes the actions the implementer will take when an error
-     * happens. The implementer owns the grpc_error.
-     *
-     * @param error the error occurred while reloading.
-     */
+
+    // Handles an error that occurs while attempting to fetch certificate data.
+    //
+    // @param error the error occurred while reloading.
     virtual void OnError(grpc_error* error) = 0;
   };
 
-  /**
-   * Set the key materials based on their certificate names. Note that we are
-   * not doing any copies for pem_root_certs and pem_key_cert_pairs. For
-   * pem_root_certs, the original string contents need to outlive the
-   * distributor; for pem_key_cert_pairs, internally it is taking two
-   * unique_ptr(s) to the credential string, so the ownership is actually
-   * transferred.
-   *
-   * @param root_cert_name The name of the root certificates being updated.
-   * @param identity_cert_name The name of the identity certificates being
-   * updated.
-   * @param pem_root_certs The content of root certificates. If set to
-   * absl::nullopt, the root certificates won't be updated and the
-   * root_cert_name will be ignored.
-   * @param pem_key_cert_pairs The content of identity key-cert pairs. If set to
-   * absl::nullopt, the identity key-certs pairs won't be updated and the
-   * identity_cert_name will be ignored.
-   */
-  void SetKeyMaterials(std::string root_cert_name,
-                       absl::optional<absl::string_view> pem_root_certs,
-                       std::string identity_cert_name,
-                       absl::optional<PemKeyCertPairList> pem_key_cert_pairs);
+  // Set the key materials based on their certificate name. Note that we are
+  // not doing any copies for pem_root_certs and pem_key_cert_pairs. For
+  // pem_root_certs, the original string contents need to outlive the
+  // distributor; for pem_key_cert_pairs, internally it is taking two
+  // unique_ptr(s) to the credential string, so the ownership is actually
+  // transferred.
+  //
+  // @param cert_name The name of the certificates being updated.
+  // @param pem_root_certs The content of root certificates.
+  // @param pem_key_cert_pairs The content of identity key-cert pairs.
+  void SetKeyMaterials(const std::string& cert_name,
+                       absl::string_view pem_root_certs,
+                       PemKeyCertPairList pem_key_cert_pairs);
 
-  void SetRootCerts(std::string root_cert_name,
+  void SetRootCerts(const std::string& root_cert_name,
                     absl::string_view pem_root_certs);
 
-  void SetKeyCertPairs(std::string identity_cert_name,
+  void SetKeyCertPairs(const std::string& identity_cert_name,
                        PemKeyCertPairList pem_key_cert_pairs);
 
   bool HasRootCerts(const std::string& root_cert_name);
 
   bool HasKeyCertPairs(const std::string& identity_cert_name);
-  /**
-   * Set the TLS certificate watch status callback function. The
-   * grpc_tls_certificate_distributor will invoke this callback when a new
-   * certificate name is watched by a newly registered watcher, or when a
-   * certificate name is not watched by any watchers.
-   *
-   * @param callback The callback function being set by the caller, e.g the
-   * Producer. Note that this callback will be invoked for each certificate
-   * name. If the identity certificate and root certificate's status are updated
-   * and they have the same cert name, this callback will be invoked twice.
-   *
-   * For the parameters in the callback function:
-   * string_value The name of the certificates being watched.
-   * bool_value_1 If the root certificates with the specific name are
-   * still being watched.
-   * bool_value_2 If the identity certificates with the specific name are
-   * still being watched.
-   */
+
+  // Set the TLS certificate watch status callback function. The
+  // grpc_tls_certificate_distributor will invoke this callback when a new
+  // certificate name is watched by a newly registered watcher, or when a
+  // certificate name is not watched by any watchers.
+  //
+  // @param callback The callback function being set by the caller, e.g the
+  // Producer. Note that this callback will be invoked for each certificate
+  // name. If the identity certificate and root certificate's name are same and
+  // they both got updated for the first time, this callback will only be
+  // invoked once.
+  //
+  // For the parameters in the callback function:
+  // string_value The name of the certificates being watched.
+  // bool_value_1 If the root certificates with the specific name are
+  // still being watched.
+  // bool_value_2 If the identity certificates with the specific name are
+  // still being watched.
   void SetWatchStatusCallback(
       std::function<void(std::string, bool, bool)> callback) {
     grpc_core::MutexLock lock(&mu_);
     watch_status_callback_ = callback;
   };
-  /**
-   * Register a watcher. The ownership of the WatcherInfo will be transferred to
-   * the watchers_ field of the distributor.
-   *
-   * @param watcher The watcher being registered.
-   * @param root_cert_name The name of the root certificates that will be
-   * watched. If set to absl::nullopt, the root certificates won't be watched.
-   * @param identity_cert_name The name of the identity certificates that will
-   * be watched. If set to absl::nullopt, the identity certificates won't be
-   * watched.
-   */
+
+  // Register a watcher. The ownership of the WatcherInfo will be transferred to
+  // the watchers_ field of the distributor, but we still need a raw pointer to
+  // cancel the watcher. So callers need to store the raw pointer somewhere.
+  //
+  // @param watcher The watcher being registered.
+  // @param root_cert_name The name of the root certificates that will be
+  // watched. If set to absl::nullopt, the root certificates won't be watched.
+  // @param identity_cert_name The name of the identity certificates that will
+  // be watched. If set to absl::nullopt, the identity certificates won't be
+  // watched.
   void WatchTlsCertificates(
       std::unique_ptr<TlsCertificatesWatcherInterface> watcher,
       absl::optional<std::string> root_cert_name,
       absl::optional<std::string> identity_cert_name);
-  /**
-   * Cancel a watcher. The ownership of the watcher should be already
-   * transferred to the distributor, so a raw pointer of the watcher is needed.
-   *
-   * @param watcher The watcher being canceled.
-   */
+
+  // Cancel a watcher.
+  //
+  // @param watcher The watcher being canceled.
   void CancelTlsCertificatesWatch(TlsCertificatesWatcherInterface* watcher);
 
+  // Propagate the error that the caller (e.g. Producer) encounters to all the
+  // watchers watching a particular certificate name.
+  //
+  // @param cert_name The watching cert name of the watchers that the caller
+  // wants to notify when encountering error.
+  // @param error The error that the caller encounters.
+  // @param root_cert_error If propagating errors to watchers watching cert_name
+  // as root certificate name.
+  // @param identity_cert_error If propagating errors to watchers watching
+  // cert_name as identity certificate name.
+  void SendErrorToWatchers(const std::string& cert_name, grpc_error* error,
+                           bool root_cert_error, bool identity_cert_error);
+
+  // Propagate the error that the caller (e.g. Producer) encounters to all
+  // watchers.
+  //
+  // @param error The error that the caller encounters.
+  void SendErrorToWatchers(grpc_error* error);
+
  private:
-  /* The struct WatcherInfo contains the information about each watcher. */
+  // Contains the information about each watcher.
   struct WatcherInfo {
     std::unique_ptr<TlsCertificatesWatcherInterface> watcher;
     absl::optional<std::string> root_cert_name;
     absl::optional<std::string> identity_cert_name;
   };
-  /* The struct Store contains the credential contents and some additional
-   * watcher information. */
-  struct Store {
-    /* The contents of the root certificates. */
-    absl::string_view pem_root_certs = "";
-    /* The contents of the identity key-certificate pairs. */
-    PemKeyCertPairList pem_key_cert_pair;
-    /* The count of watchers watching root certificates(of that particular
-     * name). */
+  // CertificateInfo contains the credential contents and some additional
+  // watcher information.
+  struct CertificateInfo {
+    // CertificateUpdated will be invoked to send updates to each of the
+    // watchers in root_cert_watchers and identity_cert_watchers whenever
+    // pem_root_certs or pem_key_cert_pair changes.
+    //
+    // @param cert_name The name of the certificates being changed.
+    // @param root_cert_changed If the root cert with name "cert_name" changed.
+    // @param identity_cert_changed If the identity cert with name "cert_name"
+    // changed.
+    // @param watchers A reference to watchers_.
+    // @param certificate_info_map A reference to certificate_info_map_.
+    void CertificatesUpdated(
+        const std::string& cert_name, bool root_cert_changed,
+        bool identity_cert_changed,
+        const std::map<TlsCertificatesWatcherInterface*, WatcherInfo>& watchers,
+        const std::map<std::string, CertificateInfo>& certificate_info_map);
+
+    // The contents of the root certificates.
+    absl::string_view pem_root_certs;
+    // The contents of the identity key-certificate pairs.
+    PemKeyCertPairList pem_key_cert_pairs;
+    // The count of watchers watching root certificates(of that particular
+    // name).
     int root_cert_watcher_count = 0;
-    /* The count of watchers watching identity certificates(of that particular
-     * name). */
+    // The count of watchers watching identity certificates(of that particular
+    // name).
     int identity_cert_watcher_count = 0;
-    /* The set of watchers watching root certificates(of that particular name).
-     * This is mainly used for quickly looking up the affected watchers while
-     * performing a credential reloading. */
+    // The set of watchers watching root certificates(of that particular name).
+    // This is mainly used for quickly looking up the affected watchers while
+    // performing a credential reloading.
     std::set<TlsCertificatesWatcherInterface*> root_cert_watchers;
-    /* The set of watchers watching identity certificates(of that particular
-     * name). This is mainly used for quickly looking up the affected watchers
-     * while performing a credential reloading. */
+    // The set of watchers watching identity certificates(of that particular
+    // name). This is mainly used for quickly looking up the affected watchers
+    // while performing a credential reloading.
     std::set<TlsCertificatesWatcherInterface*> identity_cert_watchers;
   };
-  /**
-   * CertificateUpdated will be invoked to send updates to each watcher whenever
-   * the key materials change. root_cert_name and identity_cert_name are the
-   * names of the certificates being updated.
-   *
-   * @param root_cert_name the name of the root certs being changed.
-   * @param identity_cert_name the name of the identity certs being changed.
-   */
-  void CertificatesUpdated(
-      const absl::optional<std::string>& root_cert_name,
-      const absl::optional<std::string>& identity_cert_name);
 
   grpc_core::Mutex mu_;
-  /* The field watchers_ stores the pointers to each of the watchers, and their
-   * corresponding WatcherInfo. It owns the WatcherInfo. */
+  // We need a dedicated mutex for watch_status_callback_ for allowing
+  // callers(e.g. Producer) to directly set key materials in the callback
+  // functions.
+  grpc_core::Mutex callback_mu_;
+  // Stores information about each watcher.
   std::map<TlsCertificatesWatcherInterface*, WatcherInfo> watchers_;
-  /* The callback to notify the caller, e.g. the Producer, that the watch status
-   * is changed. */
+  // The callback to notify the caller, e.g. the Producer, that the watch status
+  // is changed.
   std::function<void(std::string, bool, bool)> watch_status_callback_;
-  /* The field store_ stores the names of each certificate, and their
-   * corresponding Store, which contains corresponding credential contents and
-   * some additional watcher information. */
-  std::map<std::string, Store> store_;
+  // Stores the names of each certificate, and their corresponding credential
+  // contents as well as some additional watcher information.
+  std::map<std::string, CertificateInfo> certificate_info_map_;
 };
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
