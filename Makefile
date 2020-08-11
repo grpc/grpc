@@ -2321,8 +2321,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/status_metadata_test || ( echo test status_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_util_test"
 	$(Q) $(BINDIR)/$(CONFIG)/status_util_test || ( echo test status_util_test failed ; exit 1 )
-	$(E) "[RUN]     Testing stranded_event_test"
-	$(Q) $(BINDIR)/$(CONFIG)/stranded_event_test || ( echo test stranded_event_test failed ; exit 1 )
 	$(E) "[RUN]     Testing streaming_throughput_test"
 	$(Q) $(BINDIR)/$(CONFIG)/streaming_throughput_test || ( echo test streaming_throughput_test failed ; exit 1 )
 	$(E) "[RUN]     Testing string_ref_test"
