@@ -113,6 +113,7 @@ grpc_cc_test(
     data = [
         ":client_crash_test_server",
     ],
+    flaky = True,  # TODO(b/161828686)
     external_deps = [
         "gtest",
     ],
