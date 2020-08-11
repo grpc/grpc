@@ -178,7 +178,7 @@ class ClientAsyncReaderFactory {
   /// used to send to the server when starting the call.
   template <class W>
   static ClientAsyncReader<R>* Create(::grpc::ChannelInterface* channel,
-                                      ::grpc_impl::CompletionQueue* cq,
+                                      ::grpc::CompletionQueue* cq,
                                       const ::grpc::internal::RpcMethod& method,
                                       ::grpc_impl::ClientContext* context,
                                       const W& request, bool start, void* tag) {
@@ -327,7 +327,7 @@ class ClientAsyncWriterFactory {
   /// method of this instance.
   template <class R>
   static ClientAsyncWriter<W>* Create(::grpc::ChannelInterface* channel,
-                                      ::grpc_impl::CompletionQueue* cq,
+                                      ::grpc::CompletionQueue* cq,
                                       const ::grpc::internal::RpcMethod& method,
                                       ::grpc_impl::ClientContext* context,
                                       R* response, bool start, void* tag) {
@@ -493,7 +493,7 @@ class ClientAsyncReaderWriterFactory {
   /// Note that \a context will be used to fill in custom initial metadata
   /// used to send to the server when starting the call.
   static ClientAsyncReaderWriter<W, R>* Create(
-      ::grpc::ChannelInterface* channel, ::grpc_impl::CompletionQueue* cq,
+      ::grpc::ChannelInterface* channel, ::grpc::CompletionQueue* cq,
       const ::grpc::internal::RpcMethod& method,
       ::grpc_impl::ClientContext* context, bool start, void* tag) {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);

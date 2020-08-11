@@ -419,12 +419,6 @@ libs:
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
-  - src/core/ext/filters/client_channel/xds/xds_api.h
-  - src/core/ext/filters/client_channel/xds/xds_bootstrap.h
-  - src/core/ext/filters/client_channel/xds/xds_channel.h
-  - src/core/ext/filters/client_channel/xds/xds_channel_args.h
-  - src/core/ext/filters/client_channel/xds/xds_client.h
-  - src/core/ext/filters/client_channel/xds/xds_client_stats.h
   - src/core/ext/filters/deadline/deadline_filter.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
@@ -539,6 +533,12 @@ libs:
   - src/core/ext/upb-generated/udpa/annotations/versioning.upb.h
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
+  - src/core/ext/xds/xds_api.h
+  - src/core/ext/xds/xds_bootstrap.h
+  - src/core/ext/xds/xds_channel.h
+  - src/core/ext/xds/xds_channel_args.h
+  - src/core/ext/xds/xds_client.h
+  - src/core/ext/xds/xds_client_stats.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/channel_args.h
@@ -804,11 +804,6 @@ libs:
   - src/core/ext/filters/client_channel/service_config_parser.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
-  - src/core/ext/filters/client_channel/xds/xds_api.cc
-  - src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
-  - src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
-  - src/core/ext/filters/client_channel/xds/xds_client.cc
-  - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
   - src/core/ext/filters/client_idle/client_idle_filter.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
   - src/core/ext/filters/http/client/http_client_filter.cc
@@ -934,6 +929,11 @@ libs:
   - src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
+  - src/core/ext/xds/xds_api.cc
+  - src/core/ext/xds/xds_bootstrap.cc
+  - src/core/ext/xds/xds_channel_secure.cc
+  - src/core/ext/xds/xds_client.cc
+  - src/core/ext/xds/xds_client_stats.cc
   - src/core/lib/avl/avl.cc
   - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
@@ -1356,12 +1356,6 @@ libs:
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
-  - src/core/ext/filters/client_channel/xds/xds_api.h
-  - src/core/ext/filters/client_channel/xds/xds_bootstrap.h
-  - src/core/ext/filters/client_channel/xds/xds_channel.h
-  - src/core/ext/filters/client_channel/xds/xds_channel_args.h
-  - src/core/ext/filters/client_channel/xds/xds_client.h
-  - src/core/ext/filters/client_channel/xds/xds_client_stats.h
   - src/core/ext/filters/deadline/deadline_filter.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
@@ -1473,6 +1467,12 @@ libs:
   - src/core/ext/upb-generated/udpa/annotations/versioning.upb.h
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
+  - src/core/ext/xds/xds_api.h
+  - src/core/ext/xds/xds_bootstrap.h
+  - src/core/ext/xds/xds_channel.h
+  - src/core/ext/xds/xds_channel_args.h
+  - src/core/ext/xds/xds_client.h
+  - src/core/ext/xds/xds_client_stats.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/channel_args.h
@@ -1678,11 +1678,6 @@ libs:
   - src/core/ext/filters/client_channel/service_config_parser.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
-  - src/core/ext/filters/client_channel/xds/xds_api.cc
-  - src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
-  - src/core/ext/filters/client_channel/xds/xds_channel.cc
-  - src/core/ext/filters/client_channel/xds/xds_client.cc
-  - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
   - src/core/ext/filters/client_idle/client_idle_filter.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
   - src/core/ext/filters/http/client/http_client_filter.cc
@@ -1803,6 +1798,11 @@ libs:
   - src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
+  - src/core/ext/xds/xds_api.cc
+  - src/core/ext/xds/xds_bootstrap.cc
+  - src/core/ext/xds/xds_channel.cc
+  - src/core/ext/xds/xds_client.cc
+  - src/core/ext/xds/xds_client_stats.cc
   - src/core/lib/avl/avl.cc
   - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
@@ -2087,10 +2087,8 @@ libs:
   - include/grpcpp/alarm.h
   - include/grpcpp/alarm_impl.h
   - include/grpcpp/channel.h
-  - include/grpcpp/channel_impl.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
-  - include/grpcpp/completion_queue_impl.h
   - include/grpcpp/create_channel.h
   - include/grpcpp/create_channel_posix.h
   - include/grpcpp/ext/health_check_service_server_builder_option.h
@@ -2120,7 +2118,6 @@ libs:
   - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
-  - include/grpcpp/impl/codegen/completion_queue_impl.h
   - include/grpcpp/impl/codegen/completion_queue_tag.h
   - include/grpcpp/impl/codegen/config.h
   - include/grpcpp/impl/codegen/config_protobuf.h
@@ -2188,7 +2185,6 @@ libs:
   - include/grpcpp/support/async_unary_call_impl.h
   - include/grpcpp/support/byte_buffer.h
   - include/grpcpp/support/channel_arguments.h
-  - include/grpcpp/support/channel_arguments_impl.h
   - include/grpcpp/support/client_callback.h
   - include/grpcpp/support/client_callback_impl.h
   - include/grpcpp/support/client_interceptor.h
@@ -2469,10 +2465,8 @@ libs:
   - include/grpcpp/alarm.h
   - include/grpcpp/alarm_impl.h
   - include/grpcpp/channel.h
-  - include/grpcpp/channel_impl.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
-  - include/grpcpp/completion_queue_impl.h
   - include/grpcpp/create_channel.h
   - include/grpcpp/create_channel_posix.h
   - include/grpcpp/ext/health_check_service_server_builder_option.h
@@ -2502,7 +2496,6 @@ libs:
   - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
-  - include/grpcpp/impl/codegen/completion_queue_impl.h
   - include/grpcpp/impl/codegen/completion_queue_tag.h
   - include/grpcpp/impl/codegen/config.h
   - include/grpcpp/impl/codegen/config_protobuf.h
@@ -2570,7 +2563,6 @@ libs:
   - include/grpcpp/support/async_unary_call_impl.h
   - include/grpcpp/support/byte_buffer.h
   - include/grpcpp/support/channel_arguments.h
-  - include/grpcpp/support/channel_arguments_impl.h
   - include/grpcpp/support/client_callback.h
   - include/grpcpp/support/client_callback_impl.h
   - include/grpcpp/support/client_interceptor.h
@@ -4779,6 +4771,8 @@ targets:
   language: c++
   headers:
   - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/mock_cel/activation.h
+  - src/core/lib/security/authorization/mock_cel/cel_value.h
   src:
   - src/core/lib/security/authorization/authorization_engine.cc
   - test/core/security/authorization_engine_test.cc
@@ -7228,6 +7222,7 @@ targets:
 - name: stranded_event_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h

@@ -59,7 +59,9 @@ struct grpc_call;
 namespace grpc {
 
 class CallCredentials;
+class Channel;
 class ChannelInterface;
+class CompletionQueue;
 
 namespace internal {
 class RpcMethod;
@@ -89,8 +91,6 @@ class ClientCallbackUnaryImpl;
 class ClientContextAccessor;
 }  // namespace internal
 
-class Channel;
-class CompletionQueue;
 class ServerContext;
 template <class R>
 class ClientReader;
@@ -417,7 +417,7 @@ class ClientContext {
   friend class ::grpc::testing::InteropClientContextInspector;
   friend class ::grpc::internal::CallOpClientRecvStatus;
   friend class ::grpc::internal::CallOpRecvInitialMetadata;
-  friend class ::grpc_impl::Channel;
+  friend class ::grpc::Channel;
   template <class R>
   friend class ::grpc_impl::ClientReader;
   template <class W>
@@ -452,7 +452,7 @@ class ClientContext {
 
   grpc_call* call() const { return call_; }
   void set_call(grpc_call* call,
-                const std::shared_ptr<::grpc_impl::Channel>& channel);
+                const std::shared_ptr<::grpc::Channel>& channel);
 
   grpc::experimental::ClientRpcInfo* set_client_rpc_info(
       const char* method, grpc::internal::RpcMethod::RpcType type,
@@ -488,7 +488,7 @@ class ClientContext {
   bool wait_for_ready_explicitly_set_;
   bool idempotent_;
   bool cacheable_;
-  std::shared_ptr<::grpc_impl::Channel> channel_;
+  std::shared_ptr<::grpc::Channel> channel_;
   grpc::internal::Mutex mu_;
   grpc_call* call_;
   bool call_canceled_;

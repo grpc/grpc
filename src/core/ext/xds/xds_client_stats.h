@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CLIENT_STATS_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CLIENT_STATS_H
+#ifndef GRPC_CORE_EXT_XDS_XDS_CLIENT_STATS_H
+#define GRPC_CORE_EXT_XDS_XDS_CLIENT_STATS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -208,4 +208,4 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CLIENT_STATS_H */
+#endif /* GRPC_CORE_EXT_XDS_XDS_CLIENT_STATS_H */

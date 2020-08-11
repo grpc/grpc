@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CHANNEL_ARGS_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CHANNEL_ARGS_H
+#ifndef GRPC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H
+#define GRPC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H
 
 // Boolean channel arg indicating whether the target is an xds server.
 #define GRPC_ARG_ADDRESS_IS_XDS_SERVER "grpc.address_is_xds_server"
@@ -23,4 +23,4 @@
 // Pointer channel arg containing a ref to the XdsClient object.
 #define GRPC_ARG_XDS_CLIENT "grpc.xds_client"
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_CHANNEL_ARGS_H */
+#endif /* GRPC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H */

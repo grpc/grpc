@@ -189,17 +189,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_api.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_api.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_bootstrap.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_bootstrap.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_channel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_channel_args.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_channel_secure.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_client.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_client.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_client_stats.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_idle/client_idle_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
@@ -439,6 +428,17 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_api.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_secure.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_client.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/avl/avl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/avl/avl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/backoff/backoff.cc" role="src" />

@@ -24,12 +24,9 @@
 
 #include "src/cpp/client/create_channel_internal.h"
 
-namespace grpc_impl {
+namespace grpc {
 
 class ChannelArguments;
-}  // namespace grpc_impl
-
-namespace grpc {
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 

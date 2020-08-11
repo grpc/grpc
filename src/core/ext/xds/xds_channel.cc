@@ -20,7 +20,7 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/xds/xds_channel.h"
+#include "src/core/ext/xds/xds_channel.h"
 
 namespace grpc_core {
 
