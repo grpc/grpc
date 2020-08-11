@@ -14,10 +14,13 @@
 """Common resources used in the gRPC route guide example."""
 
 import json
+import os
+import sys
 
 import grpc
 
-protos = grpc.protos("protos/route_guide.proto", include_paths=["../.."])
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
+protos = grpc.protos("protos/route_guide.proto")
 
 
 def read_route_guide_database():
