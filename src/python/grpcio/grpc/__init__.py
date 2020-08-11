@@ -2038,7 +2038,7 @@ class Compression(enum.IntEnum):
     Gzip = _compression.Gzip
 
 
-from grpc._runtime_protos import protos, services, protos_and_services
+from grpc._runtime_protos import protos, services, protos_and_services  # pylint: disable=wrong-import-position
 
 ###################################  __all__  #################################
 
