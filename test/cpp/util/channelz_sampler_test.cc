@@ -114,7 +114,7 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
-  const int kWaitForServerSeconds = 10;
+  const int kWaitForServerSeconds = 100;
   ASSERT_TRUE(WaitForConnection(kWaitForServerSeconds));
   // client threads
   gpr_event done_ev1, done_ev2;
@@ -132,8 +132,9 @@ TEST(ChannelzSamplerTest, SimpleTest) {
        "--sampling_times=" + sampling_times,
        "--sampling_interval_seconds=" + sampling_interval_seconds,
        "--output_json=" + output_json});
-  int status = test_driver->Join();
+  test_driver->Join();
   /*
+  int status = test_driver->Join();
     if (WIFEXITED(status)) {
       if (WEXITSTATUS(status)) {
         gpr_log(GPR_ERROR,
