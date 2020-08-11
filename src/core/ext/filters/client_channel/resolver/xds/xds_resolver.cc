@@ -191,6 +191,7 @@ void XdsResolver::StartLocked() {
   grpc_error* error = GRPC_ERROR_NONE;
   xds_client_ = MakeOrphanable<XdsClient>(
       work_serializer(), interested_parties_, server_name_,
+      std::vector<grpc_resolved_address>{},
       absl::make_unique<ListenerWatcher>(Ref()), *args_, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
