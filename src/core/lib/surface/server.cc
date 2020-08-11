@@ -542,11 +542,6 @@ Server::~Server() {
   }
 }
 
-void Server::SetConfigFetcher(
-    std::unique_ptr<grpc_server_config_fetcher> config_fetcher) {
-  config_fetcher_ = std::move(config_fetcher);
-}
-
 void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
   channelz::ListenSocketNode* listen_socket_node =
       listener->channelz_listen_socket_node();
@@ -571,31 +566,14 @@ void Server::Start() {
       rm->matcher = absl::make_unique<RealRequestMatcher>(this);
     }
   }
-  grpc_channel_args* args_copy = nullptr;
   {
     MutexLock lock(&mu_global_);
     starting_ = true;
-    if (config_fetcher_ != nullptr) {
-      args_copy = grpc_channel_args_copy(channel_args_);
-    }
   }
-  if (config_fetcher_ != nullptr) {
-    std::vector<std::string> listening_addresses;
-    for (auto& listener : listeners_) {
-      const auto& addrs = listener.listener->listening_addresses();
-      listening_addresses.insert(listening_addresses.end(), addrs.begin(),
-                                 addrs.end());
-    }
-    config_fetcher_->Start(listening_addresses, args_copy);
-  } else {
-    FinishStart();
-  }
-}
-
-void Server::FinishStart() {
   for (auto& listener : listeners_) {
-    listener.listener->Start(this, &pollsets_);
+    listener.listener->Start();
   }
+  if (config_fetcher_ != nullptr) config_fetcher_->Start();
   MutexLock lock(&mu_global_);
   starting_ = false;
   starting_cv_.Signal();
@@ -1592,6 +1570,6 @@ void grpc_server_set_config_fetcher(
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_set_config_fetcher(server=%p, config_fetcher=%p)",
                  2, (server, config_fetcher));
-  server->core_server->SetConfigFetcher(
-      std::unique_ptr<grpc_server_config_fetcher>(config_fetcher));
+  server->core_server->set_config_fetcher(std::move(config_fetcher->impl));
+  delete config_fetcher;
 }

@@ -78,20 +78,31 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     virtual void OnResourceDoesNotExist() = 0;
   };
 
-  // gRPC client should populate server_name.
-  // gRPC server should populate listening_addresses.
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
-// FIXME: change API to allow ServiceConfigWatcher to be started later,
-// so that we can use this in the gRPC server
   XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
-            grpc_pollset_set* interested_parties, absl::string_view server_name,
-            std::vector<grpc_resolved_address> listening_addresses,
-            std::unique_ptr<ListenerWatcherInterface> watcher,
+            grpc_pollset_set* interested_parties,
             const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
 
   void Orphan() override;
+
+  // Set the listener watcher. Only one listener watcher can be
+  // registered, and there is no way to unregister it; it will not be
+  // destroyed until the XdsClient is destroyed.
+  // gRPC client should populate server_name.
+  // gRPC server should populate listening_addresses.
+  // TODO(roth): As part of sharing the XdsClient instance between gRPC
+  // channels, we will eventually need to support multiple listner
+  // watchers here, using an API similar to the cluster and endpoint
+  // watcher interface.  Note that doing this will mean that we can no
+  // longer filter the RDS response based on the server name of the
+  // listener, because multiple listeners can refer to the same
+  // RouteConfiguration.  So this change will affect RDS validation.
+  void SetListenerWatcher(
+      absl::string_view server_name,
+      std::vector<grpc_resolved_address> listening_addresses,
+      std::unique_ptr<ListenerWatcherInterface> watcher);
 
   // Start and cancel cluster data watch for a cluster.
   // The XdsClient takes ownership of the watcher, but the caller may
@@ -257,8 +268,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   std::unique_ptr<XdsBootstrap> bootstrap_;
   XdsApi api_;
 
-  const std::string server_name_;
-  const std::vector<grpc_resolved_address> listening_addresses_;
+  std::string server_name_;
+  std::vector<grpc_resolved_address> listening_addresses_;
   std::unique_ptr<ListenerWatcherInterface> listener_watcher_;
 
   // The channel for communicating with the xds server.

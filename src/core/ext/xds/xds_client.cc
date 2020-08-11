@@ -1744,9 +1744,6 @@ grpc_millis GetRequestTimeout(const grpc_channel_args& args) {
 
 XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
                      grpc_pollset_set* interested_parties,
-                     absl::string_view server_name,
-                     std::vector<grpc_resolved_address> listening_addresses,
-                     std::unique_ptr<ListenerWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
       request_timeout_(GetRequestTimeout(channel_args)),
@@ -1754,10 +1751,7 @@ XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
       interested_parties_(interested_parties),
       bootstrap_(
           XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
-      api_(this, &grpc_xds_client_trace, bootstrap_.get()),
-      server_name_(server_name),
-      listening_addresses_(std::move(listening_addresses)),
-      listener_watcher_(std::move(watcher)) {
+      api_(this, &grpc_xds_client_trace, bootstrap_.get()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
@@ -1780,9 +1774,6 @@ XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
   }
   chand_ = MakeOrphanable<ChannelState>(
       Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), channel);
-  if (listener_watcher_ != nullptr) {
-    chand_->Subscribe(XdsApi::kLdsTypeUrl, std::string(server_name));
-  }
 }
 
 XdsClient::~XdsClient() {
@@ -1808,6 +1799,16 @@ void XdsClient::Orphan() {
     endpoint_map_.clear();
   }
   Unref(DEBUG_LOCATION, "XdsClient::Orphan()");
+}
+
+void XdsClient::SetListenerWatcher(
+    absl::string_view server_name,
+    std::vector<grpc_resolved_address> listening_addresses,
+    std::unique_ptr<ListenerWatcherInterface> watcher) {
+  server_name_ = std::string(server_name);
+  listening_addresses_ = std::move(listening_addresses);
+  listener_watcher_ = std::move(watcher);
+  chand_->Subscribe(XdsApi::kLdsTypeUrl, server_name_);
 }
 
 void XdsClient::WatchClusterData(

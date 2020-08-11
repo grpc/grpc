@@ -66,6 +66,34 @@ class Server : public InternallyRefCounted<Server> {
     grpc_byte_buffer** optional_payload;
   };
 
+  // TODO(roth): Eventually, will need a way to modify configuration even after
+  // a connection is established (e.g., to change things like L7 rate
+  // limiting, RBAC, and fault injection configs).  One possible option
+  // would be to do something like ServiceConfig and ConfigSelector, but
+  // that might add unnecessary per-call overhead.  Need to consider other
+  // approaches here.
+  class ConfigFetcherInterface : public RefCounted<ConfigFetcherInterface> {
+   public:
+    class WatcherInterface {
+     public:
+      virtual ~WatcherInterface() = default;
+      virtual void UpdateConfig(grpc_channel_args* args) = 0;
+    };
+
+    virtual ~ConfigFetcherInterface() = default;
+
+    virtual void StartWatch(const grpc_channel_args& args,
+                            std::vector<std::string> listening_addresses,
+                            std::unique_ptr<WatcherInterface> watcher) = 0;
+    virtual void CancelWatch(WatcherInterface* watcher) = 0;
+
+    // TODO(roth): We currently need to know that all the watchers are
+    // registered before we actually start fetching, due to limitations
+    // of the way that we're using xDS for the gRPC server.  Once we've
+    // switched to the new xDS naming scheme, this method can go away.
+    virtual void Start() = 0;
+  };
+
   /// Interface for listeners.
   /// Implementations must override the Orphan() method, which should stop
   /// listening and initiate destruction of the listener.
@@ -73,17 +101,12 @@ class Server : public InternallyRefCounted<Server> {
    public:
     virtual ~ListenerInterface() = default;
 
-    /// Starts listening. This listener may refer to the pollset object beyond
-    /// this call, so it is a pointer rather than a reference.
-    virtual void Start(Server* server,
-                       const std::vector<grpc_pollset*>* pollsets) = 0;
+    /// Starts listening.
+    virtual void Start() = 0;
 
     /// Returns the channelz node for the listen socket, or null if not
     /// supported.
     virtual channelz::ListenSocketNode* channelz_listen_socket_node() const = 0;
-
-    /// Returns the addresses on which the listener is listening.
-    virtual const std::vector<std::string>& listening_addresses() const = 0;
 
     /// Sets a closure to be invoked by the listener when its destruction
     /// is complete.
@@ -95,16 +118,7 @@ class Server : public InternallyRefCounted<Server> {
 
   void Orphan() override;
 
-  const grpc_channel_args* channel_args() {
-    MutexLock lock(&mu_global_);
-    return channel_args_;
-  }
-  void set_channel_args(const grpc_channel_args* args) {
-    MutexLock lock(&mu_global_);
-    grpc_channel_args_destroy(channel_args_);
-    channel_args_ = args;
-  }
-
+  const grpc_channel_args* channel_args() const { return channel_args_; }
   grpc_resource_user* default_resource_user() const {
     return default_resource_user_;
   }
@@ -115,10 +129,15 @@ class Server : public InternallyRefCounted<Server> {
   // result is valid for the lifetime of the server.
   const std::vector<grpc_pollset*>& pollsets() const { return pollsets_; }
 
-  bool HasOpenConnections();
+  ConfigFetcherInterface* config_fetcher() const {
+    return config_fetcher_.get();
+  }
+  void set_config_fetcher(
+      RefCountedPtr<ConfigFetcherInterface> config_fetcher) {
+    config_fetcher_ = std::move(config_fetcher);
+  }
 
-  void SetConfigFetcher(
-      std::unique_ptr<grpc_server_config_fetcher> config_fetcher);
+  bool HasOpenConnections();
 
   // Adds a listener to the server.  When the server starts, it will call
   // the listener's Start() method, and when it shuts down, it will orphan
@@ -337,8 +356,6 @@ class Server : public InternallyRefCounted<Server> {
     grpc_cq_completion completion;
   };
 
-  void FinishStart();
-
   static void ListenerDestroyDone(void* arg, grpc_error* error);
 
   static void DoneShutdownEvent(void* server,
@@ -364,10 +381,10 @@ class Server : public InternallyRefCounted<Server> {
 
   std::vector<grpc_channel*> GetChannelsLocked() const;
 
-  const grpc_channel_args* channel_args_;
+  grpc_channel_args* const channel_args_;
   grpc_resource_user* default_resource_user_ = nullptr;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
-  std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
+  RefCountedPtr<ConfigFetcherInterface> config_fetcher_;
 
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;
@@ -412,19 +429,8 @@ struct grpc_server {
   grpc_core::OrphanablePtr<grpc_core::Server> core_server;
 };
 
-// TODO(roth): Eventually, will need a way to modify configuration even after
-// a connection is established (e.g., to change things like L7 rate
-// limiting, RBAC, and fault injection configs).  One possible option
-// would be to do something like ServiceConfig and ConfigSelector, but
-// that might add unnecessary per-call overhead.  Need to consider other
-// approaches here.
 struct grpc_server_config_fetcher {
- public:
-  virtual ~grpc_server_config_fetcher() = default;
-  // Takes ownership of args.
-  virtual void Start(
-      const std::vector<std::string>& listening_addresses,
-      grpc_channel_args* args) = 0;
+  grpc_core::RefCountedPtr<grpc_core::Server::ConfigFetcherInterface> impl;
 };
 
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */
