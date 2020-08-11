@@ -133,25 +133,21 @@ TEST(ChannelzSamplerTest, SimpleTest) {
        "--sampling_interval_seconds=" + sampling_interval_seconds,
        "--output_json=" + output_json});
   int status = test_driver->Join();
-/*
-  if (WIFEXITED(status)) {
-    if (WEXITSTATUS(status)) {
-      gpr_log(GPR_ERROR,
-              "Channelz sampler test test-runner exited with code %d",
-              WEXITSTATUS(status));
-      GPR_ASSERT(0);  // log the line number of the assertion failure
+  /*
+    if (WIFEXITED(status)) {
+      if (WEXITSTATUS(status)) {
+        gpr_log(GPR_ERROR,
+                "Channelz sampler test test-runner exited with code %d",
+                WEXITSTATUS(status));
+        GPR_ASSERT(0);  // log the line number of the assertion failure
+      }
+    } else if (WIFSIGNALED(status)) {
+      gpr_log(GPR_ERROR, "Channelz sampler test test-runner ended from signal
+    %d", WTERMSIG(status)); GPR_ASSERT(0); } else { gpr_log(GPR_ERROR, "Channelz
+    sampler test test-runner ended with unknown status %d", status);
+      GPR_ASSERT(0);
     }
-  } else if (WIFSIGNALED(status)) {
-    gpr_log(GPR_ERROR, "Channelz sampler test test-runner ended from signal %d",
-            WTERMSIG(status));
-    GPR_ASSERT(0);
-  } else {
-    gpr_log(GPR_ERROR,
-            "Channelz sampler test test-runner ended with unknown status %d",
-            status);
-    GPR_ASSERT(0);
-  }
-*/
+  */
   gpr_event_set(&done_ev1, (void*)1);
   gpr_event_set(&done_ev2, (void*)1);
   client_thread_1.join();
