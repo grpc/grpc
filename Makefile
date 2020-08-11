@@ -2321,8 +2321,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/status_metadata_test || ( echo test status_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_util_test"
 	$(Q) $(BINDIR)/$(CONFIG)/status_util_test || ( echo test status_util_test failed ; exit 1 )
-	$(E) "[RUN]     Testing stranded_event_test"
-	$(Q) $(BINDIR)/$(CONFIG)/stranded_event_test || ( echo test stranded_event_test failed ; exit 1 )
 	$(E) "[RUN]     Testing streaming_throughput_test"
 	$(Q) $(BINDIR)/$(CONFIG)/streaming_throughput_test || ( echo test streaming_throughput_test failed ; exit 1 )
 	$(E) "[RUN]     Testing string_ref_test"
@@ -4872,10 +4870,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/alarm.h \
     include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
-    include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
-    include/grpcpp/completion_queue_impl.h \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
@@ -4905,7 +4901,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
-    include/grpcpp/impl/codegen/completion_queue_impl.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/config_protobuf.h \
@@ -5559,10 +5554,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/alarm.h \
     include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
-    include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
-    include/grpcpp/completion_queue_impl.h \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
@@ -5592,7 +5585,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
-    include/grpcpp/impl/codegen/completion_queue_impl.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/config_protobuf.h \
