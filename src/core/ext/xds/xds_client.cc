@@ -679,7 +679,6 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
-  GPR_ASSERT(!xds_client()->server_name_.empty());
   // Create a call with the specified method name.
   const auto& method =
       xds_client()->bootstrap_->server().ShouldUseV3()
@@ -806,7 +805,8 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
       ResourceNamesForRequest(type_url);
   request_payload_slice = xds_client()->api_.CreateAdsRequest(
       type_url, resource_names, state.version, state.nonce,
-      GRPC_ERROR_REF(state.error), !sent_initial_message_);
+      GRPC_ERROR_REF(state.error), !sent_initial_message_,
+      xds_client()->listening_addresses_);
   if (type_url != XdsApi::kLdsTypeUrl && type_url != XdsApi::kRdsTypeUrl &&
       type_url != XdsApi::kCdsTypeUrl && type_url != XdsApi::kEdsTypeUrl) {
     state_map_.erase(type_url);
@@ -1745,6 +1745,7 @@ grpc_millis GetRequestTimeout(const grpc_channel_args& args) {
 XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
                      grpc_pollset_set* interested_parties,
                      absl::string_view server_name,
+                     std::vector<grpc_resolved_address> listening_addresses,
                      std::unique_ptr<ListenerWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
@@ -1755,6 +1756,7 @@ XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
           XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
       api_(this, &grpc_xds_client_trace, bootstrap_.get()),
       server_name_(server_name),
+      listening_addresses_(std::move(listening_addresses)),
       listener_watcher_(std::move(watcher)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);

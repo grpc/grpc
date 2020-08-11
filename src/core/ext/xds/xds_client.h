@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <set>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -32,6 +33,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
@@ -76,10 +78,13 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     virtual void OnResourceDoesNotExist() = 0;
   };
 
+  // gRPC client should populate server_name.
+  // gRPC server should populate listening_addresses.
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
   XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
             grpc_pollset_set* interested_parties, absl::string_view server_name,
+            std::vector<grpc_resolved_address> listening_addresses,
             std::unique_ptr<ListenerWatcherInterface> watcher,
             const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
@@ -251,6 +256,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   XdsApi api_;
 
   const std::string server_name_;
+  const std::vector<grpc_resolved_address> listening_addresses_;
   std::unique_ptr<ListenerWatcherInterface> listener_watcher_;
 
   // The channel for communicating with the xds server.
