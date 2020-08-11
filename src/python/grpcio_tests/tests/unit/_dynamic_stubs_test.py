@@ -97,6 +97,10 @@ def _test_grpc_tools_unimportable():
             _assert_unimplemented("Python 3")
 
 
+# NOTE(rbellevi): multiprocessing.Process fails to pickle function objects
+# when they do not come from the "__main__" module, so this test passes
+# if run directly on Windows, but not if started by the test runner.
+@unittest.skipIf(os.name == "nt", "Windows multiprocessing unsupported")
 class DynamicStubTest(unittest.TestCase):
 
     def test_sunny_day(self):
