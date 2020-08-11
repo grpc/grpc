@@ -16,8 +16,9 @@
 //
 //
 
-#include "src/core/lib/security/authorization/evaluate_args.h"
+#include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/slice/slice_utils.h"
 
 namespace grpc_core {
