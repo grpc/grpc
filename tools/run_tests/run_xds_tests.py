@@ -1718,6 +1718,21 @@ try:
                 metadata_to_send = '--metadata=""'
 
             if test_case in _TESTS_TO_FAIL_ON_RPC_FAILURE:
+                # TODO(ericgribkoff) Unconditional wait is recommended by TD
+                # team when reusing backend resources after config changes
+                # between test cases, as we are doing here. This should address
+                # flakiness issues with these tests; other attempts to deflake
+                # (such as waiting for the first successful RPC before failing
+                # on any subsequent failures) were insufficient because, due to
+                # propagation delays, we may initially see an RPC succeed to the
+                # expected backends but due to a stale configuration: e.g., test
+                # A (1) routes traffic to MIG A, then (2) switches to MIG B,
+                # then (3) back to MIG A. Test B begins running and sees RPCs
+                # going to MIG A, as expected. However, due to propagation
+                # delays, Test B is actually seeing the stale config from step
+                # (1), and then fails when it gets update (2) unexpectedly
+                # switching to MIG B.
+                time.sleep(200)
                 fail_on_failed_rpc = '--fail_on_failed_rpc=true'
             else:
                 fail_on_failed_rpc = '--fail_on_failed_rpc=false'
