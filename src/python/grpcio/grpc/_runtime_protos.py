@@ -105,7 +105,7 @@ def protos_and_services(protobuf_path):  # pylint: disable=unused-argument
     """
 
 
-if sys.version_info[0] < 3:
+if sys.version_info < (3, 5, 0):
     protos = _interpreter_version_protos
     services = _interpreter_version_services
     protos_and_services = _interpreter_version_protos_and_services
