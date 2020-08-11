@@ -16,7 +16,7 @@
  *
  */
 #include <stdlib.h>
-//#include <unistd.h>
+#include <unistd.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -114,7 +114,7 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
-  const int kWaitForServerSeconds = 100;
+  const int kWaitForServerSeconds = 10;
   ASSERT_TRUE(WaitForConnection(kWaitForServerSeconds));
   // client threads
   gpr_event done_ev1, done_ev2;
