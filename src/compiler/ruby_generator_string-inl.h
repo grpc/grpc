@@ -124,7 +124,7 @@ inline grpc::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor) {
     ReplacePrefix(&proto_type, ".", "");  // remove the leading . (no package)
     proto_type = RubyPackage(descriptor->file()) + "." + proto_type;
   }
-  grpc::string res(proto_type);
+  grpc::string res("." + proto_type);
   if (res.find('.') == grpc::string::npos) {
     return res;
   } else {
