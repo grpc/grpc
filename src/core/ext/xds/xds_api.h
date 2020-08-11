@@ -61,19 +61,14 @@ class XdsApi {
           PathMatcherType type;
           std::string string_matcher;
           std::unique_ptr<RE2> regex_matcher;
-          bool operator==(const PathMatcher& other) const {
-            if (type != other.type) return false;
-            if (type == PathMatcherType::REGEX) {
-              // Should never be null.
-              if (regex_matcher == nullptr || other.regex_matcher == nullptr) {
-                return false;
-              }
-              return regex_matcher->pattern() == other.regex_matcher->pattern();
-            }
-            return string_matcher == other.string_matcher;
-          }
+
+          PathMatcher() = default;
+          PathMatcher(const PathMatcher& other);
+          PathMatcher& operator=(const PathMatcher& other);
+          bool operator==(const PathMatcher& other) const;
           std::string ToString() const;
         };
+
         struct HeaderMatcher {
           enum class HeaderMatcherType {
             EXACT,    // value stored in string_matcher field
@@ -93,19 +88,18 @@ class XdsApi {
           // invert_match field may or may not exisit, so initialize it to
           // false.
           bool invert_match = false;
-          bool operator==(const HeaderMatcher& other) const {
-            return (name == other.name && type == other.type &&
-                    range_start == other.range_start &&
-                    range_end == other.range_end &&
-                    string_matcher == other.string_matcher &&
-                    present_match == other.present_match &&
-                    invert_match == other.invert_match);
-          }
+
+          HeaderMatcher() = default;
+          HeaderMatcher(const HeaderMatcher& other);
+          HeaderMatcher& operator=(const HeaderMatcher& other);
+          bool operator==(const HeaderMatcher& other) const;
           std::string ToString() const;
         };
+
         PathMatcher path_matcher;
         std::vector<HeaderMatcher> header_matchers;
         absl::optional<uint32_t> fraction_per_million;
+
         bool operator==(const Matchers& other) const {
           return (path_matcher == other.path_matcher &&
                   header_matchers == other.header_matchers &&
@@ -113,13 +107,16 @@ class XdsApi {
         }
         std::string ToString() const;
       };
+
       Matchers matchers;
+
       // Action for this route.
+      // TODO(roth): When we can use absl::variant<>, consider using that
+      // here, to enforce the fact that only one of the two fields can be set.
       std::string cluster_name;
       struct ClusterWeight {
         std::string name;
         uint32_t weight;
-
         bool operator==(const ClusterWeight& other) const {
           return (name == other.name && weight == other.weight);
         }
