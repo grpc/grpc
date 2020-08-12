@@ -103,14 +103,19 @@ set_property(CACHE gRPC_ABSL_PROVIDER PROPERTY STRINGS "module" "package")
 
 set(gRPC_ABSL_USED_TARGETS
   absl_algorithm
+  absl_algorithm_container
   absl_atomic_hook
   absl_bad_optional_access
+  absl_bad_variant_access
   absl_base
   absl_base_internal
   absl_bits
+  absl_city
   absl_civil_time
   absl_compressed_tuple
   absl_config
+  absl_container_common
+  absl_container_memory
   absl_cord
   absl_core_headers
   absl_debugging_internal
@@ -118,17 +123,27 @@ set(gRPC_ABSL_USED_TARGETS
   absl_dynamic_annotations
   absl_endian
   absl_errno_saver
+  absl_exponential_biased
   absl_fixed_array
+  absl_flat_hash_set
   absl_function_ref
   absl_graphcycles_internal
+  absl_hash
+  absl_hash_function_defaults
+  absl_hash_policy_traits
+  absl_hashtable_debug_hooks
+  absl_hashtablez_sampler
+  absl_have_sse
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
   absl_kernel_timeout_internal
+  absl_layout
   absl_log_severity
   absl_malloc_internal
   absl_memory
   absl_optional
+  absl_raw_hash_set
   absl_raw_logging_internal
   absl_span
   absl_spinlock_wait
@@ -145,6 +160,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_time_zone
   absl_type_traits
   absl_utility
+  absl_variant
   absl_meta
 )
 
@@ -1703,6 +1719,8 @@ add_library(grpc
   src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_writer.cc
+  src/core/lib/security/authorization/authorization_engine.cc
+  src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -1859,6 +1877,7 @@ target_link_libraries(grpc
   absl::strings
   absl::status
   absl::inlined_vector
+  absl::flat_hash_set
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc "-framework CoreFoundation")
@@ -8419,8 +8438,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(authorization_engine_test
-  src/core/lib/security/authorization/authorization_engine.cc
-  src/core/lib/security/authorization/evaluate_args.cc
   test/core/security/authorization_engine_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -8452,7 +8469,6 @@ target_link_libraries(authorization_engine_test
   gpr
   address_sorting
   upb
-  absl::flat_hash_set
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10761,8 +10777,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(evaluate_args_test
-  src/core/lib/security/authorization/authorization_engine.cc
-  src/core/lib/security/authorization/evaluate_args.cc
   test/core/security/evaluate_args_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -10794,7 +10808,6 @@ target_link_libraries(evaluate_args_test
   gpr
   address_sorting
   upb
-  absl::flat_hash_set
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15678,7 +15691,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc.pc")
 
@@ -15698,7 +15711,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
   "grpc"
-  "-lgrpc++ -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++ -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++.pc")
 

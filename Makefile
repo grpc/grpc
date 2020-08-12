@@ -3952,6 +3952,8 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_writer.cc \
+    src/core/lib/security/authorization/authorization_engine.cc \
+    src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -6480,6 +6482,7 @@ endif
 LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/base/dynamic_annotations.cc \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
+    third_party/abseil-cpp/absl/base/internal/exponential_biased.cc \
     third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock.cc \
@@ -6489,12 +6492,17 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
     third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
     third_party/abseil-cpp/absl/base/log_severity.cc \
+    third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.cc \
+    third_party/abseil-cpp/absl/container/internal/hashtablez_sampler_force_weak_definition.cc \
+    third_party/abseil-cpp/absl/container/internal/raw_hash_set.cc \
     third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
     third_party/abseil-cpp/absl/debugging/internal/demangle.cc \
     third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc \
     third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc \
     third_party/abseil-cpp/absl/debugging/stacktrace.cc \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
+    third_party/abseil-cpp/absl/hash/internal/city.cc \
+    third_party/abseil-cpp/absl/hash/internal/hash.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/status/status.cc \
     third_party/abseil-cpp/absl/status/status_payload_printer.cc \
@@ -6545,6 +6553,7 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc \
     third_party/abseil-cpp/absl/time/time.cc \
     third_party/abseil-cpp/absl/types/bad_optional_access.cc \
+    third_party/abseil-cpp/absl/types/bad_variant_access.cc \
 
 
 LIBGRPC_ABSEIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ABSEIL_SRC))))
@@ -11666,8 +11675,6 @@ endif
 
 
 AUTHORIZATION_ENGINE_TEST_SRC = \
-    src/core/lib/security/authorization/authorization_engine.cc \
-    src/core/lib/security/authorization/evaluate_args.cc \
     test/core/security/authorization_engine_test.cc \
 
 AUTHORIZATION_ENGINE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(AUTHORIZATION_ENGINE_TEST_SRC))))
@@ -11693,17 +11700,13 @@ else
 $(BINDIR)/$(CONFIG)/authorization_engine_test: $(PROTOBUF_DEP) $(AUTHORIZATION_ENGINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(AUTHORIZATION_ENGINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libabsl/container:flat_hash_set.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/authorization_engine_test
+	$(Q) $(LDXX) $(LDFLAGS) $(AUTHORIZATION_ENGINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/authorization_engine_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/src/core/lib/security/authorization/authorization_engine.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libabsl/container:flat_hash_set.a
-
-$(OBJDIR)/$(CONFIG)/src/core/lib/security/authorization/evaluate_args.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libabsl/container:flat_hash_set.a
-
-$(OBJDIR)/$(CONFIG)/test/core/security/authorization_engine_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libabsl/container:flat_hash_set.a
+$(OBJDIR)/$(CONFIG)/test/core/security/authorization_engine_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 deps_authorization_engine_test: $(AUTHORIZATION_ENGINE_TEST_OBJS:.o=.dep)
 
@@ -14186,8 +14189,6 @@ $(OBJDIR)/$(CONFIG)/test/cpp/util/error_details_test.o: $(GENDIR)/src/proto/grpc
 
 
 EVALUATE_ARGS_TEST_SRC = \
-    src/core/lib/security/authorization/authorization_engine.cc \
-    src/core/lib/security/authorization/evaluate_args.cc \
     test/core/security/evaluate_args_test.cc \
 
 EVALUATE_ARGS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(EVALUATE_ARGS_TEST_SRC))))
@@ -14213,17 +14214,13 @@ else
 $(BINDIR)/$(CONFIG)/evaluate_args_test: $(PROTOBUF_DEP) $(EVALUATE_ARGS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(EVALUATE_ARGS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libabsl/container:flat_hash_set.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/evaluate_args_test
+	$(Q) $(LDXX) $(LDFLAGS) $(EVALUATE_ARGS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/evaluate_args_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/src/core/lib/security/authorization/authorization_engine.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libabsl/container:flat_hash_set.a
-
-$(OBJDIR)/$(CONFIG)/src/core/lib/security/authorization/evaluate_args.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libabsl/container:flat_hash_set.a
-
-$(OBJDIR)/$(CONFIG)/test/core/security/evaluate_args_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libabsl/container:flat_hash_set.a
+$(OBJDIR)/$(CONFIG)/test/core/security/evaluate_args_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 deps_evaluate_args_test: $(EVALUATE_ARGS_TEST_OBJS:.o=.dep)
 
@@ -20232,6 +20229,8 @@ src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c: $(OPENSSL_DEP)
 src/core/ext/xds/xds_channel_secure.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
+src/core/lib/security/authorization/authorization_engine.cc: $(OPENSSL_DEP)
+src/core/lib/security/authorization/evaluate_args.cc: $(OPENSSL_DEP)
 src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)

@@ -79,7 +79,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:gpr",
-        "//:grpc_authorization_engine",
+        "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -102,7 +102,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:gpr",
-        "//:grpc_authorization_engine",
+        "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],

@@ -327,6 +327,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     standalone = True,
     deps = [
+        "grpc_authorization_engine",
         "grpc_common",
         "grpc_lb_policy_cds_secure",
         "grpc_lb_policy_eds_secure",

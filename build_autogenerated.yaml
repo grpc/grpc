@@ -649,6 +649,10 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
+  - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/mock_cel/activation.h
+  - src/core/lib/security/authorization/mock_cel/cel_value.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -1057,6 +1061,8 @@ libs:
   - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_writer.cc
+  - src/core/lib/security/authorization/authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -1175,6 +1181,7 @@ libs:
   - absl/strings:strings
   - absl/status:status
   - absl/container:inlined_vector
+  - absl/container:flat_hash_set
   baselib: true
   deps_linkage: static
   dll: true
@@ -4779,14 +4786,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
-  - src/core/lib/security/authorization/mock_cel/activation.h
-  - src/core/lib/security/authorization/mock_cel/cel_value.h
+  headers: []
   src:
-  - src/core/lib/security/authorization/authorization_engine.cc
-  - src/core/lib/security/authorization/evaluate_args.cc
   - test/core/security/authorization_engine_test.cc
   deps:
   - grpc_test_util
@@ -4794,7 +4795,6 @@ targets:
   - gpr
   - address_sorting
   - upb
-  - absl/container:flat_hash_set
 - name: backoff_test
   gtest: true
   build: test
@@ -5830,14 +5830,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
-  - src/core/lib/security/authorization/mock_cel/activation.h
-  - src/core/lib/security/authorization/mock_cel/cel_value.h
+  headers: []
   src:
-  - src/core/lib/security/authorization/authorization_engine.cc
-  - src/core/lib/security/authorization/evaluate_args.cc
   - test/core/security/evaluate_args_test.cc
   deps:
   - grpc_test_util
@@ -5845,7 +5839,6 @@ targets:
   - gpr
   - address_sorting
   - upb
-  - absl/container:flat_hash_set
 - name: eventmanager_libuv_test
   gtest: true
   build: test

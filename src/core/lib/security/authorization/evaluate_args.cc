@@ -15,10 +15,12 @@
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_CC
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_CC
 
-#include "src/core/lib/security/authorization/evaluate_args.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/slice/slice_utils.h"
 
 namespace grpc_core {
