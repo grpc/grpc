@@ -321,12 +321,22 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
           kSharedUnconnectableAddress.c_str());
   std::vector<std::thread> threads;
   threads.reserve(kNumCalls);
+  std::vector<std::unique_ptr<TestServer>> test_servers;
+  // Instantiate servers inline here, so that we get port allocation out of the
+  // way and don't depend on it during the actual test. It can sometimes take
+  // time to allocate kNumCalls ports from the port server, and we don't want to
+  // hit test timeouts because of that.
+  test_servers.reserve(kNumCalls);
   for (int i = 0; i < kNumCalls; i++) {
+    test_servers.push_back(absl::make_unique<TestServer>());
+  }
+  for (int i = 0; i < kNumCalls; i++) {
+    auto test_server = test_servers[i].get();
     threads.push_back(std::thread([kSharedUnconnectableAddress,
                                    &ping_pong_round, &ping_pongs_done,
-                                   &ping_pong_round_mu, &ping_pong_round_cv]() {
-      auto test_server = absl::make_unique<TestServer>();
-      gpr_log(GPR_DEBUG, "created test_server with address:%s",
+                                   &ping_pong_round_mu, &ping_pong_round_cv,
+                                   test_server]() {
+      gpr_log(GPR_DEBUG, "using test_server with address:%s",
               test_server->address().c_str());
       std::vector<grpc_arg> args;
       grpc_arg service_config_arg;
