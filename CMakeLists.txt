@@ -9909,10 +9909,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpcpp_channelz
     grpc++_test_util
-    grpc++_reflection
     grpc_test_util
     grpc++
-    grpc++_test_config
     grpc
     gpr
     address_sorting

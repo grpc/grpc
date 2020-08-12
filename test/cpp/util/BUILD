@@ -341,17 +341,18 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "no_test_android",
+        "no_test_ios",
         "no_windows",
     ],
     deps = [
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
-        "//:grpc++_reflection",
         "//:grpcpp_channelz",
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:test_proto",
-        "//test/core/util:grpc_test_util_base",
-        "//test/cpp/util:test_config",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )

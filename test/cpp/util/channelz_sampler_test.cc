@@ -157,6 +157,9 @@ TEST(ChannelzSamplerTest, SimpleTest) {
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+
   std::string me = argv[0];
   auto lslash = me.rfind('/');
   if (lslash != std::string::npos) {
@@ -165,7 +168,6 @@ int main(int argc, char** argv) {
     g_root = ".";
   }
 
-  ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;
 }
