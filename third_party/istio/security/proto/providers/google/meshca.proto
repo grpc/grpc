@@ -49,4 +49,3 @@ service MeshCertificateService {
     returns (MeshCertificateResponse) {
   }
 }
-

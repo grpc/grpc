@@ -2834,16 +2834,16 @@ grpc_cc_library(
 # Once upb code-gen issue is resolved, replace meshca_upb with this.
 # meshca_upb_proto_library(
 #     name = "meshca_upb",
-#     deps = ["//src/proto/grpc/tls/provider/meshca:meshca_proto"],
+#     deps = ["//third_party/istio/security/proto/providers/google:meshca_proto"],
 # )
 
 grpc_cc_library(
     name = "meshca_upb",
     srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/tls/provider/meshca/meshca.upb.c",
+        "src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c",
     ],
     hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/tls/provider/meshca/meshca.upb.h",
+        "src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.h",
     ],
     language = "c++",
     deps = [
