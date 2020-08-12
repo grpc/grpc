@@ -43,6 +43,8 @@
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
+static std::string g_root;
+
 namespace {
 using grpc::Channel;
 using grpc::ClientContext;
@@ -123,11 +125,8 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   std::thread client_thread_1(RunClient, "1", &done_ev1);
   std::thread client_thread_2(RunClient, "2", &done_ev2);
   // Run the channelz sampler
-  std::string channelz_sampler_bin_path =
-      "./bazel-bin/test/cpp/util/channelz_sampler";
   grpc::SubProcess* test_driver = new grpc::SubProcess(
-      {std::move(channelz_sampler_bin_path),
-       "--server_address=" + server_address,
+      {g_root + "/channelz_sampler", "--server_address=" + server_address,
        "--custom_credentials_type=" + custom_credentials_type,
        "--sampling_times=" + sampling_times,
        "--sampling_interval_seconds=" + sampling_interval_seconds,
@@ -157,6 +156,14 @@ TEST(ChannelzSamplerTest, SimpleTest) {
 }
 
 int main(int argc, char** argv) {
+  std::string me = argv[0];
+  auto lslash = me.rfind('/');
+  if (lslash != std::string::npos) {
+    g_root = me.substr(0, lslash);
+  } else {
+    g_root = ".";
+  }
+
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;
