@@ -149,6 +149,7 @@ TEST(ChannelzSamplerTest, SimpleTest) {
             status);
     GPR_ASSERT(0);
   }
+  delete test_driver;
   gpr_event_set(&done_ev1, (void*)1);
   gpr_event_set(&done_ev2, (void*)1);
   client_thread_1.join();
