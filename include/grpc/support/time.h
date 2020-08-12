@@ -32,9 +32,15 @@ extern "C" {
 
 /** Time constants. */
 GPRAPI gpr_timespec
-gpr_time_0(gpr_clock_type type); /** The zero time interval. */
-GPRAPI gpr_timespec gpr_inf_future(gpr_clock_type type); /** The far future */
-GPRAPI gpr_timespec gpr_inf_past(gpr_clock_type type);   /** The far past. */
+
+/** The zero time interval. */
+gpr_time_0(gpr_clock_type type);
+
+/** The far future */
+GPRAPI gpr_timespec gpr_inf_future(gpr_clock_type type);
+
+/** The far past. */
+GPRAPI gpr_timespec gpr_inf_past(gpr_clock_type type);
 
 #define GPR_MS_PER_SEC 1000
 #define GPR_US_PER_SEC 1000000
@@ -60,8 +66,10 @@ GPRAPI int gpr_time_cmp(gpr_timespec a, gpr_timespec b);
 GPRAPI gpr_timespec gpr_time_max(gpr_timespec a, gpr_timespec b);
 GPRAPI gpr_timespec gpr_time_min(gpr_timespec a, gpr_timespec b);
 
-/** Add and subtract times.  Calculations saturate at infinities. */
+/** Add times.  Calculations saturate at infinities. */
 GPRAPI gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b);
+
+/** Subtract times.  Calculations saturate at infinities. */
 GPRAPI gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b);
 
 /** Return a timespec representing a given number of time units. INT64_MIN is
