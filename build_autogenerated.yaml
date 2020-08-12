@@ -4771,10 +4771,12 @@ targets:
   language: c++
   headers:
   - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/mock_cel/activation.h
   - src/core/lib/security/authorization/mock_cel/cel_value.h
   src:
   - src/core/lib/security/authorization/authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
   - test/core/security/authorization_engine_test.cc
   deps:
   - grpc_test_util

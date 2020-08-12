@@ -1864,7 +1864,6 @@ grpc_cc_library(
         "src/core/lib/security/authorization/mock_cel/cel_value.h",
     ],
     language = "c++",
-    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "envoy_ads_upb",
         "google_api_upb",
