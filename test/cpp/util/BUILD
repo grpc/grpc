@@ -340,6 +340,9 @@ grpc_cc_test(
         "gflags",
         "gtest",
     ],
+    tags = [
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc++",
