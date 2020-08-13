@@ -106,6 +106,10 @@ grpc_error* grpc_chttp2_rst_stream_parser_parse(void* parser,
                       ((static_cast<uint32_t>(p->reason_bytes[3])));
     grpc_error* error = GRPC_ERROR_NONE;
     if (reason != GRPC_HTTP2_NO_ERROR || s->metadata_buffer[1].size == 0) {
+      // Note: We do not set GRPC_ERROR_INT_GRPC_STATUS on this error,
+      // because without that attribute, grpc_error_get_status() will use
+      // grpc_http2_error_to_grpc_status() to set the status from the
+      // GRPC_ERROR_INT_HTTP2_ERROR attribute.
       error = grpc_error_set_int(
           grpc_error_set_str(
               GRPC_ERROR_CREATE_FROM_STATIC_STRING("RST_STREAM"),

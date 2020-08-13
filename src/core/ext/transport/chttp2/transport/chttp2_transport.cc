@@ -1067,12 +1067,14 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   if (t->goaway_error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(t->goaway_error);
   }
+  // Note: We do not set GRPC_ERROR_INT_GRPC_STATUS on this error,
+  // because without that attribute, grpc_error_get_status() will use
+  // grpc_http2_error_to_grpc_status() to set the status from the
+  // GRPC_ERROR_INT_HTTP2_ERROR attribute.
   t->goaway_error = grpc_error_set_str(
       grpc_error_set_int(
-          grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
-              GRPC_ERROR_INT_HTTP2_ERROR, static_cast<intptr_t>(goaway_error)),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
+          GRPC_ERROR_INT_HTTP2_ERROR, static_cast<intptr_t>(goaway_error)),
       GRPC_ERROR_STR_RAW_BYTES, goaway_text);
 
   GRPC_CHTTP2_IF_TRACING(
