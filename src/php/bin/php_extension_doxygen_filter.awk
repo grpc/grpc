@@ -12,26 +12,51 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# the spaces in the parameter list are necessary to separate out local variables
+function sed_gensub(regexp, replacement, how, target,         cmd_, ret_) { # arguments and local variables
+    if (!target) {
+        target = $0
+    }
+    gsub(/'/, "'\"'\"'", target);
+    gsub(/\\\\/, "\\", regexp);
+
+    cmd_ = "printf '" target "' | sed -nE 's/" regexp "/" replacement "/" tolower(how) "p'";
+    if (cmd_ | getline ret_ != 1) {
+        close(cmd_);
+        error = "ERROR: running command: " cmd_ ", ret_: " ret_;
+        exit;
+    }
+    close(cmd_);
+    return ret_;
+}
+
 BEGIN {
     namespace = "Grpc";
     className = "";
     classDocComment = "";
-    delete methods; # methods[method][doc|args|static]
-    delete constants; # constants[i][name|doc]
+
+    delete methodNames; # i => methodName
+    delete methodArgs; # methodName => concatenatedArgsStr
+    delete methodDocs; # methodName => methodDocCommentStr
+    delete methodStatics; # methodName => 1 if static
+    methodsCount = 0;
+
+    delete constantNames; # i => constantName
+    delete constantDocs; # constantName => constantDocCommentStr
     constantsCount = 0;
 
     #  * class className
-    classLineRegex = "^ \\* class (\\S+)$";
+    classLineRegex = "^ \\* class ([^ \t]+)$";
     # @param type name [= default]
-    paramLineRegex = "^.*@param\\s+\\S+\\s+(\\$\\S+(\\s+=\\s+\\S+)?)\\s+.*$";
+    paramLineRegex = "^.*@param[ \t]+[^ \t]+[ \t]+(\\$[^ \t]+([ \t]+=[ \t]+[^ \t]+)?)[ \t]+.*$";
     # PHP_METHOD(class, function)
-    phpMethodLineRegex = "^PHP_METHOD\\((\\S+),\\s*(\\S+)\\).*$";
+    phpMethodLineRegex = "^PHP_METHOD\\(([^ \t]+),[ \t]*([^ \t]+)\\).*$";
 
     # PHP_ME(class, function, arginfo, flags)
-    phpMeLineRegex = "^\\s*PHP_ME\\((\\S+),\\s*(\\S+),.*$";
+    phpMeLineRegex = "^[ \t]*PHP_ME\\(([^ \t]+),[ \t]*([^ \t]+),.*$";
 
     # REGISTER_LONG_CONSTANT("namespace\\constant", grpcConstant, ..)
-    phpConstantLineRegs = "^\\s*REGISTER_LONG_CONSTANT\\(\"Grpc\\\\\\\\(\\S+)\",.*$";
+    phpConstantLineRegs = "^[ \t]*REGISTER_LONG_CONSTANT\\(\"Grpc\\\\\\\\([^ \t]+)\",.*$";
 
     error = "";
 
@@ -39,11 +64,10 @@ BEGIN {
     hideMethods["Channel::getChannelInfo"] = 1;
     hideMethods["Channel::cleanPersistentList"] = 1;
     hideMethods["Channel::getPersistentList"] = 1;
-
 }
 
 # '/**' document comment start
-/^\s*\/\*\*/ {
+/^[ \t]*\/\*\*/ {
     inDocComment = 1;
     docComment = "";
     delete args;
@@ -57,20 +81,19 @@ inDocComment==1 {
 
 # class document, must match ' * class <clasName>'
 inDocComment==1 && $0 ~ classLineRegex {
-    className = gensub(classLineRegex, "\\1", "g");
+    className = sed_gensub(classLineRegex, "\\1", "g");
 }
 
 # end of class document
-inDocComment==1 && /\*\// && classDocComment == "" {
+inDocComment==1 && /\*\// && className && classDocComment == "" {
     classDocComment = docComment;
     docComment = "";
 }
 
 # param line
 inDocComment==1 && $0 ~ paramLineRegex {
-    arg = gensub(paramLineRegex, "\\1", "g");
-    args[argsCount]=arg;
-    argsCount++;
+    arg = sed_gensub(paramLineRegex, "\\1", "g");
+    args[argsCount++]=arg;
 }
 
 # '*/' document comment end
@@ -80,18 +103,25 @@ inDocComment==1 && /\*\// {
 
 # PHP_METHOD
 $0 ~ phpMethodLineRegex {
-    class = gensub(phpMethodLineRegex, "\\1", "g");
+    class = sed_gensub(phpMethodLineRegex, "\\1", "g");
     if (class != className) {
         error = "ERROR: Missing or mismatch class names, in class comment block: " \
           className ", in PHP_METHOD: " class;
         exit;
     };
 
-    method = gensub(phpMethodLineRegex, "\\2", "g");
-    methods[method]["doc"] = docComment;
-    for (i in args) {
-        methods[method]["args"][i] = args[i];
+    method = sed_gensub(phpMethodLineRegex, "\\2", "g");
+    methodNames[methodsCount++] = method;
+    methodDocs[method] = docComment;
+
+    # concat args
+    if (argsCount > 0) {
+        methodArgs[method] = args[0];
+        for (i = 1; i < argsCount; i++) {
+            methodArgs[method] = methodArgs[method] ", " args[i];
+        }
     }
+    
     docComment = "";
 }
 
@@ -99,18 +129,18 @@ $0 ~ phpMethodLineRegex {
 $0 ~ phpMeLineRegex {
     inPhpMe = 1;
 
-    class = gensub(phpMeLineRegex, "\\1", "g");
+    class = sed_gensub(phpMeLineRegex, "\\1", "g");
     if (class != className) {
         error = "ERROR: Missing or mismatch class names, in class comment block: " \
           className ", in PHP_ME: " class;
         exit;
     };
-    method = gensub(phpMeLineRegex, "\\2", "g");
+    method = sed_gensub(phpMeLineRegex, "\\2", "g");
 }
 
 # ZEND_ACC_STATIC
-inPhpMe && /ZEND_ACC_STATIC/ { 
-    methods[method]["static"] = 1;
+inPhpMe && /ZEND_ACC_STATIC/ {
+    methodStatics[method] = 1;
 }
 
 # closing bracet of PHP_ME(...)
@@ -121,14 +151,13 @@ iinPhpMe && /\)$/ {
 # REGISTER_LONG_CONSTANT(constant, ...
 $0 ~ phpConstantLineRegs {
     inPhpConstant = 1;
-    constant = gensub(phpConstantLineRegs, "\\1", "g");
-    constants[constantsCount]["name"] = constant;
-    constants[constantsCount]["doc"] = docComment;
-    constantsCount++;
+    constant = sed_gensub(phpConstantLineRegs, "\\1", "g");
+    constantNames[constantsCount++] = constant;
+    constantDocs[constant] = docComment;
 }
 
-# closing bracet of PHP_ME(...)
-inPhpConstant && /\)\s*;\s*$/ {
+# closing bracet of REGISTER_LONG_CONSTANT(...)
+inPhpConstant && /\)[ \t]*;[ \t]*$/ {
     inPhpConstant = 0;
     docComment = "";
 }
@@ -145,27 +174,23 @@ END {
     if (className != "") {
         print classDocComment
         print "class " className " {";
-        for (m in methods) {
+        for (i = 0; i < methodsCount; i++) {
+            m = methodNames[i];
             if (hideMethods[className"::"m]) continue;
 
-            print methods[m]["doc"];
+            print methodDocs[m];
             printf "public"
-            if (methods[m]["static"]) printf " static"
+            if (methodStatics[m]) printf " static"
             printf " function " m "("
-            if (isarray(methods[m]["args"])) {
-                printf methods[m]["args"][0];
-                for (i = 1; i < length(methods[m]["args"]); i++) {
-                    printf ", " methods[m]["args"][i];
-                }
-            }
+            printf methodArgs[m];
             print ") {}";
         }
         print "\n}";
     }
 
-    for (i in constants) {
-        print constants[i]["doc"];
-        print "const " constants[i]["name"] " = 0;";
+    for (i = 0; i < constantsCount; i++) {
+        print constantDocs[constantNames[i]];
+        print "const " constantNames[i] " = 0;";
     }
 
     print "\n}";

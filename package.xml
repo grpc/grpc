@@ -189,17 +189,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_api.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_api.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_bootstrap.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_bootstrap.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_channel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_channel_args.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_channel_secure.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_client.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_client.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_client_stats.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_idle/client_idle_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
@@ -383,6 +372,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/route/v3/route.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/route/v3/route.upbdefs.c" role="src" />
@@ -451,6 +442,12 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/route/v3/srds.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/route/v3/srds.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upbdefs.c" role="src" />
@@ -459,6 +456,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/string.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/string.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upbdefs.c" role="src" />
@@ -491,6 +490,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upbdefs.c" role="src" />
@@ -559,6 +560,17 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_api.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_secure.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_client.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/avl/avl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/avl/avl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/backoff/backoff.cc" role="src" />
@@ -931,8 +943,6 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/server_auth_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/transport/target_authority_table.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/transport/target_authority_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.cc" role="src" />
@@ -943,13 +953,11 @@
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_intern.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/slice_weak_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer.cc" role="src" />
@@ -983,6 +991,8 @@
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/version.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/authority_override.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/authority_override.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.cc" role="src" />
@@ -1238,6 +1248,24 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/strip.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/substitute.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/substitute.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/barrier.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/barrier.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/blocking_counter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/blocking_counter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/graphcycles.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/mutex_nonprod.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/mutex.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/mutex.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/notification.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/notification.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/civil_time.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/civil_time.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/clock.cc" role="src" />

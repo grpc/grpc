@@ -61,6 +61,9 @@ STATUS_CODE_TO_CYGRPC_STATUS_CODE = {
 
 MAXIMUM_WAIT_TIMEOUT = 0.1
 
+_ERROR_MESSAGE_PORT_BINDING_FAILED = 'Failed to bind to address %s; set ' \
+    'GRPC_VERBOSITY=debug environment variable to see detailed error message.'
+
 
 def encode(s):
     if isinstance(s, bytes):
@@ -144,3 +147,22 @@ def wait(wait_fn, wait_complete_fn, timeout=None, spin_cb=None):
                 return True
             _wait_once(wait_fn, remaining, spin_cb)
     return False
+
+
+def validate_port_binding_result(address, port):
+    """Validates if the port binding succeed.
+
+    If the port returned by Core is 0, the binding is failed. However, in that
+    case, the Core API doesn't return a detailed failing reason. The best we
+    can do is raising an exception to prevent further confusion.
+
+    Args:
+        address: The address string to be bound.
+        port: An int returned by core
+    """
+    if port == 0:
+        # The Core API doesn't return a failure message. The best we can do
+        # is raising an exception to prevent further confusion.
+        raise RuntimeError(_ERROR_MESSAGE_PORT_BINDING_FAILED % address)
+    else:
+        return port

@@ -117,36 +117,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "slice_hash_table_test",
-    srcs = ["slice_hash_table_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "slice_weak_hash_table_test",
-    srcs = ["slice_weak_hash_table_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "b64_test",
     srcs = ["b64_test.cc"],
     language = "C++",

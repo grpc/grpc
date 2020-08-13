@@ -58,7 +58,10 @@ struct grpc_call;
 
 namespace grpc {
 
+class CallCredentials;
+class Channel;
 class ChannelInterface;
+class CompletionQueue;
 
 namespace internal {
 class RpcMethod;
@@ -88,9 +91,6 @@ class ClientCallbackUnaryImpl;
 class ClientContextAccessor;
 }  // namespace internal
 
-class CallCredentials;
-class Channel;
-class CompletionQueue;
 class ServerContext;
 template <class R>
 class ClientReader;
@@ -318,16 +318,15 @@ class ClientContext {
   ///
   /// It is legal to call this only before initial metadata is sent.
   ///
-  /// \see  https://grpc.io/docs/guides/auth
-  void set_credentials(
-      const std::shared_ptr<grpc_impl::CallCredentials>& creds);
+  /// \see  https://grpc.io/docs/guides/auth.html
+  void set_credentials(const std::shared_ptr<grpc::CallCredentials>& creds);
 
   /// EXPERIMENTAL debugging API
   ///
   /// Returns the credentials for the client call. This should be used only in
   /// tests and for diagnostic purposes, and should not be used by application
   /// logic.
-  std::shared_ptr<grpc_impl::CallCredentials> credentials() { return creds_; }
+  std::shared_ptr<grpc::CallCredentials> credentials() { return creds_; }
 
   /// Return the compression algorithm the client call will request be used.
   /// Note that the gRPC runtime may decide to ignore this request, for example,
@@ -418,7 +417,7 @@ class ClientContext {
   friend class ::grpc::testing::InteropClientContextInspector;
   friend class ::grpc::internal::CallOpClientRecvStatus;
   friend class ::grpc::internal::CallOpRecvInitialMetadata;
-  friend class ::grpc_impl::Channel;
+  friend class ::grpc::Channel;
   template <class R>
   friend class ::grpc_impl::ClientReader;
   template <class W>
@@ -453,7 +452,7 @@ class ClientContext {
 
   grpc_call* call() const { return call_; }
   void set_call(grpc_call* call,
-                const std::shared_ptr<::grpc_impl::Channel>& channel);
+                const std::shared_ptr<::grpc::Channel>& channel);
 
   grpc::experimental::ClientRpcInfo* set_client_rpc_info(
       const char* method, grpc::internal::RpcMethod::RpcType type,
@@ -489,13 +488,13 @@ class ClientContext {
   bool wait_for_ready_explicitly_set_;
   bool idempotent_;
   bool cacheable_;
-  std::shared_ptr<::grpc_impl::Channel> channel_;
+  std::shared_ptr<::grpc::Channel> channel_;
   grpc::internal::Mutex mu_;
   grpc_call* call_;
   bool call_canceled_;
   gpr_timespec deadline_;
-  std::string authority_;
-  std::shared_ptr<grpc_impl::CallCredentials> creds_;
+  grpc::string authority_;
+  std::shared_ptr<grpc::CallCredentials> creds_;
   mutable std::shared_ptr<const grpc::AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<std::string, std::string> send_initial_metadata_;

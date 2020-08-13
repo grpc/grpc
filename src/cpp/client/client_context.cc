@@ -31,9 +31,11 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/time.h>
 
-namespace grpc_impl {
+namespace grpc {
 
 class Channel;
+}  // namespace grpc
+namespace grpc_impl {
 
 class DefaultGlobalClientCallbacks final
     : public ClientContext::GlobalCallbacks {
@@ -73,7 +75,7 @@ ClientContext::~ClientContext() {
 }
 
 void ClientContext::set_credentials(
-    const std::shared_ptr<grpc_impl::CallCredentials>& creds) {
+    const std::shared_ptr<grpc::CallCredentials>& creds) {
   creds_ = creds;
   // If call_ is set, we have already created the call, and set the call
   // credentials. This should only be done before we have started the batch
@@ -113,8 +115,8 @@ void ClientContext::AddMetadata(const std::string& meta_key,
   send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
 }
 
-void ClientContext::set_call(
-    grpc_call* call, const std::shared_ptr<::grpc_impl::Channel>& channel) {
+void ClientContext::set_call(grpc_call* call,
+                             const std::shared_ptr<::grpc::Channel>& channel) {
   grpc::internal::MutexLock lock(&mu_);
   GPR_ASSERT(call_ == nullptr);
   call_ = call;

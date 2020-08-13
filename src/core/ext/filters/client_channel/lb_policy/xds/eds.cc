@@ -32,9 +32,9 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/xds/xds_channel_args.h"
-#include "src/core/ext/filters/client_channel/xds/xds_client.h"
-#include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_channel_args.h"
+#include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -457,6 +457,7 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
       grpc_error* error = GRPC_ERROR_NONE;
       xds_client_ = MakeOrphanable<XdsClient>(
           work_serializer(), interested_parties(), GetEdsResourceName(),
+          std::vector<grpc_resolved_address>{},
           nullptr /* service config watcher */, *args_, &error);
       // TODO(roth): If we decide that we care about EDS-only mode, add
       // proper error handling here.

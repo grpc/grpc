@@ -156,9 +156,8 @@ class TestTcpServer {
  private:
   void OnConnect(grpc_endpoint* tcp, grpc_pollset* /*accepting_pollset*/,
                  grpc_tcp_server_acceptor* acceptor) {
-    char* peer = grpc_endpoint_get_peer(tcp);
-    gpr_log(GPR_INFO, "Got incoming connection! from %s", peer);
-    gpr_free(peer);
+    std::string peer(grpc_endpoint_get_peer(tcp));
+    gpr_log(GPR_INFO, "Got incoming connection! from %s", peer.c_str());
     EXPECT_FALSE(acceptor->external_connection);
     listener_fd_ = grpc_tcp_server_port_fd(
         acceptor->from_server, acceptor->port_index, acceptor->fd_index);

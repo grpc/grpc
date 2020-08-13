@@ -233,8 +233,8 @@ TEST(StateTracker, DoNotNotifyShutdownAtDestructionIfAlreadyInShutdown) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   grpc_core::testing::grpc_tracer_enable_flag(
       &grpc_core::grpc_connectivity_state_trace);

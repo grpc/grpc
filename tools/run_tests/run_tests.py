@@ -926,11 +926,31 @@ class RubyLanguage(object):
                                  timeout_seconds=10 * 60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)
         ]
-        tests.append(
-            self.config.job_spec(
-                ['tools/run_tests/helper_scripts/run_ruby_end2end_tests.sh'],
-                timeout_seconds=20 * 60,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        for test in [
+                'src/ruby/end2end/sig_handling_test.rb',
+                'src/ruby/end2end/channel_state_test.rb',
+                'src/ruby/end2end/channel_closing_test.rb',
+                'src/ruby/end2end/sig_int_during_channel_watch_test.rb',
+                'src/ruby/end2end/killed_client_thread_test.rb',
+                'src/ruby/end2end/forking_client_test.rb',
+                'src/ruby/end2end/grpc_class_init_test.rb',
+                'src/ruby/end2end/multiple_killed_watching_threads_test.rb',
+                'src/ruby/end2end/load_grpc_with_gc_stress_test.rb',
+                'src/ruby/end2end/client_memory_usage_test.rb',
+                'src/ruby/end2end/package_with_underscore_test.rb',
+                'src/ruby/end2end/graceful_sig_handling_test.rb',
+                'src/ruby/end2end/graceful_sig_stop_test.rb',
+                'src/ruby/end2end/errors_load_before_grpc_lib_test.rb',
+                'src/ruby/end2end/logger_load_before_grpc_lib_test.rb',
+                'src/ruby/end2end/status_codes_load_before_grpc_lib_test.rb',
+                'src/ruby/end2end/call_credentials_timeout_test.rb',
+                'src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb'
+        ]:
+            tests.append(
+                self.config.job_spec(['ruby', test],
+                                     shortname=test,
+                                     timeout_seconds=20 * 60,
+                                     environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         return tests
 
     def pre_build_steps(self):

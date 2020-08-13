@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import argparse
 import os
 import os.path
@@ -43,13 +44,14 @@ class GuardValidator(object):
     def __init__(self):
         self.ifndef_re = re.compile(r'#ifndef ([A-Z][A-Z_1-9]*)')
         self.define_re = re.compile(r'#define ([A-Z][A-Z_1-9]*)')
-        self.endif_c_re = re.compile(
+        self.endif_c_core_re = re.compile(
             r'#endif /\* (?: *\\\n *)?([A-Z][A-Z_1-9]*) (?:\\\n *)?\*/$')
-        self.endif_cpp_re = re.compile(r'#endif  // ([A-Z][A-Z_1-9]*)')
+        self.endif_re = re.compile(r'#endif  // ([A-Z][A-Z_1-9]*)')
         self.failed = False
 
     def fail(self, fpath, regexp, fcontents, match_txt, correct, fix):
-        cpp_header = 'grpc++' in fpath or 'grpcpp' in fpath
+        c_core_header = 'include' in fpath and not ('grpc++' in fpath or
+                                                    'grpcpp' in fpath)
         self.failed = True
         invalid_guards_msg_template = (
             '{0}: Missing preprocessor guards (RE {1}). '
@@ -58,35 +60,37 @@ class GuardValidator(object):
             '#define {2}\n'
             '...\n'
             '... epic code ...\n'
-            '...\n') + ('#endif  // {2}' if cpp_header else '#endif /* {2} */')
+            '...\n') + ('#endif /* {2} */'
+                        if c_core_header else '#endif  // {2}')
         if not match_txt:
-            print invalid_guards_msg_template.format(fpath, regexp.pattern,
-                                                     build_valid_guard(fpath))
+            print(
+                invalid_guards_msg_template.format(fpath, regexp.pattern,
+                                                   build_valid_guard(fpath)))
             return fcontents
 
-        print(
-            '{}: Wrong preprocessor guards (RE {}):'
-            '\n\tFound {}, expected {}').format(fpath, regexp.pattern,
-                                                match_txt, correct)
+        print(('{}: Wrong preprocessor guards (RE {}):'
+               '\n\tFound {}, expected {}').format(fpath, regexp.pattern,
+                                                   match_txt, correct))
         if fix:
-            print 'Fixing {}...\n'.format(fpath)
+            print('Fixing {}...\n'.format(fpath))
             fixed_fcontents = re.sub(match_txt, correct, fcontents)
             if fixed_fcontents:
                 self.failed = False
             return fixed_fcontents
         else:
-            print
+            print()
         return fcontents
 
     def check(self, fpath, fix):
-        cpp_header = 'grpc++' in fpath or 'grpcpp' in fpath
+        c_core_header = 'include' in fpath and not ('grpc++' in fpath or
+                                                    'grpcpp' in fpath)
         valid_guard = build_valid_guard(fpath)
 
         fcontents = load(fpath)
 
         match = self.ifndef_re.search(fcontents)
         if not match:
-            print 'something drastically wrong with: %s' % fpath
+            print('something drastically wrong with: %s' % fpath)
             return False  # failed
         if match.lastindex is None:
             # No ifndef. Request manual addition with hints
@@ -120,22 +124,27 @@ class GuardValidator(object):
             if fix: save(fpath, fcontents)
 
         # Is there a properly commented #endif?
-        endif_re = self.endif_cpp_re if cpp_header else self.endif_c_re
         flines = fcontents.rstrip().splitlines()
-        match = endif_re.search('\n'.join(flines[-3:]))
+        match = self.endif_c_core_re.search('\n'.join(flines[-3:]))
+        if not match and not c_core_header:
+            match = self.endif_re.search('\n'.join(flines[-3:]))
         if not match:
             # No endif. Check if we have the last line as just '#endif' and if so
             # replace it with a properly commented one.
             if flines[-1] == '#endif':
-                flines[-1] = ('#endif' +
-                              ('  // {}\n'.format(valid_guard) if cpp_header
-                               else ' /* {} */\n'.format(valid_guard)))
+                flines[-1] = (
+                    '#endif' +
+                    (' /* {} */\n'.format(valid_guard)
+                     if c_core_header else '  // {}\n'.format(valid_guard)))
                 if fix:
                     fcontents = '\n'.join(flines)
                     save(fpath, fcontents)
             else:
                 # something else is wrong, bail out
-                self.fail(fpath, endif_re, flines[-1], '', '', False)
+                self.fail(
+                    fpath,
+                    self.endif_c_core_re if c_core_header else self.endif_re,
+                    flines[-1], '', '', False)
         elif match.group(1) != running_guard:
             # Is the #endif guard the same as the #ifndef and #define guards?
             fcontents = self.fail(fpath, endif_re, fcontents, match.group(1),
@@ -154,18 +163,6 @@ argp = argparse.ArgumentParser(description='include guard checker')
 argp.add_argument('-f', '--fix', default=False, action='store_true')
 argp.add_argument('--precommit', default=False, action='store_true')
 args = argp.parse_args()
-
-KNOWN_BAD = set([
-    'src/core/ext/filters/client_channel/health/health.pb.h',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h',
-    'src/core/tsi/alts/handshaker/altscontext.pb.h',
-    'src/core/tsi/alts/handshaker/handshaker.pb.h',
-    'src/core/tsi/alts/handshaker/transport_security_common.pb.h',
-    'include/grpc++/ext/reflection.grpc.pb.h',
-    'include/grpc++/ext/reflection.pb.h',
-])
 
 grep_filter = r"grep -E '^(include|src/core)/.*\.h$'"
 if args.precommit:
@@ -189,7 +186,6 @@ except subprocess.CalledProcessError:
 validator = GuardValidator()
 
 for filename in filename_list:
-    if filename in KNOWN_BAD: continue
     # Skip check for upb generated code.
     if (filename.endswith('.upb.h') or filename.endswith('.upb.c') or
             filename.endswith('.upbdefs.h') or filename.endswith('.upbdefs.c')):

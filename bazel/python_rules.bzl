@@ -53,7 +53,7 @@ def _generate_py_impl(context):
 
     imports = []
     if out_dir.import_path:
-        imports.append("__main__/%s" % out_dir.import_path)
+        imports.append("%s/%s/%s" % (context.workspace_name, context.label.package, out_dir.import_path))
 
     return [
         DefaultInfo(files = depset(direct = out_files)),
@@ -164,15 +164,12 @@ def _generate_pb2_grpc_src_impl(context):
         mnemonic = "ProtocInvocation",
     )
 
-    imports = []
-    if out_dir.import_path:
-        imports.append("__main__/%s" % out_dir.import_path)
-
     return [
         DefaultInfo(files = depset(direct = out_files)),
         PyInfo(
             transitive_sources = depset(),
-            imports = depset(direct = imports),
+            # Imports are already configured by the generated py impl
+            imports = depset(),
         ),
     ]
 

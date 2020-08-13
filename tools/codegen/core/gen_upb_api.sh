@@ -77,9 +77,12 @@ proto_files=( \
   "envoy/service/load_stats/v3/lrs.proto" \
   "envoy/service/route/v3/rds.proto" \
   "envoy/service/route/v3/srds.proto" \
+  "envoy/type/matcher/v3/metadata.proto" \
+  "envoy/type/matcher/v3/number.proto" \
   "envoy/type/matcher/v3/path.proto" \
   "envoy/type/matcher/v3/regex.proto" \
   "envoy/type/matcher/v3/string.proto" \
+  "envoy/type/matcher/v3/value.proto" \
   "envoy/type/metadata/v3/metadata.proto" \
   "envoy/type/tracing/v3/custom_tag.proto" \
   "envoy/type/v3/http.proto" \
@@ -103,6 +106,7 @@ proto_files=( \
   "src/proto/grpc/gcp/transport_security_common.proto" \
   "src/proto/grpc/health/v1/health.proto" \
   "src/proto/grpc/lb/v1/load_balancer.proto" \
+  "third_party/istio/security/proto/providers/google/meshca.proto" \
   "udpa/data/orca/v1/orca_load_report.proto" \
   "udpa/annotations/migrate.proto" \
   "udpa/annotations/sensitive.proto" \

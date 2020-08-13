@@ -29,8 +29,8 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
-#include "src/core/ext/filters/client_channel/xds/xds_channel_args.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
+#include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gpr/string.h"
@@ -40,7 +40,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/tsi/fake_transport_security.h"
 
 namespace {

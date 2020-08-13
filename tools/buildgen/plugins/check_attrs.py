@@ -38,6 +38,7 @@ VALID_ATTRIBUTE_KEYS_MAP = {
         'uses': anything(),
     },
     'lib': {
+        'asm_src': anything(),
         'baselib': anything(),
         'boringssl': one_of((True,)),
         'build_system': anything(),

@@ -120,9 +120,11 @@ set(gRPC_ABSL_USED_TARGETS
   absl_errno_saver
   absl_fixed_array
   absl_function_ref
+  absl_graphcycles_internal
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
+  absl_kernel_timeout_internal
   absl_log_severity
   absl_malloc_internal
   absl_memory
@@ -137,6 +139,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_strings
   absl_strings_internal
   absl_symbolize
+  absl_synchronization
   absl_throw_delegate
   absl_time
   absl_time_zone
@@ -479,9 +482,6 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/route.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/status.proto
-)
-protobuf_generate_grpc_cpp(
   test/core/tsi/alts/fake_handshaker/handshaker.proto
 )
 protobuf_generate_grpc_cpp(
@@ -696,6 +696,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx alts_util_test)
   add_dependencies(buildtests_cxx async_end2end_test)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
+  add_dependencies(buildtests_cxx authorization_engine_test)
   add_dependencies(buildtests_cxx backoff_test)
   add_dependencies(buildtests_cxx bad_streaming_id_bad_client_test)
   add_dependencies(buildtests_cxx badreq_bad_client_test)
@@ -866,8 +867,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx settings_timeout_test)
   add_dependencies(buildtests_cxx shutdown_test)
   add_dependencies(buildtests_cxx simple_request_bad_client_test)
-  add_dependencies(buildtests_cxx slice_hash_table_test)
-  add_dependencies(buildtests_cxx slice_weak_hash_table_test)
   add_dependencies(buildtests_cxx static_metadata_test)
   add_dependencies(buildtests_cxx stats_test)
   add_dependencies(buildtests_cxx status_metadata_test)
@@ -1316,9 +1315,11 @@ target_include_directories(gpr
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::time
+  absl::synchronization
   absl::strings
   absl::str_format
   absl::memory
+  absl::base
 )
 if(_gRPC_PLATFORM_ANDROID)
   target_link_libraries(gpr
@@ -1448,11 +1449,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/service_config_parser.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
-  src/core/ext/filters/client_channel/xds/xds_api.cc
-  src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
-  src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
-  src/core/ext/filters/client_channel/xds/xds_client.cc
-  src/core/ext/filters/client_channel/xds/xds_client_stats.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/http/client/http_client_filter.cc
@@ -1550,6 +1546,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upbdefs.c
   src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c
+  src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c
   src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c
   src/core/ext/upb-generated/envoy/config/route/v3/route.upbdefs.c
   src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
@@ -1584,10 +1581,14 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/service/route/v3/rds.upbdefs.c
   src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c
   src/core/ext/upb-generated/envoy/service/route/v3/srds.upbdefs.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upbdefs.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/string.upbdefs.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
   src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c
   src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upbdefs.c
   src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c
@@ -1604,6 +1605,7 @@ add_library(grpc
   src/core/ext/upb-generated/gogoproto/gogo.upbdefs.c
   src/core/ext/upb-generated/google/api/annotations.upb.c
   src/core/ext/upb-generated/google/api/annotations.upbdefs.c
+  src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
   src/core/ext/upb-generated/google/api/http.upb.c
   src/core/ext/upb-generated/google/api/http.upbdefs.c
   src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -1637,6 +1639,11 @@ add_library(grpc
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/upb-generated/validate/validate.upbdefs.c
+  src/core/ext/xds/xds_api.cc
+  src/core/ext/xds/xds_bootstrap.cc
+  src/core/ext/xds/xds_channel_secure.cc
+  src/core/ext/xds/xds_client.cc
+  src/core/ext/xds/xds_client_stats.cc
   src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
@@ -1799,7 +1806,6 @@ add_library(grpc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
-  src/core/lib/security/transport/target_authority_table.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/slice/b64.cc
@@ -1828,6 +1834,7 @@ add_library(grpc
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
+  src/core/lib/transport/authority_override.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/byte_stream.cc
   src/core/lib/transport/connectivity_state.cc
@@ -2191,11 +2198,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/service_config_parser.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
-  src/core/ext/filters/client_channel/xds/xds_api.cc
-  src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
-  src/core/ext/filters/client_channel/xds/xds_channel.cc
-  src/core/ext/filters/client_channel/xds/xds_client.cc
-  src/core/ext/filters/client_channel/xds/xds_client_stats.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/http/client/http_client_filter.cc
@@ -2291,6 +2293,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upbdefs.c
   src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c
+  src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c
   src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c
   src/core/ext/upb-generated/envoy/config/route/v3/route.upbdefs.c
   src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
@@ -2325,10 +2328,14 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/service/route/v3/rds.upbdefs.c
   src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c
   src/core/ext/upb-generated/envoy/service/route/v3/srds.upbdefs.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upbdefs.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/string.upbdefs.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
   src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c
   src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upbdefs.c
   src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c
@@ -2345,6 +2352,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/gogoproto/gogo.upbdefs.c
   src/core/ext/upb-generated/google/api/annotations.upb.c
   src/core/ext/upb-generated/google/api/annotations.upbdefs.c
+  src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
   src/core/ext/upb-generated/google/api/http.upb.c
   src/core/ext/upb-generated/google/api/http.upbdefs.c
   src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -2375,6 +2383,11 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/upb-generated/validate/validate.upbdefs.c
+  src/core/ext/xds/xds_api.cc
+  src/core/ext/xds/xds_bootstrap.cc
+  src/core/ext/xds/xds_channel.cc
+  src/core/ext/xds/xds_client.cc
+  src/core/ext/xds/xds_client_stats.cc
   src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
@@ -2523,6 +2536,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
+  src/core/lib/transport/authority_override.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/byte_stream.cc
   src/core/lib/transport/connectivity_state.cc
@@ -2860,12 +2874,9 @@ foreach(_hdr
   include/grpcpp/alarm.h
   include/grpcpp/alarm_impl.h
   include/grpcpp/channel.h
-  include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
-  include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
-  include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/generic/async_generic_service.h
@@ -2894,7 +2905,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
-  include/grpcpp/impl/codegen/completion_queue_impl.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/config_protobuf.h
@@ -2949,9 +2959,7 @@ foreach(_hdr
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
   include/grpcpp/security/credentials.h
-  include/grpcpp/security/credentials_impl.h
   include/grpcpp/security/server_credentials.h
-  include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
@@ -2964,7 +2972,6 @@ foreach(_hdr
   include/grpcpp/support/async_unary_call_impl.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
-  include/grpcpp/support/channel_arguments_impl.h
   include/grpcpp/support/client_callback.h
   include/grpcpp/support/client_callback_impl.h
   include/grpcpp/support/client_interceptor.h
@@ -3121,7 +3128,6 @@ target_link_libraries(grpc++_error_details
 foreach(_hdr
   include/grpc++/support/error_details.h
   include/grpcpp/support/error_details.h
-  include/grpcpp/support/error_details_impl.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3554,12 +3560,9 @@ foreach(_hdr
   include/grpcpp/alarm.h
   include/grpcpp/alarm_impl.h
   include/grpcpp/channel.h
-  include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
-  include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
-  include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/generic/async_generic_service.h
@@ -3588,7 +3591,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
-  include/grpcpp/impl/codegen/completion_queue_impl.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/config_protobuf.h
@@ -3643,9 +3645,7 @@ foreach(_hdr
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
   include/grpcpp/security/credentials.h
-  include/grpcpp/security/credentials_impl.h
   include/grpcpp/security/server_credentials.h
-  include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
@@ -3658,7 +3658,6 @@ foreach(_hdr
   include/grpcpp/support/async_unary_call_impl.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
-  include/grpcpp/support/channel_arguments_impl.h
   include/grpcpp/support/client_callback.h
   include/grpcpp/support/client_callback_impl.h
   include/grpcpp/support/client_interceptor.h
@@ -8546,6 +8545,46 @@ target_link_libraries(auth_property_iterator_test
   grpc++_test_util
   grpc_test_util
   grpc++
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(authorization_engine_test
+  src/core/lib/security/authorization/authorization_engine.cc
+  test/core/security/authorization_engine_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(authorization_engine_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(authorization_engine_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
   grpc
   gpr
   address_sorting
@@ -13968,84 +14007,6 @@ target_link_libraries(simple_request_bad_client_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(slice_hash_table_test
-  test/core/slice/slice_hash_table_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(slice_hash_table_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(slice_hash_table_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(slice_weak_hash_table_test
-  test/core/slice/slice_weak_hash_table_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(slice_weak_hash_table_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(slice_weak_hash_table_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(static_metadata_test
   test/core/transport/static_metadata_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -15063,10 +15024,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/status.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/status.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/status.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/status.grpc.pb.h
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds_end2end_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
@@ -15804,7 +15761,7 @@ generate_pkgconfig(
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
   ""
-  "-lgpr -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgpr -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "gpr.pc")
 
@@ -15814,7 +15771,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_status -labsl_cord -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc.pc")
 
@@ -15824,7 +15781,7 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr"
-  "-lgrpc_unsecure -labsl_status -labsl_cord -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc_unsecure -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc_unsecure.pc")
 
@@ -15834,7 +15791,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
   "grpc"
-  "-lgrpc++ -labsl_status -labsl_cord -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++ -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++.pc")
 
@@ -15844,6 +15801,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure -labsl_status -labsl_cord -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_bad_optional_access -labsl_str_format_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++_unsecure -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++_unsecure.pc")

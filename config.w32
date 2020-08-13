@@ -66,11 +66,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\service_config_parser.cc " +
     "src\\core\\ext\\filters\\client_channel\\subchannel.cc " +
     "src\\core\\ext\\filters\\client_channel\\subchannel_pool_interface.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_api.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_bootstrap.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_channel_secure.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_client.cc " +
-    "src\\core\\ext\\filters\\client_channel\\xds\\xds_client_stats.cc " +
     "src\\core\\ext\\filters\\client_idle\\client_idle_filter.cc " +
     "src\\core\\ext\\filters\\deadline\\deadline_filter.cc " +
     "src\\core\\ext\\filters\\http\\client\\http_client_filter.cc " +
@@ -168,6 +163,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\listener_components.upbdefs.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\udp_listener_config.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3\\udp_listener_config.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\config\\rbac\\v3\\rbac.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\route.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\route.upbdefs.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\route_components.upb.c " +
@@ -202,10 +198,14 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\envoy\\service\\route\\v3\\rds.upbdefs.c " +
     "src\\core\\ext\\upb-generated\\envoy\\service\\route\\v3\\srds.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\service\\route\\v3\\srds.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\metadata.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\number.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\path.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\regex.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\regex.upbdefs.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\string.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\string.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\value.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\metadata\\v3\\metadata.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\metadata\\v3\\metadata.upbdefs.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\tracing\\v3\\custom_tag.upb.c " +
@@ -222,6 +222,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\gogoproto\\gogo.upbdefs.c " +
     "src\\core\\ext\\upb-generated\\google\\api\\annotations.upb.c " +
     "src\\core\\ext\\upb-generated\\google\\api\\annotations.upbdefs.c " +
+    "src\\core\\ext\\upb-generated\\google\\api\\expr\\v1alpha1\\syntax.upb.c " +
     "src\\core\\ext\\upb-generated\\google\\api\\http.upb.c " +
     "src\\core\\ext\\upb-generated\\google\\api\\http.upbdefs.c " +
     "src\\core\\ext\\upb-generated\\google\\protobuf\\any.upb.c " +
@@ -256,6 +257,11 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1\\orca_load_report.upb.c " +
     "src\\core\\ext\\upb-generated\\validate\\validate.upb.c " +
     "src\\core\\ext\\upb-generated\\validate\\validate.upbdefs.c " +
+    "src\\core\\ext\\xds\\xds_api.cc " +
+    "src\\core\\ext\\xds\\xds_bootstrap.cc " +
+    "src\\core\\ext\\xds\\xds_channel_secure.cc " +
+    "src\\core\\ext\\xds\\xds_client.cc " +
+    "src\\core\\ext\\xds\\xds_client_stats.cc " +
     "src\\core\\lib\\avl\\avl.cc " +
     "src\\core\\lib\\backoff\\backoff.cc " +
     "src\\core\\lib\\channel\\channel_args.cc " +
@@ -459,7 +465,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\security\\transport\\secure_endpoint.cc " +
     "src\\core\\lib\\security\\transport\\security_handshaker.cc " +
     "src\\core\\lib\\security\\transport\\server_auth_filter.cc " +
-    "src\\core\\lib\\security\\transport\\target_authority_table.cc " +
     "src\\core\\lib\\security\\transport\\tsi_error.cc " +
     "src\\core\\lib\\security\\util\\json_util.cc " +
     "src\\core\\lib\\slice\\b64.cc " +
@@ -488,6 +493,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\surface\\server.cc " +
     "src\\core\\lib\\surface\\validate_metadata.cc " +
     "src\\core\\lib\\surface\\version.cc " +
+    "src\\core\\lib\\transport\\authority_override.cc " +
     "src\\core\\lib\\transport\\bdp_estimator.cc " +
     "src\\core\\lib\\transport\\byte_stream.cc " +
     "src\\core\\lib\\transport\\connectivity_state.cc " +
@@ -583,6 +589,14 @@ if (PHP_GRPC != "no") {
     "third_party\\abseil-cpp\\absl\\strings\\str_split.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\string_view.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\substitute.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\barrier.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\blocking_counter.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\internal\\create_thread_identity.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\internal\\graphcycles.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\internal\\per_thread_sem.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\internal\\waiter.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\mutex.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\notification.cc " +
     "third_party\\abseil-cpp\\absl\\time\\civil_time.cc " +
     "third_party\\abseil-cpp\\absl\\time\\clock.cc " +
     "third_party\\abseil-cpp\\absl\\time\\duration.cc " +
@@ -955,7 +969,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\fake");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\sockaddr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\xds");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_idle");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\deadline");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\http");
@@ -990,6 +1003,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\endpoint\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\listener");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\listener\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\rbac");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\rbac\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\route");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\trace");
@@ -1026,6 +1041,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\gogoproto");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\api");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\api\\expr");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\api\\expr\\v1alpha1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\protobuf");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\rpc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src");
@@ -1042,6 +1059,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data\\orca");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\validate");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\avl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\backoff");
@@ -1106,6 +1124,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal\\str_format");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\synchronization");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\synchronization\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time\\internal\\cctz");

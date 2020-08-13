@@ -226,7 +226,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   GRPC_ERROR_UNREF(closed_with_error);
   gpr_free(ping_acks);
-  gpr_free(peer_string);
 }
 
 static const grpc_transport_vtable* get_vtable(void);
@@ -378,11 +377,9 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     }
   }
   if (channelz_enabled) {
-    // TODO(ncteisen): add an API to endpoint to query for local addr, and pass
-    // it in here, so SocketNode knows its own address.
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            "", t->peer_string,
+            std::string(grpc_endpoint_get_local_address(t->ep)), t->peer_string,
             absl::StrFormat("%s %s", get_vtable()->name, t->peer_string));
   }
   return enable_bdp;
@@ -594,7 +591,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
   }
   if (t->notify_on_receive_settings != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_receive_settings,
-                            GRPC_ERROR_CANCELLED);
+                            GRPC_ERROR_REF(error));
     t->notify_on_receive_settings = nullptr;
   }
   GRPC_ERROR_UNREF(error);
@@ -795,7 +792,7 @@ static void set_write_state(grpc_chttp2_transport* t,
                             grpc_chttp2_write_state st, const char* reason) {
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_INFO, "W:%p %s [%s] state %s -> %s [%s]", t,
-              t->is_client ? "CLIENT" : "SERVER", t->peer_string,
+              t->is_client ? "CLIENT" : "SERVER", t->peer_string.c_str(),
               write_state_name(t->write_state), write_state_name(st), reason));
   t->write_state = st;
   // If the state is being reset back to idle, it means a write was just
@@ -1084,7 +1081,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   // We want to log this irrespective of whether http tracing is enabled if we
   // received a GOAWAY with a non NO_ERROR code.
   if (goaway_error != GRPC_HTTP2_NO_ERROR) {
-    gpr_log(GPR_INFO, "%s: Got goaway [%d] err=%s", t->peer_string,
+    gpr_log(GPR_INFO, "%s: Got goaway [%d] err=%s", t->peer_string.c_str(),
             goaway_error, grpc_error_string(t->goaway_error));
   }
   // When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
@@ -1216,7 +1213,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
           "Error in HTTP transport completing operation");
       closure->error_data.error = grpc_error_set_str(
           closure->error_data.error, GRPC_ERROR_STR_TARGET_ADDRESS,
-          grpc_slice_from_copied_string(t->peer_string));
+          grpc_slice_from_copied_string(t->peer_string.c_str()));
     }
     closure->error_data.error =
         grpc_error_add_child(closure->error_data.error, error);
@@ -1474,7 +1471,7 @@ static void perform_stream_op_locked(void* stream_op,
     }
     if (op_payload->send_initial_metadata.peer_string != nullptr) {
       gpr_atm_rel_store(op_payload->send_initial_metadata.peer_string,
-                        (gpr_atm)t->peer_string);
+                        (gpr_atm)t->peer_string.c_str());
     }
   }
 
@@ -1587,7 +1584,7 @@ static void perform_stream_op_locked(void* stream_op,
         op_payload->recv_initial_metadata.trailing_metadata_available;
     if (op_payload->recv_initial_metadata.peer_string != nullptr) {
       gpr_atm_rel_store(op_payload->recv_initial_metadata.peer_string,
-                        (gpr_atm)t->peer_string);
+                        (gpr_atm)t->peer_string.c_str());
     }
     grpc_chttp2_maybe_complete_recv_initial_metadata(t, s);
   }
@@ -1755,9 +1752,8 @@ static void retry_initiate_ping_locked(void* tp, grpc_error* error) {
 void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
   if (pq->inflight_id != id) {
-    char* from = grpc_endpoint_get_peer(t->ep);
-    gpr_log(GPR_DEBUG, "Unknown ping response from %s: %" PRIx64, from, id);
-    gpr_free(from);
+    gpr_log(GPR_DEBUG, "Unknown ping response from %s: %" PRIx64,
+            t->peer_string.c_str(), id);
     return;
   }
   grpc_core::ExecCtx::RunList(DEBUG_LOCATION,
@@ -1769,7 +1765,7 @@ void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
 
 static void send_goaway(grpc_chttp2_transport* t, grpc_error* error) {
   // We want to log this irrespective of whether http tracing is enabled
-  gpr_log(GPR_INFO, "%s: Sending goaway err=%s", t->peer_string,
+  gpr_log(GPR_INFO, "%s: Sending goaway err=%s", t->peer_string.c_str(),
           grpc_error_string(error));
   t->sent_goaway_state = GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED;
   grpc_http2_error_code http_error;
@@ -2641,7 +2637,7 @@ static void start_bdp_ping(void* tp, grpc_error* error) {
 static void start_bdp_ping_locked(void* tp, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "%s: Start BDP ping err=%s", t->peer_string,
+    gpr_log(GPR_INFO, "%s: Start BDP ping err=%s", t->peer_string.c_str(),
             grpc_error_string(error));
   }
   if (error != GRPC_ERROR_NONE || t->closed_with_error != GRPC_ERROR_NONE) {
@@ -2665,7 +2661,7 @@ static void finish_bdp_ping(void* tp, grpc_error* error) {
 static void finish_bdp_ping_locked(void* tp, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "%s: Complete BDP ping err=%s", t->peer_string,
+    gpr_log(GPR_INFO, "%s: Complete BDP ping err=%s", t->peer_string.c_str(),
             grpc_error_string(error));
   }
   if (error != GRPC_ERROR_NONE || t->closed_with_error != GRPC_ERROR_NONE) {
@@ -2835,7 +2831,7 @@ static void start_keepalive_ping_locked(void* arg, grpc_error* error) {
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
       GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-    gpr_log(GPR_INFO, "%s: Start keepalive ping", t->peer_string);
+    gpr_log(GPR_INFO, "%s: Start keepalive ping", t->peer_string.c_str());
   }
   GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive watchdog");
   GRPC_CLOSURE_INIT(&t->keepalive_watchdog_fired_locked,
@@ -2859,7 +2855,7 @@ static void finish_keepalive_ping_locked(void* arg, grpc_error* error) {
     if (error == GRPC_ERROR_NONE) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
           GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-        gpr_log(GPR_INFO, "%s: Finish keepalive ping", t->peer_string);
+        gpr_log(GPR_INFO, "%s: Finish keepalive ping", t->peer_string.c_str());
       }
       if (!t->keepalive_ping_started) {
         // start_keepalive_ping_locked has not run yet. Reschedule
@@ -2897,7 +2893,7 @@ static void keepalive_watchdog_fired_locked(void* arg, grpc_error* error) {
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
     if (error == GRPC_ERROR_NONE) {
       gpr_log(GPR_INFO, "%s: Keepalive watchdog fired. Closing transport.",
-              t->peer_string);
+              t->peer_string.c_str());
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
       close_transport_locked(
           t, grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -3205,7 +3201,7 @@ static void benign_reclaimer_locked(void* arg, grpc_error* error) {
     // disconnect cleanly
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO, "HTTP2: %s - send goaway to free memory",
-              t->peer_string);
+              t->peer_string.c_str());
     }
     send_goaway(t,
                 grpc_error_set_int(
@@ -3216,7 +3212,8 @@ static void benign_reclaimer_locked(void* arg, grpc_error* error) {
     gpr_log(GPR_INFO,
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
             " streams",
-            t->peer_string, grpc_chttp2_stream_map_size(&t->stream_map));
+            t->peer_string.c_str(),
+            grpc_chttp2_stream_map_size(&t->stream_map));
   }
   t->benign_reclaimer_registered = false;
   if (error != GRPC_ERROR_CANCELLED) {
@@ -3241,8 +3238,8 @@ static void destructive_reclaimer_locked(void* arg, grpc_error* error) {
     grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(
         grpc_chttp2_stream_map_rand(&t->stream_map));
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-      gpr_log(GPR_INFO, "HTTP2: %s - abandon stream id %d", t->peer_string,
-              s->id);
+      gpr_log(GPR_INFO, "HTTP2: %s - abandon stream id %d",
+              t->peer_string.c_str(), s->id);
     }
     grpc_chttp2_cancel_stream(
         t, s,

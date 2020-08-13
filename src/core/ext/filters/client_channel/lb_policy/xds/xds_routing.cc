@@ -35,7 +35,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/xds/xds_api.h"
+#include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -187,7 +187,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsRoutingLb> xds_routing_policy_;
 
     // Points to the corresponding key in XdsRoutingLb::actions_.
-    const std::string& name_;
+    const std::string name_;
 
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
@@ -407,9 +407,10 @@ void XdsRoutingLb::UpdateLocked(UpdateArgs args) {
     const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second;
     auto it = actions_.find(name);
     if (it == actions_.end()) {
-      it = actions_.emplace(std::make_pair(name, nullptr)).first;
-      it->second = MakeOrphanable<XdsRoutingChild>(
-          Ref(DEBUG_LOCATION, "XdsRoutingChild"), it->first);
+      it = actions_
+               .emplace(name, MakeOrphanable<XdsRoutingChild>(
+                                  Ref(DEBUG_LOCATION, "XdsRoutingChild"), name))
+               .first;
     }
     it->second->UpdateLocked(config, args.addresses, args.args);
   }

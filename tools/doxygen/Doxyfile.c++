@@ -935,12 +935,9 @@ include/grpc/support/workaround_list.h \
 include/grpcpp/alarm.h \
 include/grpcpp/alarm_impl.h \
 include/grpcpp/channel.h \
-include/grpcpp/channel_impl.h \
 include/grpcpp/client_context.h \
 include/grpcpp/completion_queue.h \
-include/grpcpp/completion_queue_impl.h \
 include/grpcpp/create_channel.h \
-include/grpcpp/create_channel_impl.h \
 include/grpcpp/create_channel_posix.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
 include/grpcpp/generic/async_generic_service.h \
@@ -969,7 +966,6 @@ include/grpcpp/impl/codegen/client_context_impl.h \
 include/grpcpp/impl/codegen/client_interceptor.h \
 include/grpcpp/impl/codegen/client_unary_call.h \
 include/grpcpp/impl/codegen/completion_queue.h \
-include/grpcpp/impl/codegen/completion_queue_impl.h \
 include/grpcpp/impl/codegen/completion_queue_tag.h \
 include/grpcpp/impl/codegen/config.h \
 include/grpcpp/impl/codegen/config_protobuf.h \
@@ -1024,9 +1020,7 @@ include/grpcpp/resource_quota.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
 include/grpcpp/security/credentials.h \
-include/grpcpp/security/credentials_impl.h \
 include/grpcpp/security/server_credentials.h \
-include/grpcpp/security/server_credentials_impl.h \
 include/grpcpp/security/tls_credentials_options.h \
 include/grpcpp/server.h \
 include/grpcpp/server_builder.h \
@@ -1039,7 +1033,6 @@ include/grpcpp/support/async_unary_call.h \
 include/grpcpp/support/async_unary_call_impl.h \
 include/grpcpp/support/byte_buffer.h \
 include/grpcpp/support/channel_arguments.h \
-include/grpcpp/support/channel_arguments_impl.h \
 include/grpcpp/support/client_callback.h \
 include/grpcpp/support/client_callback_impl.h \
 include/grpcpp/support/client_interceptor.h \
