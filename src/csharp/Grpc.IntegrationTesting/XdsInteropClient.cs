@@ -61,6 +61,10 @@ namespace Grpc.IntegrationTesting
             // The metadata to send with each RPC, in the format EmptyCall:key1:value1,UnaryCall:key2:value2
             [Option("metadata", Default = null)]
             public string Metadata { get; set; }
+
+            // Deliberately using nullable bool type to the --fail_on_failed_rpc=true syntax
+            [Option("fail_on_failed_rpc", Default = false)]
+            public bool? FailOnFailedRpc { get; set; }
         }
 
         internal enum RpcType
