@@ -113,10 +113,10 @@ grpc_cc_test(
     data = [
         ":client_crash_test_server",
     ],
-    flaky = True,  # TODO(b/161828686)
     external_deps = [
         "gtest",
     ],
+    flaky = True,  # TODO(b/161828686)
     tags = [
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
