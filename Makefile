@@ -2554,22 +2554,6 @@ $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc: src/proto/grpc/lb/v1/lo
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/src/proto/grpc/meshca/v1/ca.pb.cc: protoc_dep_error
-$(GENDIR)/src/proto/grpc/meshca/v1/ca.grpc.pb.cc: protoc_dep_error
-else
-
-$(GENDIR)/src/proto/grpc/meshca/v1/ca.pb.cc: src/proto/grpc/meshca/v1/ca.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
-	$(E) "[PROTOC]  Generating protobuf CC file from $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
-
-$(GENDIR)/src/proto/grpc/meshca/v1/ca.grpc.pb.cc: src/proto/grpc/meshca/v1/ca.proto $(GENDIR)/src/proto/grpc/meshca/v1/ca.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
-	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
-endif
-
-ifeq ($(NO_PROTOC),true)
 $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc: protoc_dep_error
 else
@@ -3173,6 +3157,22 @@ $(GENDIR)/test/core/tsi/alts/fake_handshaker/transport_security_common.pb.cc: te
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
 $(GENDIR)/test/core/tsi/alts/fake_handshaker/transport_security_common.grpc.pb.cc: test/core/tsi/alts/fake_handshaker/transport_security_common.proto $(GENDIR)/test/core/tsi/alts/fake_handshaker/transport_security_common.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/third_party/istio/security/proto/providers/google/meshca.pb.cc: protoc_dep_error
+$(GENDIR)/third_party/istio/security/proto/providers/google/meshca.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/third_party/istio/security/proto/providers/google/meshca.pb.cc: third_party/istio/security/proto/providers/google/meshca.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/third_party/istio/security/proto/providers/google/meshca.grpc.pb.cc: third_party/istio/security/proto/providers/google/meshca.proto $(GENDIR)/third_party/istio/security/proto/providers/google/meshca.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -3832,7 +3832,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/meshca/v1/ca.upb.c \
+    src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
     src/core/ext/upb-generated/udpa/annotations/status.upb.c \
@@ -16021,7 +16021,7 @@ endif
 
 
 MESH_CA_PROVIDER_TEST_SRC = \
-    $(GENDIR)/src/proto/grpc/meshca/v1/ca.pb.cc $(GENDIR)/src/proto/grpc/meshca/v1/ca.grpc.pb.cc \
+    $(GENDIR)/third_party/istio/security/proto/providers/google/meshca.pb.cc $(GENDIR)/third_party/istio/security/proto/providers/google/meshca.grpc.pb.cc \
     test/core/security/mesh_ca_provider_test.cc \
 
 MESH_CA_PROVIDER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MESH_CA_PROVIDER_TEST_SRC))))
@@ -16053,7 +16053,7 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/meshca/v1/ca.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+$(OBJDIR)/$(CONFIG)/third_party/istio/security/proto/providers/google/meshca.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 $(OBJDIR)/$(CONFIG)/test/core/security/mesh_ca_provider_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
@@ -16064,7 +16064,7 @@ ifneq ($(NO_DEPS),true)
 -include $(MESH_CA_PROVIDER_TEST_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/core/security/mesh_ca_provider_test.o: $(GENDIR)/src/proto/grpc/meshca/v1/ca.pb.cc $(GENDIR)/src/proto/grpc/meshca/v1/ca.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/core/security/mesh_ca_provider_test.o: $(GENDIR)/third_party/istio/security/proto/providers/google/meshca.pb.cc $(GENDIR)/third_party/istio/security/proto/providers/google/meshca.grpc.pb.cc
 
 
 MESSAGE_ALLOCATOR_END2END_TEST_SRC = \
@@ -20231,11 +20231,8 @@ src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc: $(OPENSSL_D
 src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c: $(OPENSSL_DEP)
-<<<<<<< HEAD
-src/core/ext/upb-generated/src/proto/grpc/meshca/v1/ca.upb.c: $(OPENSSL_DEP)
-=======
+src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c: $(OPENSSL_DEP)
 src/core/ext/xds/xds_channel_secure.cc: $(OPENSSL_DEP)
->>>>>>> master
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/certificate_provider/google_mesh_ca.cc: $(OPENSSL_DEP)
 src/core/lib/security/certificate_provider/registry.cc: $(OPENSSL_DEP)

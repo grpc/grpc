@@ -617,7 +617,7 @@
         'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c',
         'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
         'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c',
-        'src/core/ext/upb-generated/src/proto/grpc/meshca/v1/ca.upb.c',
+        'src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c',
         'src/core/ext/upb-generated/udpa/annotations/migrate.upb.c',
         'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c',
         'src/core/ext/upb-generated/udpa/annotations/status.upb.c',

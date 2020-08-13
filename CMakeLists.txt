@@ -374,9 +374,6 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/lb/v1/load_balancer.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/meshca/v1/ca.proto
-)
-protobuf_generate_grpc_cpp(
   src/proto/grpc/reflection/v1alpha/reflection.proto
 )
 protobuf_generate_grpc_cpp(
@@ -489,6 +486,9 @@ protobuf_generate_grpc_cpp(
 )
 protobuf_generate_grpc_cpp(
   test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/istio/security/proto/providers/google/meshca.proto
 )
 
 if(gRPC_BUILD_TESTS)
@@ -1572,7 +1572,7 @@ add_library(grpc
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/meshca/v1/ca.upb.c
+  src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c
   src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
   src/core/ext/upb-generated/udpa/annotations/status.upb.c
@@ -12323,10 +12323,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(mesh_ca_provider_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/meshca/v1/ca.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/meshca/v1/ca.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/meshca/v1/ca.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/meshca/v1/ca.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/third_party/istio/security/proto/providers/google/meshca.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/third_party/istio/security/proto/providers/google/meshca.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/third_party/istio/security/proto/providers/google/meshca.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/third_party/istio/security/proto/providers/google/meshca.grpc.pb.h
   test/core/security/mesh_ca_provider_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
