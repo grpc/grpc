@@ -57,7 +57,17 @@
       'csharp': 'CSHARP'
     }
   %>
-
+  <%
+    # Makefile is only intended for internal needs (building distribution artifacts etc.)
+    # so we can restrict the number of libraries/targets that are buildable using the Makefile.
+    # Other targets can be built with cmake or bazel.
+    # TODO(jtattermusch): Figure out how to avoid the need to list the dependencies explicitly.
+    # Currently it is necessary because some dependencies are marked as "build: private" in build.yaml
+    # (which itself is correct, as they are not "public" libraries from our perspective and cmake
+    # needs to have them marked as such)
+    filtered_libs = [lib for lib in libs if lib.build in ['all', 'protoc'] or lib.name in ['ares', 'boringssl', 're2', 'upb', 'z']]
+    filtered_targets = [tgt for tgt in targets if tgt.build in ['all', 'protoc']]
+  %>
 
   comma := ,
 
@@ -718,7 +728,7 @@
   CPPFLAGS := -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googlemock/include $(CPPFLAGS)
 
   PROTOC_PLUGINS_ALL =\
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   % if tgt.build == 'protoc':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
   % endif
@@ -795,7 +805,7 @@
 
   ifeq ($(DEP_MISSING),)
   all: static shared plugins\
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   % if tgt.build == 'all':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
   % endif
@@ -905,7 +915,7 @@
   stop:
   	@false
 
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   ${tgt.name}: $(BINDIR)/$(CONFIG)/${tgt.name}
   % endfor
 
@@ -935,7 +945,7 @@
   static: static_c static_cxx
 
   static_c: pc_c pc_c_unsecure cache.mk \
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -945,7 +955,7 @@
 
 
   static_cxx: pc_cxx pc_cxx_unsecure cache.mk \
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -955,7 +965,7 @@
 
 
   static_csharp: static_c \
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'csharp':
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -967,7 +977,7 @@
   shared: shared_c shared_cxx
 
   shared_c: pc_c pc_c_unsecure cache.mk\
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)\
@@ -976,7 +986,7 @@
   % endfor
 
   shared_cxx: pc_cxx pc_cxx_unsecure cache.mk\
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)\
@@ -986,7 +996,7 @@
 
 
   shared_csharp: shared_c \
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'csharp':
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)\
@@ -1001,7 +1011,7 @@
   privatelibs: privatelibs_c privatelibs_cxx
 
   privatelibs_c: \
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None) and not lib.boringssl:
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -1019,7 +1029,7 @@
 
   ifeq ($(EMBED_OPENSSL),true)
   privatelibs_cxx: \
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c++' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -1029,7 +1039,7 @@
 
   else
   privatelibs_cxx: \
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c++' and not lib.get('external_deps', None) and not lib.boringssl:
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -1043,7 +1053,7 @@
   buildtests: buildtests_c buildtests_cxx
 
   buildtests_c: privatelibs_c <%text>\</%text>
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
@@ -1052,7 +1062,7 @@
 
   ifeq ($(EMBED_OPENSSL),true)
   buildtests_cxx: privatelibs_cxx <%text>\</%text>
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
@@ -1060,7 +1070,7 @@
 
   else
   buildtests_cxx: privatelibs_cxx <%text>\</%text>
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
@@ -1074,7 +1084,7 @@
   flaky_test: flaky_test_c flaky_test_cxx
 
   test_c: buildtests_c
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
   	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
@@ -1083,7 +1093,7 @@
 
 
   flaky_test_c: buildtests_c
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
   	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
@@ -1092,7 +1102,7 @@
 
 
   test_cxx: buildtests_cxx
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
   	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
@@ -1101,7 +1111,7 @@
 
 
   flaky_test_cxx: buildtests_cxx
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
   	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
@@ -1118,7 +1128,7 @@
 
 
   tools_c: privatelibs_c\
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   % if tgt.build == 'tool' and not tgt.language=='c++':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
   % endif
@@ -1126,7 +1136,7 @@
 
 
   tools_cxx: privatelibs_cxx\
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   % if tgt.build == 'tool' and tgt.language=='c++':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
   % endif
@@ -1134,7 +1144,7 @@
 
 
   buildbenchmarks: privatelibs\
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   % if tgt.build == 'benchmark':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
   % endif
@@ -1156,7 +1166,7 @@
 
   strip-static_c: static_c
   ifeq ($(CONFIG),opt)
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
@@ -1172,7 +1182,7 @@
 
   strip-static_cxx: static_cxx
   ifeq ($(CONFIG),opt)
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
@@ -1186,7 +1196,7 @@
 
   strip-shared_c: shared_c
   ifeq ($(CONFIG),opt)
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
@@ -1202,7 +1212,7 @@
 
   strip-shared_cxx: shared_cxx
   ifeq ($(CONFIG),opt)
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
@@ -1216,7 +1226,7 @@
 
   strip-shared_csharp: shared_csharp
   ifeq ($(CONFIG),opt)
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "csharp":
   % if lib.build == "all":
@@ -1349,7 +1359,7 @@
 
   # The various libraries
 
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   ${makelib(lib)}
   % endif
@@ -1386,7 +1396,7 @@
 
   # All of the test targets, and protoc plugins
 
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   ${maketarget(tgt)}
   % endfor
 
