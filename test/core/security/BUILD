@@ -300,3 +300,24 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "mesh_ca_provider_test",
+    srcs = ["mesh_ca_provider_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_secure",
+        "//test/core/util:grpc_test_util",
+        "//third_party/istio/security/proto/providers/google:meshca_proto",
+    ],
+)

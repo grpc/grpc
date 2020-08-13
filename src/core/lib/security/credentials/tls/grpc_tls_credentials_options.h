@@ -26,6 +26,7 @@
 #include "absl/container/inlined_vector.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
 struct grpc_tls_error_details
@@ -317,6 +318,48 @@ struct grpc_tls_credentials_options
       credential_reload_config_;
   grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config>
       server_authorization_check_config_;
+};
+
+// Placeholder for aTLS grpc_tls_certificate_distributor class that is under
+// development.
+struct grpc_tls_certificate_distributor
+    : public grpc_core::RefCounted<grpc_tls_certificate_distributor> {
+ public:
+  typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
+
+  class TlsCertificatesWatcherInterface {
+   public:
+    virtual ~TlsCertificatesWatcherInterface() = default;
+    virtual void OnCertificatesChanged(
+        absl::string_view root_certs,
+        const PemKeyCertPairList& key_cert_pairs) = 0;
+    virtual void OnError(grpc_error* error) = 0;
+  };
+
+  // Set key materials.
+  virtual void SetKeyMaterials(absl::string_view pem_root_certs,
+                               PemKeyCertPairList pem_key_cert_pairs) {}
+  virtual void SetRootCerts(absl::string_view pem_root_certs) {}
+  virtual void SetKeyCertPairs(PemKeyCertPairList pem_key_cert_pairs) {}
+  // Return true if key materials have been set.
+  virtual bool HasKeyCertPairs() { return false; }
+  virtual bool HasRootCerts() { return false; }
+
+  // Register and cancel a watcher.
+  virtual void WatchTlsCertificates(
+      std::unique_ptr<TlsCertificatesWatcherInterface> watcher) {}
+  virtual void CancelTlsCertificatesWatch(
+      TlsCertificatesWatcherInterface* watcher) {}
+
+ private:
+  void CertificatesUpdated() {}
+
+  grpc_core::Mutex mu_;
+  std::map<TlsCertificatesWatcherInterface*,
+           std::unique_ptr<TlsCertificatesWatcherInterface>>
+      watchers_;
+  PemKeyCertPairList pem_key_cert_pair_list_;
+  std::string pem_root_certs_;
 };
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H \

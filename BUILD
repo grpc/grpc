@@ -1770,6 +1770,9 @@ grpc_cc_library(
     name = "grpc_secure",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
+        "src/core/lib/security/certificate_provider/google_mesh_ca.cc",
+        "src/core/lib/security/certificate_provider/registry.cc",
+        "src/core/lib/security/certificate_provider/store.cc",
         "src/core/lib/security/context/security_context.cc",
         "src/core/lib/security/credentials/alts/alts_credentials.cc",
         "src/core/lib/security/credentials/composite/composite_credentials.cc",
@@ -1809,6 +1812,12 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/xds/xds_channel_args.h",
+        "src/core/lib/security/certificate_provider/config.h",
+        "src/core/lib/security/certificate_provider/factory.h",
+        "src/core/lib/security/certificate_provider/google_mesh_ca.h",
+        "src/core/lib/security/certificate_provider/provider.h",
+        "src/core/lib/security/certificate_provider/registry.h",
+        "src/core/lib/security/certificate_provider/store.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
@@ -1841,12 +1850,16 @@ grpc_cc_library(
         "src/core/lib/security/transport/tsi_error.h",
         "src/core/lib/security/util/json_util.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "alts_util",
         "grpc_base",
         "grpc_transport_chttp2_alpn",
+        "meshca_upb",
         "tsi",
     ],
 )
