@@ -157,13 +157,14 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   client_thread_2.join();
 }
 
-char* GetDir() {
+void GetDirAndFiles() {
   char* file_path_getcwd;
   file_path_getcwd = (char*)malloc(512);
   getcwd(file_path_getcwd, 512);
   gpr_log(GPR_INFO, "##### Current dir = %s", file_path_getcwd);
   // std::cout << "##### Current dir = " << file_path_getcwd << std::endl;
-  return file_path_getcwd;
+  GetFiles(file_path_getcwd);
+  free(file_path_getcwd);
 }
 
 void GetFiles(char* cate_dir) {
@@ -178,10 +179,10 @@ void GetFiles(char* cate_dir) {
       continue;
     } else if (ptr->d_type == 8) {
       // std::cout << "file: " << ptr->d_name << std::endl;
-      gpr_log(GPR_INFO, " file: %s", ptr->d_name);
+      gpr_log(GPR_INFO, "##### file: %s", ptr->d_name);
     } else if (ptr->d_type == 4) {
       // std::cout << "dir: " << ptr->d_name << std::endl;
-      gpr_log(GPR_INFO, " dir: %s", ptr->d_name);
+      gpr_log(GPR_INFO, "##### dir: %s", ptr->d_name);
     }
   }
   closedir(dir);
@@ -196,10 +197,9 @@ int main(int argc, char** argv) {
     g_root = ".";
   }
 
-  gpr_log(GPR_INFO, "g_root = %s", g_root.c_str());
+  gpr_log(GPR_INFO, "##### g_root = %s", g_root.c_str());
   // std::cout << "g_root = " << g_root << std::endl;
-  char* cur_dir = GetDir();
-  GetFiles(cur_dir);
+  GetDir();
 
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
