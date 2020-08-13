@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include <dirent.h>
+// #include <dirent.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -157,14 +157,15 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   client_thread_2.join();
 }
 
+/*
 void GetFiles(char* cate_dir) {
   DIR* dir;
   struct dirent* ptr;
-  if ((dir = opendir(cate_dir)) == NULL) {
+  if ((dir = opendir(cate_dir)) == nullptr) {
     std::cout << "Open dir error..." << std::endl;
     exit(1);
   }
-  while ((ptr = readdir(dir)) != NULL) {
+  while ((ptr = readdir(dir)) != nullptr) {
     if (strcmp(ptr->d_name, ".") == 0 || strcmp(ptr->d_name, "..") == 0) {
       continue;
     } else if (ptr->d_type == 8) {
@@ -187,6 +188,7 @@ void GetDirAndFiles() {
   GetFiles(file_path_getcwd);
   free(file_path_getcwd);
 }
+*/
 
 int main(int argc, char** argv) {
   std::string me = argv[0];
@@ -196,10 +198,9 @@ int main(int argc, char** argv) {
   } else {
     g_root = ".";
   }
-
   gpr_log(GPR_INFO, "##### g_root = %s", g_root.c_str());
   // std::cout << "g_root = " << g_root << std::endl;
-  GetDirAndFiles();
+  // GetDirAndFiles();
 
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
