@@ -958,119 +958,11 @@
   endif
 
 
-  buildtests: buildtests_c buildtests_cxx
-
-  buildtests_c: privatelibs_c <%text>\</%text>
-  % for tgt in filtered_targets:
-  % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None):
-    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
-  % endif
-  % endfor
-
-
-  ifeq ($(EMBED_OPENSSL),true)
-  buildtests_cxx: privatelibs_cxx <%text>\</%text>
-  % for tgt in filtered_targets:
-  % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
-    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
-  % endif
-  % endfor
-
-  else
-  buildtests_cxx: privatelibs_cxx <%text>\</%text>
-  % for tgt in filtered_targets:
-  % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
-    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
-  % endif
-  % endfor
-
-  endif
-
-
-  test: test_c test_cxx
-
-  flaky_test: flaky_test_c flaky_test_cxx
-
-  test_c: buildtests_c
-  % for tgt in filtered_targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
-  	$(E) "[RUN]     Testing ${tgt.name}"
-  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
-  % endif
-  % endfor
-
-
-  flaky_test_c: buildtests_c
-  % for tgt in filtered_targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
-  	$(E) "[RUN]     Testing ${tgt.name}"
-  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
-  % endif
-  % endfor
-
-
-  test_cxx: buildtests_cxx
-  % for tgt in filtered_targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
-  	$(E) "[RUN]     Testing ${tgt.name}"
-  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
-  % endif
-  % endfor
-
-
-  flaky_test_cxx: buildtests_cxx
-  % for tgt in filtered_targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
-  	$(E) "[RUN]     Testing ${tgt.name}"
-  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
-  % endif
-  % endfor
-
-
-  test_python: static_c
-  	$(E) "[RUN]     Testing python code"
-  	$(Q) tools/run_tests/run_tests.py -lpython -c$(CONFIG)
-
-
-  tools: tools_c tools_cxx
-
-
-  tools_c: privatelibs_c\
-  % for tgt in filtered_targets:
-  % if tgt.build == 'tool' and not tgt.language=='c++':
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
-  % endif
-  % endfor
-
-
-  tools_cxx: privatelibs_cxx\
-  % for tgt in filtered_targets:
-  % if tgt.build == 'tool' and tgt.language=='c++':
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
-  % endif
-  % endfor
-
-
-  buildbenchmarks: privatelibs\
-  % for tgt in filtered_targets:
-  % if tgt.build == 'benchmark':
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
-  % endif
-  % endfor
-
-
-  benchmarks: buildbenchmarks
-
   strip: strip-static strip-shared
 
   strip-static: strip-static_c strip-static_cxx
 
   strip-shared: strip-shared_c strip-shared_cxx
-
-
-  # TODO(nnoble): the strip target is stripping in-place, instead
-  # of copying files in a temporary folder.
-  # This prevents proper debugging after running make install.
 
   strip-static_c: static_c
   ifeq ($(CONFIG),opt)
