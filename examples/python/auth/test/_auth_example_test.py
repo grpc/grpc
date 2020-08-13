@@ -18,8 +18,12 @@ from __future__ import division
 from __future__ import print_function
 
 import unittest
+import os
+import sys
 
 import grpc
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from examples.python.auth import _credentials
 from examples.python.auth import customized_auth_client
 from examples.python.auth import customized_auth_server
