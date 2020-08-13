@@ -19,7 +19,7 @@ py_library(
     testonly = 1,
     srcs = ["wait_for_ready_example.py"],
     data = [
-        "//examples:protos/helloworld.proto",
+        ":helloworld.proto",
     ],
     deps = [
         "//src/python/grpcio/grpc:grpcio",

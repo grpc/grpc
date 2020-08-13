@@ -16,13 +16,10 @@
 from __future__ import print_function
 
 import logging
-import os
-import sys
 
 import grpc
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
-protos, services = grpc.protos_and_services("protos/helloworld.protos")
+protos, services = grpc.protos_and_services("helloworld.proto")
 
 import header_manipulator_client_interceptor
 

@@ -34,7 +34,7 @@ py_binary(
     testonly = 1,
     srcs = ["customized_auth_client.py"],
     data = [
-        "//examples:protos/helloworld.proto",
+        "helloworld.proto",
     ],
     python_version = "PY3",
     deps = [
@@ -49,7 +49,7 @@ py_binary(
     testonly = 1,
     srcs = ["customized_auth_server.py"],
     data = [
-        "//examples:protos/helloworld.proto",
+        "helloworld.proto",
     ],
     python_version = "PY3",
     deps = [

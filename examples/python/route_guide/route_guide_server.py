@@ -17,14 +17,10 @@ from concurrent import futures
 import time
 import math
 import logging
-import os
-import sys
 
 import grpc
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
-
-protos, services = grpc.protos_and_services("protos/route_guide.proto")
+protos, services = grpc.protos_and_services("route_guide.proto")
 
 import route_guide_resources
 

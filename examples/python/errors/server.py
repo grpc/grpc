@@ -15,9 +15,7 @@
 
 from concurrent import futures
 import logging
-import os
 import threading
-import sys
 
 import grpc
 from grpc_status import rpc_status
@@ -25,8 +23,7 @@ from grpc_status import rpc_status
 from google.protobuf import any_pb2
 from google.rpc import code_pb2, status_pb2, error_details_pb2
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
-protos, services = grpc.protos_and_services("examples/protos/helloworld.proto")
+protos, services = grpc.protos_and_services("helloworld.proto")
 
 
 def create_greet_limit_exceed_error_status(name):

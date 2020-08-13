@@ -19,7 +19,7 @@ py_library(
     testonly = 1,
     srcs = ["client.py"],
     data = [
-        "//examples:protos/helloworld.proto",
+        "helloworld.proto",
     ],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
@@ -34,7 +34,7 @@ py_library(
     testonly = 1,
     srcs = ["server.py"],
     data = [
-        "//examples:protos/helloworld.proto",
+        "helloworld.proto",
     ],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
@@ -51,7 +51,7 @@ py_test(
     size = "small",
     srcs = ["test/_error_handling_example_test.py"],
     data = [
-        "//examples:protos/helloworld.proto",
+        "helloworld.proto",
     ],
     imports = [
         "../../../src/python/grpcio_status",

@@ -18,6 +18,10 @@ import logging
 
 import grpc
 
+# NOTE: The path to the .proto file must be reachable from an entry
+# on sys.path. Use sys.path.insert or set the $PYTHONPATH variable to
+# import from files located elsewhere on the filesystem.
+
 protos, services = grpc.protos_and_services("helloworld.proto")
 
 

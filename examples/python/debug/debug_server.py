@@ -20,16 +20,12 @@ from __future__ import print_function
 import argparse
 import logging
 from concurrent import futures
-import os
 import random
-import sys
 
 import grpc
 from grpc_channelz.v1 import channelz
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
-
-protos, services = grpc.protos_and_services("examples/protos/helloworld.proto")
+protos, services = grpc.protos_and_services("helloworld.proto")
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)

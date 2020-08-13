@@ -17,16 +17,12 @@ from __future__ import print_function
 import logging
 from concurrent import futures
 from contextlib import contextmanager
-import os
 import socket
-import sys
 import threading
 
 import grpc
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
-
-protos, services = grpc.protos_and_services("examples/protos/helloworld.proto")
+protos, services = grpc.protos_and_services("helloworld.proto")
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)

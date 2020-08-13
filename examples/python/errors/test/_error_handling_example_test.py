@@ -28,8 +28,8 @@ import unittest
 
 import grpc
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
-services = grpc.services("examples/protos/helloworld.proto")
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+services = grpc.services("helloworld.proto")
 
 from examples.python.errors import client as error_handling_client
 from examples.python.errors import server as error_handling_server
