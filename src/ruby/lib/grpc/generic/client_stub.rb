@@ -100,7 +100,7 @@ module GRPC
                    channel_args: {},
                    interceptors: [])
       @ch = ClientStub.setup_channel(channel_override, host, creds,
-                                     channel_args)
+                                     channel_args.dup)
       alt_host = channel_args[Core::Channel::SSL_TARGET]
       @host = alt_host.nil? ? host : alt_host
       @propagate_mask = propagate_mask
