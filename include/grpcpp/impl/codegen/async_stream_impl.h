@@ -21,7 +21,7 @@
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
-#include <grpcpp/impl/codegen/server_context_impl.h>
+#include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/status.h>
 
@@ -699,7 +699,7 @@ class ServerAsyncReaderInterface
 template <class W, class R>
 class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
  public:
-  explicit ServerAsyncReader(::grpc_impl::ServerContext* ctx)
+  explicit ServerAsyncReader(::grpc::ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
   /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
@@ -785,7 +785,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
   void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
 
   ::grpc::internal::Call call_;
-  ::grpc_impl::ServerContext* ctx_;
+  ::grpc::ServerContext* ctx_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
       meta_ops_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>> read_ops_;
@@ -846,7 +846,7 @@ class ServerAsyncWriterInterface
 template <class W>
 class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
  public:
-  explicit ServerAsyncWriter(::grpc_impl::ServerContext* ctx)
+  explicit ServerAsyncWriter(::grpc::ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
   /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
@@ -943,7 +943,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
   }
 
   ::grpc::internal::Call call_;
-  ::grpc_impl::ServerContext* ctx_;
+  ::grpc::ServerContext* ctx_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
       meta_ops_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
@@ -1012,7 +1012,7 @@ template <class W, class R>
 class ServerAsyncReaderWriter final
     : public ServerAsyncReaderWriterInterface<W, R> {
  public:
-  explicit ServerAsyncReaderWriter(::grpc_impl::ServerContext* ctx)
+  explicit ServerAsyncReaderWriter(::grpc::ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
   /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
@@ -1117,7 +1117,7 @@ class ServerAsyncReaderWriter final
   }
 
   ::grpc::internal::Call call_;
-  ::grpc_impl::ServerContext* ctx_;
+  ::grpc::ServerContext* ctx_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
       meta_ops_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>> read_ops_;
