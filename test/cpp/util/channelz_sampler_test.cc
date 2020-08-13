@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+#include <dirent.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -156,10 +157,37 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   client_thread_2.join();
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
+char* GetDir() {
+  char* file_path_getcwd;
+  file_path_getcwd = (char*)malloc(512);
+  getcwd(file_path_getcwd, 512);
+  gpr_log(GPR_INFO, "##### Current dir = %s", file_path_getcwd);
+  // std::cout << "##### Current dir = " << file_path_getcwd << std::endl;
+  return file_path_getcwd;
+}
 
+void GetFiles(char* cate_dir) {
+  DIR* dir;
+  struct dirent* ptr;
+  if ((dir = opendir(cate_dir)) == NULL) {
+    std::cout << "Open dir error..." << std::endl;
+    exit(1);
+  }
+  while ((ptr = readdir(dir)) != NULL) {
+    if (strcmp(ptr->d_name, ".") == 0 || strcmp(ptr->d_name, "..") == 0) {
+      continue;
+    } else if (ptr->d_type == 8) {
+      // std::cout << "file: " << ptr->d_name << std::endl;
+      gpr_log(GPR_INFO, " file: %s", ptr->d_name);
+    } else if (ptr->d_type == 4) {
+      // std::cout << "dir: " << ptr->d_name << std::endl;
+      gpr_log(GPR_INFO, " dir: %s", ptr->d_name);
+    }
+  }
+  closedir(dir);
+}
+
+int main(int argc, char** argv) {
   std::string me = argv[0];
   auto lslash = me.rfind('/');
   if (lslash != std::string::npos) {
@@ -167,6 +195,14 @@ int main(int argc, char** argv) {
   } else {
     g_root = ".";
   }
+
+  gpr_log(GPR_INFO, "g_root = %s", g_root.c_str());
+  // std::cout << "g_root = " << g_root << std::endl;
+  char* cur_dir = GetDir();
+  GetFiles(cur_dir);
+
+  grpc::testing::TestEnvironment env(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
 
   int ret = RUN_ALL_TESTS();
   return ret;
