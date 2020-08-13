@@ -157,16 +157,6 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   client_thread_2.join();
 }
 
-void GetDirAndFiles() {
-  char* file_path_getcwd;
-  file_path_getcwd = (char*)malloc(512);
-  getcwd(file_path_getcwd, 512);
-  gpr_log(GPR_INFO, "##### Current dir = %s", file_path_getcwd);
-  // std::cout << "##### Current dir = " << file_path_getcwd << std::endl;
-  GetFiles(file_path_getcwd);
-  free(file_path_getcwd);
-}
-
 void GetFiles(char* cate_dir) {
   DIR* dir;
   struct dirent* ptr;
@@ -188,6 +178,16 @@ void GetFiles(char* cate_dir) {
   closedir(dir);
 }
 
+void GetDirAndFiles() {
+  char* file_path_getcwd;
+  file_path_getcwd = (char*)malloc(512);
+  getcwd(file_path_getcwd, 512);
+  gpr_log(GPR_INFO, "##### Current dir = %s", file_path_getcwd);
+  // std::cout << "##### Current dir = " << file_path_getcwd << std::endl;
+  GetFiles(file_path_getcwd);
+  free(file_path_getcwd);
+}
+
 int main(int argc, char** argv) {
   std::string me = argv[0];
   auto lslash = me.rfind('/');
@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
 
   gpr_log(GPR_INFO, "##### g_root = %s", g_root.c_str());
   // std::cout << "g_root = " << g_root << std::endl;
-  GetDir();
+  GetDirAndFiles();
 
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
