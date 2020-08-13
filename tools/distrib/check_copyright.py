@@ -88,6 +88,8 @@ _EXEMPT = frozenset((
     'tools/grpcz/census.proto',
     # status.proto copied from googleapis
     'src/proto/grpc/status/status.proto',
+    # meshca.proto copied from istio
+    'src/proto/istio/security/proto/providers/google/meshca.proto',
 
     # Gradle wrappers used to build for Android
     'examples/android/helloworld/gradlew.bat',
