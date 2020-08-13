@@ -72,6 +72,12 @@ RUN pip install --upgrade google-api-python-client oauth2client
 # C++ dependencies
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
+#=================
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+
+RUN apt-get update && apt-get install -y cmake && apt-get clean
+
 
 RUN mkdir /var/local/jenkins
 
