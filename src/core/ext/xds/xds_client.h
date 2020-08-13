@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <set>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -80,9 +81,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // an error initializing the client.
   XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
             grpc_pollset_set* interested_parties,
-// FIXME: remove these params
-absl::string_view server_name,
-std::unique_ptr<ListenerWatcherInterface> watcher,
             const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
 

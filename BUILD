@@ -220,10 +220,8 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/alarm.h",
     "include/grpcpp/alarm_impl.h",
     "include/grpcpp/channel.h",
-    "include/grpcpp/channel_impl.h",
     "include/grpcpp/client_context.h",
     "include/grpcpp/completion_queue.h",
-    "include/grpcpp/completion_queue_impl.h",
     "include/grpcpp/create_channel.h",
     "include/grpcpp/create_channel_posix.h",
     "include/grpcpp/ext/health_check_service_server_builder_option.h",
@@ -2260,7 +2258,6 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/client_interceptor.h",
         "include/grpcpp/impl/codegen/client_unary_call.h",
         "include/grpcpp/impl/codegen/completion_queue.h",
-        "include/grpcpp/impl/codegen/completion_queue_impl.h",
         "include/grpcpp/impl/codegen/completion_queue_tag.h",
         "include/grpcpp/impl/codegen/config.h",
         "include/grpcpp/impl/codegen/core_codegen_interface.h",
@@ -2826,6 +2823,26 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        "google_api_upb",
+    ],
+)
+
+# Once upb code-gen issue is resolved, replace meshca_upb with this.
+# meshca_upb_proto_library(
+#     name = "meshca_upb",
+#     deps = ["//third_party/istio/security/proto/providers/google:meshca_proto"],
+# )
+
+grpc_cc_library(
+    name = "meshca_upb",
+    srcs = [
+        "src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.h",
     ],
     language = "c++",
     deps = [

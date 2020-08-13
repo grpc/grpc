@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <string>
 
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -39,6 +40,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
@@ -79,9 +81,11 @@ namespace grpc_core {
 
 XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcher(
     const PathMatcher& other)
-    : type(other.type), string_matcher(other.string_matcher) {
+    : type(other.type) {
   if (type == PathMatcherType::REGEX) {
     regex_matcher = absl::make_unique<RE2>(other.regex_matcher->pattern());
+  } else {
+    string_matcher = other.string_matcher;
   }
 }
 
@@ -89,9 +93,10 @@ XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher&
 XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::operator=(
     const PathMatcher& other) {
   type = other.type;
-  string_matcher = other.string_matcher;
   if (type == PathMatcherType::REGEX) {
     regex_matcher = absl::make_unique<RE2>(other.regex_matcher->pattern());
+  } else {
+    string_matcher = other.string_matcher;
   }
   return *this;
 }
@@ -125,7 +130,7 @@ std::string XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::ToString()
     default:
       break;
   }
-  return absl::StrFormat("Path %s:/%s/", path_type_string,
+  return absl::StrFormat("Path %s:%s", path_type_string,
                          type == PathMatcherType::REGEX
                              ? regex_matcher->pattern()
                              : string_matcher);
@@ -137,15 +142,20 @@ std::string XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::ToString()
 
 XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::HeaderMatcher(
     const HeaderMatcher& other)
-    : name(other.name),
-      type(other.type),
-      range_start(other.range_start),
-      range_end(other.range_end),
-      string_matcher(other.string_matcher),
-      present_match(other.present_match),
-      invert_match(other.invert_match) {
-  if (type == HeaderMatcherType::REGEX) {
-    regex_match = absl::make_unique<RE2>(other.regex_match->pattern());
+    : name(other.name), type(other.type), invert_match(other.invert_match) {
+  switch (type) {
+    case HeaderMatcherType::REGEX:
+      regex_match = absl::make_unique<RE2>(other.regex_match->pattern());
+      break;
+    case HeaderMatcherType::RANGE:
+      range_start = other.range_start;
+      range_end = other.range_end;
+      break;
+    case HeaderMatcherType::PRESENT:
+      present_match = other.present_match;
+      break;
+    default:
+      string_matcher = other.string_matcher;
   }
 }
 
@@ -154,24 +164,39 @@ XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::operator=(
     const HeaderMatcher& other) {
   name = other.name;
   type = other.type;
-  range_start = other.range_start;
-  range_end = other.range_end;
-  string_matcher = other.string_matcher;
-  if (type == HeaderMatcherType::REGEX) {
-    regex_match = absl::make_unique<RE2>(other.regex_match->pattern());
-  }
-  present_match = other.present_match;
   invert_match = other.invert_match;
+  switch (type) {
+    case HeaderMatcherType::REGEX:
+      regex_match = absl::make_unique<RE2>(other.regex_match->pattern());
+      break;
+    case HeaderMatcherType::RANGE:
+      range_start = other.range_start;
+      range_end = other.range_end;
+      break;
+    case HeaderMatcherType::PRESENT:
+      present_match = other.present_match;
+      break;
+    default:
+      string_matcher = other.string_matcher;
+  }
   return *this;
 }
 
 bool XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::operator==(
     const HeaderMatcher& other) const {
-  return (name == other.name && type == other.type &&
-          range_start == other.range_start && range_end == other.range_end &&
-          string_matcher == other.string_matcher &&
-          present_match == other.present_match &&
-          invert_match == other.invert_match);
+  if (name != other.name) return false;
+  if (type != other.type) return false;
+  if (invert_match != other.invert_match) return false;
+  switch (type) {
+    case HeaderMatcherType::REGEX:
+      return regex_match->pattern() != other.regex_match->pattern();
+    case HeaderMatcherType::RANGE:
+      return range_start != other.range_start && range_end != other.range_end;
+    case HeaderMatcherType::PRESENT:
+      return present_match != other.present_match;
+    default:
+      return string_matcher != other.string_matcher;
+  }
 }
 
 std::string XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::ToString()
@@ -440,6 +465,7 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap* bootstrap,
                   const std::string& build_version,
                   const std::string& user_agent_name,
                   const std::string& server_name,
+                  const std::vector<grpc_resolved_address>& listening_addresses,
                   envoy_config_core_v3_Node* node_msg) {
   const XdsBootstrap::Node* node = bootstrap->node();
   if (node != nullptr) {
@@ -486,6 +512,21 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap* bootstrap,
   }
   if (!bootstrap->server().ShouldUseV3()) {
     PopulateBuildVersion(arena, node_msg, build_version);
+  }
+  for (const grpc_resolved_address& address : listening_addresses) {
+    std::string address_str = grpc_sockaddr_to_string(&address, false);
+    absl::string_view addr_str;
+    absl::string_view port_str;
+    GPR_ASSERT(SplitHostPort(address_str, &addr_str, &port_str));
+    uint32_t port;
+    GPR_ASSERT(absl::SimpleAtoi(port_str, &port));
+    auto* addr_msg =
+        envoy_config_core_v3_Node_add_listening_addresses(node_msg, arena);
+    auto* socket_addr_msg =
+        envoy_config_core_v3_Address_mutable_socket_address(addr_msg, arena);
+    envoy_config_core_v3_SocketAddress_set_address(
+        socket_addr_msg, upb_strview_make(addr_str.data(), addr_str.size()));
+    envoy_config_core_v3_SocketAddress_set_port_value(socket_addr_msg, port);
   }
   envoy_config_core_v3_Node_set_user_agent_name(
       node_msg,
@@ -605,6 +646,29 @@ void AddNodeLogFields(const envoy_config_core_v3_Node* node,
     fields->emplace_back(
         absl::StrCat("  build_version: \"", build_version, "\""));
   }
+  // listening_addresses
+  size_t num_listening_addresses;
+  const envoy_config_core_v3_Address* const* listening_addresses =
+      envoy_config_core_v3_Node_listening_addresses(node,
+                                                    &num_listening_addresses);
+  for (size_t i = 0; i < num_listening_addresses; ++i) {
+    fields->emplace_back("  listening_address {");
+    const auto* socket_addr_msg =
+        envoy_config_core_v3_Address_socket_address(listening_addresses[i]);
+    if (socket_addr_msg != nullptr) {
+      fields->emplace_back("    socket_address {");
+      AddStringField(
+          "      address",
+          envoy_config_core_v3_SocketAddress_address(socket_addr_msg), fields);
+      if (envoy_config_core_v3_SocketAddress_has_port_value(socket_addr_msg)) {
+        fields->emplace_back(absl::StrCat(
+            "      port_value: ",
+            envoy_config_core_v3_SocketAddress_port_value(socket_addr_msg)));
+      }
+      fields->emplace_back("    }");
+    }
+    fields->emplace_back("  }");
+  }
   // user_agent_name
   AddStringField("  user_agent_name",
                  envoy_config_core_v3_Node_user_agent_name(node), fields);
@@ -707,7 +771,8 @@ grpc_slice XdsApi::CreateAdsRequest(
     const std::string& type_url,
     const std::set<absl::string_view>& resource_names,
     const std::string& version, const std::string& nonce, grpc_error* error,
-    bool populate_node) {
+    bool populate_node,
+    const std::vector<grpc_resolved_address>& listening_addresses) {
   upb::Arena arena;
   // Create a request.
   envoy_service_discovery_v3_DiscoveryRequest* request =
@@ -748,7 +813,7 @@ grpc_slice XdsApi::CreateAdsRequest(
         envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
                                                                  arena.ptr());
     PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_, "",
-                 node_msg);
+                 listening_addresses, node_msg);
   }
   // Add resource_names.
   for (const auto& resource_name : resource_names) {
@@ -2179,7 +2244,7 @@ grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
       envoy_service_load_stats_v3_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
   PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_,
-               server_name, node_msg);
+               server_name, {}, node_msg);
   envoy_config_core_v3_Node_add_client_features(
       node_msg, upb_strview_makez("envoy.lrs.supports_send_all_clusters"),
       arena.ptr());

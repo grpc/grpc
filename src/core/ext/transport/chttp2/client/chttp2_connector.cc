@@ -199,6 +199,8 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
   {
     MutexLock lock(&self->mu_);
     if (!self->notify_error_.has_value()) {
+      grpc_endpoint_delete_from_pollset_set(self->endpoint_,
+                                            self->args_.interested_parties);
       if (error != GRPC_ERROR_NONE) {
         // Transport got an error while waiting on SETTINGS frame.
         // TODO(yashykt): The following two lines should be moved to
@@ -225,6 +227,8 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error* error) {
     if (!self->notify_error_.has_value()) {
       // The transport did not receive the settings frame in time. Destroy the
       // transport.
+      grpc_endpoint_delete_from_pollset_set(self->endpoint_,
+                                            self->args_.interested_parties);
       // TODO(yashykt): The following two lines should be moved to
       // SubchannelConnector::Result::Reset()
       grpc_transport_destroy(self->result_->transport);
@@ -245,11 +249,8 @@ void Chttp2Connector::MaybeNotify(grpc_error* error) {
   if (notify_error_.has_value()) {
     GRPC_ERROR_UNREF(error);
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, notify_error_.value());
-    // Clear out the endpoint, since it is the responsibility of the transport
-    // to shut it down.
     // Clear state for a new Connect().
-    grpc_endpoint_delete_from_pollset_set(endpoint_, args_.interested_parties);
-    // We do not destroy the endpoint here, since it is the responsibility of
+    // Clear out the endpoint_, since it is the responsibility of
     // the transport to shut it down.
     endpoint_ = nullptr;
     notify_error_.reset();

@@ -373,6 +373,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,  # TODO(b/162087149)
     language = "C++",
     tags = [
         # TODO(apolcyn): This test is failing on Windows at entry, enable once passing.

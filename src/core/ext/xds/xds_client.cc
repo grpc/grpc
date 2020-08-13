@@ -803,7 +803,8 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
       ResourceNamesForRequest(type_url);
   request_payload_slice = xds_client()->api_.CreateAdsRequest(
       type_url, resource_names, state.version, state.nonce,
-      GRPC_ERROR_REF(state.error), !sent_initial_message_);
+      GRPC_ERROR_REF(state.error), !sent_initial_message_,
+      xds_client()->listening_addresses_);
   if (type_url != XdsApi::kLdsTypeUrl && type_url != XdsApi::kRdsTypeUrl &&
       type_url != XdsApi::kCdsTypeUrl && type_url != XdsApi::kEdsTypeUrl) {
     state_map_.erase(type_url);
@@ -1815,8 +1816,6 @@ grpc_millis GetRequestTimeout(const grpc_channel_args& args) {
 
 XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
                      grpc_pollset_set* interested_parties,
-                     absl::string_view server_name,
-                     std::unique_ptr<ListenerWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
       request_timeout_(GetRequestTimeout(channel_args)),
@@ -1824,9 +1823,7 @@ XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
       interested_parties_(interested_parties),
       bootstrap_(
           XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
-      api_(this, &grpc_xds_client_trace, bootstrap_.get()),
-      server_name_(server_name),
-      listener_watcher_(std::move(watcher)) {
+      api_(this, &grpc_xds_client_trace, bootstrap_.get()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
@@ -1849,9 +1846,6 @@ XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
   }
   chand_ = MakeOrphanable<ChannelState>(
       Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), channel);
-  if (listener_watcher_ != nullptr) {
-    chand_->Subscribe(XdsApi::kLdsTypeUrl, std::string(server_name));
-  }
 }
 
 XdsClient::~XdsClient() {
