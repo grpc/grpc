@@ -8411,6 +8411,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(authorization_engine_test
   src/core/lib/security/authorization/authorization_engine.cc
+  src/core/lib/security/authorization/evaluate_args.cc
   test/core/security/authorization_engine_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc

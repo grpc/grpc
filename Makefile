@@ -11652,6 +11652,7 @@ endif
 
 AUTHORIZATION_ENGINE_TEST_SRC = \
     src/core/lib/security/authorization/authorization_engine.cc \
+    src/core/lib/security/authorization/evaluate_args.cc \
     test/core/security/authorization_engine_test.cc \
 
 AUTHORIZATION_ENGINE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(AUTHORIZATION_ENGINE_TEST_SRC))))
@@ -11684,6 +11685,8 @@ endif
 endif
 
 $(OBJDIR)/$(CONFIG)/src/core/lib/security/authorization/authorization_engine.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/core/lib/security/authorization/evaluate_args.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 $(OBJDIR)/$(CONFIG)/test/core/security/authorization_engine_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 
