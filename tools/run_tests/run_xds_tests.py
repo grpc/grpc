@@ -828,12 +828,40 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                 {
                     "UnaryCall": alternate_backend_instances,
                     "EmptyCall": original_backend_instances
+                }),
+            (
+                # This test case is similar to the one above (but with route
+                # services swapped). This test has two routes (full_path and
+                # the default) to match EmptyCall, and both routes set
+                # alternative_backend_service as the action. This forces the
+                # client to handle duplicate Clusters in the RDS response.
+                [
+                    {
+                        'priority': 0,
+                        # Prefix UnaryCall -> original_backend_service.
+                        'matchRules': [{
+                            'prefixMatch': '/grpc.testing.TestService/Unary'
+                        }],
+                        'service': original_backend_service.url
+                    },
+                    {
+                        'priority': 1,
+                        # FullPath EmptyCall -> alternate_backend_service.
+                        'matchRules': [{
+                            'fullPathMatch':
+                                '/grpc.testing.TestService/EmptyCall'
+                        }],
+                        'service': alternate_backend_service.url
+                    }
+                ],
+                {
+                    "UnaryCall": original_backend_instances,
+                    "EmptyCall": alternate_backend_instances
                 })
         ]
 
         for (route_rules, expected_instances) in test_cases:
-            logger.info('patching url map with %s -> alternative',
-                        route_rules[0]['matchRules'])
+            logger.info('patching url map with %s', route_rules)
             patch_url_map_backend_service(gcp,
                                           original_backend_service,
                                           route_rules=route_rules)
@@ -846,8 +874,8 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                 original_backend_instances + alternate_backend_instances,
                 _WAIT_FOR_STATS_SEC)
 
-            retry_count = 10
-            # Each attempt takes about 10 seconds, 10 retries is equivalent to 100
+            retry_count = 20
+            # Each attempt takes about 10 seconds, 20 retries is equivalent to 200
             # seconds timeout.
             for i in range(retry_count):
                 stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
@@ -1718,6 +1746,21 @@ try:
                 metadata_to_send = '--metadata=""'
 
             if test_case in _TESTS_TO_FAIL_ON_RPC_FAILURE:
+                # TODO(ericgribkoff) Unconditional wait is recommended by TD
+                # team when reusing backend resources after config changes
+                # between test cases, as we are doing here. This should address
+                # flakiness issues with these tests; other attempts to deflake
+                # (such as waiting for the first successful RPC before failing
+                # on any subsequent failures) were insufficient because, due to
+                # propagation delays, we may initially see an RPC succeed to the
+                # expected backends but due to a stale configuration: e.g., test
+                # A (1) routes traffic to MIG A, then (2) switches to MIG B,
+                # then (3) back to MIG A. Test B begins running and sees RPCs
+                # going to MIG A, as expected. However, due to propagation
+                # delays, Test B is actually seeing the stale config from step
+                # (1), and then fails when it gets update (2) unexpectedly
+                # switching to MIG B.
+                time.sleep(200)
                 fail_on_failed_rpc = '--fail_on_failed_rpc=true'
             else:
                 fail_on_failed_rpc = '--fail_on_failed_rpc=false'

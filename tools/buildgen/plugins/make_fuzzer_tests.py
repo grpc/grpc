@@ -50,6 +50,6 @@ def mako_plugin(dictionary):
                         'platforms': ['mac', 'linux'],
                         'ci_platforms': ['linux'],
                         'flaky': False,
-                        'language': 'c',
+                        'language': 'c++',
                         'cpu_cost': 0.1,
                     })
