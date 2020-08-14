@@ -1380,9 +1380,9 @@ class ChannelData::ClientChannelControlHelper
         &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &arg, 1);
     Subchannel* subchannel =
         chand_->client_channel_factory_->CreateSubchannel(new_args);
-    subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
+    subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
     return MakeRefCounted<SubchannelWrapper>(
         chand_, subchannel, std::move(health_check_service_name));
   }
