@@ -1743,7 +1743,12 @@ try:
                 metadata_to_send = '--metadata="EmptyCall:{key}:{value}"'.format(
                     key=_TEST_METADATA_KEY, value=_TEST_METADATA_VALUE)
             else:
-                metadata_to_send = '--metadata=""'
+                # Setting the arg explicitly to empty with '--metadata=""'
+                # makes C# client fail
+                # (see https://github.com/commandlineparser/commandline/issues/412),
+                # so instead we just rely on clients using the default when
+                # metadata arg is not specified.
+                metadata_to_send = ''
 
             if test_case in _TESTS_TO_FAIL_ON_RPC_FAILURE:
                 # TODO(ericgribkoff) Unconditional wait is recommended by TD
