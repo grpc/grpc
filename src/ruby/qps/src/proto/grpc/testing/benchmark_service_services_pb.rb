@@ -34,20 +34,20 @@ module Grpc
 
         # One request followed by one response.
         # The server returns the client payload as-is.
-        rpc :UnaryCall, SimpleRequest, SimpleResponse
+        rpc :UnaryCall, ::Grpc::Testing::SimpleRequest, ::Grpc::Testing::SimpleResponse
         # Repeated sequence of one request followed by one response.
         # Should be called streaming ping-pong
         # The server returns the client payload as-is on each response
-        rpc :StreamingCall, stream(SimpleRequest), stream(SimpleResponse)
+        rpc :StreamingCall, stream(::Grpc::Testing::SimpleRequest), stream(::Grpc::Testing::SimpleResponse)
         # Single-sided unbounded streaming from client to server
         # The server returns the client payload as-is once the client does WritesDone
-        rpc :StreamingFromClient, stream(SimpleRequest), SimpleResponse
+        rpc :StreamingFromClient, stream(::Grpc::Testing::SimpleRequest), ::Grpc::Testing::SimpleResponse
         # Single-sided unbounded streaming from server to client
         # The server repeatedly returns the client payload as-is
-        rpc :StreamingFromServer, SimpleRequest, stream(SimpleResponse)
+        rpc :StreamingFromServer, ::Grpc::Testing::SimpleRequest, stream(::Grpc::Testing::SimpleResponse)
         # Two-sided unbounded streaming between server to client
         # Both sides send the content of their own choice to the other
-        rpc :StreamingBothWays, stream(SimpleRequest), stream(SimpleResponse)
+        rpc :StreamingBothWays, stream(::Grpc::Testing::SimpleRequest), stream(::Grpc::Testing::SimpleResponse)
       end
 
       Stub = Service.rpc_stub_class
