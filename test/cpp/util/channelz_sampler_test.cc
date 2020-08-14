@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-// #include <dirent.h>
+#include <dirent.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -172,21 +172,18 @@ int main(int argc, char** argv) {
   system("pwd");
   gpr_log(GPR_INFO, "##### 0th level files - ls .");
   system("ls -l");
-  gpr_log(GPR_INFO, "@@@@@ 1th level files - ls test");
-  system("ls -l test");
   gpr_log(GPR_INFO, "@@@@@ 1th level files - ls cmake");
   system("ls -l cmake");
-  // system("ls -l _solib_k8");
-  gpr_log(GPR_INFO, "$$$$$ 2nd files - ls test/cpp");
-  system("ls -l test/cpp");
-  gpr_log(GPR_INFO, "$$$$$ 2nd files - ls test/core");
-  system("ls -l test/core");
   gpr_log(GPR_INFO, "$$$$$ 2nd level files - ls cmake/build");
   system("ls -l cmake/build");
-  gpr_log(GPR_INFO, "&&&&& 3rd files - ls test/cpp/util");
+  gpr_log(GPR_INFO, "&&&&& 3rd level files - ls cmake/build/gen");
+  system("ls -l cmake/build/gen");
+  gpr_log(GPR_INFO, "&&&&& 3rd level files - ls test/cpp/util");
   system("ls -l test/cpp/util");
-  gpr_log(GPR_INFO, "&&&&& 3rd files - ls test/core/util");
-  system("ls -l test/core/util");
+  gpr_log(GPR_INFO, "##### seach by locate");
+  system("locate channelz_sampler");
+  gpr_log(GPR_INFO, "##### seach by find");
+  system("find . -name channelz_sampler");
 
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
