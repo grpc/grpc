@@ -121,6 +121,10 @@ std::shared_ptr<ServerCredentials> SslServerCredentials(
           ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
           : options.client_certificate_request,
       nullptr);
+  grpc_ssl_server_credentials_set_min_tls_version(c_creds,
+                                                  options.min_tls_version);
+  grpc_ssl_server_credentials_set_max_tls_version(c_creds,
+                                                  options.max_tls_version);
   return std::shared_ptr<ServerCredentials>(
       new SecureServerCredentials(c_creds));
 }

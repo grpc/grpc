@@ -39,11 +39,16 @@ namespace grpc {
 struct SslServerCredentialsOptions {
   /// \warning Deprecated
   SslServerCredentialsOptions()
-      : force_client_auth(false),
+      : min_tls_version(TLS1_2),
+        max_tls_version(TLS1_3),
+        force_client_auth(false),
         client_certificate_request(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {}
   SslServerCredentialsOptions(
       grpc_ssl_client_certificate_request_type request_type)
-      : force_client_auth(false), client_certificate_request(request_type) {}
+      : min_tls_version(TLS1_2),
+        max_tls_version(TLS1_3),
+        force_client_auth(false),
+        client_certificate_request(request_type) {}
 
   struct PemKeyCertPair {
     std::string private_key;
@@ -51,6 +56,8 @@ struct SslServerCredentialsOptions {
   };
   std::string pem_root_certs;
   std::vector<PemKeyCertPair> pem_key_cert_pairs;
+  grpc_tls_version min_tls_version;
+  grpc_tls_version max_tls_version;
   /// \warning Deprecated
   bool force_client_auth;
 

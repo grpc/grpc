@@ -64,7 +64,7 @@ void MaybeEchoDeadline(experimental::ServerContextBase* context,
                        const EchoRequest* request, EchoResponse* response);
 
 void CheckServerAuthContext(const experimental::ServerContextBase* context,
-                            const std::string& expected_transport_security_type,
+                            const std::string& expected_credentials_type,
                             const std::string& expected_client_identity);
 
 // Returns the number of pairs in metadata that exactly match the given
