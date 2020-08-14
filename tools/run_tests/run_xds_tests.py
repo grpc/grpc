@@ -1726,6 +1726,8 @@ try:
             server_uri = service_host_name + ':' + str(gcp.service_port)
         if args.xds_v3_support:
             client_env['GRPC_XDS_EXPERIMENTAL_V3_SUPPORT'] = 'true'
+            bootstrap_server_features.append('xds_v3')	
+        if args.bootstrap_file:
             bootstrap_path = os.path.abspath(args.bootstrap_file)
         else:
             with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
