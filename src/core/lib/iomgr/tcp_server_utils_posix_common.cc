@@ -189,11 +189,6 @@ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
     goto error;
   }
 
-  if (listen(fd, get_max_accept_queue_size()) < 0) {
-    err = GRPC_OS_ERROR(errno, "listen");
-    goto error;
-  }
-
   sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
 
   if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
@@ -216,6 +211,20 @@ error:
                          GRPC_ERROR_INT_FD, fd);
   GRPC_ERROR_UNREF(err);
   return ret;
+}
+
+grpc_error* grpc_tcp_server_socket_start_listening(int fd) {
+  if (listen(fd, get_max_accept_queue_size()) < 0) {
+    if (fd >= 0) close(fd);
+    grpc_error* err = GRPC_OS_ERROR(errno, "listen");
+    grpc_error* ret =
+        grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                               "Unable to start listening on socket", &err, 1),
+                           GRPC_ERROR_INT_FD, fd);
+    GRPC_ERROR_UNREF(err);
+    return ret;
+  }
+  return GRPC_ERROR_NONE;
 }
 
 #endif /* GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON */

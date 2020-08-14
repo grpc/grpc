@@ -118,6 +118,10 @@ grpc_error* grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
 grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server*, int fd,
                                            const grpc_resolved_address* addr,
                                            bool so_reuseport, int* port);
+
+// Start listening on a socket.
+grpc_error* grpc_tcp_server_socket_start_listening(int fd);
+
 /* Ruturn true if the platform supports ifaddrs */
 bool grpc_tcp_server_have_ifaddrs(void);
 

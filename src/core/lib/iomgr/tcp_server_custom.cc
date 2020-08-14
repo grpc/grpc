@@ -296,11 +296,6 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s,
     return error;
   }
 
-  error = grpc_custom_socket_vtable->listen(socket);
-  if (error != GRPC_ERROR_NONE) {
-    return error;
-  }
-
   sockname_temp.len = GRPC_MAX_SOCKADDR_SIZE;
   error = grpc_custom_socket_vtable->getsockname(
       socket, (grpc_sockaddr*)&sockname_temp.addr, (int*)&sockname_temp.len);
@@ -430,6 +425,13 @@ static void tcp_server_start(grpc_tcp_server* server,
   server->on_accept_cb = on_accept_cb;
   server->on_accept_cb_arg = cb_arg;
   for (sp = server->head; sp; sp = sp->next) {
+    // Start listening on socket.
+    grpc_error* error = grpc_custom_socket_vtable->listen(sp->socket);
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "error listening to socket: %s",
+              grpc_error_string(error));
+      GPR_ASSERT(false);
+    }
     grpc_custom_socket* new_socket =
         (grpc_custom_socket*)gpr_malloc(sizeof(grpc_custom_socket));
     new_socket->endpoint = nullptr;

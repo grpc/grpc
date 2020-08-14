@@ -209,11 +209,6 @@ static grpc_error* prepare_socket(SOCKET sock,
     goto failure;
   }
 
-  if (listen(sock, SOMAXCONN) == SOCKET_ERROR) {
-    error = GRPC_WSA_ERROR(WSAGetLastError(), "listen");
-    goto failure;
-  }
-
   sockname_temp_len = sizeof(struct sockaddr_storage);
   if (getsockname(sock, (grpc_sockaddr*)sockname_temp.addr,
                   &sockname_temp_len) == SOCKET_ERROR) {
@@ -227,7 +222,7 @@ static grpc_error* prepare_socket(SOCKET sock,
 
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  grpc_error_set_int(
+  grpc_error* ret = grpc_error_set_int(
       grpc_error_set_str(
           GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
               "Failed to prepare server socket", &error, 1),
@@ -236,7 +231,7 @@ failure:
       GRPC_ERROR_INT_FD, (intptr_t)sock);
   GRPC_ERROR_UNREF(error);
   if (sock != INVALID_SOCKET) closesocket(sock);
-  return error;
+  return ret;
 }
 
 static void decrement_active_ports_and_notify_locked(grpc_tcp_listener* sp) {
@@ -532,6 +527,18 @@ static void tcp_server_start(grpc_tcp_server* s,
   s->on_accept_cb = on_accept_cb;
   s->on_accept_cb_arg = on_accept_cb_arg;
   for (sp = s->head; sp; sp = sp->next) {
+    // Start listening.
+    if (listen(sp->socket->socket, SOMAXCONN) == SOCKET_ERROR) {
+      grpc_error* error = GRPC_WSA_ERROR(WSAGetLastError(), "listen");
+      grpc_error* ret = grpc_error_set_int(
+          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+              "Failed to prepare server socket", &error, 1),
+          GRPC_ERROR_INT_FD, (intptr_t)sp->socket);
+      GRPC_ERROR_UNREF(error);
+      gpr_log(GPR_ERROR, "error listening on server socket: %s",
+              grpc_error_string(ret));
+      GPR_ASSERT(false);
+    }
     GPR_ASSERT(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(sp)));
     s->active_ports++;
   }

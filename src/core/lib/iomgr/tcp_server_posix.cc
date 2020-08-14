@@ -365,6 +365,8 @@ static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
     err = grpc_tcp_server_prepare_socket(listener->server, fd, &listener->addr,
                                          true, &port);
     if (err != GRPC_ERROR_NONE) return err;
+    err = grpc_tcp_server_socket_start_listening(fd);
+    if (err != GRPC_ERROR_NONE) return err;
     listener->server->nports++;
     addr_str = grpc_sockaddr_to_string(&listener->addr, true);
     sp = static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
@@ -502,6 +504,13 @@ static void tcp_server_start(grpc_tcp_server* s,
   s->pollsets = pollsets;
   sp = s->head;
   while (sp != nullptr) {
+    grpc_error* error = grpc_tcp_server_socket_start_listening(sp->fd);
+    // listen(2) should never fail, because we've already bound to the port.
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "cannot start listening: %s",
+              grpc_error_string(error));
+      GPR_ASSERT(false);
+    }
     if (s->so_reuseport && !grpc_is_unix_socket(&sp->addr) &&
         pollsets->size() > 1) {
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
