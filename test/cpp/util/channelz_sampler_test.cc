@@ -203,9 +203,9 @@ int main(int argc, char** argv) {
   g_root = "test/cpp/util";
   gpr_log(GPR_INFO, "##### Print pwd");
   system("pwd");
-  gpr_log(GPR_INFO, "##### search by locate");
-  system("locate channelz_sampler");
-  gpr_log(GPR_INFO, "##### search by find");
+  gpr_log(GPR_INFO, "##### ls test/cpp/util");
+  system("ls test/cpp/util");
+  gpr_log(GPR_INFO, "##### Search by find");
   system("find / -name channelz_sampler");
 
   grpc::testing::TestEnvironment env(argc, argv);
