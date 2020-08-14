@@ -26,6 +26,7 @@ py_binary(
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
+    imports = ["."],
 )
 
 py_binary(
@@ -40,6 +41,7 @@ py_binary(
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
+    imports = ["."],
 )
 
 py_binary(
@@ -51,6 +53,7 @@ py_binary(
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
     ],
+    imports = ["."],
 )
 
 py_test(

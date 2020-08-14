@@ -15,8 +15,6 @@
 
 import unittest
 import logging
-import os
-import sys
 
 from examples.python.wait_for_ready import wait_for_ready_example
 

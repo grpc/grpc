@@ -22,8 +22,6 @@ except ImportError:
     pass
 
 import logging
-import os
-import sys
 import unittest
 
 import grpc
