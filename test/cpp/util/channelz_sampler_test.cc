@@ -157,38 +157,6 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   client_thread_2.join();
 }
 
-/*
-void GetFiles(char* cate_dir) {
-  DIR* dir;
-  struct dirent* ptr;
-  if ((dir = opendir(cate_dir)) == nullptr) {
-    std::cout << "Open dir error..." << std::endl;
-    exit(1);
-  }
-  while ((ptr = readdir(dir)) != nullptr) {
-    if (strcmp(ptr->d_name, ".") == 0 || strcmp(ptr->d_name, "..") == 0) {
-      continue;
-    } else if (ptr->d_type == 8) {
-      // std::cout << "file: " << ptr->d_name << std::endl;
-      gpr_log(GPR_INFO, "##### file: %s", ptr->d_name);
-    } else if (ptr->d_type == 4) {
-      // std::cout << "dir: " << ptr->d_name << std::endl;
-      gpr_log(GPR_INFO, "##### dir: %s", ptr->d_name);
-    }
-  }
-  closedir(dir);
-}
-void GetDirAndFiles() {
-  char* file_path_getcwd;
-  file_path_getcwd = (char*)malloc(512);
-  getcwd(file_path_getcwd, 512);
-  gpr_log(GPR_INFO, "##### Current dir = %s", file_path_getcwd);
-  // std::cout << "##### Current dir = " << file_path_getcwd << std::endl;
-  GetFiles(file_path_getcwd);
-  free(file_path_getcwd);
-}
-*/
-
 int main(int argc, char** argv) {
   std::string me = argv[0];
   auto lslash = me.rfind('/');
@@ -198,19 +166,21 @@ int main(int argc, char** argv) {
     g_root = ".";
   }
   gpr_log(GPR_INFO, "##### g_root = %s", g_root.c_str());
-  // std::cout << "g_root = " << g_root << std::endl;
-  // GetDirAndFiles();
   g_root = "test/cpp/util";
-  gpr_log(GPR_INFO, "##### Print pwd");
+
+  gpr_log(GPR_INFO, "##### Current directory - pwd:");
   system("pwd");
-  gpr_log(GPR_INFO, "##### ls test/cpp/util");
+  gpr_log(GPR_INFO, "##### 0th files - ls");
+  system("ls -l");
+  gpr_log(GPR_INFO, "##### 1th files - ls");
+  gpr_log(GPR_INFO, "##### 2th files - ls");
+  gpr_log(GPR_INFO, "##### files under - ls test/cpp/util");
   system("ls test/cpp/util");
-  gpr_log(GPR_INFO, "##### Search by find");
-  system("find / -name channelz_sampler");
+  // gpr_log(GPR_INFO, "##### Search by find");
+  // system("find / -name channelz_sampler");
 
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-
   int ret = RUN_ALL_TESTS();
   return ret;
 }
