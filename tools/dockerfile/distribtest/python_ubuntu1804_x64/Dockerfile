@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2020 the gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:14.04
+FROM ubuntu:18.04
 
-RUN apt-get update -y && apt-get install -y curl
+RUN apt-get update -y && apt-get install -y python python-pip
 
-# Install rvm
-RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-RUN \curl -sSL https://get.rvm.io | bash -s stable --ruby
-
-RUN /bin/bash -l -c "echo '. /etc/profile.d/rvm.sh' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install --update bundler"
+RUN pip install virtualenv
