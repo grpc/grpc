@@ -121,8 +121,8 @@ static void print_stack_from_context(HANDLE thread, CONTEXT c) {
     IMAGEHLP_LINE64 line;
     line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
     DWORD displacement = 0;
-    if (SymGetLineFromAddrW64(process, (DWORD64)(s.AddrPC.Offset), &displacement,
-                            &line)) {
+    if (SymGetLineFromAddrW64(process, (DWORD64)(s.AddrPC.Offset),
+                              &displacement, &line)) {
       file_name = line.FileName;
       line_number = (int)line.LineNumber;
     }
