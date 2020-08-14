@@ -752,13 +752,13 @@ void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
       gpr_log(GPR_INFO, "Subchannel=%p: Throttling keepalive time to %d", this,
               new_keepalive_time);
     }
-    const grpc_arg arg_to_add = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), new_keepalive_time);
-    const char* arg_to_remove = GRPC_ARG_KEEPALIVE_TIME_MS;
-    grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
-        args_, &arg_to_remove, 1, &arg_to_add, 1);
-    grpc_channel_args_destroy(args_);
-    args_ = new_args;
+    // const grpc_arg arg_to_add = grpc_channel_arg_integer_create(
+    //     const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), new_keepalive_time);
+    // const char* arg_to_remove = GRPC_ARG_KEEPALIVE_TIME_MS;
+    // grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+    //     args_, &arg_to_remove, 1, &arg_to_add, 1);
+    // grpc_channel_args_destroy(args_);
+    // args_ = new_args;
   }
 }
 
