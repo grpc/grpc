@@ -1182,6 +1182,7 @@ channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
 channel_filter_test: $(BINDIR)/$(CONFIG)/channel_filter_test
 channel_trace_test: $(BINDIR)/$(CONFIG)/channel_trace_test
 channelz_registry_test: $(BINDIR)/$(CONFIG)/channelz_registry_test
+channelz_sampler_test: $(BINDIR)/$(CONFIG)/channelz_sampler_test
 channelz_service_test: $(BINDIR)/$(CONFIG)/channelz_service_test
 channelz_test: $(BINDIR)/$(CONFIG)/channelz_test
 cli_call_test: $(BINDIR)/$(CONFIG)/cli_call_test
@@ -1560,6 +1561,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/channel_trace_test \
   $(BINDIR)/$(CONFIG)/channelz_registry_test \
+  $(BINDIR)/$(CONFIG)/channelz_sampler_test \
   $(BINDIR)/$(CONFIG)/channelz_service_test \
   $(BINDIR)/$(CONFIG)/channelz_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
@@ -1718,6 +1720,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/channel_trace_test \
   $(BINDIR)/$(CONFIG)/channelz_registry_test \
+  $(BINDIR)/$(CONFIG)/channelz_sampler_test \
   $(BINDIR)/$(CONFIG)/channelz_service_test \
   $(BINDIR)/$(CONFIG)/channelz_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
@@ -2187,6 +2190,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/channel_trace_test || ( echo test channel_trace_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channelz_registry_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channelz_registry_test || ( echo test channelz_registry_test failed ; exit 1 )
+	$(E) "[RUN]     Testing channelz_sampler_test"
+	$(Q) $(BINDIR)/$(CONFIG)/channelz_sampler_test || ( echo test channelz_sampler_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channelz_service_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channelz_service_test || ( echo test channelz_service_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channelz_test"
@@ -13198,6 +13203,59 @@ ifneq ($(NO_DEPS),true)
 -include $(CHANNELZ_REGISTRY_TEST_OBJS:.o=.dep)
 endif
 endif
+
+
+CHANNELZ_SAMPLER_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
+    test/cpp/util/channelz_sampler_test.cc \
+
+CHANNELZ_SAMPLER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHANNELZ_SAMPLER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/channelz_sampler_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
+
+$(BINDIR)/$(CONFIG)/channelz_sampler_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/channelz_sampler_test: $(PROTOBUF_DEP) $(CHANNELZ_SAMPLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CHANNELZ_SAMPLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/channelz_sampler_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/empty.o:  $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/test.o:  $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/util/channelz_sampler_test.o:  $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_channelz_sampler_test: $(CHANNELZ_SAMPLER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHANNELZ_SAMPLER_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/util/channelz_sampler_test.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 CHANNELZ_SERVICE_TEST_SRC = \
