@@ -116,6 +116,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,  # TODO(b/161828686)
     tags = [
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
