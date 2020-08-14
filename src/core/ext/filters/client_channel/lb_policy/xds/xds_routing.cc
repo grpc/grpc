@@ -35,6 +35,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -333,6 +334,10 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 }
 
 XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
+  gpr_log(GPR_INFO, "DONNAA given routing action by config selector: %s",
+          std::string(args.call_state->ExperimentalGetCallAttribute(
+                          kCallAttributeRoutingAction))
+              .c_str());
   for (const Route& route : route_table_) {
     // Path matching.
     if (!PathMatch(args.path, route.matchers->path_matcher)) continue;

@@ -952,6 +952,8 @@ grpc_cc_library(
     external_deps = [
         "madler_zlib",
         "absl/container:inlined_vector",
+        "absl/debugging:stacktrace",
+        "absl/debugging:symbolize",
         "absl/status",
         "absl/types:optional",
     ],
@@ -1077,6 +1079,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
+        "absl/debugging:stacktrace",
+        "absl/debugging:symbolize",
     ],
     language = "c++",
     deps = [
@@ -1453,6 +1457,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver_xds_header",
         "grpc_xds_api_header",
     ],
 )
@@ -1740,6 +1745,13 @@ grpc_cc_library(
         "grpc_client_channel",
     ],
 )
+grpc_cc_library(
+    name = "grpc_resolver_xds_header",
+    hdrs = [
+        "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h",
+    ],
+    language = "c++",
+)
 
 grpc_cc_library(
     name = "grpc_resolver_xds",
@@ -1747,6 +1759,11 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
     language = "c++",
+    external_deps = [
+        "absl/debugging:stacktrace",
+        "absl/debugging:symbolize",
+        "absl/functional:bind_front",
+    ],
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -1760,6 +1777,11 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
     language = "c++",
+    external_deps = [
+        "absl/debugging:stacktrace",
+        "absl/debugging:symbolize",
+        "absl/functional:bind_front",
+    ],
     deps = [
         "grpc_base",
         "grpc_client_channel",

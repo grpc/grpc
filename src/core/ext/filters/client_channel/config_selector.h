@@ -67,6 +67,8 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<ConfigSelector> GetFromChannelArgs(
       const grpc_channel_args& args);
+  static grpc_channel_args* RemoveFromChannelArgs(
+      const grpc_channel_args& args);
 };
 
 // Default ConfigSelector that gets the MethodConfig from the service config.

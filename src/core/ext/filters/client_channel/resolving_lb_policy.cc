@@ -322,6 +322,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   // later use.
   RefCountedPtr<ConfigSelector> config_selector =
       ConfigSelector::GetFromChannelArgs(*result.args);
+  result.args = ConfigSelector::RemoveFromChannelArgs(*result.args);
   // Create or update LB policy, as needed.
   if (service_config_result.lb_policy_config != nullptr) {
     CreateOrUpdateLbPolicyLocked(

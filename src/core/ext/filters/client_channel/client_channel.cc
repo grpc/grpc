@@ -3980,6 +3980,7 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
 }
 
 void CallData::MaybeInvokeConfigSelectorCommitCallback() {
+  gpr_log(GPR_INFO, "DONNAAA reach MaybeInvokeConfigSelectorCommitCallback");
   if (on_call_committed_ != nullptr) {
     on_call_committed_();
     on_call_committed_ = nullptr;
@@ -4161,7 +4162,9 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
         connected_subchannel_ =
             chand->GetConnectedSubchannelInDataPlane(result.subchannel.get());
         GPR_ASSERT(connected_subchannel_ != nullptr);
-        if (retry_committed_) MaybeInvokeConfigSelectorCommitCallback();
+        if (!enable_retries_ || retry_committed_) {
+          MaybeInvokeConfigSelectorCommitCallback();
+        }
       }
       lb_recv_trailing_metadata_ready_ = result.recv_trailing_metadata_ready;
       *error = result.error;

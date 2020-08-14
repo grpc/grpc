@@ -18,7 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
+#include "absl/functional/bind_front.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
+#include "re2/re2.h"
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
@@ -29,6 +34,8 @@
 namespace grpc_core {
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
+
+const char* kCallAttributeRoutingAction = "routing_action";
 
 namespace {
 
@@ -42,8 +49,7 @@ class XdsResolver : public Resolver {
       : Resolver(std::move(args.work_serializer),
                  std::move(args.result_handler)),
         args_(grpc_channel_args_copy(args.args)),
-        interested_parties_(args.pollset_set),
-        config_selector_(MakeRefCounted<XdsConfigSelector>()) {
+        interested_parties_(args.pollset_set) {
     char* path = args.uri->path;
     if (path[0] == '/') ++path;
     server_name_ = path;
@@ -70,6 +76,10 @@ class XdsResolver : public Resolver {
   }
 
  private:
+  struct ClusterState {
+    int refcount = 0;
+  };
+
   class ListenerWatcher : public XdsClient::ListenerWatcherInterface {
    public:
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
@@ -84,9 +94,154 @@ class XdsResolver : public Resolver {
 
   class XdsConfigSelector : public ConfigSelector {
    public:
+    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
+                      const XdsApi::RdsUpdate& rds_update)
+        : resolver_(std::move(resolver)) {
+      for (const auto& update : rds_update.routes) {
+        // todo@ donna weighted target name
+        // Keep a set of actions from this update and take a reference for every
+        // cluster. Ref count will be unset in the destructor.
+        actions_.emplace(update.cluster_name);
+        {
+          MutexLock lock(&resolver_->cluster_state_map_mu_);
+          resolver_->cluster_state_map_[update.cluster_name].refcount++;
+        }
+        void *stack[128];
+        int size = absl::GetStackTrace(stack, 128, 1);
+        for (int i = 0; i < size; ++i) {
+          char out[256];
+          if (absl::Symbolize(stack[i], out, 256)) {
+            gpr_log(GPR_INFO, "donna stack trace per selector %p add:[%s]", this, out);
+          }
+        }
+        XdsApi::RdsUpdate::RdsRoute route;
+        route.matchers.path_matcher.type = update.matchers.path_matcher.type;
+        route.matchers.path_matcher.string_matcher =
+            update.matchers.path_matcher.string_matcher;
+        if (route.matchers.path_matcher.type ==
+            XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::
+                PathMatcherType::REGEX) {
+          route.matchers.path_matcher.regex_matcher = absl::make_unique<RE2>(
+              update.matchers.path_matcher.regex_matcher->pattern());
+        }
+        // todo@ donnadionne header matchers
+        route.cluster_name = update.cluster_name;
+        // todo@ donnadionne weighted clusters.
+        route_table_.routes.emplace_back(std::move(route));
+      }
+      gpr_log(GPR_INFO,
+              "DONNAA: RDS update passed in;  RouteConfiguration contains "
+              "%" PRIuPTR
+              " routes to build the route_table_ for XdsConfigSelector",
+              route_table_.routes.size());
+      for (size_t i = 0; i < route_table_.routes.size(); ++i) {
+        gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
+                route_table_.routes[i].ToString().c_str());
+      }
+      {
+        MutexLock lock(&resolver_->cluster_state_map_mu_);
+        for (const auto& state : resolver_->cluster_state_map_) {
+          gpr_log(GPR_INFO, "DONNAAA: constructor: cluster %s and count %d",
+                  state.first.c_str(), state.second.refcount);
+        }
+      }
+    }
+
+    ~XdsConfigSelector() {
+      MutexLock lock(&resolver_->cluster_state_map_mu_);
+      void *stack[128];
+      int size = absl::GetStackTrace(stack, 128, 1);
+      for (int i = 0; i < size; ++i) {
+        char out[256];
+        if (absl::Symbolize(stack[i], out, 256)) {
+          gpr_log(GPR_INFO, "donna stack trace per selector %p minus:[%s]", this, out);
+        }
+      }
+      for (const auto& action : actions_) {
+        resolver_->cluster_state_map_[action].refcount--;
+        if (resolver_->cluster_state_map_[action].refcount == 0) {
+          gpr_log(GPR_INFO, "DONNAAA: destructor erasing from cluster state map: %s", action.c_str());
+          resolver_->cluster_state_map_.erase(action);
+        }
+      }
+      for (const auto& state : resolver_->cluster_state_map_) {
+        gpr_log(GPR_INFO, "DONNAAA: destructor: cluster %s and count %d",
+                state.first.c_str(), state.second.refcount);
+      }
+    }
+
+    void OnCallCommited(const std::string& routing_action) {
+      gpr_log(GPR_INFO, "DONNAAA: OnCallCommitted %s", routing_action.c_str());
+      MutexLock lock(&resolver_->cluster_state_map_mu_);
+      resolver_->cluster_state_map_[routing_action].refcount--;
+      if (resolver_->cluster_state_map_[routing_action].refcount == 0) {
+        gpr_log(GPR_INFO, "DONNAAA: OnCallCommitted erasing from cluster state map: %s", routing_action.c_str());
+        resolver_->cluster_state_map_.erase(routing_action);
+      }
+      /*void *stack[128];
+      int size = absl::GetStackTrace(stack, 128, 1);
+      for (int i = 0; i < size; ++i) {
+        char out[256];
+        if (absl::Symbolize(stack[i], out, 256)) {
+          gpr_log(GPR_INFO, "donna stack trace per call minus:[%s]", out);
+        }
+      }*/
+    }
+
     CallConfig GetCallConfig(GetCallConfigArgs args) override {
+      /*gpr_log(GPR_INFO, "DONNAA NEW path is %s",
+              GRPC_SLICE_START_PTR(*(args.path)));
+      for (grpc_linked_mdelem* md = args.initial_metadata->list.head;
+           md != nullptr; md = md->next) {
+        char* key = grpc_slice_to_c_string(GRPC_MDKEY(md->md));
+        char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md->md));
+        gpr_log(GPR_INFO, "key[%s]: value[%s]", key, value);
+        gpr_free(key);
+        gpr_free(value);
+      }*/
+      for (size_t i = 0; i < route_table_.routes.size(); ++i) {
+        // gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
+        //        route_table_.routes[i].matchers.ToString().c_str());
+        // gpr_log(GPR_INFO, "Route action %s",
+        //        route_table_.routes[i].cluster_name.c_str());
+        if (absl::StartsWith(
+                StringViewFromSlice(*args.path),
+                route_table_.routes[i].matchers.path_matcher.string_matcher)) {
+          gpr_log(GPR_INFO, "DONNAA match action found: %s",
+                  route_table_.routes[i].cluster_name.c_str());
+          char* routing_action_str = static_cast<char*>(args.arena->Alloc(
+              route_table_.routes[i].cluster_name.size() + 1));
+          strcpy(routing_action_str,
+                 route_table_.routes[i].cluster_name.c_str());
+          CallConfig call_config;
+          call_config.call_attributes[kCallAttributeRoutingAction] =
+              absl::string_view(routing_action_str);
+          call_config.on_call_committed =
+              absl::bind_front(&XdsResolver::XdsConfigSelector::OnCallCommited,
+                               this, route_table_.routes[i].cluster_name);
+          {
+            MutexLock lock(&resolver_->cluster_state_map_mu_);
+            resolver_->cluster_state_map_[route_table_.routes[i].cluster_name]
+                .refcount++;
+          }
+          /*void *stack[128];
+          int size = absl::GetStackTrace(stack, 128, 1);
+          for (int i = 0; i < size; ++i) {
+            char out[256];
+            if (absl::Symbolize(stack[i], out, 256)) {
+              gpr_log(GPR_INFO, "donna stack trace per call add:[%s]", out);
+            }
+          }*/
+          return call_config;
+        }
+      }
       return CallConfig();
     }
+
+   private:
+    RefCountedPtr<XdsResolver> resolver_;
+    XdsApi::RdsUpdate route_table_;
+    std::set<std::string> actions_;
   };
 
   // Returns the weighted_clusters action name to use from
@@ -107,7 +262,8 @@ class XdsResolver : public Resolver {
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
-  RefCountedPtr<XdsConfigSelector> config_selector_;
+  std::map<std::string /* cluster_name */, ClusterState> cluster_state_map_;
+  Mutex cluster_state_map_mu_;  // protects the cluster state map.
 
   // 2-level map to store WeightedCluster action names.
   // Top level map is keyed by cluster names without weight like a_b_c; bottom
@@ -148,9 +304,11 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
     gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s",
             resolver_.get(), result.service_config->json_string().c_str());
   }
+  RefCountedPtr<XdsConfigSelector> config_selector =
+      MakeRefCounted<XdsConfigSelector>(resolver_, *listener_data.rds_update);
   grpc_arg new_args[] = {
       resolver_->xds_client_->MakeChannelArg(),
-      resolver_->config_selector_->MakeChannelArg(),
+      config_selector->MakeChannelArg(),
   };
   result.args = grpc_channel_args_copy_and_add(resolver_->args_, new_args,
                                                GPR_ARRAY_SIZE(new_args));
