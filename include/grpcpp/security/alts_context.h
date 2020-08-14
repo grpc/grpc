@@ -51,7 +51,7 @@ class AltsContext {
   std::string local_service_account() const;
   grpc_security_level security_level() const;
   RpcProtocolVersions peer_rpc_versions() const;
-  const std::map<std::string, std::string> peer_attributes() const;
+  std::map<std::string, std::string> peer_attributes() const;
 
  private:
   std::string application_protocol_;

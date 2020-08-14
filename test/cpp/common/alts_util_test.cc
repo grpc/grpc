@@ -128,7 +128,7 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   EXPECT_EQ(0, rpc_protocol_versions.min_rpc_version.major_version);
   EXPECT_EQ(0, rpc_protocol_versions.min_rpc_version.minor_version);
   EXPECT_EQ(expected_peer_atrributes_value,
-            alts_context->peer_attributes()[expected_peer_atrributes_key]);
+            alts_context->peer_attributes().at(expected_peer_atrributes_key));
 }
 
 TEST(AltsUtilTest, AuthContextWithGoodAltsContext) {

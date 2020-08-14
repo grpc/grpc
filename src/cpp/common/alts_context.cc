@@ -119,7 +119,7 @@ AltsContext::RpcProtocolVersions AltsContext::peer_rpc_versions() const {
   return peer_rpc_versions_;
 }
 
-const std::map<std::string, std::string> AltsContext::peer_attributes() const {
+std::map<std::string, std::string> AltsContext::peer_attributes() const{
   return peer_attributes_map_;
 }
 
