@@ -318,6 +318,11 @@ grpc_cc_binary(
         "gflags",
     ],
     language = "c++",
+    tags = [
+        "no_test_android",
+        "no_test_ios",
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc++",
