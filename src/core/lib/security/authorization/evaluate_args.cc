@@ -20,6 +20,9 @@
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
+#include "src/core/ext/filters/client_channel/parse_address.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/slice/slice_utils.h"
 
 namespace grpc_core {
@@ -69,42 +72,88 @@ std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
   return headers;
 }
 
+absl::string_view EvaluateArgs::GetLocalAddress() const {
+  absl::string_view addr = grpc_endpoint_get_local_address(endpoint_);
+  size_t first_colon = addr.find(":");
+  size_t last_colon = addr.rfind(":");
+  if (first_colon == std::string::npos || last_colon == std::string::npos) {
+    return "";
+  } else {
+    return addr.substr(first_colon + 1, last_colon - first_colon - 1);
+  }
+}
+
+int EvaluateArgs::GetLocalPort() const {
+  if (endpoint_ == nullptr) {
+    return 0;
+  }
+  grpc_uri* uri = grpc_uri_parse(
+      std::string(grpc_endpoint_get_local_address(endpoint_)).c_str(), true);
+  grpc_resolved_address resolved_addr;
+  if (uri == nullptr || !grpc_parse_uri(uri, &resolved_addr)) {
+    grpc_uri_destroy(uri);
+    return 0;
+  }
+  grpc_uri_destroy(uri);
+  return grpc_sockaddr_get_port(&resolved_addr);
+}
+
+absl::string_view EvaluateArgs::GetPeerAddress() const {
+  absl::string_view addr = grpc_endpoint_get_peer(endpoint_);
+  size_t first_colon = addr.find(":");
+  size_t last_colon = addr.rfind(":");
+  if (first_colon == std::string::npos || last_colon == std::string::npos) {
+    return "";
+  } else {
+    return addr.substr(first_colon + 1, last_colon - first_colon - 1);
+  }
+}
+
+int EvaluateArgs::GetPeerPort() const {
+  if (endpoint_ == nullptr) {
+    return 0;
+  }
+  grpc_uri* uri = grpc_uri_parse(
+      std::string(grpc_endpoint_get_peer(endpoint_)).c_str(), true);
+  grpc_resolved_address resolved_addr;
+  if (uri == nullptr || !grpc_parse_uri(uri, &resolved_addr)) {
+    grpc_uri_destroy(uri);
+    return 0;
+  }
+  grpc_uri_destroy(uri);
+  return grpc_sockaddr_get_port(&resolved_addr);
+}
+
 absl::string_view EvaluateArgs::GetSpiffeId() const {
-  absl::string_view spiffe_id;
   if (auth_context_ == nullptr) {
-    return spiffe_id;
+    return "";
   }
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context_, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr) return spiffe_id;
-  if (strncmp(prop->value, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
-              prop->value_length) != 0) {
-    return spiffe_id;
+  if (prop == nullptr ||
+      strncmp(prop->value, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
+              prop->value_length) != 0 ||
+      grpc_auth_property_iterator_next(&it) != nullptr) {
+    return "";
   }
-  if (grpc_auth_property_iterator_next(&it) != nullptr) return spiffe_id;
-  spiffe_id = absl::string_view(
-      reinterpret_cast<const char*>(prop->value, prop->value_length));
-  return spiffe_id;
+  return absl::string_view(prop->value, prop->value_length);
 }
 
 absl::string_view EvaluateArgs::GetCertServerName() const {
-  absl::string_view name;
   if (auth_context_ == nullptr) {
-    return name;
+    return "";
   }
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context_, GRPC_X509_CN_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr) return name;
-  if (strncmp(prop->value, GRPC_X509_CN_PROPERTY_NAME, prop->value_length) !=
-      0) {
-    return name;
+  if (prop == nullptr ||
+      strncmp(prop->value, GRPC_X509_CN_PROPERTY_NAME, prop->value_length) !=
+          0 ||
+      grpc_auth_property_iterator_next(&it) != nullptr) {
+    return "";
   }
-  if (grpc_auth_property_iterator_next(&it) != nullptr) return name;
-  name = absl::string_view(
-      reinterpret_cast<const char*>(prop->value, prop->value_length));
-  return name;
+  return absl::string_view(prop->value, prop->value_length);
 }
 
 }  // namespace grpc_core
