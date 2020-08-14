@@ -68,6 +68,18 @@ def protos(protobuf_path):  # pylint: disable=unused-argument
     by protoc. The path is expected to be relative to an entry on sys.path
     and all transitive dependencies of the file should also be resolveable
     from an entry on sys.path.
+
+    To completely disable the machinery behind this function, set the
+    GRPC_PYTHON_DISABLE_DYNAMIC_STUBS environment variable to "true".
+
+    Args:
+      protobuf_path: The path to the .proto file on the filesystem. This path
+        must be resolveable from an entry on sys.path and so must all of its
+        transitive dependencies.
+
+    Returns:
+      A module object corresponding to the message code for the indicated
+      .proto file. Equivalent to a generated _pb2.py file.
     """
 
 
@@ -92,6 +104,18 @@ def services(protobuf_path):  # pylint: disable=unused-argument
     by protoc. The path is expected to be relative to an entry on sys.path
     and all transitive dependencies of the file should also be resolveable
     from an entry on sys.path.
+
+    To completely disable the machinery behind this function, set the
+    GRPC_PYTHON_DISABLE_DYNAMIC_STUBS environment variable to "true".
+
+    Args:
+      protobuf_path: The path to the .proto file on the filesystem. This path
+        must be resolveable from an entry on sys.path and so must all of its
+        transitive dependencies.
+
+    Returns:
+      A module object corresponding to the stub/service code for the indicated
+      .proto file. Equivalent to a generated _pb2_grpc.py file.
     """
 
 
@@ -102,6 +126,17 @@ def protos_and_services(protobuf_path):  # pylint: disable=unused-argument
 
     The return value of this function is equivalent to a call to protos and a
     call to services.
+
+    To completely disable the machinery behind this function, set the
+    GRPC_PYTHON_DISABLE_DYNAMIC_STUBS environment variable to "true".
+
+    Args:
+      protobuf_path: The path to the .proto file on the filesystem. This path
+        must be resolveable from an entry on sys.path and so must all of its
+        transitive dependencies.
+
+    Returns:
+      A 2-tuple of module objects corresponding to (protos(path), services(path)).
     """
 
 
