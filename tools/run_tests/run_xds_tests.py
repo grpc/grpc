@@ -1726,15 +1726,12 @@ try:
             server_uri = service_host_name + ':' + str(gcp.service_port)
         if args.xds_v3_support:
             client_env['GRPC_XDS_EXPERIMENTAL_V3_SUPPORT'] = 'true'
-            bootstrap_server_features.append('xds_v3')
-        if args.bootstrap_file:
             bootstrap_path = os.path.abspath(args.bootstrap_file)
         else:
             with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
-                bootstrap_file.write(
-                    _BOOTSTRAP_TEMPLATE.format(
-                        node_id=socket.gethostname()).encode('utf-8'),
-                        server_features=json.dumps(bootstrap_server_features))
+                bootstrap_file.write(_BOOTSTRAP_TEMPLATE.format(
+                    node_id=socket.gethostname(),
+                    server_features=json.dumps(bootstrap_server_features)).encode('utf-8'))
                 bootstrap_path = bootstrap_file.name
         client_env['GRPC_XDS_BOOTSTRAP'] = bootstrap_path
         test_results = {}
