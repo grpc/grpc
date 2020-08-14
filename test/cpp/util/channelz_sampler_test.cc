@@ -201,6 +201,12 @@ int main(int argc, char** argv) {
   // std::cout << "g_root = " << g_root << std::endl;
   // GetDirAndFiles();
   g_root = "test/cpp/util";
+  gpr_log(GPR_INFO, "##### Print pwd");
+  system("pwd");
+  gpr_log(GPR_INFO, "##### search by locate");
+  system("locate channelz_sampler");
+  gpr_log(GPR_INFO, "##### search by find");
+  system("find / -name channelz_sampler");
 
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
