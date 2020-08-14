@@ -7,7 +7,7 @@ Rules for implementors:
 3. Reads May continue to succeed after a failing write.
    However, once a write fails, all subsequent writes Must fail,
    and similarly, once a read fails, all subsequent reads Must fail.
-4. A non-OK status received from the wire is not considered an error status.
+4. A non-OK status received from the server is not considered an error status.
 5. When an error status is known to the library, if the user asks for status,
    the library Should discard messages received in the library but not delivered
    to the user and then deliver the status. If the user does not ask for status

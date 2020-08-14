@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/end2end/cq_verifier.h"
 
@@ -43,7 +43,7 @@
 
 #define ROOT_EXPECTATION 1000
 
-/* a set of metadata we expect to find on an event */
+// a set of metadata we expect to find on an event
 typedef struct metadata {
   size_t count;
   size_t cap;
@@ -51,8 +51,7 @@ typedef struct metadata {
   char** values;
 } metadata;
 
-/* details what we expect to find on a single event - and forms a linked
-   list to detail other expectations */
+// details what we expect to find on a single event
 struct Expectation {
   Expectation(const char* f, int l, grpc_completion_type t, void* tag_arg,
               bool check_success_arg, int success_arg, bool* seen_arg)
@@ -72,16 +71,17 @@ struct Expectation {
   bool* seen;
 };
 
-/* the verifier itself */
+// the verifier itself
 struct cq_verifier {
-  /* bound completion queue */
+  // bound completion queue
   grpc_completion_queue* cq;
-  /* expectation list */
+  // expectation list
   std::list<Expectation> expectations;
-  /* maybe expectation list */
+  // maybe expectation list
   std::list<Expectation> maybe_expectations;
 };
 
+// TODO(yashykt): Convert this to constructor/destructor pair
 cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
   cq_verifier* v = new cq_verifier;
   v->cq = cq;
@@ -279,6 +279,7 @@ void cq_verify(cq_verifier* v) {
     gpr_log(GPR_ERROR, "expected tags:\n%s", ExpectationsString(*v).c_str());
     abort();
   }
+  v->maybe_expectations.clear();
 }
 
 void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {

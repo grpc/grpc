@@ -235,6 +235,7 @@ static void test_server_streaming(grpc_end2end_test_config config,
     error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                   tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
+    CQ_MAYBE_EXPECT_COMPLETION(cqv, tag(1), true, &seen_status);
     CQ_EXPECT_COMPLETION(cqv, tag(102), true);
     cq_verify(cqv);
     if (request_payload_recv == nullptr) {
