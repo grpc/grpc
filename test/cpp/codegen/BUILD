@@ -54,6 +54,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc++",
+        "//:grpc++_codegen_proto",
         "//test/core/util:grpc_test_util",
     ],
 )

@@ -25,7 +25,10 @@ grpc_cc_library(
     srcs = ["parse_json.cc"],
     hdrs = ["parse_json.h"],
     external_deps = ["protobuf"],
-    deps = ["//:grpc++"],
+    deps = [
+        "//:grpc++",
+        "//:grpc++_config_proto",
+    ],
 )
 
 grpc_cc_library(

@@ -3034,14 +3034,12 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/completion_queue.h \
     include/grpc++/impl/codegen/completion_queue_tag.h \
     include/grpc++/impl/codegen/config.h \
-    include/grpc++/impl/codegen/config_protobuf.h \
     include/grpc++/impl/codegen/core_codegen.h \
     include/grpc++/impl/codegen/core_codegen_interface.h \
     include/grpc++/impl/codegen/create_auth_context.h \
     include/grpc++/impl/codegen/grpc_library.h \
     include/grpc++/impl/codegen/metadata_map.h \
     include/grpc++/impl/codegen/method_handler_impl.h \
-    include/grpc++/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/rpc_method.h \
     include/grpc++/impl/codegen/rpc_service_method.h \
     include/grpc++/impl/codegen/security/auth_context.h \
@@ -3122,7 +3120,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/completion_queue.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
-    include/grpcpp/impl/codegen/config_protobuf.h \
     include/grpcpp/impl/codegen/core_codegen.h \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
@@ -3135,9 +3132,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
-    include/grpcpp/impl/codegen/proto_buffer_reader.h \
-    include/grpcpp/impl/codegen/proto_buffer_writer.h \
-    include/grpcpp/impl/codegen/proto_utils.h \
     include/grpcpp/impl/codegen/rpc_method.h \
     include/grpcpp/impl/codegen/rpc_service_method.h \
     include/grpcpp/impl/codegen/security/auth_context.h \
@@ -3565,14 +3559,12 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/completion_queue.h \
     include/grpc++/impl/codegen/completion_queue_tag.h \
     include/grpc++/impl/codegen/config.h \
-    include/grpc++/impl/codegen/config_protobuf.h \
     include/grpc++/impl/codegen/core_codegen.h \
     include/grpc++/impl/codegen/core_codegen_interface.h \
     include/grpc++/impl/codegen/create_auth_context.h \
     include/grpc++/impl/codegen/grpc_library.h \
     include/grpc++/impl/codegen/metadata_map.h \
     include/grpc++/impl/codegen/method_handler_impl.h \
-    include/grpc++/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/rpc_method.h \
     include/grpc++/impl/codegen/rpc_service_method.h \
     include/grpc++/impl/codegen/security/auth_context.h \
@@ -3653,7 +3645,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/completion_queue.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
-    include/grpcpp/impl/codegen/config_protobuf.h \
     include/grpcpp/impl/codegen/core_codegen.h \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
@@ -3666,9 +3657,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
-    include/grpcpp/impl/codegen/proto_buffer_reader.h \
-    include/grpcpp/impl/codegen/proto_buffer_writer.h \
-    include/grpcpp/impl/codegen/proto_utils.h \
     include/grpcpp/impl/codegen/rpc_method.h \
     include/grpcpp/impl/codegen/rpc_service_method.h \
     include/grpcpp/impl/codegen/security/auth_context.h \
