@@ -24,19 +24,6 @@ cdef bint _has_fd_monitoring = True
 IF UNAME_SYSNAME == "Windows":
     cdef void _unified_socket_write(int fd) nogil:
         win_socket_send(<WIN_SOCKET>fd, b"1", 1, 0)
-
-    # If the event loop policy is Proactor, then immediately turn on fall back
-    # mode.
-    try:
-        if hasattr(asyncio, 'WindowsProactorEventLoopPolicy') and \
-            isinstance(asyncio.get_event_loop_policy(), asyncio.WindowsProactorEventLoopPolicy):
-            _has_fd_monitoring = False
-        elif isinstance(asyncio.get_event_loop_policy(), asyncio.DefaultEventLoopPolicy):
-            if sys.version_info >= (3, 8, 0):
-                _has_fd_monitoring = False
-    except NameError:
-        # Pass if asyncio is not imported for 2.7
-        pass
 ELSE:
     from posix cimport unistd
 
