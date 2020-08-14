@@ -240,11 +240,17 @@ class CLanguage(object):
         self._make_options = []
         self._use_cmake = True
         if self.platform == 'windows':
-            _check_compiler(
-                self.args.compiler,
-                ['default', 'cmake', 'cmake_vs2015', 'cmake_vs2017'])
+            _check_compiler(self.args.compiler, [
+                'default', 'cmake', 'cmake_vs2015', 'cmake_vs2017',
+                'cmake_vs2019'
+            ])
             _check_arch(self.args.arch, ['default', 'x64', 'x86'])
-            cmake_generator_option = 'Visual Studio 15 2017' if self.args.compiler == 'cmake_vs2017' else 'Visual Studio 14 2015'
+            if self.args.compiler == 'cmake_vs2019':
+                cmake_generator_option = 'Visual Studio 16 2019'
+            elif self.args.compiler == 'cmake_vs2017':
+                cmake_generator_option = 'Visual Studio 15 2017'
+            else:
+                cmake_generator_option = 'Visual Studio 14 2015'
             cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
             self._cmake_configure_extra_args = [
                 '-G', cmake_generator_option, '-A', cmake_arch_option
@@ -1446,11 +1452,30 @@ argp.add_argument(
 argp.add_argument(
     '--compiler',
     choices=[
-        'default', 'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl',
-        'clang3.6', 'clang3.7', 'python2.7', 'python3.5', 'python3.6',
-        'python3.7', 'python3.8', 'pypy', 'pypy3', 'python_alpine',
-        'all_the_cpythons', 'electron1.3', 'electron1.6', 'coreclr', 'cmake',
-        'cmake_vs2015', 'cmake_vs2017'
+        'default',
+        'gcc4.9',
+        'gcc5.3',
+        'gcc7.4',
+        'gcc8.3',
+        'gcc_musl',
+        'clang3.6',
+        'clang3.7',
+        'python2.7',
+        'python3.5',
+        'python3.6',
+        'python3.7',
+        'python3.8',
+        'pypy',
+        'pypy3',
+        'python_alpine',
+        'all_the_cpythons',
+        'electron1.3',
+        'electron1.6',
+        'coreclr',
+        'cmake',
+        'cmake_vs2015',
+        'cmake_vs2017',
+        'cmake_vs2019',
     ],
     default='default',
     help=
