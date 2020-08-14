@@ -26,6 +26,7 @@
 #include <thread>
 
 #include "grpc/grpc.h"
+#include "grpc/support/alloc.h"
 #include "grpc/support/port_platform.h"
 #include "grpcpp/channel.h"
 #include "grpcpp/client_context.h"
@@ -171,6 +172,7 @@ int main(int argc, char** argv) {
 
   char* test_srcdir = gpr_getenv("TEST_SRCDIR");
   gpr_log(GPR_INFO, "##### env TEST_SRCDIR = %s", test_srcdir);
+  gpr_free(test_srcdir);
 
   gpr_log(GPR_INFO, "##### Current directory - pwd");
   system("pwd");
