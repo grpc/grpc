@@ -301,6 +301,10 @@ def _status_code_and_message(stub):
             payload=messages_pb2.Payload(body=b'\x00'),
             response_status=messages_pb2.EchoStatus(code=code, message=details))
         pipe.add(request)  # sends the initial request.
+    try:
+        next(response_iterator)
+    except grpc.RpcError as rpc_error:
+        assert rpc_error.code() == status
     # Dropping out of with block closes the pipe
     _validate_status_code_and_details(response_iterator, status, details)
 

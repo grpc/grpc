@@ -271,6 +271,10 @@ async def _status_code_and_message(stub: test_pb2_grpc.TestServiceStub):
                                                 message=details))
     await call.write(request)  # sends the initial request.
     await call.done_writing()
+    try:
+        await call.read()
+    except aio.AioRpcError as rpc_error:
+        assert rpc_error.code() == status
     await _validate_status_code_and_details(call, status, details)
 
 
