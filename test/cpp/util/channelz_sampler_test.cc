@@ -38,6 +38,7 @@
 #include "grpcpp/server_builder.h"
 #include "grpcpp/server_context.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -167,6 +168,9 @@ int main(int argc, char** argv) {
   }
   gpr_log(GPR_INFO, "##### g_root = %s", g_root.c_str());
   g_root = "test/cpp/util";
+
+  char* test_srcdir = gpr_getenv("TEST_SRCDIR");
+  gpr_log(GPR_INFO, "##### env TEST_SRCDIR = %s", test_srcdir);
 
   gpr_log(GPR_INFO, "##### Current directory - pwd");
   system("pwd");
