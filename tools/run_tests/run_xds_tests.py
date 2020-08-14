@@ -113,6 +113,7 @@ argp.add_argument(
 argp.add_argument(
     '--xds_v3_support',
     default=False,
+    action='store_true',
     help='Support xDS v3 via GRPC_XDS_EXPERIMENTAL_V3_SUPPORT')
 argp.add_argument(
     '--client_cmd',
