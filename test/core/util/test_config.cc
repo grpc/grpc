@@ -118,10 +118,10 @@ static void print_stack_from_context(HANDLE thread, CONTEXT c) {
 
     PWSTR file_name = L"<<no line info>>";
     int line_number = 0;
-    IMAGEHLP_LINE line;
-    line.SizeOfStruct = sizeof(IMAGEHLP_LINE);
+    IMAGEHLP_LINE64 line;
+    line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
     DWORD displacement = 0;
-    if (SymGetLineFromAddrW(process, (DWORD64)(s.AddrPC.Offset), &displacement,
+    if (SymGetLineFromAddrW64(process, (DWORD64)(s.AddrPC.Offset), &displacement,
                             &line)) {
       file_name = line.FileName;
       line_number = (int)line.LineNumber;
