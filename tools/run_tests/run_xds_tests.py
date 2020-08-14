@@ -17,6 +17,7 @@
 import argparse
 import googleapiclient.discovery
 import grpc
+import json
 import logging
 import os
 import random
@@ -109,6 +110,13 @@ argp.add_argument(
     default='',
     help='File to reference via GRPC_XDS_BOOTSTRAP. Disables built-in '
     'bootstrap generation')
+argp.add_argument(
+    '--xds_v3_support',
+    default=False,
+    action='store_true',
+    help='Support xDS v3 via GRPC_XDS_EXPERIMENTAL_V3_SUPPORT. '
+    'If a pre-created bootstrap file is provided via the --bootstrap_file '
+    'parameter, it should include xds_v3 in its server_features field.')
 argp.add_argument(
     '--client_cmd',
     default=None,
@@ -240,7 +248,8 @@ _BOOTSTRAP_TEMPLATE = """
         "type": "google_default",
         "config": {{}}
       }}
-    ]
+    ],
+    "server_features": {server_features}
   }}]
 }}""" % (args.network.split('/')[-1], args.zone, args.xds_server)
 
@@ -1709,20 +1718,26 @@ try:
     wait_for_healthy_backends(gcp, backend_service, instance_group)
 
     if args.test_case:
+        client_env = dict(os.environ)
+        bootstrap_server_features = []
         if gcp.service_port == _DEFAULT_SERVICE_PORT:
             server_uri = service_host_name
         else:
             server_uri = service_host_name + ':' + str(gcp.service_port)
+        if args.xds_v3_support:
+            client_env['GRPC_XDS_EXPERIMENTAL_V3_SUPPORT'] = 'true'
+            bootstrap_server_features.append('xds_v3')
         if args.bootstrap_file:
             bootstrap_path = os.path.abspath(args.bootstrap_file)
         else:
             with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
                 bootstrap_file.write(
                     _BOOTSTRAP_TEMPLATE.format(
-                        node_id=socket.gethostname()).encode('utf-8'))
+                        node_id=socket.gethostname(),
+                        server_features=json.dumps(
+                            bootstrap_server_features)).encode('utf-8'))
                 bootstrap_path = bootstrap_file.name
-        client_env = dict(os.environ, GRPC_XDS_BOOTSTRAP=bootstrap_path)
-
+        client_env['GRPC_XDS_BOOTSTRAP'] = bootstrap_path
         test_results = {}
         failed_tests = []
         for test_case in args.test_case:
