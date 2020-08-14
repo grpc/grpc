@@ -34,8 +34,8 @@ cq_verifier* cq_verifier_create(grpc_completion_queue* cq);
 void cq_verifier_destroy(cq_verifier* v);
 
 /* ensure all expected events (and only those events) are present on the
-   bound completion queue */
-void cq_verify(cq_verifier* v);
+   bound completion queue within \a timeout_sec */
+void cq_verify(cq_verifier* v, int timeout_sec = 10);
 
 /* ensure that the completion queue is empty */
 void cq_verify_empty(cq_verifier* v);

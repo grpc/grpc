@@ -1084,6 +1084,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
     gpr_log(GPR_INFO, "%s: Got goaway [%d] err=%s", t->peer_string.c_str(),
             goaway_error, grpc_error_string(t->goaway_error));
   }
+  absl::Status status = grpc_error_to_absl_status(t->goaway_error);
   // When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
   // data equal to "too_many_pings", it should log the occurrence at a log level
   // that is enabled by default and double the configured KEEPALIVE_TIME used
@@ -1102,8 +1103,9 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             ? GRPC_MILLIS_INF_FUTURE
             : static_cast<grpc_millis>(current_keepalive_time_ms *
                                        KEEPALIVE_TIME_BACKOFF_MULTIPLIER);
+    status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
+                      absl::Cord(std::to_string(t->keepalive_time)));
   }
-  absl::Status status = grpc_error_to_absl_status(t->goaway_error);
   // lie: use transient failure from the transport to indicate goaway has been
   // received.
   connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
