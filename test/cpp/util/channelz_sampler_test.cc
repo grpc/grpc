@@ -200,6 +200,7 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "##### g_root = %s", g_root.c_str());
   // std::cout << "g_root = " << g_root << std::endl;
   // GetDirAndFiles();
+  g_root = "test/cpp/util";
 
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

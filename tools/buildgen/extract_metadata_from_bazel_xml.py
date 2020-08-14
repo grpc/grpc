@@ -468,12 +468,6 @@ def _filter_cc_tests(tests):
             lambda test: not test.startswith(
                 'test/core/tsi:ssl_session_cache_test'), tests))
 
-    # channelz_sampler_test.cc
-    tests = list(
-        filter(
-            lambda test: not test.startswith(
-                'test/cpp/util:channelz_sampler_test'), tests))
-
     return tests
 
 
