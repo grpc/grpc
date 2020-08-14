@@ -29,7 +29,10 @@
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
+using grpc::testing::kTls12CredentialsType;
+using grpc::testing::kTls13CredentialsType;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -50,13 +53,15 @@ void MaybeEchoDeadline(experimental::ServerContextBase* context,
 }
 
 void CheckServerAuthContext(const experimental::ServerContextBase* context,
-                            const std::string& expected_transport_security_type,
+                            const std::string& expected_credentials_type,
                             const std::string& expected_client_identity) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
   EXPECT_EQ(1u, tst.size());
-  EXPECT_EQ(expected_transport_security_type, ToString(tst[0]));
+  std::string transport_security_type =
+      GetTransportSecurityType(expected_credentials_type);
+  EXPECT_EQ(transport_security_type, ToString(tst[0]));
   if (expected_client_identity.empty()) {
     EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
     EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());

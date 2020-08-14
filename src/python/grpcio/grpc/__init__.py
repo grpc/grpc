@@ -1587,7 +1587,9 @@ def method_handlers_generic_handler(service, method_handlers):
 
 def ssl_channel_credentials(root_certificates=None,
                             private_key=None,
-                            certificate_chain=None):
+                            certificate_chain=None,
+                            min_tls_version=None,
+                            max_tls_version=None):
     """Creates a ChannelCredentials for use with an SSL-enabled Channel.
 
     Args:
@@ -1604,7 +1606,8 @@ def ssl_channel_credentials(root_certificates=None,
     """
     return ChannelCredentials(
         _cygrpc.SSLChannelCredentials(root_certificates, private_key,
-                                      certificate_chain))
+                                      certificate_chain, min_tls_version,
+                                      max_tls_version))
 
 
 def metadata_call_credentials(metadata_plugin, name=None):
@@ -1674,7 +1677,9 @@ def composite_channel_credentials(channel_credentials, *call_credentials):
 
 def ssl_server_credentials(private_key_certificate_chain_pairs,
                            root_certificates=None,
-                           require_client_auth=False):
+                           require_client_auth=False,
+                           min_tls_version=None,
+                           max_tls_version=None):
     """Creates a ServerCredentials for use with an SSL-enabled Server.
 
     Args:
@@ -1703,7 +1708,7 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
             _cygrpc.server_credentials_ssl(root_certificates, [
                 _cygrpc.SslPemKeyCertPair(key, pem)
                 for key, pem in private_key_certificate_chain_pairs
-            ], require_client_auth))
+            ], require_client_auth, min_tls_version, max_tls_version))
 
 
 def ssl_server_certificate_configuration(private_key_certificate_chain_pairs,

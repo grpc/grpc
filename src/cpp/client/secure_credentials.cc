@@ -112,6 +112,10 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
       options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
       options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair, nullptr,
       nullptr);
+  grpc_ssl_credentials_set_min_tls_version(
+      c_creds, options.tls_version_range.min_tls_version);
+  grpc_ssl_credentials_set_max_tls_version(
+      c_creds, options.tls_version_range.max_tls_version);
   return WrapChannelCredentials(c_creds);
 }
 

@@ -408,9 +408,9 @@ class SecureServerSecureClient(unittest.TestCase, ServerClientMixin):
             None, [
                 cygrpc.SslPemKeyCertPair(resources.private_key(),
                                          resources.certificate_chain())
-            ], False)
+            ], False, None, None)
         client_credentials = cygrpc.SSLChannelCredentials(
-            resources.test_root_certificates(), None, None)
+            resources.test_root_certificates(), None, None, None, None)
         self.setUpMixin(server_credentials, client_credentials,
                         _SSL_HOST_OVERRIDE)
 

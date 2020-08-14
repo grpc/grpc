@@ -476,6 +476,11 @@ cdef extern from "grpc/grpc_security.h":
   grpc_server_credentials *grpc_ssl_server_credentials_create_with_options(
       grpc_ssl_server_credentials_options *options)
 
+  void grpc_ssl_server_credentials_set_min_tls_version(
+      grpc_server_credentials* creds, grpc_tls_version min_tls_version);
+  void grpc_ssl_server_credentials_set_max_tls_version(
+      grpc_server_credentials* creds, grpc_tls_version max_tls_version);
+
   ctypedef struct grpc_ssl_pem_key_cert_pair:
     const char *private_key
     const char *certificate_chain "cert_chain"
@@ -512,6 +517,11 @@ cdef extern from "grpc/grpc_security.h":
       grpc_channel_credentials *creds1, grpc_call_credentials *creds2,
       void *reserved) nogil
   void grpc_channel_credentials_release(grpc_channel_credentials *creds) nogil
+
+  void grpc_ssl_credentials_set_min_tls_version(
+      grpc_channel_credentials* creds, grpc_tls_version min_tls_version) nogil;
+  void grpc_ssl_credentials_set_max_tls_version(
+      grpc_channel_credentials* creds, grpc_tls_version max_tls_version) nogil;
 
   grpc_call_credentials *grpc_composite_call_credentials_create(
       grpc_call_credentials *creds1, grpc_call_credentials *creds2,
@@ -668,3 +678,7 @@ cdef extern from "grpc/grpc_security_constants.h":
   ctypedef enum grpc_local_connect_type:
     UDS
     LOCAL_TCP
+
+  ctypedef enum grpc_tls_version:
+    TLS1_2
+    TLS1_3

@@ -160,7 +160,9 @@ std::shared_ptr<Channel> CreateTestChannel(
           server, InsecureChannelCredentials(), channel_args,
           std::move(interceptor_creators));
     }
-  } else if (cred_type == testing::kTlsCredentialsType) {  // cred_type == "ssl"
+  } else if (cred_type == testing::kTlsCredentialsType ||
+             cred_type == testing::kTls12CredentialsType ||
+             cred_type == testing::kTls13CredentialsType) {
     if (use_prod_roots) {
       gpr_once_init(&g_once_init_add_prod_ssl_provider, &AddProdSslType);
       channel_creds = testing::GetCredentialsProvider()->GetChannelCredentials(
