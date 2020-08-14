@@ -27,6 +27,7 @@ py_library(
         "//tools/distrib/python/grpcio_tools:grpc_tools",
         requirement("googleapis-common-protos"),
     ],
+    imports = ["."],
 )
 
 py_library(
@@ -44,6 +45,7 @@ py_library(
         "//conditions:default": [requirement("futures")],
         "//:python3": [],
     }),
+    imports = ["."],
 )
 
 py_test(

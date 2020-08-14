@@ -28,7 +28,6 @@ import unittest
 
 import grpc
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 services = grpc.services("helloworld.proto")
 
 from examples.python.errors import client as error_handling_client

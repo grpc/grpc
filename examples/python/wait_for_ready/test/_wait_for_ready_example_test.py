@@ -18,7 +18,6 @@ import logging
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from examples.python.wait_for_ready import wait_for_ready_example
 
 

@@ -25,6 +25,7 @@ py_library(
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
+    imports = ["."],
 )
 
 py_test(
