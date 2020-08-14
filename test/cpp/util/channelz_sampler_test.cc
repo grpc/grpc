@@ -178,7 +178,6 @@ void GetFiles(char* cate_dir) {
   }
   closedir(dir);
 }
-
 void GetDirAndFiles() {
   char* file_path_getcwd;
   file_path_getcwd = (char*)malloc(512);
