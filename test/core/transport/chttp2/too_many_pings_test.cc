@@ -176,6 +176,7 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
   grpc_completion_queue_destroy(cq);
 }
 
+#if 0
 // Perform a simple RPC where the client makes a request, and both the client
 // and server continue reading so that gRPC can send and receive keepalive
 // pings.
@@ -527,6 +528,7 @@ TEST_F(KeepaliveThrottlingTest,
     ;
   grpc_completion_queue_destroy(cq);
 }
+#endif
 
 }  // namespace
 

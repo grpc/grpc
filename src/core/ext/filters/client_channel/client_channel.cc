@@ -1120,16 +1120,19 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       //         gpr_log(GPR_INFO, "chand=%p: throttling keepalive time to %d",
       //                 parent_->chand_, parent_->chand_->keepalive_time_);
       //       }
-      //       // Propagate the new keepalive time to all subchannels. This is so
-      //       // that new transports created by any subchannel (and not just the
-      //       // subchannel that received the GOAWAY), use the new keepalive time.
-      //       for (auto* subchannel_wrapper :
+      //       // Propagate the new keepalive time to all subchannels. This is
+      //       so
+      //       // that new transports created by any subchannel (and not just
+      //       the
+      //       // subchannel that received the GOAWAY), use the new keepalive
+      //       time. for (auto* subchannel_wrapper :
       //            parent_->chand_->subchannel_wrappers_) {
       //         subchannel_wrapper->ThrottleKeepaliveTime(new_keepalive_time);
       //       }
       //     }
       //   } else {
-      //     gpr_log(GPR_ERROR, "chand=%p: Illegal keepalive throttling value %s",
+      //     gpr_log(GPR_ERROR, "chand=%p: Illegal keepalive throttling value
+      //     %s",
       //             parent_->chand_,
       //             std::string(keepalive_throttling.value()).c_str());
       //   }
@@ -1380,7 +1383,7 @@ class ChannelData::ClientChannelControlHelper
         &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &arg, 1);
     Subchannel* subchannel =
         chand_->client_channel_factory_->CreateSubchannel(new_args);
-    subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
+    //subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
     return MakeRefCounted<SubchannelWrapper>(
