@@ -24,6 +24,8 @@ import sys
 import unittest
 
 
+# TODO(https://github.com/grpc/grpc/issues/23847): Deduplicate this mechanism with
+# the grpcio_tests module.
 def _wrap_in_subprocess(error_queue, fn):
 
     @functools.wraps(fn)
