@@ -15,4 +15,7 @@ targets excessively large (particularly when they are not even C++ specific).
 User code should *not* include anything from this directory. Only generated code
 and gRPC library code should include contents from this directory. User code
 should instead include contents from the main `grpcpp` directory or its
-accessible subcomponents like `grpcpp/support`.
+accessible subcomponents like `grpcpp/support`. It is possible that we may
+remove this directory altogether if the motivations for its existence are no
+longer strong enough (e.g., if most users migrate away from the `proto_library`
+target type or if the additional overhead of depending on gRPC C++ is not high).
