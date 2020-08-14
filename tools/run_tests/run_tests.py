@@ -877,12 +877,14 @@ class PythonLanguage(object):
                     # tested.
                     return (
                         python27_config,
+                        python37_config,
                         python38_config,
                     )
                 else:
                     return (
                         python27_config,
                         python35_config,
+                        python37_config,
                         python38_config,
                     )
         elif args.compiler == 'python2.7':
