@@ -1729,9 +1729,11 @@ try:
             bootstrap_path = os.path.abspath(args.bootstrap_file)
         else:
             with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
-                bootstrap_file.write(_BOOTSTRAP_TEMPLATE.format(
-                    node_id=socket.gethostname(),
-                    server_features=json.dumps(bootstrap_server_features)).encode('utf-8'))
+                bootstrap_file.write(
+                    _BOOTSTRAP_TEMPLATE.format(
+                        node_id=socket.gethostname(),
+                        server_features=json.dumps(
+                            bootstrap_server_features)).encode('utf-8'))
                 bootstrap_path = bootstrap_file.name
         client_env['GRPC_XDS_BOOTSTRAP'] = bootstrap_path
         test_results = {}
