@@ -382,7 +382,7 @@ grpc_core::Resolver::Result BuildResolverResult(
 
 // Tests that when new subchannels are created due to a change in resolved
 // addresses, the new subchannels use the updated keepalive time.
-TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleSubchannels1) {
+TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
   grpc_core::ExecCtx exec_ctx;
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   std::string server_address1 =
@@ -460,7 +460,8 @@ TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleSubchannels1) {
 // Tests that when a channel has multiple subchannels and receives a GOAWAY with
 // "too_many_pings" on one of them, all subchannels start any new transports
 // with an updated keepalive time.
-TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleSubchannels2) {
+TEST_F(KeepaliveThrottlingTest,
+       ExistingSubchannelsUseNewKeepaliveTimeWhenReconnecting) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   std::string server_address1 =
       grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
