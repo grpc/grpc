@@ -391,27 +391,6 @@ static bool md_key_cmp(grpc_mdelem md, const grpc_slice& reference) {
   return GRPC_MDKEY(md).refcount == reference.refcount;
 }
 
-static bool md_cmp(grpc_mdelem md, grpc_mdelem ref_md,
-                   const grpc_slice& ref_key) {
-  if (GPR_LIKELY(GRPC_MDELEM_IS_INTERNED(md))) {
-    return md.payload == ref_md.payload;
-  }
-  if (md_key_cmp(md, ref_key)) {
-    return grpc_slice_eq_static_interned(GRPC_MDVALUE(md),
-                                         GRPC_MDVALUE(ref_md));
-  }
-  return false;
-}
-
-static bool is_nonzero_status(grpc_mdelem md) {
-  // If md.payload == GRPC_MDELEM_GRPC_STATUS_1 or GRPC_MDELEM_GRPC_STATUS_2,
-  // then we have seen an error. In fact, if it is a GRPC_STATUS and it's
-  // not equal to GRPC_MDELEM_GRPC_STATUS_0, then we have seen an error.
-  // TODO(ctiller): check for a status like " 0"
-  return md_key_cmp(md, GRPC_MDSTR_GRPC_STATUS) &&
-         !md_cmp(md, GRPC_MDELEM_GRPC_STATUS_0, GRPC_MDSTR_GRPC_STATUS);
-}
-
 static void GPR_ATTRIBUTE_NOINLINE on_initial_header_log(
     grpc_chttp2_transport* t, grpc_chttp2_stream* s, grpc_mdelem md) {
   char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
@@ -493,9 +472,7 @@ static grpc_error* on_initial_header(void* tp, grpc_mdelem md) {
     on_initial_header_log(t, s, md);
   }
 
-  if (is_nonzero_status(md)) {  // not GRPC_MDELEM_GRPC_STATUS_0?
-    s->seen_error = true;
-  } else if (md_key_cmp(md, GRPC_MDSTR_GRPC_TIMEOUT)) {
+  if (md_key_cmp(md, GRPC_MDSTR_GRPC_TIMEOUT)) {
     return handle_timeout(s, md);
   }
 
@@ -532,10 +509,6 @@ static grpc_error* on_trailing_header(void* tp, grpc_mdelem md) {
             t->is_client ? "CLI" : "SVR", key, value);
     gpr_free(key);
     gpr_free(value);
-  }
-
-  if (is_nonzero_status(md)) {  // not GRPC_MDELEM_GRPC_STATUS_0?
-    s->seen_error = true;
   }
 
   const size_t new_size = s->metadata_buffer[1].size + GRPC_MDELEM_LENGTH(md);

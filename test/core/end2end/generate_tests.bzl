@@ -343,6 +343,7 @@ END2END_TESTS = {
         proxyable = False,
     ),
     "server_finishes_request": _test_options(),
+    "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),
     "shutdown_finishes_tags": _test_options(),
     "simple_cacheable_request": _test_options(),
