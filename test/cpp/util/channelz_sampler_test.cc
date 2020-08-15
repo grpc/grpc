@@ -182,14 +182,16 @@ int main(int argc, char** argv) {
   system("ls -l cmake");
   gpr_log(GPR_INFO, "$$$$$ 2nd level files - ls cmake/build");
   system("ls -l cmake/build");
-  gpr_log(GPR_INFO, "&&&&& 3rd level files - ls cmake/build/gen");
-  system("ls -l cmake/build/gen");
+  gpr_log(GPR_INFO, "&&&&& 3rd level files - ls cmake/build/gens");
+  system("ls -l cmake/build/gens");
   gpr_log(GPR_INFO, "&&&&& 3rd level files - ls test/cpp/util");
   system("ls -l test/cpp/util");
   gpr_log(GPR_INFO, "##### seach by locate");
   system("locate channelz_sampler");
-  gpr_log(GPR_INFO, "##### seach by find");
+  gpr_log(GPR_INFO, "##### find channelz_sampler");
   system("find . -name channelz_sampler");
+  gpr_log(GPR_INFO, "##### find channelz_sampler_test");
+  system("find . -name channelz_sampler_test");
 
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
