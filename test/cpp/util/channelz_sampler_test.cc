@@ -190,6 +190,8 @@ int main(int argc, char** argv) {
   system("locate channelz_sampler");
   gpr_log(GPR_INFO, "##### seach by find");
   system("find . -name channelz_sampler");
+  gpr_log(GPR_INFO, "##### find channelz_sampler_test");
+  system("find . -name channelz_sampler_test");
 
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

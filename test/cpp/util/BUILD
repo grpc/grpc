@@ -311,7 +311,7 @@ grpc_cc_binary(
     ],
 )
 
-grpc_cc_binary(
+grpc_cc_test(
     name = "channelz_sampler",
     srcs = ["channelz_sampler.cc"],
     external_deps = [
