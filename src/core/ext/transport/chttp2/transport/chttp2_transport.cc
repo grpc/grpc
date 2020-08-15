@@ -1412,64 +1412,44 @@ static void perform_stream_op_locked(void* stream_op,
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
     s->send_initial_metadata =
         op_payload->send_initial_metadata.send_initial_metadata;
-    const size_t metadata_size =
-        grpc_metadata_batch_size(s->send_initial_metadata);
-    const size_t metadata_peer_limit =
-        t->settings[GRPC_PEER_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
     if (t->is_client) {
       s->deadline = GPR_MIN(s->deadline, s->send_initial_metadata->deadline);
     }
-    if (metadata_size > metadata_peer_limit) {
-      grpc_chttp2_cancel_stream(
-          t, s,
-          grpc_error_set_int(
-              grpc_error_set_int(
-                  grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                         "to-be-sent initial metadata size "
-                                         "exceeds peer limit"),
-                                     GRPC_ERROR_INT_SIZE,
-                                     static_cast<intptr_t>(metadata_size)),
-                  GRPC_ERROR_INT_LIMIT,
-                  static_cast<intptr_t>(metadata_peer_limit)),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
-    } else {
-      if (contains_non_ok_status(s->send_initial_metadata)) {
-        s->seen_error = true;
-      }
-      if (!s->write_closed) {
-        if (t->is_client) {
-          if (t->closed_with_error == GRPC_ERROR_NONE) {
-            GPR_ASSERT(s->id == 0);
-            grpc_chttp2_list_add_waiting_for_concurrency(t, s);
-            maybe_start_some_streams(t);
-          } else {
-            grpc_chttp2_cancel_stream(
-                t, s,
-                grpc_error_set_int(
-                    GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                        "Transport closed", &t->closed_with_error, 1),
-                    GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
-          }
+    if (contains_non_ok_status(s->send_initial_metadata)) {
+      s->seen_error = true;
+    }
+    if (!s->write_closed) {
+      if (t->is_client) {
+        if (t->closed_with_error == GRPC_ERROR_NONE) {
+          GPR_ASSERT(s->id == 0);
+          grpc_chttp2_list_add_waiting_for_concurrency(t, s);
+          maybe_start_some_streams(t);
         } else {
-          GPR_ASSERT(s->id != 0);
-          grpc_chttp2_mark_stream_writable(t, s);
-          if (!(op->send_message &&
-                (op->payload->send_message.send_message->flags() &
-                 GRPC_WRITE_BUFFER_HINT))) {
-            grpc_chttp2_initiate_write(
-                t, GRPC_CHTTP2_INITIATE_WRITE_SEND_INITIAL_METADATA);
-          }
+          grpc_chttp2_cancel_stream(
+              t, s,
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                      "Transport closed", &t->closed_with_error, 1),
+                  GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
         }
       } else {
-        s->send_initial_metadata = nullptr;
-        grpc_chttp2_complete_closure_step(
-            t, s, &s->send_initial_metadata_finished,
-            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                "Attempt to send initial metadata after stream was closed",
-                &s->write_closed_error, 1),
-            "send_initial_metadata_finished");
+        GPR_ASSERT(s->id != 0);
+        grpc_chttp2_mark_stream_writable(t, s);
+        if (!(op->send_message &&
+              (op->payload->send_message.send_message->flags() &
+               GRPC_WRITE_BUFFER_HINT))) {
+          grpc_chttp2_initiate_write(
+              t, GRPC_CHTTP2_INITIATE_WRITE_SEND_INITIAL_METADATA);
+        }
       }
+    } else {
+      s->send_initial_metadata = nullptr;
+      grpc_chttp2_complete_closure_step(
+          t, s, &s->send_initial_metadata_finished,
+          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+              "Attempt to send initial metadata after stream was closed",
+              &s->write_closed_error, 1),
+          "send_initial_metadata_finished");
     }
     if (op_payload->send_initial_metadata.peer_string != nullptr) {
       gpr_atm_rel_store(op_payload->send_initial_metadata.peer_string,
@@ -1531,47 +1511,27 @@ static void perform_stream_op_locked(void* stream_op,
         op_payload->send_trailing_metadata.send_trailing_metadata;
     s->sent_trailing_metadata_op = op_payload->send_trailing_metadata.sent;
     s->write_buffering = false;
-    const size_t metadata_size =
-        grpc_metadata_batch_size(s->send_trailing_metadata);
-    const size_t metadata_peer_limit =
-        t->settings[GRPC_PEER_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
-    if (metadata_size > metadata_peer_limit) {
-      grpc_chttp2_cancel_stream(
-          t, s,
-          grpc_error_set_int(
-              grpc_error_set_int(
-                  grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                         "to-be-sent trailing metadata size "
-                                         "exceeds peer limit"),
-                                     GRPC_ERROR_INT_SIZE,
-                                     static_cast<intptr_t>(metadata_size)),
-                  GRPC_ERROR_INT_LIMIT,
-                  static_cast<intptr_t>(metadata_peer_limit)),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
-    } else {
-      if (contains_non_ok_status(s->send_trailing_metadata)) {
-        s->seen_error = true;
-      }
-      if (s->write_closed) {
-        s->send_trailing_metadata = nullptr;
-        s->sent_trailing_metadata_op = nullptr;
-        grpc_chttp2_complete_closure_step(
-            t, s, &s->send_trailing_metadata_finished,
-            grpc_metadata_batch_is_empty(
-                op->payload->send_trailing_metadata.send_trailing_metadata)
-                ? GRPC_ERROR_NONE
-                : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                      "Attempt to send trailing metadata after "
-                      "stream was closed"),
-            "send_trailing_metadata_finished");
-      } else if (s->id != 0) {
-        // TODO(ctiller): check if there's flow control for any outstanding
-        //   bytes before going writable
-        grpc_chttp2_mark_stream_writable(t, s);
-        grpc_chttp2_initiate_write(
-            t, GRPC_CHTTP2_INITIATE_WRITE_SEND_TRAILING_METADATA);
-      }
+    if (contains_non_ok_status(s->send_trailing_metadata)) {
+      s->seen_error = true;
+    }
+    if (s->write_closed) {
+      s->send_trailing_metadata = nullptr;
+      s->sent_trailing_metadata_op = nullptr;
+      grpc_chttp2_complete_closure_step(
+          t, s, &s->send_trailing_metadata_finished,
+          grpc_metadata_batch_is_empty(
+              op->payload->send_trailing_metadata.send_trailing_metadata)
+              ? GRPC_ERROR_NONE
+              : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "Attempt to send trailing metadata after "
+                    "stream was closed"),
+          "send_trailing_metadata_finished");
+    } else if (s->id != 0) {
+      // TODO(ctiller): check if there's flow control for any outstanding
+      //   bytes before going writable
+      grpc_chttp2_mark_stream_writable(t, s);
+      grpc_chttp2_initiate_write(
+          t, GRPC_CHTTP2_INITIATE_WRITE_SEND_TRAILING_METADATA);
     }
   }
 
