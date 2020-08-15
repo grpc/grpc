@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>GRPC PHP: Main Page</title>
+<title>GRPC PHP: Ordering Status and Reads in the gRPC API</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -46,7 +46,6 @@ $(function() {
 });
 /* @license-end */</script>
 <div id="main-nav"></div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -61,12 +60,20 @@ $(function() {
 </iframe>
 </div>
 
-<div class="header">
+</div><!-- top -->
+<div class="PageDoc"><div class="header">
   <div class="headertitle">
-<div class="title">GRPC PHP Documentation</div>  </div>
+<div class="title">Ordering Status and Reads in the gRPC API </div>  </div>
 </div><!--header-->
 <div class="contents">
-</div><!-- contents -->
+<div class="textblock"><p>Rules for implementors:</p><ol type="1">
+<li>Reads and Writes Must not succeed after Status has been delivered.</li>
+<li>OK Status is only delivered after all buffered messages are read.</li>
+<li>Reads May continue to succeed after a failing write. However, once a write fails, all subsequent writes Must fail, and similarly, once a read fails, all subsequent reads Must fail.</li>
+<li>When an error status is known to the library, if the user asks for status, the library Should discard messages received in the library but not delivered to the user and then deliver the status. If the user does not ask for status but continues reading, the library Should deliver buffered messages before delivering status. The library MAY choose to implement the stricter version where errors cause all buffered messages to be dropped, but this is not a requirement. </li>
+</ol>
+</div></div><!-- contents -->
+</div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated on Fri Aug 14 2020 18:35:56 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
