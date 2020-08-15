@@ -172,7 +172,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.11'
+    ss.dependency 'BoringSSL-GRPC', '0.0.12'
     abseil_version = '1.20200225.0'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version

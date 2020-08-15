@@ -1419,6 +1419,8 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/fipsmodule/tls/internal.h )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/fipsmodule/tls/kdf.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf.c )
+  s.files += %w( third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c )
+  s.files += %w( third_party/boringssl-with-bazel/src/crypto/hpke/internal.h )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/hrss/internal.h )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/internal.h )

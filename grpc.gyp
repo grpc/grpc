@@ -1681,6 +1681,7 @@
         'third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c',
         'third_party/boringssl-with-bazel/src/crypto/fipsmodule/is_fips.c',
         'third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf.c',
+        'third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c',
         'third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c',
         'third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c',
         'third_party/boringssl-with-bazel/src/crypto/mem.c',
