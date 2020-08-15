@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>GRPC PHP: Main Page</title>
+<title>GRPC PHP: gRPC Wait for Ready Semantics</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -46,7 +46,6 @@ $(function() {
 });
 /* @license-end */</script>
 <div id="main-nav"></div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -61,12 +60,16 @@ $(function() {
 </iframe>
 </div>
 
-<div class="header">
+</div><!-- top -->
+<div class="PageDoc"><div class="header">
   <div class="headertitle">
-<div class="title">GRPC PHP Documentation</div>  </div>
+<div class="title">gRPC Wait for Ready Semantics </div>  </div>
 </div><!--header-->
 <div class="contents">
-</div><!-- contents -->
+<div class="textblock"><p>If an RPC is issued but the channel is in <code>TRANSIENT_FAILURE</code> or <code>SHUTDOWN</code> states, the RPC is unable to be transmitted promptly. By default, gRPC implementations SHOULD fail such RPCs immediately. This is known as "fail fast," but usage of the term is historical. RPCs SHOULD NOT fail as a result of the channel being in other states (<code>CONNECTING</code>, <code>READY</code>, or <code>IDLE</code>).</p>
+<p>gRPC implementations MAY provide a per-RPC option to not fail RPCs as a result of the channel being in <code>TRANSIENT_FAILURE</code> state. Instead, the implementation queues the RPCs until the channel is <code>READY</code>. This is known as "wait for ready." The RPCs SHOULD still fail before <code>READY</code> if there are unrelated reasons, such as the channel is <code>SHUTDOWN</code> or the RPC's deadline is reached. </p>
+</div></div><!-- contents -->
+</div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated on Fri Aug 14 2020 18:35:56 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">

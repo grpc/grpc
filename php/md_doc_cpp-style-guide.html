@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>GRPC PHP: Main Page</title>
+<title>GRPC PHP: GRPC C++ STYLE GUIDE</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -46,7 +46,6 @@ $(function() {
 });
 /* @license-end */</script>
 <div id="main-nav"></div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -61,12 +60,15 @@ $(function() {
 </iframe>
 </div>
 
-<div class="header">
+</div><!-- top -->
+<div class="PageDoc"><div class="header">
   <div class="headertitle">
-<div class="title">GRPC PHP Documentation</div>  </div>
+<div class="title">GRPC C++ STYLE GUIDE </div>  </div>
 </div><!--header-->
 <div class="contents">
-</div><!-- contents -->
+<div class="textblock"><p>The majority of gRPC's C++ requirements are drawn from the <a href="https://google.github.io/styleguide/cppguide.html">Google C++ style guide</a>. Additionally, as in C, layout rules are defined by clang-format, and all code should be passed through clang-format. A (docker-based) script to do so is included in <a href="../tools/distrib/clang_format_code.sh">tools/distrib/clang_format_code.sh</a>. </p>
+</div></div><!-- contents -->
+</div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated on Fri Aug 14 2020 18:35:56 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
