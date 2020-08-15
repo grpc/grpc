@@ -1067,6 +1067,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
   test/core/end2end/tests/server_finishes_request.cc
+  test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
   test/core/end2end/tests/shutdown_finishes_tags.cc
   test/core/end2end/tests/simple_cacheable_request.cc
@@ -1200,6 +1201,7 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
   test/core/end2end/tests/server_finishes_request.cc
+  test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
   test/core/end2end/tests/shutdown_finishes_tags.cc
   test/core/end2end/tests/simple_cacheable_request.cc

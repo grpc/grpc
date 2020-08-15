@@ -3349,6 +3349,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/retry_throttled.cc \
     test/core/end2end/tests/retry_too_many_attempts.cc \
     test/core/end2end/tests/server_finishes_request.cc \
+    test/core/end2end/tests/server_streaming.cc \
     test/core/end2end/tests/shutdown_finishes_calls.cc \
     test/core/end2end/tests/shutdown_finishes_tags.cc \
     test/core/end2end/tests/simple_cacheable_request.cc \
@@ -3462,6 +3463,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/retry_throttled.cc \
     test/core/end2end/tests/retry_too_many_attempts.cc \
     test/core/end2end/tests/server_finishes_request.cc \
+    test/core/end2end/tests/server_streaming.cc \
     test/core/end2end/tests/shutdown_finishes_calls.cc \
     test/core/end2end/tests/shutdown_finishes_tags.cc \
     test/core/end2end/tests/simple_cacheable_request.cc \
