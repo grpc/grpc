@@ -21,13 +21,13 @@ py_library(
     data = [
         "helloworld.proto",
     ],
+    imports = ["."],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_status/grpc_status",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
         requirement("googleapis-common-protos"),
     ],
-    imports = ["."],
 )
 
 py_library(
@@ -37,6 +37,7 @@ py_library(
     data = [
         "helloworld.proto",
     ],
+    imports = ["."],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
@@ -45,7 +46,6 @@ py_library(
         "//conditions:default": [requirement("futures")],
         "//:python3": [],
     }),
-    imports = ["."],
 )
 
 py_test(

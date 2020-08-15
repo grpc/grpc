@@ -21,11 +21,11 @@ py_library(
     data = [
         ":helloworld.proto",
     ],
+    imports = ["."],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
-    imports = ["."],
 )
 
 py_test(

@@ -36,13 +36,13 @@ py_binary(
     data = [
         "helloworld.proto",
     ],
+    imports = ["."],
     python_version = "PY3",
     deps = [
         ":_credentials",
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
-    imports = ["."],
 )
 
 py_binary(
@@ -52,13 +52,13 @@ py_binary(
     data = [
         "helloworld.proto",
     ],
+    imports = ["."],
     python_version = "PY3",
     deps = [
         ":_credentials",
         "//src/python/grpcio/grpc:grpcio",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
-    imports = ["."],
 )
 
 py_test(
