@@ -5960,6 +5960,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/is_fips.c \
     third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf.c \
+    third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
     third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
     third_party/boringssl-with-bazel/src/crypto/mem.c \
@@ -19420,6 +19421,7 @@ BORINGSSL_CRYPTO_TEST_SRC = \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/sha/sha_test.cc \
     third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf_test.cc \
     third_party/boringssl-with-bazel/src/crypto/hmac_extra/hmac_test.cc \
+    third_party/boringssl-with-bazel/src/crypto/hpke/hpke_test.cc \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss_test.cc \
     third_party/boringssl-with-bazel/src/crypto/impl_dispatch_test.cc \
     third_party/boringssl-with-bazel/src/crypto/lhash/lhash_test.cc \
@@ -19549,6 +19551,8 @@ $(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/fipsmodule/sha/s
 $(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/hmac_extra/hmac_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+$(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/hpke/hpke_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl-with-bazel/src/crypto/hrss/hrss_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
