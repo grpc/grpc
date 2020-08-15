@@ -14,13 +14,12 @@
 """The Python implementation of the GRPC helloworld.Greeter client."""
 
 from __future__ import print_function
-
 import logging
 
 import grpc
 
-protos, services = grpc.protos_and_services("helloworld.proto")
-
+import helloworld_pb2
+import helloworld_pb2_grpc
 import header_manipulator_client_interceptor
 
 
@@ -33,8 +32,8 @@ def run():
     with grpc.insecure_channel('localhost:50051') as channel:
         intercept_channel = grpc.intercept_channel(channel,
                                                    header_adder_interceptor)
-        stub = services.GreeterStub(intercept_channel)
-        response = stub.SayHello(protos.HelloRequest(name='you'))
+        stub = helloworld_pb2_grpc.GreeterStub(intercept_channel)
+        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
     print("Greeter client received: " + response.message)
 
 

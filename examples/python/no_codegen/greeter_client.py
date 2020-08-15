@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2020 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,11 @@ import logging
 
 import grpc
 
-import helloworld_pb2
-import helloworld_pb2_grpc
+# NOTE: The path to the .proto file must be reachable from an entry
+# on sys.path. Use sys.path.insert or set the $PYTHONPATH variable to
+# import from files located elsewhere on the filesystem.
+
+protos, services = grpc.protos_and_services("helloworld.proto")
 
 
 def run():
@@ -27,8 +30,8 @@ def run():
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
     with grpc.insecure_channel('localhost:50051') as channel:
-        stub = helloworld_pb2_grpc.GreeterStub(channel)
-        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
+        stub = services.GreeterStub(channel)
+        response = stub.SayHello(protos.HelloRequest(name='you'))
     print("Greeter client received: " + response.message)
 
 

@@ -19,20 +19,21 @@ import logging
 import grpc
 from grpc_reflection.v1alpha import reflection
 
-protos, services = grpc.protos_and_services("helloworld.proto")
+import helloworld_pb2
+import helloworld_pb2_grpc
 
 
-class Greeter(services.GreeterServicer):
+class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
     def SayHello(self, request, context):
-        return protos.HelloReply(message='Hello, %s!' % request.name)
+        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    services.add_GreeterServicer_to_server(Greeter(), server)
+    helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     SERVICE_NAMES = (
-        protos.DESCRIPTOR.services_by_name['Greeter'].full_name,
+        helloworld_pb2.DESCRIPTOR.services_by_name['Greeter'].full_name,
         reflection.SERVICE_NAME,
     )
     reflection.enable_server_reflection(SERVICE_NAMES, server)

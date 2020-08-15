@@ -22,9 +22,8 @@ import contextlib
 import logging
 
 import grpc
-
-protos, services = grpc.protos_and_services("helloworld.proto")
-
+from examples import helloworld_pb2
+from examples import helloworld_pb2_grpc
 from examples.python.auth import _credentials
 
 _LOGGER = logging.getLogger(__name__)
@@ -73,8 +72,8 @@ def create_client_channel(addr):
 
 
 def send_rpc(channel):
-    stub = services.GreeterStub(channel)
-    request = protos.HelloRequest(name='you')
+    stub = helloworld_pb2_grpc.GreeterStub(channel)
+    request = helloworld_pb2.HelloRequest(name='you')
     try:
         response = stub.SayHello(request)
     except grpc.RpcError as rpc_error:

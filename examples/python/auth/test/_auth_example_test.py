@@ -20,7 +20,6 @@ from __future__ import print_function
 import unittest
 
 import grpc
-
 from examples.python.auth import _credentials
 from examples.python.auth import customized_auth_client
 from examples.python.auth import customized_auth_server

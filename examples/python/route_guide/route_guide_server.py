@@ -20,8 +20,8 @@ import logging
 
 import grpc
 
-protos, services = grpc.protos_and_services("route_guide.proto")
-
+import route_guide_pb2
+import route_guide_pb2_grpc
 import route_guide_resources
 
 
@@ -55,7 +55,7 @@ def get_distance(start, end):
     return R * c
 
 
-class RouteGuideServicer(services.RouteGuideServicer):
+class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
     """Provides methods that implement functionality of route guide server."""
 
     def __init__(self):
@@ -64,7 +64,7 @@ class RouteGuideServicer(services.RouteGuideServicer):
     def GetFeature(self, request, context):
         feature = get_feature(self.db, request)
         if feature is None:
-            return protos.Feature(name="", location=request)
+            return route_guide_pb2.Feature(name="", location=request)
         else:
             return feature
 
@@ -96,10 +96,10 @@ class RouteGuideServicer(services.RouteGuideServicer):
             prev_point = point
 
         elapsed_time = time.time() - start_time
-        return protos.RouteSummary(point_count=point_count,
-                                   feature_count=feature_count,
-                                   distance=int(distance),
-                                   elapsed_time=int(elapsed_time))
+        return route_guide_pb2.RouteSummary(point_count=point_count,
+                                            feature_count=feature_count,
+                                            distance=int(distance),
+                                            elapsed_time=int(elapsed_time))
 
     def RouteChat(self, request_iterator, context):
         prev_notes = []
@@ -112,7 +112,8 @@ class RouteGuideServicer(services.RouteGuideServicer):
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    services.add_RouteGuideServicer_to_server(RouteGuideServicer(), server)
+    route_guide_pb2_grpc.add_RouteGuideServicer_to_server(
+        RouteGuideServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     server.wait_for_termination()

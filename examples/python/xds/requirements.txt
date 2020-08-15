@@ -1,5 +1,4 @@
 grpcio>=1.28.1
-grpcio-tools
 protobuf
 grpcio-reflection
 grpcio-health-checking

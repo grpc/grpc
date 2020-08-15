@@ -19,10 +19,10 @@ from __future__ import print_function
 
 import argparse
 import logging
-
 import grpc
 
-protos, services = grpc.protos_and_services("helloworld.proto")
+from examples import helloworld_pb2
+from examples import helloworld_pb2_grpc
 
 _DESCRIPTION = 'A client capable of compression.'
 _COMPRESSION_OPTIONS = {
@@ -37,8 +37,8 @@ _LOGGER = logging.getLogger(__name__)
 def run_client(channel_compression, call_compression, target):
     with grpc.insecure_channel(target,
                                compression=channel_compression) as channel:
-        stub = services.GreeterStub(channel)
-        response = stub.SayHello(protos.HelloRequest(name='you'),
+        stub = helloworld_pb2_grpc.GreeterStub(channel)
+        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'),
                                  compression=call_compression,
                                  wait_for_ready=True)
         print("Response: {}".format(response))

@@ -18,14 +18,11 @@ py_library(
     name = "client",
     testonly = 1,
     srcs = ["client.py"],
-    data = [
-        "helloworld.proto",
-    ],
-    imports = ["."],
     deps = [
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_status/grpc_status",
-        "//tools/distrib/python/grpcio_tools:grpc_tools",
         requirement("googleapis-common-protos"),
     ],
 )
@@ -34,14 +31,11 @@ py_library(
     name = "server",
     testonly = 1,
     srcs = ["server.py"],
-    data = [
-        "helloworld.proto",
-    ],
-    imports = ["."],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        "//tools/distrib/python/grpcio_tools:grpc_tools",
         "//src/python/grpcio_status/grpc_status:grpc_status",
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
     ] + select({
         "//conditions:default": [requirement("futures")],
         "//:python3": [],
@@ -52,9 +46,6 @@ py_test(
     name = "test/_error_handling_example_test",
     size = "small",
     srcs = ["test/_error_handling_example_test.py"],
-    data = [
-        "helloworld.proto",
-    ],
     imports = [
         "../../../src/python/grpcio_status",
         "../../../src/python/grpcio_tests",
@@ -64,6 +55,5 @@ py_test(
         ":client",
         ":server",
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
-        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )

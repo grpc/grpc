@@ -17,15 +17,15 @@ from threading import Thread
 from concurrent import futures
 
 import grpc
-
-protos, services = grpc.protos_and_services("demo.proto")
+import demo_pb2_grpc
+import demo_pb2
 
 __all__ = 'DemoServer'
 SERVER_ADDRESS = 'localhost:23333'
 SERVER_ID = 1
 
 
-class DemoServer(services.GRPCDemoServicer):
+class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
 
     # 一元模式(在一次调用中, 客户端只能向服务器传输一次请求数据, 服务器也只能返回一次响应)
     # unary-unary(In a single call, the client can only send request once, and the server can
@@ -33,7 +33,7 @@ class DemoServer(services.GRPCDemoServicer):
     def SimpleMethod(self, request, context):
         print("SimpleMethod called by client(%d) the message: %s" %
               (request.client_id, request.request_data))
-        response = protos.Response(
+        response = demo_pb2.Response(
             server_id=SERVER_ID,
             response_data="Python server SimpleMethod Ok!!!!")
         return response
@@ -46,7 +46,7 @@ class DemoServer(services.GRPCDemoServicer):
         for request in request_iterator:
             print("recv from client(%d), message= %s" %
                   (request.client_id, request.request_data))
-        response = protos.Response(
+        response = demo_pb2.Response(
             server_id=SERVER_ID,
             response_data="Python server ClientStreamingMethod ok")
         return response
@@ -62,7 +62,7 @@ class DemoServer(services.GRPCDemoServicer):
         # create a generator
         def response_messages():
             for i in range(5):
-                response = protos.Response(
+                response = demo_pb2.Response(
                     server_id=SERVER_ID,
                     response_data=("send by Python server, message=%d" % i))
                 yield response
@@ -86,7 +86,7 @@ class DemoServer(services.GRPCDemoServicer):
         t.start()
 
         for i in range(5):
-            yield protos.Response(
+            yield demo_pb2.Response(
                 server_id=SERVER_ID,
                 response_data=("send by Python server, message= %d" % i))
 
@@ -96,12 +96,19 @@ class DemoServer(services.GRPCDemoServicer):
 def main():
     server = grpc.server(futures.ThreadPoolExecutor())
 
-    services.add_GRPCDemoServicer_to_server(DemoServer(), server)
+    demo_pb2_grpc.add_GRPCDemoServicer_to_server(DemoServer(), server)
 
     server.add_insecure_port(SERVER_ADDRESS)
     print("------------------start Python GRPC server")
     server.start()
     server.wait_for_termination()
+
+    # If raise Error:
+    #   AttributeError: '_Server' object has no attribute 'wait_for_termination'
+    # You can use the following code instead:
+    # import time
+    # while 1:
+    #     time.sleep(10)
 
 
 if __name__ == '__main__':

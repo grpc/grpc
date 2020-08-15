@@ -17,8 +17,7 @@ The example would only successfully run in GCP environment."""
 
 import grpc
 
-services = grpc.services("demo.proto")
-
+import demo_pb2_grpc
 from client import (bidirectional_streaming_method, client_streaming_method,
                     server_streaming_method, simple_method)
 
@@ -29,7 +28,7 @@ def main():
     with grpc.secure_channel(
             SERVER_ADDRESS,
             credentials=grpc.alts_channel_credentials()) as channel:
-        stub = services.GRPCDemoStub(channel)
+        stub = demo_pb2_grpc.GRPCDemoStub(channel)
         simple_method(stub)
         client_streaming_method(stub)
         server_streaming_method(stub)

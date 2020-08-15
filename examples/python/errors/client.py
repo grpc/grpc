@@ -14,21 +14,21 @@
 """This example handles rich error status in client-side."""
 
 from __future__ import print_function
-
 import logging
 
 import grpc
 from grpc_status import rpc_status
 from google.rpc import error_details_pb2
 
-protos, services = grpc.protos_and_services("helloworld.proto")
+from examples import helloworld_pb2
+from examples import helloworld_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
 
 
 def process(stub):
     try:
-        response = stub.SayHello(protos.HelloRequest(name='Alice'))
+        response = stub.SayHello(helloworld_pb2.HelloRequest(name='Alice'))
         _LOGGER.info('Call success: %s', response.message)
     except grpc.RpcError as rpc_error:
         _LOGGER.error('Call failure: %s', rpc_error)
@@ -47,7 +47,7 @@ def main():
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
     with grpc.insecure_channel('localhost:50051') as channel:
-        stub = services.GreeterStub(channel)
+        stub = helloworld_pb2_grpc.GreeterStub(channel)
         process(stub)
 
 

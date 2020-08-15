@@ -24,7 +24,8 @@ import sys
 
 import grpc
 
-protos, services = grpc.protos_and_services("hash_name.proto")
+from examples.python.cancellation import hash_name_pb2
+from examples.python.cancellation import hash_name_pb2_grpc
 
 _DESCRIPTION = "A client for finding hashes similar to names."
 _LOGGER = logging.getLogger(__name__)
@@ -32,8 +33,8 @@ _LOGGER = logging.getLogger(__name__)
 
 def run_unary_client(server_target, name, ideal_distance):
     with grpc.insecure_channel(server_target) as channel:
-        stub = services.HashFinderStub(channel)
-        future = stub.Find.future(protos.HashNameRequest(
+        stub = hash_name_pb2_grpc.HashFinderStub(channel)
+        future = stub.Find.future(hash_name_pb2.HashNameRequest(
             desired_name=name, ideal_hamming_distance=ideal_distance),
                                   wait_for_ready=True)
 
@@ -49,8 +50,8 @@ def run_unary_client(server_target, name, ideal_distance):
 def run_streaming_client(server_target, name, ideal_distance,
                          interesting_distance):
     with grpc.insecure_channel(server_target) as channel:
-        stub = services.HashFinderStub(channel)
-        result_generator = stub.FindRange(protos.HashNameRequest(
+        stub = hash_name_pb2_grpc.HashFinderStub(channel)
+        result_generator = stub.FindRange(hash_name_pb2.HashNameRequest(
             desired_name=name,
             ideal_hamming_distance=ideal_distance,
             interesting_hamming_distance=interesting_distance),

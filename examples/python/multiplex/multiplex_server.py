@@ -20,8 +20,10 @@ import logging
 
 import grpc
 
-hw_protos, hw_services = grpc.protos_and_services("helloworld.proto")
-rg_protos, rg_services = grpc.protos_and_services("route_guide.proto")
+import helloworld_pb2
+import helloworld_pb2_grpc
+import route_guide_pb2
+import route_guide_pb2_grpc
 import route_guide_resources
 
 
@@ -54,13 +56,14 @@ def _get_distance(start, end):
     return R * c
 
 
-class _GreeterServicer(hw_services.GreeterServicer):
+class _GreeterServicer(helloworld_pb2_grpc.GreeterServicer):
 
     def SayHello(self, request, context):
-        return hw_protos.HelloReply(message='Hello, {}!'.format(request.name))
+        return helloworld_pb2.HelloReply(
+            message='Hello, {}!'.format(request.name))
 
 
-class _RouteGuideServicer(rg_services.RouteGuideServicer):
+class _RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
     """Provides methods that implement functionality of route guide server."""
 
     def __init__(self):
@@ -69,7 +72,7 @@ class _RouteGuideServicer(rg_services.RouteGuideServicer):
     def GetFeature(self, request, context):
         feature = _get_feature(self.db, request)
         if feature is None:
-            return rg_protos.Feature(name="", location=request)
+            return route_guide_pb2.Feature(name="", location=request)
         else:
             return feature
 
@@ -101,10 +104,10 @@ class _RouteGuideServicer(rg_services.RouteGuideServicer):
             prev_point = point
 
         elapsed_time = time.time() - start_time
-        return rg_protos.RouteSummary(point_count=point_count,
-                                      feature_count=feature_count,
-                                      distance=int(distance),
-                                      elapsed_time=int(elapsed_time))
+        return route_guide_pb2.RouteSummary(point_count=point_count,
+                                            feature_count=feature_count,
+                                            distance=int(distance),
+                                            elapsed_time=int(elapsed_time))
 
     def RouteChat(self, request_iterator, context):
         prev_notes = []
@@ -117,8 +120,10 @@ class _RouteGuideServicer(rg_services.RouteGuideServicer):
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    hw_services.add_GreeterServicer_to_server(_GreeterServicer(), server)
-    rg_services.add_RouteGuideServicer_to_server(_RouteGuideServicer(), server)
+    helloworld_pb2_grpc.add_GreeterServicer_to_server(_GreeterServicer(),
+                                                      server)
+    route_guide_pb2_grpc.add_RouteGuideServicer_to_server(
+        _RouteGuideServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     server.wait_for_termination()

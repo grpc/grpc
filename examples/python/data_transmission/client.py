@@ -16,7 +16,8 @@
 import time
 import grpc
 
-protos, services = grpc.protos_and_services("demo.proto")
+import demo_pb2_grpc
+import demo_pb2
 
 __all__ = [
     'simple_method', 'client_streaming_method', 'server_streaming_method',
@@ -36,8 +37,8 @@ CLIENT_ID = 1
 # only respond once.)
 def simple_method(stub):
     print("--------------Call SimpleMethod Begin--------------")
-    request = protos.Request(client_id=CLIENT_ID,
-                             request_data="called by Python client")
+    request = demo_pb2.Request(client_id=CLIENT_ID,
+                               request_data="called by Python client")
     response = stub.SimpleMethod(request)
     print("resp from server(%d), the message=%s" %
           (response.server_id, response.response_data))
@@ -54,7 +55,7 @@ def client_streaming_method(stub):
     # create a generator
     def request_messages():
         for i in range(5):
-            request = protos.Request(
+            request = demo_pb2.Request(
                 client_id=CLIENT_ID,
                 request_data=("called by Python client, message:%d" % i))
             yield request
@@ -70,8 +71,8 @@ def client_streaming_method(stub):
 # but the server can return the response many times.)
 def server_streaming_method(stub):
     print("--------------Call ServerStreamingMethod Begin--------------")
-    request = protos.Request(client_id=CLIENT_ID,
-                             request_data="called by Python client")
+    request = demo_pb2.Request(client_id=CLIENT_ID,
+                               request_data="called by Python client")
     response_iterator = stub.ServerStreamingMethod(request)
     for response in response_iterator:
         print("recv from server(%d), message=%s" %
@@ -91,7 +92,7 @@ def bidirectional_streaming_method(stub):
     # create a generator
     def request_messages():
         for i in range(5):
-            request = protos.Request(
+            request = demo_pb2.Request(
                 client_id=CLIENT_ID,
                 request_data=("called by Python client, message: %d" % i))
             yield request
@@ -107,7 +108,7 @@ def bidirectional_streaming_method(stub):
 
 def main():
     with grpc.insecure_channel(SERVER_ADDRESS) as channel:
-        stub = services.GRPCDemoStub(channel)
+        stub = demo_pb2_grpc.GRPCDemoStub(channel)
 
         simple_method(stub)
 

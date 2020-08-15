@@ -18,13 +18,13 @@ import logging
 
 import grpc
 
-protos, services = grpc.protos_and_services("helloworld.proto")
-
+import helloworld_pb2
+import helloworld_pb2_grpc
 import default_value_client_interceptor
 
 
 def run():
-    default_value = protos.HelloReply(
+    default_value = helloworld_pb2.HelloReply(
         message='Hello from your local interceptor!')
     default_value_interceptor = default_value_client_interceptor.DefaultValueClientInterceptor(
         default_value)
@@ -34,8 +34,8 @@ def run():
     with grpc.insecure_channel('localhost:50051') as channel:
         intercept_channel = grpc.intercept_channel(channel,
                                                    default_value_interceptor)
-        stub = services.GreeterStub(intercept_channel)
-        response = stub.SayHello(protos.HelloRequest(name='you'))
+        stub = helloworld_pb2_grpc.GreeterStub(intercept_channel)
+        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
     print("Greeter client received: " + response.message)
 
 

@@ -19,7 +19,7 @@ from concurrent import futures
 
 import grpc
 
-services = grpc.services("demo.proto")
+import demo_pb2_grpc
 from server import DemoServer
 
 SERVER_ADDRESS = 'localhost:23333'
@@ -27,7 +27,7 @@ SERVER_ADDRESS = 'localhost:23333'
 
 def main():
     svr = grpc.server(futures.ThreadPoolExecutor())
-    services.add_GRPCDemoServicer_to_server(DemoServer(), svr)
+    demo_pb2_grpc.add_GRPCDemoServicer_to_server(DemoServer(), svr)
     svr.add_secure_port(SERVER_ADDRESS,
                         server_credentials=grpc.alts_server_credentials())
     print("------------------start Python GRPC server with ALTS encryption")

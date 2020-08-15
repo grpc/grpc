@@ -29,7 +29,8 @@ import sys
 
 import grpc
 
-protos, services = grpc.protos_and_services("prime.proto")
+import prime_pb2
+import prime_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,11 +47,11 @@ def is_prime(n):
         return True
 
 
-class PrimeChecker(services.PrimeCheckerServicer):
+class PrimeChecker(prime_pb2_grpc.PrimeCheckerServicer):
 
     def check(self, request, context):
         _LOGGER.info('Determining primality of %s', request.candidate)
-        return protos.Primality(isPrime=is_prime(request.candidate))
+        return prime_pb2.Primality(isPrime=is_prime(request.candidate))
 
 
 def _wait_forever(server):
@@ -69,7 +70,7 @@ def _run_server(bind_address):
     server = grpc.server(futures.ThreadPoolExecutor(
         max_workers=_THREAD_CONCURRENCY,),
                          options=options)
-    services.add_PrimeCheckerServicer_to_server(PrimeChecker(), server)
+    prime_pb2_grpc.add_PrimeCheckerServicer_to_server(PrimeChecker(), server)
     server.add_insecure_port(bind_address)
     server.start()
     _wait_forever(server)

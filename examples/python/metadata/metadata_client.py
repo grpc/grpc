@@ -18,7 +18,8 @@ import logging
 
 import grpc
 
-protos, services = grpc.protos_and_services("helloworld.proto")
+import helloworld_pb2
+import helloworld_pb2_grpc
 
 
 def run():
@@ -26,9 +27,9 @@ def run():
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
     with grpc.insecure_channel('localhost:50051') as channel:
-        stub = services.GreeterStub(channel)
+        stub = helloworld_pb2_grpc.GreeterStub(channel)
         response, call = stub.SayHello.with_call(
-            protos.HelloRequest(name='you'),
+            helloworld_pb2.HelloRequest(name='you'),
             metadata=(
                 ('initial-metadata-1', 'The value should be str'),
                 ('binary-metadata-bin',

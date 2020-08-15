@@ -17,12 +17,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import argparse
 import logging
-
+import argparse
 import grpc
-
-protos, services = grpc.protos_and_services("helloworld.proto")
+from examples import helloworld_pb2
+from examples import helloworld_pb2_grpc
 
 
 def process(stub, request):
@@ -36,8 +35,8 @@ def process(stub, request):
 
 def run(addr, n):
     with grpc.insecure_channel(addr) as channel:
-        stub = services.GreeterStub(channel)
-        request = protos.HelloRequest(name='you')
+        stub = helloworld_pb2_grpc.GreeterStub(channel)
+        request = helloworld_pb2.HelloRequest(name='you')
         for _ in range(n):
             process(stub, request)
 

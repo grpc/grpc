@@ -98,5 +98,3 @@ disable=
 	no-else-return,
 	# NOTE(lidiz): Python 3 make object inheritance default, but not PY2
 	useless-object-inheritance,
-  # NOTE(rbellevi): Pylint does not recognize grpc.protos() as an import.
-  wrong-import-position,

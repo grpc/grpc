@@ -26,7 +26,8 @@ import sys
 
 import grpc
 
-protos, services = grpc.protos_and_services("prime.proto")
+import prime_pb2
+import prime_pb2_grpc
 
 _PROCESS_COUNT = 8
 _MAXIMUM_CANDIDATE = 10000
@@ -51,7 +52,7 @@ def _initialize_worker(server_address):
     global _worker_stub_singleton  # pylint: disable=global-statement
     _LOGGER.info('Initializing worker process.')
     _worker_channel_singleton = grpc.insecure_channel(server_address)
-    _worker_stub_singleton = services.PrimeCheckerStub(
+    _worker_stub_singleton = prime_pb2_grpc.PrimeCheckerStub(
         _worker_channel_singleton)
     atexit.register(_shutdown_worker)
 
@@ -59,7 +60,7 @@ def _initialize_worker(server_address):
 def _run_worker_query(primality_candidate):
     _LOGGER.info('Checking primality of %s.', primality_candidate)
     return _worker_stub_singleton.check(
-        protos.PrimeCandidate(candidate=primality_candidate))
+        prime_pb2.PrimeCandidate(candidate=primality_candidate))
 
 
 def _calculate_primes(server_address):

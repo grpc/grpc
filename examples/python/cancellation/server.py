@@ -25,7 +25,8 @@ import threading
 import grpc
 import search
 
-protos, services = grpc.protos_and_services("hash_name.proto")
+from examples.python.cancellation import hash_name_pb2
+from examples.python.cancellation import hash_name_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
 _SERVER_HOST = 'localhost'
@@ -33,7 +34,7 @@ _SERVER_HOST = 'localhost'
 _DESCRIPTION = "A server for finding hashes similar to names."
 
 
-class HashFinder(services.HashFinderServicer):
+class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
 
     def __init__(self, maximum_hashes):
         super(HashFinder, self).__init__()
@@ -58,7 +59,7 @@ class HashFinder(services.HashFinderServicer):
             context.cancel()
         _LOGGER.debug("Servicer thread returning.")
         if not candidates:
-            return protos.HashNameResponse()
+            return hash_name_pb2.HashNameResponse()
         return candidates[-1]
 
     def FindRange(self, request, context):
@@ -90,8 +91,8 @@ def _running_server(port, maximum_hashes):
     # threads.
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1),
                          maximum_concurrent_rpcs=1)
-    services.add_HashFinderServicer_to_server(HashFinder(maximum_hashes),
-                                              server)
+    hash_name_pb2_grpc.add_HashFinderServicer_to_server(
+        HashFinder(maximum_hashes), server)
     address = '{}:{}'.format(_SERVER_HOST, port)
     actual_port = server.add_insecure_port(address)
     server.start()

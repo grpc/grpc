@@ -18,7 +18,8 @@ import logging
 
 import grpc
 
-protos, services = grpc.protos_and_services("helloworld.proto")
+import helloworld_pb2
+import helloworld_pb2_grpc
 
 
 def run():
@@ -32,10 +33,11 @@ def run():
                                         ('grpc.enable_retries', 0),
                                         ('grpc.keepalive_timeout_ms', 10000)
                                        ]) as channel:
-        stub = services.GreeterStub(channel)
+        stub = helloworld_pb2_grpc.GreeterStub(channel)
         # Timeout in seconds.
         # Please refer gRPC Python documents for more detail. https://grpc.io/grpc/python/grpc.html
-        response = stub.SayHello(protos.HelloRequest(name='you'), timeout=10)
+        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'),
+                                 timeout=10)
     print("Greeter client received: " + response.message)
 
 
