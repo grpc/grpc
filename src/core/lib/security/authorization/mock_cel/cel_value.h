@@ -40,10 +40,7 @@ namespace expr {
 namespace runtime {
 
 // Break cyclic depdendencies for container types.
-class CelMap {
- public:
-  CelMap() = default;
-};
+class CelMap;
 
 // This is a temporary stub implementation of CEL APIs.
 // Once gRPC imports the CEL library, this class will be removed.
@@ -76,17 +73,6 @@ class CelValue {
   // Value type T should be supported by specification of ValueHolder.
   template <class T>
   explicit CelValue(T value) {}
-};
-
-// CelMap implementation that uses STL map container as backing storage.
-class ContainerBackedMapImpl : public CelMap {
- public:
-  ContainerBackedMapImpl() = default;
-
-  static std::unique_ptr<CelMap> Create(
-      absl::Span<std::pair<CelValue, CelValue>> key_values) {
-    return absl::make_unique<ContainerBackedMapImpl>();
-  }
 };
 
 }  // namespace runtime

@@ -1710,12 +1710,6 @@ src/core/lib/json/json_writer.cc \
 src/core/lib/profiling/basic_timers.cc \
 src/core/lib/profiling/stap_timers.cc \
 src/core/lib/profiling/timers.h \
-src/core/lib/security/authorization/authorization_engine.cc \
-src/core/lib/security/authorization/authorization_engine.h \
-src/core/lib/security/authorization/evaluate_args.cc \
-src/core/lib/security/authorization/evaluate_args.h \
-src/core/lib/security/authorization/mock_cel/activation.h \
-src/core/lib/security/authorization/mock_cel/cel_value.h \
 src/core/lib/security/context/security_context.cc \
 src/core/lib/security/context/security_context.h \
 src/core/lib/security/credentials/alts/alts_credentials.cc \

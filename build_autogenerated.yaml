@@ -651,10 +651,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
-  - src/core/lib/security/authorization/mock_cel/activation.h
-  - src/core/lib/security/authorization/mock_cel/cel_value.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -1063,8 +1059,6 @@ libs:
   - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_writer.cc
-  - src/core/lib/security/authorization/authorization_engine.cc
-  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -1183,7 +1177,6 @@ libs:
   - absl/strings:strings
   - absl/status:status
   - absl/container:inlined_vector
-  - absl/container:flat_hash_set
   baselib: true
   deps_linkage: static
   dll: true
@@ -1210,7 +1203,6 @@ libs:
   headers:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
-  - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -1230,7 +1222,6 @@ libs:
   src:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
-  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1261,7 +1252,6 @@ libs:
   headers:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
-  - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -1281,7 +1271,6 @@ libs:
   src:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
-  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -4780,8 +4769,14 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/mock_cel/activation.h
+  - src/core/lib/security/authorization/mock_cel/cel_value.h
   src:
+  - src/core/lib/security/authorization/authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
   - test/core/security/authorization_engine_test.cc
   deps:
   - grpc_test_util
@@ -5816,19 +5811,6 @@ targets:
   - grpc++_error_details
   - grpc_test_util
   - grpc++
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
-- name: evaluate_args_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/security/evaluate_args_test.cc
-  deps:
-  - grpc_test_util
   - grpc
   - gpr
   - address_sorting
@@ -7521,7 +7503,6 @@ targets:
   headers:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
-  - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -7544,7 +7525,6 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
-  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc

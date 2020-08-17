@@ -24,13 +24,9 @@
 #include <string>
 #include <vector>
 
-#include "absl/container/flat_hash_set.h"
-#include "envoy/config/rbac/v3/rbac.upb.h"
-#include "google/api/expr/v1alpha1/syntax.upb.h"
+#include "src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.h"
+#include "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h"
 #include "upb/upb.hpp"
-
-#include "src/core/lib/security/authorization/evaluate_args.h"
-#include "src/core/lib/security/authorization/mock_cel/activation.h"
 
 namespace grpc_core {
 
@@ -66,17 +62,11 @@ class AuthorizationEngine {
     kDeny,
   };
 
-  std::unique_ptr<google::api::expr::runtime::Activation> CreateActivation(
-      const EvaluateArgs& args);
-
   std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
       deny_if_matched_;
   std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
       allow_if_matched_;
   upb::Arena arena_;
-  absl::flat_hash_set<std::string> envoy_attributes_;
-  absl::flat_hash_set<std::string> header_keys_;
-  std::unique_ptr<google::api::expr::runtime::CelMap> headers_;
 };
 
 }  // namespace grpc_core
