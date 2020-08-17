@@ -22,7 +22,7 @@
 	url = https://github.com/google/boringssl.git
 [submodule "third_party/re2"]
 	path = third_party/re2
-	url = git://github.com/google/re2.git
+	url = https://github.com/google/re2.git
 [submodule "third_party/cares/cares"]
 	path = third_party/cares/cares
 	url = https://github.com/c-ares/c-ares.git
