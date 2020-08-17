@@ -4589,7 +4589,7 @@ targets:
   language: c
   headers: []
   src:
-  - test/core/client_channel/uri_parser_test.cc
+  - test/core/uri/uri_parser_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -7470,7 +7470,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/client_channel/uri_fuzzer_test.cc
+  - test/core/uri/uri_fuzzer_test.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
   - grpc_test_util
@@ -7480,7 +7480,7 @@ targets:
   - address_sorting
   - upb
   corpus_dirs:
-  - test/core/client_channel/uri_corpus
+  - test/core/uri/uri_corpus
   maxlen: 128
 - name: window_overflow_bad_client_test
   gtest: true

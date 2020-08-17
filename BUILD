@@ -953,6 +953,7 @@ grpc_cc_library(
         "madler_zlib",
         "absl/container:inlined_vector",
         "absl/status",
+        "absl/strings",
         "absl/types:optional",
     ],
     language = "c++",
