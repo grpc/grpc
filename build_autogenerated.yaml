@@ -5449,7 +5449,6 @@ targets:
   platforms:
   - linux
   - posix
-  - mac
 - name: channelz_service_test
   gtest: true
   build: test

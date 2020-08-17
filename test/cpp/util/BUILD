@@ -348,6 +348,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "no_mac",
         "no_test_android",
         "no_test_ios",
         "no_windows",
