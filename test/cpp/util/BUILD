@@ -342,6 +342,7 @@ grpc_cc_test(
     ],
     tags = [
         "no_mac",  # cmake does not build channelz_sampler in Basic Tests C/C++ MacOS test
+        "no_windiws",  # unistd.h
     ],
     deps = [
         "//:gpr",
