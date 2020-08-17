@@ -280,7 +280,7 @@ static void timer_thread_cleanup(completed_thread* ct) {
 }
 
 static void timer_thread(void* completed_thread_ptr) {
-  gpr_tls_set(&g_this_thread_is_timer_thread,static_cast<intptr_t>(1));
+  gpr_tls_set(&g_this_thread_is_timer_thread, static_cast<intptr_t>(1));
 
   // this threads exec_ctx: we try to run things through to completion here
   // since it's easy to spin up new threads
