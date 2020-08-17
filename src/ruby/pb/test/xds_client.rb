@@ -98,7 +98,7 @@ class TestTarget < Grpc::Testing::LoadBalancerStatsService::Service
     end
     # convert results into proper proto object
     rpcs_by_method = {}
-    watcher['rpcs_by_method'].each do | rpc_name, rpcs_by_peer |
+    watcher['rpcs_by_method'].each do |rpc_name, rpcs_by_peer|
       rpcs_by_method[rpc_name] = LoadBalancerStatsResponse::RpcsByPeer.new(
         rpcs_by_peer: rpcs_by_peer
       )
@@ -173,7 +173,7 @@ def run_test_loop(stub, target_seconds_between_rpcs, fail_on_failed_rpcs,
       $watchers.each do |watcher|
         # this is counted once when each group of all rpcs_to_send were done
         watcher['rpcs_needed'] -= 1
-        results.each do | rpc_name, remote_peer |
+        results.each do |rpc_name, remote_peer|
           if remote_peer.strip.empty?
             # error is counted per individual RPC
             watcher['no_remote_peer'] += 1
