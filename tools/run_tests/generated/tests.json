@@ -69828,7 +69828,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/02d156dc5e6f2c11c90c2e06fcee04adf036a342"
+      "test/core/uri/uri_corpus/02d156dc5e6f2c11c90c2e06fcee04adf036a342"
     ], 
     "ci_platforms": [
       "linux"
@@ -69851,7 +69851,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/042dc4512fa3d391c5170cf3aa61e6a638f84342"
+      "test/core/uri/uri_corpus/042dc4512fa3d391c5170cf3aa61e6a638f84342"
     ], 
     "ci_platforms": [
       "linux"
@@ -69874,7 +69874,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/0e9bbe975f2027e8c39c89f85f667530368e7d11"
+      "test/core/uri/uri_corpus/0e9bbe975f2027e8c39c89f85f667530368e7d11"
     ], 
     "ci_platforms": [
       "linux"
@@ -69897,7 +69897,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/1155aa6ea7ef262a81a63692513ea395f84dad6f"
+      "test/core/uri/uri_corpus/1155aa6ea7ef262a81a63692513ea395f84dad6f"
     ], 
     "ci_platforms": [
       "linux"
@@ -69920,7 +69920,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/13856a5569ffd085a4d5c07af5f8e9310835a118"
+      "test/core/uri/uri_corpus/13856a5569ffd085a4d5c07af5f8e9310835a118"
     ], 
     "ci_platforms": [
       "linux"
@@ -69943,7 +69943,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/14b57bcbf1e17b1db1de491ef2ba3768f704b7dc"
+      "test/core/uri/uri_corpus/14b57bcbf1e17b1db1de491ef2ba3768f704b7dc"
     ], 
     "ci_platforms": [
       "linux"
@@ -69966,7 +69966,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/1794310671a060eead6e5ee66ac978a18ec7e84f"
+      "test/core/uri/uri_corpus/1794310671a060eead6e5ee66ac978a18ec7e84f"
     ], 
     "ci_platforms": [
       "linux"
@@ -69989,7 +69989,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/1d30b2a79afbaf2828ff42b9a9647e942ba1ab80"
+      "test/core/uri/uri_corpus/1d30b2a79afbaf2828ff42b9a9647e942ba1ab80"
     ], 
     "ci_platforms": [
       "linux"
@@ -70012,7 +70012,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/1fcf5d9c333b70596cf5ba04d1f7affdf445b971"
+      "test/core/uri/uri_corpus/1fcf5d9c333b70596cf5ba04d1f7affdf445b971"
     ], 
     "ci_platforms": [
       "linux"
@@ -70035,7 +70035,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/23162c8a8936e20b195404c21337ee734d02a6bc"
+      "test/core/uri/uri_corpus/23162c8a8936e20b195404c21337ee734d02a6bc"
     ], 
     "ci_platforms": [
       "linux"
@@ -70058,7 +70058,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/23f3198b815ca60bdadcaae682b9f965dda387f1"
+      "test/core/uri/uri_corpus/23f3198b815ca60bdadcaae682b9f965dda387f1"
     ], 
     "ci_platforms": [
       "linux"
@@ -70081,7 +70081,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/2ef3893b43f1f60b77b59ce06a6bce9815d78eaf"
+      "test/core/uri/uri_corpus/2ef3893b43f1f60b77b59ce06a6bce9815d78eaf"
     ], 
     "ci_platforms": [
       "linux"
@@ -70104,7 +70104,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/356c3c129e203b5c74550b4209764d74b9caefce"
+      "test/core/uri/uri_corpus/356c3c129e203b5c74550b4209764d74b9caefce"
     ], 
     "ci_platforms": [
       "linux"
@@ -70127,7 +70127,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/396568fc41c8ccb31ec925b4a862e4d29ead1327"
+      "test/core/uri/uri_corpus/396568fc41c8ccb31ec925b4a862e4d29ead1327"
     ], 
     "ci_platforms": [
       "linux"
@@ -70150,7 +70150,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/3b1e7526a99918006b87e499d2beb6c4ac9c3c0c"
+      "test/core/uri/uri_corpus/3b1e7526a99918006b87e499d2beb6c4ac9c3c0c"
     ], 
     "ci_platforms": [
       "linux"
@@ -70173,7 +70173,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/3b58860f3451d3e7aad99690a8d39782ca5116fc"
+      "test/core/uri/uri_corpus/3b58860f3451d3e7aad99690a8d39782ca5116fc"
     ], 
     "ci_platforms": [
       "linux"
@@ -70196,7 +70196,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/41963cc10752f70c3af7e3d85868efb097a0ea9c"
+      "test/core/uri/uri_corpus/41963cc10752f70c3af7e3d85868efb097a0ea9c"
     ], 
     "ci_platforms": [
       "linux"
@@ -70219,7 +70219,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/47b5228404451fc9d4071fa69192514bb4ce33c1"
+      "test/core/uri/uri_corpus/47b5228404451fc9d4071fa69192514bb4ce33c1"
     ], 
     "ci_platforms": [
       "linux"
@@ -70242,7 +70242,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/56a2da4b2e6fb795243901023ed8d0aa083d1aab"
+      "test/core/uri/uri_corpus/56a2da4b2e6fb795243901023ed8d0aa083d1aab"
     ], 
     "ci_platforms": [
       "linux"
@@ -70265,7 +70265,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/574c2f13858a9a6d724654bd913ede9ae3abf822"
+      "test/core/uri/uri_corpus/574c2f13858a9a6d724654bd913ede9ae3abf822"
     ], 
     "ci_platforms": [
       "linux"
@@ -70288,7 +70288,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/582f789c19033a152094cbf8565f14154a778ddb"
+      "test/core/uri/uri_corpus/582f789c19033a152094cbf8565f14154a778ddb"
     ], 
     "ci_platforms": [
       "linux"
@@ -70311,7 +70311,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/636c5606fc23713a1bae88c8899c0541cfad4fd8"
+      "test/core/uri/uri_corpus/636c5606fc23713a1bae88c8899c0541cfad4fd8"
     ], 
     "ci_platforms": [
       "linux"
@@ -70334,7 +70334,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/63fe493b270b17426d77a27cbf3abac5b2c2794a"
+      "test/core/uri/uri_corpus/63fe493b270b17426d77a27cbf3abac5b2c2794a"
     ], 
     "ci_platforms": [
       "linux"
@@ -70357,7 +70357,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/655300a902b62662296a8e46bfb04fbcb07182cb"
+      "test/core/uri/uri_corpus/655300a902b62662296a8e46bfb04fbcb07182cb"
     ], 
     "ci_platforms": [
       "linux"
@@ -70380,7 +70380,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/6ae3acd9d8507b61bf235748026080a4138dba58"
+      "test/core/uri/uri_corpus/6ae3acd9d8507b61bf235748026080a4138dba58"
     ], 
     "ci_platforms": [
       "linux"
@@ -70403,7 +70403,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/6b70979a70a038ff6607d6cf85485ee95baf58e6"
+      "test/core/uri/uri_corpus/6b70979a70a038ff6607d6cf85485ee95baf58e6"
     ], 
     "ci_platforms": [
       "linux"
@@ -70426,7 +70426,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/7314ab3545a7535a26e0e8aad67caea5534d68b1"
+      "test/core/uri/uri_corpus/7314ab3545a7535a26e0e8aad67caea5534d68b1"
     ], 
     "ci_platforms": [
       "linux"
@@ -70449,7 +70449,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/7ff4d8b8d1ffd0d42c48bbb91e5856a9ec31aecb"
+      "test/core/uri/uri_corpus/7ff4d8b8d1ffd0d42c48bbb91e5856a9ec31aecb"
     ], 
     "ci_platforms": [
       "linux"
@@ -70472,7 +70472,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/87daa131e0973b77a232a870ed749ef29cf58e6d"
+      "test/core/uri/uri_corpus/87daa131e0973b77a232a870ed749ef29cf58e6d"
     ], 
     "ci_platforms": [
       "linux"
@@ -70495,7 +70495,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/884dcaee2908ffe5f12b65b8eba81016099c4266"
+      "test/core/uri/uri_corpus/884dcaee2908ffe5f12b65b8eba81016099c4266"
     ], 
     "ci_platforms": [
       "linux"
@@ -70518,7 +70518,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/8d7e944fd5d0ede94097fcc98b47b09a3f9c76cb"
+      "test/core/uri/uri_corpus/8d7e944fd5d0ede94097fcc98b47b09a3f9c76cb"
     ], 
     "ci_platforms": [
       "linux"
@@ -70541,7 +70541,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/9671149af0b444f59bbdf71340d3441dadd8a7b4"
+      "test/core/uri/uri_corpus/9671149af0b444f59bbdf71340d3441dadd8a7b4"
     ], 
     "ci_platforms": [
       "linux"
@@ -70564,7 +70564,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/96c8d266b7dc037288ef305c996608270f72e7fb"
+      "test/core/uri/uri_corpus/96c8d266b7dc037288ef305c996608270f72e7fb"
     ], 
     "ci_platforms": [
       "linux"
@@ -70587,7 +70587,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/975536c71ade4800415a7e9c2f1b45c35a6d5ea8"
+      "test/core/uri/uri_corpus/975536c71ade4800415a7e9c2f1b45c35a6d5ea8"
     ], 
     "ci_platforms": [
       "linux"
@@ -70610,7 +70610,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/99750aa67d30beaea8af565c829d4999aa8cb91b"
+      "test/core/uri/uri_corpus/99750aa67d30beaea8af565c829d4999aa8cb91b"
     ], 
     "ci_platforms": [
       "linux"
@@ -70633,7 +70633,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/a1140f3f8b5cffc1010221b9a4084a25fb75c1f6"
+      "test/core/uri/uri_corpus/a1140f3f8b5cffc1010221b9a4084a25fb75c1f6"
     ], 
     "ci_platforms": [
       "linux"
@@ -70656,7 +70656,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/a1f0f9b75bb354eb063d7cba4fcfa2d0b88d63de"
+      "test/core/uri/uri_corpus/a1f0f9b75bb354eb063d7cba4fcfa2d0b88d63de"
     ], 
     "ci_platforms": [
       "linux"
@@ -70679,7 +70679,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/a296eb3d1d436ed7df7195b10aa3c4de3896f98d"
+      "test/core/uri/uri_corpus/a296eb3d1d436ed7df7195b10aa3c4de3896f98d"
     ], 
     "ci_platforms": [
       "linux"
@@ -70702,7 +70702,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/a8b8e66050b424f1b8c07d46f868199fb7f60e38"
+      "test/core/uri/uri_corpus/a8b8e66050b424f1b8c07d46f868199fb7f60e38"
     ], 
     "ci_platforms": [
       "linux"
@@ -70725,7 +70725,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/aba1472880406a318ce207ee79815b7acf087757"
+      "test/core/uri/uri_corpus/aba1472880406a318ce207ee79815b7acf087757"
     ], 
     "ci_platforms": [
       "linux"
@@ -70748,7 +70748,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/af55baf8c8855e563befdf1eefbcbd46c5ddb8d2"
+      "test/core/uri/uri_corpus/af55baf8c8855e563befdf1eefbcbd46c5ddb8d2"
     ], 
     "ci_platforms": [
       "linux"
@@ -70771,7 +70771,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/b3c0bf66c2bf5d24ef1daf4cc5a9d6d5bd0e8bfd"
+      "test/core/uri/uri_corpus/b3c0bf66c2bf5d24ef1daf4cc5a9d6d5bd0e8bfd"
     ], 
     "ci_platforms": [
       "linux"
@@ -70794,7 +70794,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/c28a47409cf5d95bb372238d01e73d8b831408e4"
+      "test/core/uri/uri_corpus/c28a47409cf5d95bb372238d01e73d8b831408e4"
     ], 
     "ci_platforms": [
       "linux"
@@ -70817,7 +70817,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/c3ef1d41888063a08700c3add1e4465aabcf8807"
+      "test/core/uri/uri_corpus/c3ef1d41888063a08700c3add1e4465aabcf8807"
     ], 
     "ci_platforms": [
       "linux"
@@ -70840,7 +70840,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/c550a76af21f9b9cc92a386d5c8998b26f8f2e4d"
+      "test/core/uri/uri_corpus/c550a76af21f9b9cc92a386d5c8998b26f8f2e4d"
     ], 
     "ci_platforms": [
       "linux"
@@ -70863,7 +70863,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/c79721406d0ab80495f186fd88e37fba98637ae9"
+      "test/core/uri/uri_corpus/c79721406d0ab80495f186fd88e37fba98637ae9"
     ], 
     "ci_platforms": [
       "linux"
@@ -70886,7 +70886,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/ceb4e2264ba7a8d5be47d276b37ec09489e00245"
+      "test/core/uri/uri_corpus/ceb4e2264ba7a8d5be47d276b37ec09489e00245"
     ], 
     "ci_platforms": [
       "linux"
@@ -70909,7 +70909,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/cf4395958f5bfb46fd6f535a39657d016c75114c"
+      "test/core/uri/uri_corpus/cf4395958f5bfb46fd6f535a39657d016c75114c"
     ], 
     "ci_platforms": [
       "linux"
@@ -70932,7 +70932,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/d46668372b7e20154a89409a7430a28e642afdca"
+      "test/core/uri/uri_corpus/d46668372b7e20154a89409a7430a28e642afdca"
     ], 
     "ci_platforms": [
       "linux"
@@ -70955,7 +70955,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/d6fe7412a0a1d1c733160246f3fa425f4f97682a"
+      "test/core/uri/uri_corpus/d6fe7412a0a1d1c733160246f3fa425f4f97682a"
     ], 
     "ci_platforms": [
       "linux"
@@ -70978,7 +70978,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/dns.txt"
+      "test/core/uri/uri_corpus/dns.txt"
     ], 
     "ci_platforms": [
       "linux"
@@ -71001,7 +71001,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/e241f29957b0e30ec11aaaf91b2339f7015fa5fd"
+      "test/core/uri/uri_corpus/e241f29957b0e30ec11aaaf91b2339f7015fa5fd"
     ], 
     "ci_platforms": [
       "linux"
@@ -71024,7 +71024,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/ea02d9fea9bad5b89cf353a0169238f584177e71"
+      "test/core/uri/uri_corpus/ea02d9fea9bad5b89cf353a0169238f584177e71"
     ], 
     "ci_platforms": [
       "linux"
@@ -71047,7 +71047,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/ec4731dddf94ed3ea92ae4d5a71f145ab6e3f6ee"
+      "test/core/uri/uri_corpus/ec4731dddf94ed3ea92ae4d5a71f145ab6e3f6ee"
     ], 
     "ci_platforms": [
       "linux"
@@ -71070,7 +71070,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/ed2f78646f19fc47dd85ff0877c232b71913ece2"
+      "test/core/uri/uri_corpus/ed2f78646f19fc47dd85ff0877c232b71913ece2"
     ], 
     "ci_platforms": [
       "linux"
@@ -71093,7 +71093,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/f6889f4a6350fea1596a3adea5cdac02bd5d1ff3"
+      "test/core/uri/uri_corpus/f6889f4a6350fea1596a3adea5cdac02bd5d1ff3"
     ], 
     "ci_platforms": [
       "linux"
@@ -71116,7 +71116,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/f6f3bd030f0d321efe7c51ca3f057de23509af67"
+      "test/core/uri/uri_corpus/f6f3bd030f0d321efe7c51ca3f057de23509af67"
     ], 
     "ci_platforms": [
       "linux"
@@ -71139,7 +71139,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/f97598cff03306af3c70400608fec47268b5075d"
+      "test/core/uri/uri_corpus/f97598cff03306af3c70400608fec47268b5075d"
     ], 
     "ci_platforms": [
       "linux"
@@ -71162,7 +71162,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/f9e1ec1fc642b575bc9955618b7065747f56b101"
+      "test/core/uri/uri_corpus/f9e1ec1fc642b575bc9955618b7065747f56b101"
     ], 
     "ci_platforms": [
       "linux"
@@ -71185,7 +71185,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/fe0630a3aeed2ec6f474f362e4c839478290d5c4"
+      "test/core/uri/uri_corpus/fe0630a3aeed2ec6f474f362e4c839478290d5c4"
     ], 
     "ci_platforms": [
       "linux"
@@ -71208,7 +71208,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/ipv4.txt"
+      "test/core/uri/uri_corpus/ipv4.txt"
     ], 
     "ci_platforms": [
       "linux"
@@ -71231,7 +71231,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/ipv6.txt"
+      "test/core/uri/uri_corpus/ipv6.txt"
     ], 
     "ci_platforms": [
       "linux"
@@ -71254,7 +71254,7 @@
   }, 
   {
     "args": [
-      "test/core/client_channel/uri_corpus/unix.txt"
+      "test/core/uri/uri_corpus/unix.txt"
     ], 
     "ci_platforms": [
       "linux"

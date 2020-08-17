@@ -8014,7 +8014,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(uri_parser_test
-  test/core/client_channel/uri_parser_test.cc
+  test/core/uri/uri_parser_test.cc
 )
 
 target_include_directories(uri_parser_test
@@ -15579,7 +15579,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(uri_fuzzer_test_one_entry
-  test/core/client_channel/uri_fuzzer_test.cc
+  test/core/uri/uri_fuzzer_test.cc
   test/core/util/one_corpus_entry_fuzzer.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc

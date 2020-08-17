@@ -18,23 +18,14 @@ grpc_package(name = "test/core/client_channel")
 
 licenses(["notice"])  # Apache v2
 
-grpc_cc_test(
-    name = "parse_address_test",
-    srcs = ["parse_address_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
-grpc_cc_test(
-    name = "parse_address_with_named_scope_id_test",
-    srcs = ["parse_address_with_named_scope_id_test.cc"],
+grpc_fuzzer(
+    name = "uri_fuzzer_test",
+    srcs = ["uri_fuzzer_test.cc"],
+    corpus = "uri_corpus",
     language = "C++",
     tags = ["no_windows"],
-    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -43,40 +34,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "retry_throttle_test",
-    srcs = ["retry_throttle_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "service_config_test",
-    srcs = ["service_config_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "xds_bootstrap_test",
-    srcs = ["xds_bootstrap_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
+    name = "uri_parser_test",
+    srcs = ["uri_parser_test.cc"],
     language = "C++",
     deps = [
         "//:gpr",
