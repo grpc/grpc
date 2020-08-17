@@ -313,7 +313,6 @@ grpc_cc_binary(
 
 grpc_cc_binary(
     name = "channelz_sampler",
-    testonly = 1,
     srcs = ["channelz_sampler.cc"],
     external_deps = [
         "gflags",
