@@ -61,45 +61,7 @@ static unsigned seed(void) { return (unsigned)_getpid(); }
 #pragma comment(lib, "dbghelp.lib")
 #endif
 
-static void print_current_stack() {
-  typedef USHORT(WINAPI * CaptureStackBackTraceType)(
-      __in ULONG, __in ULONG, __out PVOID*, __out_opt PULONG);
-  CaptureStackBackTraceType func = (CaptureStackBackTraceType)(GetProcAddress(
-      LoadLibrary(_T("kernel32.dll")), "RtlCaptureStackBackTrace"));
-
-  if (func == NULL) return;  // WOE 29.SEP.2010
-
-// Quote from Microsoft Documentation:
-// ## Windows Server 2003 and Windows XP:
-// ## The sum of the FramesToSkip and FramesToCapture parameters must be less
-// than 63.
-#define MAX_CALLERS 62
-
-  void* callers_stack[MAX_CALLERS];
-  unsigned short frames;
-  SYMBOL_INFOW* symbol;
-  HANDLE process;
-  process = GetCurrentProcess();
-  SymInitialize(process, NULL, TRUE);
-  frames = (func)(0, MAX_CALLERS, callers_stack, NULL);
-  symbol =
-      (SYMBOL_INFOW*)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(wchar_t), 1);
-  symbol->MaxNameLen = 255;
-  symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
-
-  const unsigned short MAX_CALLERS_SHOWN = 32;
-  frames = frames < MAX_CALLERS_SHOWN ? frames : MAX_CALLERS_SHOWN;
-  for (unsigned int i = 0; i < frames; i++) {
-    SymFromAddrW(process, (DWORD64)(callers_stack[i]), 0, symbol);
-    fwprintf(stderr, L"*** %d: %016I64X %ls - %016I64X\n", i,
-             (DWORD64)callers_stack[i], symbol->Name, (DWORD64)symbol->Address);
-    fflush(stderr);
-  }
-
-  free(symbol);
-}
-
-static void print_stack_from_context(CONTEXT c) {
+static void print_stack_from_context(HANDLE thread, CONTEXT c) {
   STACKFRAME s;  // in/out stackframe
   memset(&s, 0, sizeof(s));
   DWORD imageType;
@@ -135,24 +97,49 @@ static void print_stack_from_context(CONTEXT c) {
 #endif
 
   HANDLE process = GetCurrentProcess();
-  HANDLE thread = GetCurrentThread();
 
   SYMBOL_INFOW* symbol =
       (SYMBOL_INFOW*)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(wchar_t), 1);
   symbol->MaxNameLen = 255;
   symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
 
-  while (StackWalk(imageType, process, thread, &s, &c, 0,
-                   SymFunctionTableAccess, SymGetModuleBase, 0)) {
-    BOOL has_symbol =
-        SymFromAddrW(process, (DWORD64)(s.AddrPC.Offset), 0, symbol);
-    fwprintf(
-        stderr, L"*** %016I64X %ls - %016I64X\n", (DWORD64)(s.AddrPC.Offset),
-        has_symbol ? symbol->Name : L"<<no symbol>>", (DWORD64)symbol->Address);
+  const unsigned short MAX_CALLERS_SHOWN =
+      8192;  // avoid flooding the stderr if stacktrace is way too long
+  for (int frame = 0; frame < MAX_CALLERS_SHOWN &&
+                      StackWalk(imageType, process, thread, &s, &c, 0,
+                                SymFunctionTableAccess, SymGetModuleBase, 0);
+       frame++) {
+    PWSTR symbol_name = L"<<no symbol>>";
+    DWORD64 symbol_address = 0;
+    if (SymFromAddrW(process, (DWORD64)(s.AddrPC.Offset), 0, symbol)) {
+      symbol_name = symbol->Name;
+      symbol_address = (DWORD64)symbol->Address;
+    }
+
+    PWSTR file_name = L"<<no line info>>";
+    int line_number = 0;
+    IMAGEHLP_LINE64 line;
+    line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+    DWORD displacement = 0;
+    if (SymGetLineFromAddrW64(process, (DWORD64)(s.AddrPC.Offset),
+                              &displacement, &line)) {
+      file_name = line.FileName;
+      line_number = (int)line.LineNumber;
+    }
+
+    fwprintf(stderr, L"*** %d: %016I64X %ls - %016I64X (%ls:%d)\n", frame,
+             (DWORD64)(s.AddrPC.Offset), symbol_name, symbol_address, file_name,
+             line_number);
     fflush(stderr);
   }
 
   free(symbol);
+}
+
+static void print_current_stack() {
+  CONTEXT context;
+  RtlCaptureContext(&context);
+  print_stack_from_context(GetCurrentThread(), context);
 }
 
 static LONG crash_handler(struct _EXCEPTION_POINTERS* ex_info) {
@@ -168,7 +155,7 @@ static LONG crash_handler(struct _EXCEPTION_POINTERS* ex_info) {
     exrec = exrec->ExceptionRecord;
   }
   if (try_to_print_stack) {
-    print_stack_from_context(*ex_info->ContextRecord);
+    print_stack_from_context(GetCurrentThread(), *ex_info->ContextRecord);
   }
   if (IsDebuggerPresent()) {
     __debugbreak();
