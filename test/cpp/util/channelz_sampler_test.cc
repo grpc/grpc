@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
     g_root = ".";
   }
   gpr_log(GPR_INFO, "##### g_root = %s", g_root.c_str());
-  g_root = "test/cpp/util";
+  // g_root = "test/cpp/util";
 
   char* test_srcdir = gpr_getenv("TEST_SRCDIR");
   gpr_log(GPR_INFO, "##### env TEST_SRCDIR = %s", test_srcdir);
