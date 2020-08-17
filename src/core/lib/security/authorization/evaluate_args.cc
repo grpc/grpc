@@ -76,10 +76,10 @@ absl::string_view EvaluateArgs::GetSpiffeId() const {
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context_, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr || grpc_auth_property_iterator_next(&it) != nullptr)
+  if (prop == nullptr || grpc_auth_property_iterator_next(&it) != nullptr) {
     return "";
-  return absl::string_view(
-      reinterpret_cast<const char*>(prop->value, prop->value_length));
+  }
+  return absl::string_view(prop->value, prop->value_length);
 }
 
 absl::string_view EvaluateArgs::GetCertServerName() const {
@@ -89,8 +89,9 @@ absl::string_view EvaluateArgs::GetCertServerName() const {
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context_, GRPC_X509_CN_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr || grpc_auth_property_iterator_next(&it) != nullptr)
+  if (prop == nullptr || grpc_auth_property_iterator_next(&it) != nullptr) {
     return "";
+  }
   return absl::string_view(prop->value, prop->value_length);
 }
 
