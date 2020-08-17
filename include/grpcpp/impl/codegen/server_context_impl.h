@@ -49,7 +49,6 @@ struct grpc_call;
 struct census_context;
 
 namespace grpc_impl {
-class ClientContext;
 class Server;
 template <class W, class R>
 class ServerAsyncReader;
@@ -94,6 +93,7 @@ class ErrorMethodHandler;
 
 }  // namespace grpc_impl
 namespace grpc {
+class ClientContext;
 class CompletionQueue;
 class GenericServerContext;
 class ServerInterface;
@@ -373,7 +373,7 @@ class ServerContextBase {
   friend class ::grpc_impl::internal::ErrorMethodHandler;
   template <class Base>
   friend class ::grpc_impl::internal::FinishOnlyReactor;
-  friend class ::grpc_impl::ClientContext;
+  friend class ::grpc::ClientContext;
   friend class ::grpc::GenericServerContext;
 #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   friend class ::grpc::GenericCallbackServerContext;
