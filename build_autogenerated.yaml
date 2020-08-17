@@ -5427,26 +5427,6 @@ targets:
   - address_sorting
   - upb
   uses_polling: false
-- name: channelz_sampler
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/cpp/util/channelz_sampler.cc
-  deps:
-  - grpcpp_channelz
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc++_test_config
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: channelz_sampler_test
   gtest: true
   build: test

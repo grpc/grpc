@@ -311,11 +311,12 @@ grpc_cc_binary(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "channelz_sampler",
     srcs = ["channelz_sampler.cc"],
     external_deps = [
         "gflags",
+        "gtest",
     ],
     language = "c++",
     tags = [
