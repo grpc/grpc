@@ -313,18 +313,11 @@ grpc_cc_binary(
 
 grpc_cc_binary(
     name = "channelz_sampler",
-    testonly = 1,
     srcs = ["channelz_sampler.cc"],
     external_deps = [
         "gflags",
-        "gtest",
     ],
     language = "c++",
-    tags = [
-        "no_test_android",
-        "no_test_ios",
-        "no_windows",
-    ],
     deps = [
         "//:gpr",
         "//:grpc++",
@@ -348,10 +341,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
-        "no_mac",
-        "no_test_android",
-        "no_test_ios",
-        "no_windows",
+        "no_mac",  # cmake does not build channelz_sampler in Basic Tests C/C++ MacOS test
     ],
     deps = [
         "//:gpr",

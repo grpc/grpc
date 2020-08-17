@@ -15,9 +15,8 @@
  * limitations under the License.
  *
  */
-#include <dirent.h>
 #include <stdlib.h>
-#include <unistd.h>
+// #include <unistd.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -160,6 +159,9 @@ TEST(ChannelzSamplerTest, SimpleTest) {
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+
   std::string me = argv[0];
   auto lslash = me.rfind('/');
   if (lslash != std::string::npos) {
@@ -193,8 +195,6 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "##### find channelz_sampler_test");
   system("find . -name channelz_sampler_test");
 
-  grpc::testing::TestEnvironment env(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;
 }

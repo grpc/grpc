@@ -5489,6 +5489,7 @@ targets:
   platforms:
   - linux
   - posix
+  - windows
 - name: channelz_service_test
   gtest: true
   build: test
