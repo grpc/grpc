@@ -54,10 +54,13 @@ def _collect_errors(fn):
 
 
 def _run_in_subprocess(test_case):
+    sys.path.insert(
+        0, os.path.join(os.path.realpath(os.path.dirname(__file__)), ".."))
     error_queue = multiprocessing.Queue()
     proc = multiprocessing.Process(target=test_case, args=(error_queue,))
     proc.start()
     proc.join()
+    sys.path.pop(0)
     if not error_queue.empty():
         raise error_queue.get()
     assert proc.exitcode == 0, "Process exited with code {}".format(
