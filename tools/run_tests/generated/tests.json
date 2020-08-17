@@ -3982,8 +3982,7 @@
     "benchmark": false, 
     "ci_platforms": [
       "linux", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -3994,8 +3993,7 @@
     "name": "channelz_sampler_test", 
     "platforms": [
       "linux", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
     "uses_polling": true
   }, 
