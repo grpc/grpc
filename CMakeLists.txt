@@ -790,7 +790,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx channel_filter_test)
   add_dependencies(buildtests_cxx channel_trace_test)
   add_dependencies(buildtests_cxx channelz_registry_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx channelz_sampler_test)
   endif()
   add_dependencies(buildtests_cxx channelz_service_test)
@@ -9932,7 +9932,7 @@ target_link_libraries(channelz_registry_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(channelz_sampler_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
