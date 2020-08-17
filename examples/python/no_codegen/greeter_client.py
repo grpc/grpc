@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Hello World without using protoc
+"""Hello World without using protoc.
 
 This example parses message and service schemas directly from a
 .proto file on the filesystem.
