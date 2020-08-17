@@ -37,8 +37,6 @@ from subprocess import PIPE
 _PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
 _README_PATH = os.path.join(_PACKAGE_PATH, 'README.rst')
 
-_TEST_CLASS = "grpc_tools.test.protoc_test.ProtocTest"
-
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
 
@@ -225,5 +223,4 @@ setuptools.setup(
         'grpcio>={version}'.format(version=grpc_version.VERSION),
     ],
     package_data=package_data(),
-    test_suite=_TEST_CLASS,
 )
