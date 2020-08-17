@@ -87,6 +87,9 @@ class Executor {
                   ExecutorType executor_type = ExecutorType::DEFAULT,
                   ExecutorJobType job_type = ExecutorJobType::SHORT);
 
+  // Return if the current thread is able to call ShutdownAll()
+  static bool CurrentThreadCanShutdownAll();
+
   // Shutdown ALL the executors
   static void ShutdownAll();
 

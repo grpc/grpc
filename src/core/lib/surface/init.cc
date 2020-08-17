@@ -210,12 +210,16 @@ void grpc_shutdown_internal(void* /*ignored*/) {
 
 void grpc_shutdown(void) {
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
+  if (grpc_core::Executor::CurrentThreadCanShutdownAll()) {
+    grpc_shutdown_blocking();
+    return;
+  }
   grpc_core::MutexLock lock(&g_init_mu);
   if (--g_initializations == 0) {
     g_initializations++;
     g_shutting_down = true;
-    // spawn a detached thread to do the actual clean up in case we are
-    // currently in an executor thread.
+    // spawn a detached thread to do the actual clean up only if we are in an
+    // executor thread.
     grpc_core::Thread cleanup_thread(
         "grpc_shutdown", grpc_shutdown_internal, nullptr, nullptr,
         grpc_core::Thread::Options().set_joinable(false).set_tracked(false));

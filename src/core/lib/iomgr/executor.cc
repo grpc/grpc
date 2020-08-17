@@ -54,6 +54,7 @@ namespace grpc_core {
 namespace {
 
 GPR_TLS_DECL(g_this_thread_state);
+GPR_TLS_DECL(g_this_thread_is_executor_thread);
 
 Executor* executors[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)];
 
@@ -215,6 +216,8 @@ void Executor::Shutdown() { SetThreading(false); }
 void Executor::ThreadMain(void* arg) {
   ThreadState* ts = static_cast<ThreadState*>(arg);
   gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(ts));
+  gpr_tls_set(&g_this_thread_is_executor_thread,
+              static_cast<intptr_t>(0xdeadbeef));
 
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
@@ -407,6 +410,10 @@ void Executor::Run(grpc_closure* closure, grpc_error* error,
                    ExecutorType executor_type, ExecutorJobType job_type) {
   executor_enqueue_fns_[static_cast<size_t>(executor_type)]
                        [static_cast<size_t>(job_type)](closure, error);
+}
+
+bool Executor::CurrentThreadCanShutdownAll() {
+  return 0xdeadbeef != gpr_tls_get(&g_this_thread_is_executor_thread);
 }
 
 void Executor::ShutdownAll() {
