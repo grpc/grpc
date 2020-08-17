@@ -11,30 +11,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Python implementation of the GRPC helloworld.Greeter client."""
+"""Hello World without using protoc
+
+This example parses message and service schemas directly from a
+.proto file on the filesystem.
+
+Several APIs used in this example are in an experimental state.
+"""
 
 from __future__ import print_function
 import logging
 
 import grpc
+import grpc.experimental
 
 # NOTE: The path to the .proto file must be reachable from an entry
 # on sys.path. Use sys.path.insert or set the $PYTHONPATH variable to
 # import from files located elsewhere on the filesystem.
 
-protos, services = grpc.protos_and_services("helloworld.proto")
+protos = grpc.protos("helloworld.proto")
+services = grpc.services("helloworld.proto")
 
+logging.basicConfig()
 
-def run():
-    # NOTE(gRPC Python Team): .close() is possible on a channel and should be
-    # used in circumstances in which the with statement does not fit the needs
-    # of the code.
-    with grpc.insecure_channel('localhost:50051') as channel:
-        stub = services.GreeterStub(channel)
-        response = stub.SayHello(protos.HelloRequest(name='you'))
-    print("Greeter client received: " + response.message)
-
-
-if __name__ == '__main__':
-    logging.basicConfig()
-    run()
+response = services.Greeter.SayHello(protos.HelloRequest(name='you'),
+                                     'localhost:50051',
+                                     insecure=True)
+print("Greeter client received: " + response.message)
