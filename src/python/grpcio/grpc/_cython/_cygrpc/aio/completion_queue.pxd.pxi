@@ -53,6 +53,7 @@ cdef class BaseCompletionQueue:
 cdef class _BoundEventLoop:
     cdef readonly object loop
     cdef readonly object read_socket  # socket.socket
+    cdef bint _has_reader
 
 
 cdef class PollerCompletionQueue(BaseCompletionQueue):
