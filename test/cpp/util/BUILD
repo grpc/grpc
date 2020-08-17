@@ -318,6 +318,9 @@ grpc_cc_binary(
         "gflags",
     ],
     language = "c++",
+    tags = [
+        "no_windiws",  # unistd.h
+    ],
     deps = [
         "//:gpr",
         "//:grpc++",
