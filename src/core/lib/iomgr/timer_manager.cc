@@ -260,6 +260,8 @@ static void timer_main_loop() {
   }
 }
 
+GPR_TLS_DECL(g_this_thread_is_timer_thread);
+
 static void timer_thread_cleanup(completed_thread* ct) {
   gpr_mu_lock(&g_mu);
   // terminate the thread: drop the waiter count, thread count, and let whomever
@@ -278,6 +280,8 @@ static void timer_thread_cleanup(completed_thread* ct) {
 }
 
 static void timer_thread(void* completed_thread_ptr) {
+  gpr_tls_set(&g_this_thread_is_timer_thread,static_cast<intptr_t>(1));
+
   // this threads exec_ctx: we try to run things through to completion here
   // since it's easy to spin up new threads
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
@@ -332,6 +336,10 @@ static void stop_threads(void) {
   }
   g_wakeups = 0;
   gpr_mu_unlock(&g_mu);
+}
+
+bool grpc_timer_manager_current_thread_can_shutdown(void) {
+  return gpr_tls_get(&g_this_thread_is_timer_thread) != 1;
 }
 
 void grpc_timer_manager_shutdown(void) {

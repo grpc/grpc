@@ -210,7 +210,8 @@ void grpc_shutdown_internal(void* /*ignored*/) {
 
 void grpc_shutdown(void) {
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
-  if (grpc_core::Executor::CurrentThreadCanShutdownAll()) {
+  if (grpc_core::Executor::CurrentThreadCanShutdownAll()
+      && grpc_timer_manager_current_thread_can_shutdown()) {
     grpc_shutdown_blocking();
     return;
   }

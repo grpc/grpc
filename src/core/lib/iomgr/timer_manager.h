@@ -27,6 +27,7 @@
    all times, and thus effectively preventing the thundering herd problem. */
 
 void grpc_timer_manager_init(void);
+bool grpc_timer_manager_current_thread_can_shutdown(void);
 void grpc_timer_manager_shutdown(void);
 
 /* enable/disable threading - must be called after grpc_timer_manager_init and

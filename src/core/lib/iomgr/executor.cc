@@ -216,8 +216,7 @@ void Executor::Shutdown() { SetThreading(false); }
 void Executor::ThreadMain(void* arg) {
   ThreadState* ts = static_cast<ThreadState*>(arg);
   gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(ts));
-  gpr_tls_set(&g_this_thread_is_executor_thread,
-              static_cast<intptr_t>(0xdeadbeef));
+  gpr_tls_set(&g_this_thread_is_executor_thread, static_cast<intptr_t>(1));
 
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
@@ -413,7 +412,7 @@ void Executor::Run(grpc_closure* closure, grpc_error* error,
 }
 
 bool Executor::CurrentThreadCanShutdownAll() {
-  return 0xdeadbeef != gpr_tls_get(&g_this_thread_is_executor_thread);
+  return gpr_tls_get(&g_this_thread_is_executor_thread) != 1;
 }
 
 void Executor::ShutdownAll() {
