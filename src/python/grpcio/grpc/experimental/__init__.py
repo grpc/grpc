@@ -122,6 +122,6 @@ __all__ = (
     'wrap_server_method_handler',
 )
 
-if sys.version_info[0] == 3 and sys.version_info[1] >= 6:
+if sys.version_info > (3, 6):
     from grpc._simple_stubs import unary_unary, unary_stream, stream_unary, stream_stream
     __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream)
