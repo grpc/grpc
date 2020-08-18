@@ -68,6 +68,57 @@ TEST_F(EvaluateArgsTest, TestEvaluateArgsPeerPort) {
       << "Error: Failed to extract correct Peer port from EvaluateArgs.";
 }
 
+TEST(EvaluateArgsMetadataTest, GetPathSuccess) {
+  grpc_init();
+  grpc_metadata_batch metadata_;
+  absl::string_view get_val;
+  grpc_metadata_batch_init(&metadata_);
+  grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"));
+  grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_PATH, fake_val);
+  grpc_linked_mdelem* storage = new grpc_linked_mdelem;
+  storage->md = fake_val_md;
+  GRPC_LOG_IF_ERROR("failed to add to metadata batch", grpc_metadata_batch_link_head(&metadata_, storage));
+  EvaluateArgs* evalArgs = new EvaluateArgs(&metadata_, nullptr, nullptr);
+  get_val = evalArgs->GetPath();
+  grpc_metadata_batch_destroy(&metadata_);
+  EXPECT_EQ(get_val, "/foo/bar") << "Failed to properly set or retrieve path.";
+  grpc_shutdown();
+}
+
+TEST(EvaluateArgsMetadataTest, GetHostSuccess) {
+  grpc_init();
+  grpc_metadata_batch metadata_;
+  absl::string_view get_val;
+  grpc_metadata_batch_init(&metadata_);
+  grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string("foo"));
+  grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_HOST, fake_val);
+  grpc_linked_mdelem* storage = new grpc_linked_mdelem;
+  storage->md = fake_val_md;
+  GRPC_LOG_IF_ERROR("failed to add to metadata batch", grpc_metadata_batch_link_head(&metadata_, storage));
+  EvaluateArgs* evalArgs = new EvaluateArgs(&metadata_, nullptr, nullptr);
+  get_val = evalArgs->GetHost();
+  EXPECT_EQ(get_val, "foo") << "Failed to properly set or retrieve host.";
+  grpc_metadata_batch_destroy(&metadata_);
+  grpc_shutdown();
+}
+
+TEST(EvaluateArgsMetadataTest, GetMethodSuccess) {
+  grpc_init();
+  grpc_metadata_batch metadata_;
+  absl::string_view get_val;
+  grpc_metadata_batch_init(&metadata_);
+  grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string("GET"));
+  grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_METHOD, fake_val);
+  grpc_linked_mdelem* storage = new grpc_linked_mdelem;
+  storage->md = fake_val_md;
+  GRPC_LOG_IF_ERROR("failed to add to metadata batch", grpc_metadata_batch_link_head(&metadata_, storage));
+  EvaluateArgs* evalArgs = new EvaluateArgs(&metadata_, nullptr, nullptr);
+  get_val = evalArgs->GetMethod();
+  EXPECT_EQ(get_val, "GET") << "Failed to properly set or retrieve method.";
+  grpc_metadata_batch_destroy(&metadata_);
+  grpc_shutdown();
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
