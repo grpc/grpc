@@ -67,7 +67,7 @@ you to manually test the service.
 Exercise your server's application-layer service:
 
 ```sh
-> grpcurl --plaintext -d '{"name": "you"}' localhost:50051
+> grpcurl --plaintext -d '{"name": "you"}' localhost:30051
 {
   "message": "Hello you from jtatt.muc.corp.google.com!"
 }
@@ -76,7 +76,7 @@ Exercise your server's application-layer service:
 Make sure that all of your server's services are available via reflection:
 
 ```sh
-> grpcurl --plaintext localhost:50051 list
+> grpcurl --plaintext localhost:30051 list
 grpc.health.v1.Health
 grpc.reflection.v1alpha.ServerReflection
 helloworld.Greeter
@@ -85,13 +85,13 @@ helloworld.Greeter
 Make sure that your services are reporting healthy:
 
 ```sh
-> grpcurl --plaintext -d '{"service": "helloworld.Greeter"}' localhost:50051
+> grpcurl --plaintext -d '{"service": "helloworld.Greeter"}' localhost:30051
 grpc.health.v1.Health/Check
 {
   "status": "SERVING"
 }
 
-> grpcurl --plaintext -d '{"service": ""}' localhost:50051
+> grpcurl --plaintext -d '{"service": ""}' localhost:30051
 grpc.health.v1.Health/Check
 {
   "status": "SERVING"
