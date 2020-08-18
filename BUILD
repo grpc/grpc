@@ -952,6 +952,7 @@ grpc_cc_library(
         "madler_zlib",
         "absl/container:inlined_vector",
         "absl/status",
+        "absl/strings",
         "absl/types:optional",
     ],
     language = "c++",
@@ -1855,9 +1856,11 @@ grpc_cc_library(
     name = "grpc_authorization_engine",
     srcs = [
         "src/core/lib/security/authorization/authorization_engine.cc",
+        "src/core/lib/security/authorization/evaluate_args.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
+        "src/core/lib/security/authorization/evaluate_args.h",
         "src/core/lib/security/authorization/mock_cel/activation.h",
         "src/core/lib/security/authorization/mock_cel/cel_value.h",
     ],
@@ -1866,6 +1869,7 @@ grpc_cc_library(
         "envoy_ads_upb",
         "google_api_upb",
         "grpc_base",
+        "grpc_secure",
     ],
 )
 
@@ -2254,7 +2258,6 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/client_callback.h",
         "include/grpcpp/impl/codegen/client_callback_impl.h",
         "include/grpcpp/impl/codegen/client_context.h",
-        "include/grpcpp/impl/codegen/client_context_impl.h",
         "include/grpcpp/impl/codegen/client_interceptor.h",
         "include/grpcpp/impl/codegen/client_unary_call.h",
         "include/grpcpp/impl/codegen/completion_queue.h",

@@ -25,7 +25,6 @@
 #include <grpcpp/impl/codegen/time.h>
 
 namespace grpc_impl {
-class ClientContext;
 template <class R>
 class ClientReader;
 template <class W>
@@ -55,6 +54,7 @@ class ClientCallbackUnaryFactory;
 
 namespace grpc {
 class ChannelInterface;
+class ClientContext;
 class CompletionQueue;
 
 namespace experimental {
@@ -135,7 +135,7 @@ class ChannelInterface {
   friend class ::grpc::experimental::DelegatingChannel;
   friend class ::grpc::internal::InterceptedChannel;
   virtual internal::Call CreateCall(const internal::RpcMethod& method,
-                                    ::grpc_impl::ClientContext* context,
+                                    ::grpc::ClientContext* context,
                                     ::grpc::CompletionQueue* cq) = 0;
   virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                                 internal::Call* call) = 0;
@@ -155,9 +155,8 @@ class ChannelInterface {
   // method and adding a new pure method to an interface would be a breaking
   // change (even though this is private and non-API)
   virtual internal::Call CreateCallInternal(
-      const internal::RpcMethod& /*method*/,
-      ::grpc_impl::ClientContext* /*context*/, ::grpc::CompletionQueue* /*cq*/,
-      size_t /*interceptor_pos*/) {
+      const internal::RpcMethod& /*method*/, ::grpc::ClientContext* /*context*/,
+      ::grpc::CompletionQueue* /*cq*/, size_t /*interceptor_pos*/) {
     return internal::Call();
   }
 

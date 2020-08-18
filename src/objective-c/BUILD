@@ -17,7 +17,7 @@
 load("//bazel:grpc_build_system.bzl", "grpc_generate_objc_one_off_targets", "grpc_objc_library")
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
