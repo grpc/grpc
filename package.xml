@@ -141,8 +141,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/local_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/local_subchannel_pool.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/parse_address.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.h" role="src" />
@@ -638,6 +636,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/nameser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/parse_address.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/poller/eventmanager_libuv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/poller/eventmanager_libuv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.cc" role="src" />
