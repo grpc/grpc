@@ -238,7 +238,8 @@
   </table>
   <a id="Grpc_Core_Metadata_Entry_Value_" data-uid="Grpc.Core.Metadata.Entry.Value*"></a>
   <h4 id="Grpc_Core_Metadata_Entry_Value" data-uid="Grpc.Core.Metadata.Entry.Value">Value</h4>
-  <div class="markdown level1 summary"><p>Gets the string value of this metadata entry.</p>
+  <div class="markdown level1 summary"><p>Gets the string value of this metadata entry.
+If the metadata entry is binary then an exception is thrown.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -262,7 +263,8 @@
   </table>
   <a id="Grpc_Core_Metadata_Entry_ValueBytes_" data-uid="Grpc.Core.Metadata.Entry.ValueBytes*"></a>
   <h4 id="Grpc_Core_Metadata_Entry_ValueBytes" data-uid="Grpc.Core.Metadata.Entry.ValueBytes">ValueBytes</h4>
-  <div class="markdown level1 summary"><p>Gets the binary value of this metadata entry.</p>
+  <div class="markdown level1 summary"><p>Gets the binary value of this metadata entry.
+If the metadata entry is not binary the string value will be returned as ASCII encoded bytes.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>

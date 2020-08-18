@@ -451,6 +451,89 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
+  <a id="Grpc_Core_Metadata_Get_" data-uid="Grpc.Core.Metadata.Get*"></a>
+  <h4 id="Grpc_Core_Metadata_Get_System_String_" data-uid="Grpc.Core.Metadata.Get(System.String)">Get(String)</h4>
+  <div class="markdown level1 summary"><p>Gets the last metadata entry with the specified key.
+If there are no matching entries then <code>null</code> is returned.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Metadata.Entry Get(string key)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Metadata.Entry.html">Metadata.Entry</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Metadata_GetAll_" data-uid="Grpc.Core.Metadata.GetAll*"></a>
+  <h4 id="Grpc_Core_Metadata_GetAll_System_String_" data-uid="Grpc.Core.Metadata.GetAll(System.String)">GetAll(String)</h4>
+  <div class="markdown level1 summary"><p>Gets all metadata entries with the specified key.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IEnumerable&lt;Metadata.Entry&gt; GetAll(string key)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="Grpc.Core.Metadata.Entry.html">Metadata.Entry</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <a id="Grpc_Core_Metadata_GetEnumerator_" data-uid="Grpc.Core.Metadata.GetEnumerator*"></a>
   <h4 id="Grpc_Core_Metadata_GetEnumerator" data-uid="Grpc.Core.Metadata.GetEnumerator">GetEnumerator()</h4>
   <div class="markdown level1 summary"><span class="xref">IList`1</span>
@@ -471,6 +554,92 @@ gRPC supports these types of metadata:
     <tbody>
       <tr>
         <td><span class="xref">System.Collections.Generic.IEnumerator</span>&lt;<a class="xref" href="Grpc.Core.Metadata.Entry.html">Metadata.Entry</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Metadata_GetValue_" data-uid="Grpc.Core.Metadata.GetValue*"></a>
+  <h4 id="Grpc_Core_Metadata_GetValue_System_String_" data-uid="Grpc.Core.Metadata.GetValue(System.String)">GetValue(String)</h4>
+  <div class="markdown level1 summary"><p>Gets the string value of the last metadata entry with the specified key.
+If the metadata entry is binary then an exception is thrown.
+If there are no matching entries then <code>null</code> is returned.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string GetValue(string key)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Metadata_GetValueBytes_" data-uid="Grpc.Core.Metadata.GetValueBytes*"></a>
+  <h4 id="Grpc_Core_Metadata_GetValueBytes_System_String_" data-uid="Grpc.Core.Metadata.GetValueBytes(System.String)">GetValueBytes(String)</h4>
+  <div class="markdown level1 summary"><p>Gets the bytes value of the last metadata entry with the specified key.
+If the metadata entry is not binary the string value will be returned as ASCII encoded bytes.
+If there are no matching entries then <code>null</code> is returned.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte[] GetValueBytes(string key)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">key</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
         <td></td>
       </tr>
     </tbody>

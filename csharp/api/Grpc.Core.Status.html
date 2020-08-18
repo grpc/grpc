@@ -145,6 +145,48 @@
       </tr>
     </tbody>
   </table>
+  <a id="Grpc_Core_Status__ctor_" data-uid="Grpc.Core.Status.#ctor*"></a>
+  <h4 id="Grpc_Core_Status__ctor_Grpc_Core_StatusCode_System_String_System_Exception_" data-uid="Grpc.Core.Status.#ctor(Grpc.Core.StatusCode,System.String,System.Exception)">Status(StatusCode, String, Exception)</h4>
+  <div class="markdown level1 summary"><p>Creates a new instance of <code>Status</code>.
+Users should not use this constructor, except for creating instances for testing.
+The debug error string should only be populated by gRPC internals.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Status(StatusCode statusCode, string detail, Exception debugException)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.StatusCode.html">StatusCode</a></td>
+        <td><span class="parametername">statusCode</span></td>
+        <td><p>Status code.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">detail</span></td>
+        <td><p>Detail.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Exception</span></td>
+        <td><span class="parametername">debugException</span></td>
+        <td><p>Optional internal error details.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="fields">Fields
   </h3>
   <h4 id="Grpc_Core_Status_DefaultCancelled" data-uid="Grpc.Core.Status.DefaultCancelled">DefaultCancelled</h4>
@@ -195,6 +237,37 @@
   </table>
   <h3 id="properties">Properties
   </h3>
+  <a id="Grpc_Core_Status_DebugException_" data-uid="Grpc.Core.Status.DebugException*"></a>
+  <h4 id="Grpc_Core_Status_DebugException" data-uid="Grpc.Core.Status.DebugException">DebugException</h4>
+  <div class="markdown level1 summary"><p>In case of an error, this field may contain additional error details to help with debugging.
+This field will be only populated on a client and its value is generated locally,
+based on the internal state of the gRPC client stack (i.e. the value is never sent over the wire).
+Note that this field is available only for debugging purposes, the application logic should
+never rely on values of this field (it should use <code>StatusCode</code> and <code>Detail</code> instead).
+Example: when a client fails to connect to a server, this field may provide additional details
+why the connection to the server has failed.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Exception DebugException { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Exception</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <a id="Grpc_Core_Status_Detail_" data-uid="Grpc.Core.Status.Detail*"></a>
   <h4 id="Grpc_Core_Status_Detail" data-uid="Grpc.Core.Status.Detail">Detail</h4>
   <div class="markdown level1 summary"><p>Gets the detail.</p>
