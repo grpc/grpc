@@ -25,6 +25,10 @@ class LoadBalancerStatsResponse extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>int32 num_failures = 2;</code>
      */
     protected $num_failures = 0;
+    /**
+     * Generated from protobuf field <code>map<string, .grpc.testing.LoadBalancerStatsResponse.RpcsByPeer> rpcs_by_method = 3;</code>
+     */
+    private $rpcs_by_method;
 
     /**
      * Constructor.
@@ -36,6 +40,7 @@ class LoadBalancerStatsResponse extends \Google\Protobuf\Internal\Message
      *           The number of completed RPCs for each peer.
      *     @type int $num_failures
      *           The number of RPCs that failed to record a remote peer.
+     *     @type array|\Google\Protobuf\Internal\MapField $rpcs_by_method
      * }
      */
     public function __construct($data = NULL) {
@@ -91,6 +96,28 @@ class LoadBalancerStatsResponse extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkInt32($var);
         $this->num_failures = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>map<string, .grpc.testing.LoadBalancerStatsResponse.RpcsByPeer> rpcs_by_method = 3;</code>
+     * @return \Google\Protobuf\Internal\MapField
+     */
+    public function getRpcsByMethod()
+    {
+        return $this->rpcs_by_method;
+    }
+
+    /**
+     * Generated from protobuf field <code>map<string, .grpc.testing.LoadBalancerStatsResponse.RpcsByPeer> rpcs_by_method = 3;</code>
+     * @param array|\Google\Protobuf\Internal\MapField $var
+     * @return $this
+     */
+    public function setRpcsByMethod($var)
+    {
+        $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\LoadBalancerStatsResponse\RpcsByPeer::class);
+        $this->rpcs_by_method = $arr;
 
         return $this;
     }
