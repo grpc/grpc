@@ -32,12 +32,17 @@ namespace grpc_core {
 class EvaluateArgs {
  public:
   EvaluateArgs(grpc_metadata_batch* metadata, grpc_auth_context* auth_context,
-               grpc_endpoint* endpoint);
+               grpc_endpoint* endpoint)
+      : metadata_(metadata), auth_context_(auth_context), endpoint_(endpoint) {}
 
   absl::string_view GetPath() const;
   absl::string_view GetHost() const;
   absl::string_view GetMethod() const;
   std::multimap<absl::string_view, absl::string_view> GetHeaders() const;
+  absl::string_view GetLocalAddress() const;
+  int GetLocalPort() const;
+  absl::string_view GetPeerAddress() const;
+  int GetPeerPort() const;
   absl::string_view GetSpiffeId() const;
   absl::string_view GetCertServerName() const;
 
