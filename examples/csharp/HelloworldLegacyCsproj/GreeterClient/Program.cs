@@ -22,7 +22,7 @@ namespace GreeterClient
     {
         public static void Main(string[] args)
         {
-            Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
+            Channel channel = new Channel("127.0.0.1:30051", ChannelCredentials.Insecure);
 
             var client = new Greeter.GreeterClient(channel);
             String user = "you";
