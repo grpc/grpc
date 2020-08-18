@@ -12,7 +12,7 @@ var searchData=
   ['serverasyncwriter_2275',['ServerAsyncWriter',['../classgrpc__impl_1_1_server_async_writer.html',1,'grpc_impl']]],
   ['serverasyncwriterinterface_2276',['ServerAsyncWriterInterface',['../classgrpc__impl_1_1_server_async_writer_interface.html',1,'grpc_impl']]],
   ['serverbidireactor_2277',['ServerBidiReactor',['../classgrpc__impl_1_1_server_bidi_reactor.html',1,'grpc_impl']]],
-  ['serverbuilder_2278',['ServerBuilder',['../classgrpc__impl_1_1_server_builder.html',1,'grpc_impl']]],
+  ['serverbuilder_2278',['ServerBuilder',['../classgrpc_1_1_server_builder.html',1,'grpc']]],
   ['serverbuilderoption_2279',['ServerBuilderOption',['../classgrpc__impl_1_1_server_builder_option.html',1,'grpc_impl']]],
   ['serverbuilderplugin_2280',['ServerBuilderPlugin',['../classgrpc_1_1_server_builder_plugin.html',1,'grpc']]],
   ['servercallbackcall_2281',['ServerCallbackCall',['../classgrpc__impl_1_1internal_1_1_server_callback_call.html',1,'grpc_impl::internal']]],

@@ -34,7 +34,7 @@ var searchData=
   ['cq_5fshutdown_5fcb_51',['cq_shutdown_cb',['../structgrpc__completion__queue__attributes.html#a0f38aa6990e86d316925b9b9a7db473a',1,'grpc_completion_queue_attributes']]],
   ['cs_52',['cs',['../structgpr__mu.html#abab5a72a693be27488fb7a9b2cb23e5c',1,'gpr_mu']]],
   ['ctx_53',['ctx',['../structgrpc__auth__property__iterator.html#a971904d29fa6f6ca6a853d078cae2f58',1,'grpc_auth_property_iterator']]],
-  ['current_54',['current',['../structgrpc__byte__buffer__reader.html#ab4b5af3d89b38da03dfde50c50e9e199',1,'grpc_byte_buffer_reader']]],
+  ['current_54',['current',['../structgrpc__byte__buffer__reader.html#a572a28bdf5757a641d9a80f74e3021ae',1,'grpc_byte_buffer_reader']]],
   ['connection_20backoff_20interop_20test_20descriptions_55',['Connection Backoff Interop Test Descriptions',['../md_doc_connection-backoff-interop-test-description.html',1,'']]],
   ['combiner_20explanation_56',['Combiner Explanation',['../md_doc_core_combiner-explainer.html',1,'']]]
 ];
