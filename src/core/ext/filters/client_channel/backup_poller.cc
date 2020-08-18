@@ -106,6 +106,7 @@ static void g_poller_unref() {
                                       grpc_schedule_on_exec_ctx));
     gpr_mu_unlock(p->pollset_mu);
     grpc_timer_cancel(&p->polling_timer);
+    backup_poller_shutdown_unref(p);
   } else {
     gpr_mu_unlock(&g_poller_mu);
   }
@@ -143,8 +144,8 @@ static void g_poller_init_locked() {
     g_poller->shutting_down = false;
     grpc_pollset_init(g_poller->pollset, &g_poller->pollset_mu);
     gpr_ref_init(&g_poller->refs, 0);
-    // one for timer cancellation, one for pollset shutdown
-    gpr_ref_init(&g_poller->shutdown_refs, 2);
+    // one for timer cancellation, one for pollset shutdown, one for g_poller
+    gpr_ref_init(&g_poller->shutdown_refs, 3);
     GRPC_CLOSURE_INIT(&g_poller->run_poller_closure, run_poller, g_poller,
                       grpc_schedule_on_exec_ctx);
     grpc_timer_init(&g_poller->polling_timer,
