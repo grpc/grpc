@@ -981,7 +981,10 @@ Server::~Server() {
       }
     }
   }
-
+  // Destroy health check service before we destroy the C server so that
+  // it does not call grpc_server_request_registered_call() after the C
+  // server has been destroyed.
+  health_check_service_.reset();
   grpc_server_destroy(server_);
 }
 
