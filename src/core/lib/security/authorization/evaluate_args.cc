@@ -70,41 +70,29 @@ std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
 }
 
 absl::string_view EvaluateArgs::GetSpiffeId() const {
-  absl::string_view spiffe_id;
   if (auth_context_ == nullptr) {
-    return spiffe_id;
+    return "";
   }
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context_, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr) return spiffe_id;
-  if (strncmp(prop->value, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
-              prop->value_length) != 0) {
-    return spiffe_id;
+  if (prop == nullptr || grpc_auth_property_iterator_next(&it) != nullptr) {
+    return "";
   }
-  if (grpc_auth_property_iterator_next(&it) != nullptr) return spiffe_id;
-  spiffe_id = absl::string_view(
-      reinterpret_cast<const char*>(prop->value, prop->value_length));
-  return spiffe_id;
+  return absl::string_view(prop->value, prop->value_length);
 }
 
 absl::string_view EvaluateArgs::GetCertServerName() const {
-  absl::string_view name;
   if (auth_context_ == nullptr) {
-    return name;
+    return "";
   }
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context_, GRPC_X509_CN_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr) return name;
-  if (strncmp(prop->value, GRPC_X509_CN_PROPERTY_NAME, prop->value_length) !=
-      0) {
-    return name;
+  if (prop == nullptr || grpc_auth_property_iterator_next(&it) != nullptr) {
+    return "";
   }
-  if (grpc_auth_property_iterator_next(&it) != nullptr) return name;
-  name = absl::string_view(
-      reinterpret_cast<const char*>(prop->value, prop->value_length));
-  return name;
+  return absl::string_view(prop->value, prop->value_length);
 }
 
 }  // namespace grpc_core
