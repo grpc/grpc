@@ -68,6 +68,32 @@ TEST_F(EvaluateArgsTest, TestEvaluateArgsPeerPort) {
       << "Error: Failed to extract correct Peer port from EvaluateArgs.";
 }
 
+TEST(EvaluateArgsMetadataTest, HandlesNullMetadata) {
+  EvaluateArgs evalArgs(nullptr, nullptr, nullptr);
+  absl::string_view path = evalArgs.GetPath();
+  absl::string_view method = evalArgs.GetMethod();
+  absl::string_view host = evalArgs.GetHost();
+  std::multimap<absl::string_view, absl::string_view> headers = evalArgs.GetHeaders();
+  EXPECT_EQ(path, nullptr) << "Failed to return nullptr with null metadata_batch.";
+  EXPECT_EQ(method, nullptr) << "Failed to return nullptr with null metadata_batch.";
+  EXPECT_EQ(host, nullptr) << "Failed to return nullptr with null metadata_batch.";
+  EXPECT_EQ(headers.size(), 0) << "Failed to return nullptr with null metadata_batch.";
+}
+
+TEST(EvaluateArgsMetadataTest, HandlesEmptyMetadata) {
+  grpc_metadata_batch metadata_;
+  grpc_metadata_batch_init(&metadata_);
+  EvaluateArgs evalArgs(&metadata_, nullptr, nullptr);
+  absl::string_view path = evalArgs.GetPath();
+  absl::string_view method = evalArgs.GetMethod();
+  absl::string_view host = evalArgs.GetHost();
+  std::multimap<absl::string_view, absl::string_view> headers = evalArgs.GetHeaders();
+  EXPECT_EQ(path, nullptr) << "Failed to return nullptr with null metadata_batch.";
+  EXPECT_EQ(method, nullptr) << "Failed to return nullptr with null metadata_batch.";
+  EXPECT_EQ(host, nullptr) << "Failed to return nullptr with null metadata_batch.";
+  EXPECT_EQ(headers.size(), 0) << "Failed to return nullptr with null metadata_batch.";
+}
+
 TEST(EvaluateArgsMetadataTest, GetPathSuccess) {
   grpc_init();
   grpc_metadata_batch metadata_;
@@ -75,49 +101,148 @@ TEST(EvaluateArgsMetadataTest, GetPathSuccess) {
   grpc_metadata_batch_init(&metadata_);
   grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"));
   grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_PATH, fake_val);
-  grpc_linked_mdelem* storage = new grpc_linked_mdelem;
-  storage->md = fake_val_md;
-  GRPC_LOG_IF_ERROR("failed to add to metadata batch", grpc_metadata_batch_link_head(&metadata_, storage));
-  EvaluateArgs* evalArgs = new EvaluateArgs(&metadata_, nullptr, nullptr);
-  get_val = evalArgs->GetPath();
+  grpc_linked_mdelem storage;
+  // grpc_linked_mdelem* storage = new grpc_linked_mdelem;
+  storage.md = fake_val_md;
+  GRPC_LOG_IF_ERROR("failed to add to metadata batch", grpc_metadata_batch_link_head(&metadata_, &storage));
+  EvaluateArgs evalArgs(&metadata_, nullptr, nullptr);
+  // EvaluateArgs* evalArgs = new EvaluateArgs(&metadata_, nullptr, nullptr);
+  get_val = evalArgs.GetPath();
   grpc_metadata_batch_destroy(&metadata_);
   EXPECT_EQ(get_val, "/foo/bar") << "Failed to properly set or retrieve path.";
   grpc_shutdown();
 }
 
 TEST(EvaluateArgsMetadataTest, GetHostSuccess) {
-  grpc_init();
+  // grpc_init();
   grpc_metadata_batch metadata_;
-  absl::string_view get_val;
   grpc_metadata_batch_init(&metadata_);
   grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string("foo"));
   grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_HOST, fake_val);
-  grpc_linked_mdelem* storage = new grpc_linked_mdelem;
-  storage->md = fake_val_md;
-  GRPC_LOG_IF_ERROR("failed to add to metadata batch", grpc_metadata_batch_link_head(&metadata_, storage));
-  EvaluateArgs* evalArgs = new EvaluateArgs(&metadata_, nullptr, nullptr);
-  get_val = evalArgs->GetHost();
+  grpc_linked_mdelem storage;
+  storage.md = fake_val_md;
+  GRPC_LOG_IF_ERROR("failed to add to metadata batch", grpc_metadata_batch_link_head(&metadata_, &storage));
+  EvaluateArgs evalArgs(&metadata_, nullptr, nullptr);
+  absl::string_view get_val = evalArgs.GetHost();
   EXPECT_EQ(get_val, "foo") << "Failed to properly set or retrieve host.";
   grpc_metadata_batch_destroy(&metadata_);
-  grpc_shutdown();
+  // grpc_shutdown();
 }
 
 TEST(EvaluateArgsMetadataTest, GetMethodSuccess) {
-  grpc_init();
   grpc_metadata_batch metadata_;
   absl::string_view get_val;
   grpc_metadata_batch_init(&metadata_);
   grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string("GET"));
   grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_METHOD, fake_val);
-  grpc_linked_mdelem* storage = new grpc_linked_mdelem;
-  storage->md = fake_val_md;
-  GRPC_LOG_IF_ERROR("failed to add to metadata batch", grpc_metadata_batch_link_head(&metadata_, storage));
-  EvaluateArgs* evalArgs = new EvaluateArgs(&metadata_, nullptr, nullptr);
-  get_val = evalArgs->GetMethod();
+  grpc_linked_mdelem storage;
+  storage.md = fake_val_md;
+  GRPC_LOG_IF_ERROR("failed to add to metadata batch", grpc_metadata_batch_link_head(&metadata_, &storage));
+  EvaluateArgs evalArgs(&metadata_, nullptr, nullptr);
+  get_val = evalArgs.GetMethod();
   EXPECT_EQ(get_val, "GET") << "Failed to properly set or retrieve method.";
   grpc_metadata_batch_destroy(&metadata_);
+}
+
+// TEST(EvaluateArgsMetadataTest, GetHeadersSuccess) {
+//   grpc_init();
+//   grpc_metadata_batch metadata_;
+//   grpc_metadata_batch_init(&metadata_);
+//   std::multimap<std::string, std::string> real_headers;
+//   real_headers.emplace(GRPC_MDSTR_PATH, "/foo/bar");
+//   // real_headers.emplace(GRPC_MDSTR_HOST, "foo");
+//   // real_headers.emplace(GRPC_MDSTR_METHOD, "GET");
+  
+//   // grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"));
+//   // grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_PATH, fake_val);
+//   // grpc_linked_mdelem* storage = new grpc_linked_mdelem;
+//   // storage->md = fake_val_md;
+//   // GRPC_LOG_IF_ERROR("failed to add to metadata batch", grpc_metadata_batch_link_head(&metadata_, storage));
+
+// }
+
+
+
+TEST(EvaluateArgsAuthContextTest, HandlesNullAuthContext) {
+  EvaluateArgs evalArgs(nullptr, nullptr, nullptr);
+  absl::string_view spiffe_id = evalArgs.GetSpiffeId();
+  absl::string_view name = evalArgs.GetCertServerName();
+  EXPECT_EQ(spiffe_id, nullptr) << "Failed to return nullptr with null auth_context.";
+  EXPECT_EQ(name, nullptr) << "Failed to return nullptr with null auth_context.";
+}
+
+TEST(EvaluateArgsAuthContextTest, HandlesEmptyAuthCtx) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context auth_context_(ctx);
+  ASSERT_NE(&auth_context_, nullptr) << "auth_context didint initialize?";
+
+  EvaluateArgs evalArgs(nullptr, &auth_context_, nullptr);
+  absl::string_view spiffe_id = evalArgs.GetSpiffeId();
+  absl::string_view name = evalArgs.GetCertServerName();
+  EXPECT_EQ(spiffe_id, nullptr) << "Failed to return nullptr with empty auth_context.";
+  EXPECT_EQ(name, nullptr) << "Failed to return nullptr with empty auth_context.";
+}
+
+
+
+
+TEST(EvaluateArgsAuthContextTest, GetSpiffeIdSuccessOneProperty) {
+  grpc_init();
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context auth_context_(ctx);
+  ASSERT_NE(&auth_context_, nullptr) << "auth_context didint initialize?";
+  
+  auth_context_.add_cstring_property(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "test1");
+
+  EvaluateArgs evalArgs(nullptr, &auth_context_, nullptr);
+  absl::string_view id = evalArgs.GetSpiffeId();
+  EXPECT_EQ(id, "test1") << "Failed to properly retrieve spiffe id";
   grpc_shutdown();
 }
+
+TEST(EvaluateArgsAuthContextTest, GetSpiffeIdFailDuplicateProperty) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context auth_context_(ctx);
+  ASSERT_NE(&auth_context_, nullptr) << "auth_context didint initialize?";
+  
+  auth_context_.add_cstring_property(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "test1");  
+  auth_context_.add_cstring_property(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "test2");
+
+  EvaluateArgs evalArgs(nullptr, &auth_context_, nullptr);
+  absl::string_view id = evalArgs.GetSpiffeId();
+  EXPECT_EQ(id, nullptr) << "Failed to account for multiple properties";
+}
+
+TEST(EvaluateArgsAuthContextTest, GetCertServerNameSuccessOneProperty) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context auth_context_(ctx);
+  ASSERT_NE(&auth_context_, nullptr) << "auth_context didint initialize?";
+  
+  auth_context_.add_cstring_property(GRPC_X509_CN_PROPERTY_NAME, "test1");
+
+  EvaluateArgs evalArgs(nullptr, &auth_context_, nullptr);
+  absl::string_view name = evalArgs.GetCertServerName();
+  EXPECT_EQ(name, "test1") << "Failed to properly retrieve cert server name";
+}
+
+TEST(EvaluateArgsAuthContextTest, GetCertServerNameFailDuplicateProperty) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context auth_context_(ctx);
+  ASSERT_NE(&auth_context_, nullptr) << "auth_context didint initialize?";
+  
+  auth_context_.add_cstring_property(GRPC_X509_CN_PROPERTY_NAME, "test1");  
+  auth_context_.add_cstring_property(GRPC_X509_CN_PROPERTY_NAME, "test2");
+  EvaluateArgs evalArgs(nullptr, &auth_context_, nullptr);
+  absl::string_view name = evalArgs.GetCertServerName();
+  EXPECT_EQ(name, nullptr) << "Failed to account for multiple properties";
+}
+
+
 
 }  // namespace grpc_core
 
