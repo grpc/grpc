@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/ext/filters/client_channel/parse_address.h"
+#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 

@@ -19,30 +19,6 @@ grpc_package(name = "test/core/client_channel")
 licenses(["notice"])
 
 grpc_cc_test(
-    name = "parse_address_test",
-    srcs = ["parse_address_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "parse_address_with_named_scope_id_test",
-    srcs = ["parse_address_with_named_scope_id_test.cc"],
-    language = "C++",
-    tags = ["no_windows"],
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "retry_throttle_test",
     srcs = ["retry_throttle_test.cc"],
     external_deps = [
