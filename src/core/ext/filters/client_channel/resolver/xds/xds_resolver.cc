@@ -97,43 +97,52 @@ class XdsResolver : public Resolver {
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
                       const XdsApi::RdsUpdate& rds_update)
         : resolver_(std::move(resolver)) {
-      for (const auto& update : rds_update.routes) {
-        // todo@ donna weighted target name
-        // Keep a set of actions from this update and take a reference for every
-        // cluster. Ref count will be unset in the destructor.
-        actions_.emplace(update.cluster_name);
-        {
-          MutexLock lock(&resolver_->cluster_state_map_mu_);
-          resolver_->cluster_state_map_[update.cluster_name].refcount++;
+      for (const auto& route : rds_update.routes) {
+        const std::string action_name = route.weighted_clusters.empty()
+                                            ? route.cluster_name
+                                            : "donna_new_constructed_name";
+        if (actions_.find(action_name) == actions_.end()) {
+          // todo@ donna weighted target name
+          // Keep a set of actions from this update and take a reference for
+          // every cluster. Ref count will be unset in the destructor.
+          actions_.emplace(action_name);
+          {
+            MutexLock lock(&resolver_->cluster_state_map_mu_);
+            resolver_->cluster_state_map_[action_name].refcount++;
+          }
         }
-        void *stack[128];
+        /*void *stack[128];
         int size = absl::GetStackTrace(stack, 128, 1);
         for (int i = 0; i < size; ++i) {
           char out[256];
           if (absl::Symbolize(stack[i], out, 256)) {
-            gpr_log(GPR_INFO, "donna stack trace per selector %p add:[%s]", this, out);
+            gpr_log(GPR_INFO, "donna stack trace per selector %p add:[%s]",
+        this, out);
           }
-        }
-        XdsApi::RdsUpdate::RdsRoute route;
-        route.matchers.path_matcher.type = update.matchers.path_matcher.type;
-        route.matchers.path_matcher.string_matcher =
-            update.matchers.path_matcher.string_matcher;
-        if (route.matchers.path_matcher.type ==
+        }*/
+        XdsApi::RdsUpdate::RdsRoute route_table_entry;
+        route_table_entry.matchers.path_matcher.type =
+            route.matchers.path_matcher.type;
+        route_table_entry.matchers.path_matcher.string_matcher =
+            route.matchers.path_matcher.string_matcher;
+        if (route_table_entry.matchers.path_matcher.type ==
             XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::
                 PathMatcherType::REGEX) {
-          route.matchers.path_matcher.regex_matcher = absl::make_unique<RE2>(
-              update.matchers.path_matcher.regex_matcher->pattern());
+          route_table_entry.matchers.path_matcher.regex_matcher =
+              absl::make_unique<RE2>(
+                  route.matchers.path_matcher.regex_matcher->pattern());
         }
         // todo@ donnadionne header matchers
-        route.cluster_name = update.cluster_name;
+        route_table_entry.cluster_name = action_name;
         // todo@ donnadionne weighted clusters.
         route_table_.routes.emplace_back(std::move(route));
       }
-      gpr_log(GPR_INFO,
-              "DONNAA: RDS update passed in;  RouteConfiguration contains "
-              "%" PRIuPTR
-              " routes to build the route_table_ for XdsConfigSelector",
-              route_table_.routes.size());
+      gpr_log(
+          GPR_INFO,
+          "DONNAAA: RDS update passed in;  RouteConfiguration contains "
+          "%" PRIuPTR
+          " routes to build the route_table_ for XdsConfigSelector %p added",
+          route_table_.routes.size(), this);
       for (size_t i = 0; i < route_table_.routes.size(); ++i) {
         gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
                 route_table_.routes[i].ToString().c_str());
@@ -148,19 +157,23 @@ class XdsResolver : public Resolver {
     }
 
     ~XdsConfigSelector() {
+      gpr_log(GPR_INFO, "DONNAAA: destructor per selector %p minus", this);
       MutexLock lock(&resolver_->cluster_state_map_mu_);
-      void *stack[128];
+      void* stack[128];
       int size = absl::GetStackTrace(stack, 128, 1);
       for (int i = 0; i < size; ++i) {
         char out[256];
         if (absl::Symbolize(stack[i], out, 256)) {
-          gpr_log(GPR_INFO, "donna stack trace per selector %p minus:[%s]", this, out);
+          gpr_log(GPR_INFO, "donna stack trace per selector %p minus:[%s]",
+                  this, out);
         }
       }
       for (const auto& action : actions_) {
         resolver_->cluster_state_map_[action].refcount--;
         if (resolver_->cluster_state_map_[action].refcount == 0) {
-          gpr_log(GPR_INFO, "DONNAAA: destructor erasing from cluster state map: %s", action.c_str());
+          gpr_log(GPR_INFO,
+                  "DONNAAA: destructor ERASING from cluster state map: %s",
+                  action.c_str());
           resolver_->cluster_state_map_.erase(action);
         }
       }
@@ -171,11 +184,14 @@ class XdsResolver : public Resolver {
     }
 
     void OnCallCommited(const std::string& routing_action) {
-      gpr_log(GPR_INFO, "DONNAAA: OnCallCommitted %s", routing_action.c_str());
+      // gpr_log(GPR_INFO, "DONNAAA: OnCallCommitted %s",
+      // routing_action.c_str());
       MutexLock lock(&resolver_->cluster_state_map_mu_);
       resolver_->cluster_state_map_[routing_action].refcount--;
       if (resolver_->cluster_state_map_[routing_action].refcount == 0) {
-        gpr_log(GPR_INFO, "DONNAAA: OnCallCommitted erasing from cluster state map: %s", routing_action.c_str());
+        gpr_log(GPR_INFO,
+                "DONNAAA: OnCallCommitted ERASING from cluster state map: %s",
+                routing_action.c_str());
         resolver_->cluster_state_map_.erase(routing_action);
       }
       /*void *stack[128];
@@ -207,7 +223,10 @@ class XdsResolver : public Resolver {
         if (absl::StartsWith(
                 StringViewFromSlice(*args.path),
                 route_table_.routes[i].matchers.path_matcher.string_matcher)) {
-          gpr_log(GPR_INFO, "DONNAA match action found: %s",
+          gpr_log(GPR_INFO, "DONNAA match of %s %s and actio: %s",
+                  std::string(StringViewFromSlice(*args.path)).c_str(),
+                  route_table_.routes[i]
+                      .matchers.path_matcher.string_matcher.c_str(),
                   route_table_.routes[i].cluster_name.c_str());
           char* routing_action_str = static_cast<char*>(args.arena->Alloc(
               route_table_.routes[i].cluster_name.size() + 1));

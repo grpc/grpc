@@ -334,7 +334,7 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 }
 
 XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
-  gpr_log(GPR_INFO, "DONNAA given routing action by config selector: %s",
+  gpr_log(GPR_INFO, "DONNAAA given routing action by config selector: [%s]",
           std::string(args.call_state->ExperimentalGetCallAttribute(
                           kCallAttributeRoutingAction))
               .c_str());

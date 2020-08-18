@@ -1022,6 +1022,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     const std::string& cluster_name = p.first;
     if (cds_update_map.find(cluster_name) == cds_update_map.end()) {
       ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
+      if (!cluster_state.update.has_value()) {
+        gpr_log(GPR_INFO, "donna new case prvent does not exist");
+        continue;
+      }
       cluster_state.update.reset();
       for (const auto& p : cluster_state.watchers) {
         p.first->OnResourceDoesNotExist();

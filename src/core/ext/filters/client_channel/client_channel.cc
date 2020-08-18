@@ -3980,7 +3980,6 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
 }
 
 void CallData::MaybeInvokeConfigSelectorCommitCallback() {
-  gpr_log(GPR_INFO, "DONNAAA reach MaybeInvokeConfigSelectorCommitCallback");
   if (on_call_committed_ != nullptr) {
     on_call_committed_();
     on_call_committed_ = nullptr;
