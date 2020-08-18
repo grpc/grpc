@@ -33,7 +33,7 @@ module Grpc
         self.service_name = 'grpc.testing.ReportQpsScenarioService'
 
         # Report results of a QPS test benchmark scenario.
-        rpc :ReportScenario, ScenarioResult, Void
+        rpc :ReportScenario, ::Grpc::Testing::ScenarioResult, ::Grpc::Testing::Void
       end
 
       Stub = Service.rpc_stub_class
