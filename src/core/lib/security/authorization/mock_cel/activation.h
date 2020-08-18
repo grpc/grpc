@@ -22,7 +22,7 @@
 #include "src/core/lib/security/authorization/mock_cel/cel_value.h"
 
 namespace grpc_core {
-namespace mock_cel{
+namespace mock_cel {
 
 // Base class for an activation. This is a temporary stub implementation of CEL
 // APIs. Once gRPC imports the CEL library, this class will be removed.
