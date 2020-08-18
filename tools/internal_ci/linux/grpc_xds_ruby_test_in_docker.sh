@@ -50,10 +50,10 @@ touch "$TOOLS_DIR"/src/proto/grpc/testing/__init__.py
 
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_routing_lb,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
-    --test_case=all \
+    --test_case="all,path_matching,header_matching" \
     --project_id=grpc-testing \
-    --source_image=projects/grpc-testing/global/images/xds-test-server \
+    --source_image=projects/grpc-testing/global/images/xds-test-server-2 \
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
     --gcp_suffix=$(date '+%s') \
     --verbose \
-    --client_cmd='ruby src/ruby/pb/test/xds_client.rb --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps}'
+    --client_cmd='ruby src/ruby/pb/test/xds_client.rb --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {fail_on_failed_rpc} {rpcs_to_send} {metadata_to_send}'

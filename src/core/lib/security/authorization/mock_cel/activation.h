@@ -21,10 +21,8 @@
 
 #include "src/core/lib/security/authorization/mock_cel/cel_value.h"
 
-namespace google {
-namespace api {
-namespace expr {
-namespace runtime {
+namespace grpc_core {
+namespace mock_cel {
 
 // Base class for an activation. This is a temporary stub implementation of CEL
 // APIs. Once gRPC imports the CEL library, this class will be removed.
@@ -53,9 +51,7 @@ class Activation : public BaseActivation {
   void InsertValue(absl::string_view name, const CelValue& value) {}
 };
 
-}  // namespace runtime
-}  // namespace expr
-}  // namespace api
-}  // namespace google
+}  // namespace mock_cel
+}  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_ACTIVATION_H

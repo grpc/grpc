@@ -100,6 +100,7 @@ libs:
   - test/core/end2end/tests/retry_throttled.cc
   - test/core/end2end/tests/retry_too_many_attempts.cc
   - test/core/end2end/tests/server_finishes_request.cc
+  - test/core/end2end/tests/server_streaming.cc
   - test/core/end2end/tests/shutdown_finishes_calls.cc
   - test/core/end2end/tests/shutdown_finishes_tags.cc
   - test/core/end2end/tests/simple_cacheable_request.cc
@@ -209,6 +210,7 @@ libs:
   - test/core/end2end/tests/retry_throttled.cc
   - test/core/end2end/tests/retry_too_many_attempts.cc
   - test/core/end2end/tests/server_finishes_request.cc
+  - test/core/end2end/tests/server_streaming.cc
   - test/core/end2end/tests/shutdown_finishes_calls.cc
   - test/core/end2end/tests/shutdown_finishes_tags.cc
   - test/core/end2end/tests/simple_cacheable_request.cc
@@ -2087,10 +2089,8 @@ libs:
   - include/grpcpp/alarm.h
   - include/grpcpp/alarm_impl.h
   - include/grpcpp/channel.h
-  - include/grpcpp/channel_impl.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
-  - include/grpcpp/completion_queue_impl.h
   - include/grpcpp/create_channel.h
   - include/grpcpp/create_channel_posix.h
   - include/grpcpp/ext/health_check_service_server_builder_option.h
@@ -2116,11 +2116,9 @@ libs:
   - include/grpcpp/impl/codegen/client_callback.h
   - include/grpcpp/impl/codegen/client_callback_impl.h
   - include/grpcpp/impl/codegen/client_context.h
-  - include/grpcpp/impl/codegen/client_context_impl.h
   - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
-  - include/grpcpp/impl/codegen/completion_queue_impl.h
   - include/grpcpp/impl/codegen/completion_queue_tag.h
   - include/grpcpp/impl/codegen/config.h
   - include/grpcpp/impl/codegen/config_protobuf.h
@@ -2468,10 +2466,8 @@ libs:
   - include/grpcpp/alarm.h
   - include/grpcpp/alarm_impl.h
   - include/grpcpp/channel.h
-  - include/grpcpp/channel_impl.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
-  - include/grpcpp/completion_queue_impl.h
   - include/grpcpp/create_channel.h
   - include/grpcpp/create_channel_posix.h
   - include/grpcpp/ext/health_check_service_server_builder_option.h
@@ -2497,11 +2493,9 @@ libs:
   - include/grpcpp/impl/codegen/client_callback.h
   - include/grpcpp/impl/codegen/client_callback_impl.h
   - include/grpcpp/impl/codegen/client_context.h
-  - include/grpcpp/impl/codegen/client_context_impl.h
   - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
-  - include/grpcpp/impl/codegen/completion_queue_impl.h
   - include/grpcpp/impl/codegen/completion_queue_tag.h
   - include/grpcpp/impl/codegen/config.h
   - include/grpcpp/impl/codegen/config_protobuf.h
@@ -4582,7 +4576,7 @@ targets:
   language: c
   headers: []
   src:
-  - test/core/client_channel/uri_parser_test.cc
+  - test/core/uri/uri_parser_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -4777,10 +4771,12 @@ targets:
   language: c++
   headers:
   - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/mock_cel/activation.h
   - src/core/lib/security/authorization/mock_cel/cel_value.h
   src:
   - src/core/lib/security/authorization/authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
   - test/core/security/authorization_engine_test.cc
   deps:
   - grpc_test_util
@@ -7228,6 +7224,7 @@ targets:
 - name: stranded_event_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -7453,7 +7450,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/client_channel/uri_fuzzer_test.cc
+  - test/core/uri/uri_fuzzer_test.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
   - grpc_test_util
@@ -7463,7 +7460,7 @@ targets:
   - address_sorting
   - upb
   corpus_dirs:
-  - test/core/client_channel/uri_corpus
+  - test/core/uri/uri_corpus
   maxlen: 128
 - name: window_overflow_bad_client_test
   gtest: true

@@ -1894,11 +1894,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
-  // TODO(mattstev): Re-enable TLS 1.3 by using |options.min_tls_version| and
-  // |options.max_tls_version|, rather than hardcoding in TLS 1.2 as the min and
-  // max.
   result = tsi_set_min_and_max_tls_versions(
-      ssl_context, tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_2);
+      ssl_context, options->min_tls_version, options->max_tls_version);
   if (result != TSI_OK) return result;
   if (ssl_context == nullptr) {
     gpr_log(GPR_ERROR, "Could not create ssl context.");
@@ -2064,12 +2061,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #else
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif
-      // TODO(mattstev): Re-enable TLS 1.3 by using |options.min_tls_version|
-      // and |options.max_tls_version|, rather than hardcoding in TLS 1.2 as the
-      // min and max.
       result = tsi_set_min_and_max_tls_versions(impl->ssl_contexts[i],
-                                                tsi_tls_version::TSI_TLS1_2,
-                                                tsi_tls_version::TSI_TLS1_2);
+                                                options->min_tls_version,
+                                                options->max_tls_version);
       if (result != TSI_OK) return result;
       if (impl->ssl_contexts[i] == nullptr) {
         gpr_log(GPR_ERROR, "Could not create ssl context.");

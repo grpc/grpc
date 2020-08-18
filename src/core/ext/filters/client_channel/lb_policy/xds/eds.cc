@@ -457,6 +457,7 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
       grpc_error* error = GRPC_ERROR_NONE;
       xds_client_ = MakeOrphanable<XdsClient>(
           work_serializer(), interested_parties(), GetEdsResourceName(),
+          std::vector<grpc_resolved_address>{},
           nullptr /* service config watcher */, *args_, &error);
       // TODO(roth): If we decide that we care about EDS-only mode, add
       // proper error handling here.

@@ -71,6 +71,10 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     add_message "grpc.testing.LoadBalancerStatsResponse" do
       map :rpcs_by_peer, :string, :int32, 1
       optional :num_failures, :int32, 2
+      map :rpcs_by_method, :string, :message, 3, "grpc.testing.LoadBalancerStatsResponse.RpcsByPeer"
+    end
+    add_message "grpc.testing.LoadBalancerStatsResponse.RpcsByPeer" do
+      map :rpcs_by_peer, :string, :int32, 1
     end
     add_enum "grpc.testing.PayloadType" do
       value :COMPRESSABLE, 0
@@ -99,6 +103,7 @@ module Grpc
     ReconnectInfo = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ReconnectInfo").msgclass
     LoadBalancerStatsRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerStatsRequest").msgclass
     LoadBalancerStatsResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerStatsResponse").msgclass
+    LoadBalancerStatsResponse::RpcsByPeer = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerStatsResponse.RpcsByPeer").msgclass
     PayloadType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.PayloadType").enummodule
     GrpclbRouteType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.GrpclbRouteType").enummodule
   end

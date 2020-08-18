@@ -31,7 +31,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/time.h>
 
-namespace grpc_impl {
+namespace grpc {
 
 class Channel;
 
@@ -43,7 +43,7 @@ class DefaultGlobalClientCallbacks final
   void Destructor(ClientContext* /*context*/) override {}
 };
 
-static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+static internal::GrpcLibraryInitializer g_gli_initializer;
 static DefaultGlobalClientCallbacks* g_default_client_callbacks =
     new DefaultGlobalClientCallbacks();
 static ClientContext::GlobalCallbacks* g_client_callbacks =
@@ -73,7 +73,7 @@ ClientContext::~ClientContext() {
 }
 
 void ClientContext::set_credentials(
-    const std::shared_ptr<grpc::CallCredentials>& creds) {
+    const std::shared_ptr<CallCredentials>& creds) {
   creds_ = creds;
   // If call_ is set, we have already created the call, and set the call
   // credentials. This should only be done before we have started the batch
@@ -113,9 +113,9 @@ void ClientContext::AddMetadata(const std::string& meta_key,
   send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
 }
 
-void ClientContext::set_call(
-    grpc_call* call, const std::shared_ptr<::grpc_impl::Channel>& channel) {
-  grpc::internal::MutexLock lock(&mu_);
+void ClientContext::set_call(grpc_call* call,
+                             const std::shared_ptr<Channel>& channel) {
+  internal::MutexLock lock(&mu_);
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
   channel_ = channel;
@@ -145,7 +145,7 @@ void ClientContext::set_compression_algorithm(
 }
 
 void ClientContext::TryCancel() {
-  grpc::internal::MutexLock lock(&mu_);
+  internal::MutexLock lock(&mu_);
   if (call_) {
     SendCancelToInterceptors();
     grpc_call_cancel(call_, nullptr);
@@ -155,7 +155,7 @@ void ClientContext::TryCancel() {
 }
 
 void ClientContext::SendCancelToInterceptors() {
-  grpc::internal::CancelInterceptorBatchMethods cancel_methods;
+  internal::CancelInterceptorBatchMethods cancel_methods;
   for (size_t i = 0; i < rpc_info_.interceptors_.size(); i++) {
     rpc_info_.RunInterceptor(&cancel_methods, i);
   }
@@ -178,4 +178,4 @@ void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {
   g_client_callbacks = client_callbacks;
 }
 
-}  // namespace grpc_impl
+}  // namespace grpc

@@ -178,9 +178,9 @@ class ClientAsyncReaderFactory {
   /// used to send to the server when starting the call.
   template <class W>
   static ClientAsyncReader<R>* Create(::grpc::ChannelInterface* channel,
-                                      ::grpc_impl::CompletionQueue* cq,
+                                      ::grpc::CompletionQueue* cq,
                                       const ::grpc::internal::RpcMethod& method,
-                                      ::grpc_impl::ClientContext* context,
+                                      ::grpc::ClientContext* context,
                                       const W& request, bool start, void* tag) {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
     return new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
@@ -259,9 +259,8 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
  private:
   friend class internal::ClientAsyncReaderFactory<R>;
   template <class W>
-  ClientAsyncReader(::grpc::internal::Call call,
-                    ::grpc_impl::ClientContext* context, const W& request,
-                    bool start, void* tag)
+  ClientAsyncReader(::grpc::internal::Call call, ::grpc::ClientContext* context,
+                    const W& request, bool start, void* tag)
       : context_(context), call_(call), started_(start) {
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(init_ops_.SendMessage(request).ok());
@@ -280,7 +279,7 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
     call_.PerformOps(&init_ops_);
   }
 
-  ::grpc_impl::ClientContext* context_;
+  ::grpc::ClientContext* context_;
   ::grpc::internal::Call call_;
   bool started_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
@@ -327,9 +326,9 @@ class ClientAsyncWriterFactory {
   /// method of this instance.
   template <class R>
   static ClientAsyncWriter<W>* Create(::grpc::ChannelInterface* channel,
-                                      ::grpc_impl::CompletionQueue* cq,
+                                      ::grpc::CompletionQueue* cq,
                                       const ::grpc::internal::RpcMethod& method,
-                                      ::grpc_impl::ClientContext* context,
+                                      ::grpc::ClientContext* context,
                                       R* response, bool start, void* tag) {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
     return new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
@@ -426,9 +425,8 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
  private:
   friend class internal::ClientAsyncWriterFactory<W>;
   template <class R>
-  ClientAsyncWriter(::grpc::internal::Call call,
-                    ::grpc_impl::ClientContext* context, R* response,
-                    bool start, void* tag)
+  ClientAsyncWriter(::grpc::internal::Call call, ::grpc::ClientContext* context,
+                    R* response, bool start, void* tag)
       : context_(context), call_(call), started_(start) {
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
@@ -450,7 +448,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     }
   }
 
-  ::grpc_impl::ClientContext* context_;
+  ::grpc::ClientContext* context_;
   ::grpc::internal::Call call_;
   bool started_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
@@ -493,9 +491,9 @@ class ClientAsyncReaderWriterFactory {
   /// Note that \a context will be used to fill in custom initial metadata
   /// used to send to the server when starting the call.
   static ClientAsyncReaderWriter<W, R>* Create(
-      ::grpc::ChannelInterface* channel, ::grpc_impl::CompletionQueue* cq,
-      const ::grpc::internal::RpcMethod& method,
-      ::grpc_impl::ClientContext* context, bool start, void* tag) {
+      ::grpc::ChannelInterface* channel, ::grpc::CompletionQueue* cq,
+      const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
+      bool start, void* tag) {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
 
     return new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
@@ -601,8 +599,7 @@ class ClientAsyncReaderWriter final
  private:
   friend class internal::ClientAsyncReaderWriterFactory<W, R>;
   ClientAsyncReaderWriter(::grpc::internal::Call call,
-                          ::grpc_impl::ClientContext* context, bool start,
-                          void* tag)
+                          ::grpc::ClientContext* context, bool start, void* tag)
       : context_(context), call_(call), started_(start) {
     if (start) {
       StartCallInternal(tag);
@@ -622,7 +619,7 @@ class ClientAsyncReaderWriter final
     }
   }
 
-  ::grpc_impl::ClientContext* context_;
+  ::grpc::ClientContext* context_;
   ::grpc::internal::Call call_;
   bool started_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
