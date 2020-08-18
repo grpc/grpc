@@ -13,6 +13,7 @@
 # limitations under the License.
 """A setup module for the gRPC Python package."""
 
+import multiprocessing
 import os
 import os.path
 import sys
@@ -94,17 +95,19 @@ TESTS_REQUIRE = INSTALL_REQUIRES
 
 PACKAGES = setuptools.find_packages('.')
 
-setuptools.setup(
-    name='grpcio-tests',
-    version=grpc_version.VERSION,
-    license=LICENSE,
-    packages=list(PACKAGES),
-    package_dir=PACKAGE_DIRECTORIES,
-    package_data=PACKAGE_DATA,
-    install_requires=INSTALL_REQUIRES,
-    cmdclass=COMMAND_CLASS,
-    tests_require=TESTS_REQUIRE,
-    test_suite=TEST_SUITE,
-    test_loader=TEST_LOADER,
-    test_runner=TEST_RUNNER,
-)
+if __name__ == "__main__":
+    multiprocessing.freeze_support()
+    setuptools.setup(
+        name='grpcio-tests',
+        version=grpc_version.VERSION,
+        license=LICENSE,
+        packages=list(PACKAGES),
+        package_dir=PACKAGE_DIRECTORIES,
+        package_data=PACKAGE_DATA,
+        install_requires=INSTALL_REQUIRES,
+        cmdclass=COMMAND_CLASS,
+        tests_require=TESTS_REQUIRE,
+        test_suite=TEST_SUITE,
+        test_loader=TEST_LOADER,
+        test_runner=TEST_RUNNER,
+    )
