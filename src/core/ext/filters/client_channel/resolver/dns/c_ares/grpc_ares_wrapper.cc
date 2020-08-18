@@ -37,7 +37,6 @@
 #include <grpc/support/time.h>
 
 #include <address_sorting/address_sorting.h>
-#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -45,6 +44,7 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/nameser.h"
+#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/authority_override.h"
 

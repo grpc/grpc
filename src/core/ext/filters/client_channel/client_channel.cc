@@ -2176,13 +2176,14 @@ void CallData::Destroy(grpc_call_element* elem,
                        const grpc_call_final_info* /*final_info*/,
                        grpc_closure* then_schedule_closure) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  if (GPR_LIKELY(calld->subchannel_call_ != nullptr)) {
-    calld->subchannel_call_->SetAfterCallStackDestroy(then_schedule_closure);
-    then_schedule_closure = nullptr;
-  }
+  RefCountedPtr<SubchannelCall> subchannel_call = calld->subchannel_call_;
   calld->~CallData();
-  // TODO(yashkt) : This can potentially be a Closure::Run
-  ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
+  if (GPR_LIKELY(subchannel_call != nullptr)) {
+    subchannel_call->SetAfterCallStackDestroy(then_schedule_closure);
+  } else {
+    // TODO(yashkt) : This can potentially be a Closure::Run
+    ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
+  }
 }
 
 void CallData::StartTransportStreamOpBatch(

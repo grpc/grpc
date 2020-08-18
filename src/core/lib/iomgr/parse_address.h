@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PARSE_ADDRESS_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PARSE_ADDRESS_H
+#ifndef GRPC_CORE_LIB_IOMGR_PARSE_ADDRESS_H
+#define GRPC_CORE_LIB_IOMGR_PARSE_ADDRESS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -50,4 +50,4 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
 /* Converts named or numeric port to a uint16 suitable for use in a sockaddr. */
 uint16_t grpc_strhtons(const char* port);
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PARSE_ADDRESS_H */
+#endif /* GRPC_CORE_LIB_IOMGR_PARSE_ADDRESS_H */

@@ -48,7 +48,7 @@ class HelloWorldTest
 
   public static HelloReply Greet(string greeting)
   {
-    const int Port = 50051;
+    const int Port = 30051;
 
     Server server = new Server
     {
@@ -57,7 +57,7 @@ class HelloWorldTest
     };
     server.Start();
 
-    Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
+    Channel channel = new Channel("127.0.0.1:30051", ChannelCredentials.Insecure);
 
     var client = new Greeter.GreeterClient(channel);
 

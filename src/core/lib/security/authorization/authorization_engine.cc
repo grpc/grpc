@@ -20,6 +20,22 @@
 
 namespace grpc_core {
 
+namespace {
+
+// Symbols for traversing Envoy Attributes
+constexpr char kUrlPath[] = "url_path";
+constexpr char kHost[] = "host";
+constexpr char kMethod[] = "method";
+constexpr char kHeaders[] = "headers";
+constexpr char kSourceAddress[] = "source_address";
+constexpr char kSourcePort[] = "source_port";
+constexpr char kDestinationAddress[] = "destination_address";
+constexpr char kDestinationPort[] = "destination_port";
+constexpr char kSpiffeId[] = "spiffe_id";
+constexpr char kCertServerName[] = "cert_server_name";
+
+}  // namespace
+
 std::unique_ptr<AuthorizationEngine>
 AuthorizationEngine::CreateAuthorizationEngine(
     const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies) {
@@ -72,6 +88,90 @@ AuthorizationEngine::AuthorizationEngine(
       }
     }
   }
+}
+
+std::unique_ptr<mock_cel::Activation> AuthorizationEngine::CreateActivation(
+    const EvaluateArgs& args) {
+  std::unique_ptr<mock_cel::Activation> activation;
+  for (const auto& elem : envoy_attributes_) {
+    if (elem == kUrlPath) {
+      absl::string_view url_path(args.GetPath());
+      if (!url_path.empty()) {
+        activation->InsertValue(kUrlPath,
+                                mock_cel::CelValue::CreateStringView(url_path));
+      }
+    } else if (elem == kHost) {
+      absl::string_view host(args.GetHost());
+      if (!host.empty()) {
+        activation->InsertValue(kHost,
+                                mock_cel::CelValue::CreateStringView(host));
+      }
+    } else if (elem == kMethod) {
+      absl::string_view method(args.GetMethod());
+      if (!method.empty()) {
+        activation->InsertValue(kMethod,
+                                mock_cel::CelValue::CreateStringView(method));
+      }
+    } else if (elem == kHeaders) {
+      std::multimap<absl::string_view, absl::string_view> headers =
+          args.GetHeaders();
+      std::vector<std::pair<mock_cel::CelValue, mock_cel::CelValue>>
+          header_items;
+      for (const auto& header_key : header_keys_) {
+        auto header_item = headers.find(header_key);
+        if (header_item != headers.end()) {
+          header_items.push_back(
+              std::pair<mock_cel::CelValue, mock_cel::CelValue>(
+                  mock_cel::CelValue::CreateStringView(header_key),
+                  mock_cel::CelValue::CreateStringView(header_item->second)));
+        }
+      }
+      headers_ = mock_cel::ContainerBackedMapImpl::Create(
+          absl::Span<std::pair<mock_cel::CelValue, mock_cel::CelValue>>(
+              header_items));
+      activation->InsertValue(kHeaders,
+                              mock_cel::CelValue::CreateMap(headers_.get()));
+    } else if (elem == kSourceAddress) {
+      absl::string_view source_address(args.GetPeerAddress());
+      if (!source_address.empty()) {
+        activation->InsertValue(
+            kSourceAddress,
+            mock_cel::CelValue::CreateStringView(source_address));
+      }
+    } else if (elem == kSourcePort) {
+      activation->InsertValue(
+          kSourcePort, mock_cel::CelValue::CreateInt64(args.GetPeerPort()));
+    } else if (elem == kDestinationAddress) {
+      absl::string_view destination_address(args.GetLocalAddress());
+      if (!destination_address.empty()) {
+        activation->InsertValue(
+            kDestinationAddress,
+            mock_cel::CelValue::CreateStringView(destination_address));
+      }
+    } else if (elem == kDestinationPort) {
+      activation->InsertValue(kDestinationPort, mock_cel::CelValue::CreateInt64(
+                                                    args.GetLocalPort()));
+    } else if (elem == kSpiffeId) {
+      absl::string_view spiffe_id(args.GetSpiffeId());
+      if (!spiffe_id.empty()) {
+        activation->InsertValue(
+            kSpiffeId, mock_cel::CelValue::CreateStringView(spiffe_id));
+      }
+    } else if (elem == kCertServerName) {
+      absl::string_view cert_server_name(args.GetCertServerName());
+      if (!cert_server_name.empty()) {
+        activation->InsertValue(
+            kCertServerName,
+            mock_cel::CelValue::CreateStringView(cert_server_name));
+      }
+    } else {
+      gpr_log(GPR_ERROR,
+              "Error: Authorization engine does not support evaluating "
+              "attribute %s.",
+              elem.c_str());
+    }
+  }
+  return activation;
 }
 
 }  // namespace grpc_core
