@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['externalconnectiontype_3785',['ExternalConnectionType',['../classgrpc__impl_1_1_server_builder_1_1experimental__type.html#af90d71aec1b7f4eda49cc21e4ca69a0a',1,'grpc_impl::ServerBuilder::experimental_type']]]
+  ['externalconnectiontype_3776',['ExternalConnectionType',['../classgrpc_1_1_server_builder_1_1experimental__type.html#aa540de9e554cad2244c22302c58c6006',1,'grpc::ServerBuilder::experimental_type']]]
 ];

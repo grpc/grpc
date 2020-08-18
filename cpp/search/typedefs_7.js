@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['healthcheckserviceinterface_3720',['HealthCheckServiceInterface',['../namespacegrpc.html#a7dad7f8e27d95459a7f538356ef2aecb',1,'grpc']]],
-  ['hoststring_3721',['HostString',['../classgrpc__impl_1_1_server_builder.html#a99be6918c103dc4a6887cf60f97043f5',1,'grpc_impl::ServerBuilder']]]
+  ['hoststring_3715',['HostString',['../classgrpc_1_1_server_builder.html#a859a36e42d7acbe4b56decf57e84b54d',1,'grpc::ServerBuilder']]]
 ];
