@@ -168,6 +168,7 @@ class XdsResolver : public Resolver {
                   this, out);
         }
       }
+      bool update = false;
       for (const auto& action : actions_) {
         resolver_->cluster_state_map_[action].refcount--;
         if (resolver_->cluster_state_map_[action].refcount == 0) {
@@ -175,12 +176,51 @@ class XdsResolver : public Resolver {
                   "DONNAAA: destructor ERASING from cluster state map: %s",
                   action.c_str());
           resolver_->cluster_state_map_.erase(action);
+          update = true;
         }
       }
       for (const auto& state : resolver_->cluster_state_map_) {
         gpr_log(GPR_INFO, "DONNAAA: destructor: cluster %s and count %d",
                 state.first.c_str(), state.second.refcount);
       }
+      if (update) UpdateServiceConfig();
+    }
+
+    void UpdateServiceConfig() {
+      Result result;
+      std::vector<std::string> actions_vector;
+      for (const auto& cluster : resolver_->cluster_state_map_) {
+        actions_vector.push_back(
+            absl::StrFormat("      \"cds:%s\":{\n"
+                            "        \"childPolicy\":[ {\n"
+                            "          \"cds_experimental\":{\n"
+                            "            \"cluster\": \"%s\"\n"
+                            "          }\n"
+                            "        } ]\n"
+                            "       }",
+                            cluster.first, cluster.first));
+      }
+      std::vector<std::string> config_parts;
+      config_parts.push_back(
+          "{\n"
+          "  \"loadBalancingConfig\":[\n"
+          "    { \"xds_routing_experimental\":{\n"
+          "      \"actions\":{\n");
+      config_parts.push_back(absl::StrJoin(actions_vector, ",\n"));
+      config_parts.push_back(
+          "    }\n"
+          "    } }\n"
+          "  ]\n"
+          "}");
+      std::string json = absl::StrJoin(config_parts, "");
+      grpc_error* error = GRPC_ERROR_NONE;
+      RefCountedPtr<ServiceConfig> service_config = ServiceConfig::Create(json.c_str(), &error);
+      result.service_config = service_config;
+      gpr_log(GPR_INFO, "DONNAAA NEW service config json: %s", json.c_str());
+      grpc_arg new_args[] = {resolver_->xds_client_->MakeChannelArg()};
+      result.args = grpc_channel_args_copy_and_add(resolver_->args_, new_args,
+                                                   GPR_ARRAY_SIZE(new_args));
+      resolver_->result_handler()->ReturnResult(std::move(result));
     }
 
     void OnCallCommited(const std::string& routing_action) {
@@ -689,6 +729,7 @@ grpc_error* XdsResolver::CreateServiceConfig(
   std::string json = absl::StrJoin(config_parts, "");
   grpc_error* error = GRPC_ERROR_NONE;
   *service_config = ServiceConfig::Create(json.c_str(), &error);
+  gpr_log(GPR_INFO, "DONNAAA service config json: %s", json.c_str());
   return error;
 }
 

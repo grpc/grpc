@@ -781,6 +781,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:routes error:required field not present"));
+      gpr_log(GPR_INFO, "DONNAAA new service config should fail here due to no ROUTES");
     } else if (it->second.type() != Json::Type::ARRAY) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:routes error:type should be array"));
