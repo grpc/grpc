@@ -46,6 +46,7 @@ class _StatsWatcher:
     _end: int
     _rpcs_needed: int
     _rpcs_by_peer: DefaultDict[str, int]
+    _rpcs_by_method: DefaultDict[str, DefaultDict[str, int]]
     _no_remote_peer: int
     _lock: threading.Lock
     _condition: threading.Condition
@@ -55,10 +56,11 @@ class _StatsWatcher:
         self._end = end
         self._rpcs_needed = end - start
         self._rpcs_by_peer = collections.defaultdict(int)
+        self._rpcs_by_method = collections.defaultdict(lambda: collections.defaultdict(int))
         self._condition = threading.Condition()
         self._no_remote_peer = 0
 
-    def on_rpc_complete(self, request_id: int, peer: str) -> None:
+    def on_rpc_complete(self, request_id: int, peer: str, method: str) -> None:
         """Records statistics for a single RPC."""
         if self._start <= request_id < self._end:
             with self._condition:
@@ -66,6 +68,7 @@ class _StatsWatcher:
                     self._no_remote_peer += 1
                 else:
                     self._rpcs_by_peer[peer] += 1
+                    self._rpcs_by_method[method][peer] += 1
                 self._rpcs_needed -= 1
                 self._condition.notify()
 
@@ -78,6 +81,9 @@ class _StatsWatcher:
             response = messages_pb2.LoadBalancerStatsResponse()
             for peer, count in self._rpcs_by_peer.items():
                 response.rpcs_by_peer[peer] = count
+            for method, count_by_peer in self._rpcs_by_method.items():
+                for peer, count in count_by_peer.items():
+                    response.rpcs_by_method[method].rpcs_by_peer[peer] = count
             response.num_failures = self._no_remote_peer + self._rpcs_needed
         return response
 
@@ -120,7 +126,7 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
 
 
 def _start_rpc(method: str, metadata: Sequence[Tuple[str, str]], request_id: int, stub: test_pb2_grpc.TestServiceStub,
-               timeout: float, futures: Mapping[int, grpc.Future]) -> None:
+               timeout: float, futures: Mapping[int, Tuple[grpc.Future, str]]) -> None:
     logger.info(f"Sending {method} request to backend: {request_id}")
     if method == "UnaryCall":
         future = stub.UnaryCall.future(messages_pb2.SimpleRequest(),
@@ -132,10 +138,10 @@ def _start_rpc(method: str, metadata: Sequence[Tuple[str, str]], request_id: int
                                        timeout=timeout)
     else:
         raise ValueError(f"Unrecognized method '{method}'.")
-    futures[request_id] = future
-
+    futures[request_id] = (future, method)
 
 def _on_rpc_done(rpc_id: int, future: grpc.Future,
+                 method: str,
                  print_response: bool) -> None:
     exception = future.exception()
     hostname = ""
@@ -146,8 +152,12 @@ def _on_rpc_done(rpc_id: int, future: grpc.Future,
             logger.error(exception)
     else:
         response = future.result()
-        logger.info(f"Got result {rpc_id}")
-        hostname = response.hostname
+        hostname_metadata = [metadatum for metadatum in future.initial_metadata() if metadatum[0] == "hostname"]
+        hostname = None
+        if len(hostname_metadata) == 1:
+            hostname = hostname_metadata[0][1]
+        else:
+            hostname = response.hostname
         if print_response:
             if future.code() == grpc.StatusCode.OK:
                 logger.info("Successful response.")
@@ -155,24 +165,24 @@ def _on_rpc_done(rpc_id: int, future: grpc.Future,
                 logger.info(f"RPC failed: {call}")
     with _global_lock:
         for watcher in _watchers:
-            watcher.on_rpc_complete(rpc_id, hostname)
+            watcher.on_rpc_complete(rpc_id, hostname, method)
 
 
 def _remove_completed_rpcs(futures: Mapping[int, grpc.Future],
                            print_response: bool) -> None:
     logger.debug("Removing completed RPCs")
     done = []
-    for future_id, future in futures.items():
+    for future_id, (future, method) in futures.items():
         if future.done():
-            _on_rpc_done(future_id, future, args.print_response)
+            _on_rpc_done(future_id, future, method, args.print_response)
             done.append(future_id)
     for rpc_id in done:
         del futures[rpc_id]
 
 
-def _cancel_all_rpcs(futures: Mapping[int, grpc.Future]) -> None:
+def _cancel_all_rpcs(futures: Mapping[int, Tuple[grpc.Future, str]]) -> None:
     logger.info("Cancelling all remaining RPCs")
-    for future in futures.values():
+    for future, _ in futures.values():
         future.cancel()
 
 
@@ -181,7 +191,7 @@ def _run_single_channel(method: str, metadata: Sequence[Tuple[str, str]], qps: i
     duration_per_query = 1.0 / float(qps)
     with grpc.insecure_channel(server) as channel:
         stub = test_pb2_grpc.TestServiceStub(channel)
-        futures: Dict[int, grpc.Future] = {}
+        futures: Dict[int, Tuple[grpc.Future, str]] = {}
         while not _stop_event.is_set():
             request_id = None
             with _global_lock:
