@@ -334,6 +334,28 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                                  local_service_account);
   grpc_gcp_AltsContext_set_peer_rpc_versions(
       context, const_cast<grpc_gcp_RpcProtocolVersions*>(peer_rpc_version));
+  grpc_gcp_Identity* peer_identity = const_cast<grpc_gcp_Identity*>(identity);
+  if (peer_identity == nullptr) {
+    gpr_log(GPR_ERROR, "Null peer identity in ALTS context.");
+    return TSI_FAILED_PRECONDITION;
+  }
+  if (grpc_gcp_Identity_has_attributes(identity)) {
+    size_t iter = UPB_MAP_BEGIN;
+    grpc_gcp_Identity_AttributesEntry* peer_attributes_entry =
+        grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
+    while (peer_attributes_entry != nullptr) {
+      upb_strview key = grpc_gcp_Identity_AttributesEntry_key(
+          const_cast<grpc_gcp_Identity_AttributesEntry*>(
+              peer_attributes_entry));
+      upb_strview val = grpc_gcp_Identity_AttributesEntry_value(
+          const_cast<grpc_gcp_Identity_AttributesEntry*>(
+              peer_attributes_entry));
+      grpc_gcp_AltsContext_peer_attributes_set(context, key, val,
+                                               context_arena.ptr());
+      peer_attributes_entry =
+          grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
+    }
+  }
   size_t serialized_ctx_length;
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
       context, context_arena.ptr(), &serialized_ctx_length);
