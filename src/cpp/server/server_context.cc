@@ -367,7 +367,7 @@ std::string ServerContextBase::peer() const {
 }
 
 const struct census_context* ServerContextBase::census_context() const {
-  return grpc_census_call_get_context(call_);
+  return call_ == nullptr ? nullptr : grpc_census_call_get_context(call_);
 }
 
 void ServerContextBase::SetLoadReportingCosts(

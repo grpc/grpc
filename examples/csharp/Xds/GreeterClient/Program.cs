@@ -23,7 +23,7 @@ namespace GreeterClient
     {
         private class Options
         {
-            [Option("server", Default = "localhost:50051", HelpText = "The address of the server")]
+            [Option("server", Default = "localhost:30051", HelpText = "The address of the server")]
             public string Server { get; set; }
         }
 

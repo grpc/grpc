@@ -103,14 +103,19 @@ set_property(CACHE gRPC_ABSL_PROVIDER PROPERTY STRINGS "module" "package")
 
 set(gRPC_ABSL_USED_TARGETS
   absl_algorithm
+  absl_algorithm_container
   absl_atomic_hook
   absl_bad_optional_access
+  absl_bad_variant_access
   absl_base
   absl_base_internal
   absl_bits
+  absl_city
   absl_civil_time
   absl_compressed_tuple
   absl_config
+  absl_container_common
+  absl_container_memory
   absl_cord
   absl_core_headers
   absl_debugging_internal
@@ -118,17 +123,27 @@ set(gRPC_ABSL_USED_TARGETS
   absl_dynamic_annotations
   absl_endian
   absl_errno_saver
+  absl_exponential_biased
   absl_fixed_array
+  absl_flat_hash_set
   absl_function_ref
   absl_graphcycles_internal
+  absl_hash
+  absl_hash_function_defaults
+  absl_hash_policy_traits
+  absl_hashtable_debug_hooks
+  absl_hashtablez_sampler
+  absl_have_sse
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
   absl_kernel_timeout_internal
+  absl_layout
   absl_log_severity
   absl_malloc_internal
   absl_memory
   absl_optional
+  absl_raw_hash_set
   absl_raw_logging_internal
   absl_span
   absl_spinlock_wait
@@ -145,6 +160,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_time_zone
   absl_type_traits
   absl_utility
+  absl_variant
   absl_meta
 )
 
@@ -795,6 +811,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx duplicate_header_bad_client_test)
   add_dependencies(buildtests_cxx end2end_test)
   add_dependencies(buildtests_cxx error_details_test)
+  add_dependencies(buildtests_cxx evaluate_args_test)
   add_dependencies(buildtests_cxx eventmanager_libuv_test)
   add_dependencies(buildtests_cxx exception_test)
   add_dependencies(buildtests_cxx filter_end2end_test)
@@ -1050,6 +1067,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
   test/core/end2end/tests/server_finishes_request.cc
+  test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
   test/core/end2end/tests/shutdown_finishes_tags.cc
   test/core/end2end/tests/simple_cacheable_request.cc
@@ -1183,6 +1201,7 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
   test/core/end2end/tests/server_finishes_request.cc
+  test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
   test/core/end2end/tests/shutdown_finishes_tags.cc
   test/core/end2end/tests/simple_cacheable_request.cc
@@ -1421,7 +1440,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
-  src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -1646,6 +1664,7 @@ add_library(grpc
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/parse_address.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -1702,6 +1721,8 @@ add_library(grpc
   src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_writer.cc
+  src/core/lib/security/authorization/authorization_engine.cc
+  src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -1858,6 +1879,7 @@ target_link_libraries(grpc
   absl::strings
   absl::status
   absl::inlined_vector
+  absl::flat_hash_set
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc "-framework CoreFoundation")
@@ -1944,6 +1966,7 @@ if(gRPC_BUILD_TESTS)
 add_library(grpc_test_util
   test/core/util/cmdline.cc
   test/core/util/debugger_macros.cc
+  test/core/util/eval_args_mock_endpoint.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2010,6 +2033,7 @@ if(gRPC_BUILD_TESTS)
 add_library(grpc_test_util_unsecure
   test/core/util/cmdline.cc
   test/core/util/debugger_macros.cc
+  test/core/util/eval_args_mock_endpoint.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2105,7 +2129,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
-  src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -2324,6 +2347,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/parse_address.cc
   src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -2771,7 +2795,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_callback.h
   include/grpcpp/impl/codegen/client_callback_impl.h
   include/grpcpp/impl/codegen/client_context.h
-  include/grpcpp/impl/codegen/client_context_impl.h
   include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
@@ -3456,7 +3479,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_callback.h
   include/grpcpp/impl/codegen/client_callback_impl.h
   include/grpcpp/impl/codegen/client_context.h
-  include/grpcpp/impl/codegen/client_context_impl.h
   include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
@@ -6582,7 +6604,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(parse_address_test
-  test/core/client_channel/parse_address_test.cc
+  test/core/iomgr/parse_address_test.cc
 )
 
 target_include_directories(parse_address_test
@@ -6613,7 +6635,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(parse_address_with_named_scope_id_test
-    test/core/client_channel/parse_address_with_named_scope_id_test.cc
+    test/core/iomgr/parse_address_with_named_scope_id_test.cc
   )
 
   target_include_directories(parse_address_with_named_scope_id_test
@@ -7990,7 +8012,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(uri_parser_test
-  test/core/client_channel/uri_parser_test.cc
+  test/core/uri/uri_parser_test.cc
 )
 
 target_include_directories(uri_parser_test
@@ -8408,7 +8430,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(authorization_engine_test
-  src/core/lib/security/authorization/authorization_engine.cc
   test/core/security/authorization_engine_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -10736,6 +10757,45 @@ target_link_libraries(error_details_test
   grpc++_error_details
   grpc_test_util
   grpc++
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(evaluate_args_test
+  test/core/security/evaluate_args_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(evaluate_args_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(evaluate_args_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
   grpc
   gpr
   address_sorting
@@ -14681,6 +14741,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
     test/core/util/cmdline.cc
     test/core/util/debugger_macros.cc
+    test/core/util/eval_args_mock_endpoint.cc
     test/core/util/fuzzer_util.cc
     test/core/util/grpc_profiler.cc
     test/core/util/histogram.cc
@@ -15516,7 +15577,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(uri_fuzzer_test_one_entry
-  test/core/client_channel/uri_fuzzer_test.cc
+  test/core/uri/uri_fuzzer_test.cc
   test/core/util/one_corpus_entry_fuzzer.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15622,7 +15683,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc.pc")
 
@@ -15642,7 +15703,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
   "grpc"
-  "-lgrpc++ -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++ -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++.pc")
 

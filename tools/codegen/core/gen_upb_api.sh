@@ -106,6 +106,7 @@ proto_files=( \
   "src/proto/grpc/gcp/transport_security_common.proto" \
   "src/proto/grpc/health/v1/health.proto" \
   "src/proto/grpc/lb/v1/load_balancer.proto" \
+  "third_party/istio/security/proto/providers/google/meshca.proto" \
   "udpa/data/orca/v1/orca_load_report.proto" \
   "udpa/annotations/migrate.proto" \
   "udpa/annotations/sensitive.proto" \

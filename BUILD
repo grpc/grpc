@@ -325,6 +325,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     standalone = True,
     deps = [
+        "grpc_authorization_engine",
         "grpc_common",
         "grpc_lb_policy_cds_secure",
         "grpc_lb_policy_eds_secure",
@@ -715,6 +716,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
+        "src/core/lib/iomgr/parse_address.cc",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/pollset.cc",
         "src/core/lib/iomgr/pollset_custom.cc",
@@ -870,6 +872,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
         "src/core/lib/iomgr/nameser.h",
+        "src/core/lib/iomgr/parse_address.h",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.h",
         "src/core/lib/iomgr/pollset_custom.h",
@@ -952,6 +955,7 @@ grpc_cc_library(
         "madler_zlib",
         "absl/container:inlined_vector",
         "absl/status",
+        "absl/strings",
         "absl/types:optional",
     ],
     language = "c++",
@@ -1026,7 +1030,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc",
         "src/core/ext/filters/client_channel/lb_policy_registry.cc",
         "src/core/ext/filters/client_channel/local_subchannel_pool.cc",
-        "src/core/ext/filters/client_channel/parse_address.cc",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
         "src/core/ext/filters/client_channel/resolver.cc",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
@@ -1057,7 +1060,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy_factory.h",
         "src/core/ext/filters/client_channel/lb_policy_registry.h",
         "src/core/ext/filters/client_channel/local_subchannel_pool.h",
-        "src/core/ext/filters/client_channel/parse_address.h",
         "src/core/ext/filters/client_channel/proxy_mapper.h",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.h",
         "src/core/ext/filters/client_channel/resolver.h",
@@ -1855,17 +1857,23 @@ grpc_cc_library(
     name = "grpc_authorization_engine",
     srcs = [
         "src/core/lib/security/authorization/authorization_engine.cc",
+        "src/core/lib/security/authorization/evaluate_args.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
+        "src/core/lib/security/authorization/evaluate_args.h",
         "src/core/lib/security/authorization/mock_cel/activation.h",
         "src/core/lib/security/authorization/mock_cel/cel_value.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_set",
     ],
     language = "c++",
     deps = [
         "envoy_ads_upb",
         "google_api_upb",
         "grpc_base",
+        "grpc_secure",
     ],
 )
 
@@ -2254,7 +2262,6 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/client_callback.h",
         "include/grpcpp/impl/codegen/client_callback_impl.h",
         "include/grpcpp/impl/codegen/client_context.h",
-        "include/grpcpp/impl/codegen/client_context_impl.h",
         "include/grpcpp/impl/codegen/client_interceptor.h",
         "include/grpcpp/impl/codegen/client_unary_call.h",
         "include/grpcpp/impl/codegen/completion_queue.h",
@@ -2822,6 +2829,26 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        "google_api_upb",
+    ],
+)
+
+# Once upb code-gen issue is resolved, replace meshca_upb with this.
+# meshca_upb_proto_library(
+#     name = "meshca_upb",
+#     deps = ["//third_party/istio/security/proto/providers/google:meshca_proto"],
+# )
+
+grpc_cc_library(
+    name = "meshca_upb",
+    srcs = [
+        "src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.h",
     ],
     language = "c++",
     deps = [

@@ -962,7 +962,6 @@ include/grpcpp/impl/codegen/channel_interface.h \
 include/grpcpp/impl/codegen/client_callback.h \
 include/grpcpp/impl/codegen/client_callback_impl.h \
 include/grpcpp/impl/codegen/client_context.h \
-include/grpcpp/impl/codegen/client_context_impl.h \
 include/grpcpp/impl/codegen/client_interceptor.h \
 include/grpcpp/impl/codegen/client_unary_call.h \
 include/grpcpp/impl/codegen/completion_queue.h \
@@ -1110,8 +1109,6 @@ src/core/ext/filters/client_channel/lb_policy_registry.cc \
 src/core/ext/filters/client_channel/lb_policy_registry.h \
 src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
-src/core/ext/filters/client_channel/parse_address.cc \
-src/core/ext/filters/client_channel/parse_address.h \
 src/core/ext/filters/client_channel/proxy_mapper.h \
 src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
 src/core/ext/filters/client_channel/proxy_mapper_registry.h \
@@ -1607,6 +1604,8 @@ src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.cc \
 src/core/lib/iomgr/lockfree_event.h \
 src/core/lib/iomgr/nameser.h \
+src/core/lib/iomgr/parse_address.cc \
+src/core/lib/iomgr/parse_address.h \
 src/core/lib/iomgr/poller/eventmanager_libuv.cc \
 src/core/lib/iomgr/poller/eventmanager_libuv.h \
 src/core/lib/iomgr/polling_entity.cc \
@@ -1710,6 +1709,12 @@ src/core/lib/json/json_writer.cc \
 src/core/lib/profiling/basic_timers.cc \
 src/core/lib/profiling/stap_timers.cc \
 src/core/lib/profiling/timers.h \
+src/core/lib/security/authorization/authorization_engine.cc \
+src/core/lib/security/authorization/authorization_engine.h \
+src/core/lib/security/authorization/evaluate_args.cc \
+src/core/lib/security/authorization/evaluate_args.h \
+src/core/lib/security/authorization/mock_cel/activation.h \
+src/core/lib/security/authorization/mock_cel/cel_value.h \
 src/core/lib/security/context/security_context.cc \
 src/core/lib/security/context/security_context.h \
 src/core/lib/security/credentials/alts/alts_credentials.cc \

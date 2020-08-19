@@ -43,8 +43,8 @@ def main
   end
 
   correct_modularized_rpc = 'rpc :TestOne, ' \
-                            'Grpc::Testing::PackageWithUnderscore::Data::Request, ' \
-                            'Grpc::Testing::PackageWithUnderscore::Data::Response'
+                            '::Grpc::Testing::PackageWithUnderscore::Data::Request, ' \
+                            '::Grpc::Testing::PackageWithUnderscore::Data::Response'
 
   return if got.include?(correct_modularized_rpc)
 

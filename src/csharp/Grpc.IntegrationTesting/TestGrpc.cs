@@ -950,5 +950,132 @@ namespace Grpc.Testing {
     }
 
   }
+  /// <summary>
+  /// A service to remotely control health status of an xDS test server.
+  /// </summary>
+  public static partial class XdsUpdateHealthService
+  {
+    static readonly string __ServiceName = "grpc.testing.XdsUpdateHealthService";
+
+    static readonly grpc::Marshaller<global::Grpc.Testing.Empty> __Marshaller_grpc_testing_Empty = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Empty.Parser.ParseFrom);
+
+    static readonly grpc::Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty> __Method_SetServing = new grpc::Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "SetServing",
+        __Marshaller_grpc_testing_Empty,
+        __Marshaller_grpc_testing_Empty);
+
+    static readonly grpc::Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty> __Method_SetNotServing = new grpc::Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "SetNotServing",
+        __Marshaller_grpc_testing_Empty,
+        __Marshaller_grpc_testing_Empty);
+
+    /// <summary>Service descriptor</summary>
+    public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
+    {
+      get { return global::Grpc.Testing.TestReflection.Descriptor.Services[4]; }
+    }
+
+    /// <summary>Base class for server-side implementations of XdsUpdateHealthService</summary>
+    [grpc::BindServiceMethod(typeof(XdsUpdateHealthService), "BindService")]
+    public abstract partial class XdsUpdateHealthServiceBase
+    {
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> SetServing(global::Grpc.Testing.Empty request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> SetNotServing(global::Grpc.Testing.Empty request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+    }
+
+    /// <summary>Client for XdsUpdateHealthService</summary>
+    public partial class XdsUpdateHealthServiceClient : grpc::ClientBase<XdsUpdateHealthServiceClient>
+    {
+      /// <summary>Creates a new client for XdsUpdateHealthService</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
+      public XdsUpdateHealthServiceClient(grpc::ChannelBase channel) : base(channel)
+      {
+      }
+      /// <summary>Creates a new client for XdsUpdateHealthService that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
+      public XdsUpdateHealthServiceClient(grpc::CallInvoker callInvoker) : base(callInvoker)
+      {
+      }
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      protected XdsUpdateHealthServiceClient() : base()
+      {
+      }
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
+      protected XdsUpdateHealthServiceClient(ClientBaseConfiguration configuration) : base(configuration)
+      {
+      }
+
+      public virtual global::Grpc.Testing.Empty SetServing(global::Grpc.Testing.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return SetServing(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual global::Grpc.Testing.Empty SetServing(global::Grpc.Testing.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_SetServing, null, options, request);
+      }
+      public virtual grpc::AsyncUnaryCall<global::Grpc.Testing.Empty> SetServingAsync(global::Grpc.Testing.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return SetServingAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual grpc::AsyncUnaryCall<global::Grpc.Testing.Empty> SetServingAsync(global::Grpc.Testing.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_SetServing, null, options, request);
+      }
+      public virtual global::Grpc.Testing.Empty SetNotServing(global::Grpc.Testing.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return SetNotServing(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual global::Grpc.Testing.Empty SetNotServing(global::Grpc.Testing.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_SetNotServing, null, options, request);
+      }
+      public virtual grpc::AsyncUnaryCall<global::Grpc.Testing.Empty> SetNotServingAsync(global::Grpc.Testing.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return SetNotServingAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual grpc::AsyncUnaryCall<global::Grpc.Testing.Empty> SetNotServingAsync(global::Grpc.Testing.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_SetNotServing, null, options, request);
+      }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
+      protected override XdsUpdateHealthServiceClient NewInstance(ClientBaseConfiguration configuration)
+      {
+        return new XdsUpdateHealthServiceClient(configuration);
+      }
+    }
+
+    /// <summary>Creates service definition that can be registered with a server</summary>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static grpc::ServerServiceDefinition BindService(XdsUpdateHealthServiceBase serviceImpl)
+    {
+      return grpc::ServerServiceDefinition.CreateBuilder()
+          .AddMethod(__Method_SetServing, serviceImpl.SetServing)
+          .AddMethod(__Method_SetNotServing, serviceImpl.SetNotServing).Build();
+    }
+
+    /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
+    /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
+    /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static void BindService(grpc::ServiceBinderBase serviceBinder, XdsUpdateHealthServiceBase serviceImpl)
+    {
+      serviceBinder.AddMethod(__Method_SetServing, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(serviceImpl.SetServing));
+      serviceBinder.AddMethod(__Method_SetNotServing, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(serviceImpl.SetNotServing));
+    }
+
+  }
 }
 #endregion

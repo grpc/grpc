@@ -28,7 +28,7 @@ namespace HelloworldXamarin.iOS
 {
     public partial class ViewController : UIViewController
     {
-        const int Port = 50051;
+        const int Port = 30051;
         int count = 1;
 
         public ViewController(IntPtr handle) : base(handle)
@@ -63,7 +63,7 @@ namespace HelloworldXamarin.iOS
             };
             server.Start();
 
-            Channel channel = new Channel("localhost:50051", ChannelCredentials.Insecure);
+            Channel channel = new Channel("localhost:30051", ChannelCredentials.Insecure);
 
             var client = new Greeter.GreeterClient(channel);
             string user = "Xamarin " + count;

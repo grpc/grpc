@@ -57,6 +57,8 @@ void RegisterOpenCensusPlugin() {
 
 ::opencensus::trace::Span GetSpanFromServerContext(
     grpc::ServerContext* context) {
+  if (context == nullptr) return opencensus::trace::Span::BlankSpan();
+
   return reinterpret_cast<const grpc::CensusContext*>(context->census_context())
       ->Span();
 }

@@ -124,7 +124,7 @@ inline std::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor) {
     ReplacePrefix(&proto_type, ".", "");  // remove the leading . (no package)
     proto_type = RubyPackage(descriptor->file()) + "." + proto_type;
   }
-  std::string res(proto_type);
+  std::string res("." + proto_type);
   if (res.find('.') == std::string::npos) {
     return res;
   } else {

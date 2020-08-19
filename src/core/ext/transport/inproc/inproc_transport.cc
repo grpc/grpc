@@ -202,11 +202,6 @@ struct inproc_stream {
     }
 
     t->unref();
-
-    if (closure_at_destroy) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure_at_destroy,
-                              GRPC_ERROR_NONE);
-    }
   }
 
 #ifndef NDEBUG
@@ -249,7 +244,6 @@ struct inproc_stream {
   bool other_side_closed = false;               // won't talk anymore
   bool write_buffer_other_side_closed = false;  // on hold
   grpc_stream_refcount* refs;
-  grpc_closure* closure_at_destroy = nullptr;
 
   grpc_core::Arena* arena;
 
@@ -1183,12 +1177,17 @@ void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   gpr_mu_unlock(&t->mu->mu);
 }
 
-void destroy_stream(grpc_transport* /*gt*/, grpc_stream* gs,
+void destroy_stream(grpc_transport* gt, grpc_stream* gs,
                     grpc_closure* then_schedule_closure) {
   INPROC_LOG(GPR_INFO, "destroy_stream %p %p", gs, then_schedule_closure);
+  inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
   inproc_stream* s = reinterpret_cast<inproc_stream*>(gs);
-  s->closure_at_destroy = then_schedule_closure;
+  gpr_mu_lock(&t->mu->mu);
+  close_stream_locked(s);
+  gpr_mu_unlock(&t->mu->mu);
   s->~inproc_stream();
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure,
+                          GRPC_ERROR_NONE);
 }
 
 void destroy_transport(grpc_transport* gt) {
