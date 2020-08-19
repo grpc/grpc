@@ -20,6 +20,9 @@
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
+#include "src/core/lib/iomgr/parse_address.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/slice/slice_utils.h"
 
 namespace grpc_core {
@@ -67,6 +70,58 @@ std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
     headers.emplace(StringViewFromSlice(key), StringViewFromSlice(val));
   }
   return headers;
+}
+
+absl::string_view EvaluateArgs::GetLocalAddress() const {
+  absl::string_view addr = grpc_endpoint_get_local_address(endpoint_);
+  size_t first_colon = addr.find(":");
+  size_t last_colon = addr.rfind(":");
+  if (first_colon == std::string::npos || last_colon == std::string::npos) {
+    return "";
+  } else {
+    return addr.substr(first_colon + 1, last_colon - first_colon - 1);
+  }
+}
+
+int EvaluateArgs::GetLocalPort() const {
+  if (endpoint_ == nullptr) {
+    return 0;
+  }
+  grpc_uri* uri = grpc_uri_parse(
+      std::string(grpc_endpoint_get_local_address(endpoint_)).c_str(), true);
+  grpc_resolved_address resolved_addr;
+  if (uri == nullptr || !grpc_parse_uri(uri, &resolved_addr)) {
+    grpc_uri_destroy(uri);
+    return 0;
+  }
+  grpc_uri_destroy(uri);
+  return grpc_sockaddr_get_port(&resolved_addr);
+}
+
+absl::string_view EvaluateArgs::GetPeerAddress() const {
+  absl::string_view addr = grpc_endpoint_get_peer(endpoint_);
+  size_t first_colon = addr.find(":");
+  size_t last_colon = addr.rfind(":");
+  if (first_colon == std::string::npos || last_colon == std::string::npos) {
+    return "";
+  } else {
+    return addr.substr(first_colon + 1, last_colon - first_colon - 1);
+  }
+}
+
+int EvaluateArgs::GetPeerPort() const {
+  if (endpoint_ == nullptr) {
+    return 0;
+  }
+  grpc_uri* uri = grpc_uri_parse(
+      std::string(grpc_endpoint_get_peer(endpoint_)).c_str(), true);
+  grpc_resolved_address resolved_addr;
+  if (uri == nullptr || !grpc_parse_uri(uri, &resolved_addr)) {
+    grpc_uri_destroy(uri);
+    return 0;
+  }
+  grpc_uri_destroy(uri);
+  return grpc_sockaddr_get_port(&resolved_addr);
 }
 
 absl::string_view EvaluateArgs::GetSpiffeId() const {

@@ -325,6 +325,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     standalone = True,
     deps = [
+        "grpc_authorization_engine",
         "grpc_common",
         "grpc_lb_policy_cds_secure",
         "grpc_lb_policy_eds_secure",
@@ -1863,6 +1864,9 @@ grpc_cc_library(
         "src/core/lib/security/authorization/evaluate_args.h",
         "src/core/lib/security/authorization/mock_cel/activation.h",
         "src/core/lib/security/authorization/mock_cel/cel_value.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_set",
     ],
     language = "c++",
     deps = [

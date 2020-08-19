@@ -741,6 +741,12 @@
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_engine.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/mock_cel/activation.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/mock_cel/cel_value.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/alts_credentials.cc" role="src" />
@@ -968,6 +974,7 @@
     <file baseinstalldir="/" name="src/php/ext/grpc/timeval.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/version.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/algorithm/algorithm.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/algorithm/container.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/attributes.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/call_once.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/casts.h" role="src" />
@@ -982,6 +989,8 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/direct_mmap.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/endian.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/errno_saver.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/exponential_biased.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/exponential_biased.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/hide_ptr.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/identity.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/inline_variable.h" role="src" />
@@ -1021,9 +1030,22 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/port.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/thread_annotations.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/fixed_array.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/flat_hash_set.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/inlined_vector.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/common.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/compressed_tuple.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/container_memory.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/hash_function_defaults.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/hash_policy_traits.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/hashtable_debug_hooks.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/hashtablez_sampler_force_weak_definition.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/have_sse.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/inlined_vector.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/layout.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/raw_hash_set.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/raw_hash_set.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/address_is_readable.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/demangle.cc" role="src" />
@@ -1050,6 +1072,11 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_win32.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/function_ref.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/internal/function_ref.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/hash.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/city.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/city.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/hash.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/hash.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/memory/memory.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/meta/type_traits.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/numeric/int128.cc" role="src" />
@@ -1167,10 +1194,14 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/time.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_optional_access.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_optional_access.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_variant_access.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_variant_access.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/internal/optional.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/internal/span.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/internal/variant.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/optional.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/span.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/variant.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/utility/utility.h" role="src" />
     <file baseinstalldir="/" name="third_party/address_sorting/address_sorting.c" role="src" />
     <file baseinstalldir="/" name="third_party/address_sorting/address_sorting_internal.h" role="src" />
