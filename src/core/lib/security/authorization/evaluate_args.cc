@@ -132,8 +132,7 @@ absl::string_view EvaluateArgs::GetSpiffeId() const {
       auth_context_, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == nullptr ||
-      strncmp(prop->value, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
-              prop->value_length) != 0 ||
+      strcmp(prop->name, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME) != 0 ||
       grpc_auth_property_iterator_next(&it) != nullptr) {
     return "";
   }
@@ -148,8 +147,7 @@ absl::string_view EvaluateArgs::GetCertServerName() const {
       auth_context_, GRPC_X509_CN_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == nullptr ||
-      strncmp(prop->value, GRPC_X509_CN_PROPERTY_NAME, prop->value_length) !=
-          0 ||
+      strcmp(prop->name, GRPC_X509_CN_PROPERTY_NAME) != 0 ||
       grpc_auth_property_iterator_next(&it) != nullptr) {
     return "";
   }
