@@ -79,8 +79,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
+  // TODO(roth): Remove the server_name parameter as part of sharing the
+  // XdsClient instance between channels.
   XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
-            grpc_pollset_set* interested_parties,
+            grpc_pollset_set* interested_parties, absl::string_view server_name,
             const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
 
@@ -257,6 +259,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     grpc_millis last_report_time = ExecCtx::Get()->Now();
   };
 
+// FIXME: consider making this API public and having it work like any
+// other watcher
   absl::optional<XdsApi::RdsUpdate> WatchRouteConfigData(
       absl::string_view route_config_name, const std::string& listener_name);
   void CancelRouteConfigDataWatch(absl::string_view route_config_name,
@@ -283,6 +287,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
   XdsApi api_;
+
+  // TODO(roth): In order to share the XdsClient instance between
+  // channels and servers, we will need to remove this field.  In order
+  // to do that, we'll need to figure out if we can stop sending the
+  // server name as part of the node metadata in the LRS request.
+  const std::string server_name_;
 
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
