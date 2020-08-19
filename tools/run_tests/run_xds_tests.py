@@ -1808,11 +1808,12 @@ try:
                     # client's output as soon as it terminates. This enables
                     # authors of client binaries to debug simple failures quickly.
                     # This thread is responsible for closing the test_log file.
+
                     while client_process.returncode is None:
                         try:
                             client_process.wait(timeout=_LOGGING_THREAD_TIMEOUT_SECS)
                         except subprocess.TimeoutExpired:
-                            break
+                            continue
 
                     test_log_file.close()
                     if args.log_client_output:
