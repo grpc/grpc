@@ -33,7 +33,6 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
-#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
@@ -46,6 +45,7 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -741,6 +741,25 @@ Subchannel* Subchannel::Create(OrphanablePtr<SubchannelConnector> connector,
   Subchannel* registered = subchannel_pool->RegisterSubchannel(key, c);
   if (registered == c) c->subchannel_pool_ = subchannel_pool->Ref();
   return registered;
+}
+
+void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
+  MutexLock lock(&mu_);
+  // Only update the value if the new keepalive time is larger.
+  if (new_keepalive_time > keepalive_time_) {
+    keepalive_time_ = new_keepalive_time;
+    if (grpc_trace_subchannel.enabled()) {
+      gpr_log(GPR_INFO, "Subchannel=%p: Throttling keepalive time to %d", this,
+              new_keepalive_time);
+    }
+    const grpc_arg arg_to_add = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), new_keepalive_time);
+    const char* arg_to_remove = GRPC_ARG_KEEPALIVE_TIME_MS;
+    grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+        args_, &arg_to_remove, 1, &arg_to_add, 1);
+    grpc_channel_args_destroy(args_);
+    args_ = new_args;
+  }
 }
 
 Subchannel* Subchannel::Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {

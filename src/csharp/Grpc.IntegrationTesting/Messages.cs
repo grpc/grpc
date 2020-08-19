@@ -58,14 +58,22 @@ namespace Grpc.Testing {
             "eF9yZWNvbm5lY3RfYmFja29mZl9tcxgBIAEoBSIzCg1SZWNvbm5lY3RJbmZv",
             "Eg4KBnBhc3NlZBgBIAEoCBISCgpiYWNrb2ZmX21zGAIgAygFIkEKGExvYWRC",
             "YWxhbmNlclN0YXRzUmVxdWVzdBIQCghudW1fcnBjcxgBIAEoBRITCgt0aW1l",
-            "b3V0X3NlYxgCIAEoBSKzAQoZTG9hZEJhbGFuY2VyU3RhdHNSZXNwb25zZRJN",
+            "b3V0X3NlYxgCIAEoBSKLBAoZTG9hZEJhbGFuY2VyU3RhdHNSZXNwb25zZRJN",
             "CgxycGNzX2J5X3BlZXIYASADKAsyNy5ncnBjLnRlc3RpbmcuTG9hZEJhbGFu",
             "Y2VyU3RhdHNSZXNwb25zZS5ScGNzQnlQZWVyRW50cnkSFAoMbnVtX2ZhaWx1",
-            "cmVzGAIgASgFGjEKD1JwY3NCeVBlZXJFbnRyeRILCgNrZXkYASABKAkSDQoF",
-            "dmFsdWUYAiABKAU6AjgBKh8KC1BheWxvYWRUeXBlEhAKDENPTVBSRVNTQUJM",
-            "RRAAKm8KD0dycGNsYlJvdXRlVHlwZRIdChlHUlBDTEJfUk9VVEVfVFlQRV9V",
-            "TktOT1dOEAASHgoaR1JQQ0xCX1JPVVRFX1RZUEVfRkFMTEJBQ0sQARIdChlH",
-            "UlBDTEJfUk9VVEVfVFlQRV9CQUNLRU5EEAJiBnByb3RvMw=="));
+            "cmVzGAIgASgFElEKDnJwY3NfYnlfbWV0aG9kGAMgAygLMjkuZ3JwYy50ZXN0",
+            "aW5nLkxvYWRCYWxhbmNlclN0YXRzUmVzcG9uc2UuUnBjc0J5TWV0aG9kRW50",
+            "cnkamQEKClJwY3NCeVBlZXISWAoMcnBjc19ieV9wZWVyGAEgAygLMkIuZ3Jw",
+            "Yy50ZXN0aW5nLkxvYWRCYWxhbmNlclN0YXRzUmVzcG9uc2UuUnBjc0J5UGVl",
+            "ci5ScGNzQnlQZWVyRW50cnkaMQoPUnBjc0J5UGVlckVudHJ5EgsKA2tleRgB",
+            "IAEoCRINCgV2YWx1ZRgCIAEoBToCOAEaMQoPUnBjc0J5UGVlckVudHJ5EgsK",
+            "A2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoBToCOAEaZwoRUnBjc0J5TWV0aG9k",
+            "RW50cnkSCwoDa2V5GAEgASgJEkEKBXZhbHVlGAIgASgLMjIuZ3JwYy50ZXN0",
+            "aW5nLkxvYWRCYWxhbmNlclN0YXRzUmVzcG9uc2UuUnBjc0J5UGVlcjoCOAEq",
+            "HwoLUGF5bG9hZFR5cGUSEAoMQ09NUFJFU1NBQkxFEAAqbwoPR3JwY2xiUm91",
+            "dGVUeXBlEh0KGUdSUENMQl9ST1VURV9UWVBFX1VOS05PV04QABIeChpHUlBD",
+            "TEJfUk9VVEVfVFlQRV9GQUxMQkFDSxABEh0KGUdSUENMQl9ST1VURV9UWVBF",
+            "X0JBQ0tFTkQQAmIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.PayloadType), typeof(global::Grpc.Testing.GrpclbRouteType), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -82,7 +90,8 @@ namespace Grpc.Testing {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ReconnectParams), global::Grpc.Testing.ReconnectParams.Parser, new[]{ "MaxReconnectBackoffMs" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ReconnectInfo), global::Grpc.Testing.ReconnectInfo.Parser, new[]{ "Passed", "BackoffMs" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadBalancerStatsRequest), global::Grpc.Testing.LoadBalancerStatsRequest.Parser, new[]{ "NumRpcs", "TimeoutSec" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadBalancerStatsResponse), global::Grpc.Testing.LoadBalancerStatsResponse.Parser, new[]{ "RpcsByPeer", "NumFailures" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, })
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadBalancerStatsResponse), global::Grpc.Testing.LoadBalancerStatsResponse.Parser, new[]{ "RpcsByPeer", "NumFailures", "RpcsByMethod" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadBalancerStatsResponse.Types.RpcsByPeer), global::Grpc.Testing.LoadBalancerStatsResponse.Types.RpcsByPeer.Parser, new[]{ "RpcsByPeer_" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
+            null, null, })
           }));
     }
     #endregion
@@ -2706,6 +2715,7 @@ namespace Grpc.Testing {
     public LoadBalancerStatsResponse(LoadBalancerStatsResponse other) : this() {
       rpcsByPeer_ = other.rpcsByPeer_.Clone();
       numFailures_ = other.numFailures_;
+      rpcsByMethod_ = other.rpcsByMethod_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -2741,6 +2751,16 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "rpcs_by_method" field.</summary>
+    public const int RpcsByMethodFieldNumber = 3;
+    private static readonly pbc::MapField<string, global::Grpc.Testing.LoadBalancerStatsResponse.Types.RpcsByPeer>.Codec _map_rpcsByMethod_codec
+        = new pbc::MapField<string, global::Grpc.Testing.LoadBalancerStatsResponse.Types.RpcsByPeer>.Codec(pb::FieldCodec.ForString(10, ""), pb::FieldCodec.ForMessage(18, global::Grpc.Testing.LoadBalancerStatsResponse.Types.RpcsByPeer.Parser), 26);
+    private readonly pbc::MapField<string, global::Grpc.Testing.LoadBalancerStatsResponse.Types.RpcsByPeer> rpcsByMethod_ = new pbc::MapField<string, global::Grpc.Testing.LoadBalancerStatsResponse.Types.RpcsByPeer>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::MapField<string, global::Grpc.Testing.LoadBalancerStatsResponse.Types.RpcsByPeer> RpcsByMethod {
+      get { return rpcsByMethod_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as LoadBalancerStatsResponse);
@@ -2756,6 +2776,7 @@ namespace Grpc.Testing {
       }
       if (!RpcsByPeer.Equals(other.RpcsByPeer)) return false;
       if (NumFailures != other.NumFailures) return false;
+      if (!RpcsByMethod.Equals(other.RpcsByMethod)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -2764,6 +2785,7 @@ namespace Grpc.Testing {
       int hash = 1;
       hash ^= RpcsByPeer.GetHashCode();
       if (NumFailures != 0) hash ^= NumFailures.GetHashCode();
+      hash ^= RpcsByMethod.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -2782,6 +2804,7 @@ namespace Grpc.Testing {
         output.WriteRawTag(16);
         output.WriteInt32(NumFailures);
       }
+      rpcsByMethod_.WriteTo(output, _map_rpcsByMethod_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -2794,6 +2817,7 @@ namespace Grpc.Testing {
       if (NumFailures != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(NumFailures);
       }
+      size += rpcsByMethod_.CalculateSize(_map_rpcsByMethod_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -2809,6 +2833,7 @@ namespace Grpc.Testing {
       if (other.NumFailures != 0) {
         NumFailures = other.NumFailures;
       }
+      rpcsByMethod_.Add(other.rpcsByMethod_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -2828,9 +2853,144 @@ namespace Grpc.Testing {
             NumFailures = input.ReadInt32();
             break;
           }
+          case 26: {
+            rpcsByMethod_.AddEntriesFrom(input, _map_rpcsByMethod_codec);
+            break;
+          }
         }
       }
     }
+
+    #region Nested types
+    /// <summary>Container for nested types declared in the LoadBalancerStatsResponse message type.</summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static partial class Types {
+      public sealed partial class RpcsByPeer : pb::IMessage<RpcsByPeer> {
+        private static readonly pb::MessageParser<RpcsByPeer> _parser = new pb::MessageParser<RpcsByPeer>(() => new RpcsByPeer());
+        private pb::UnknownFieldSet _unknownFields;
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public static pb::MessageParser<RpcsByPeer> Parser { get { return _parser; } }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public static pbr::MessageDescriptor Descriptor {
+          get { return global::Grpc.Testing.LoadBalancerStatsResponse.Descriptor.NestedTypes[0]; }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        pbr::MessageDescriptor pb::IMessage.Descriptor {
+          get { return Descriptor; }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public RpcsByPeer() {
+          OnConstruction();
+        }
+
+        partial void OnConstruction();
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public RpcsByPeer(RpcsByPeer other) : this() {
+          rpcsByPeer_ = other.rpcsByPeer_.Clone();
+          _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public RpcsByPeer Clone() {
+          return new RpcsByPeer(this);
+        }
+
+        /// <summary>Field number for the "rpcs_by_peer" field.</summary>
+        public const int RpcsByPeer_FieldNumber = 1;
+        private static readonly pbc::MapField<string, int>.Codec _map_rpcsByPeer_codec
+            = new pbc::MapField<string, int>.Codec(pb::FieldCodec.ForString(10, ""), pb::FieldCodec.ForInt32(16, 0), 10);
+        private readonly pbc::MapField<string, int> rpcsByPeer_ = new pbc::MapField<string, int>();
+        /// <summary>
+        /// The number of completed RPCs for each peer.
+        /// </summary>
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public pbc::MapField<string, int> RpcsByPeer_ {
+          get { return rpcsByPeer_; }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override bool Equals(object other) {
+          return Equals(other as RpcsByPeer);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public bool Equals(RpcsByPeer other) {
+          if (ReferenceEquals(other, null)) {
+            return false;
+          }
+          if (ReferenceEquals(other, this)) {
+            return true;
+          }
+          if (!RpcsByPeer_.Equals(other.RpcsByPeer_)) return false;
+          return Equals(_unknownFields, other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override int GetHashCode() {
+          int hash = 1;
+          hash ^= RpcsByPeer_.GetHashCode();
+          if (_unknownFields != null) {
+            hash ^= _unknownFields.GetHashCode();
+          }
+          return hash;
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override string ToString() {
+          return pb::JsonFormatter.ToDiagnosticString(this);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void WriteTo(pb::CodedOutputStream output) {
+          rpcsByPeer_.WriteTo(output, _map_rpcsByPeer_codec);
+          if (_unknownFields != null) {
+            _unknownFields.WriteTo(output);
+          }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public int CalculateSize() {
+          int size = 0;
+          size += rpcsByPeer_.CalculateSize(_map_rpcsByPeer_codec);
+          if (_unknownFields != null) {
+            size += _unknownFields.CalculateSize();
+          }
+          return size;
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void MergeFrom(RpcsByPeer other) {
+          if (other == null) {
+            return;
+          }
+          rpcsByPeer_.Add(other.rpcsByPeer_);
+          _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void MergeFrom(pb::CodedInputStream input) {
+          uint tag;
+          while ((tag = input.ReadTag()) != 0) {
+            switch(tag) {
+              default:
+                _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+                break;
+              case 10: {
+                rpcsByPeer_.AddEntriesFrom(input, _map_rpcsByPeer_codec);
+                break;
+              }
+            }
+          }
+        }
+
+      }
+
+    }
+    #endregion
 
   }
 

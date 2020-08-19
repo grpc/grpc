@@ -172,7 +172,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.11'
+    ss.dependency 'BoringSSL-GRPC', '0.0.12'
     abseil_version = '1.20200225.0'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -242,8 +242,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy_registry.h',
                       'src/core/ext/filters/client_channel/local_subchannel_pool.cc',
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
-                      'src/core/ext/filters/client_channel/parse_address.cc',
-                      'src/core/ext/filters/client_channel/parse_address.h',
                       'src/core/ext/filters/client_channel/proxy_mapper.h',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
@@ -871,6 +869,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/lockfree_event.cc',
                       'src/core/lib/iomgr/lockfree_event.h',
                       'src/core/lib/iomgr/nameser.h',
+                      'src/core/lib/iomgr/parse_address.cc',
+                      'src/core/lib/iomgr/parse_address.h',
                       'src/core/lib/iomgr/poller/eventmanager_libuv.cc',
                       'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                       'src/core/lib/iomgr/polling_entity.cc',
@@ -1273,7 +1273,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy_factory.h',
                               'src/core/ext/filters/client_channel/lb_policy_registry.h',
                               'src/core/ext/filters/client_channel/local_subchannel_pool.h',
-                              'src/core/ext/filters/client_channel/parse_address.h',
                               'src/core/ext/filters/client_channel/proxy_mapper.h',
                               'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
                               'src/core/ext/filters/client_channel/resolver.h',
@@ -1572,6 +1571,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
                               'src/core/lib/iomgr/nameser.h',
+                              'src/core/lib/iomgr/parse_address.h',
                               'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                               'src/core/lib/iomgr/polling_entity.h',
                               'src/core/lib/iomgr/pollset.h',
@@ -1863,6 +1863,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_throttled.cc',
                       'test/core/end2end/tests/retry_too_many_attempts.cc',
                       'test/core/end2end/tests/server_finishes_request.cc',
+                      'test/core/end2end/tests/server_streaming.cc',
                       'test/core/end2end/tests/shutdown_finishes_calls.cc',
                       'test/core/end2end/tests/shutdown_finishes_tags.cc',
                       'test/core/end2end/tests/simple_cacheable_request.cc',

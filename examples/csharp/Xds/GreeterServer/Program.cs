@@ -46,7 +46,7 @@ namespace GreeterServer
     {
         class Options
         {
-            [Option("port", Default = 50051, HelpText = "The port to listen on.")]
+            [Option("port", Default = 30051, HelpText = "The port to listen on.")]
             public int Port { get; set; }
 
             [Option("hostname", Required = false, HelpText = "The name clients will see in responses. If not specified, machine's hostname will obtain automatically.")]

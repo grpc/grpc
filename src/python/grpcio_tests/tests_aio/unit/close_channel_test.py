@@ -19,7 +19,7 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
-from grpc.experimental.aio import _base_call
+from grpc.aio import _base_call
 
 from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
 from tests_aio.unit._test_base import AioTestBase

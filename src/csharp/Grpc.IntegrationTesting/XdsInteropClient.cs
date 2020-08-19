@@ -39,7 +39,7 @@ namespace Grpc.IntegrationTesting
 
             [Option("qps", Default = 1)]
 
-            // The desired QPS per channel.
+            // The desired QPS per channel, for each type of RPC.
             public int Qps { get; set; }
 
             [Option("server", Default = "localhost:8080")]
@@ -53,11 +53,28 @@ namespace Grpc.IntegrationTesting
 
             [Option("print_response", Default = false)]
             public bool PrintResponse { get; set; }
+
+            // Types of RPCs to make, ',' separated string. RPCs can be EmptyCall or UnaryCall
+            [Option("rpc", Default = "UnaryCall")]
+            public string Rpc { get; set; }
+
+            // The metadata to send with each RPC, in the format EmptyCall:key1:value1,UnaryCall:key2:value2
+            [Option("metadata", Default = null)]
+            public string Metadata { get; set; }
+        }
+
+        internal enum RpcType
+        {
+            UnaryCall,
+            EmptyCall
         }
 
         ClientOptions options;
 
         StatsWatcher statsWatcher = new StatsWatcher();
+
+        List<RpcType> rpcs;
+        Dictionary<RpcType, Metadata> metadata;
 
         // make watcher accessible by tests
         internal StatsWatcher StatsWatcher => statsWatcher;
@@ -65,6 +82,8 @@ namespace Grpc.IntegrationTesting
         internal XdsInteropClient(ClientOptions options)
         {
             this.options = options;
+            this.rpcs = ParseRpcArgument(this.options.Rpc);
+            this.metadata = ParseMetadataArgument(this.options.Metadata);
         }
 
         public static void Run(string[] args)
@@ -124,8 +143,11 @@ namespace Grpc.IntegrationTesting
             var stopwatch = Stopwatch.StartNew();
             while (!cancellationToken.IsCancellationRequested)
             {
-                inflightTasks.Add(RunSingleRpcAsync(client, cancellationToken));
-                rpcsStarted++;
+                foreach (var rpcType in rpcs)
+                {
+                    inflightTasks.Add(RunSingleRpcAsync(client, cancellationToken, rpcType));
+                    rpcsStarted++;
+                }
 
                 // only cleanup calls that have already completed, calls that are still inflight will be cleaned up later.
                 await CleanupCompletedTasksAsync(inflightTasks);
@@ -133,7 +155,7 @@ namespace Grpc.IntegrationTesting
                 Console.WriteLine($"Currently {inflightTasks.Count} in-flight RPCs");
 
                 // if needed, wait a bit before we start the next RPC.
-                int nextDueInMillis = (int) Math.Max(0, (1000 * rpcsStarted / options.Qps) - stopwatch.ElapsedMilliseconds);
+                int nextDueInMillis = (int) Math.Max(0, (1000 * rpcsStarted / options.Qps / rpcs.Count) - stopwatch.ElapsedMilliseconds);
                 if (nextDueInMillis > 0)
                 {
                     await Task.Delay(nextDueInMillis);
@@ -146,25 +168,61 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine($"Channel shutdown {channelId}");
         }
 
-        private async Task RunSingleRpcAsync(TestService.TestServiceClient client, CancellationToken cancellationToken)
+        private async Task RunSingleRpcAsync(TestService.TestServiceClient client, CancellationToken cancellationToken, RpcType rpcType)
         {
             long rpcId = statsWatcher.RpcIdGenerator.Increment();
             try
             {
-                Console.WriteLine($"Starting RPC {rpcId}.");
-                var response = await client.UnaryCallAsync(new SimpleRequest(),
-                    new CallOptions(cancellationToken: cancellationToken, deadline: DateTime.UtcNow.AddSeconds(options.RpcTimeoutSec)));
-                
-                statsWatcher.OnRpcComplete(rpcId, response.Hostname);
-                if (options.PrintResponse)
+                Console.WriteLine($"Starting RPC {rpcId} of type {rpcType}");
+
+                // metadata to send with the RPC
+                var headers = new Metadata();
+                if (metadata.ContainsKey(rpcType))
                 {
-                    Console.WriteLine($"Got response {response}");
+                    headers = metadata[rpcType];
+                    if (headers.Count > 0)
+                    {
+                        var printableHeaders = "[" + string.Join(", ", headers) + "]";
+                        Console.WriteLine($"Will send metadata {printableHeaders}");
+                    }
                 }
-                Console.WriteLine($"RPC {rpcId} succeeded ");
+
+                if (rpcType == RpcType.UnaryCall)
+                {
+
+                    var call = client.UnaryCallAsync(new SimpleRequest(),
+                        new CallOptions(headers: headers, cancellationToken: cancellationToken, deadline: DateTime.UtcNow.AddSeconds(options.RpcTimeoutSec)));
+
+                    var response = await call;
+                    var hostname = (await call.ResponseHeadersAsync).GetValue("hostname") ?? response.Hostname;
+                    statsWatcher.OnRpcComplete(rpcId, rpcType, hostname);
+                    if (options.PrintResponse)
+                    {
+                        Console.WriteLine($"Got response {response}");
+                    }
+                }
+                else if (rpcType == RpcType.EmptyCall)
+                {
+                    var call = client.EmptyCallAsync(new Empty(),
+                        new CallOptions(headers: headers, cancellationToken: cancellationToken, deadline: DateTime.UtcNow.AddSeconds(options.RpcTimeoutSec)));
+
+                    var response = await call;
+                    var hostname = (await call.ResponseHeadersAsync).GetValue("hostname");
+                    statsWatcher.OnRpcComplete(rpcId, rpcType, hostname);
+                    if (options.PrintResponse)
+                    {
+                        Console.WriteLine($"Got response {response}");
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unsupported RPC type ${rpcType}");
+                }
+                Console.WriteLine($"RPC {rpcId} succeeded");
             }
             catch (RpcException ex)
             {
-                statsWatcher.OnRpcComplete(rpcId, null);
+                statsWatcher.OnRpcComplete(rpcId, rpcType, null);
                 Console.WriteLine($"RPC {rpcId} failed: {ex}");
             }
         }
@@ -186,6 +244,66 @@ namespace Grpc.IntegrationTesting
                 tasks.Remove(task);
             }
         }
+
+        private static List<RpcType> ParseRpcArgument(string rpcArg)
+        {
+            var result = new List<RpcType>();
+            foreach (var part in rpcArg.Split(','))
+            {
+                result.Add(ParseRpc(part));
+            }
+            return result;
+        }
+
+        private static RpcType ParseRpc(string rpc)
+        {
+            switch (rpc)
+            {
+                case "UnaryCall":
+                    return RpcType.UnaryCall;
+                case "EmptyCall":
+                    return RpcType.EmptyCall;
+                default:
+                    throw new ArgumentException($"Unknown RPC: \"{rpc}\"");
+            }
+        }
+
+        private static Dictionary<RpcType, Metadata> ParseMetadataArgument(string metadataArg)
+        {
+            var rpcMetadata = new Dictionary<RpcType, Metadata>();
+            if (string.IsNullOrEmpty(metadataArg))
+            {
+                return rpcMetadata;
+            }
+
+            foreach (var metadata in metadataArg.Split(','))
+            {
+                var parts = metadata.Split(':');
+                if (parts.Length != 3)
+                {
+                    throw new ArgumentException($"Invalid metadata: \"{metadata}\"");
+                }
+                var rpc = ParseRpc(parts[0]);
+                var key = parts[1];
+                var value = parts[2];
+
+                var md = new Metadata { {key, value} };
+
+                if (rpcMetadata.ContainsKey(rpc))
+                {
+                    var existingMetadata = rpcMetadata[rpc];
+                    foreach (var entry in md)
+                    {
+                        existingMetadata.Add(entry);
+                    }
+                }
+                else
+                {
+                    rpcMetadata.Add(rpc, md);
+                }
+            }
+            return rpcMetadata;
+        }
     }
 
     internal class StatsWatcher
@@ -198,6 +316,7 @@ namespace Grpc.IntegrationTesting
         private int rpcsCompleted;
         private int rpcsNoHostname;
         private Dictionary<string, int> rpcsByHostname;
+        private Dictionary<string, Dictionary<string, int>> rpcsByMethod;
 
         public AtomicCounter RpcIdGenerator => rpcIdGenerator;
 
@@ -206,7 +325,7 @@ namespace Grpc.IntegrationTesting
             Reset();
         }
 
-        public void OnRpcComplete(long rpcId, string responseHostname)
+        public void OnRpcComplete(long rpcId, XdsInteropClient.RpcType rpcType, string responseHostname)
         {
             lock (myLock)
             {
@@ -221,11 +340,24 @@ namespace Grpc.IntegrationTesting
                 }
                 else 
                 {
+                    // update rpcsByHostname
                     if (!rpcsByHostname.ContainsKey(responseHostname))
                     {
                         rpcsByHostname[responseHostname] = 0;
                     }
                     rpcsByHostname[responseHostname] += 1;
+
+                    // update rpcsByMethod
+                    var method = rpcType.ToString();
+                    if (!rpcsByMethod.ContainsKey(method))
+                    {
+                        rpcsByMethod[method] = new Dictionary<string, int>();
+                    }
+                    if (!rpcsByMethod[method].ContainsKey(responseHostname))
+                    {
+                        rpcsByMethod[method][responseHostname] = 0;
+                    }
+                    rpcsByMethod[method][responseHostname] += 1;
                 }
                 rpcsCompleted += 1;
 
@@ -245,6 +377,7 @@ namespace Grpc.IntegrationTesting
                 rpcsCompleted = 0;
                 rpcsNoHostname = 0;
                 rpcsByHostname = new Dictionary<string, int>();
+                rpcsByMethod = new Dictionary<string, Dictionary<string, int>>();
             }
         }
 
@@ -269,6 +402,14 @@ namespace Grpc.IntegrationTesting
                         // we collected enough RPCs, or timed out waiting
                         var response = new LoadBalancerStatsResponse { NumFailures = rpcsNoHostname };
                         response.RpcsByPeer.Add(rpcsByHostname);
+                        
+                        response.RpcsByMethod.Clear();
+                        foreach (var methodEntry in rpcsByMethod)
+                        {
+                            var rpcsByPeer = new LoadBalancerStatsResponse.Types.RpcsByPeer();
+                            rpcsByPeer.RpcsByPeer_.Add(methodEntry.Value);
+                            response.RpcsByMethod[methodEntry.Key] = rpcsByPeer;
+                        }
                         Reset();
                         return response;
                     }

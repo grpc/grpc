@@ -90,6 +90,9 @@ struct RegisteredCall {
 
 struct CallRegistrationTable {
   grpc_core::Mutex mu;
+  // The map key should be owned strings rather than unowned char*'s to
+  // guarantee that it outlives calls on the core channel (which may outlast the
+  // C++ or other wrapped language Channel that registered these calls).
   std::map<std::pair<std::string, std::string>, RegisteredCall>
       map /* GUARDED_BY(mu) */;
   int method_registration_attempts /* GUARDED_BY(mu) */ = 0;

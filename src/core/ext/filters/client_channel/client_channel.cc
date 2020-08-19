@@ -28,6 +28,7 @@
 
 #include <set>
 
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -331,6 +332,7 @@ class ChannelData {
   // applied in the data plane mutex when the picker is updated.
   std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>>
       pending_subchannel_updates_;
+  int keepalive_time_ = -1;
 
   //
   // Fields accessed from both data plane mutex and control plane
@@ -972,6 +974,10 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
 
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
 
+  void ThrottleKeepaliveTime(int new_keepalive_time) {
+    subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
+  }
+
   const grpc_channel_args* channel_args() override {
     return subchannel_->channel_args();
   }
@@ -1102,6 +1108,32 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                 watcher_.get());
       }
       ConnectivityStateChange state_change = PopConnectivityStateChange();
+      absl::optional<absl::Cord> keepalive_throttling =
+          state_change.status.GetPayload(grpc_core::kKeepaliveThrottlingKey);
+      if (keepalive_throttling.has_value()) {
+        int new_keepalive_time = -1;
+        if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
+                             &new_keepalive_time)) {
+          if (new_keepalive_time > parent_->chand_->keepalive_time_) {
+            parent_->chand_->keepalive_time_ = new_keepalive_time;
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+              gpr_log(GPR_INFO, "chand=%p: throttling keepalive time to %d",
+                      parent_->chand_, parent_->chand_->keepalive_time_);
+            }
+            // Propagate the new keepalive time to all subchannels. This is so
+            // that new transports created by any subchannel (and not just the
+            // subchannel that received the GOAWAY), use the new keepalive time.
+            for (auto* subchannel_wrapper :
+                 parent_->chand_->subchannel_wrappers_) {
+              subchannel_wrapper->ThrottleKeepaliveTime(new_keepalive_time);
+            }
+          }
+        } else {
+          gpr_log(GPR_ERROR, "chand=%p: Illegal keepalive throttling value %s",
+                  parent_->chand_,
+                  std::string(keepalive_throttling.value()).c_str());
+        }
+      }
       // Ignore update if the parent WatcherWrapper has been replaced
       // since this callback was scheduled.
       if (watcher_ != nullptr) {
@@ -1350,6 +1382,7 @@ class ChannelData::ClientChannelControlHelper
         chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
+    subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
     return MakeRefCounted<SubchannelWrapper>(
         chand_, subchannel, std::move(health_check_service_name));
   }
@@ -1683,6 +1716,9 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   channel_args_ = new_args != nullptr
                       ? new_args
                       : grpc_channel_args_copy(args->channel_args);
+  keepalive_time_ = grpc_channel_args_find_integer(
+      channel_args_, GRPC_ARG_KEEPALIVE_TIME_MS,
+      {-1 /* default value, unset */, 1, INT_MAX});
   if (!ResolverRegistry::IsValidTarget(target_uri_.get())) {
     std::string error_message =
         absl::StrCat("the target uri is not valid: ", target_uri_.get());
@@ -2140,13 +2176,14 @@ void CallData::Destroy(grpc_call_element* elem,
                        const grpc_call_final_info* /*final_info*/,
                        grpc_closure* then_schedule_closure) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  if (GPR_LIKELY(calld->subchannel_call_ != nullptr)) {
-    calld->subchannel_call_->SetAfterCallStackDestroy(then_schedule_closure);
-    then_schedule_closure = nullptr;
-  }
+  RefCountedPtr<SubchannelCall> subchannel_call = calld->subchannel_call_;
   calld->~CallData();
-  // TODO(yashkt) : This can potentially be a Closure::Run
-  ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
+  if (GPR_LIKELY(subchannel_call != nullptr)) {
+    subchannel_call->SetAfterCallStackDestroy(then_schedule_closure);
+  } else {
+    // TODO(yashkt) : This can potentially be a Closure::Run
+    ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
+  }
 }
 
 void CallData::StartTransportStreamOpBatch(

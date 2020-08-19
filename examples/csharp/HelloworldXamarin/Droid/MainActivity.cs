@@ -28,7 +28,7 @@ namespace HelloworldXamarin.Droid
     [Activity(Label = "HelloworldXamarin", MainLauncher = true, Icon = "@mipmap/icon")]
     public class MainActivity : Activity
     {
-        const int Port = 50051;
+        const int Port = 30051;
         int count = 1;
 
         protected override void OnCreate(Bundle savedInstanceState)
@@ -55,8 +55,8 @@ namespace HelloworldXamarin.Droid
             server.Start();
 
             // use loopback on host machine: https://developer.android.com/studio/run/emulator-networking
-            //10.0.2.2:50051
-            Channel channel = new Channel("localhost:50051", ChannelCredentials.Insecure);
+            //10.0.2.2:30051
+            Channel channel = new Channel("localhost:30051", ChannelCredentials.Insecure);
 
             var client = new Greeter.GreeterClient(channel);
             string user = "Xamarin " + count;
