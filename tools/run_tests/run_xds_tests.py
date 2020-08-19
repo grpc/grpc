@@ -1809,11 +1809,12 @@ try:
                     # authors of client binaries to debug simple failures quickly.
                     # This thread is responsible for closing the test_log file.
 
-                    while client_process.returncode is None:
-                        try:
-                            client_process.wait(timeout=_LOGGING_THREAD_TIMEOUT_SECS)
-                        except subprocess.TimeoutExpired:
-                            continue
+                    # NOTE(rbellevi): We use Popen.poll and a sleep because
+                    # Popen.wait() is implemented using a busy loop itself. This
+                    # is the best we can do without resorting to
+                    # asyncio.create_subprocess_exec.
+                    while client_process.poll() is None:
+                        time.sleep(_LOGGING_THREAD_TIMEOUT_SECS)
 
                     test_log_file.close()
                     if args.log_client_output:
