@@ -145,6 +145,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     "too_many_pings_test",
+    timeout = "long",  # Required for internal test infrastructure (cl/325757166)
     srcs = ["too_many_pings_test.cc"],
     external_deps = ["gtest"],
     deps = [

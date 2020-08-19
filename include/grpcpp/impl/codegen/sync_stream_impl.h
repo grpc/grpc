@@ -20,7 +20,7 @@
 
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
-#include <grpcpp/impl/codegen/client_context_impl.h>
+#include <grpcpp/impl/codegen/client_context.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/server_context_impl.h>
@@ -162,7 +162,7 @@ class ClientReaderFactory {
   template <class W>
   static ClientReader<R>* Create(::grpc::ChannelInterface* channel,
                                  const ::grpc::internal::RpcMethod& method,
-                                 ::grpc_impl::ClientContext* context,
+                                 ::grpc::ClientContext* context,
                                  const W& request) {
     return new ClientReader<R>(channel, method, context, request);
   }
@@ -231,7 +231,7 @@ class ClientReader final : public ClientReaderInterface<R> {
 
  private:
   friend class internal::ClientReaderFactory<R>;
-  ::grpc_impl::ClientContext* context_;
+  ::grpc::ClientContext* context_;
   ::grpc::CompletionQueue cq_;
   ::grpc::internal::Call call_;
 
@@ -241,7 +241,7 @@ class ClientReader final : public ClientReaderInterface<R> {
   template <class W>
   ClientReader(::grpc::ChannelInterface* channel,
                const ::grpc::internal::RpcMethod& method,
-               ::grpc_impl::ClientContext* context, const W& request)
+               ::grpc::ClientContext* context, const W& request)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
@@ -282,8 +282,7 @@ class ClientWriterFactory {
   template <class R>
   static ClientWriter<W>* Create(::grpc::ChannelInterface* channel,
                                  const ::grpc::internal::RpcMethod& method,
-                                 ::grpc_impl::ClientContext* context,
-                                 R* response) {
+                                 ::grpc::ClientContext* context, R* response) {
     return new ClientWriter<W>(channel, method, context, response);
   }
 };
@@ -376,7 +375,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   template <class R>
   ClientWriter(::grpc::ChannelInterface* channel,
                const ::grpc::internal::RpcMethod& method,
-               ::grpc_impl::ClientContext* context, R* response)
+               ::grpc::ClientContext* context, R* response)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
@@ -395,7 +394,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     }
   }
 
-  ::grpc_impl::ClientContext* context_;
+  ::grpc::ClientContext* context_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
                               ::grpc::internal::CallOpGenericRecvMessage,
                               ::grpc::internal::CallOpClientRecvStatus>
@@ -434,7 +433,7 @@ class ClientReaderWriterFactory {
   static ClientReaderWriter<W, R>* Create(
       ::grpc::ChannelInterface* channel,
       const ::grpc::internal::RpcMethod& method,
-      ::grpc_impl::ClientContext* context) {
+      ::grpc::ClientContext* context) {
     return new ClientReaderWriter<W, R>(channel, method, context);
   }
 };
@@ -543,7 +542,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
  private:
   friend class internal::ClientReaderWriterFactory<W, R>;
 
-  ::grpc_impl::ClientContext* context_;
+  ::grpc::ClientContext* context_;
   ::grpc::CompletionQueue cq_;
   ::grpc::internal::Call call_;
 
@@ -552,7 +551,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   /// used to send to the server when starting the call.
   ClientReaderWriter(::grpc::ChannelInterface* channel,
                      const ::grpc::internal::RpcMethod& method,
-                     ::grpc_impl::ClientContext* context)
+                     ::grpc::ClientContext* context)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,

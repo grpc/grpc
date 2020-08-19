@@ -66,7 +66,7 @@ class AuthorizationEngine {
     kDeny,
   };
 
-  std::unique_ptr<google::api::expr::runtime::Activation> CreateActivation(
+  std::unique_ptr<mock_cel::Activation> CreateActivation(
       const EvaluateArgs& args);
 
   std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
@@ -76,7 +76,7 @@ class AuthorizationEngine {
   upb::Arena arena_;
   absl::flat_hash_set<std::string> envoy_attributes_;
   absl::flat_hash_set<std::string> header_keys_;
-  std::unique_ptr<google::api::expr::runtime::CelMap> headers_;
+  std::unique_ptr<mock_cel::CelMap> headers_;
 };
 
 }  // namespace grpc_core

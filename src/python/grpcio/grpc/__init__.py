@@ -2038,6 +2038,8 @@ class Compression(enum.IntEnum):
     Gzip = _compression.Gzip
 
 
+from grpc._runtime_protos import protos, services, protos_and_services  # pylint: disable=wrong-import-position
+
 ###################################  __all__  #################################
 
 __all__ = (
@@ -2098,6 +2100,9 @@ __all__ = (
     'secure_channel',
     'intercept_channel',
     'server',
+    'protos',
+    'services',
+    'protos_and_services',
 )
 
 ############################### Extension Shims ################################

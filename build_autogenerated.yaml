@@ -401,7 +401,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy_factory.h
   - src/core/ext/filters/client_channel/lb_policy_registry.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
-  - src/core/ext/filters/client_channel/parse_address.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
   - src/core/ext/filters/client_channel/resolver.h
@@ -607,6 +606,7 @@ libs:
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/nameser.h
+  - src/core/lib/iomgr/parse_address.h
   - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
@@ -782,7 +782,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
-  - src/core/ext/filters/client_channel/parse_address.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -1007,6 +1006,7 @@ libs:
   - src/core/lib/iomgr/is_epollexclusive_available.cc
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
+  - src/core/lib/iomgr/parse_address.cc
   - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
@@ -1349,7 +1349,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy_factory.h
   - src/core/ext/filters/client_channel/lb_policy_registry.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
-  - src/core/ext/filters/client_channel/parse_address.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
   - src/core/ext/filters/client_channel/resolver.h
@@ -1552,6 +1551,7 @@ libs:
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/nameser.h
+  - src/core/lib/iomgr/parse_address.h
   - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
@@ -1663,7 +1663,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
-  - src/core/ext/filters/client_channel/parse_address.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -1882,6 +1881,7 @@ libs:
   - src/core/lib/iomgr/is_epollexclusive_available.cc
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
+  - src/core/lib/iomgr/parse_address.cc
   - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
@@ -2127,7 +2127,6 @@ libs:
   - include/grpcpp/impl/codegen/client_callback.h
   - include/grpcpp/impl/codegen/client_callback_impl.h
   - include/grpcpp/impl/codegen/client_context.h
-  - include/grpcpp/impl/codegen/client_context_impl.h
   - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
@@ -2505,7 +2504,6 @@ libs:
   - include/grpcpp/impl/codegen/client_callback.h
   - include/grpcpp/impl/codegen/client_callback_impl.h
   - include/grpcpp/impl/codegen/client_context.h
-  - include/grpcpp/impl/codegen/client_context_impl.h
   - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
@@ -3956,7 +3954,7 @@ targets:
   language: c
   headers: []
   src:
-  - test/core/client_channel/parse_address_test.cc
+  - test/core/iomgr/parse_address_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3968,7 +3966,7 @@ targets:
   language: c
   headers: []
   src:
-  - test/core/client_channel/parse_address_with_named_scope_id_test.cc
+  - test/core/iomgr/parse_address_with_named_scope_id_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -4589,7 +4587,7 @@ targets:
   language: c
   headers: []
   src:
-  - test/core/client_channel/uri_parser_test.cc
+  - test/core/uri/uri_parser_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -7470,7 +7468,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/client_channel/uri_fuzzer_test.cc
+  - test/core/uri/uri_fuzzer_test.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
   - grpc_test_util
@@ -7480,7 +7478,7 @@ targets:
   - address_sorting
   - upb
   corpus_dirs:
-  - test/core/client_channel/uri_corpus
+  - test/core/uri/uri_corpus
   maxlen: 128
 - name: window_overflow_bad_client_test
   gtest: true

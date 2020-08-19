@@ -1,4 +1,4 @@
-# Welcome to `impl/codegen`
+# Welcome to `include/grpcpp/impl/codegen`
 
 ## Why is this directory here?
 
