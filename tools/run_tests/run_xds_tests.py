@@ -1899,7 +1899,8 @@ try:
                 result.message = result.message.encode('UTF-8')
                 test_results[test_case] = [result]
                 if not client_logged.wait(timeout=_CLIENT_PROCESS_TIMEOUT_SECS):
-                    logger.info("Client process failed to terminate. Killing it.")
+                    logger.info(
+                        "Client process failed to terminate. Killing it.")
                     client_process.kill()
                     client_logged.wait(timeout=_CLIENT_PROCESS_TIMEOUT_SECS)
         if not os.path.exists(_TEST_LOG_BASE_DIR):
