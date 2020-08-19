@@ -1803,6 +1803,7 @@ try:
                                                   stderr=subprocess.STDOUT,
                                                   stdout=test_log_file)
                 client_logged = threading.Event()
+
                 def _log_client(client_process, client_logged):
                     # NOTE(rbellevi): Runs on another thread and logs the
                     # client's output as soon as it terminates. This enables
@@ -1826,7 +1827,12 @@ try:
                             logger.info(client_output.read())
                     client_logged.set()
 
-                logging_thread = threading.Thread(target=_log_client, args=(client_process, client_logged,), daemon=True)
+                logging_thread = threading.Thread(target=_log_client,
+                                                  args=(
+                                                      client_process,
+                                                      client_logged,
+                                                  ),
+                                                  daemon=True)
                 logging_thread.start()
                 if test_case == 'backends_restart':
                     test_backends_restart(gcp, backend_service, instance_group)
