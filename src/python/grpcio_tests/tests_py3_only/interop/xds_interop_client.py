@@ -159,13 +159,11 @@ def _on_rpc_done(rpc_id: int, future: grpc.Future, method: str,
             logger.error(exception)
     else:
         response = future.result()
-        hostname_metadata = [
-            metadatum for metadatum in future.initial_metadata()
-            if metadatum[0] == "hostname"
-        ]
         hostname = None
-        if len(hostname_metadata) == 1:
-            hostname = hostname_metadata[0][1]
+        for metadatum in future.initial_metadata():
+            if metadatum[0] == "hostname":
+                hostname = metadatum[1]
+                break
         else:
             hostname = response.hostname
         if print_response:
