@@ -271,6 +271,28 @@ def _run(args: argparse.Namespace, methods: Sequence[str],
         method_handle.stop()
 
 
+def parse_metadata_arg(metadata_arg: str) -> PerMethodMetadataType:
+    metadata = metadata_arg.split(",") if args.metadata else []
+    per_method_metadata = collections.defaultdict(list)
+    for metadatum in metadata:
+        elems = metadatum.split(":")
+        if len(elems) != 3:
+            raise ValueError(
+                f"'{metadatum}' was not in the form 'METHOD:KEY:VALUE'")
+        if elems[0] not in _SUPPORTED_METHODS:
+            raise ValueError(f"Unrecognized method '{elems[0]}'")
+        per_method_metadata[elems[0]].append((elems[1], elems[2]))
+    return per_method_metadata
+
+
+def parse_rpc_arg(rpc_arg: str) -> Sequence[str]:
+    methods = rpc_arg.split(",")
+    if set(methods) - set(_SUPPORTED_METHODS):
+        raise ValueError("--rpc supported methods: {}".format(
+            ", ".join(_SUPPORTED_METHODS)))
+    return methods
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Run Python XDS interop client.')
@@ -325,18 +347,4 @@ if __name__ == "__main__":
         file_handler = logging.FileHandler(args.log_file, mode='a')
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
-    methods = args.rpc.split(",")
-    if set(methods) - set(_SUPPORTED_METHODS):
-        raise ValueError("--rpc supported methods: {}".format(
-            ", ".join(_SUPPORTED_METHODS)))
-    per_method_metadata = collections.defaultdict(list)
-    metadata = args.metadata.split(",") if args.metadata else []
-    for metadatum in metadata:
-        elems = metadatum.split(":")
-        if len(elems) != 3:
-            raise ValueError(
-                f"'{metadatum}' was not in the form 'METHOD:KEY:VALUE'")
-        if elems[0] not in _SUPPORTED_METHODS:
-            raise ValueError(f"Unrecognized method '{elems[0]}'")
-        per_method_metadata[elems[0]].append((elems[1], elems[2]))
-    _run(args, methods, per_method_metadata)
+    _run(args, parse_rpc_arg(args.rpc), parse_metadata_arg(args.metadata))
