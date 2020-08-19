@@ -65,6 +65,7 @@ _TEST_CASES = [
 _ADDITIONAL_TEST_CASES = ['path_matching', 'header_matching']
 
 _LOGGING_THREAD_TIMEOUT_SECS = 0.5
+_CLIENT_PROCESS_TIMEOUT_SECS = 2.0
 
 
 def parse_test_cases(arg):
@@ -1897,7 +1898,10 @@ try:
                 # result.message, which has a default value of ''.
                 result.message = result.message.encode('UTF-8')
                 test_results[test_case] = [result]
-                client_logged.wait()
+                if not client_logged.wait(timeout=_CLIENT_PROCESS_TIMEOUT_SECS):
+                    logger.info("Client process failed to terminate. Killing it.")
+                    client_process.kill()
+                    client_logged.wait(timeout=_CLIENT_PROCESS_TIMEOUT_SECS)
         if not os.path.exists(_TEST_LOG_BASE_DIR):
             os.makedirs(_TEST_LOG_BASE_DIR)
         report_utils.render_junit_xml_report(test_results,
