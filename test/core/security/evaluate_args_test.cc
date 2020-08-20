@@ -68,6 +68,74 @@ TEST_F(EvaluateArgsTest, TestEvaluateArgsPeerPort) {
       << "Error: Failed to extract correct Peer port from EvaluateArgs.";
 }
 
+TEST(EvaluateArgsAuthContextTest, HandlesNullAuthContext) {
+  EvaluateArgs evalArgs(nullptr, nullptr, nullptr);
+  EXPECT_EQ(evalArgs.GetSpiffeId(), nullptr)
+      << "Failed to return nullptr with null auth_context.";
+  EXPECT_EQ(evalArgs.GetCertServerName(), nullptr)
+      << "Failed to return nullptr with null auth_context.";
+}
+
+TEST(EvaluateArgsAuthContextTest, HandlesEmptyAuthCtx) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context auth_context(ctx);
+  ASSERT_NE(&auth_context, nullptr) << "auth_context didint initialize?";
+  EvaluateArgs evalArgs(nullptr, &auth_context, nullptr);
+  EXPECT_EQ(evalArgs.GetSpiffeId(), nullptr)
+      << "Failed to return nullptr with empty auth_context.";
+  EXPECT_EQ(evalArgs.GetCertServerName(), nullptr)
+      << "Failed to return nullptr with empty auth_context.";
+}
+
+TEST(EvaluateArgsAuthContextTest, GetSpiffeIdSuccessOneProperty) {
+  grpc_init();
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context auth_context(ctx);
+  ASSERT_NE(&auth_context, nullptr) << "auth_context didint initialize?";
+  auth_context.add_cstring_property(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "test1");
+  EvaluateArgs evalArgs(nullptr, &auth_context, nullptr);
+  EXPECT_EQ(evalArgs.GetSpiffeId(), "test1")
+      << "Failed to properly retrieve spiffe id";
+  grpc_shutdown();
+}
+
+TEST(EvaluateArgsAuthContextTest, GetSpiffeIdFailDuplicateProperty) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context auth_context(ctx);
+  ASSERT_NE(&auth_context, nullptr) << "auth_context didint initialize?";
+  auth_context.add_cstring_property(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "test1");
+  auth_context.add_cstring_property(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "test2");
+  EvaluateArgs evalArgs(nullptr, &auth_context, nullptr);
+  EXPECT_EQ(evalArgs.GetSpiffeId(), nullptr)
+      << "Failed to account for multiple properties";
+}
+
+TEST(EvaluateArgsAuthContextTest, GetCertServerNameSuccessOneProperty) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context auth_context(ctx);
+  ASSERT_NE(&auth_context, nullptr) << "auth_context didint initialize?";
+  auth_context.add_cstring_property(GRPC_X509_CN_PROPERTY_NAME, "test1");
+  EvaluateArgs evalArgs(nullptr, &auth_context, nullptr);
+  EXPECT_EQ(evalArgs.GetCertServerName(), "test1")
+      << "Failed to properly retrieve cert server name";
+}
+
+TEST(EvaluateArgsAuthContextTest, GetCertServerNameFailDuplicateProperty) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context auth_context(ctx);
+  ASSERT_NE(&auth_context, nullptr) << "auth_context didint initialize?";
+  auth_context.add_cstring_property(GRPC_X509_CN_PROPERTY_NAME, "test1");
+  auth_context.add_cstring_property(GRPC_X509_CN_PROPERTY_NAME, "test2");
+  EvaluateArgs evalArgs(nullptr, &auth_context, nullptr);
+  EXPECT_EQ(evalArgs.GetCertServerName(), nullptr)
+      << "Failed to account for multiple properties";
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
