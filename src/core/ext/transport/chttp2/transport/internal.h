@@ -430,6 +430,8 @@ struct grpc_chttp2_transport {
   grpc_chttp2_write_cb* write_cb_pool = nullptr;
 
   /* bdp estimator */
+  bool bdp_ping_blocked =
+      false; /* Is the BDP blocked due to not receiving any data? */
   grpc_closure next_bdp_ping_timer_expired_locked;
   grpc_closure start_bdp_ping_locked;
   grpc_closure finish_bdp_ping_locked;
@@ -873,5 +875,7 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
 
 void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error* error);
+
+void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */
