@@ -77,13 +77,13 @@
 #if __GLIBC_PREREQ(2, 10)
 #define GRPC_LINUX_SOCKETUTILS 1
 #endif
-#if !(__GLIBC_PREREQ(2, 17))
+#if !(__GLIBC_PREREQ(2, 18))
 /*
  * TCP_USER_TIMEOUT wasn't imported to glibc until 2.18. Use Linux system
  * header instead.
  */
 #define GRPC_LINUX_TCP_H 1
-#endif /* __GLIBC_PREREQ(2, 17) */
+#endif /* __GLIBC_PREREQ(2, 18) */
 #endif
 #ifndef __GLIBC__
 #define GRPC_LINUX_EPOLL 1
