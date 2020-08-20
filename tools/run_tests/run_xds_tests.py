@@ -593,7 +593,8 @@ def test_round_robin(gcp, backend_service, instance_group):
             continue
         expected_requests = total_requests_received / len(instance_names)
         for instance in instance_names:
-            if abs(stats.rpcs_by_peer[instance] - expected_requests) > threshold:
+            if abs(stats.rpcs_by_peer[instance] -
+                   expected_requests) > threshold:
                 raise Exception(
                     'RPC peer distribution differs from expected by more than %d '
                     'for instance %s (%s)' % (threshold, instance, stats))
