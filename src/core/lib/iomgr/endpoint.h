@@ -35,7 +35,6 @@
 
 typedef struct grpc_endpoint grpc_endpoint;
 typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
-class Timestamps;
 
 struct grpc_endpoint_vtable {
   void (*read)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
