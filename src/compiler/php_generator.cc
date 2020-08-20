@@ -78,10 +78,15 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
   out->Print("/**\n");
   out->Print(GetPHPComments(method, " *").c_str());
   if (method->client_streaming()) {
+    if (method->server_streaming()) {
+      vars["return_type_id"] = "\\Grpc\\BidiStreamingCall";
+    } else {
+      vars["return_type_id"] = "\\Grpc\\ClientStreamingCall";
+    }
     out->Print(vars,
                " * @param array $$metadata metadata\n"
                " * @param array $$options call options\n"
-               " * @return \\$output_type_id$\n */\n"
+               " * @return $return_type_id$\n */\n"
                "public function $name$($$metadata = [], "
                "$$options = []) {\n");
     out->Indent();
@@ -96,11 +101,16 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
                "['\\$output_type_id$','decode'],\n"
                "$$metadata, $$options);\n");
   } else {
+    if (method->server_streaming()) {
+      vars["return_type_id"] = "\\Grpc\\ServerStreamingCall";
+    } else {
+      vars["return_type_id"] = "\\Grpc\\UnaryCall";
+    }
     out->Print(vars,
                " * @param \\$input_type_id$ $$argument input argument\n"
                " * @param array $$metadata metadata\n"
                " * @param array $$options call options\n"
-               " * @return \\$output_type_id$\n */\n"
+               " * @return $return_type_id$\n */\n"
                "public function $name$(\\$input_type_id$ $$argument,\n"
                "  $$metadata = [], $$options = []) {\n");
     out->Indent();
