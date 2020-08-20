@@ -95,3 +95,11 @@ build:python_poller_engine --test_env="GRPC_ASYNCIO_ENGINE=poller"
 build:counters --compilation_mode=opt
 build:counters --copt=-Wframe-larger-than=16384
 build:counters --copt=-DGPR_LOW_LEVEL_COUNTERS
+
+# "mutrace" config is based on a legacy config provided by the Makefile (see definition in build_handwritten.yaml).
+# It is only used in microbenchmarks (see tools/run_tests/run_microbenchmark.py)
+# TODO(jtattermusch): get rid of the "mutrace" config when possible
+build:mutrace --copt=-O3
+build:mutrace --copt=-fno-omit-frame-pointer
+build:mutrace --copt=-DNDEBUG
+build:mutrace --linkopt=-rdynamic

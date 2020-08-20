@@ -27,6 +27,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import threading
 
 from oauth2client.client import GoogleCredentials
 
@@ -62,6 +63,9 @@ _TEST_CASES = [
 #
 # TODO: Move them into _TEST_CASES when support is ready in all languages.
 _ADDITIONAL_TEST_CASES = ['path_matching', 'header_matching']
+
+_LOGGING_THREAD_TIMEOUT_SECS = 0.5
+_CLIENT_PROCESS_TIMEOUT_SECS = 2.0
 
 
 def parse_test_cases(arg):
@@ -1799,6 +1803,38 @@ try:
                                                   env=client_env,
                                                   stderr=subprocess.STDOUT,
                                                   stdout=test_log_file)
+                client_logged = threading.Event()
+
+                def _log_client(client_process, client_logged):
+                    # NOTE(rbellevi): Runs on another thread and logs the
+                    # client's output as soon as it terminates. This enables
+                    # authors of client binaries to debug simple failures quickly.
+                    # This thread is responsible for closing the test_log file.
+
+                    # NOTE(rbellevi): We use Popen.poll and a sleep because
+                    # Popen.wait() is implemented using a busy loop itself. This
+                    # is the best we can do without resorting to
+                    # asyncio.create_subprocess_exec.
+                    while client_process.poll() is None:
+                        time.sleep(_LOGGING_THREAD_TIMEOUT_SECS)
+
+                    test_log_file.close()
+                    if args.log_client_output:
+                        banner = "#" * 40
+                        logger.info(banner)
+                        logger.info('Client output:')
+                        logger.info(banner)
+                        with open(test_log_filename, 'r') as client_output:
+                            logger.info(client_output.read())
+                    client_logged.set()
+
+                logging_thread = threading.Thread(target=_log_client,
+                                                  args=(
+                                                      client_process,
+                                                      client_logged,
+                                                  ),
+                                                  daemon=True)
+                logging_thread.start()
                 if test_case == 'backends_restart':
                     test_backends_restart(gcp, backend_service, instance_group)
                 elif test_case == 'change_backend_service':
@@ -1856,17 +1892,17 @@ try:
                 result.state = 'FAILED'
                 result.message = str(e)
             finally:
-                if client_process and not client_process.returncode:
+                if client_process and client_process.returncode is None:
                     client_process.terminate()
-                test_log_file.close()
                 # Workaround for Python 3, as report_utils will invoke decode() on
                 # result.message, which has a default value of ''.
                 result.message = result.message.encode('UTF-8')
                 test_results[test_case] = [result]
-                if args.log_client_output:
-                    logger.info('Client output:')
-                    with open(test_log_filename, 'r') as client_output:
-                        logger.info(client_output.read())
+                if not client_logged.wait(timeout=_CLIENT_PROCESS_TIMEOUT_SECS):
+                    logger.info(
+                        "Client process failed to terminate. Killing it.")
+                    client_process.kill()
+                    client_logged.wait(timeout=_CLIENT_PROCESS_TIMEOUT_SECS)
         if not os.path.exists(_TEST_LOG_BASE_DIR):
             os.makedirs(_TEST_LOG_BASE_DIR)
         report_utils.render_junit_xml_report(test_results,

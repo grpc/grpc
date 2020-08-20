@@ -37,7 +37,7 @@ class MathClient extends \Grpc\BaseStub {
      * @param \Math\DivArgs $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Math\DivReply
+     * @return \Grpc\UnaryCall
      */
     public function Div(\Math\DivArgs $argument,
       $metadata = [], $options = []) {
@@ -54,7 +54,7 @@ class MathClient extends \Grpc\BaseStub {
      * replies.  The stream ends immediately if either end aborts.
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Math\DivReply
+     * @return \Grpc\BidiStreamingCall
      */
     public function DivMany($metadata = [], $options = []) {
         return $this->_bidiRequest('/math.Math/DivMany',
@@ -69,7 +69,7 @@ class MathClient extends \Grpc\BaseStub {
      * @param \Math\FibArgs $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Math\Num
+     * @return \Grpc\ServerStreamingCall
      */
     public function Fib(\Math\FibArgs $argument,
       $metadata = [], $options = []) {
@@ -84,7 +84,7 @@ class MathClient extends \Grpc\BaseStub {
      * is closed.
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Math\Num
+     * @return \Grpc\ClientStreamingCall
      */
     public function Sum($metadata = [], $options = []) {
         return $this->_clientStreamRequest('/math.Math/Sum',

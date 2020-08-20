@@ -54,7 +54,6 @@ class ExternalConnectionAcceptorImpl;
 }  // namespace grpc
 
 namespace grpc_impl {
-class HealthCheckServiceInterface;
 class ServerInitializer;
 
 /// Represents a gRPC server.
