@@ -67,6 +67,11 @@ py_library(
 )
 
 py_library(
+    name = "aio",
+    srcs = glob(["aio/**/*.py"]),
+)
+
+py_library(
     name = "_runtime_protos",
     srcs = ["_runtime_protos.py"],
 )
@@ -79,6 +84,7 @@ py_library(
     ],
     imports = ["../"],
     deps = [
+        ":aio",
         ":utilities",
         ":auth",
         ":plugin_wrapping",

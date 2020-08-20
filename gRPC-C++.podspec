@@ -201,6 +201,7 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-Core', version
     abseil_version = '1.20200225.0'
     ss.dependency 'abseil/base/base', abseil_version
+    ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
@@ -235,7 +236,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy_factory.h',
                       'src/core/ext/filters/client_channel/lb_policy_registry.h',
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
-                      'src/core/ext/filters/client_channel/parse_address.h',
                       'src/core/ext/filters/client_channel/proxy_mapper.h',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
                       'src/core/ext/filters/client_channel/resolver.h',
@@ -468,6 +468,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.h',
                       'src/core/lib/iomgr/nameser.h',
+                      'src/core/lib/iomgr/parse_address.h',
                       'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                       'src/core/lib/iomgr/polling_entity.h',
                       'src/core/lib/iomgr/pollset.h',
@@ -513,6 +514,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/work_serializer.h',
                       'src/core/lib/json/json.h',
                       'src/core/lib/profiling/timers.h',
+                      'src/core/lib/security/authorization/authorization_engine.h',
+                      'src/core/lib/security/authorization/evaluate_args.h',
+                      'src/core/lib/security/authorization/mock_cel/activation.h',
+                      'src/core/lib/security/authorization/mock_cel/cel_value.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -725,7 +730,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy_factory.h',
                               'src/core/ext/filters/client_channel/lb_policy_registry.h',
                               'src/core/ext/filters/client_channel/local_subchannel_pool.h',
-                              'src/core/ext/filters/client_channel/parse_address.h',
                               'src/core/ext/filters/client_channel/proxy_mapper.h',
                               'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
                               'src/core/ext/filters/client_channel/resolver.h',
@@ -958,6 +962,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
                               'src/core/lib/iomgr/nameser.h',
+                              'src/core/lib/iomgr/parse_address.h',
                               'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                               'src/core/lib/iomgr/polling_entity.h',
                               'src/core/lib/iomgr/pollset.h',
@@ -1003,6 +1008,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/work_serializer.h',
                               'src/core/lib/json/json.h',
                               'src/core/lib/profiling/timers.h',
+                              'src/core/lib/security/authorization/authorization_engine.h',
+                              'src/core/lib/security/authorization/evaluate_args.h',
+                              'src/core/lib/security/authorization/mock_cel/activation.h',
+                              'src/core/lib/security/authorization/mock_cel/cel_value.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',

@@ -16,8 +16,8 @@ import asyncio
 import grpc
 from typing import AsyncIterable
 from grpc.experimental import aio
-from grpc.experimental.aio._typing import MetadatumType, MetadataKey, MetadataValue
-from grpc.experimental.aio._metadata import Metadata
+from grpc.aio._typing import MetadatumType, MetadataKey, MetadataValue
+from grpc.aio._metadata import Metadata
 
 from tests.unit.framework.common import test_constants
 

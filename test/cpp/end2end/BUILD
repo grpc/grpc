@@ -670,7 +670,11 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        # Test manipulates network settings (e.g. using iptables) while running so it is only
+        # run on demand ("manual") and when no other tests are running ("exclusive").
+        # It also means that the test won't work with setups like bazel RBE.
         "manual",
+        "exclusive",
         "no_test_ios",
     ],
     deps = [
@@ -750,10 +754,14 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        # Test requires root and manipulates network settings while running so it is only
+        # run on demand ("manual") and when no other tests are running ("exclusive").
+        # It also means that the test won't work with setups like bazel RBE.
         "manual",
+        "exclusive",
         "no_test_android",
         "no_test_ios",
-    ],  # test requires root, won't work with bazel RBE
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
