@@ -828,12 +828,40 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                 {
                     "UnaryCall": alternate_backend_instances,
                     "EmptyCall": original_backend_instances
+                }),
+            (
+                # This test case is similar to the one above (but with route
+                # services swapped). This test has two routes (full_path and
+                # the default) to match EmptyCall, and both routes set
+                # alternative_backend_service as the action. This forces the
+                # client to handle duplicate Clusters in the RDS response.
+                [
+                    {
+                        'priority': 0,
+                        # Prefix UnaryCall -> original_backend_service.
+                        'matchRules': [{
+                            'prefixMatch': '/grpc.testing.TestService/Unary'
+                        }],
+                        'service': original_backend_service.url
+                    },
+                    {
+                        'priority': 1,
+                        # FullPath EmptyCall -> alternate_backend_service.
+                        'matchRules': [{
+                            'fullPathMatch':
+                                '/grpc.testing.TestService/EmptyCall'
+                        }],
+                        'service': alternate_backend_service.url
+                    }
+                ],
+                {
+                    "UnaryCall": original_backend_instances,
+                    "EmptyCall": alternate_backend_instances
                 })
         ]
 
         for (route_rules, expected_instances) in test_cases:
-            logger.info('patching url map with %s -> alternative',
-                        route_rules[0]['matchRules'])
+            logger.info('patching url map with %s', route_rules)
             patch_url_map_backend_service(gcp,
                                           original_backend_service,
                                           route_rules=route_rules)
@@ -846,8 +874,8 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                 original_backend_instances + alternate_backend_instances,
                 _WAIT_FOR_STATS_SEC)
 
-            retry_count = 10
-            # Each attempt takes about 10 seconds, 10 retries is equivalent to 100
+            retry_count = 20
+            # Each attempt takes about 10 seconds, 20 retries is equivalent to 200
             # seconds timeout.
             for i in range(retry_count):
                 stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
