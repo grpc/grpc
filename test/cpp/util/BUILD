@@ -319,9 +319,6 @@ grpc_cc_binary(
     ],
     language = "c++",
     tags = [
-        "no_mac",  # cmake does not build channelz_sampler in Basic Tests C/C++ MacOS test
-        "no_test_android",  # android_cc_test doesn't work with data dependency.
-        "no_test_ios",
         "no_windows",  # unistd.h
     ],
     deps = [
