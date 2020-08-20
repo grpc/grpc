@@ -1619,10 +1619,13 @@ grpc_error* LdsResponseParse(
     }
     // Fail if listener name is duplicated.
     std::string listener_name(listener_name_strview);
+// FIXME: do we need this?
+#if 0
     if (lds_update_map->find(listener_name) != lds_update_map->end()) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
           "duplicate listener name \"", listener_name, "\"").c_str());
     }
+#endif
     XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name];
     // Get api_listener and decode it to http_connection_manager.
     const envoy_config_listener_v3_ApiListener* api_listener =
@@ -1723,10 +1726,13 @@ grpc_error* RdsResponseParse(
     }
     // Fail if route config name is duplicated.
     std::string route_config_name(route_config_name_strview);
+// FIXME: do we need this?
+#if 0
     if (rds_update_map->find(route_config_name) != rds_update_map->end()) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
           "duplicate route config name \"", route_config_name, "\"").c_str());
     }
+#endif
     XdsApi::RdsUpdate& rds_update =
         (*rds_update_map)[std::move(route_config_name)];
     // Parse the route_config.
@@ -1771,10 +1777,13 @@ grpc_error* CdsResponseParse(
     }
     // Fail if cluster name is duplicated.
     std::string cluster_name(cluster_name_strview);
+// FIXME: do we need this?
+#if 0
     if (cds_update_map->find(cluster_name) != cds_update_map->end()) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
           "duplicate cluster name \"", cluster_name, "\"").c_str());
     }
+#endif
     XdsApi::CdsUpdate& cds_update = (*cds_update_map)[std::move(cluster_name)];
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster)) {
@@ -1973,10 +1982,13 @@ grpc_error* EdsResponseParse(
     }
     // Fail if EDS service name is duplicated.
     std::string eds_service_name(eds_service_name_strview);
+// FIXME: do we need this?
+#if 0
     if (eds_update_map->find(eds_service_name) != eds_update_map->end()) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
           "duplicate EDS service name \"", eds_service_name, "\"").c_str());
     }
+#endif
     XdsApi::EdsUpdate& eds_update =
         (*eds_update_map)[std::move(eds_service_name)];
     // Get the endpoints.

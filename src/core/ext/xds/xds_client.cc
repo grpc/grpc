@@ -573,8 +573,11 @@ void XdsClient::ChannelState::Unsubscribe(const std::string& type_url,
                                           const std::string& name,
                                           bool delay_unsubscription) {
   if (ads_calld_ != nullptr) {
-    ads_calld_->calld()->Unsubscribe(type_url, name, delay_unsubscription);
-    if (!ads_calld_->calld()->HasSubscribedResources()) ads_calld_.reset();
+    auto* calld = ads_calld_->calld();
+    if (calld != nullptr) {
+      calld->Unsubscribe(type_url, name, delay_unsubscription);
+      if (!calld->HasSubscribedResources()) ads_calld_.reset();
+    }
   }
 }
 

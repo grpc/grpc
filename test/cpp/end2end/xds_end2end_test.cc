@@ -2524,10 +2524,6 @@ TEST_P(LdsRdsTest, ChooseMatchedDomain) {
   *(route_config.add_virtual_hosts()) = route_config.virtual_hosts(0);
   route_config.mutable_virtual_hosts(0)->clear_domains();
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_cluster_header();
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
