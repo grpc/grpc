@@ -2499,7 +2499,7 @@ TEST_P(LdsRdsTest, ListenerRemoved) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that LDS client should send a NACK if matching domain can't be found in
+// Tests that LDS client ACKS but fails if matching domain can't be found in
 // the LDS response.
 TEST_P(LdsRdsTest, NoMatchedDomain) {
   RouteConfiguration route_config =
@@ -2510,10 +2510,10 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
+  // Do a bit of polling, to allow the ACK to get to the ADS server.
+  channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10));
   const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "No matched virtual host found in the route config.");
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should choose the virtual host with matching domain if
