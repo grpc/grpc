@@ -68,6 +68,127 @@ TEST_F(EvaluateArgsTest, TestEvaluateArgsPeerPort) {
       << "Error: Failed to extract correct Peer port from EvaluateArgs.";
 }
 
+TEST(EvaluateArgsMetadataTest, HandlesNullMetadata) {
+  EvaluateArgs evalArgs(nullptr, nullptr, nullptr);
+  EXPECT_EQ(evalArgs.GetPath(), nullptr)
+      << "Failed to return nullptr with null metadata_batch.";
+  EXPECT_EQ(evalArgs.GetMethod(), nullptr)
+      << "Failed to return nullptr with null metadata_batch.";
+  EXPECT_EQ(evalArgs.GetHost(), nullptr)
+      << "Failed to return nullptr with null metadata_batch.";
+  EXPECT_EQ(evalArgs.GetHeaders().size(), 0)
+      << "Failed to return nullptr with null metadata_batch.";
+}
+
+TEST(EvaluateArgsMetadataTest, HandlesEmptyMetadata) {
+  grpc_metadata_batch metadata;
+  grpc_metadata_batch_init(&metadata);
+  EvaluateArgs evalArgs(&metadata, nullptr, nullptr);
+  EXPECT_EQ(evalArgs.GetPath(), nullptr)
+      << "Failed to return nullptr with null metadata_batch.";
+  EXPECT_EQ(evalArgs.GetMethod(), nullptr)
+      << "Failed to return nullptr with null metadata_batch.";
+  EXPECT_EQ(evalArgs.GetHost(), nullptr)
+      << "Failed to return nullptr with null metadata_batch.";
+  EXPECT_EQ(evalArgs.GetHeaders().size(), 0)
+      << "Failed to return nullptr with null metadata_batch.";
+}
+
+TEST(EvaluateArgsMetadataTest, GetPathSuccess) {
+  grpc_init();
+  grpc_metadata_batch metadata;
+  grpc_metadata_batch_init(&metadata);
+  grpc_slice fake_val =
+      grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"));
+  grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_PATH, fake_val);
+  grpc_linked_mdelem storage;
+  storage.md = fake_val_md;
+  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage), nullptr);
+  EvaluateArgs evalArgs(&metadata, nullptr, nullptr);
+  grpc_metadata_batch_destroy(&metadata);
+  EXPECT_EQ(evalArgs.GetPath(), "/foo/bar")
+      << "Failed to properly set or retrieve path.";
+  grpc_shutdown();
+}
+
+TEST(EvaluateArgsMetadataTest, GetHostSuccess) {
+  grpc_init();
+  grpc_metadata_batch metadata;
+  grpc_metadata_batch_init(&metadata);
+  grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string("foo"));
+  grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_HOST, fake_val);
+  grpc_linked_mdelem storage;
+  storage.md = fake_val_md;
+  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage), nullptr);
+  EvaluateArgs evalArgs(&metadata, nullptr, nullptr);
+  EXPECT_EQ(evalArgs.GetHost(), "foo")
+      << "Failed to properly set or retrieve host.";
+  grpc_metadata_batch_destroy(&metadata);
+  grpc_shutdown();
+}
+
+TEST(EvaluateArgsMetadataTest, GetMethodSuccess) {
+  grpc_init();
+  grpc_metadata_batch metadata;
+  grpc_metadata_batch_init(&metadata);
+  grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string("GET"));
+  grpc_mdelem fake_val_md =
+      grpc_mdelem_from_slices(GRPC_MDSTR_METHOD, fake_val);
+  grpc_linked_mdelem storage;
+  storage.md = fake_val_md;
+  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage), nullptr);
+  EvaluateArgs evalArgs(&metadata, nullptr, nullptr);
+  EXPECT_EQ(evalArgs.GetMethod(), "GET")
+      << "Failed to properly set or retrieve method.";
+  grpc_metadata_batch_destroy(&metadata);
+  grpc_shutdown();
+}
+
+TEST(EvaluateArgsMetadataTest, GetHeadersSuccess) {
+  grpc_init();
+  grpc_metadata_batch metadata;
+  grpc_metadata_batch_init(&metadata);
+  grpc_slice fake_path =
+      grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"));
+  grpc_mdelem fake_path_md =
+      grpc_mdelem_from_slices(GRPC_MDSTR_PATH, fake_path);
+  grpc_linked_mdelem storage;
+  storage.md = fake_path_md;
+  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage, GRPC_BATCH_PATH),
+            nullptr)
+      << "couldn't add metadata";
+
+  grpc_slice fake_host =
+      grpc_slice_intern(grpc_slice_from_static_string("foo"));
+  grpc_mdelem fake_host_md =
+      grpc_mdelem_from_slices(GRPC_MDSTR_HOST, fake_host);
+  grpc_linked_mdelem storage2;
+  storage2.md = fake_host_md;
+  ASSERT_EQ(
+      grpc_metadata_batch_link_tail(&metadata, &storage2, GRPC_BATCH_HOST),
+      nullptr)
+      << "couldn't add metadata";
+
+  EvaluateArgs evalArgs(&metadata, nullptr, nullptr);
+  std::multimap<absl::string_view, absl::string_view> headers =
+      evalArgs.GetHeaders();
+  ASSERT_TRUE(headers.size() == 2) << "number of metdata elements is incorrect";
+  grpc_metadata_batch_destroy(&metadata);
+  std::multimap<absl::string_view, absl::string_view>::iterator itr =
+      headers.begin();
+  ASSERT_TRUE(itr != headers.end()) << "iterator is empty";
+  ASSERT_EQ(itr->first, StringViewFromSlice(GRPC_MDSTR_PATH))
+      << "wrong order of metadata";
+  EXPECT_EQ(itr->second, "/foo/bar") << "wrong value of metadata";
+  ++itr;
+  ASSERT_EQ(itr->first, StringViewFromSlice(GRPC_MDSTR_HOST))
+      << "wrong order of metadata";
+  EXPECT_EQ(itr->second, "foo") << "wrong value of metadata";
+  ++itr;
+  ASSERT_TRUE(itr == headers.end()) << "iterator still has extra values";
+  grpc_shutdown();
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
