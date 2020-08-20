@@ -29,9 +29,6 @@
 #include "src/core/lib/channel/channelz.h"
 
 namespace grpc_core {
-
-class Subchannel;
-
 namespace channelz {
 
 class SubchannelNode : public BaseNode {
