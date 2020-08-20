@@ -283,10 +283,6 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
 };
 }  // namespace
 
-}  // namespace grpc
-
-namespace grpc_impl {
-
 /// Use private inheritance rather than composition only to establish order
 /// of construction, since the public base class should be constructed after the
 /// elements belonging to the private base class are constructed. This is not
@@ -1361,4 +1357,4 @@ grpc::CompletionQueue* Server::CallbackCQ() {
   return callback_cq_;
 }
 
-}  // namespace grpc_impl
+}  // namespace grpc

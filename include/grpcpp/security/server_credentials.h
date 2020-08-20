@@ -29,12 +29,9 @@
 
 struct grpc_server;
 
-namespace grpc_impl {
-
-class Server;
-}  // namespace grpc_impl
 namespace grpc {
 
+class Server;
 /// Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
   /// \warning Deprecated
@@ -72,7 +69,7 @@ class ServerCredentials {
       const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) = 0;
 
  private:
-  friend class ::grpc_impl::Server;
+  friend class Server;
 
   /// Tries to bind \a server to the given \a addr (eg, localhost:1234,
   /// 192.168.1.1:31416, [::1]:27182, etc.)

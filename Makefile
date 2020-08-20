@@ -3178,7 +3178,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
     include/grpcpp/server_context.h \
-    include/grpcpp/server_impl.h \
     include/grpcpp/server_posix.h \
     include/grpcpp/support/async_stream.h \
     include/grpcpp/support/async_stream_impl.h \
@@ -3708,7 +3707,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
     include/grpcpp/server_context.h \
-    include/grpcpp/server_impl.h \
     include/grpcpp/server_posix.h \
     include/grpcpp/support/async_stream.h \
     include/grpcpp/support/async_stream_impl.h \

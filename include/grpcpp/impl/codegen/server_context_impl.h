@@ -49,7 +49,6 @@ struct grpc_call;
 struct census_context;
 
 namespace grpc_impl {
-class Server;
 template <class W, class R>
 class ServerAsyncReader;
 template <class W>
@@ -96,6 +95,7 @@ namespace grpc {
 class ClientContext;
 class CompletionQueue;
 class GenericServerContext;
+class Server;
 class ServerInterface;
 
 #ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
@@ -338,7 +338,7 @@ class ServerContextBase {
   friend class ::grpc::testing::ServerContextTestSpouse;
   friend class ::grpc::testing::DefaultReactorTestPeer;
   friend class ::grpc::ServerInterface;
-  friend class ::grpc_impl::Server;
+  friend class ::grpc::Server;
   template <class W, class R>
   friend class ::grpc_impl::ServerAsyncReader;
   template <class W>
@@ -544,7 +544,7 @@ class ServerContext : public ServerContextBase {
 
  private:
   // Constructor for internal use by server only
-  friend class ::grpc_impl::Server;
+  friend class ::grpc::Server;
   ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
       : ServerContextBase(deadline, arr) {}
 
