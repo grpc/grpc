@@ -20,6 +20,10 @@
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_STATUSOR_H
 
 namespace cel_base {
+
+// This is a temporary stub implementation of CEL APIs.
+// Once gRPC imports the CEL library, this file will be removed.
+
 template <typename T>
 class ABSL_MUST_USE_RESULT StatusOr;
 

@@ -30,6 +30,9 @@
 namespace grpc_core {
 namespace mock_cel {
 
+// This is a temporary stub implementation of CEL APIs.
+// Once gRPC imports the CEL library, this file will be removed.
+
 class ExpressionStep {
  public:
   virtual ~ExpressionStep() {}
@@ -51,15 +54,7 @@ class CelExpressionFlatImpl : public CelExpression {
                         bool enable_unknown_function_results = false) {}
 
   cel_base::StatusOr<CelValue> Evaluate(
-      const BaseActivation& activation,
-      CelEvaluationState* state) const override;
-
- private:
-  const ExecutionPath path_;
-  const int max_iterations_;
-  const std::set<std::string> iter_variable_names_;
-  bool enable_unknowns_;
-  bool enable_unknown_function_results_;
+      const BaseActivation& activation) const override;
 }
 
 }  // namespace mock_cel

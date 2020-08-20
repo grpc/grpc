@@ -21,12 +21,15 @@
 namespace grpc_core {
 namespace mock_cel {
 
+// This is a temporary stub implementation of CEL APIs.
+// Once gRPC imports the CEL library, this file will be removed.
+
 cel_base::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
     const google::api::expr::v1alpha1::Expr* expr,
     const google::api::expr::v1alpha1::SourceInfo* source_info) {
   std::unique_ptr<CelExpression> celexpr =
       absl::make_unique(new CelExpression());
-  return new cel_base::StatusOr<std::unique_ptr<CelExpression>>(celexpr);
+  return celexpr;
 }
 
 cel_base::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(

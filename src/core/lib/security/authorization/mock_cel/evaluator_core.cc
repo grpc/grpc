@@ -25,9 +25,12 @@
 #include "src/core/lib/security/authorization/mock_cel/cel_value.h"
 #include "src/core/lib/security/authorization/mock_cel/statusor.h"
 
+// This is a temporary stub implementation of CEL APIs.
+// Once gRPC imports the CEL library, this file will be removed.
+
 cel_base::StatusOr<CelValue> CelExpressionFlatImpl::Evaluate(
-    const BaseActivation& activation, CelEvaluationState* state) const {
-  return new cel_base::StatusOr<CelValue>(CelValue::CreateNull());
+    const BaseActivation& activation) const {
+  return CelValue::CreateNull();
 }
 
 #endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_EVALUATOR_CORE_CC

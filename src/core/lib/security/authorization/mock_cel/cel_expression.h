@@ -27,6 +27,9 @@
 namespace grpc_core {
 namespace mock_cel {
 
+// This is a temporary stub implementation of CEL APIs.
+// Once gRPC imports the CEL library, this file will be removed.
+
 class CelExpression {
  public:
   CelExpression(){};
