@@ -1504,17 +1504,20 @@ try:
             test_log_filename = os.path.join(log_dir, _SPONGE_LOG_NAME)
             test_log_file = open(test_log_filename, 'w+')
             client_process = None
-            if test_case in _TESTS_TO_FAIL_ON_RPC_FAILURE:
-                wait_for_config_propagation(
-                    gcp, instance_group,
-                    args.client_cmd.format(server_uri=server_uri,
-                                           stats_port=args.stats_port,
-                                           qps=args.qps,
-                                           fail_on_failed_rpc=False),
-                    client_env)
-                fail_on_failed_rpc = '--fail_on_failed_rpc=true'
-            else:
-                fail_on_failed_rpc = '--fail_on_failed_rpc=false'
+            # TODO(ericgribkoff) Temporarily disable fail_on_failed_rpc checks
+            # in the client. This means we will ignore intermittent RPC
+            # failures (but this framework still checks that the final result
+            # is as expected).
+            #
+            # Reason for disabling this is, the resources are shared by
+            # multiple tests, and a change in previous test could be delayed
+            # until the second test starts. The second test may see
+            # intermittent failures because of that.
+            #
+            # A fix is to not share resources between tests (though that does
+            # mean the tests will be significantly slower due to creating new
+            # resources).
+            fail_on_failed_rpc = ''
             client_cmd = shlex.split(
                 args.client_cmd.format(server_uri=server_uri,
                                        stats_port=args.stats_port,
