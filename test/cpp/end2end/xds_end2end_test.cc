@@ -996,7 +996,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         // (even the unchanged ones)
         for (const auto& p : subscription_name_map) {
           const std::string& resource_name = p.first;
-          if (resources_added_to_response.find(resource_type) ==
+          if (resources_added_to_response.find(resource_name) ==
               resources_added_to_response.end()) {
             const ResourceState& resource_state =
                 parent_->resource_map_[resource_type][resource_name];

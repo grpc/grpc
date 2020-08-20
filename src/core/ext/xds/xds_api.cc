@@ -1781,12 +1781,16 @@ grpc_error* CdsResponseParse(
     }
     MaybeLogCluster(client, tracer, cluster);
     // Ignore unexpected cluster names.
-    upb_strview cluster_name = envoy_config_cluster_v3_Cluster_name(cluster);
-    absl::string_view cluster_name_strview(cluster_name.data,
-                                           cluster_name.size);
-    if (expected_cluster_names.find(cluster_name_strview) ==
+    std::string cluster_name =
+        UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(cluster));
+    if (expected_cluster_names.find(cluster_name) ==
         expected_cluster_names.end()) {
       continue;
+    }
+    // Fail on duplicate resources.
+    if (cds_update_map->find(cluster_name) != cds_update_map->end()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
+          "duplicate resource name \"", cluster_name, "\"").c_str());
     }
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster)) {
@@ -1829,8 +1833,7 @@ grpc_error* CdsResponseParse(
       }
       cds_update.lrs_load_reporting_server_name.emplace("");
     }
-    cds_update_map->emplace(UpbStringToStdString(cluster_name),
-                            std::move(cds_update));
+    cds_update_map->emplace(std::move(cluster_name), std::move(cds_update));
   }
   return GRPC_ERROR_NONE;
 }
@@ -1977,16 +1980,18 @@ grpc_error* EdsResponseParse(
           "Can't parse cluster_load_assignment.");
     }
     MaybeLogClusterLoadAssignment(client, tracer, cluster_load_assignment);
-    // Check the cluster name (which actually means eds_service_name). Ignore
-    // unexpected names.
-    upb_strview cluster_name =
+    // Check the EDS service name.  Ignore unexpected names.
+    std::string eds_service_name = UpbStringToStdString(
         envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(
-            cluster_load_assignment);
-    absl::string_view cluster_name_strview(cluster_name.data,
-                                           cluster_name.size);
-    if (expected_eds_service_names.find(cluster_name_strview) ==
+            cluster_load_assignment));
+    if (expected_eds_service_names.find(eds_service_name) ==
         expected_eds_service_names.end()) {
       continue;
+    }
+    // Fail on duplicate resources.
+    if (eds_update_map->find(eds_service_name) != eds_update_map->end()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
+          "duplicate resource name \"", eds_service_name, "\"").c_str());
     }
     // Get the endpoints.
     size_t locality_size;
@@ -2026,8 +2031,7 @@ grpc_error* EdsResponseParse(
         if (error != GRPC_ERROR_NONE) return error;
       }
     }
-    eds_update_map->emplace(UpbStringToStdString(cluster_name),
-                            std::move(eds_update));
+    eds_update_map->emplace(std::move(eds_service_name), std::move(eds_update));
   }
   return GRPC_ERROR_NONE;
 }
