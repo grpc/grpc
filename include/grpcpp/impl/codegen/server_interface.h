@@ -191,8 +191,7 @@ class ServerInterface : public internal::CallHook {
 
   class BaseAsyncRequest : public internal::CompletionQueueTag {
    public:
-    BaseAsyncRequest(ServerInterface* server,
-                     ::grpc::ServerContext* context,
+    BaseAsyncRequest(ServerInterface* server, ::grpc::ServerContext* context,
                      internal::ServerAsyncStreamingInterface* stream,
                      ::grpc::CompletionQueue* call_cq,
                      ::grpc::ServerCompletionQueue* notification_cq, void* tag,
@@ -270,8 +269,7 @@ class ServerInterface : public internal::CallHook {
   class PayloadAsyncRequest final : public RegisteredAsyncRequest {
    public:
     PayloadAsyncRequest(internal::RpcServiceMethod* registered_method,
-                        ServerInterface* server,
-                        ::grpc::ServerContext* context,
+                        ServerInterface* server, ::grpc::ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc::CompletionQueue* call_cq,
                         ::grpc::ServerCompletionQueue* notification_cq,

@@ -49,7 +49,6 @@ struct grpc_call;
 struct census_context;
 
 namespace grpc_impl {
-class ClientContext;
 class Server;
 template <class W, class R>
 class ServerAsyncReader;
@@ -94,9 +93,18 @@ class ErrorMethodHandler;
 
 }  // namespace grpc_impl
 namespace grpc {
+class ClientContext;
 class CompletionQueue;
 class GenericServerContext;
 class ServerInterface;
+
+// TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
+namespace experimental {
+
+typedef ::grpc::ServerContextBase ServerContextBase;
+typedef ::grpc::CallbackServerContext CallbackServerContext;
+
+}  // namespace experimental
 
 #ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 namespace experimental {
@@ -369,7 +377,7 @@ class ServerContextBase {
   friend class ::grpc_impl::internal::ErrorMethodHandler;
   template <class Base>
   friend class ::grpc_impl::internal::FinishOnlyReactor;
-  friend class ::grpc_impl::ClientContext;
+  friend class ::grpc::ClientContext;
   friend class ::grpc::GenericServerContext;
 #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   friend class ::grpc::GenericCallbackServerContext;
@@ -592,9 +600,9 @@ class CallbackServerContext : public ServerContextBase {
 
 }  // namespace grpc
 
-static_assert(std::is_base_of<::grpc::ServerContextBase,
-                              ::grpc::ServerContext>::value,
-              "improper base class");
+static_assert(
+    std::is_base_of<::grpc::ServerContextBase, ::grpc::ServerContext>::value,
+    "improper base class");
 static_assert(std::is_base_of<::grpc::ServerContextBase,
                               ::grpc::CallbackServerContext>::value,
               "improper base class");

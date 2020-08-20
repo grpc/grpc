@@ -52,8 +52,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
     auto* call = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackUnaryImpl)))
         ServerCallbackUnaryImpl(
-            static_cast<::grpc::CallbackServerContext*>(
-                param.server_context),
+            static_cast<::grpc::CallbackServerContext*>(param.server_context),
             param.call, allocator_state, std::move(param.call_requester));
     param.server_context->BeginCompletionOp(
         param.call, [call](bool) { call->MaybeDone(); }, call);
@@ -62,8 +61,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
     if (param.status.ok()) {
       reactor = ::grpc::internal::CatchingReactorGetter<ServerUnaryReactor>(
           get_reactor_,
-          static_cast<::grpc::CallbackServerContext*>(
-              param.server_context),
+          static_cast<::grpc::CallbackServerContext*>(param.server_context),
           call->request(), call->response());
     }
 
@@ -266,8 +264,7 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
     auto* reader = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackReaderImpl)))
         ServerCallbackReaderImpl(
-            static_cast<::grpc::CallbackServerContext*>(
-                param.server_context),
+            static_cast<::grpc::CallbackServerContext*>(param.server_context),
             param.call, std::move(param.call_requester));
     // Inlineable OnDone can be false in the CompletionOp callback because there
     // is no read reactor that has an inlineable OnDone; this only applies to
@@ -282,8 +279,7 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
       reactor = ::grpc::internal::CatchingReactorGetter<
           ServerReadReactor<RequestType>>(
           get_reactor_,
-          static_cast<::grpc::CallbackServerContext*>(
-              param.server_context),
+          static_cast<::grpc::CallbackServerContext*>(param.server_context),
           reader->response());
     }
 
@@ -299,8 +295,8 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
   }
 
  private:
-  std::function<ServerReadReactor<RequestType>*(
-      ::grpc::CallbackServerContext*, ResponseType*)>
+  std::function<ServerReadReactor<RequestType>*(::grpc::CallbackServerContext*,
+                                                ResponseType*)>
       get_reactor_;
 
   class ServerCallbackReaderImpl : public ServerCallbackReader<RequestType> {
@@ -451,8 +447,7 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
     auto* writer = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackWriterImpl)))
         ServerCallbackWriterImpl(
-            static_cast<::grpc::CallbackServerContext*>(
-                param.server_context),
+            static_cast<::grpc::CallbackServerContext*>(param.server_context),
             param.call, static_cast<RequestType*>(param.request),
             std::move(param.call_requester));
     // Inlineable OnDone can be false in the CompletionOp callback because there
@@ -468,8 +463,7 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
       reactor = ::grpc::internal::CatchingReactorGetter<
           ServerWriteReactor<ResponseType>>(
           get_reactor_,
-          static_cast<::grpc::CallbackServerContext*>(
-              param.server_context),
+          static_cast<::grpc::CallbackServerContext*>(param.server_context),
           writer->request());
     }
     if (reactor == nullptr) {
@@ -671,8 +665,7 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
     auto* stream = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackReaderWriterImpl)))
         ServerCallbackReaderWriterImpl(
-            static_cast<::grpc::CallbackServerContext*>(
-                param.server_context),
+            static_cast<::grpc::CallbackServerContext*>(param.server_context),
             param.call, std::move(param.call_requester));
     // Inlineable OnDone can be false in the CompletionOp callback because there
     // is no bidi reactor that has an inlineable OnDone; this only applies to
@@ -686,8 +679,8 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
     if (param.status.ok()) {
       reactor = ::grpc::internal::CatchingReactorGetter<
           ServerBidiReactor<RequestType, ResponseType>>(
-          get_reactor_, static_cast<::grpc::CallbackServerContext*>(
-                            param.server_context));
+          get_reactor_,
+          static_cast<::grpc::CallbackServerContext*>(param.server_context));
     }
 
     if (reactor == nullptr) {

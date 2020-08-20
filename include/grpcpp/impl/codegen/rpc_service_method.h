@@ -49,8 +49,8 @@ class MethodHandler {
     /// \param requester : used only by the callback API. It is a function
     ///        called by the RPC Controller to request another RPC (and also
     ///        to set up the state required to make that request possible)
-    HandlerParameter(Call* c, ::grpc::ServerContextBase* context,
-                     void* req, Status req_status, void* handler_data,
+    HandlerParameter(Call* c, ::grpc::ServerContextBase* context, void* req,
+                     Status req_status, void* handler_data,
                      std::function<void()> requester)
         : call(c),
           server_context(context),

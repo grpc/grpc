@@ -707,8 +707,7 @@ namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody final {
  public:
-  ServerReaderWriterBody(grpc::internal::Call* call,
-                         ::grpc::ServerContext* ctx)
+  ServerReaderWriterBody(grpc::internal::Call* call, ::grpc::ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
 
   void SendInitialMetadata() {
@@ -805,8 +804,7 @@ class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
 
   friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler<
       ServerReaderWriter<W, R>, false>;
-  ServerReaderWriter(::grpc::internal::Call* call,
-                     ::grpc::ServerContext* ctx)
+  ServerReaderWriter(::grpc::internal::Call* call, ::grpc::ServerContext* ctx)
       : body_(call, ctx) {}
 };
 
@@ -875,8 +873,7 @@ class ServerUnaryStreamer final
 
   friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler<
       ServerUnaryStreamer<RequestType, ResponseType>, true>;
-  ServerUnaryStreamer(::grpc::internal::Call* call,
-                      ::grpc::ServerContext* ctx)
+  ServerUnaryStreamer(::grpc::internal::Call* call, ::grpc::ServerContext* ctx)
       : body_(call, ctx), read_done_(false), write_done_(false) {}
 };
 
@@ -937,8 +934,7 @@ class ServerSplitStreamer final
 
   friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler<
       ServerSplitStreamer<RequestType, ResponseType>, false>;
-  ServerSplitStreamer(::grpc::internal::Call* call,
-                      ::grpc::ServerContext* ctx)
+  ServerSplitStreamer(::grpc::internal::Call* call, ::grpc::ServerContext* ctx)
       : body_(call, ctx), read_done_(false) {}
 };
 
