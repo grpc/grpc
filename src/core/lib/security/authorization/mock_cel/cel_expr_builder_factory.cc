@@ -16,6 +16,8 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h"
 
 namespace grpc_core {
@@ -31,8 +33,7 @@ struct InterpreterOptions {
 std::unique_ptr<CelExpressionBuilder>
 CreateCelExpressionBuilder(
     const InterpreterOptions& options = InterpreterOptions()) {
-  CelExpressionBuilder* builder = new CelExpressionBuilder();
-  return absl::make_unique<CelExpressionBuilder>(builder);
+  return absl::make_unique<CelExpressionBuilder>();
 }
 
 }  // namespace mock_cel

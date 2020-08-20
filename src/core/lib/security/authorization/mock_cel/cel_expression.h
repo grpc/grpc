@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_EXPRESSION_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_EXPRESSION_H
 
+#include <grpc/support/port_platform.h>
+
 #include "google/api/expr/v1alpha1/syntax.pb.h"
 #include "src/core/lib/security/authorization/mock_cel/activation.h"
 #include "src/core/lib/security/authorization/mock_cel/cel_value.h"

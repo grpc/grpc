@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_EVALUATOR_CORE_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_EVALUATOR_CORE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <vector>
 
@@ -26,6 +28,7 @@
 #include "src/core/lib/security/authorization/mock_cel/activation.h"
 #include "src/core/lib/security/authorization/mock_cel/cel_expression.h"
 #include "src/core/lib/security/authorization/mock_cel/cel_value.h"
+#include "src/core/lib/security/authorization/mock_cel/statusor.h"
 
 namespace grpc_core {
 namespace mock_cel {

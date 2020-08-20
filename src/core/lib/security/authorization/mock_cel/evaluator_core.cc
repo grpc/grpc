@@ -19,11 +19,9 @@
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_EVALUATOR_CORE_CC
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_EVALUATOR_CORE_CC
 
-#include "src/core/lib/security/authorization/mock_cel/evaluator_core.h"
+#include <grpc/support/port_platform.h>
 
-#include "absl/status/status.h"
-#include "src/core/lib/security/authorization/mock_cel/cel_value.h"
-#include "src/core/lib/security/authorization/mock_cel/statusor.h"
+#include "src/core/lib/security/authorization/mock_cel/evaluator_core.h"
 
 // This is a temporary stub implementation of CEL APIs.
 // Once gRPC imports the CEL library, this file will be removed.

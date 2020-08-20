@@ -16,6 +16,8 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/authorization/mock_cel/cel_expression.h"
 
 namespace grpc_core {
@@ -27,9 +29,7 @@ namespace mock_cel {
 cel_base::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
     const google::api::expr::v1alpha1::Expr* expr,
     const google::api::expr::v1alpha1::SourceInfo* source_info) {
-  std::unique_ptr<CelExpression> celexpr =
-      absl::make_unique(new CelExpression());
-  return celexpr;
+  return absl::make_unique<CelExpression>();
 }
 
 cel_base::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
