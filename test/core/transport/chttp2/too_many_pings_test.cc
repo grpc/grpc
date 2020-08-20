@@ -49,6 +49,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/surface/channel.h"
 
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
