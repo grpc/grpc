@@ -16,8 +16,8 @@
 
 #include <gtest/gtest.h>
 
-#include "src/core/lib/security/authorization/evaluate_args.h"
 #include "absl/strings/string_view.h"
+#include "src/core/lib/security/authorization/evaluate_args.h"
 #include "test/core/util/eval_args_mock_endpoint.h"
 
 namespace grpc_core {
@@ -112,6 +112,7 @@ TEST(EvaluateArgsMetadataTest, GetPathSuccess) {
 }
 
 TEST(EvaluateArgsMetadataTest, GetHostSuccess) {
+  grpc_init();
   grpc_metadata_batch metadata;
   grpc_metadata_batch_init(&metadata);
   grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string("foo"));
@@ -123,9 +124,11 @@ TEST(EvaluateArgsMetadataTest, GetHostSuccess) {
   EXPECT_EQ(evalArgs.GetHost(), "foo")
       << "Failed to properly set or retrieve host.";
   grpc_metadata_batch_destroy(&metadata);
+  grpc_shutdown();
 }
 
 TEST(EvaluateArgsMetadataTest, GetMethodSuccess) {
+  grpc_init();
   grpc_metadata_batch metadata;
   grpc_metadata_batch_init(&metadata);
   grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string("GET"));
@@ -138,9 +141,11 @@ TEST(EvaluateArgsMetadataTest, GetMethodSuccess) {
   EXPECT_EQ(evalArgs.GetMethod(), "GET")
       << "Failed to properly set or retrieve method.";
   grpc_metadata_batch_destroy(&metadata);
+  grpc_shutdown();
 }
 
 TEST(EvaluateArgsMetadataTest, GetHeadersSuccess) {
+  grpc_init();
   grpc_metadata_batch metadata;
   grpc_metadata_batch_init(&metadata);
   grpc_slice fake_path =
@@ -164,29 +169,14 @@ TEST(EvaluateArgsMetadataTest, GetHeadersSuccess) {
       nullptr)
       << "couldn't add metadata";
 
-  grpc_slice fake_method =
-      grpc_slice_intern(grpc_slice_from_static_string("GET"));
-  grpc_mdelem fake_method_md =
-      grpc_mdelem_from_slices(GRPC_MDSTR_METHOD, fake_method);
-  grpc_linked_mdelem storage3;
-  storage3.md = fake_method_md;
-  ASSERT_EQ(
-      grpc_metadata_batch_link_head(&metadata, &storage3, GRPC_BATCH_METHOD),
-      nullptr)
-      << "couldn't add metadata";
-
   EvaluateArgs evalArgs(&metadata, nullptr, nullptr);
   std::multimap<absl::string_view, absl::string_view> headers =
       evalArgs.GetHeaders();
-  ASSERT_TRUE(headers.size() == 3) << "number of metdata elements is incorrect";
+  ASSERT_TRUE(headers.size() == 2) << "number of metdata elements is incorrect";
   grpc_metadata_batch_destroy(&metadata);
   std::multimap<absl::string_view, absl::string_view>::iterator itr =
       headers.begin();
   ASSERT_TRUE(itr != headers.end()) << "iterator is empty";
-  ASSERT_EQ(itr->first, StringViewFromSlice(GRPC_MDSTR_METHOD))
-      << "wrong order of metadata";
-  EXPECT_EQ(itr->second, "GET") << "wrong value of metadata";
-  ++itr;
   ASSERT_EQ(itr->first, StringViewFromSlice(GRPC_MDSTR_PATH))
       << "wrong order of metadata";
   EXPECT_EQ(itr->second, "/foo/bar") << "wrong value of metadata";
@@ -196,6 +186,7 @@ TEST(EvaluateArgsMetadataTest, GetHeadersSuccess) {
   EXPECT_EQ(itr->second, "foo") << "wrong value of metadata";
   ++itr;
   ASSERT_TRUE(itr == headers.end()) << "iterator still has extra values";
+  grpc_shutdown();
 }
 
 TEST(EvaluateArgsAuthContextTest, HandlesNullAuthContext) {
