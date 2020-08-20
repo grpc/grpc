@@ -29,8 +29,8 @@
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
-#include <grpcpp/impl/codegen/client_context_impl.h>
-#include <grpcpp/impl/codegen/completion_queue_impl.h>
+#include <grpcpp/impl/codegen/client_context.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -51,8 +51,8 @@ class CallHook;
 // TODO(yangg) if the map is changed before we send, the pointers will be a
 // mess. Make sure it does not happen.
 inline grpc_metadata* FillMetadataArray(
-    const std::multimap<grpc::string, grpc::string>& metadata,
-    size_t* metadata_count, const grpc::string& optional_error_details) {
+    const std::multimap<std::string, std::string>& metadata,
+    size_t* metadata_count, const std::string& optional_error_details) {
   *metadata_count = metadata.size() + (optional_error_details.empty() ? 0 : 1);
   if (*metadata_count == 0) {
     return nullptr;
@@ -198,9 +198,10 @@ class WriteOptions {
 
 namespace internal {
 
-/// Default argument for CallOpSet. I is unused by the class, but can be
-/// used for generating multiple names for the same thing.
-template <int I>
+/// Default argument for CallOpSet. The Unused parameter is unused by
+/// the class, but can be used for generating multiple names for the
+/// same thing.
+template <int Unused>
 class CallNoOp {
  protected:
   void AddOp(grpc_op* /*ops*/, size_t* /*nops*/) {}
@@ -219,7 +220,7 @@ class CallOpSendInitialMetadata {
     maybe_compression_level_.is_set = false;
   }
 
-  void SendInitialMetadata(std::multimap<grpc::string, grpc::string>* metadata,
+  void SendInitialMetadata(std::multimap<std::string, std::string>* metadata,
                            uint32_t flags) {
     maybe_compression_level_.is_set = false;
     send_ = true;
@@ -275,7 +276,7 @@ class CallOpSendInitialMetadata {
   bool send_;
   uint32_t flags_;
   size_t initial_metadata_count_;
-  std::multimap<grpc::string, grpc::string>* metadata_map_;
+  std::multimap<std::string, std::string>* metadata_map_;
   grpc_metadata* initial_metadata_;
   struct {
     bool is_set;
@@ -421,17 +422,12 @@ Status CallOpSendMessage::SendMessagePtr(const M* message) {
 template <class R>
 class CallOpRecvMessage {
  public:
-  CallOpRecvMessage()
-      : got_message(false),
-        message_(nullptr),
-        allow_not_getting_message_(false) {}
-
   void RecvMessage(R* message) { message_ = message; }
 
   // Do not change status if no message is received.
   void AllowNoMessage() { allow_not_getting_message_ = true; }
 
-  bool got_message;
+  bool got_message = false;
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
@@ -444,7 +440,7 @@ class CallOpRecvMessage {
   }
 
   void FinishOp(bool* status) {
-    if (message_ == nullptr || hijacked_) return;
+    if (message_ == nullptr) return;
     if (recv_buf_.Valid()) {
       if (*status) {
         got_message = *status =
@@ -455,18 +451,24 @@ class CallOpRecvMessage {
         got_message = false;
         recv_buf_.Clear();
       }
-    } else {
-      got_message = false;
-      if (!allow_not_getting_message_) {
-        *status = false;
+    } else if (hijacked_) {
+      if (hijacked_recv_message_failed_) {
+        FinishOpRecvMessageFailureHandler(status);
+      } else {
+        // The op was hijacked and it was successful. There is no further action
+        // to be performed since the message is already in its non-serialized
+        // form.
       }
+    } else {
+      FinishOpRecvMessageFailureHandler(status);
     }
   }
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
     if (message_ == nullptr) return;
-    interceptor_methods->SetRecvMessage(message_, &got_message);
+    interceptor_methods->SetRecvMessage(message_,
+                                        &hijacked_recv_message_failed_);
   }
 
   void SetFinishInterceptionHookPoint(
@@ -485,10 +487,19 @@ class CallOpRecvMessage {
   }
 
  private:
-  R* message_;
+  // Sets got_message and \a status for a failed recv message op
+  void FinishOpRecvMessageFailureHandler(bool* status) {
+    got_message = false;
+    if (!allow_not_getting_message_) {
+      *status = false;
+    }
+  }
+
+  R* message_ = nullptr;
   ByteBuffer recv_buf_;
-  bool allow_not_getting_message_;
+  bool allow_not_getting_message_ = false;
   bool hijacked_ = false;
+  bool hijacked_recv_message_failed_ = false;
 };
 
 class DeserializeFunc {
@@ -513,9 +524,6 @@ class DeserializeFuncType final : public DeserializeFunc {
 
 class CallOpGenericRecvMessage {
  public:
-  CallOpGenericRecvMessage()
-      : got_message(false), allow_not_getting_message_(false) {}
-
   template <class R>
   void RecvMessage(R* message) {
     // Use an explicit base class pointer to avoid resolution error in the
@@ -528,7 +536,7 @@ class CallOpGenericRecvMessage {
   // Do not change status if no message is received.
   void AllowNoMessage() { allow_not_getting_message_ = true; }
 
-  bool got_message;
+  bool got_message = false;
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
@@ -541,7 +549,7 @@ class CallOpGenericRecvMessage {
   }
 
   void FinishOp(bool* status) {
-    if (!deserialize_ || hijacked_) return;
+    if (!deserialize_) return;
     if (recv_buf_.Valid()) {
       if (*status) {
         got_message = true;
@@ -550,6 +558,14 @@ class CallOpGenericRecvMessage {
       } else {
         got_message = false;
         recv_buf_.Clear();
+      }
+    } else if (hijacked_) {
+      if (hijacked_recv_message_failed_) {
+        FinishOpRecvMessageFailureHandler(status);
+      } else {
+        // The op was hijacked and it was successful. There is no further action
+        // to be performed since the message is already in its non-serialized
+        // form.
       }
     } else {
       got_message = false;
@@ -562,7 +578,8 @@ class CallOpGenericRecvMessage {
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
     if (!deserialize_) return;
-    interceptor_methods->SetRecvMessage(message_, &got_message);
+    interceptor_methods->SetRecvMessage(message_,
+                                        &hijacked_recv_message_failed_);
   }
 
   void SetFinishInterceptionHookPoint(
@@ -582,11 +599,20 @@ class CallOpGenericRecvMessage {
   }
 
  private:
-  void* message_;
-  bool hijacked_ = false;
+  // Sets got_message and \a status for a failed recv message op
+  void FinishOpRecvMessageFailureHandler(bool* status) {
+    got_message = false;
+    if (!allow_not_getting_message_) {
+      *status = false;
+    }
+  }
+
+  void* message_ = nullptr;
   std::unique_ptr<DeserializeFunc> deserialize_;
   ByteBuffer recv_buf_;
-  bool allow_not_getting_message_;
+  bool allow_not_getting_message_ = false;
+  bool hijacked_ = false;
+  bool hijacked_recv_message_failed_ = false;
 };
 
 class CallOpClientSendClose {
@@ -629,7 +655,7 @@ class CallOpServerSendStatus {
   CallOpServerSendStatus() : send_status_available_(false) {}
 
   void ServerSendStatus(
-      std::multimap<grpc::string, grpc::string>* trailing_metadata,
+      std::multimap<std::string, std::string>* trailing_metadata,
       const Status& status) {
     send_error_details_ = status.error_details();
     metadata_map_ = trailing_metadata;
@@ -683,10 +709,10 @@ class CallOpServerSendStatus {
   bool hijacked_ = false;
   bool send_status_available_;
   grpc_status_code send_status_code_;
-  grpc::string send_error_details_;
-  grpc::string send_error_message_;
+  std::string send_error_details_;
+  std::string send_error_message_;
   size_t trailing_metadata_count_;
-  std::multimap<grpc::string, grpc::string>* metadata_map_;
+  std::multimap<std::string, std::string>* metadata_map_;
   grpc_metadata* trailing_metadata_;
   grpc_slice error_message_slice_;
 };
@@ -695,7 +721,7 @@ class CallOpRecvInitialMetadata {
  public:
   CallOpRecvInitialMetadata() : metadata_map_(nullptr) {}
 
-  void RecvInitialMetadata(::grpc_impl::ClientContext* context) {
+  void RecvInitialMetadata(::grpc::ClientContext* context) {
     context->initial_metadata_received_ = true;
     metadata_map_ = &context->recv_initial_metadata_;
   }
@@ -744,7 +770,7 @@ class CallOpClientRecvStatus {
   CallOpClientRecvStatus()
       : recv_status_(nullptr), debug_error_string_(nullptr) {}
 
-  void ClientRecvStatus(::grpc_impl::ClientContext* context, Status* status) {
+  void ClientRecvStatus(::grpc::ClientContext* context, Status* status) {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
@@ -773,9 +799,9 @@ class CallOpClientRecvStatus {
       *recv_status_ =
           Status(static_cast<StatusCode>(status_code_),
                  GRPC_SLICE_IS_EMPTY(error_message_)
-                     ? grpc::string()
-                     : grpc::string(GRPC_SLICE_START_PTR(error_message_),
-                                    GRPC_SLICE_END_PTR(error_message_)),
+                     ? std::string()
+                     : std::string(GRPC_SLICE_START_PTR(error_message_),
+                                   GRPC_SLICE_END_PTR(error_message_)),
                  metadata_map_->GetBinaryErrorDetails());
       if (debug_error_string_ != nullptr) {
         client_context_->set_debug_error_string(debug_error_string_);
@@ -810,7 +836,7 @@ class CallOpClientRecvStatus {
 
  private:
   bool hijacked_ = false;
-  ::grpc_impl::ClientContext* client_context_;
+  ::grpc::ClientContext* client_context_;
   MetadataMap* metadata_map_;
   Status* recv_status_;
   const char* debug_error_string_;
@@ -828,7 +854,7 @@ class CallOpSet;
 /// the maximum count of ops we'll need in a set. We leverage the
 /// empty base class optimization to slim this class (especially
 /// when there are many unused slots used). To avoid duplicate base classes,
-/// the template parmeter for CallNoOp is varied by argument position.
+/// the template parameter for CallNoOp is varied by argument position.
 template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
 class CallOpSet : public CallOpSetInterface,
                   public Op1,

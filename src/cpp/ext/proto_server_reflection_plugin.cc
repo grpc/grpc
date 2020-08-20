@@ -23,13 +23,13 @@
 
 #include "src/cpp/ext/proto_server_reflection.h"
 
-namespace grpc_impl {
+namespace grpc {
 namespace reflection {
 
 ProtoServerReflectionPlugin::ProtoServerReflectionPlugin()
     : reflection_service_(new grpc::ProtoServerReflection()) {}
 
-grpc::string ProtoServerReflectionPlugin::name() {
+std::string ProtoServerReflectionPlugin::name() {
   return "proto_server_reflection";
 }
 
@@ -41,7 +41,7 @@ void ProtoServerReflectionPlugin::Finish(grpc::ServerInitializer* si) {
   reflection_service_->SetServiceList(si->GetServiceList());
 }
 
-void ProtoServerReflectionPlugin::ChangeArguments(const grpc::string& /*name*/,
+void ProtoServerReflectionPlugin::ChangeArguments(const std::string& /*name*/,
                                                   void* /*value*/) {}
 
 bool ProtoServerReflectionPlugin::has_sync_methods() const {
@@ -64,10 +64,11 @@ static std::unique_ptr< ::grpc::ServerBuilderPlugin> CreateProtoReflection() {
 }
 
 void InitProtoReflectionServerBuilderPlugin() {
-  static bool already_here = false;
-  if (already_here) return;
-  already_here = true;
-  ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateProtoReflection);
+  static struct Initialize {
+    Initialize() {
+      ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateProtoReflection);
+    }
+  } initializer;
 }
 
 // Force InitProtoReflectionServerBuilderPlugin() to be called at static
@@ -79,4 +80,4 @@ struct StaticProtoReflectionPluginInitializer {
 } static_proto_reflection_plugin_initializer;
 
 }  // namespace reflection
-}  // namespace grpc_impl
+}  // namespace grpc

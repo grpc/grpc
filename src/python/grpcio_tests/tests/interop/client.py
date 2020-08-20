@@ -43,10 +43,18 @@ def parse_interop_client_args():
                         default=False,
                         type=resources.parse_bool,
                         help='require a secure connection')
+    parser.add_argument('--use_alts',
+                        default=False,
+                        type=resources.parse_bool,
+                        help='require an ALTS secure connection')
     parser.add_argument('--use_test_ca',
                         default=False,
                         type=resources.parse_bool,
                         help='replace platform root CAs with ca.pem')
+    parser.add_argument('--custom_credentials_type',
+                        choices=["compute_engine_channel_creds"],
+                        default=None,
+                        help='use google default credentials')
     parser.add_argument('--server_host_override',
                         type=str,
                         help='the server host to which to claim to connect')
@@ -56,6 +64,14 @@ def parse_interop_client_args():
     parser.add_argument('--default_service_account',
                         type=str,
                         help='email address of the default service account')
+    parser.add_argument(
+        "--grpc_test_use_grpclb_with_child_policy",
+        type=str,
+        help=(
+            "If non-empty, set a static service config on channels created by "
+            + "grpc::CreateTestChannel, that configures the grpclb LB policy " +
+            "with a child policy being the value of this flag (e.g. round_robin "
+            + "or pick_first)."))
     return parser.parse_args()
 
 
@@ -85,22 +101,44 @@ def _create_call_credentials(args):
 def get_secure_channel_parameters(args):
     call_credentials = _create_call_credentials(args)
 
-    if args.use_test_ca:
-        root_certificates = resources.test_root_certificates()
-    else:
-        root_certificates = None  # will load default roots.
+    channel_opts = ()
+    if args.grpc_test_use_grpclb_with_child_policy:
+        channel_opts += ((
+            "grpc.service_config",
+            '{"loadBalancingConfig": [{"grpclb": {"childPolicy": [{"%s": {}}]}}]}'
+            % args.grpc_test_use_grpclb_with_child_policy),)
+    if args.custom_credentials_type is not None:
+        if args.custom_credentials_type == "compute_engine_channel_creds":
+            assert call_credentials is None
+            google_credentials, unused_project_id = google_auth.default(
+                scopes=[args.oauth_scope])
+            call_creds = grpc.metadata_call_credentials(
+                google_auth.transport.grpc.AuthMetadataPlugin(
+                    credentials=google_credentials,
+                    request=google_auth.transport.requests.Request()))
+            channel_credentials = grpc.compute_engine_channel_credentials(
+                call_creds)
+        else:
+            raise ValueError("Unknown credentials type '{}'".format(
+                args.custom_credentials_type))
+    elif args.use_tls:
+        if args.use_test_ca:
+            root_certificates = resources.test_root_certificates()
+        else:
+            root_certificates = None  # will load default roots.
 
-    channel_credentials = grpc.ssl_channel_credentials(root_certificates)
-    if call_credentials is not None:
-        channel_credentials = grpc.composite_channel_credentials(
-            channel_credentials, call_credentials)
+        channel_credentials = grpc.ssl_channel_credentials(root_certificates)
+        if call_credentials is not None:
+            channel_credentials = grpc.composite_channel_credentials(
+                channel_credentials, call_credentials)
 
-    channel_opts = None
-    if args.server_host_override:
-        channel_opts = ((
-            'grpc.ssl_target_name_override',
-            args.server_host_override,
-        ),)
+        if args.server_host_override:
+            channel_opts += ((
+                'grpc.ssl_target_name_override',
+                args.server_host_override,
+            ),)
+    elif args.use_alts:
+        channel_credentials = grpc.alts_channel_credentials()
 
     return channel_credentials, channel_opts
 
@@ -108,7 +146,7 @@ def get_secure_channel_parameters(args):
 def _create_channel(args):
     target = '{}:{}'.format(args.server_host, args.server_port)
 
-    if args.use_tls:
+    if args.use_tls or args.use_alts or args.custom_credentials_type is not None:
         channel_credentials, options = get_secure_channel_parameters(args)
         return grpc.secure_channel(target, channel_credentials, options)
     else:

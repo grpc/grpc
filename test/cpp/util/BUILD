@@ -180,6 +180,9 @@ grpc_cc_test(
         "grpc_tool_test.cc",
     ],
     data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
         "//src/proto/grpc/testing:echo.proto",
         "//src/proto/grpc/testing:echo_messages.proto",
         "//src/proto/grpc/testing:simple_messages.proto",
@@ -199,7 +202,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing:simple_messages_proto",
-        "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],
 )

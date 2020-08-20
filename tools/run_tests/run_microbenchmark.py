@@ -74,6 +74,15 @@ def text(txt):
     index_html += "<p><pre>%s</pre></p>\n" % cgi.escape(txt)
 
 
+def _bazel_build_benchmark(bm_name, cfg):
+    """Build given benchmark with bazel"""
+    subprocess.check_call([
+        'tools/bazel', 'build',
+        '--config=%s' % cfg,
+        '//test/cpp/microbenchmarks:%s' % bm_name
+    ])
+
+
 def collect_latency(bm_name, args):
     """generate latency profiles"""
     benchmarks = []
@@ -81,16 +90,15 @@ def collect_latency(bm_name, args):
     cleanup = []
 
     heading('Latency Profiles: %s' % bm_name)
-    subprocess.check_call([
-        'make', bm_name, 'CONFIG=basicprof', '-j',
-        '%d' % multiprocessing.cpu_count()
-    ])
-    for line in subprocess.check_output(
-        ['bins/basicprof/%s' % bm_name, '--benchmark_list_tests']).splitlines():
+    _bazel_build_benchmark(bm_name, 'basicprof')
+    for line in subprocess.check_output([
+            'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
+            '--benchmark_list_tests'
+    ]).splitlines():
         link(line, '%s.txt' % fnize(line))
         benchmarks.append(
             jobset.JobSpec([
-                'bins/basicprof/%s' % bm_name,
+                'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
                 '--benchmark_filter=^%s$' % line, '--benchmark_min_time=0.05'
             ],
                            environ={
@@ -133,21 +141,20 @@ def collect_latency(bm_name, args):
 def collect_perf(bm_name, args):
     """generate flamegraphs"""
     heading('Flamegraphs: %s' % bm_name)
-    subprocess.check_call([
-        'make', bm_name, 'CONFIG=mutrace', '-j',
-        '%d' % multiprocessing.cpu_count()
-    ])
+    _bazel_build_benchmark(bm_name, 'mutrace')
     benchmarks = []
     profile_analysis = []
     cleanup = []
-    for line in subprocess.check_output(
-        ['bins/mutrace/%s' % bm_name, '--benchmark_list_tests']).splitlines():
+    for line in subprocess.check_output([
+            'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
+            '--benchmark_list_tests'
+    ]).splitlines():
         link(line, '%s.svg' % fnize(line))
         benchmarks.append(
             jobset.JobSpec([
                 'perf', 'record', '-o',
                 '%s-perf.data' % fnize(line), '-g', '-F', '997',
-                'bins/mutrace/%s' % bm_name,
+                'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
                 '--benchmark_filter=^%s$' % line, '--benchmark_min_time=10'
             ],
                            shortname='perf-%s' % fnize(line)))
@@ -183,13 +190,9 @@ def collect_perf(bm_name, args):
 
 
 def run_summary(bm_name, cfg, base_json_name):
-    subprocess.check_call([
-        'make', bm_name,
-        'CONFIG=%s' % cfg, '-j',
-        '%d' % multiprocessing.cpu_count()
-    ])
+    _bazel_build_benchmark(bm_name, cfg)
     cmd = [
-        'bins/%s/%s' % (cfg, bm_name),
+        'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
         '--benchmark_out=%s.%s.json' % (base_json_name, cfg),
         '--benchmark_out_format=json'
     ]

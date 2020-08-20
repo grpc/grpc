@@ -64,6 +64,11 @@ typedef enum {
   TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
 } tsi_client_certificate_request_type;
 
+typedef enum {
+  TSI_TLS1_2,
+  TSI_TLS1_3,
+} tsi_tls_version;
+
 const char* tsi_result_to_string(tsi_result result);
 const char* tsi_security_level_to_string(tsi_security_level security_level);
 
@@ -208,11 +213,10 @@ typedef struct tsi_peer_property {
   } value;
 } tsi_peer_property;
 
-typedef struct {
+struct tsi_peer {
   tsi_peer_property* properties;
   size_t property_count;
-} tsi_peer;
-
+};
 /* Destructs the tsi_peer object. */
 void tsi_peer_destruct(tsi_peer* self);
 

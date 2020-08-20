@@ -18,29 +18,32 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+#include <thread>
+#include <vector>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
+
+#include <gflags/gflags.h>
+#include <gmock/gmock.h>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-
-#include <string.h>
-
-#include <errno.h>
-#include <fcntl.h>
-#include <gflags/gflags.h>
-#include <gmock/gmock.h>
-#include <thread>
-#include <vector>
 
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
-#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -50,12 +53,13 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -87,6 +91,13 @@ using namespace google;
 using namespace gflags;
 
 DEFINE_string(target_name, "", "Target name to resolve.");
+DEFINE_string(do_ordered_address_comparison, "",
+              "Whether or not to compare resolved addresses to expected "
+              "addresses using an ordered comparison. This is useful for "
+              "testing certain behaviors that involve sorting of resolved "
+              "addresses. Note it would be better if this argument was a "
+              "bool flag, but it's a string for ease of invocation from "
+              "the generated python test runner.");
 DEFINE_string(expected_addrs, "",
               "List of expected backend or balancer addresses in the form "
               "'<ip0:port0>,<is_balancer0>;<ip1:port1>,<is_balancer1>;...'. "
@@ -193,7 +204,7 @@ struct ArgsStruct {
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-  grpc_core::Combiner* lock;
+  std::shared_ptr<grpc_core::WorkSerializer> lock;
   grpc_channel_args* channel_args;
   vector<GrpcLBAddress> expected_addrs;
   std::string expected_service_config_string;
@@ -207,7 +218,7 @@ void ArgsInit(ArgsStruct* args) {
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
-  args->lock = grpc_combiner_create();
+  args->lock = std::make_shared<grpc_core::WorkSerializer>();
   gpr_atm_rel_store(&args->done_atm, 0);
   args->channel_args = nullptr;
 }
@@ -227,7 +238,6 @@ void ArgsFinish(ArgsStruct* args) {
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
-  GRPC_COMBINER_UNREF(args->lock, nullptr);
 }
 
 gpr_timespec NSecondDeadline(int seconds) {
@@ -485,8 +495,18 @@ class CheckingResultHandler : public ResultHandler {
               found_lb_addrs.size(), args->expected_addrs.size());
       abort();
     }
-    EXPECT_THAT(args->expected_addrs,
-                UnorderedElementsAreArray(found_lb_addrs));
+    if (FLAGS_do_ordered_address_comparison == "True") {
+      EXPECT_EQ(args->expected_addrs, found_lb_addrs);
+    } else if (FLAGS_do_ordered_address_comparison == "False") {
+      EXPECT_THAT(args->expected_addrs,
+                  UnorderedElementsAreArray(found_lb_addrs));
+    } else {
+      gpr_log(GPR_ERROR,
+              "Invalid for setting for --do_ordered_address_comparison. "
+              "Have %s, want True or False",
+              FLAGS_do_ordered_address_comparison.c_str());
+      GPR_ASSERT(0);
+    }
     const char* service_config_json =
         result.service_config == nullptr
             ? nullptr
@@ -504,11 +524,10 @@ class CheckingResultHandler : public ResultHandler {
                                  std::vector<GrpcLBAddress>* out) {
     for (size_t i = 0; i < addresses.size(); i++) {
       const grpc_core::ServerAddress& addr = addresses[i];
-      char* str;
-      grpc_sockaddr_to_string(&str, &addr.address(), 1 /* normalize */);
-      gpr_log(GPR_INFO, "%s", str);
-      out->emplace_back(GrpcLBAddress(std::string(str), is_balancer));
-      gpr_free(str);
+      std::string str =
+          grpc_sockaddr_to_string(&addr.address(), true /* normalize */);
+      gpr_log(GPR_INFO, "%s", str.c_str());
+      out->emplace_back(GrpcLBAddress(std::move(str), is_balancer));
     }
   }
 };
@@ -522,8 +541,8 @@ int g_fake_non_responsive_dns_server_port = -1;
 void InjectBrokenNameServerList(ares_channel channel) {
   struct ares_addr_port_node dns_server_addrs[2];
   memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
-  grpc_core::UniquePtr<char> unused_host;
-  grpc_core::UniquePtr<char> local_dns_server_port;
+  std::string unused_host;
+  std::string local_dns_server_port;
   GPR_ASSERT(grpc_core::SplitHostPort(FLAGS_local_dns_server_address.c_str(),
                                       &unused_host, &local_dns_server_port));
   gpr_log(GPR_DEBUG,
@@ -544,16 +563,13 @@ void InjectBrokenNameServerList(ares_channel channel) {
   dns_server_addrs[1].family = AF_INET;
   ((char*)&dns_server_addrs[1].addr.addr4)[0] = 0x7f;
   ((char*)&dns_server_addrs[1].addr.addr4)[3] = 0x1;
-  dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.get());
-  dns_server_addrs[1].udp_port = atoi(local_dns_server_port.get());
+  dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.c_str());
+  dns_server_addrs[1].udp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].next = nullptr;
   GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
 }
 
-void StartResolvingLocked(void* arg, grpc_error* /*unused*/) {
-  grpc_core::Resolver* r = static_cast<grpc_core::Resolver*>(arg);
-  r->StartLocked();
-}
+void StartResolvingLocked(grpc_core::Resolver* r) { r->StartLocked(); }
 
 void RunResolvesRelevantRecordsTest(
     std::unique_ptr<grpc_core::Resolver::ResultHandler> (*CreateResultHandler)(
@@ -566,7 +582,7 @@ void RunResolvesRelevantRecordsTest(
   args.expected_service_config_error = FLAGS_expected_service_config_error;
   args.expected_lb_policy = FLAGS_expected_lb_policy;
   // maybe build the address with an authority
-  char* whole_uri = nullptr;
+  std::string whole_uri;
   gpr_log(GPR_DEBUG,
           "resolver_component_test: --inject_broken_nameserver_list: %s",
           FLAGS_inject_broken_nameserver_list.c_str());
@@ -578,14 +594,12 @@ void RunResolvesRelevantRecordsTest(
         new grpc::testing::FakeNonResponsiveDNSServer(
             g_fake_non_responsive_dns_server_port));
     grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
-    GPR_ASSERT(
-        gpr_asprintf(&whole_uri, "dns:///%s", FLAGS_target_name.c_str()));
+    whole_uri = absl::StrCat("dns:///", FLAGS_target_name);
   } else if (FLAGS_inject_broken_nameserver_list == "False") {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
             FLAGS_local_dns_server_address.c_str());
-    GPR_ASSERT(gpr_asprintf(&whole_uri, "dns://%s/%s",
-                            FLAGS_local_dns_server_address.c_str(),
-                            FLAGS_target_name.c_str()));
+    whole_uri = absl::StrFormat("dns://%s/%s", FLAGS_local_dns_server_address,
+                                FLAGS_target_name);
   } else {
     gpr_log(GPR_DEBUG, "Invalid value for --inject_broken_nameserver_list.");
     abort();
@@ -627,14 +641,13 @@ void RunResolvesRelevantRecordsTest(
   }
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      grpc_core::ResolverRegistry::CreateResolver(whole_uri, resolver_args,
-                                                  args.pollset_set, args.lock,
-                                                  CreateResultHandler(&args));
+      grpc_core::ResolverRegistry::CreateResolver(
+          whole_uri.c_str(), resolver_args, args.pollset_set, args.lock,
+          CreateResultHandler(&args));
   grpc_channel_args_destroy(resolver_args);
-  gpr_free(whole_uri);
-  args.lock->Run(
-      GRPC_CLOSURE_CREATE(StartResolvingLocked, resolver.get(), nullptr),
-      GRPC_ERROR_NONE);
+  auto* resolver_ptr = resolver.get();
+  args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); },
+                 DEBUG_LOCATION);
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);

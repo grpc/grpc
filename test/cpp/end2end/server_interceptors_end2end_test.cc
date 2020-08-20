@@ -521,7 +521,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
       grpc::CreateChannel(server_address, InsecureChannelCredentials());
   GenericStub generic_stub(channel);
 
-  const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
+  const std::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
   EchoRequest send_request;
   EchoRequest recv_request;
   EchoResponse send_response;
@@ -536,6 +536,8 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   send_request.set_message("Hello");
   cli_ctx.AddMetadata("testkey", "testvalue");
 
+  CompletionQueue* cq = srv_cq.get();
+  std::thread request_call([cq]() { Verifier().Expect(4, true).Verify(cq); });
   std::unique_ptr<GenericClientAsyncReaderWriter> call =
       generic_stub.PrepareCall(&cli_ctx, kMethodName, &cli_cq);
   call->StartCall(tag(1));
@@ -551,7 +553,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
 
   service.RequestCall(&srv_ctx, &stream, srv_cq.get(), srv_cq.get(), tag(4));
 
-  Verifier().Expect(4, true).Verify(srv_cq.get());
+  request_call.join();
   EXPECT_EQ(kMethodName, srv_ctx.method());
   EXPECT_TRUE(CheckMetadata(srv_ctx.client_metadata(), "testkey", "testvalue"));
   srv_ctx.AddTrailingMetadata("testkey", "testvalue");

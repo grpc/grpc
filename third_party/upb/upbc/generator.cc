@@ -43,7 +43,7 @@ static std::string DefSourceFilename(std::string proto_filename) {
 class Output {
  public:
   Output(protobuf::io::ZeroCopyOutputStream* stream) : stream_(stream) {}
-  ~Output() { stream_->BackUp(size_); }
+  ~Output() { stream_->BackUp((int)size_); }
 
   template <class... Arg>
   void operator()(absl::string_view format, const Arg&... arg) {
@@ -87,7 +87,9 @@ class Generator : public protoc::CodeGenerator {
   bool Generate(const protobuf::FileDescriptor* file,
                 const std::string& parameter, protoc::GeneratorContext* context,
                 std::string* error) const override;
-
+  uint64_t GetSupportedFeatures() const override {
+    return FEATURE_PROTO3_OPTIONAL;
+  }
 };
 
 void AddMessages(const protobuf::Descriptor* message,
@@ -279,7 +281,9 @@ std::string FieldDefault(const protobuf::FieldDescriptor* field) {
     case protobuf::FieldDescriptor::CPPTYPE_BOOL:
       return field->default_value_bool() ? "true" : "false";
     case protobuf::FieldDescriptor::CPPTYPE_ENUM:
-      return EnumValueSymbol(field->default_value_enum());
+      // Use a number instead of a symbolic name so that we don't require
+      // this enum's header to be included.
+      return absl::StrCat(field->default_value_enum()->number());
   }
   ABSL_ASSERT(false);
   return "XXX";
@@ -331,23 +335,26 @@ void GenerateMessageInHeader(const protobuf::Descriptor* message, Output& output
 
   output("/* $0 */\n\n", message->full_name());
   std::string msgname = ToCIdent(message->full_name());
-  output(
-      "UPB_INLINE $0 *$0_new(upb_arena *arena) {\n"
-      "  return ($0 *)upb_msg_new(&$1, arena);\n"
-      "}\n"
-      "UPB_INLINE $0 *$0_parse(const char *buf, size_t size,\n"
-      "                        upb_arena *arena) {\n"
-      "  $0 *ret = $0_new(arena);\n"
-      "  return (ret && upb_decode(buf, size, ret, &$1, arena)) ? ret : NULL;\n"
-      "}\n"
-      "UPB_INLINE char *$0_serialize(const $0 *msg, upb_arena *arena, size_t "
-      "*len) {\n"
-      "  return upb_encode(msg, &$1, arena, len);\n"
-      "}\n"
-      "\n",
-      MessageName(message), MessageInit(message));
 
-  for (int i = 0; i < message->oneof_decl_count(); i++) {
+  if (!message->options().map_entry()) {
+    output(
+        "UPB_INLINE $0 *$0_new(upb_arena *arena) {\n"
+        "  return ($0 *)_upb_msg_new(&$1, arena);\n"
+        "}\n"
+        "UPB_INLINE $0 *$0_parse(const char *buf, size_t size,\n"
+        "                        upb_arena *arena) {\n"
+        "  $0 *ret = $0_new(arena);\n"
+        "  return (ret && upb_decode(buf, size, ret, &$1, arena)) ? ret : NULL;\n"
+        "}\n"
+        "UPB_INLINE char *$0_serialize(const $0 *msg, upb_arena *arena, size_t "
+        "*len) {\n"
+        "  return upb_encode(msg, &$1, arena, len);\n"
+        "}\n"
+        "\n",
+        MessageName(message), MessageInit(message));
+  }
+
+  for (int i = 0; i < message->real_oneof_decl_count(); i++) {
     const protobuf::OneofDescriptor* oneof = message->oneof_decl(i);
     std::string fullname = ToCIdent(oneof->full_name());
     output("typedef enum {\n");
@@ -361,46 +368,90 @@ void GenerateMessageInHeader(const protobuf::Descriptor* message, Output& output
         fullname);
     output(
         "UPB_INLINE $0_oneofcases $1_$2_case(const $1* msg) { "
-        "return ($0_oneofcases)UPB_FIELD_AT(msg, int32_t, $3); }\n"
+        "return ($0_oneofcases)*UPB_PTR_AT(msg, $3, int32_t); }\n"
         "\n",
         fullname, msgname, oneof->name(),
         GetSizeInit(layout.GetOneofCaseOffset(oneof)));
   }
 
-  for (auto field : FieldNumberOrder(message)) {
+  // Generate const methods.
 
+  for (auto field : FieldNumberOrder(message)) {
+    // Generate hazzer (if any).
     if (layout.HasHasbit(field)) {
       output(
           "UPB_INLINE bool $0_has_$1(const $0 *msg) { "
-          "return _upb_has_field(msg, $2); }\n",
+          "return _upb_hasbit(msg, $2); }\n",
           msgname, field->name(), layout.GetHasbitIndex(field));
-    } else if (field->containing_oneof()) {
+    } else if (field->real_containing_oneof()) {
       output(
           "UPB_INLINE bool $0_has_$1(const $0 *msg) { "
-          "return _upb_has_oneof_field(msg, $2, $3); }\n",
+          "return _upb_getoneofcase(msg, $2) == $3; }\n",
           msgname, field->name(),
-          GetSizeInit(layout.GetOneofCaseOffset(field->containing_oneof())),
+          GetSizeInit(
+              layout.GetOneofCaseOffset(field->real_containing_oneof())),
           field->number());
+    } else if (field->message_type()) {
+      output(
+          "UPB_INLINE bool $0_has_$1(const $0 *msg) { "
+          "return _upb_has_submsg_nohasbit(msg, $2); }\n",
+          msgname, field->name(), GetSizeInit(layout.GetFieldOffset(field)));
     }
 
-    if (field->is_repeated()) {
+    // Generate getter.
+    if (field->is_map()) {
+      const protobuf::Descriptor* entry = field->message_type();
+      const protobuf::FieldDescriptor* key = entry->FindFieldByNumber(1);
+      const protobuf::FieldDescriptor* val = entry->FindFieldByNumber(2);
+      output(
+          "UPB_INLINE size_t $0_$1_size(const $0 *msg) {"
+          "return _upb_msg_map_size(msg, $2); }\n",
+          msgname, field->name(), GetSizeInit(layout.GetFieldOffset(field)));
+      output(
+          "UPB_INLINE bool $0_$1_get(const $0 *msg, $2 key, $3 *val) { "
+          "return _upb_msg_map_get(msg, $4, &key, $5, val, $6); }\n",
+          msgname, field->name(), CType(key), CType(val),
+          GetSizeInit(layout.GetFieldOffset(field)),
+          key->cpp_type() == protobuf::FieldDescriptor::CPPTYPE_STRING
+              ? "0"
+              : "sizeof(key)",
+          val->cpp_type() == protobuf::FieldDescriptor::CPPTYPE_STRING
+              ? "0"
+              : "sizeof(*val)");
+      output(
+          "UPB_INLINE $0 $1_$2_next(const $1 *msg, size_t* iter) { "
+          "return ($0)_upb_msg_map_next(msg, $3, iter); }\n",
+          CTypeConst(field), msgname, field->name(),
+          GetSizeInit(layout.GetFieldOffset(field)));
+    } else if (message->options().map_entry()) {
+      output(
+          "UPB_INLINE $0 $1_$2(const $1 *msg) {\n"
+          "  $3 ret;\n"
+          "  _upb_msg_map_$2(msg, &ret, $4);\n"
+          "  return ret;\n"
+          "}\n",
+          CTypeConst(field), msgname, field->name(), CType(field),
+          field->cpp_type() == protobuf::FieldDescriptor::CPPTYPE_STRING
+              ? "0"
+              : "sizeof(ret)");
+    } else if (field->is_repeated()) {
       output(
           "UPB_INLINE $0 const* $1_$2(const $1 *msg, size_t *len) { "
           "return ($0 const*)_upb_array_accessor(msg, $3, len); }\n",
           CTypeConst(field), msgname, field->name(),
           GetSizeInit(layout.GetFieldOffset(field)));
-    } else if (field->containing_oneof()) {
+    } else if (field->real_containing_oneof()) {
       output(
           "UPB_INLINE $0 $1_$2(const $1 *msg) { "
           "return UPB_READ_ONEOF(msg, $0, $3, $4, $5, $6); }\n",
           CTypeConst(field), msgname, field->name(),
           GetSizeInit(layout.GetFieldOffset(field)),
-          GetSizeInit(layout.GetOneofCaseOffset(field->containing_oneof())),
+          GetSizeInit(layout.GetOneofCaseOffset(field->real_containing_oneof())),
           field->number(), FieldDefault(field));
     } else {
       output(
           "UPB_INLINE $0 $1_$2(const $1 *msg) { "
-          "return UPB_FIELD_AT(msg, $0, $3); }\n",
+          "return *UPB_PTR_AT(msg, $3, $0); }\n",
           CTypeConst(field), msgname, field->name(),
           GetSizeInit(layout.GetFieldOffset(field)));
     }
@@ -408,8 +459,43 @@ void GenerateMessageInHeader(const protobuf::Descriptor* message, Output& output
 
   output("\n");
 
+  // Generate mutable methods.
+
   for (auto field : FieldNumberOrder(message)) {
-    if (field->is_repeated()) {
+    if (field->is_map()) {
+      // TODO(haberman): add map-based mutators.
+      const protobuf::Descriptor* entry = field->message_type();
+      const protobuf::FieldDescriptor* key = entry->FindFieldByNumber(1);
+      const protobuf::FieldDescriptor* val = entry->FindFieldByNumber(2);
+      output(
+          "UPB_INLINE void $0_$1_clear($0 *msg) { _upb_msg_map_clear(msg, $2); }\n",
+          msgname, field->name(),
+          GetSizeInit(layout.GetFieldOffset(field)));
+      output(
+          "UPB_INLINE bool $0_$1_set($0 *msg, $2 key, $3 val, upb_arena *a) { "
+          "return _upb_msg_map_set(msg, $4, &key, $5, &val, $6, a); }\n",
+          msgname, field->name(), CType(key), CType(val),
+          GetSizeInit(layout.GetFieldOffset(field)),
+          key->cpp_type() == protobuf::FieldDescriptor::CPPTYPE_STRING
+              ? "0"
+              : "sizeof(key)",
+          val->cpp_type() == protobuf::FieldDescriptor::CPPTYPE_STRING
+              ? "0"
+              : "sizeof(val)");
+      output(
+          "UPB_INLINE bool $0_$1_delete($0 *msg, $2 key) { "
+          "return _upb_msg_map_delete(msg, $3, &key, $4); }\n",
+          msgname, field->name(), CType(key),
+          GetSizeInit(layout.GetFieldOffset(field)),
+          key->cpp_type() == protobuf::FieldDescriptor::CPPTYPE_STRING
+              ? "0"
+              : "sizeof(key)");
+      output(
+          "UPB_INLINE $0 $1_$2_nextmutable($1 *msg, size_t* iter) { "
+          "return ($0)_upb_msg_map_next(msg, $3, iter); }\n",
+          CType(field), msgname, field->name(),
+          GetSizeInit(layout.GetFieldOffset(field)));
+    } else if (field->is_repeated()) {
       output(
           "UPB_INLINE $0* $1_mutable_$2($1 *msg, size_t *len) {\n"
           "  return ($0*)_upb_array_mutable_accessor(msg, $3, len);\n"
@@ -419,17 +505,15 @@ void GenerateMessageInHeader(const protobuf::Descriptor* message, Output& output
       output(
           "UPB_INLINE $0* $1_resize_$2($1 *msg, size_t len, "
           "upb_arena *arena) {\n"
-          "  return ($0*)_upb_array_resize_accessor(msg, $3, len, $4, $5, "
-          "arena);\n"
+          "  return ($0*)_upb_array_resize_accessor(msg, $3, len, $4, arena);\n"
           "}\n",
           CType(field), msgname, field->name(),
           GetSizeInit(layout.GetFieldOffset(field)),
-          GetSizeInit(MessageLayout::SizeOfUnwrapped(field).size),
           UpbType(field));
       if (field->cpp_type() == protobuf::FieldDescriptor::CPPTYPE_MESSAGE) {
         output(
             "UPB_INLINE struct $0* $1_add_$2($1 *msg, upb_arena *arena) {\n"
-            "  struct $0* sub = (struct $0*)upb_msg_new(&$3, arena);\n"
+            "  struct $0* sub = (struct $0*)_upb_msg_new(&$3, arena);\n"
             "  bool ok = _upb_array_append_accessor(\n"
             "      msg, $4, $5, $6, &sub, arena);\n"
             "  if (!ok) return NULL;\n"
@@ -443,8 +527,8 @@ void GenerateMessageInHeader(const protobuf::Descriptor* message, Output& output
       } else {
         output(
             "UPB_INLINE bool $1_add_$2($1 *msg, $0 val, upb_arena *arena) {\n"
-            "  return _upb_array_append_accessor(\n"
-            "      msg, $3, $4, $5, &val, arena);\n"
+            "  return _upb_array_append_accessor(msg, $3, $4, $5, &val,\n"
+            "      arena);\n"
             "}\n",
             CType(field), msgname, field->name(),
             GetSizeInit(layout.GetFieldOffset(field)),
@@ -452,30 +536,49 @@ void GenerateMessageInHeader(const protobuf::Descriptor* message, Output& output
             UpbType(field));
       }
     } else {
+      // Non-repeated field.
+      if (message->options().map_entry() && field->name() == "key") {
+        // Key cannot be mutated.
+        continue;
+      }
+
+      // The common function signature for all setters.  Varying implementations
+      // follow.
       output("UPB_INLINE void $0_set_$1($0 *msg, $2 value) {\n", msgname,
              field->name(), CType(field));
-      if (field->containing_oneof()) {
+
+      if (message->options().map_entry()) {
+        output(
+            "  _upb_msg_map_set_value(msg, &value, $0);\n"
+            "}\n",
+            field->cpp_type() == protobuf::FieldDescriptor::CPPTYPE_STRING
+                ? "0"
+                : "sizeof(" + CType(field) + ")");
+      } else if (field->real_containing_oneof()) {
         output(
             "  UPB_WRITE_ONEOF(msg, $0, $1, value, $2, $3);\n"
             "}\n",
             CType(field), GetSizeInit(layout.GetFieldOffset(field)),
-            GetSizeInit(layout.GetOneofCaseOffset(field->containing_oneof())),
+            GetSizeInit(
+                layout.GetOneofCaseOffset(field->real_containing_oneof())),
             field->number());
       } else {
         if (MessageLayout::HasHasbit(field)) {
           output("  _upb_sethas(msg, $0);\n", layout.GetHasbitIndex(field));
         }
         output(
-            "  UPB_FIELD_AT(msg, $0, $1) = value;\n"
+            "  *UPB_PTR_AT(msg, $1, $0) = value;\n"
             "}\n",
             CType(field), GetSizeInit(layout.GetFieldOffset(field)));
       }
-      if (field->cpp_type() == protobuf::FieldDescriptor::CPPTYPE_MESSAGE) {
+
+      if (field->cpp_type() == protobuf::FieldDescriptor::CPPTYPE_MESSAGE &&
+          !message->options().map_entry()) {
         output(
             "UPB_INLINE struct $0* $1_mutable_$2($1 *msg, upb_arena *arena) {\n"
             "  struct $0* sub = (struct $0*)$1_$2(msg);\n"
             "  if (sub == NULL) {\n"
-            "    sub = (struct $0*)upb_msg_new(&$3, arena);\n"
+            "    sub = (struct $0*)_upb_msg_new(&$3, arena);\n"
             "    if (!sub) return NULL;\n"
             "    $1_set_$2(msg, sub);\n"
             "  }\n"
@@ -495,7 +598,6 @@ void WriteHeader(const protobuf::FileDescriptor* file, Output& output) {
   output(
       "#ifndef $0_UPB_H_\n"
       "#define $0_UPB_H_\n\n"
-      "#include \"upb/generated_util.h\"\n"
       "#include \"upb/msg.h\"\n"
       "#include \"upb/decode.h\"\n"
       "#include \"upb/encode.h\"\n\n",
@@ -585,6 +687,22 @@ void WriteHeader(const protobuf::FileDescriptor* file, Output& output) {
       ToPreproc(file->name()));
 }
 
+int TableDescriptorType(const protobuf::FieldDescriptor* field) {
+  if (field->file()->syntax() == protobuf::FileDescriptor::SYNTAX_PROTO2 &&
+      field->type() == protobuf::FieldDescriptor::TYPE_STRING) {
+    // From the perspective of the binary encoder/decoder, proto2 string fields
+    // are identical to bytes fields. Only in proto3 do we check UTF-8 for
+    // string fields at parse time.
+    //
+    // If we ever use these tables for JSON encoding/decoding (for example by
+    // embedding field names on the side) we will have to revisit this, because
+    // string vs. bytes behavior is not affected by proto2 vs proto3.
+    return protobuf::FieldDescriptor::TYPE_BYTES;
+  } else {
+    return field->type();
+  }
+}
+
 void WriteSource(const protobuf::FileDescriptor* file, Output& output) {
   EmitFileWarning(file, output);
 
@@ -608,7 +726,6 @@ void WriteSource(const protobuf::FileDescriptor* file, Output& output) {
     std::string msgname = ToCIdent(message->full_name());
     std::string fields_array_ref = "NULL";
     std::string submsgs_array_ref = "NULL";
-    std::string oneofs_array_ref = "NULL";
     absl::flat_hash_map<const protobuf::Descriptor*, int> submsg_indexes;
     MessageLayout layout(message);
     std::vector<const protobuf::FieldDescriptor*> sorted_submsgs =
@@ -651,15 +768,28 @@ void WriteSource(const protobuf::FileDescriptor* file, Output& output) {
         }
 
         if (MessageLayout::HasHasbit(field)) {
-          presence = absl::StrCat(layout.GetHasbitIndex(field));
-        } else if (field->containing_oneof()) {
+          int index = layout.GetHasbitIndex(field);
+          assert(index != 0);
+          presence = absl::StrCat(index);
+        } else if (field->real_containing_oneof()) {
           MessageLayout::Size case_offset =
-              layout.GetOneofCaseOffset(field->containing_oneof());
+              layout.GetOneofCaseOffset(field->real_containing_oneof());
 
-          // Our encoding that distinguishes oneofs from presence-having fields.
-          case_offset.size32 = -case_offset.size32 - 1;
-          case_offset.size64 = -case_offset.size64 - 1;
+          // We encode as negative to distinguish from hasbits.
+          case_offset.size32 = ~case_offset.size32;
+          case_offset.size64 = ~case_offset.size64;
+          assert(case_offset.size32 < 0);
+          assert(case_offset.size64 < 0);
           presence = GetSizeInit(case_offset);
+        }
+
+        std::string label;
+        if (field->is_map()) {
+          label = "_UPB_LABEL_MAP";
+        } else if (field->is_packed()) {
+          label = "_UPB_LABEL_PACKED";
+        } else {
+          label = absl::StrCat(field->label());
         }
 
         output("  {$0, $1, $2, $3, $4, $5},\n",
@@ -667,8 +797,8 @@ void WriteSource(const protobuf::FileDescriptor* file, Output& output) {
                GetSizeInit(layout.GetFieldOffset(field)),
                presence,
                submsg_index,
-               field->type(),
-               field->label());
+               TableDescriptorType(field),
+               label);
       }
       output("};\n\n");
     }
@@ -746,10 +876,28 @@ void WriteDefSource(const protobuf::FileDescriptor* file, Output& output) {
   EmitFileWarning(file, output);
 
   output("#include \"upb/def.h\"\n");
+  output("#include \"$0\"\n", DefHeaderFilename(file->name()));
   output("\n");
 
   for (int i = 0; i < file->dependency_count(); i++) {
     output("extern upb_def_init $0;\n", DefInitSymbol(file->dependency(i)));
+  }
+
+  std::vector<const protobuf::Descriptor*> file_messages =
+      SortedMessages(file);
+
+  for (auto message : file_messages) {
+    output("extern const upb_msglayout $0;\n", MessageInit(message));
+  }
+  output("\n");
+
+  if (!file_messages.empty()) {
+    output("static const upb_msglayout *layouts[$0] = {\n", file_messages.size());
+    for (auto message : file_messages) {
+      output("  &$0,\n", MessageInit(message));
+    }
+    output("};\n");
+    output("\n");
   }
 
   protobuf::FileDescriptorProto file_proto;
@@ -757,33 +905,19 @@ void WriteDefSource(const protobuf::FileDescriptor* file, Output& output) {
   std::string file_data;
   file_proto.SerializeToString(&file_data);
 
-  output("static const char descriptor[$0] =\n", file_data.size());
+  output("static const char descriptor[$0] = {", file_data.size());
 
-  {
-    if (file_data.size() > 65535) {
-      // Workaround for MSVC: "Error C1091: compiler limit: string exceeds
-      // 65535 bytes in length". Declare a static array of chars rather than
-      // use a string literal. Only write 25 bytes per line.
-      static const size_t kBytesPerLine = 25;
-      output("{ ");
-      for (size_t i = 0; i < file_data.size();) {
-        for (size_t j = 0; j < kBytesPerLine && i < file_data.size(); ++i, ++j) {
-          output("'$0', ", absl::CEscape(file_data.substr(i, 1)));
-        }
-        output("\n");
-      }
-      output("'\\0' }");  // null-terminate
-    } else {
-      // Only write 40 bytes per line.
-      static const size_t kBytesPerLine = 40;
-      for (size_t i = 0; i < file_data.size(); i += kBytesPerLine) {
-        output(
-            "\"$0\"\n",
-            EscapeTrigraphs(absl::CEscape(file_data.substr(i, kBytesPerLine))));
-      }
+  // C90 only guarantees that strings can be up to 509 characters, and some
+  // implementations have limits here (for example, MSVC only allows 64k:
+  // https://docs.microsoft.com/en-us/cpp/error-messages/compiler-errors-1/fatal-error-c1091.
+  // So we always emit an array instead of a string.
+  for (size_t i = 0; i < file_data.size();) {
+    for (size_t j = 0; j < 25 && i < file_data.size(); ++i, ++j) {
+      output("'$0', ", absl::CEscape(file_data.substr(i, 1)));
     }
-    output(";\n");
+    output("\n");
   }
+  output("};\n\n");
 
   output("static upb_def_init *deps[$0] = {\n", file->dependency_count() + 1);
   for (int i = 0; i < file->dependency_count(); i++) {
@@ -791,18 +925,24 @@ void WriteDefSource(const protobuf::FileDescriptor* file, Output& output) {
   }
   output("  NULL\n");
   output("};\n");
+  output("\n");
 
   output("upb_def_init $0 = {\n", DefInitSymbol(file));
   output("  deps,\n");
+  if (file_messages.empty()) {
+    output("  NULL,\n");
+  } else {
+    output("  layouts,\n");
+  }
   output("  \"$0\",\n", file->name());
   output("  UPB_STRVIEW_INIT(descriptor, $0)\n", file_data.size());
   output("};\n");
 }
 
 bool Generator::Generate(const protobuf::FileDescriptor* file,
-                         const std::string& parameter,
+                         const std::string& /* parameter */,
                          protoc::GeneratorContext* context,
-                         std::string* error) const {
+                         std::string* /* error */) const {
   Output h_output(context->Open(HeaderFilename(file->name())));
   WriteHeader(file, h_output);
 

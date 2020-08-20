@@ -19,6 +19,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #include <gflags/gflags.h>
 #include <gmock/gmock.h>
 
@@ -27,7 +32,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include "include/grpc/support/string_util.h"
+
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
@@ -36,9 +41,9 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/port.h"
@@ -81,7 +86,7 @@ struct ArgsStruct {
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-  grpc_core::Combiner* lock;
+  std::shared_ptr<grpc_core::WorkSerializer> lock;
   grpc_channel_args* channel_args;
 };
 
@@ -90,7 +95,7 @@ void ArgsInit(ArgsStruct* args) {
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
-  args->lock = grpc_combiner_create();
+  args->lock = std::make_shared<grpc_core::WorkSerializer>();
   gpr_atm_rel_store(&args->done_atm, 0);
   args->channel_args = nullptr;
 }
@@ -109,7 +114,6 @@ void ArgsFinish(ArgsStruct* args) {
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
-  GRPC_COMBINER_UNREF(args->lock, nullptr);
 }
 
 void PollPollsetUntilRequestDone(ArgsStruct* args) {
@@ -155,18 +159,15 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
 void TestCancelActiveDNSQuery(ArgsStruct* args) {
   int fake_dns_port = grpc_pick_unused_port_or_die();
   grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
-  char* client_target;
-  GPR_ASSERT(gpr_asprintf(
-      &client_target,
+  std::string client_target = absl::StrFormat(
       "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
-      fake_dns_port));
+      fake_dns_port);
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(
-          client_target, nullptr, args->pollset_set, args->lock,
+          client_target.c_str(), nullptr, args->pollset_set, args->lock,
           std::unique_ptr<grpc_core::Resolver::ResultHandler>(
               new AssertFailureResultHandler(args)));
-  gpr_free(client_target);
   resolver->StartLocked();
   // Without resetting and causing resolver shutdown, the
   // PollPollsetUntilRequestDone call should never finish.
@@ -279,19 +280,24 @@ void TestCancelDuringActiveQuery(
   int fake_dns_port = grpc_pick_unused_port_or_die();
   grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
   // Create a call that will try to use the fake DNS server
-  char* client_target = nullptr;
-  GPR_ASSERT(gpr_asprintf(
-      &client_target,
+  std::string client_target = absl::StrFormat(
       "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
-      fake_dns_port));
+      fake_dns_port);
   gpr_log(GPR_DEBUG, "TestCancelActiveDNSQuery. query timeout setting: %d",
           query_timeout_setting);
   grpc_channel_args* client_args = nullptr;
   grpc_status_code expected_status_code = GRPC_STATUS_OK;
+  gpr_timespec rpc_deadline;
   if (query_timeout_setting == NONE) {
+    // The RPC deadline should go off well before the DNS resolution
+    // timeout fires.
     expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
+    // use default DNS resolution timeout (which is over one minute).
     client_args = nullptr;
+    rpc_deadline = grpc_timeout_milliseconds_to_deadline(100);
   } else if (query_timeout_setting == SHORT) {
+    // The DNS resolution timeout should fire well before the
+    // RPC's deadline expires.
     expected_status_code = GRPC_STATUS_UNAVAILABLE;
     grpc_arg arg;
     arg.type = GRPC_ARG_INTEGER;
@@ -299,25 +305,31 @@ void TestCancelDuringActiveQuery(
     arg.value.integer =
         1;  // Set this shorter than the call deadline so that it goes off.
     client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+    // Set the deadline high enough such that if we hit this and get
+    // a deadline exceeded status code, then we are confident that there's
+    // a bug causing cancellation of DNS resolutions to not happen in a timely
+    // manner.
+    rpc_deadline = grpc_timeout_seconds_to_deadline(10);
   } else if (query_timeout_setting == ZERO) {
+    // The RPC deadline should go off well before the DNS resolution
+    // timeout fires.
     expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
     grpc_arg arg;
     arg.type = GRPC_ARG_INTEGER;
     arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
     arg.value.integer = 0;  // Set this to zero to disable query timeouts.
     client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+    rpc_deadline = grpc_timeout_milliseconds_to_deadline(100);
   } else {
     abort();
   }
   grpc_channel* client =
-      grpc_insecure_channel_create(client_target, client_args, nullptr);
-  gpr_free(client_target);
+      grpc_insecure_channel_create(client_target.c_str(), client_args, nullptr);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
-  gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(100);
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-      grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
+      grpc_slice_from_static_string("/foo"), nullptr, rpc_deadline, nullptr);
   GPR_ASSERT(call);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;

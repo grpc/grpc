@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
@@ -116,6 +116,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,  # TODO(b/161828686)
     tags = [
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
@@ -525,6 +526,14 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds:eds_for_test_proto",
         "//src/proto/grpc/testing/xds:lds_rds_for_test_proto",
         "//src/proto/grpc/testing/xds:lrs_for_test_proto",
+        "//src/proto/grpc/testing/xds/v3:ads_proto",
+        "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:discovery_proto",
+        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
+        "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
+        "//src/proto/grpc/testing/xds/v3:listener_proto",
+        "//src/proto/grpc/testing/xds/v3:lrs_proto",
+        "//src/proto/grpc/testing/xds/v3:route_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

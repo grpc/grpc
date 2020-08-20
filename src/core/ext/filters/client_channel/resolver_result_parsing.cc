@@ -24,6 +24,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -35,7 +38,6 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/optional.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
@@ -53,8 +55,9 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
 }
 
 void ClientChannelServiceConfigParser::Register() {
-  g_client_channel_service_config_parser_index = ServiceConfig::RegisterParser(
-      absl::make_unique<ClientChannelServiceConfigParser>());
+  g_client_channel_service_config_parser_index =
+      ServiceConfigParser::RegisterParser(
+          absl::make_unique<ClientChannelServiceConfigParser>());
 }
 
 namespace {
@@ -311,14 +314,15 @@ const char* ParseHealthCheckConfig(const Json& field, grpc_error** error) {
 
 }  // namespace
 
-std::unique_ptr<ServiceConfig::ParsedConfig>
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
                                                     grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error*> error_list;
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
   std::string lb_policy_name;
-  Optional<ClientChannelGlobalParsedConfig::RetryThrottling> retry_throttling;
+  absl::optional<ClientChannelGlobalParsedConfig::RetryThrottling>
+      retry_throttling;
   const char* health_check_service_name = nullptr;
   // Parse LB config.
   auto it = json.object_value().find("loadBalancingConfig");
@@ -350,13 +354,11 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:loadBalancingPolicy error:Unknown lb policy"));
       } else if (requires_config) {
-        char* error_msg;
-        gpr_asprintf(&error_msg,
-                     "field:loadBalancingPolicy error:%s requires a config. "
-                     "Please use loadBalancingConfig instead.",
-                     lb_policy_name.c_str());
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg));
-        gpr_free(error_msg);
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("field:loadBalancingPolicy error:", lb_policy_name,
+                         " requires a config. Please use loadBalancingConfig "
+                         "instead.")
+                .c_str()));
       }
     }
   }
@@ -391,12 +393,12 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
   return nullptr;
 }
 
-std::unique_ptr<ServiceConfig::ParsedConfig>
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(const Json& json,
                                                        grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error*> error_list;
-  Optional<bool> wait_for_ready;
+  absl::optional<bool> wait_for_ready;
   grpc_millis timeout = 0;
   std::unique_ptr<ClientChannelMethodParsedConfig::RetryPolicy> retry_policy;
   // Parse waitForReady.

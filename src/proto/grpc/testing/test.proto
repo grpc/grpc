@@ -84,3 +84,9 @@ service LoadBalancerStatsService {
   rpc GetClientStats(LoadBalancerStatsRequest)
       returns (LoadBalancerStatsResponse) {}
 }
+
+// A service to remotely control health status of an xDS test server.
+service XdsUpdateHealthService {
+  rpc SetServing(grpc.testing.Empty) returns (grpc.testing.Empty);
+  rpc SetNotServing(grpc.testing.Empty) returns (grpc.testing.Empty);
+}

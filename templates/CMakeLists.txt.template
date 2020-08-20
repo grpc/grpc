@@ -61,6 +61,7 @@
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
       deps.append("${_gRPC_CARES_LIBRARIES}")
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
+      deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
@@ -185,6 +186,9 @@
   set(gRPC_CARES_PROVIDER "module" CACHE STRING "Provider of c-ares library")
   set_property(CACHE gRPC_CARES_PROVIDER PROPERTY STRINGS "module" "package")
 
+  set(gRPC_RE2_PROVIDER "module" CACHE STRING "Provider of re2 library")
+  set_property(CACHE gRPC_RE2_PROVIDER PROPERTY STRINGS "module" "package")
+
   set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
   set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
 
@@ -243,15 +247,29 @@
   endif()
 
    # Use C99 standard
-  set(CMAKE_C_STANDARD 99)
+  if (NOT DEFINED CMAKE_C_STANDARD)
+    set(CMAKE_C_STANDARD 99)
+  endif()
 
   # Add c++11 flags
-  set(CMAKE_CXX_STANDARD 11)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  set(CMAKE_CXX_EXTENSIONS OFF)
+  if (NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 11)
+  else()
+    if (CMAKE_CXX_STANDARD LESS 11)
+      message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 11, please specify at least SET(CMAKE_CXX_STANDARD 11)")
+    endif()
+  endif()
+  if (NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  endif()
+  if (NOT DEFINED CMAKE_CXX_EXTENSIONS)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+  endif()
 
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
-  set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+  if (NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+  endif()
   list(APPEND CMAKE_MODULE_PATH "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules")
 
   if(MSVC)
@@ -265,6 +283,9 @@
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4267")
     # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
+  endif()
+  if (MINGW)
+    add_definitions(-D_WIN32_WINNT=0x600)
   endif()
   set(CMAKE_C_FLAGS "<%text>${CMAKE_C_FLAGS} ${_gRPC_C_CXX_FLAGS}</%text>")
   set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS} ${_gRPC_C_CXX_FLAGS}</%text>")
@@ -296,6 +317,7 @@
   include(cmake/cares.cmake)
   include(cmake/gflags.cmake)
   include(cmake/protobuf.cmake)
+  include(cmake/re2.cmake)
   include(cmake/ssl.cmake)
   include(cmake/upb.cmake)
   include(cmake/zlib.cmake)
@@ -308,7 +330,7 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> rt m pthread)
   endif()
 
-  if(WIN32 AND MSVC)
+  if(WIN32)
     set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32)
   endif()
 
@@ -438,7 +460,7 @@
     for lib in libs:
       if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
       if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 'z']: continue  # we build these using CMake instead
+      if lib.name in ['ares', 'benchmark', 're2', 'z']: continue  # we build these using CMake instead
       if is_absl_lib(lib.name): continue  # we build these using CMake instead
       cmake_libs.append(lib)
   %>
@@ -546,6 +568,7 @@
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
@@ -625,6 +648,7 @@
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
@@ -673,7 +697,7 @@
   configure_file(cmake/gRPCConfig.cmake.in
     gRPCConfig.cmake @ONLY)
   write_basic_package_version_file(<%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>gRPCConfigVersion.cmake
-    VERSION <%text>${PACKAGE_VERSION}</%text>
+    VERSION <%text>${gRPC_CPP_VERSION}</%text>
     COMPATIBILITY AnyNewerVersion)
   install(FILES
       <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>gRPCConfig.cmake
@@ -722,7 +746,7 @@
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "gpr openssl"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "upb", "cares", "z"] + list_absl_lib_files_for("grpc"))}"
+    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"] + list_absl_lib_files_for("grpc"))}"
     ""
     "grpc.pc")
 
@@ -740,7 +764,7 @@
   generate_pkgconfig(
     "gRPC++"
     "C++ wrapper for gRPC"
-    "<%text>${PACKAGE_VERSION}</%text>"
+    "<%text>${gRPC_CPP_VERSION}</%text>"
     "grpc"
     "${" ".join(("-l" + l) for l in ["grpc++",] + list_absl_lib_files_for("grpc++"))}"
     ""
@@ -750,7 +774,7 @@
   generate_pkgconfig(
     "gRPC++ unsecure"
     "C++ wrapper for gRPC without SSL"
-    "<%text>${PACKAGE_VERSION}</%text>"
+    "<%text>${gRPC_CPP_VERSION}</%text>"
     "grpc_unsecure"
     "${" ".join(("-l" + l) for l in ["grpc++_unsecure",] + list_absl_lib_files_for("grpc++_unsecure"))}"
     ""

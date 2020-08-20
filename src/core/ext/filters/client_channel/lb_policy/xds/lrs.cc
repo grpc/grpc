@@ -22,12 +22,12 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/xds/xds_client.h"
-#include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
@@ -120,10 +120,11 @@ class LrsLb : public LoadBalancingPolicy {
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_channel_args& args) override;
-    void UpdateState(grpc_connectivity_state state,
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
-    void AddTraceEvent(TraceSeverity severity, StringView message) override;
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override;
 
    private:
     RefCountedPtr<LrsLb> lrs_policy_;
@@ -156,6 +157,7 @@ class LrsLb : public LoadBalancingPolicy {
 
   // Latest state and picker reported by the child policy.
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  absl::Status status_;
   RefCountedPtr<RefCountedPicker> picker_;
 };
 
@@ -176,7 +178,7 @@ LoadBalancingPolicy::PickResult LrsLb::LoadReportingPicker::Pick(
         locality_stats_->Ref(DEBUG_LOCATION, "LocalityStats+call").release();
     result.recv_trailing_metadata_ready =
         // Note: This callback does not run in either the control plane
-        // combiner or in the data plane mutex.
+        // work serializer or in the data plane mutex.
         [locality_stats](grpc_error* error, MetadataInterface* /*metadata*/,
                          CallState* /*call_state*/) {
           const bool call_failed = error != GRPC_ERROR_NONE;
@@ -253,9 +255,11 @@ void LrsLb::UpdateLocked(UpdateArgs args) {
         config_->eds_service_name(), config_->locality_name());
     MaybeUpdatePickerLocked();
   }
+  // Remove XdsClient from channel args, so that its presence doesn't
+  // prevent us from sharing subchannels between channels.
+  grpc_channel_args* new_args = XdsClient::RemoveFromChannelArgs(*args.args);
   // Update child policy.
-  UpdateChildPolicyLocked(std::move(args.addresses), args.args);
-  args.args = nullptr;  // Ownership passed to UpdateChildPolicyLocked().
+  UpdateChildPolicyLocked(std::move(args.addresses), new_args);
 }
 
 void LrsLb::MaybeUpdatePickerLocked() {
@@ -263,17 +267,21 @@ void LrsLb::MaybeUpdatePickerLocked() {
     auto lrs_picker =
         absl::make_unique<LoadReportingPicker>(picker_, locality_stats_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
-      gpr_log(GPR_INFO, "[lrs_lb %p] updating connectivity: state=%s picker=%p",
-              this, ConnectivityStateName(state_), lrs_picker.get());
+      gpr_log(
+          GPR_INFO,
+          "[lrs_lb %p] updating connectivity: state=%s status=(%s) picker=%p",
+          this, ConnectivityStateName(state_), status_.ToString().c_str(),
+          lrs_picker.get());
     }
-    channel_control_helper()->UpdateState(state_, std::move(lrs_picker));
+    channel_control_helper()->UpdateState(state_, status_,
+                                          std::move(lrs_picker));
   }
 }
 
 OrphanablePtr<LoadBalancingPolicy> LrsLb::CreateChildPolicyLocked(
     const grpc_channel_args* args) {
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
@@ -322,15 +330,19 @@ RefCountedPtr<SubchannelInterface> LrsLb::Helper::CreateSubchannel(
 }
 
 void LrsLb::Helper::UpdateState(grpc_connectivity_state state,
+                                const absl::Status& status,
                                 std::unique_ptr<SubchannelPicker> picker) {
   if (lrs_policy_->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
-    gpr_log(GPR_INFO,
-            "[lrs_lb %p] child connectivity state update: state=%s picker=%p",
-            lrs_policy_.get(), ConnectivityStateName(state), picker.get());
+    gpr_log(
+        GPR_INFO,
+        "[lrs_lb %p] child connectivity state update: state=%s (%s) picker=%p",
+        lrs_policy_.get(), ConnectivityStateName(state),
+        status.ToString().c_str(), picker.get());
   }
   // Save the state and picker.
   lrs_policy_->state_ = state;
+  lrs_policy_->status_ = status;
   lrs_policy_->picker_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
   // Wrap the picker and return it to the channel.
   lrs_policy_->MaybeUpdatePickerLocked();
@@ -341,7 +353,8 @@ void LrsLb::Helper::RequestReresolution() {
   lrs_policy_->channel_control_helper()->RequestReresolution();
 }
 
-void LrsLb::Helper::AddTraceEvent(TraceSeverity severity, StringView message) {
+void LrsLb::Helper::AddTraceEvent(TraceSeverity severity,
+                                  absl::string_view message) {
   if (lrs_policy_->shutting_down_) return;
   lrs_policy_->channel_control_helper()->AddTraceEvent(severity, message);
 }

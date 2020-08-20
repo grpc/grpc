@@ -18,15 +18,18 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/client_channel/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -65,6 +68,7 @@ class CdsLb : public LoadBalancingPolicy {
         : parent_(std::move(parent)) {}
     void OnClusterChanged(XdsApi::CdsUpdate cluster_data) override;
     void OnError(grpc_error* error) override;
+    void OnResourceDoesNotExist() override;
 
    private:
     RefCountedPtr<CdsLb> parent_;
@@ -76,10 +80,11 @@ class CdsLb : public LoadBalancingPolicy {
     explicit Helper(RefCountedPtr<CdsLb> parent) : parent_(std::move(parent)) {}
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_channel_args& args) override;
-    void UpdateState(grpc_connectivity_state state,
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
-    void AddTraceEvent(TraceSeverity severity, StringView message) override;
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override;
 
    private:
     RefCountedPtr<CdsLb> parent_;
@@ -88,6 +93,8 @@ class CdsLb : public LoadBalancingPolicy {
   ~CdsLb();
 
   void ShutdownLocked() override;
+
+  void MaybeDestroyChildPolicyLocked();
 
   RefCountedPtr<CdsLbConfig> config_;
 
@@ -168,7 +175,7 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   // Create child policy if not already present.
   if (parent_->child_policy_ == nullptr) {
     LoadBalancingPolicy::Args args;
-    args.combiner = parent_->combiner();
+    args.work_serializer = parent_->work_serializer();
     args.args = parent_->args_;
     args.channel_control_helper = absl::make_unique<Helper>(parent_->Ref());
     parent_->child_policy_ =
@@ -203,11 +210,28 @@ void CdsLb::ClusterWatcher::OnError(grpc_error* error) {
   // we keep running with the data we had previously.
   if (parent_->child_policy_ == nullptr) {
     parent_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
         absl::make_unique<TransientFailurePicker>(error));
   } else {
     GRPC_ERROR_UNREF(error);
   }
+}
+
+void CdsLb::ClusterWatcher::OnResourceDoesNotExist() {
+  gpr_log(GPR_ERROR,
+          "[cdslb %p] CDS resource for %s does not exist -- reporting "
+          "TRANSIENT_FAILURE",
+          parent_.get(), parent_->config_->cluster().c_str());
+  grpc_error* error = grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("CDS resource \"", parent_->config_->cluster(),
+                       "\" does not exist")
+              .c_str()),
+      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+  parent_->channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
+      absl::make_unique<TransientFailurePicker>(error));
+  parent_->MaybeDestroyChildPolicyLocked();
 }
 
 //
@@ -221,13 +245,16 @@ RefCountedPtr<SubchannelInterface> CdsLb::Helper::CreateSubchannel(
 }
 
 void CdsLb::Helper::UpdateState(grpc_connectivity_state state,
+                                const absl::Status& status,
                                 std::unique_ptr<SubchannelPicker> picker) {
-  if (parent_->shutting_down_) return;
+  if (parent_->shutting_down_ || parent_->child_policy_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] state updated by child: %s", this,
-            ConnectivityStateName(state));
+    gpr_log(GPR_INFO,
+            "[cdslb %p] state updated by child: %s message_state: (%s)", this,
+            ConnectivityStateName(state), status.ToString().c_str());
   }
-  parent_->channel_control_helper()->UpdateState(state, std::move(picker));
+  parent_->channel_control_helper()->UpdateState(state, status,
+                                                 std::move(picker));
 }
 
 void CdsLb::Helper::RequestReresolution() {
@@ -239,7 +266,8 @@ void CdsLb::Helper::RequestReresolution() {
   parent_->channel_control_helper()->RequestReresolution();
 }
 
-void CdsLb::Helper::AddTraceEvent(TraceSeverity severity, StringView message) {
+void CdsLb::Helper::AddTraceEvent(TraceSeverity severity,
+                                  absl::string_view message) {
   if (parent_->shutting_down_) return;
   parent_->channel_control_helper()->AddTraceEvent(severity, message);
 }
@@ -268,21 +296,24 @@ void CdsLb::ShutdownLocked() {
     gpr_log(GPR_INFO, "[cdslb %p] shutting down", this);
   }
   shutting_down_ = true;
-  if (child_policy_ != nullptr) {
-    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
-                                     interested_parties());
-    child_policy_.reset();
-  }
+  MaybeDestroyChildPolicyLocked();
   if (xds_client_ != nullptr) {
     if (cluster_watcher_ != nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
         gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
                 config_->cluster().c_str());
       }
-      xds_client_->CancelClusterDataWatch(
-          StringView(config_->cluster().c_str()), cluster_watcher_);
+      xds_client_->CancelClusterDataWatch(config_->cluster(), cluster_watcher_);
     }
     xds_client_.reset();
+  }
+}
+
+void CdsLb::MaybeDestroyChildPolicyLocked() {
+  if (child_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
+                                     interested_parties());
+    child_policy_.reset();
   }
 }
 
@@ -309,9 +340,9 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
         gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
                 old_config->cluster().c_str());
       }
-      xds_client_->CancelClusterDataWatch(
-          StringView(old_config->cluster().c_str()), cluster_watcher_,
-          /*delay_unsubscription=*/true);
+      xds_client_->CancelClusterDataWatch(old_config->cluster(),
+                                          cluster_watcher_,
+                                          /*delay_unsubscription=*/true);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
       gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
@@ -319,8 +350,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
     }
     auto watcher = absl::make_unique<ClusterWatcher>(Ref());
     cluster_watcher_ = watcher.get();
-    xds_client_->WatchClusterData(StringView(config_->cluster().c_str()),
-                                  std::move(watcher));
+    xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
   }
 }
 

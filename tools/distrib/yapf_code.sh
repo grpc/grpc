@@ -26,6 +26,7 @@ DIRS=(
     'src'
     'test'
     'tools'
+    'setup.py'
 )
 
 VIRTUALENV=yapf_virtual_environment

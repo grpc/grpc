@@ -15,12 +15,14 @@
 import asyncio
 import gc
 import logging
+import socket
 import time
 import unittest
 
 import grpc
 from grpc.experimental import aio
 
+from tests.unit import resources
 from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase
 
@@ -38,6 +40,8 @@ _STREAM_STREAM_READER_WRITER = '/test/StreamStreamReaderWriter'
 _STREAM_STREAM_EVILLY_MIXED = '/test/StreamStreamEvillyMixed'
 _UNIMPLEMENTED_METHOD = '/test/UnimplementedMethod'
 _ERROR_IN_STREAM_STREAM = '/test/ErrorInStreamStream'
+_ERROR_WITHOUT_RAISE_IN_UNARY_UNARY = '/test/ErrorWithoutRaiseInUnaryUnary'
+_ERROR_WITHOUT_RAISE_IN_STREAM_STREAM = '/test/ErrorWithoutRaiseInStreamStream'
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
@@ -86,6 +90,12 @@ class _GenericHandler(grpc.GenericRpcHandler):
             _ERROR_IN_STREAM_STREAM:
                 grpc.stream_stream_rpc_method_handler(
                     self._error_in_stream_stream),
+            _ERROR_WITHOUT_RAISE_IN_UNARY_UNARY:
+                grpc.unary_unary_rpc_method_handler(
+                    self._error_without_raise_in_unary_unary),
+            _ERROR_WITHOUT_RAISE_IN_STREAM_STREAM:
+                grpc.stream_stream_rpc_method_handler(
+                    self._error_without_raise_in_stream_stream),
         }
 
     @staticmethod
@@ -167,6 +177,16 @@ class _GenericHandler(grpc.GenericRpcHandler):
             assert _REQUEST == request
             raise RuntimeError('A testing RuntimeError!')
         yield _RESPONSE
+
+    async def _error_without_raise_in_unary_unary(self, request, context):
+        assert _REQUEST == request
+        context.set_code(grpc.StatusCode.INTERNAL)
+
+    async def _error_without_raise_in_stream_stream(self, request_iterator,
+                                                    context):
+        async for request in request_iterator:
+            assert _REQUEST == request
+        context.set_code(grpc.StatusCode.INTERNAL)
 
     def service(self, handler_details):
         self._called.set_result(None)
@@ -425,6 +445,40 @@ class TestServer(AioTestBase):
 
         # Don't segfault here
         self.assertEqual(grpc.StatusCode.UNKNOWN, await call.code())
+
+    async def test_error_without_raise_in_unary_unary(self):
+        call = self._channel.unary_unary(_ERROR_WITHOUT_RAISE_IN_UNARY_UNARY)(
+            _REQUEST)
+
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call
+
+        rpc_error = exception_context.exception
+        self.assertEqual(grpc.StatusCode.INTERNAL, rpc_error.code())
+
+    async def test_error_without_raise_in_stream_stream(self):
+        call = self._channel.stream_stream(
+            _ERROR_WITHOUT_RAISE_IN_STREAM_STREAM)()
+
+        for _ in range(_NUM_STREAM_REQUESTS):
+            await call.write(_REQUEST)
+        await call.done_writing()
+
+        self.assertEqual(grpc.StatusCode.INTERNAL, await call.code())
+
+    async def test_port_binding_exception(self):
+        server = aio.server(options=(('grpc.so_reuseport', 0),))
+        port = server.add_insecure_port('localhost:0')
+        bind_address = "localhost:%d" % port
+
+        with self.assertRaises(RuntimeError):
+            server.add_insecure_port(bind_address)
+
+        server_credentials = grpc.ssl_server_credentials([
+            (resources.private_key(), resources.certificate_chain())
+        ])
+        with self.assertRaises(RuntimeError):
+            server.add_secure_port(bind_address, server_credentials)
 
 
 if __name__ == '__main__':

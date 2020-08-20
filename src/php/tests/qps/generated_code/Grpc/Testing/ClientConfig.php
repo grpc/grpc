@@ -22,49 +22,49 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>.grpc.testing.ClientType client_type = 2;</code>
      */
-    private $client_type = 0;
+    protected $client_type = 0;
     /**
      * Generated from protobuf field <code>.grpc.testing.SecurityParams security_params = 3;</code>
      */
-    private $security_params = null;
+    protected $security_params = null;
     /**
      * How many concurrent RPCs to start for each channel.
      * For synchronous client, use a separate thread for each outstanding RPC.
      *
      * Generated from protobuf field <code>int32 outstanding_rpcs_per_channel = 4;</code>
      */
-    private $outstanding_rpcs_per_channel = 0;
+    protected $outstanding_rpcs_per_channel = 0;
     /**
      * Number of independent client channels to create.
      * i-th channel will connect to server_target[i % server_targets.size()]
      *
      * Generated from protobuf field <code>int32 client_channels = 5;</code>
      */
-    private $client_channels = 0;
+    protected $client_channels = 0;
     /**
      * Only for async client. Number of threads to use to start/manage RPCs.
      *
      * Generated from protobuf field <code>int32 async_client_threads = 7;</code>
      */
-    private $async_client_threads = 0;
+    protected $async_client_threads = 0;
     /**
      * Generated from protobuf field <code>.grpc.testing.RpcType rpc_type = 8;</code>
      */
-    private $rpc_type = 0;
+    protected $rpc_type = 0;
     /**
      * The requested load for the entire client (aggregated over all the threads).
      *
      * Generated from protobuf field <code>.grpc.testing.LoadParams load_params = 10;</code>
      */
-    private $load_params = null;
+    protected $load_params = null;
     /**
      * Generated from protobuf field <code>.grpc.testing.PayloadConfig payload_config = 11;</code>
      */
-    private $payload_config = null;
+    protected $payload_config = null;
     /**
      * Generated from protobuf field <code>.grpc.testing.HistogramParams histogram_params = 12;</code>
      */
-    private $histogram_params = null;
+    protected $histogram_params = null;
     /**
      * Specify the cores we should run the client on, if desired
      *
@@ -74,13 +74,13 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>int32 core_limit = 14;</code>
      */
-    private $core_limit = 0;
+    protected $core_limit = 0;
     /**
      * If we use an OTHER_CLIENT client_type, this string gives more detail
      *
      * Generated from protobuf field <code>string other_client_api = 15;</code>
      */
-    private $other_client_api = '';
+    protected $other_client_api = '';
     /**
      * Generated from protobuf field <code>repeated .grpc.testing.ChannelArg channel_args = 16;</code>
      */
@@ -90,23 +90,78 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      *
      * Generated from protobuf field <code>int32 threads_per_cq = 17;</code>
      */
-    private $threads_per_cq = 0;
+    protected $threads_per_cq = 0;
     /**
      * Number of messages on a stream before it gets finished/restarted
      *
      * Generated from protobuf field <code>int32 messages_per_stream = 18;</code>
      */
-    private $messages_per_stream = 0;
+    protected $messages_per_stream = 0;
     /**
      * Use coalescing API when possible.
      *
      * Generated from protobuf field <code>bool use_coalesce_api = 19;</code>
      */
-    private $use_coalesce_api = false;
+    protected $use_coalesce_api = false;
+    /**
+     * If 0, disabled. Else, specifies the period between gathering latency
+     * medians in milliseconds.
+     *
+     * Generated from protobuf field <code>int32 median_latency_collection_interval_millis = 20;</code>
+     */
+    protected $median_latency_collection_interval_millis = 0;
+    /**
+     * Number of client processes. 0 indicates no restriction.
+     *
+     * Generated from protobuf field <code>int32 client_processes = 21;</code>
+     */
+    protected $client_processes = 0;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type string[]|\Google\Protobuf\Internal\RepeatedField $server_targets
+     *           List of targets to connect to. At least one target needs to be specified.
+     *     @type int $client_type
+     *     @type \Grpc\Testing\SecurityParams $security_params
+     *     @type int $outstanding_rpcs_per_channel
+     *           How many concurrent RPCs to start for each channel.
+     *           For synchronous client, use a separate thread for each outstanding RPC.
+     *     @type int $client_channels
+     *           Number of independent client channels to create.
+     *           i-th channel will connect to server_target[i % server_targets.size()]
+     *     @type int $async_client_threads
+     *           Only for async client. Number of threads to use to start/manage RPCs.
+     *     @type int $rpc_type
+     *     @type \Grpc\Testing\LoadParams $load_params
+     *           The requested load for the entire client (aggregated over all the threads).
+     *     @type \Grpc\Testing\PayloadConfig $payload_config
+     *     @type \Grpc\Testing\HistogramParams $histogram_params
+     *     @type int[]|\Google\Protobuf\Internal\RepeatedField $core_list
+     *           Specify the cores we should run the client on, if desired
+     *     @type int $core_limit
+     *     @type string $other_client_api
+     *           If we use an OTHER_CLIENT client_type, this string gives more detail
+     *     @type \Grpc\Testing\ChannelArg[]|\Google\Protobuf\Internal\RepeatedField $channel_args
+     *     @type int $threads_per_cq
+     *           Number of threads that share each completion queue
+     *     @type int $messages_per_stream
+     *           Number of messages on a stream before it gets finished/restarted
+     *     @type bool $use_coalesce_api
+     *           Use coalescing API when possible.
+     *     @type int $median_latency_collection_interval_millis
+     *           If 0, disabled. Else, specifies the period between gathering latency
+     *           medians in milliseconds.
+     *     @type int $client_processes
+     *           Number of client processes. 0 indicates no restriction.
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**
@@ -523,6 +578,60 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkBool($var);
         $this->use_coalesce_api = $var;
+
+        return $this;
+    }
+
+    /**
+     * If 0, disabled. Else, specifies the period between gathering latency
+     * medians in milliseconds.
+     *
+     * Generated from protobuf field <code>int32 median_latency_collection_interval_millis = 20;</code>
+     * @return int
+     */
+    public function getMedianLatencyCollectionIntervalMillis()
+    {
+        return $this->median_latency_collection_interval_millis;
+    }
+
+    /**
+     * If 0, disabled. Else, specifies the period between gathering latency
+     * medians in milliseconds.
+     *
+     * Generated from protobuf field <code>int32 median_latency_collection_interval_millis = 20;</code>
+     * @param int $var
+     * @return $this
+     */
+    public function setMedianLatencyCollectionIntervalMillis($var)
+    {
+        GPBUtil::checkInt32($var);
+        $this->median_latency_collection_interval_millis = $var;
+
+        return $this;
+    }
+
+    /**
+     * Number of client processes. 0 indicates no restriction.
+     *
+     * Generated from protobuf field <code>int32 client_processes = 21;</code>
+     * @return int
+     */
+    public function getClientProcesses()
+    {
+        return $this->client_processes;
+    }
+
+    /**
+     * Number of client processes. 0 indicates no restriction.
+     *
+     * Generated from protobuf field <code>int32 client_processes = 21;</code>
+     * @param int $var
+     * @return $this
+     */
+    public function setClientProcesses($var)
+    {
+        GPBUtil::checkInt32($var);
+        $this->client_processes = $var;
 
         return $this;
     }

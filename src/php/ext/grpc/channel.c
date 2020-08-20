@@ -16,6 +16,11 @@
  *
  */
 
+/**
+ * class Channel
+ * @see https://github.com/grpc/grpc/tree/master/src/php/ext/grpc/channel.c
+ */
+
 #include "channel.h"
 
 #include <ext/standard/php_var.h>
@@ -45,7 +50,7 @@ extern HashTable grpc_persistent_list;
 extern HashTable grpc_target_upper_bound_map;
 
 void free_grpc_channel_wrapper(grpc_channel_wrapper* channel, bool free_channel) {
-  if (free_channel) {
+  if (free_channel && channel->wrapped) {
     grpc_channel_destroy(channel->wrapped);
     channel->wrapped = NULL;
   }
@@ -350,7 +355,6 @@ PHP_METHOD(Channel, __construct) {
                            1 TSRMLS_CC);
       return;
     } else {
-      Z_ADDREF(*creds_obj);
       creds = PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel_credentials,
                                           creds_obj);
     }

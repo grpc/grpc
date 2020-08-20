@@ -1,0 +1,55 @@
+# Copyright 2020 The gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package(default_testonly = 1)
+
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
+
+proto_library(
+    name = "simplest_proto",
+    testonly = True,
+    srcs = ["simplest.proto"],
+    strip_import_prefix = "/tools/distrib/python/grpcio_tools/grpc_tools/test/",
+)
+
+proto_library(
+    name = "complicated_proto",
+    testonly = True,
+    srcs = ["complicated.proto"],
+    strip_import_prefix = "/tools/distrib/python/grpcio_tools/grpc_tools/test/",
+    deps = [":simplest_proto"],
+)
+
+py_proto_library(
+    name = "complicated_py_pb2",
+    testonly = True,
+    deps = ["complicated_proto"],
+)
+
+py_test(
+    name = "protoc_test",
+    srcs = ["protoc_test.py"],
+    data = [
+        "complicated.proto",
+        "flawed.proto",
+        "simple.proto",
+        "simpler.proto",
+        "simplest.proto",
+    ],
+    python_version = "PY3",
+    deps = [
+        ":complicated_py_pb2",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
+    ],
+)

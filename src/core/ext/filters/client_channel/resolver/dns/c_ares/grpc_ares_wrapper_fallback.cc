@@ -32,7 +32,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms,
-    grpc_core::Combiner* combiner) {
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   return NULL;
 }
 
@@ -42,7 +42,8 @@ grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms,
-    grpc_core::Combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) =
+    grpc_dns_lookup_ares_locked_impl;
 
 static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {}
 

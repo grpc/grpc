@@ -16,6 +16,7 @@
 import asyncio
 import gc
 import logging
+import socket
 import time
 import unittest
 
@@ -31,7 +32,8 @@ from tests_aio.unit._test_server import start_test_server
 class TestChannelReady(AioTestBase):
 
     async def setUp(self):
-        address, self._port, self._socket = get_socket(listen=False)
+        address, self._port, self._socket = get_socket(
+            listen=False, sock_options=(socket.SO_REUSEADDR,))
         self._channel = aio.insecure_channel(f"{address}:{self._port}")
         self._socket.close()
 

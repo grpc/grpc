@@ -69,21 +69,31 @@ void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
 namespace grpc_core {
 
 struct RegisteredCall {
+  // The method and host are kept as part of this struct just to manage their
+  // lifetime since they must outlive the mdelem contents.
+  std::string method;
+  std::string host;
+
   grpc_mdelem path;
   grpc_mdelem authority;
 
-  explicit RegisteredCall(const char* method, const char* host);
+  explicit RegisteredCall(const char* method_arg, const char* host_arg);
   // TODO(vjpai): delete copy constructor once all supported compilers allow
   //              std::map value_type to be MoveConstructible.
   RegisteredCall(const RegisteredCall& other);
   RegisteredCall(RegisteredCall&& other) noexcept;
+  RegisteredCall& operator=(const RegisteredCall&) = delete;
+  RegisteredCall& operator=(RegisteredCall&&) = delete;
 
   ~RegisteredCall();
 };
 
 struct CallRegistrationTable {
   grpc_core::Mutex mu;
-  std::map<std::pair<const char*, const char*>, RegisteredCall>
+  // The map key should be owned strings rather than unowned char*'s to
+  // guarantee that it outlives calls on the core channel (which may outlast the
+  // C++ or other wrapped language Channel that registered these calls).
+  std::map<std::pair<std::string, std::string>, RegisteredCall>
       map /* GUARDED_BY(mu) */;
   int method_registration_attempts /* GUARDED_BY(mu) */ = 0;
 };

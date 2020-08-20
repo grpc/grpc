@@ -28,11 +28,10 @@ grpc_error* grpc_tcp_server_create(grpc_closure* shutdown_complete,
   return grpc_tcp_server_impl->create(shutdown_complete, args, server);
 }
 
-void grpc_tcp_server_start(grpc_tcp_server* server, grpc_pollset** pollsets,
-                           size_t pollset_count,
+void grpc_tcp_server_start(grpc_tcp_server* server,
+                           const std::vector<grpc_pollset*>* pollsets,
                            grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
-  grpc_tcp_server_impl->start(server, pollsets, pollset_count, on_accept_cb,
-                              cb_arg);
+  grpc_tcp_server_impl->start(server, pollsets, on_accept_cb, cb_arg);
 }
 
 grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,

@@ -21,12 +21,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/json/json.h"
-
-#include "src/core/lib/gprpp/string_view.h"
 
 namespace grpc_core {
 
@@ -52,7 +52,7 @@ class JsonWriter {
 
   void OutputCheck(size_t needed);
   void OutputChar(char c);
-  void OutputString(const StringView str);
+  void OutputString(const absl::string_view str);
   void OutputIndent();
   void ValueEnd();
   void EscapeUtf16(uint16_t utf16);
@@ -92,7 +92,7 @@ void JsonWriter::OutputChar(char c) {
   output_.push_back(c);
 }
 
-void JsonWriter::OutputString(const StringView str) {
+void JsonWriter::OutputString(const absl::string_view str) {
   OutputCheck(str.size());
   output_.append(str.data(), str.size());
 }
@@ -110,11 +110,12 @@ void JsonWriter::OutputIndent() {
     return;
   }
   while (spaces >= (sizeof(spacesstr) - 1)) {
-    OutputString(StringView(spacesstr, sizeof(spacesstr) - 1));
+    OutputString(absl::string_view(spacesstr, sizeof(spacesstr) - 1));
     spaces -= static_cast<unsigned>(sizeof(spacesstr) - 1);
   }
   if (spaces == 0) return;
-  OutputString(StringView(spacesstr + sizeof(spacesstr) - 1 - spaces, spaces));
+  OutputString(
+      absl::string_view(spacesstr + sizeof(spacesstr) - 1 - spaces, spaces));
 }
 
 void JsonWriter::ValueEnd() {
@@ -131,7 +132,7 @@ void JsonWriter::ValueEnd() {
 
 void JsonWriter::EscapeUtf16(uint16_t utf16) {
   static const char hex[] = "0123456789abcdef";
-  OutputString(StringView("\\u", 2));
+  OutputString(absl::string_view("\\u", 2));
   OutputChar(hex[(utf16 >> 12) & 0x0f]);
   OutputChar(hex[(utf16 >> 8) & 0x0f]);
   OutputChar(hex[(utf16 >> 4) & 0x0f]);
@@ -150,19 +151,19 @@ void JsonWriter::EscapeString(const std::string& string) {
     } else if (c < 32 || c == 127) {
       switch (c) {
         case '\b':
-          OutputString(StringView("\\b", 2));
+          OutputString(absl::string_view("\\b", 2));
           break;
         case '\f':
-          OutputString(StringView("\\f", 2));
+          OutputString(absl::string_view("\\f", 2));
           break;
         case '\n':
-          OutputString(StringView("\\n", 2));
+          OutputString(absl::string_view("\\n", 2));
           break;
         case '\r':
-          OutputString(StringView("\\r", 2));
+          OutputString(absl::string_view("\\r", 2));
           break;
         case '\t':
-          OutputString(StringView("\\t", 2));
+          OutputString(absl::string_view("\\t", 2));
           break;
         default:
           EscapeUtf16(c);

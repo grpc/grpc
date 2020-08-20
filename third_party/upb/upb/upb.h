@@ -1,8 +1,5 @@
 /*
 ** This file contains shared definitions that are widely used across upb.
-**
-** This is a mixed C/C++ interface that offers a full API to both languages.
-** See the top-level README for more information.
 */
 
 #ifndef UPB_H_
@@ -15,24 +12,14 @@
 #include <stdint.h>
 #include <string.h>
 
-#ifdef __cplusplus
-#include <memory>
-namespace upb {
-class Arena;
-class Status;
-template <int N> class InlinedArena;
-}
-#endif
-
 #include "upb/port_def.inc"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* upb_status *****************************************************************/
 
-/* upb_status represents a success or failure status and error message.
- * It owns no resources and allocates no memory, so it should work
- * even in OOM situations. */
-
-/* The maximum length of an error message before it will get truncated. */
 #define UPB_STATUS_MAX_MESSAGE 127
 
 typedef struct {
@@ -40,58 +27,15 @@ typedef struct {
   char msg[UPB_STATUS_MAX_MESSAGE];  /* Error message; NULL-terminated. */
 } upb_status;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 const char *upb_status_errmsg(const upb_status *status);
 bool upb_ok(const upb_status *status);
 
-/* Any of the functions that write to a status object allow status to be NULL,
- * to support use cases where the function's caller does not care about the
- * status message. */
+/* These are no-op if |status| is NULL. */
 void upb_status_clear(upb_status *status);
 void upb_status_seterrmsg(upb_status *status, const char *msg);
 void upb_status_seterrf(upb_status *status, const char *fmt, ...);
 void upb_status_vseterrf(upb_status *status, const char *fmt, va_list args);
-
-UPB_INLINE void upb_status_setoom(upb_status *status) {
-  upb_status_seterrmsg(status, "out of memory");
-}
-
-#ifdef __cplusplus
-}  /* extern "C" */
-
-class upb::Status {
- public:
-  Status() { upb_status_clear(&status_); }
-
-  upb_status* ptr() { return &status_; }
-
-  /* Returns true if there is no error. */
-  bool ok() const { return upb_ok(&status_); }
-
-  /* Guaranteed to be NULL-terminated. */
-  const char *error_message() const { return upb_status_errmsg(&status_); }
-
-  /* The error message will be truncated if it is longer than
-   * UPB_STATUS_MAX_MESSAGE-4. */
-  void SetErrorMessage(const char *msg) { upb_status_seterrmsg(&status_, msg); }
-  void SetFormattedErrorMessage(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    upb_status_vseterrf(&status_, fmt, args);
-    va_end(args);
-  }
-
-  /* Resets the status to a successful state with no message. */
-  void Clear() { upb_status_clear(&status_); }
-
- private:
-  upb_status status_;
-};
-
-#endif  /* __cplusplus */
+void upb_status_vappenderrf(upb_status *status, const char *fmt, va_list args);
 
 /** upb_strview ************************************************************/
 
@@ -159,15 +103,7 @@ UPB_INLINE void upb_free(upb_alloc *alloc, void *ptr) {
 
 /* The global allocator used by upb.  Uses the standard malloc()/free(). */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern upb_alloc upb_alloc_global;
-
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif
 
 /* Functions that hard-code the global malloc.
  *
@@ -205,9 +141,14 @@ typedef void upb_cleanup_func(void *ud);
 struct upb_arena;
 typedef struct upb_arena upb_arena;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct {
+  /* We implement the allocator interface.
+   * This must be the first member of upb_arena!
+   * TODO(haberman): remove once handlers are gone. */
+  upb_alloc alloc;
+
+  char *ptr, *end;
+} _upb_arena_head;
 
 /* Creates an arena from the given initial block (if any -- n may be 0).
  * Additional blocks will be allocated from |alloc|.  If |alloc| is NULL, this
@@ -215,82 +156,39 @@ extern "C" {
 upb_arena *upb_arena_init(void *mem, size_t n, upb_alloc *alloc);
 void upb_arena_free(upb_arena *a);
 bool upb_arena_addcleanup(upb_arena *a, void *ud, upb_cleanup_func *func);
-size_t upb_arena_bytesallocated(const upb_arena *a);
+void upb_arena_fuse(upb_arena *a, upb_arena *b);
+void *_upb_arena_slowmalloc(upb_arena *a, size_t size);
 
 UPB_INLINE upb_alloc *upb_arena_alloc(upb_arena *a) { return (upb_alloc*)a; }
 
-/* Convenience wrappers around upb_alloc functions. */
-
 UPB_INLINE void *upb_arena_malloc(upb_arena *a, size_t size) {
-  return upb_malloc(upb_arena_alloc(a), size);
+  _upb_arena_head *h = (_upb_arena_head*)a;
+  void* ret;
+  size = UPB_ALIGN_MALLOC(size);
+
+  if (UPB_UNLIKELY((size_t)(h->end - h->ptr) < size)) {
+    return _upb_arena_slowmalloc(a, size);
+  }
+
+  ret = h->ptr;
+  h->ptr += size;
+  return ret;
 }
 
 UPB_INLINE void *upb_arena_realloc(upb_arena *a, void *ptr, size_t oldsize,
                                    size_t size) {
-  return upb_realloc(upb_arena_alloc(a), ptr, oldsize, size);
+  void *ret = upb_arena_malloc(a, size);
+
+  if (ret && oldsize > 0) {
+    memcpy(ret, ptr, oldsize);
+  }
+
+  return ret;
 }
 
 UPB_INLINE upb_arena *upb_arena_new(void) {
   return upb_arena_init(NULL, 0, &upb_alloc_global);
 }
-
-#ifdef __cplusplus
-}  /* extern "C" */
-
-class upb::Arena {
- public:
-  /* A simple arena with no initial memory block and the default allocator. */
-  Arena() : ptr_(upb_arena_new(), upb_arena_free) {}
-
-  upb_arena* ptr() { return ptr_.get(); }
-
-  /* Allows this arena to be used as a generic allocator.
-   *
-   * The arena does not need free() calls so when using Arena as an allocator
-   * it is safe to skip them.  However they are no-ops so there is no harm in
-   * calling free() either. */
-  upb_alloc *allocator() { return upb_arena_alloc(ptr_.get()); }
-
-  /* Add a cleanup function to run when the arena is destroyed.
-   * Returns false on out-of-memory. */
-  bool AddCleanup(void *ud, upb_cleanup_func* func) {
-    return upb_arena_addcleanup(ptr_.get(), ud, func);
-  }
-
-  /* Total number of bytes that have been allocated.  It is undefined what
-   * Realloc() does to &arena_ counter. */
-  size_t BytesAllocated() const { return upb_arena_bytesallocated(ptr_.get()); }
-
- private:
-  std::unique_ptr<upb_arena, decltype(&upb_arena_free)> ptr_;
-};
-
-#endif
-
-/* upb::InlinedArena **********************************************************/
-
-/* upb::InlinedArena seeds the arenas with a predefined amount of memory.  No
- * heap memory will be allocated until the initial block is exceeded.
- *
- * These types only exist in C++ */
-
-#ifdef __cplusplus
-
-template <int N> class upb::InlinedArena : public upb::Arena {
- public:
-  InlinedArena() : ptr_(upb_arena_new(&initial_block_, N, &upb_alloc_global)) {}
-
-  upb_arena* ptr() { return ptr_.get(); }
-
- private:
-  InlinedArena(const InlinedArena*) = delete;
-  InlinedArena& operator=(const InlinedArena*) = delete;
-
-  std::unique_ptr<upb_arena, decltype(&upb_arena_free)> ptr_;
-  char initial_block_[N];
-};
-
-#endif  /* __cplusplus */
 
 /* Constants ******************************************************************/
 
@@ -311,21 +209,17 @@ typedef enum {
  * types defined in descriptor.proto, which gives INT32 and SINT32 separate
  * types (we distinguish the two with the "integer encoding" enum below). */
 typedef enum {
-  /* Types stored in 1 byte. */
   UPB_TYPE_BOOL     = 1,
-  /* Types stored in 4 bytes. */
   UPB_TYPE_FLOAT    = 2,
   UPB_TYPE_INT32    = 3,
   UPB_TYPE_UINT32   = 4,
   UPB_TYPE_ENUM     = 5,  /* Enum values are int32. */
-  /* Types stored as pointers (probably 4 or 8 bytes). */
-  UPB_TYPE_STRING   = 6,
-  UPB_TYPE_BYTES    = 7,
-  UPB_TYPE_MESSAGE  = 8,
-  /* Types stored as 8 bytes. */
-  UPB_TYPE_DOUBLE   = 9,
-  UPB_TYPE_INT64    = 10,
-  UPB_TYPE_UINT64   = 11
+  UPB_TYPE_MESSAGE  = 6,
+  UPB_TYPE_DOUBLE   = 7,
+  UPB_TYPE_INT64    = 8,
+  UPB_TYPE_UINT64   = 9,
+  UPB_TYPE_STRING   = 10,
+  UPB_TYPE_BYTES    = 11
 } upb_fieldtype_t;
 
 /* The repeated-ness of each field; this matches descriptor.proto. */
@@ -337,6 +231,7 @@ typedef enum {
 
 /* Descriptor types, as defined in descriptor.proto. */
 typedef enum {
+  /* Old (long) names.  TODO(haberman): remove */
   UPB_DESCRIPTOR_TYPE_DOUBLE   = 1,
   UPB_DESCRIPTOR_TYPE_FLOAT    = 2,
   UPB_DESCRIPTOR_TYPE_INT64    = 3,
@@ -354,11 +249,60 @@ typedef enum {
   UPB_DESCRIPTOR_TYPE_SFIXED32 = 15,
   UPB_DESCRIPTOR_TYPE_SFIXED64 = 16,
   UPB_DESCRIPTOR_TYPE_SINT32   = 17,
-  UPB_DESCRIPTOR_TYPE_SINT64   = 18
+  UPB_DESCRIPTOR_TYPE_SINT64   = 18,
+
+  UPB_DTYPE_DOUBLE   = 1,
+  UPB_DTYPE_FLOAT    = 2,
+  UPB_DTYPE_INT64    = 3,
+  UPB_DTYPE_UINT64   = 4,
+  UPB_DTYPE_INT32    = 5,
+  UPB_DTYPE_FIXED64  = 6,
+  UPB_DTYPE_FIXED32  = 7,
+  UPB_DTYPE_BOOL     = 8,
+  UPB_DTYPE_STRING   = 9,
+  UPB_DTYPE_GROUP    = 10,
+  UPB_DTYPE_MESSAGE  = 11,
+  UPB_DTYPE_BYTES    = 12,
+  UPB_DTYPE_UINT32   = 13,
+  UPB_DTYPE_ENUM     = 14,
+  UPB_DTYPE_SFIXED32 = 15,
+  UPB_DTYPE_SFIXED64 = 16,
+  UPB_DTYPE_SINT32   = 17,
+  UPB_DTYPE_SINT64   = 18
 } upb_descriptortype_t;
 
-extern const uint8_t upb_desctype_to_fieldtype[];
+#define UPB_MAP_BEGIN ((size_t)-1)
+
+UPB_INLINE bool _upb_isle(void) {
+  int x = 1;
+  return *(char*)&x == 1;
+}
+
+UPB_INLINE uint32_t _upb_be_swap32(uint32_t val) {
+  if (_upb_isle()) {
+    return val;
+  } else {
+    return ((val & 0xff) << 24) | ((val & 0xff00) << 8) |
+           ((val & 0xff0000ULL) >> 8) | ((val & 0xff000000ULL) >> 24);
+  }
+}
+
+UPB_INLINE uint64_t _upb_be_swap64(uint64_t val) {
+  if (_upb_isle()) {
+    return val;
+  } else {
+    return ((val & 0xff) << 56) | ((val & 0xff00) << 40) |
+           ((val & 0xff0000) << 24) | ((val & 0xff000000) << 8) |
+           ((val & 0xff00000000ULL) >> 8) | ((val & 0xff0000000000ULL) >> 24) |
+           ((val & 0xff000000000000ULL) >> 40) |
+           ((val & 0xff00000000000000ULL) >> 56);
+  }
+}
 
 #include "upb/port_undef.inc"
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 
 #endif  /* UPB_H_ */

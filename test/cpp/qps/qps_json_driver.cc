@@ -26,6 +26,7 @@
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
 
+#include "test/core/util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/parse_json.h"
@@ -226,7 +227,7 @@ static double SearchOfferedLoad(
 }
 
 static bool QpsDriver() {
-  grpc::string json;
+  std::string json;
 
   bool scfile = (FLAGS_scenarios_file != "");
   bool scjson = (FLAGS_scenarios_json != "");
@@ -249,7 +250,7 @@ static bool QpsDriver() {
     fseek(json_file, 0, SEEK_SET);
     GPR_ASSERT(len == (long)fread(data, 1, len, json_file));
     fclose(json_file);
-    json = grpc::string(data, data + len);
+    json = std::string(data, data + len);
     delete[] data;
   } else if (scjson) {
     json = FLAGS_scenarios_json.c_str();
@@ -290,6 +291,7 @@ static bool QpsDriver() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 
   bool ok = grpc::testing::QpsDriver();

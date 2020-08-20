@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import argparse
 import datetime
 import os
@@ -78,6 +79,9 @@ _EXEMPT = frozenset((
     'examples/python/route_guide/route_guide_pb2.py',
     'examples/python/route_guide/route_guide_pb2_grpc.py',
 
+    # Generated doxygen config file
+    'tools/doxygen/Doxyfile.php',
+
     # An older file originally from outside gRPC.
     'src/php/tests/bootstrap.php',
     # census.proto copied from github
@@ -92,6 +96,10 @@ _EXEMPT = frozenset((
     # Designer-generated source
     'examples/csharp/HelloworldXamarin/Droid/Resources/Resource.designer.cs',
     'examples/csharp/HelloworldXamarin/iOS/ViewController.designer.cs',
+
+    # BoringSSL generated header. It has commit version information at the head
+    # of the file so we cannot check the license info.
+    'src/boringssl/boringssl_prefix_symbols.h',
 ))
 
 RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) ([Tt]he )?gRPC [Aa]uthors(\.|)'
@@ -125,9 +133,9 @@ assert (re.search(RE_LICENSE['Makefile'], load('Makefile')))
 def log(cond, why, filename):
     if not cond: return
     if args.output == 'details':
-        print '%s: %s' % (why, filename)
+        print('%s: %s' % (why, filename))
     else:
-        print filename
+        print(filename)
 
 
 # scan files, validate the text

@@ -23,11 +23,10 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 
-typedef struct {
+struct grpc_endpoint_pair {
   grpc_endpoint* client;
   grpc_endpoint* server;
-} grpc_endpoint_pair;
-
+};
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
                                                    grpc_channel_args* args);
 

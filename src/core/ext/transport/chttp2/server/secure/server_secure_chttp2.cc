@@ -22,9 +22,10 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 
@@ -56,12 +57,10 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
   }
   sc = creds->create_security_connector();
   if (sc == nullptr) {
-    char* msg;
-    gpr_asprintf(&msg,
-                 "Unable to create secure server with credentials of type %s.",
-                 creds->type());
-    err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+    err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unable to create secure server with credentials of type ",
+                     creds->type())
+            .c_str());
     goto done;
   }
   // Create channel args.
@@ -69,10 +68,11 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
   args_to_add[0] = grpc_server_credentials_to_arg(creds);
   args_to_add[1] = grpc_security_connector_to_arg(sc.get());
   args =
-      grpc_channel_args_copy_and_add(grpc_server_get_channel_args(server),
+      grpc_channel_args_copy_and_add(server->core_server->channel_args(),
                                      args_to_add, GPR_ARRAY_SIZE(args_to_add));
   // Add server port.
-  err = grpc_chttp2_server_add_port(server, addr, args, &port_num);
+  err = grpc_core::Chttp2ServerAddPort(server->core_server.get(), addr, args,
+                                       &port_num);
 done:
   sc.reset(DEBUG_LOCATION, "server");
 

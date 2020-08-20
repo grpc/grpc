@@ -19,13 +19,13 @@
 #ifndef GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 #define GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 
-#include <memory>
-#include <vector>
-
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpcpp/support/config.h>
+
+#include <memory>
+#include <vector>
 
 typedef struct grpc_tls_credential_reload_arg grpc_tls_credential_reload_arg;
 typedef struct grpc_tls_credential_reload_config
@@ -36,7 +36,7 @@ typedef struct grpc_tls_server_authorization_check_config
     grpc_tls_server_authorization_check_config;
 typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
 
-namespace grpc_impl {
+namespace grpc {
 namespace experimental {
 
 /** TLS key materials config, wrapper for grpc_tls_key_materials_config. It is
@@ -44,12 +44,12 @@ namespace experimental {
 class TlsKeyMaterialsConfig {
  public:
   struct PemKeyCertPair {
-    grpc::string private_key;
-    grpc::string cert_chain;
+    std::string private_key;
+    std::string cert_chain;
   };
 
   /** Getters for member fields. **/
-  const grpc::string pem_root_certs() const { return pem_root_certs_; }
+  const std::string pem_root_certs() const { return pem_root_certs_; }
   const std::vector<PemKeyCertPair>& pem_key_cert_pair_list() const {
     return pem_key_cert_pair_list_;
   }
@@ -57,17 +57,17 @@ class TlsKeyMaterialsConfig {
 
   /** Setter for key materials that will be called by the user. Ownership of the
    * arguments will not be transferred. **/
-  void set_pem_root_certs(const grpc::string& pem_root_certs);
+  void set_pem_root_certs(const std::string& pem_root_certs);
   void add_pem_key_cert_pair(const PemKeyCertPair& pem_key_cert_pair);
   void set_key_materials(
-      const grpc::string& pem_root_certs,
+      const std::string& pem_root_certs,
       const std::vector<PemKeyCertPair>& pem_key_cert_pair_list);
   void set_version(int version) { version_ = version; };
 
  private:
   int version_ = 0;
   std::vector<PemKeyCertPair> pem_key_cert_pair_list_;
-  grpc::string pem_root_certs_;
+  std::string pem_root_certs_;
 };
 
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. It is
@@ -90,21 +90,21 @@ class TlsCredentialReloadArg {
   void* cb_user_data() const;
   bool is_pem_key_cert_pair_list_empty() const;
   grpc_ssl_certificate_config_reload_status status() const;
-  grpc::string error_details() const;
+  std::string error_details() const;
 
   /** Setters for member fields. Ownership of the arguments will not be
    *  transferred. **/
   void set_cb_user_data(void* cb_user_data);
-  void set_pem_root_certs(const grpc::string& pem_root_certs);
+  void set_pem_root_certs(const std::string& pem_root_certs);
   void add_pem_key_cert_pair(
       const TlsKeyMaterialsConfig::PemKeyCertPair& pem_key_cert_pair);
-  void set_key_materials(const grpc::string& pem_root_certs,
+  void set_key_materials(const std::string& pem_root_certs,
                          std::vector<TlsKeyMaterialsConfig::PemKeyCertPair>
                              pem_key_cert_pair_list);
   void set_key_materials_config(
       const std::shared_ptr<TlsKeyMaterialsConfig>& key_materials_config);
   void set_status(grpc_ssl_certificate_config_reload_status status);
-  void set_error_details(const grpc::string& error_details);
+  void set_error_details(const std::string& error_details);
 
   /** Calls the C arg's callback function. **/
   void OnCredentialReloadDoneCallback();
@@ -187,20 +187,20 @@ class TlsServerAuthorizationCheckArg {
   /** Getters for member fields. **/
   void* cb_user_data() const;
   int success() const;
-  grpc::string target_name() const;
-  grpc::string peer_cert() const;
-  grpc::string peer_cert_full_chain() const;
+  std::string target_name() const;
+  std::string peer_cert() const;
+  std::string peer_cert_full_chain() const;
   grpc_status_code status() const;
-  grpc::string error_details() const;
+  std::string error_details() const;
 
   /** Setters for member fields. **/
   void set_cb_user_data(void* cb_user_data);
   void set_success(int success);
-  void set_target_name(const grpc::string& target_name);
-  void set_peer_cert(const grpc::string& peer_cert);
-  void set_peer_cert_full_chain(const grpc::string& peer_cert_full_chain);
+  void set_target_name(const std::string& target_name);
+  void set_peer_cert(const std::string& peer_cert);
+  void set_peer_cert_full_chain(const std::string& peer_cert_full_chain);
   void set_status(grpc_status_code status);
-  void set_error_details(const grpc::string& error_details);
+  void set_error_details(const std::string& error_details);
 
   /** Calls the C arg's callback function. **/
   void OnServerAuthorizationCheckDoneCallback();
@@ -278,6 +278,21 @@ class TlsServerAuthorizationCheckConfig {
  * more details. **/
 class TlsCredentialsOptions {
  public:
+  // Constructor for client.
+  explicit TlsCredentialsOptions(
+      grpc_tls_server_verification_option server_verification_option,
+      std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
+      std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
+      std::shared_ptr<TlsServerAuthorizationCheckConfig>
+          server_authorization_check_config);
+
+  // Constructor for server.
+  explicit TlsCredentialsOptions(
+      grpc_ssl_client_certificate_request_type cert_request_type,
+      std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
+      std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config);
+
+  // This constructor will be deprecated.
   TlsCredentialsOptions(
       grpc_ssl_client_certificate_request_type cert_request_type,
       grpc_tls_server_verification_option server_verification_option,
@@ -325,6 +340,6 @@ class TlsCredentialsOptions {
 };
 
 }  // namespace experimental
-}  // namespace grpc_impl
+}  // namespace grpc
 
 #endif  // GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H

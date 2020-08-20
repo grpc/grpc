@@ -32,6 +32,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
+#include "src/core/lib/iomgr/ev_apple.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
@@ -147,14 +148,15 @@ CFStreamHandle::CFStreamHandle(CFReadStreamRef read_stream,
       kCFStreamEventOpenCompleted | kCFStreamEventCanAcceptBytes |
           kCFStreamEventErrorOccurred | kCFStreamEventEndEncountered,
       CFStreamHandle::WriteCallback, &ctx);
-  CFReadStreamSetDispatchQueue(read_stream, dispatch_queue_);
-  CFWriteStreamSetDispatchQueue(write_stream, dispatch_queue_);
+  grpc_apple_register_read_stream(read_stream, dispatch_queue_);
+  grpc_apple_register_write_stream(write_stream, dispatch_queue_);
 }
 
 CFStreamHandle::~CFStreamHandle() {
   open_event_.DestroyEvent();
   read_event_.DestroyEvent();
   write_event_.DestroyEvent();
+  dispatch_release(dispatch_queue_);
 }
 
 void CFStreamHandle::NotifyOnOpen(grpc_closure* closure) {

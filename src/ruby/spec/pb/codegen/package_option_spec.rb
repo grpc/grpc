@@ -27,7 +27,9 @@ describe 'Code Generation Options' do
   end
 
   it 'should generate and respect Ruby style package options' do
-    with_protos(%w[grpc/testing/package_options_ruby_style.proto grpc/testing/package_options_import.proto]) do
+    with_protos(['grpc/testing/package_options_ruby_style.proto',
+                 'grpc/testing/package_options_import.proto',
+                 'grpc/testing/package_options_import2.proto']) do
       expect { RPC::Test::New::Package::Options::AnotherTestService::Service }.to raise_error(NameError)
       expect(require('grpc/testing/package_options_ruby_style_services_pb')).to be_truthy
       expect { RPC::Test::New::Package::Options::AnotherTestService::Service }.to_not raise_error
@@ -38,8 +40,32 @@ describe 'Code Generation Options' do
       expect(services[:GetTest].output).to eq(RPC::Test::New::Package::Options::AnotherTestResponse)
       expect(services[:OtherTest].input).to eq(A::Other::Thing)
       expect(services[:OtherTest].output).to eq(A::Other::Thing)
+      expect(services[:PackageTest].input).to eq(A::Other::Thing)
+      expect(services[:PackageTest].output).to eq(B::Other::Foo::Bar)
       expect(services[:FooTest].input).to eq(RPC::Test::New::Package::Options::Foo)
       expect(services[:FooTest].output).to eq(RPC::Test::New::Package::Options::Foo)
+      expect(services[:NestedMessageTest].input).to eq(RPC::Test::New::Package::Options::Foo)
+      expect(services[:NestedMessageTest].output).to eq(RPC::Test::New::Package::Options::Bar::Baz)
+    end
+  end
+
+  it 'should generate when package and service has same name' do
+    with_protos(['grpc/testing/same_package_service_name.proto']) do
+      expect { SameName::SameName::Service }.to raise_error(NameError)
+      expect(require('grpc/testing/same_package_service_name_services_pb')).to be_truthy
+      expect { SameName::SameName::Service }.to_not raise_error
+      expect { SameName::Request }.to_not raise_error
+      expect { SameName::Status }.to_not raise_error
+    end
+  end
+
+  it 'should generate when ruby_package and service has same name' do
+    with_protos(['grpc/testing/same_ruby_package_service_name.proto']) do
+      expect { SameName2::SameName2::Service }.to raise_error(NameError)
+      expect(require('grpc/testing/same_ruby_package_service_name_services_pb')).to be_truthy
+      expect { SameName2::SameName2::Service }.to_not raise_error
+      expect { SameName2::Request }.to_not raise_error
+      expect { SameName2::Status }.to_not raise_error
     end
   end
 end

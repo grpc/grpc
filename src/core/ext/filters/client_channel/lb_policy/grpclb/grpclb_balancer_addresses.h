@@ -30,9 +30,6 @@ grpc_arg CreateGrpclbBalancerAddressesArg(
 const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
     const grpc_channel_args& args);
 
-grpc_arg CreateGrpclbBalancerNameArg(const char* balancer_name);
-const char* FindGrpclbBalancerNameInChannelArgs(const grpc_channel_args& args);
-
 }  // namespace grpc_core
 
 #endif /*                                                                         \

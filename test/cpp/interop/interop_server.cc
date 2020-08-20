@@ -31,7 +31,6 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -78,13 +77,13 @@ void MaybeEchoMetadata(ServerContext* context) {
   if (iter != client_metadata.end()) {
     context->AddInitialMetadata(
         kEchoInitialMetadataKey,
-        grpc::string(iter->second.begin(), iter->second.end()));
+        std::string(iter->second.begin(), iter->second.end()));
   }
   iter = client_metadata.find(kEchoTrailingBinMetadataKey);
   if (iter != client_metadata.end()) {
     context->AddTrailingMetadata(
         kEchoTrailingBinMetadataKey,
-        grpc::string(iter->second.begin(), iter->second.end()));
+        std::string(iter->second.begin(), iter->second.end()));
   }
   // Check if client sent a magic key in the header that makes us echo
   // back the user-agent (for testing purpose)
@@ -94,7 +93,7 @@ void MaybeEchoMetadata(ServerContext* context) {
     if (iter != client_metadata.end()) {
       context->AddInitialMetadata(
           kEchoUserAgentKey,
-          grpc::string(iter->second.begin(), iter->second.end()));
+          std::string(iter->second.begin(), iter->second.end()));
     }
   }
 }
@@ -118,7 +117,7 @@ bool CheckExpectedCompression(const ServerContext& context,
               "Expected compression but got uncompressed request from client.");
       return false;
     }
-    if (!(inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS)) {
+    if (!(inspector.WasCompressed())) {
       gpr_log(GPR_ERROR,
               "Failure: Requested compression in a compressable request, but "
               "compression bit in message flags not set.");
@@ -126,7 +125,7 @@ bool CheckExpectedCompression(const ServerContext& context,
     }
   } else {
     // Didn't expect compression -> make sure the request is uncompressed
-    if (inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS) {
+    if (inspector.WasCompressed()) {
       gpr_log(GPR_ERROR,
               "Failure: Didn't requested compression, but compression bit in "
               "message flags set.");
@@ -268,7 +267,7 @@ class TestServiceImpl : public TestService::Service {
       if (request.response_parameters_size() != 0) {
         response.mutable_payload()->set_type(request.payload().type());
         response.mutable_payload()->set_body(
-            grpc::string(request.response_parameters(0).size(), '\0'));
+            std::string(request.response_parameters(0).size(), '\0'));
         int time_us;
         if ((time_us = request.response_parameters(0).interval_us()) > 0) {
           // Sleep before response if needed
@@ -306,7 +305,7 @@ class TestServiceImpl : public TestService::Service {
                       "Request does not have response parameters.");
       }
       response.mutable_payload()->set_body(
-          grpc::string(requests[i].response_parameters(0).size(), '\0'));
+          std::string(requests[i].response_parameters(0).size(), '\0'));
       write_success = stream->Write(response);
     }
     if (write_success) {

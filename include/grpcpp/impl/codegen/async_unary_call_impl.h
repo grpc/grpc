@@ -21,7 +21,7 @@
 
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
-#include <grpcpp/impl/codegen/client_context_impl.h>
+#include <grpcpp/impl/codegen/client_context.h>
 #include <grpcpp/impl/codegen/server_context_impl.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/status.h>
@@ -77,9 +77,9 @@ class ClientAsyncResponseReaderFactory {
   /// used to send to the server when starting the call.
   template <class W>
   static ClientAsyncResponseReader<R>* Create(
-      ::grpc::ChannelInterface* channel, ::grpc_impl::CompletionQueue* cq,
-      const ::grpc::internal::RpcMethod& method,
-      ::grpc_impl::ClientContext* context, const W& request, bool start) {
+      ::grpc::ChannelInterface* channel, ::grpc::CompletionQueue* cq,
+      const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
+      const W& request, bool start) {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
     return new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncResponseReader<R>)))
@@ -153,15 +153,15 @@ class ClientAsyncResponseReader final
 
  private:
   friend class internal::ClientAsyncResponseReaderFactory<R>;
-  ::grpc_impl::ClientContext* const context_;
+  ::grpc::ClientContext* const context_;
   ::grpc::internal::Call call_;
   bool started_;
   bool initial_metadata_read_ = false;
 
   template <class W>
   ClientAsyncResponseReader(::grpc::internal::Call call,
-                            ::grpc_impl::ClientContext* context,
-                            const W& request, bool start)
+                            ::grpc::ClientContext* context, const W& request,
+                            bool start)
       : context_(context), call_(call), started_(start) {
     // Bind the metadata at time of StartCallInternal but set up the rest here
     // TODO(ctiller): don't assert

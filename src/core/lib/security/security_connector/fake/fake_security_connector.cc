@@ -22,13 +22,15 @@
 
 #include <stdbool.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
-#include "src/core/ext/filters/client_channel/xds/xds_channel_args.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
+#include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gpr/string.h"
@@ -38,7 +40,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/tsi/fake_transport_security.h"
 
 namespace {
@@ -103,20 +104,20 @@ class grpc_fake_channel_security_connector final
         tsi_create_fake_handshaker(/*is_client=*/true), this, args));
   }
 
-  bool check_call_host(grpc_core::StringView host,
+  bool check_call_host(absl::string_view host,
                        grpc_auth_context* /*auth_context*/,
                        grpc_closure* /*on_call_host_checked*/,
                        grpc_error** /*error*/) override {
-    grpc_core::StringView authority_hostname;
-    grpc_core::StringView authority_ignored_port;
-    grpc_core::StringView target_hostname;
-    grpc_core::StringView target_ignored_port;
+    absl::string_view authority_hostname;
+    absl::string_view authority_ignored_port;
+    absl::string_view target_hostname;
+    absl::string_view target_ignored_port;
     grpc_core::SplitHostPort(host, &authority_hostname,
                              &authority_ignored_port);
     grpc_core::SplitHostPort(target_, &target_hostname, &target_ignored_port);
     if (target_name_override_ != nullptr) {
-      grpc_core::StringView fake_security_target_name_override_hostname;
-      grpc_core::StringView fake_security_target_name_override_ignored_port;
+      absl::string_view fake_security_target_name_override_hostname;
+      absl::string_view fake_security_target_name_override_ignored_port;
       grpc_core::SplitHostPort(
           target_name_override_, &fake_security_target_name_override_hostname,
           &fake_security_target_name_override_ignored_port);
@@ -227,11 +228,10 @@ static void fake_check_peer(
   prop_name = peer.properties[0].name;
   if (prop_name == nullptr ||
       strcmp(prop_name, TSI_CERTIFICATE_TYPE_PEER_PROPERTY)) {
-    char* msg;
-    gpr_asprintf(&msg, "Unexpected property in fake peer: %s.",
-                 prop_name == nullptr ? "<EMPTY>" : prop_name);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unexpected property in fake peer: ",
+                     prop_name == nullptr ? "<EMPTY>" : prop_name)
+            .c_str());
     goto end;
   }
   if (strncmp(peer.properties[0].value.data, TSI_FAKE_CERTIFICATE_TYPE,
@@ -243,11 +243,10 @@ static void fake_check_peer(
   prop_name = peer.properties[1].name;
   if (prop_name == nullptr ||
       strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY) != 0) {
-    char* msg;
-    gpr_asprintf(&msg, "Unexpected property in fake peer: %s.",
-                 prop_name == nullptr ? "<EMPTY>" : prop_name);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unexpected property in fake peer: ",
+                     prop_name == nullptr ? "<EMPTY>" : prop_name)
+            .c_str());
     goto end;
   }
   if (strncmp(peer.properties[1].value.data, TSI_FAKE_SECURITY_LEVEL,

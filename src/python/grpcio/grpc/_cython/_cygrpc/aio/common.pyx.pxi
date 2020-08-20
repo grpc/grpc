@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from cpython.version cimport PY_MAJOR_VERSION, PY_MINOR_VERSION
+
 
 cdef grpc_status_code get_status_code(object code) except *:
     if isinstance(code, int):
@@ -112,3 +114,73 @@ def schedule_coro_threadsafe(object coro, object loop):
             )
         else:
             raise
+
+
+def async_generator_to_generator(object agen, object loop):
+    """Converts an async generator into generator."""
+    try:
+        while True:
+            future = asyncio.run_coroutine_threadsafe(
+                agen.__anext__(),
+                loop
+            )
+            response = future.result()
+            if response is EOF:
+                break
+            else:
+                yield response
+    except StopAsyncIteration:
+        # If StopAsyncIteration is raised, end this generator.
+        pass
+
+
+async def generator_to_async_generator(object gen, object loop, object thread_pool):
+    """Converts a generator into async generator.
+
+    The generator might block, so we need to delegate the iteration to thread
+    pool. Also, we can't simply delegate __next__ to the thread pool, otherwise
+    we will see following error:
+
+        TypeError: StopIteration interacts badly with generators and cannot be
+            raised into a Future
+    """
+    queue = asyncio.Queue(maxsize=1, loop=loop)
+
+    def yield_to_queue():
+        try:
+            for item in gen:
+                asyncio.run_coroutine_threadsafe(queue.put(item), loop).result()
+        finally:
+            asyncio.run_coroutine_threadsafe(queue.put(EOF), loop).result()
+
+    future = loop.run_in_executor(
+        thread_pool,
+        yield_to_queue,
+    )
+
+    while True:
+        response = await queue.get()
+        if response is EOF:
+            break
+        else:
+            yield response
+
+    # Port the exception if there is any
+    await future
+
+
+if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 7:
+    def get_working_loop():
+        """Returns a running event loop.
+
+        Due to a defect of asyncio.get_event_loop, its returned event loop might
+        not be set as the default event loop for the main thread.
+        """
+        try:
+            return asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.get_event_loop()
+else:
+    def get_working_loop():
+        """Returns a running event loop."""
+        return asyncio.get_event_loop()

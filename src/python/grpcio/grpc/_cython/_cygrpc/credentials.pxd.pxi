@@ -102,3 +102,9 @@ cdef class ServerCredentials:
 cdef class LocalChannelCredentials(ChannelCredentials):
 
   cdef grpc_local_connect_type _local_connect_type
+
+
+cdef class ALTSChannelCredentials(ChannelCredentials):
+  cdef grpc_alts_credentials_options *c_options
+
+  cdef grpc_channel_credentials *c(self) except *

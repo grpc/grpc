@@ -183,9 +183,18 @@ class PythonDistribTest(object):
 class RubyDistribTest(object):
     """Tests Ruby package"""
 
-    def __init__(self, platform, arch, docker_suffix, ruby_version=None):
-        self.name = 'ruby_%s_%s_%s_version_%s' % (platform, arch, docker_suffix,
-                                                  ruby_version or 'unspecified')
+    def __init__(self,
+                 platform,
+                 arch,
+                 docker_suffix,
+                 ruby_version=None,
+                 source=False):
+        self.package_type = 'binary'
+        if source:
+            self.package_type = 'source'
+        self.name = 'ruby_%s_%s_%s_version_%s_package_type_%s' % (
+            platform, arch, docker_suffix, ruby_version or
+            'unspecified', self.package_type)
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
@@ -210,8 +219,8 @@ class RubyDistribTest(object):
         return create_docker_jobspec(
             self.name,
             dockerfile_name,
-            'test/distrib/ruby/run_distrib_test.sh %s %s' %
-            (arch_to_gem_arch[self.arch], self.platform),
+            'test/distrib/ruby/run_distrib_test.sh %s %s %s' %
+            (arch_to_gem_arch[self.arch], self.platform, self.package_type),
             copy_rel_path='test/distrib')
 
     def __str__(self):
@@ -243,6 +252,7 @@ class PHPDistribTest(object):
             return create_jobspec(
                 self.name, ['test/distrib/php/run_distrib_test_macos.sh'],
                 environ={'EXTERNAL_GIT_ROOT': '../../../..'},
+                timeout_seconds=15 * 60,
                 use_workspace=True)
         else:
             raise Exception("Not supported yet.")
@@ -296,7 +306,7 @@ class CppDistribTest(object):
 def targets():
     """Gets list of supported targets"""
     return [
-        CppDistribTest('linux', 'x64', 'jessie', 'routeguide'),
+        # C++
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_submodule'),
         CppDistribTest('linux', 'x64', 'stretch', 'cmake'),
         CppDistribTest('linux', 'x64', 'stretch', 'cmake_as_externalproject'),
@@ -308,6 +318,7 @@ def targets():
         CppDistribTest('linux', 'x64', 'stretch', 'raspberry_pi'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
         CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
+        # C#
         CSharpDistribTest('linux', 'x64', 'jessie'),
         CSharpDistribTest('linux', 'x86', 'jessie'),
         CSharpDistribTest('linux', 'x64', 'stretch'),
@@ -319,6 +330,7 @@ def targets():
         CSharpDistribTest('macos', 'x86'),
         CSharpDistribTest('windows', 'x86'),
         CSharpDistribTest('windows', 'x64'),
+        # Python
         PythonDistribTest('linux', 'x64', 'jessie'),
         PythonDistribTest('linux', 'x86', 'jessie'),
         PythonDistribTest('linux', 'x64', 'centos6'),
@@ -326,27 +338,34 @@ def targets():
         PythonDistribTest('linux', 'x64', 'fedora23'),
         PythonDistribTest('linux', 'x64', 'opensuse'),
         PythonDistribTest('linux', 'x64', 'arch'),
-        PythonDistribTest('linux', 'x64', 'ubuntu1404'),
         PythonDistribTest('linux', 'x64', 'ubuntu1604'),
+        PythonDistribTest('linux', 'x64', 'ubuntu1804'),
         PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
         PythonDistribTest('linux', 'x64', 'jessie', source=True),
         PythonDistribTest('linux', 'x86', 'jessie', source=True),
         PythonDistribTest('linux', 'x64', 'centos7', source=True),
         PythonDistribTest('linux', 'x64', 'fedora23', source=True),
         PythonDistribTest('linux', 'x64', 'arch', source=True),
-        PythonDistribTest('linux', 'x64', 'ubuntu1404', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1604', source=True),
+        PythonDistribTest('linux', 'x64', 'ubuntu1804', source=True),
+        # Ruby
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_3'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_4'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_5'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_6'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_7'),
+        RubyDistribTest('linux',
+                        'x64',
+                        'jessie',
+                        ruby_version='ruby_2_3',
+                        source=True),
         RubyDistribTest('linux', 'x64', 'centos6'),
         RubyDistribTest('linux', 'x64', 'centos7'),
         RubyDistribTest('linux', 'x64', 'fedora23'),
         RubyDistribTest('linux', 'x64', 'opensuse'),
-        RubyDistribTest('linux', 'x64', 'ubuntu1404'),
         RubyDistribTest('linux', 'x64', 'ubuntu1604'),
+        RubyDistribTest('linux', 'x64', 'ubuntu1804'),
+        # PHP
         PHPDistribTest('linux', 'x64', 'jessie'),
         PHPDistribTest('macos', 'x64'),
     ]

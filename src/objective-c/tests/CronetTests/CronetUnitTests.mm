@@ -39,9 +39,6 @@
 #import "test/core/end2end/data/ssl_test_data.h"
 #import "test/core/util/test_config.h"
 
-#define GRPC_SHADOW_BORINGSSL_SYMBOLS
-#import "src/core/tsi/grpc_shadow_boringssl.h"
-
 #import <openssl_grpc/ssl.h>
 
 static void drain_cq(grpc_completion_queue *cq) {
@@ -133,11 +130,10 @@ unsigned int parse_h2_length(const char *field) {
                               {{NULL, NULL, NULL, NULL}}}};
 
   int port = grpc_pick_unused_port_or_die();
-  grpc_core::UniquePtr<char> addr;
-  grpc_core::JoinHostPort(&addr, "127.0.0.1", port);
+  std::string addr = grpc_core::JoinHostPort("127.0.0.1", port);
   grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
-  grpc_channel *client = grpc_cronet_secure_channel_create(cronetEngine, addr.get(), NULL, NULL);
+  grpc_channel *client = grpc_cronet_secure_channel_create(cronetEngine, addr.c_str(), NULL, NULL);
 
   cq_verifier *cqv = cq_verifier_create(cq);
   grpc_op ops[6];
@@ -264,11 +260,10 @@ unsigned int parse_h2_length(const char *field) {
                               {{NULL, NULL, NULL, NULL}}}};
 
   int port = grpc_pick_unused_port_or_die();
-  grpc_core::UniquePtr<char> addr;
-  grpc_core::JoinHostPort(&addr, "127.0.0.1", port);
+  std::string addr = grpc_core::JoinHostPort("127.0.0.1", port);
   grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
-  grpc_channel *client = grpc_cronet_secure_channel_create(cronetEngine, addr.get(), args, NULL);
+  grpc_channel *client = grpc_cronet_secure_channel_create(cronetEngine, addr.c_str(), args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(cq);
   grpc_op ops[6];

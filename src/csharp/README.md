@@ -18,7 +18,7 @@ The following documentation is for the original gRPC C# implementation only (the
 SUPPORTED PLATFORMS
 ------------------
 
-- [.NET Core](https://dotnet.github.io/) on Linux, Windows and Mac OS X 
+- [.NET Core](https://dotnet.github.io/) on Linux, Windows and Mac OS X
 - .NET Framework 4.5+ (Windows)
 - Mono 4+ on Linux, Windows and Mac OS X
 
@@ -39,7 +39,7 @@ HOW TO USE
 
 - Open Visual Studio and start a new project/solution (alternatively, you can create a new project from command line with `dotnet` SDK)
 
-- Add the [Grpc](https://www.nuget.org/packages/Grpc/) NuGet package as a dependency (Project options -> Manage NuGet Packages). 
+- Add the [Grpc](https://www.nuget.org/packages/Grpc/) NuGet package as a dependency (Project options -> Manage NuGet Packages).
 
 - To be able to generate code from Protocol Buffer (`.proto`) file definitions, add the [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools/) NuGet package which provides [code generation integrated into your build](BUILD-INTEGRATION.md).
 
@@ -78,11 +78,11 @@ If you are a user of gRPC C#, go to Usage section above.
 **Windows, Linux or Mac OS X**
 
 - The easiest way to build is using the `run_tests.py` script that will take care of building the `grpc_csharp_ext` native library.
-  
+
   ```
-  # NOTE: make sure all necessary git submodules with dependencies 
+  # NOTE: make sure all necessary git submodules with dependencies
   # are available by running "git submodule update --init"
-  
+
   # from the gRPC repository root
   $ python tools/run_tests/run_tests.py -l csharp -c dbg --build_only
   ```
@@ -126,4 +126,4 @@ Internally, gRPC C# uses a native library written in C (gRPC C core) and invokes
 
 [API Reference]: https://grpc.io/grpc/csharp/api/Grpc.Core.html
 [Helloworld Example]: ../../examples/csharp/Helloworld
-[RouteGuide Tutorial]: https://grpc.io/docs/tutorials/basic/csharp.html 
+[RouteGuide Tutorial]: https://grpc.io/docs/languages/csharp/basics

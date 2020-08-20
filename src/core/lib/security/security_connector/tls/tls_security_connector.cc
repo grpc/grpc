@@ -23,6 +23,9 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -128,11 +131,9 @@ grpc_status_code TlsFetchKeyMaterials(
 grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    char* msg;
-    gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return error;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
+            .c_str());
   }
   return GRPC_ERROR_NONE;
 }
@@ -144,15 +145,14 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
     : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
                                       std::move(channel_creds),
                                       std::move(request_metadata_creds)),
-      overridden_target_name_(overridden_target_name == nullptr
-                                  ? nullptr
-                                  : gpr_strdup(overridden_target_name)) {
+      overridden_target_name_(
+          overridden_target_name == nullptr ? "" : overridden_target_name) {
   key_materials_config_ = grpc_tls_key_materials_config_create()->Ref();
   check_arg_ = ServerAuthorizationCheckArgCreate(this);
-  grpc_core::StringView host;
-  grpc_core::StringView port;
+  absl::string_view host;
+  absl::string_view port;
   grpc_core::SplitHostPort(target_name, &host, &port);
-  target_name_ = grpc_core::StringViewToCString(host);
+  target_name_ = std::string(host);
 }
 
 TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
@@ -176,8 +176,8 @@ void TlsChannelSecurityConnector::add_handshakers(
   tsi_handshaker* tsi_hs = nullptr;
   tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
       client_handshaker_factory_,
-      overridden_target_name_ != nullptr ? overridden_target_name_.get()
-                                         : target_name_.get(),
+      overridden_target_name_.empty() ? target_name_.c_str()
+                                      : overridden_target_name_.c_str(),
       &tsi_hs);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
@@ -192,9 +192,9 @@ void TlsChannelSecurityConnector::check_peer(
     tsi_peer peer, grpc_endpoint* /*ep*/,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
-  const char* target_name = overridden_target_name_ != nullptr
-                                ? overridden_target_name_.get()
-                                : target_name_.get();
+  const char* target_name = overridden_target_name_.empty()
+                                ? target_name_.c_str()
+                                : overridden_target_name_.c_str();
   grpc_error* error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
@@ -271,16 +271,16 @@ int TlsChannelSecurityConnector::cmp(
   if (c != 0) {
     return c;
   }
-  return grpc_ssl_cmp_target_name(target_name_.get(), other->target_name_.get(),
-                                  overridden_target_name_.get(),
-                                  other->overridden_target_name_.get());
+  return grpc_ssl_cmp_target_name(
+      target_name_.c_str(), other->target_name_.c_str(),
+      overridden_target_name_.c_str(), other->overridden_target_name_.c_str());
 }
 
 bool TlsChannelSecurityConnector::check_call_host(
-    grpc_core::StringView host, grpc_auth_context* auth_context,
-    grpc_closure* on_call_host_checked, grpc_error** error) {
-  return grpc_ssl_check_call_host(host, target_name_.get(),
-                                  overridden_target_name_.get(), auth_context,
+    absl::string_view host, grpc_auth_context* auth_context,
+    grpc_closure* /*on_call_host_checked*/, grpc_error** error) {
+  return grpc_ssl_check_call_host(host, target_name_.c_str(),
+                                  overridden_target_name_.c_str(), auth_context,
                                   error);
 }
 
@@ -333,8 +333,10 @@ grpc_security_status TlsChannelSecurityConnector::ReplaceHandshakerFactory(
       key_materials_config_->pem_key_cert_pair_list());
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
       pem_key_cert_pair, key_materials_config_->pem_root_certs(),
-      skip_server_certificate_verification, ssl_session_cache,
-      &client_handshaker_factory_);
+      skip_server_certificate_verification,
+      grpc_get_tsi_tls_version(creds->options().min_tls_version()),
+      grpc_get_tsi_tls_version(creds->options().max_tls_version()),
+      ssl_session_cache, &client_handshaker_factory_);
   /* Free memory. */
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
   return status;
@@ -401,31 +403,30 @@ void TlsChannelSecurityConnector::ServerAuthorizationCheckDone(
 grpc_error* TlsChannelSecurityConnector::ProcessServerAuthorizationCheckResult(
     grpc_tls_server_authorization_check_arg* arg) {
   grpc_error* error = GRPC_ERROR_NONE;
-  char* msg = nullptr;
   /* Server authorization check is cancelled by caller. */
   if (arg->status == GRPC_STATUS_CANCELLED) {
-    gpr_asprintf(&msg,
-                 "Server authorization check is cancelled by the caller with "
-                 "error: %s",
-                 arg->error_details->error_details().c_str());
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Server authorization check is cancelled by the caller "
+                     "with error: ",
+                     arg->error_details->error_details())
+            .c_str());
   } else if (arg->status == GRPC_STATUS_OK) {
     /* Server authorization check completed successfully but returned check
      * failure. */
     if (!arg->success) {
-      gpr_asprintf(&msg, "Server authorization check failed with error: %s",
-                   arg->error_details->error_details().c_str());
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Server authorization check failed with error: ",
+                       arg->error_details->error_details())
+              .c_str());
     }
     /* Server authorization check did not complete correctly. */
   } else {
-    gpr_asprintf(
-        &msg,
-        "Server authorization check did not finish correctly with error: %s",
-        arg->error_details->error_details().c_str());
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat(
+            "Server authorization check did not finish correctly with error: ",
+            arg->error_details->error_details())
+            .c_str());
   }
-  gpr_free(msg);
   return error;
 }
 
@@ -543,7 +544,10 @@ grpc_security_status TlsServerSecurityConnector::ReplaceHandshakerFactory() {
   grpc_security_status status = grpc_ssl_tsi_server_handshaker_factory_init(
       pem_key_cert_pairs, num_key_cert_pairs,
       key_materials_config_->pem_root_certs(),
-      creds->options().cert_request_type(), &server_handshaker_factory_);
+      creds->options().cert_request_type(),
+      grpc_get_tsi_tls_version(creds->options().min_tls_version()),
+      grpc_get_tsi_tls_version(creds->options().max_tls_version()),
+      &server_handshaker_factory_);
   /* Free memory. */
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,
                                           num_key_cert_pairs);

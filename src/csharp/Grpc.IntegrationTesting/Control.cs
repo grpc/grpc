@@ -34,7 +34,7 @@ namespace Grpc.Testing {
             "U2VjdXJpdHlQYXJhbXMSEwoLdXNlX3Rlc3RfY2EYASABKAgSHAoUc2VydmVy",
             "X2hvc3Rfb3ZlcnJpZGUYAiABKAkSEQoJY3JlZF90eXBlGAMgASgJIk0KCkNo",
             "YW5uZWxBcmcSDAoEbmFtZRgBIAEoCRITCglzdHJfdmFsdWUYAiABKAlIABIT",
-            "CglpbnRfdmFsdWUYAyABKAVIAEIHCgV2YWx1ZSKiBQoMQ2xpZW50Q29uZmln",
+            "CglpbnRfdmFsdWUYAyABKAVIAEIHCgV2YWx1ZSK8BQoMQ2xpZW50Q29uZmln",
             "EhYKDnNlcnZlcl90YXJnZXRzGAEgAygJEi0KC2NsaWVudF90eXBlGAIgASgO",
             "MhguZ3JwYy50ZXN0aW5nLkNsaWVudFR5cGUSNQoPc2VjdXJpdHlfcGFyYW1z",
             "GAMgASgLMhwuZ3JwYy50ZXN0aW5nLlNlY3VyaXR5UGFyYW1zEiQKHG91dHN0",
@@ -49,60 +49,61 @@ namespace Grpc.Testing {
             "cmdzGBAgAygLMhguZ3JwYy50ZXN0aW5nLkNoYW5uZWxBcmcSFgoOdGhyZWFk",
             "c19wZXJfY3EYESABKAUSGwoTbWVzc2FnZXNfcGVyX3N0cmVhbRgSIAEoBRIY",
             "ChB1c2VfY29hbGVzY2VfYXBpGBMgASgIEjEKKW1lZGlhbl9sYXRlbmN5X2Nv",
-            "bGxlY3Rpb25faW50ZXJ2YWxfbWlsbGlzGBQgASgFIjgKDENsaWVudFN0YXR1",
-            "cxIoCgVzdGF0cxgBIAEoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0cyIV",
-            "CgRNYXJrEg0KBXJlc2V0GAEgASgIImgKCkNsaWVudEFyZ3MSKwoFc2V0dXAY",
-            "ASABKAsyGi5ncnBjLnRlc3RpbmcuQ2xpZW50Q29uZmlnSAASIgoEbWFyaxgC",
-            "IAEoCzISLmdycGMudGVzdGluZy5NYXJrSABCCQoHYXJndHlwZSL9AgoMU2Vy",
-            "dmVyQ29uZmlnEi0KC3NlcnZlcl90eXBlGAEgASgOMhguZ3JwYy50ZXN0aW5n",
-            "LlNlcnZlclR5cGUSNQoPc2VjdXJpdHlfcGFyYW1zGAIgASgLMhwuZ3JwYy50",
-            "ZXN0aW5nLlNlY3VyaXR5UGFyYW1zEgwKBHBvcnQYBCABKAUSHAoUYXN5bmNf",
-            "c2VydmVyX3RocmVhZHMYByABKAUSEgoKY29yZV9saW1pdBgIIAEoBRIzCg5w",
-            "YXlsb2FkX2NvbmZpZxgJIAEoCzIbLmdycGMudGVzdGluZy5QYXlsb2FkQ29u",
-            "ZmlnEhEKCWNvcmVfbGlzdBgKIAMoBRIYChBvdGhlcl9zZXJ2ZXJfYXBpGAsg",
-            "ASgJEhYKDnRocmVhZHNfcGVyX2NxGAwgASgFEhwKE3Jlc291cmNlX3F1b3Rh",
-            "X3NpemUY6QcgASgFEi8KDGNoYW5uZWxfYXJncxjqByADKAsyGC5ncnBjLnRl",
-            "c3RpbmcuQ2hhbm5lbEFyZyJoCgpTZXJ2ZXJBcmdzEisKBXNldHVwGAEgASgL",
-            "MhouZ3JwYy50ZXN0aW5nLlNlcnZlckNvbmZpZ0gAEiIKBG1hcmsYAiABKAsy",
-            "Ei5ncnBjLnRlc3RpbmcuTWFya0gAQgkKB2FyZ3R5cGUiVQoMU2VydmVyU3Rh",
-            "dHVzEigKBXN0YXRzGAEgASgLMhkuZ3JwYy50ZXN0aW5nLlNlcnZlclN0YXRz",
-            "EgwKBHBvcnQYAiABKAUSDQoFY29yZXMYAyABKAUiDQoLQ29yZVJlcXVlc3Qi",
-            "HQoMQ29yZVJlc3BvbnNlEg0KBWNvcmVzGAEgASgFIgYKBFZvaWQi/QEKCFNj",
-            "ZW5hcmlvEgwKBG5hbWUYASABKAkSMQoNY2xpZW50X2NvbmZpZxgCIAEoCzIa",
-            "LmdycGMudGVzdGluZy5DbGllbnRDb25maWcSEwoLbnVtX2NsaWVudHMYAyAB",
-            "KAUSMQoNc2VydmVyX2NvbmZpZxgEIAEoCzIaLmdycGMudGVzdGluZy5TZXJ2",
-            "ZXJDb25maWcSEwoLbnVtX3NlcnZlcnMYBSABKAUSFgoOd2FybXVwX3NlY29u",
-            "ZHMYBiABKAUSGQoRYmVuY2htYXJrX3NlY29uZHMYByABKAUSIAoYc3Bhd25f",
-            "bG9jYWxfd29ya2VyX2NvdW50GAggASgFIjYKCVNjZW5hcmlvcxIpCglzY2Vu",
-            "YXJpb3MYASADKAsyFi5ncnBjLnRlc3RpbmcuU2NlbmFyaW8ihAQKFVNjZW5h",
-            "cmlvUmVzdWx0U3VtbWFyeRILCgNxcHMYASABKAESGwoTcXBzX3Blcl9zZXJ2",
-            "ZXJfY29yZRgCIAEoARIaChJzZXJ2ZXJfc3lzdGVtX3RpbWUYAyABKAESGAoQ",
-            "c2VydmVyX3VzZXJfdGltZRgEIAEoARIaChJjbGllbnRfc3lzdGVtX3RpbWUY",
-            "BSABKAESGAoQY2xpZW50X3VzZXJfdGltZRgGIAEoARISCgpsYXRlbmN5XzUw",
-            "GAcgASgBEhIKCmxhdGVuY3lfOTAYCCABKAESEgoKbGF0ZW5jeV85NRgJIAEo",
-            "ARISCgpsYXRlbmN5Xzk5GAogASgBEhMKC2xhdGVuY3lfOTk5GAsgASgBEhgK",
-            "EHNlcnZlcl9jcHVfdXNhZ2UYDCABKAESJgoec3VjY2Vzc2Z1bF9yZXF1ZXN0",
-            "c19wZXJfc2Vjb25kGA0gASgBEiIKGmZhaWxlZF9yZXF1ZXN0c19wZXJfc2Vj",
-            "b25kGA4gASgBEiAKGGNsaWVudF9wb2xsc19wZXJfcmVxdWVzdBgPIAEoARIg",
-            "ChhzZXJ2ZXJfcG9sbHNfcGVyX3JlcXVlc3QYECABKAESIgoac2VydmVyX3F1",
-            "ZXJpZXNfcGVyX2NwdV9zZWMYESABKAESIgoaY2xpZW50X3F1ZXJpZXNfcGVy",
-            "X2NwdV9zZWMYEiABKAEigwMKDlNjZW5hcmlvUmVzdWx0EigKCHNjZW5hcmlv",
-            "GAEgASgLMhYuZ3JwYy50ZXN0aW5nLlNjZW5hcmlvEi4KCWxhdGVuY2llcxgC",
-            "IAEoCzIbLmdycGMudGVzdGluZy5IaXN0b2dyYW1EYXRhEi8KDGNsaWVudF9z",
-            "dGF0cxgDIAMoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0cxIvCgxzZXJ2",
-            "ZXJfc3RhdHMYBCADKAsyGS5ncnBjLnRlc3RpbmcuU2VydmVyU3RhdHMSFAoM",
-            "c2VydmVyX2NvcmVzGAUgAygFEjQKB3N1bW1hcnkYBiABKAsyIy5ncnBjLnRl",
-            "c3RpbmcuU2NlbmFyaW9SZXN1bHRTdW1tYXJ5EhYKDmNsaWVudF9zdWNjZXNz",
-            "GAcgAygIEhYKDnNlcnZlcl9zdWNjZXNzGAggAygIEjkKD3JlcXVlc3RfcmVz",
-            "dWx0cxgJIAMoCzIgLmdycGMudGVzdGluZy5SZXF1ZXN0UmVzdWx0Q291bnQq",
-            "VgoKQ2xpZW50VHlwZRIPCgtTWU5DX0NMSUVOVBAAEhAKDEFTWU5DX0NMSUVO",
-            "VBABEhAKDE9USEVSX0NMSUVOVBACEhMKD0NBTExCQUNLX0NMSUVOVBADKnAK",
-            "ClNlcnZlclR5cGUSDwoLU1lOQ19TRVJWRVIQABIQCgxBU1lOQ19TRVJWRVIQ",
-            "ARIYChRBU1lOQ19HRU5FUklDX1NFUlZFUhACEhAKDE9USEVSX1NFUlZFUhAD",
-            "EhMKD0NBTExCQUNLX1NFUlZFUhAEKnIKB1JwY1R5cGUSCQoFVU5BUlkQABIN",
-            "CglTVFJFQU1JTkcQARIZChVTVFJFQU1JTkdfRlJPTV9DTElFTlQQAhIZChVT",
-            "VFJFQU1JTkdfRlJPTV9TRVJWRVIQAxIXChNTVFJFQU1JTkdfQk9USF9XQVlT",
-            "EARiBnByb3RvMw=="));
+            "bGxlY3Rpb25faW50ZXJ2YWxfbWlsbGlzGBQgASgFEhgKEGNsaWVudF9wcm9j",
+            "ZXNzZXMYFSABKAUiOAoMQ2xpZW50U3RhdHVzEigKBXN0YXRzGAEgASgLMhku",
+            "Z3JwYy50ZXN0aW5nLkNsaWVudFN0YXRzIhUKBE1hcmsSDQoFcmVzZXQYASAB",
+            "KAgiaAoKQ2xpZW50QXJncxIrCgVzZXR1cBgBIAEoCzIaLmdycGMudGVzdGlu",
+            "Zy5DbGllbnRDb25maWdIABIiCgRtYXJrGAIgASgLMhIuZ3JwYy50ZXN0aW5n",
+            "Lk1hcmtIAEIJCgdhcmd0eXBlIpcDCgxTZXJ2ZXJDb25maWcSLQoLc2VydmVy",
+            "X3R5cGUYASABKA4yGC5ncnBjLnRlc3RpbmcuU2VydmVyVHlwZRI1Cg9zZWN1",
+            "cml0eV9wYXJhbXMYAiABKAsyHC5ncnBjLnRlc3RpbmcuU2VjdXJpdHlQYXJh",
+            "bXMSDAoEcG9ydBgEIAEoBRIcChRhc3luY19zZXJ2ZXJfdGhyZWFkcxgHIAEo",
+            "BRISCgpjb3JlX2xpbWl0GAggASgFEjMKDnBheWxvYWRfY29uZmlnGAkgASgL",
+            "MhsuZ3JwYy50ZXN0aW5nLlBheWxvYWRDb25maWcSEQoJY29yZV9saXN0GAog",
+            "AygFEhgKEG90aGVyX3NlcnZlcl9hcGkYCyABKAkSFgoOdGhyZWFkc19wZXJf",
+            "Y3EYDCABKAUSHAoTcmVzb3VyY2VfcXVvdGFfc2l6ZRjpByABKAUSLwoMY2hh",
+            "bm5lbF9hcmdzGOoHIAMoCzIYLmdycGMudGVzdGluZy5DaGFubmVsQXJnEhgK",
+            "EHNlcnZlcl9wcm9jZXNzZXMYFSABKAUiaAoKU2VydmVyQXJncxIrCgVzZXR1",
+            "cBgBIAEoCzIaLmdycGMudGVzdGluZy5TZXJ2ZXJDb25maWdIABIiCgRtYXJr",
+            "GAIgASgLMhIuZ3JwYy50ZXN0aW5nLk1hcmtIAEIJCgdhcmd0eXBlIlUKDFNl",
+            "cnZlclN0YXR1cxIoCgVzdGF0cxgBIAEoCzIZLmdycGMudGVzdGluZy5TZXJ2",
+            "ZXJTdGF0cxIMCgRwb3J0GAIgASgFEg0KBWNvcmVzGAMgASgFIg0KC0NvcmVS",
+            "ZXF1ZXN0Ih0KDENvcmVSZXNwb25zZRINCgVjb3JlcxgBIAEoBSIGCgRWb2lk",
+            "Iv0BCghTY2VuYXJpbxIMCgRuYW1lGAEgASgJEjEKDWNsaWVudF9jb25maWcY",
+            "AiABKAsyGi5ncnBjLnRlc3RpbmcuQ2xpZW50Q29uZmlnEhMKC251bV9jbGll",
+            "bnRzGAMgASgFEjEKDXNlcnZlcl9jb25maWcYBCABKAsyGi5ncnBjLnRlc3Rp",
+            "bmcuU2VydmVyQ29uZmlnEhMKC251bV9zZXJ2ZXJzGAUgASgFEhYKDndhcm11",
+            "cF9zZWNvbmRzGAYgASgFEhkKEWJlbmNobWFya19zZWNvbmRzGAcgASgFEiAK",
+            "GHNwYXduX2xvY2FsX3dvcmtlcl9jb3VudBgIIAEoBSI2CglTY2VuYXJpb3MS",
+            "KQoJc2NlbmFyaW9zGAEgAygLMhYuZ3JwYy50ZXN0aW5nLlNjZW5hcmlvIoQE",
+            "ChVTY2VuYXJpb1Jlc3VsdFN1bW1hcnkSCwoDcXBzGAEgASgBEhsKE3Fwc19w",
+            "ZXJfc2VydmVyX2NvcmUYAiABKAESGgoSc2VydmVyX3N5c3RlbV90aW1lGAMg",
+            "ASgBEhgKEHNlcnZlcl91c2VyX3RpbWUYBCABKAESGgoSY2xpZW50X3N5c3Rl",
+            "bV90aW1lGAUgASgBEhgKEGNsaWVudF91c2VyX3RpbWUYBiABKAESEgoKbGF0",
+            "ZW5jeV81MBgHIAEoARISCgpsYXRlbmN5XzkwGAggASgBEhIKCmxhdGVuY3lf",
+            "OTUYCSABKAESEgoKbGF0ZW5jeV85ORgKIAEoARITCgtsYXRlbmN5Xzk5ORgL",
+            "IAEoARIYChBzZXJ2ZXJfY3B1X3VzYWdlGAwgASgBEiYKHnN1Y2Nlc3NmdWxf",
+            "cmVxdWVzdHNfcGVyX3NlY29uZBgNIAEoARIiChpmYWlsZWRfcmVxdWVzdHNf",
+            "cGVyX3NlY29uZBgOIAEoARIgChhjbGllbnRfcG9sbHNfcGVyX3JlcXVlc3QY",
+            "DyABKAESIAoYc2VydmVyX3BvbGxzX3Blcl9yZXF1ZXN0GBAgASgBEiIKGnNl",
+            "cnZlcl9xdWVyaWVzX3Blcl9jcHVfc2VjGBEgASgBEiIKGmNsaWVudF9xdWVy",
+            "aWVzX3Blcl9jcHVfc2VjGBIgASgBIoMDCg5TY2VuYXJpb1Jlc3VsdBIoCghz",
+            "Y2VuYXJpbxgBIAEoCzIWLmdycGMudGVzdGluZy5TY2VuYXJpbxIuCglsYXRl",
+            "bmNpZXMYAiABKAsyGy5ncnBjLnRlc3RpbmcuSGlzdG9ncmFtRGF0YRIvCgxj",
+            "bGllbnRfc3RhdHMYAyADKAsyGS5ncnBjLnRlc3RpbmcuQ2xpZW50U3RhdHMS",
+            "LwoMc2VydmVyX3N0YXRzGAQgAygLMhkuZ3JwYy50ZXN0aW5nLlNlcnZlclN0",
+            "YXRzEhQKDHNlcnZlcl9jb3JlcxgFIAMoBRI0CgdzdW1tYXJ5GAYgASgLMiMu",
+            "Z3JwYy50ZXN0aW5nLlNjZW5hcmlvUmVzdWx0U3VtbWFyeRIWCg5jbGllbnRf",
+            "c3VjY2VzcxgHIAMoCBIWCg5zZXJ2ZXJfc3VjY2VzcxgIIAMoCBI5Cg9yZXF1",
+            "ZXN0X3Jlc3VsdHMYCSADKAsyIC5ncnBjLnRlc3RpbmcuUmVxdWVzdFJlc3Vs",
+            "dENvdW50KlYKCkNsaWVudFR5cGUSDwoLU1lOQ19DTElFTlQQABIQCgxBU1lO",
+            "Q19DTElFTlQQARIQCgxPVEhFUl9DTElFTlQQAhITCg9DQUxMQkFDS19DTElF",
+            "TlQQAypwCgpTZXJ2ZXJUeXBlEg8KC1NZTkNfU0VSVkVSEAASEAoMQVNZTkNf",
+            "U0VSVkVSEAESGAoUQVNZTkNfR0VORVJJQ19TRVJWRVIQAhIQCgxPVEhFUl9T",
+            "RVJWRVIQAxITCg9DQUxMQkFDS19TRVJWRVIQBCpyCgdScGNUeXBlEgkKBVVO",
+            "QVJZEAASDQoJU1RSRUFNSU5HEAESGQoVU1RSRUFNSU5HX0ZST01fQ0xJRU5U",
+            "EAISGQoVU1RSRUFNSU5HX0ZST01fU0VSVkVSEAMSFwoTU1RSRUFNSU5HX0JP",
+            "VEhfV0FZUxAEYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.PayloadsReflection.Descriptor, global::Grpc.Testing.StatsReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.ClientType), typeof(global::Grpc.Testing.ServerType), typeof(global::Grpc.Testing.RpcType), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -111,11 +112,11 @@ namespace Grpc.Testing {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadParams), global::Grpc.Testing.LoadParams.Parser, new[]{ "ClosedLoop", "Poisson" }, new[]{ "Load" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SecurityParams), global::Grpc.Testing.SecurityParams.Parser, new[]{ "UseTestCa", "ServerHostOverride", "CredType" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ChannelArg), global::Grpc.Testing.ChannelArg.Parser, new[]{ "Name", "StrValue", "IntValue" }, new[]{ "Value" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi", "ChannelArgs", "ThreadsPerCq", "MessagesPerStream", "UseCoalesceApi", "MedianLatencyCollectionIntervalMillis" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi", "ChannelArgs", "ThreadsPerCq", "MessagesPerStream", "UseCoalesceApi", "MedianLatencyCollectionIntervalMillis", "ClientProcesses" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientStatus), global::Grpc.Testing.ClientStatus.Parser, new[]{ "Stats" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Mark), global::Grpc.Testing.Mark.Parser, new[]{ "Reset" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientArgs), global::Grpc.Testing.ClientArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerConfig), global::Grpc.Testing.ServerConfig.Parser, new[]{ "ServerType", "SecurityParams", "Port", "AsyncServerThreads", "CoreLimit", "PayloadConfig", "CoreList", "OtherServerApi", "ThreadsPerCq", "ResourceQuotaSize", "ChannelArgs" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerConfig), global::Grpc.Testing.ServerConfig.Parser, new[]{ "ServerType", "SecurityParams", "Port", "AsyncServerThreads", "CoreLimit", "PayloadConfig", "CoreList", "OtherServerApi", "ThreadsPerCq", "ResourceQuotaSize", "ChannelArgs", "ServerProcesses" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerArgs), global::Grpc.Testing.ServerArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerStatus), global::Grpc.Testing.ServerStatus.Parser, new[]{ "Stats", "Port", "Cores" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.CoreRequest), global::Grpc.Testing.CoreRequest.Parser, null, null, null, null, null),
@@ -1059,6 +1060,7 @@ namespace Grpc.Testing {
       messagesPerStream_ = other.messagesPerStream_;
       useCoalesceApi_ = other.useCoalesceApi_;
       medianLatencyCollectionIntervalMillis_ = other.medianLatencyCollectionIntervalMillis_;
+      clientProcesses_ = other.clientProcesses_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1298,6 +1300,20 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "client_processes" field.</summary>
+    public const int ClientProcessesFieldNumber = 21;
+    private int clientProcesses_;
+    /// <summary>
+    /// Number of client processes. 0 indicates no restriction.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int ClientProcesses {
+      get { return clientProcesses_; }
+      set {
+        clientProcesses_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ClientConfig);
@@ -1329,6 +1345,7 @@ namespace Grpc.Testing {
       if (MessagesPerStream != other.MessagesPerStream) return false;
       if (UseCoalesceApi != other.UseCoalesceApi) return false;
       if (MedianLatencyCollectionIntervalMillis != other.MedianLatencyCollectionIntervalMillis) return false;
+      if (ClientProcesses != other.ClientProcesses) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1353,6 +1370,7 @@ namespace Grpc.Testing {
       if (MessagesPerStream != 0) hash ^= MessagesPerStream.GetHashCode();
       if (UseCoalesceApi != false) hash ^= UseCoalesceApi.GetHashCode();
       if (MedianLatencyCollectionIntervalMillis != 0) hash ^= MedianLatencyCollectionIntervalMillis.GetHashCode();
+      if (ClientProcesses != 0) hash ^= ClientProcesses.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1429,6 +1447,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(160, 1);
         output.WriteInt32(MedianLatencyCollectionIntervalMillis);
       }
+      if (ClientProcesses != 0) {
+        output.WriteRawTag(168, 1);
+        output.WriteInt32(ClientProcesses);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1484,6 +1506,9 @@ namespace Grpc.Testing {
       }
       if (MedianLatencyCollectionIntervalMillis != 0) {
         size += 2 + pb::CodedOutputStream.ComputeInt32Size(MedianLatencyCollectionIntervalMillis);
+      }
+      if (ClientProcesses != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeInt32Size(ClientProcesses);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1555,6 +1580,9 @@ namespace Grpc.Testing {
       }
       if (other.MedianLatencyCollectionIntervalMillis != 0) {
         MedianLatencyCollectionIntervalMillis = other.MedianLatencyCollectionIntervalMillis;
+      }
+      if (other.ClientProcesses != 0) {
+        ClientProcesses = other.ClientProcesses;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1650,6 +1678,10 @@ namespace Grpc.Testing {
           }
           case 160: {
             MedianLatencyCollectionIntervalMillis = input.ReadInt32();
+            break;
+          }
+          case 168: {
+            ClientProcesses = input.ReadInt32();
             break;
           }
         }
@@ -2168,6 +2200,7 @@ namespace Grpc.Testing {
       threadsPerCq_ = other.threadsPerCq_;
       resourceQuotaSize_ = other.resourceQuotaSize_;
       channelArgs_ = other.channelArgs_.Clone();
+      serverProcesses_ = other.serverProcesses_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -2322,6 +2355,20 @@ namespace Grpc.Testing {
       get { return channelArgs_; }
     }
 
+    /// <summary>Field number for the "server_processes" field.</summary>
+    public const int ServerProcessesFieldNumber = 21;
+    private int serverProcesses_;
+    /// <summary>
+    /// Number of server processes. 0 indicates no restriction.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int ServerProcesses {
+      get { return serverProcesses_; }
+      set {
+        serverProcesses_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ServerConfig);
@@ -2346,6 +2393,7 @@ namespace Grpc.Testing {
       if (ThreadsPerCq != other.ThreadsPerCq) return false;
       if (ResourceQuotaSize != other.ResourceQuotaSize) return false;
       if(!channelArgs_.Equals(other.channelArgs_)) return false;
+      if (ServerProcesses != other.ServerProcesses) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -2363,6 +2411,7 @@ namespace Grpc.Testing {
       if (ThreadsPerCq != 0) hash ^= ThreadsPerCq.GetHashCode();
       if (ResourceQuotaSize != 0) hash ^= ResourceQuotaSize.GetHashCode();
       hash ^= channelArgs_.GetHashCode();
+      if (ServerProcesses != 0) hash ^= ServerProcesses.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -2409,6 +2458,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(96);
         output.WriteInt32(ThreadsPerCq);
       }
+      if (ServerProcesses != 0) {
+        output.WriteRawTag(168, 1);
+        output.WriteInt32(ServerProcesses);
+      }
       if (ResourceQuotaSize != 0) {
         output.WriteRawTag(200, 62);
         output.WriteInt32(ResourceQuotaSize);
@@ -2451,6 +2504,9 @@ namespace Grpc.Testing {
         size += 2 + pb::CodedOutputStream.ComputeInt32Size(ResourceQuotaSize);
       }
       size += channelArgs_.CalculateSize(_repeated_channelArgs_codec);
+      if (ServerProcesses != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeInt32Size(ServerProcesses);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -2497,6 +2553,9 @@ namespace Grpc.Testing {
         ResourceQuotaSize = other.ResourceQuotaSize;
       }
       channelArgs_.Add(other.channelArgs_);
+      if (other.ServerProcesses != 0) {
+        ServerProcesses = other.ServerProcesses;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -2549,6 +2608,10 @@ namespace Grpc.Testing {
           }
           case 96: {
             ThreadsPerCq = input.ReadInt32();
+            break;
+          }
+          case 168: {
+            ServerProcesses = input.ReadInt32();
             break;
           }
           case 8008: {

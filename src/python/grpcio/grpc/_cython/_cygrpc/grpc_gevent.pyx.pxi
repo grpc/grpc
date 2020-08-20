@@ -283,14 +283,14 @@ cdef socket_resolve_async_cython(ResolveWrapper resolve_wrapper):
 def socket_resolve_async_python(resolve_wrapper):
   socket_resolve_async_cython(resolve_wrapper)
 
-cdef void socket_resolve_async(grpc_custom_resolver* r, char* host, char* port) with gil:
+cdef void socket_resolve_async(grpc_custom_resolver* r, const char* host, const char* port) with gil:
   rw = ResolveWrapper()
   rw.c_resolver = r
   rw.c_host = host
   rw.c_port = port
   _spawn_greenlet(socket_resolve_async_python, rw)
 
-cdef grpc_error* socket_resolve(char* host, char* port,
+cdef grpc_error* socket_resolve(const char* host, const char* port,
                                 grpc_resolved_addresses** res) with gil:
     try:
       result = gevent_socket.getaddrinfo(host, port)

@@ -53,13 +53,13 @@ void client_authority_start_transport_stream_op_batch(
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // Handle send_initial_metadata.
-  auto* initial_metadata =
-      batch->payload->send_initial_metadata.send_initial_metadata;
   // If the initial metadata doesn't already contain :authority, add it.
   if (batch->send_initial_metadata &&
-      initial_metadata->idx.named.authority == nullptr) {
+      batch->payload->send_initial_metadata.send_initial_metadata->idx.named
+              .authority == nullptr) {
     grpc_error* error = grpc_metadata_batch_add_head(
-        initial_metadata, &calld->authority_storage,
+        batch->payload->send_initial_metadata.send_initial_metadata,
+        &calld->authority_storage,
         GRPC_MDELEM_REF(chand->default_authority_mdelem), GRPC_BATCH_AUTHORITY);
     if (error != GRPC_ERROR_NONE) {
       grpc_transport_stream_op_batch_finish_with_failure(batch, error,

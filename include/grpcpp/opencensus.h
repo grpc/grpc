@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2018 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 
 namespace grpc_impl {
 class ServerContext;
-}
+}  // namespace grpc_impl
 
 namespace grpc {
 // These symbols in this file will not be included in the binary unless

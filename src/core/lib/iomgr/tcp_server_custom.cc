@@ -23,6 +23,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <string>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -214,10 +216,9 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
       (grpc_tcp_server_acceptor*)gpr_malloc(sizeof(*acceptor));
   grpc_endpoint* ep = nullptr;
   grpc_resolved_address peer_name;
-  char* peer_name_string;
+  std::string peer_name_string;
   grpc_error* err;
 
-  peer_name_string = nullptr;
   memset(&peer_name, 0, sizeof(grpc_resolved_address));
   peer_name.len = GRPC_MAX_SOCKADDR_SIZE;
   err = grpc_custom_socket_vtable->getpeername(
@@ -229,21 +230,16 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
     GRPC_ERROR_UNREF(err);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    if (peer_name_string) {
-      gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection: %s",
-              sp->server, peer_name_string);
-    } else {
-      gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection", sp->server);
-    }
+    gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection: %s", sp->server,
+            peer_name_string.c_str());
   }
   ep = custom_tcp_endpoint_create(socket, sp->server->resource_quota,
-                                  peer_name_string);
+                                  peer_name_string.c_str());
   acceptor->from_server = sp->server;
   acceptor->port_index = sp->port_index;
   acceptor->fd_index = 0;
   acceptor->external_connection = false;
   sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, nullptr, acceptor);
-  gpr_free(peer_name_string);
 }
 
 static void custom_accept_callback(grpc_custom_socket* socket,
@@ -389,15 +385,9 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   }
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    char* port_string;
-    grpc_sockaddr_to_string(&port_string, addr, 0);
-    const char* str = grpc_error_string(error);
-    if (port_string) {
-      gpr_log(GPR_INFO, "SERVER %p add_port %s error=%s", s, port_string, str);
-      gpr_free(port_string);
-    } else {
-      gpr_log(GPR_INFO, "SERVER %p add_port error=%s", s, str);
-    }
+    gpr_log(GPR_INFO, "SERVER %p add_port %s error=%s", s,
+            grpc_sockaddr_to_string(addr, false).c_str(),
+            grpc_error_string(error));
   }
 
   family = grpc_sockaddr_get_family(addr);
@@ -427,12 +417,10 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   return error;
 }
 
-static void tcp_server_start(grpc_tcp_server* server, grpc_pollset** pollsets,
-                             size_t pollset_count,
+static void tcp_server_start(grpc_tcp_server* server,
+                             const std::vector<grpc_pollset*>* /*pollsets*/,
                              grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
   grpc_tcp_listener* sp;
-  (void)pollsets;
-  (void)pollset_count;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "SERVER_START %p", server);

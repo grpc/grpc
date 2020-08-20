@@ -31,6 +31,7 @@ module GRPC
     #
     # @param s [String] the string to be converted.
     def self.underscore(s)
+      s = +s # Avoid mutating the argument, as it might be frozen.
       s.gsub!(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
       s.gsub!(/([a-z\d])([A-Z])/, '\1_\2')
       s.tr!('-', '_')
@@ -167,22 +168,22 @@ module GRPC
             if desc.request_response?
               define_method(mth_name) do |req, metadata = {}|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                request_response(route, req, marshal, unmarshal, metadata)
+                request_response(route, req, marshal, unmarshal, **metadata)
               end
             elsif desc.client_streamer?
               define_method(mth_name) do |reqs, metadata = {}|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                client_streamer(route, reqs, marshal, unmarshal, metadata)
+                client_streamer(route, reqs, marshal, unmarshal, **metadata)
               end
             elsif desc.server_streamer?
               define_method(mth_name) do |req, metadata = {}, &blk|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                server_streamer(route, req, marshal, unmarshal, metadata, &blk)
+                server_streamer(route, req, marshal, unmarshal, **metadata, &blk)
               end
             else  # is a bidi_stream
               define_method(mth_name) do |reqs, metadata = {}, &blk|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                bidi_streamer(route, reqs, marshal, unmarshal, metadata, &blk)
+                bidi_streamer(route, reqs, marshal, unmarshal, **metadata, &blk)
               end
             end
           end

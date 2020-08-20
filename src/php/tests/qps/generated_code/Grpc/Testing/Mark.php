@@ -20,11 +20,21 @@ class Mark extends \Google\Protobuf\Internal\Message
      *
      * Generated from protobuf field <code>bool reset = 1;</code>
      */
-    private $reset = false;
+    protected $reset = false;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type bool $reset
+     *           if true, the stats will be reset after taking their snapshot.
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

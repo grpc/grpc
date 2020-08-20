@@ -46,7 +46,7 @@ _GRPC_DEP_NAMES = [
     'boringssl',
     'zlib',
     'com_google_protobuf',
-    'com_github_google_googletest',
+    'com_google_googletest',
     'rules_cc',
     'com_github_gflags_gflags',
     'com_github_google_benchmark',
@@ -65,9 +65,11 @@ _GRPC_DEP_NAMES = [
     'build_bazel_rules_apple',
     'build_bazel_apple_support',
     'libuv',
+    'com_github_google_re2',
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
+    'upb',  # third_party/upb is checked in locally
     'rules_cc',
     'com_google_absl',
     'io_opencensus_cpp',
@@ -109,7 +111,12 @@ class BazelEvalState(object):
         if args['name'] in _GRPC_BAZEL_ONLY_DEPS:
             self.names_and_urls[args['name']] = 'dont care'
             return
-        self.names_and_urls[args['name']] = args['url']
+        url = args.get('url', None)
+        if not url:
+            # we will only be looking for git commit hashes, so concatenating
+            # the urls is fine.
+            url = ' '.join(args['urls'])
+        self.names_and_urls[args['name']] = url
 
     def git_repository(self, **args):
         assert self.names_and_urls.get(args['name']) is None
@@ -165,6 +172,11 @@ if len(workspace_git_hashes - git_submodule_hashes) > 0:
     print(
         "Found discrepancies between git submodules and Bazel WORKSPACE dependencies"
     )
+    print("workspace_git_hashes: %s" % workspace_git_hashes)
+    print("git_submodule_hashes: %s" % git_submodule_hashes)
+    print("workspace_git_hashes - git_submodule_hashes: %s" %
+          (workspace_git_hashes - git_submodule_hashes))
+    sys.exit(1)
 
 # Also check that we can override each dependency
 for name in _GRPC_DEP_NAMES:

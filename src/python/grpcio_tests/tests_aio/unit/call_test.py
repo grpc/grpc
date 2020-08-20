@@ -102,11 +102,11 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
     async def test_call_initial_metadata_awaitable(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
-        self.assertEqual((), await call.initial_metadata())
+        self.assertEqual(aio.Metadata(), await call.initial_metadata())
 
     async def test_call_trailing_metadata_awaitable(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
-        self.assertEqual((), await call.trailing_metadata())
+        self.assertEqual(aio.Metadata(), await call.trailing_metadata())
 
     async def test_call_initial_metadata_cancelable(self):
         coro_started = asyncio.Event()
@@ -122,7 +122,7 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
         # Test that initial metadata can still be asked thought
         # a cancellation happened with the previous task
-        self.assertEqual((), await call.initial_metadata())
+        self.assertEqual(aio.Metadata(), await call.initial_metadata())
 
     async def test_call_initial_metadata_multiple_waiters(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
@@ -134,8 +134,8 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         task2 = self.loop.create_task(coro())
 
         await call
-
-        self.assertEqual([(), ()], await asyncio.gather(*[task1, task2]))
+        expected = [aio.Metadata() for _ in range(2)]
+        self.assertEqual(expected, await asyncio.gather(*[task1, task2]))
 
     async def test_call_code_cancelable(self):
         coro_started = asyncio.Event()
@@ -216,6 +216,23 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
 
 class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
+
+    async def test_call_rpc_error(self):
+        channel = aio.insecure_channel(UNREACHABLE_TARGET)
+        request = messages_pb2.StreamingOutputCallRequest()
+        stub = test_pb2_grpc.TestServiceStub(channel)
+        call = stub.StreamingOutputCall(request)
+
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            async for response in call:
+                pass
+
+        self.assertEqual(grpc.StatusCode.UNAVAILABLE,
+                         exception_context.exception.code())
+
+        self.assertTrue(call.done())
+        self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
+        await channel.close()
 
     async def test_cancel_unary_stream(self):
         # Prepares the request
@@ -550,7 +567,6 @@ class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
 
         cancel_later_task = self.loop.create_task(cancel_later())
 
-        # No exceptions here
         with self.assertRaises(asyncio.CancelledError):
             await call
 
@@ -772,9 +788,10 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
 
         cancel_later_task = self.loop.create_task(cancel_later())
 
-        # No exceptions here
-        async for response in call:
-            self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
+        with self.assertRaises(asyncio.CancelledError):
+            async for response in call:
+                self.assertEqual(_RESPONSE_PAYLOAD_SIZE,
+                                 len(response.payload.body))
 
         await request_iterator_received_the_exception.wait()
 
