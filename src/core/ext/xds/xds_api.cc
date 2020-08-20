@@ -1769,21 +1769,17 @@ grpc_error* CdsResponseParse(
     }
     MaybeLogCluster(client, tracer, cluster);
     // Ignore unexpected cluster names.
-    absl::string_view cluster_name_strview =
-        UpbStringToAbsl(envoy_config_cluster_v3_Cluster_name(cluster));
-    if (expected_cluster_names.find(cluster_name_strview) ==
+    std::string cluster_name =
+        UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(cluster));
+    if (expected_cluster_names.find(cluster_name) ==
         expected_cluster_names.end()) {
       continue;
     }
-    // Fail if cluster name is duplicated.
-    std::string cluster_name(cluster_name_strview);
-// FIXME: do we need this?
-#if 0
+    // Fail on duplicate resources.
     if (cds_update_map->find(cluster_name) != cds_update_map->end()) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
-          "duplicate cluster name \"", cluster_name, "\"").c_str());
+          "duplicate resource name \"", cluster_name, "\"").c_str());
     }
-#endif
     XdsApi::CdsUpdate& cds_update = (*cds_update_map)[std::move(cluster_name)];
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster)) {
@@ -1971,24 +1967,19 @@ grpc_error* EdsResponseParse(
           "Can't parse cluster_load_assignment.");
     }
     MaybeLogClusterLoadAssignment(client, tracer, cluster_load_assignment);
-    // Check the cluster name (which actually means eds_service_name). Ignore
-    // unexpected names.
-    absl::string_view eds_service_name_strview = UpbStringToAbsl(
+    // Check the EDS service name.  Ignore unexpected names.
+    std::string eds_service_name = UpbStringToStdString(
         envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(
             cluster_load_assignment));
-    if (expected_eds_service_names.find(eds_service_name_strview) ==
+    if (expected_eds_service_names.find(eds_service_name) ==
         expected_eds_service_names.end()) {
       continue;
     }
-    // Fail if EDS service name is duplicated.
-    std::string eds_service_name(eds_service_name_strview);
-// FIXME: do we need this?
-#if 0
+    // Fail on duplicate resources.
     if (eds_update_map->find(eds_service_name) != eds_update_map->end()) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
-          "duplicate EDS service name \"", eds_service_name, "\"").c_str());
+          "duplicate resource name \"", eds_service_name, "\"").c_str());
     }
-#endif
     XdsApi::EdsUpdate& eds_update =
         (*eds_update_map)[std::move(eds_service_name)];
     // Get the endpoints.
