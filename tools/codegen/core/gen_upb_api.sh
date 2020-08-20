@@ -21,10 +21,14 @@ bazel=`pwd`/tools/bazel
 
 if [ $# -eq 0 ]; then
   UPB_OUTPUT_DIR=$PWD/src/core/ext/upb-generated
+  UPBDEFS_OUTPUT_DIR=$PWD/src/core/ext/upbdefs-generated
   rm -rf $UPB_OUTPUT_DIR
+  rm -rf $UPBDEFS_OUTPUT_DIR
   mkdir -p $UPB_OUTPUT_DIR
 else
-  UPB_OUTPUT_DIR=$1
+  UPB_OUTPUT_DIR=$1/upb-generated
+  UPBDEFS_OUTPUT_DIR=$1/upbdefs-generated
+  mkdir $UPB_OUTPUT_DIR
 fi
 
 $bazel build @com_google_protobuf//:protoc
@@ -134,8 +138,6 @@ done
 # See https://github.com/grpc/grpc/issues/23307
 
 # move all .upbdefs.h and .upbdefs.c files from under src/core/ext/upb-generated to src/core/ext/upbdefs-generated
-UPBDEFS_OUTPUT_DIR=$PWD/src/core/ext/upbdefs-generated
-rm -rf $UPBDEFS_OUTPUT_DIR
 cp -r $UPB_OUTPUT_DIR $UPBDEFS_OUTPUT_DIR
 
 # remove files that don't belong under upb-generated
