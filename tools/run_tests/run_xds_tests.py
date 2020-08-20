@@ -579,17 +579,26 @@ def test_round_robin(gcp, backend_service, instance_group):
     threshold = 1
     wait_until_all_rpcs_go_to_given_backends(instance_names,
                                              _WAIT_FOR_STATS_SEC)
-    stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
-    requests_received = [stats.rpcs_by_peer[x] for x in stats.rpcs_by_peer]
-    total_requests_received = sum(requests_received)
-    if total_requests_received != _NUM_TEST_RPCS:
-        raise Exception('Unexpected RPC failures', stats)
-    expected_requests = total_requests_received / len(instance_names)
-    for instance in instance_names:
-        if abs(stats.rpcs_by_peer[instance] - expected_requests) > threshold:
-            raise Exception(
-                'RPC peer distribution differs from expected by more than %d '
-                'for instance %s (%s)' % (threshold, instance, stats))
+    # TODO(ericgribkoff) Delayed config propagation from earlier tests
+    # may result in briefly receiving an empty EDS update, resulting in failed
+    # RPCs. Retry distribution validation if this occurs; long-term fix is
+    # creating new backend resources for each individual test case.
+    max_attempts = 10
+    for i in range(max_attempts):
+        stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
+        requests_received = [stats.rpcs_by_peer[x] for x in stats.rpcs_by_peer]
+        total_requests_received = sum(requests_received)
+        if total_requests_received != _NUM_TEST_RPCS:
+            logger.info('Unexpected RPC failures, retrying: %s', stats)
+            continue
+        expected_requests = total_requests_received / len(instance_names)
+        for instance in instance_names:
+            if abs(stats.rpcs_by_peer[instance] - expected_requests) > threshold:
+                raise Exception(
+                    'RPC peer distribution differs from expected by more than %d '
+                    'for instance %s (%s)' % (threshold, instance, stats))
+        return
+    raise Exception('RPC failures persisted through %d retries' % max_attempts)
 
 
 def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
