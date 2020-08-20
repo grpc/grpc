@@ -161,7 +161,6 @@ TEST(ChannelzSamplerTest, SimpleTest) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-
   std::string me = argv[0];
   auto lslash = me.rfind('/');
   if (lslash != std::string::npos) {
@@ -169,32 +168,6 @@ int main(int argc, char** argv) {
   } else {
     g_root = ".";
   }
-  // gpr_log(GPR_INFO, "##### g_root = %s", g_root.c_str());
-  // g_root = "test/cpp/util";
-
-  // char* test_srcdir = gpr_getenv("TEST_SRCDIR");
-  // gpr_log(GPR_INFO, "##### env TEST_SRCDIR = %s", test_srcdir);
-  // gpr_free(test_srcdir);
-
-  // gpr_log(GPR_INFO, "##### Current directory - pwd");
-  // system("pwd");
-  // gpr_log(GPR_INFO, "##### 0th level files - ls .");
-  // system("ls -l");
-  // gpr_log(GPR_INFO, "@@@@@ 1th level files - ls cmake");
-  // system("ls -l cmake");
-  // gpr_log(GPR_INFO, "$$$$$ 2nd level files - ls cmake/build");
-  // system("ls -l cmake/build");
-  // gpr_log(GPR_INFO, "&&&&& 3rd level files - ls cmake/build/gens");
-  // system("ls -l cmake/build/gens");
-  // gpr_log(GPR_INFO, "&&&&& 3rd level files - ls test/cpp/util");
-  // system("ls -l test/cpp/util");
-  // gpr_log(GPR_INFO, "##### seach by locate");
-  // system("locate channelz_sampler");
-  // gpr_log(GPR_INFO, "##### find channelz_sampler");
-  // system("find . -name channelz_sampler");
-  // gpr_log(GPR_INFO, "##### find channelz_sampler_test");
-  // system("find . -name channelz_sampler_test");
-
   int ret = RUN_ALL_TESTS();
   return ret;
 }
