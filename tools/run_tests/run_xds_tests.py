@@ -1717,25 +1717,20 @@ try:
             else:
                 metadata_to_send = '--metadata=""'
 
-            if test_case in _TESTS_TO_FAIL_ON_RPC_FAILURE:
-                # TODO(ericgribkoff) Unconditional wait is recommended by TD
-                # team when reusing backend resources after config changes
-                # between test cases, as we are doing here. This should address
-                # flakiness issues with these tests; other attempts to deflake
-                # (such as waiting for the first successful RPC before failing
-                # on any subsequent failures) were insufficient because, due to
-                # propagation delays, we may initially see an RPC succeed to the
-                # expected backends but due to a stale configuration: e.g., test
-                # A (1) routes traffic to MIG A, then (2) switches to MIG B,
-                # then (3) back to MIG A. Test B begins running and sees RPCs
-                # going to MIG A, as expected. However, due to propagation
-                # delays, Test B is actually seeing the stale config from step
-                # (1), and then fails when it gets update (2) unexpectedly
-                # switching to MIG B.
-                time.sleep(200)
-                fail_on_failed_rpc = '--fail_on_failed_rpc=true'
-            else:
-                fail_on_failed_rpc = '--fail_on_failed_rpc=false'
+            # TODO(ericgribkoff) Temporarily disable fail_on_failed_rpc checks
+            # in the client. This means we will ignore intermittent RPC
+            # failures (but this framework still checks that the final result
+            # is as expected).
+            #
+            # Reason for disabling this is, the resources are shared by
+            # multiple tests, and a change in previous test could be delayed
+            # until the second test starts. The second test may see
+            # intermittent failures because of that.
+            #
+            # A fix is to not share resources between tests (though that does
+            # mean the tests will be significantly slower due to creating new
+            # resources).
+            fail_on_failed_rpc = ''
 
             client_cmd_formatted = args.client_cmd.format(
                 server_uri=server_uri,
