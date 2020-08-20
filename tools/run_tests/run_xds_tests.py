@@ -546,12 +546,30 @@ def test_remove_instance_group(gcp, backend_service, instance_group,
         instance_names = get_instance_names(gcp, instance_group)
         same_zone_instance_names = get_instance_names(gcp,
                                                       same_zone_instance_group)
-        wait_until_all_rpcs_go_to_given_backends(
-            instance_names + same_zone_instance_names, _WAIT_FOR_BACKEND_SEC)
+        try:
+            wait_until_all_rpcs_go_to_given_backends(
+                instance_names + same_zone_instance_names,
+                _WAIT_FOR_OPERATION_SEC)
+            remaining_instance_group = same_zone_instance_group
+            remaining_instance_names = same_zone_instance_names
+        except RpcDistributionError as e:
+            # If connected to TD in a different zone, we may route traffic to
+            # only one instance group. Determine which group that is to continue
+            # with the remainder of the test case.
+            try:
+                wait_until_all_rpcs_go_to_given_backends(
+                    instance_names, _WAIT_FOR_STATS_SEC)
+                remaining_instance_group = same_zone_instance_group
+                remaining_instance_names = same_zone_instance_names
+            except RpcDistributionError as e:
+                wait_until_all_rpcs_go_to_given_backends(
+                    same_zone_instance_names, _WAIT_FOR_STATS_SEC)
+                remaining_instance_group = instance_group
+                remaining_instance_names = instance_names
         patch_backend_instances(gcp,
-                                backend_service, [same_zone_instance_group],
+                                backend_service, [remaining_instance_group],
                                 balancing_mode='RATE')
-        wait_until_all_rpcs_go_to_given_backends(same_zone_instance_names,
+        wait_until_all_rpcs_go_to_given_backends(remaining_instance_names,
                                                  _WAIT_FOR_BACKEND_SEC)
     finally:
         patch_backend_instances(gcp, backend_service, [instance_group])
