@@ -1811,6 +1811,11 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/xds/xds_channel_args.h",
+        "src/core/lib/security/certificate_provider/config.h",
+        "src/core/lib/security/certificate_provider/factory.h",
+        "src/core/lib/security/certificate_provider/provider.h",
+        "src/core/lib/security/certificate_provider/registry.h",
+        "src/core/lib/security/certificate_provider/store.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
