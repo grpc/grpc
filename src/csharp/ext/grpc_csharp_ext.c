@@ -1114,14 +1114,12 @@ grpcsharp_ssl_server_credentials_create_options_using_config(
       client_certificate_request, certificate_config);
 }
 
-grpc_ssl_server_certificate_config_callback saved_cb = NULL;
-
 // Definition of grpcsharp_ssl_server_certificate_config_callback_handler
 // needs to be the same as the definition of the callback.
 static grpc_ssl_certificate_config_reload_status
 grpcsharp_ssl_server_certificate_config_callback_handler(
     void* user_data, grpc_ssl_server_certificate_config** config) {
-  return native_callback_dispatcher(saved_cb, user_data, (void**)config, NULL,
+  return native_callback_dispatcher(user_data, (void**)config, NULL, NULL,
                                     NULL, NULL, NULL);
 }
 
@@ -1129,10 +1127,10 @@ GPR_EXPORT grpc_ssl_server_credentials_options* GPR_CALLTYPE
 grpcsharp_ssl_server_credentials_create_options_using_config_fetcher(
     grpc_ssl_client_certificate_request_type client_certificate_request,
     grpc_ssl_server_certificate_config_callback cb, void* user_data) {
-  saved_cb = cb;
+  // Passing cb as user_data. Disregarding user_data. TODO: remove user_data.
   return grpc_ssl_server_credentials_create_options_using_config_fetcher(
       client_certificate_request,
-      grpcsharp_ssl_server_certificate_config_callback_handler, user_data);
+      grpcsharp_ssl_server_certificate_config_callback_handler, cb);
 }
 
 GPR_EXPORT void GPR_CALLTYPE

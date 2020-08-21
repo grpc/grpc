@@ -41,10 +41,10 @@ namespace Grpc.Core.Internal
 
         private int HandleUniversalCallback(IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
         {
-            return ServerCertificateConfigCallback(arg0, arg1);
+            return ServerCertificateConfigCallback(arg0);
         }
 
-        private int ServerCertificateConfigCallback(IntPtr arg0, IntPtr arg1)
+        private int ServerCertificateConfigCallback(IntPtr arg0)
         {
             try
             {
@@ -53,12 +53,7 @@ namespace Grpc.Core.Internal
 
                 // Write the pointer to the certificate to the location where arg1 is pointing to:
                 ServerCertificateConfigSafeHandle nativeServerCertificateConfig = serverCertificateConfig.ToNative();
-                Native.grpcsharp_write_ssl_server_certificate_config_to_pointer(arg1, nativeServerCertificateConfig);
-
-                // Perhaps the pointer arithmetic should be done in Native should be done in CLR:
-                    //GCHandle handle = GCHandle.Alloc(nativeServerCertificateConfig);
-                    //IntPtr pointerToNativeHandle = GCHandle.ToIntPtr(handle);
-                    //Marshal.WriteIntPtr(arg1, pointerToNativeHandle);
+                Native.grpcsharp_write_ssl_server_certificate_config_to_pointer(arg0, nativeServerCertificateConfig);
 
                 // We could somehow retrieve the old cert config and compare instead of passing .New unconditinally.
                 return (int)SslCertificateConfigReloadStatus.New;
