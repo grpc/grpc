@@ -14,20 +14,23 @@
 
 import sys
 
+_REQUIRED_SYMBOLS = ("_protos", "_services", "_protos_and_services")
+
 
 def _uninstalled_protos(*args, **kwargs):
     raise NotImplementedError(
-        "Install the grpcio-tools package to use the protos function.")
+        "Install grpcio-tools package (1.32.0+) to use the protos function.")
 
 
 def _uninstalled_services(*args, **kwargs):
     raise NotImplementedError(
-        "Install the grpcio-tools package to use the services function.")
+        "Install the grpcio-tools (1.32.0+) package to use the services function."
+    )
 
 
 def _uninstalled_protos_and_services(*args, **kwargs):
     raise NotImplementedError(
-        "Install the grpcio-tools package to use the protos_and_services function."
+        "Install the grpcio-tools package (1.32.0+) to use the protos_and_services function."
     )
 
 
@@ -156,6 +159,12 @@ else:
         services = _uninstalled_services
         protos_and_services = _uninstalled_protos_and_services
     else:
-        from grpc_tools.protoc import _protos as protos  # pylint: disable=unused-import
-        from grpc_tools.protoc import _services as services  # pylint: disable=unused-import
-        from grpc_tools.protoc import _protos_and_services as protos_and_services  # pylint: disable=unused-import
+        import grpc_tools.protoc  # pylint: disable=unused-import
+        if all(hasattr(grpc_tools.protoc, sym) for sym in _REQUIRED_SYMBOLS):
+            from grpc_tools.protoc import _protos as protos  # pylint: disable=unused-import
+            from grpc_tools.protoc import _services as services  # pylint: disable=unused-import
+            from grpc_tools.protoc import _protos_and_services as protos_and_services  # pylint: disable=unused-import
+        else:
+            protos = _uninstalled_protos
+            services = _uninstalled_services
+            protos_and_services = _uninstalled_protos_and_services
