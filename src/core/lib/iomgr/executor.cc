@@ -470,6 +470,9 @@ void Executor::SetThreadingDefault(bool enable) {
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->SetThreading(enable);
 }
 
-void grpc_executor_global_init() { gpr_tls_init(&g_this_thread_state); }
+void grpc_executor_global_init() {
+  gpr_tls_init(&g_this_thread_state);
+  gpr_tls_init(&g_this_thread_is_executor_thread);
+}
 
 }  // namespace grpc_core

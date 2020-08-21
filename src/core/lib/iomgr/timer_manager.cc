@@ -304,6 +304,7 @@ void grpc_timer_manager_init(void) {
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv_wait);
   gpr_cv_init(&g_cv_shutdown);
+  gpr_tls_init(&g_this_thread_is_timer_thread);
   g_threaded = false;
   g_thread_count = 0;
   g_waiter_count = 0;
@@ -345,6 +346,7 @@ bool grpc_timer_manager_current_thread_can_shutdown(void) {
 void grpc_timer_manager_shutdown(void) {
   stop_threads();
 
+  gpr_tls_destroy(&g_this_thread_is_timer_thread);
   gpr_mu_destroy(&g_mu);
   gpr_cv_destroy(&g_cv_wait);
   gpr_cv_destroy(&g_cv_shutdown);
