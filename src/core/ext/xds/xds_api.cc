@@ -1746,6 +1746,12 @@ grpc_error* CdsResponseParse(
         expected_cluster_names.end()) {
       continue;
     }
+    // Fail on duplicate resources.
+    if (cds_update_map->find(cluster_name) != cds_update_map->end()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate resource name \"", cluster_name, "\"")
+              .c_str());
+    }
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType not found.");
@@ -1933,14 +1939,19 @@ grpc_error* EdsResponseParse(
           "Can't parse cluster_load_assignment.");
     }
     MaybeLogClusterLoadAssignment(client, tracer, cluster_load_assignment);
-    // Check the cluster name (which actually means eds_service_name). Ignore
-    // unexpected names.
+    // Check the EDS service name.  Ignore unexpected names.
     std::string eds_service_name = UpbStringToStdString(
         envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(
             cluster_load_assignment));
     if (expected_eds_service_names.find(eds_service_name) ==
         expected_eds_service_names.end()) {
       continue;
+    }
+    // Fail on duplicate resources.
+    if (eds_update_map->find(eds_service_name) != eds_update_map->end()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate resource name \"", eds_service_name, "\"")
+              .c_str());
     }
     // Get the endpoints.
     size_t locality_size;
