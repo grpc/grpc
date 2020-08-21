@@ -51,15 +51,20 @@ struct grpc_tls_certificate_distributor
         absl::optional<PemKeyCertPairList> key_cert_pairs) = 0;
 
     // Handles an error that occurs while attempting to fetch certificate data.
-    // Note that if a watcher sees an error, it simply means the Provider is having problems renewing new data.
-    // If the watcher has previously received several OnCertificatesChanged, all the data
-    // received from that function is valid old data. In that case, watcher might simply log the error.
-    // If the watcher hasn't received any OnCertificatesChanged before error occurs, this means no valid data yet, and the watcher should either fail or "waiting" for the valid data
-    // in a non-blocking way.
+    // Note that if a watcher sees an error, it simply means the Provider is
+    // having problems renewing new data. If the watcher has previously received
+    // several OnCertificatesChanged, all the data received from that function
+    // is valid old data. In that case, watcher might simply log the error. If
+    // the watcher hasn't received any OnCertificatesChanged before error
+    // occurs, this means no valid data yet, and the watcher should either fail
+    // or "waiting" for the valid data in a non-blocking way.
     //
-    // @param root_cert_error the error occurred while reloading root certificates.
-    // @param root_cert_error the error occurred while reloading root certificates.
-    virtual void OnError(grpc_error* root_cert_error, grpc_error* identity_cert_error) = 0;
+    // @param root_cert_error the error occurred while reloading root
+    // certificates.
+    // @param root_cert_error the error occurred while reloading root
+    // certificates.
+    virtual void OnError(grpc_error* root_cert_error,
+                         grpc_error* identity_cert_error) = 0;
   };
 
   // Sets the key materials based on their certificate name. Note that we are
@@ -91,9 +96,13 @@ struct grpc_tls_certificate_distributor
   //
   // @param cert_name The watching cert name of the watchers that the caller
   // wants to notify when encountering error.
-  // @param root_cert_error The error that the caller encounters when reloading root certs.
-  // @param identity_cert_error The error that the caller encounters when reloading identity certs.
-  void SetErrorForCert(const std::string& cert_name, grpc_error* root_cert_error, grpc_error* identity_cert_error);
+  // @param root_cert_error The error that the caller encounters when reloading
+  // root certs.
+  // @param identity_cert_error The error that the caller encounters when
+  // reloading identity certs.
+  void SetErrorForCert(const std::string& cert_name,
+                       grpc_error* root_cert_error,
+                       grpc_error* identity_cert_error);
 
   // Propagates the error that the caller (e.g. Producer) encounters to all
   // watchers.
@@ -105,24 +114,30 @@ struct grpc_tls_certificate_distributor
   // grpc_tls_certificate_distributor will invoke this callback when a new
   // certificate name is watched by a newly registered watcher, or when a
   // certificate name is no longer watched by any watchers.
-  // Note that when the callback shows a cert is no longer being watched, the distributor will delete the corresponding certificate data from its cache. This means that if the callback subsequently says
-  // the same cert is now being watched again, the provider must re-provide the credentials to the distributor.
+  // Note that when the callback shows a cert is no longer being watched, the
+  // distributor will delete the corresponding certificate data from its cache.
+  // This means that if the callback subsequently says the same cert is now
+  // being watched again, the provider must re-provide the credentials to the
+  // distributor.
   // @param callback The callback function being set by the caller, e.g the
   // Producer. Note that this callback will be invoked for each certificate
   // name.
   //
   // For the parameters in the callback function:
   // string_value The name of the certificates being watched.
-  // bool_value_1 If the root certificates with the specific name are being watched.
-  // bool_value_2 If the identity certificates with the specific name are being watched.
+  // bool_value_1 If the root certificates with the specific name are being
+  // watched. bool_value_2 If the identity certificates with the specific name
+  // are being watched.
   void SetWatchStatusCallback(
       std::function<void(std::string, bool, bool)> callback) {
     grpc_core::MutexLock lock(&mu_);
     watch_status_callback_ = callback;
   };
 
-  // Registers a watcher. The caller may keep a raw pointer to the watcher, which may be used only for cancellation. (Because the caller does not own the watcher, the pointer must not be used for any other purpose.)
-  // At least one of root_cert_name and identity_cert_name must be specified.
+  // Registers a watcher. The caller may keep a raw pointer to the watcher,
+  // which may be used only for cancellation. (Because the caller does not own
+  // the watcher, the pointer must not be used for any other purpose.) At least
+  // one of root_cert_name and identity_cert_name must be specified.
   //
   // @param watcher The watcher being registered.
   // @param root_cert_name The name of the root certificates that will be
@@ -149,8 +164,10 @@ struct grpc_tls_certificate_distributor
   };
   // CertificateInfo contains the credential contents and some additional
   // watcher information.
-  // Note that having errors doesn't indicate the corresponding credentials are invalid. For example, if root_cert_error != nullptr but pem_root_certs has value, it simply means an error occurs
-  // while trying to fetch the latest root certs, while pem_root_certs still contains the valid old data.
+  // Note that having errors doesn't indicate the corresponding credentials are
+  // invalid. For example, if root_cert_error != nullptr but pem_root_certs has
+  // value, it simply means an error occurs while trying to fetch the latest
+  // root certs, while pem_root_certs still contains the valid old data.
   struct CertificateInfo {
     // The contents of the root certificates.
     absl::string_view pem_root_certs;
@@ -160,8 +177,9 @@ struct grpc_tls_certificate_distributor
     // This is mainly used for quickly looking up the affected watchers while
     // performing a credential reloading.
     std::set<TlsCertificatesWatcherInterface*> root_cert_watchers;
-    // The set of watchers watching identity certificates. This is mainly used for quickly looking up the affected watchers
-    // while performing a credential reloading.
+    // The set of watchers watching identity certificates. This is mainly used
+    // for quickly looking up the affected watchers while performing a
+    // credential reloading.
     std::set<TlsCertificatesWatcherInterface*> identity_cert_watchers;
     // The root cert reloading error propagated by the caller.
     grpc_error* root_cert_error = GRPC_ERROR_NONE;
@@ -173,15 +191,13 @@ struct grpc_tls_certificate_distributor
       GRPC_ERROR_UNREF(identity_cert_error);
     }
     void SetError(grpc_error* new_root_error, grpc_error* new_identity_error) {
-      GPR_ASSERT(new_root_error != GRPC_ERROR_NONE || new_identity_error != GRPC_ERROR_NONE);
-      gpr_log(GPR_ERROR, "%s", "called once");
+      GPR_ASSERT(new_root_error != GRPC_ERROR_NONE ||
+                 new_identity_error != GRPC_ERROR_NONE);
       if (new_root_error != GRPC_ERROR_NONE) {
-        gpr_log(GPR_ERROR, "%s", "this being called");
         GRPC_ERROR_UNREF(root_cert_error);
         root_cert_error = new_root_error;
       }
       if (new_identity_error != GRPC_ERROR_NONE) {
-        gpr_log(GPR_ERROR, "%s", "this  this being called");
         GRPC_ERROR_UNREF(identity_cert_error);
         identity_cert_error = new_identity_error;
       }
@@ -190,9 +206,11 @@ struct grpc_tls_certificate_distributor
       GPR_ASSERT(clear_root || clear_identity);
       if (clear_root) {
         GRPC_ERROR_UNREF(root_cert_error);
+        root_cert_error = GRPC_ERROR_NONE;
       }
       if (clear_identity) {
         GRPC_ERROR_UNREF(identity_cert_error);
+        identity_cert_error = GRPC_ERROR_NONE;
       }
     }
   };
@@ -207,7 +225,8 @@ struct grpc_tls_certificate_distributor
   // changed.
   // @param watchers A reference to watchers_.
   // @param certificate_info_map A reference to certificate_info_map_.
-  void CertificatesUpdated(const std::string& cert_name, bool root_cert_changed, bool identity_cert_changed);
+  void CertificatesUpdated(const std::string& cert_name, bool root_cert_changed,
+                           bool identity_cert_changed);
 
   grpc_core::Mutex mu_;
   // We need a dedicated mutex for watch_status_callback_ for allowing

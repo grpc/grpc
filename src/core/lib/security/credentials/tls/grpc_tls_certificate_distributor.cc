@@ -24,8 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "src/core/lib/slice/slice_internal.h"
-
 void grpc_tls_certificate_distributor::SetKeyMaterials(
     const std::string& cert_name, absl::string_view pem_root_certs,
     PemKeyCertPairList pem_key_cert_pairs) {
@@ -69,53 +67,44 @@ bool grpc_tls_certificate_distributor::HasKeyCertPairs(
          !it->second.pem_key_cert_pairs.empty();
 };
 
-void grpc_tls_certificate_distributor::SetErrorForCert(const std::string& cert_name, grpc_error* root_cert_error, grpc_error* identity_cert_error) {
-  GPR_ASSERT(root_cert_error != GRPC_ERROR_NONE || identity_cert_error != GRPC_ERROR_NONE);
-  gpr_log(GPR_ERROR, "%s", "hereherehere");
+void grpc_tls_certificate_distributor::SetErrorForCert(
+    const std::string& cert_name, grpc_error* root_cert_error,
+    grpc_error* identity_cert_error) {
+  GPR_ASSERT(root_cert_error != GRPC_ERROR_NONE ||
+             identity_cert_error != GRPC_ERROR_NONE);
   CertificateInfo& cert_info = certificate_info_map_[cert_name];
-  cert_info.SetError(GRPC_ERROR_REF(root_cert_error), GRPC_ERROR_REF(identity_cert_error));
+  cert_info.SetError(GRPC_ERROR_REF(root_cert_error),
+                     GRPC_ERROR_REF(identity_cert_error));
   if (root_cert_error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "%s", "shoudn't call this line");
     for (const auto watcher_ptr : cert_info.root_cert_watchers) {
       const auto watcher_it = watchers_.find(watcher_ptr);
-      // If the watcher's root cert name is also cert_name, we'll invoke the callback and update certificate_info_map_ for both certs.
+      // If the watcher's root cert name is also cert_name, we'll invoke the
+      // callback and update certificate_info_map_ for both certs.
       if (watcher_it != watchers_.end() &&
           watcher_it->second.root_cert_name.has_value() &&
           *watcher_it->second.root_cert_name == cert_name) {
-        gpr_log(GPR_ERROR, "%s", "here");
-        GPR_ASSERT(root_cert_error != GRPC_ERROR_NONE || identity_cert_error != GRPC_ERROR_NONE);
-        gpr_log(GPR_ERROR, "%s", "now I am here");
-        watcher_ptr->OnError(GRPC_ERROR_REF(root_cert_error), GRPC_ERROR_REF(identity_cert_error));
+        GPR_ASSERT(root_cert_error != GRPC_ERROR_NONE ||
+                   identity_cert_error != GRPC_ERROR_NONE);
+        watcher_ptr->OnError(GRPC_ERROR_REF(root_cert_error),
+                             GRPC_ERROR_REF(identity_cert_error));
       }
     }
   }
   if (identity_cert_error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "%s", "should call this line");
     for (const auto watcher_ptr : cert_info.identity_cert_watchers) {
-      gpr_log(GPR_ERROR, "%s", "should in this loop");
       const auto watcher_it = watchers_.find(watcher_ptr);
       // If the watcher's root cert name is also cert_name, we already invoked
-      // the watcher's OnError and updated certificate_info_map_ when checking root_cert_error, so we will skip
-      // here.
+      // the watcher's OnError and updated certificate_info_map_ when checking
+      // root_cert_error, so we will skip here.
       if (watcher_it != watchers_.end() &&
           watcher_it->second.root_cert_name.has_value() &&
           *watcher_it->second.root_cert_name == cert_name) {
         continue;
       }
-      watcher_ptr->OnError(GRPC_ERROR_REF(root_cert_error), GRPC_ERROR_REF(identity_cert_error));
+      watcher_ptr->OnError(GRPC_ERROR_REF(root_cert_error),
+                           GRPC_ERROR_REF(identity_cert_error));
     }
   }
-
-
-
-
-
-
-
-
-
-
-
   GRPC_ERROR_UNREF(root_cert_error);
   GRPC_ERROR_UNREF(identity_cert_error);
 };
@@ -126,8 +115,11 @@ void grpc_tls_certificate_distributor::SetError(grpc_error* error) {
     const auto watcher_ptr = watcher.first;
     GPR_ASSERT(watcher_ptr != nullptr);
     const auto& watcher_info = watcher.second;
-    gpr_log(GPR_ERROR, "%s", "watcher info:");
-    watcher_ptr->OnError(watcher_info.root_cert_name.has_value() ? GRPC_ERROR_REF(error) : GRPC_ERROR_NONE, watcher_info.identity_cert_name.has_value() ? GRPC_ERROR_REF(error) : GRPC_ERROR_NONE);
+    watcher_ptr->OnError(
+        watcher_info.root_cert_name.has_value() ? GRPC_ERROR_REF(error)
+                                                : GRPC_ERROR_NONE,
+        watcher_info.identity_cert_name.has_value() ? GRPC_ERROR_REF(error)
+                                                    : GRPC_ERROR_NONE);
   }
   for (auto& cert_info_entry : certificate_info_map_) {
     auto& cert_info = cert_info_entry.second;
@@ -147,12 +139,12 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
   // Update watchers_ and certificate_info_map_.
   {
     grpc_core::MutexLock lock(&mu_);
-    gpr_log(GPR_ERROR, "%s", "in watch");
     GPR_ASSERT(root_cert_name.has_value() || identity_cert_name.has_value());
     TlsCertificatesWatcherInterface* watcher_ptr = watcher.get();
     GPR_ASSERT(watcher_ptr != nullptr);
     const auto watcher_it = watchers_.find(watcher_ptr);
-    // The caller needs to cancel the watcher first if it wants to re-register the watcher.
+    // The caller needs to cancel the watcher first if it wants to re-register
+    // the watcher.
     GPR_ASSERT(watcher_it == watchers_.end());
     watchers_[watcher_ptr] = {std::move(watcher), root_cert_name,
                               identity_cert_name};
@@ -161,56 +153,50 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     grpc_error* root_error = GRPC_ERROR_NONE;
     grpc_error* identity_error = GRPC_ERROR_NONE;
     if (root_cert_name.has_value()) {
-      gpr_log(GPR_ERROR, "%s", "in root");
       CertificateInfo& cert_info = certificate_info_map_[*root_cert_name];
       start_watching_root_cert = cert_info.root_cert_watchers.empty();
-      already_watching_identity_for_root_cert = !cert_info.identity_cert_watchers.empty();
+      already_watching_identity_for_root_cert =
+          !cert_info.identity_cert_watchers.empty();
       cert_info.root_cert_watchers.insert(watcher_ptr);
       root_error = GRPC_ERROR_REF(cert_info.root_cert_error);
       updated_root_certs = cert_info.pem_root_certs;
-      gpr_log(GPR_ERROR, "%d", cert_info.root_cert_error == GRPC_ERROR_NONE);
-      gpr_log(GPR_ERROR, "%d", cert_info.root_cert_error == GRPC_ERROR_NONE);
     }
     if (identity_cert_name.has_value()) {
       CertificateInfo& cert_info = certificate_info_map_[*identity_cert_name];
       start_watching_identity_cert = cert_info.identity_cert_watchers.empty();
-      already_watching_root_for_identity_cert = !cert_info.root_cert_watchers.empty();
+      already_watching_root_for_identity_cert =
+          !cert_info.root_cert_watchers.empty();
       cert_info.identity_cert_watchers.insert(watcher_ptr);
       identity_error = GRPC_ERROR_REF(cert_info.identity_cert_error);
       updated_identity_pairs = cert_info.pem_key_cert_pairs;
-
-
-      gpr_log(GPR_ERROR, "%d", cert_info.identity_cert_error == GRPC_ERROR_NONE);
-
-
-//      grpc_slice error_slice;
-//      GPR_ASSERT(grpc_error_get_str(cert_info.identity_cert_error, GRPC_ERROR_STR_DESCRIPTION, &error_slice));
-//      std::string error_str = std::string(grpc_core::StringViewFromSlice(error_slice));
-//      gpr_log(GPR_ERROR, "in id: %s", error_str.c_str());
     }
-    // Notify this watcher if the certs it is watching already had some contents.
-    // Note that an *_cert_error in cert_info only indicates error occurred while trying to fetch the latest cert, but the updated_*_certs should always be valid. So we will
-    // send the updates regardless of *_cert_error.
+    // Notify this watcher if the certs it is watching already had some
+    // contents. Note that an *_cert_error in cert_info only indicates error
+    // occurred while trying to fetch the latest cert, but the updated_*_certs
+    // should always be valid. So we will send the updates regardless of
+    // *_cert_error.
     if (!updated_root_certs.empty() && !updated_identity_pairs.empty()) {
-      watcher_ptr->OnCertificatesChanged(updated_root_certs, updated_identity_pairs);
+      watcher_ptr->OnCertificatesChanged(updated_root_certs,
+                                         updated_identity_pairs);
     } else {
       if (!updated_root_certs.empty()) {
         watcher_ptr->OnCertificatesChanged(updated_root_certs, absl::nullopt);
       }
       if (!updated_identity_pairs.empty()) {
-        watcher_ptr->OnCertificatesChanged(absl::nullopt, updated_identity_pairs);
+        watcher_ptr->OnCertificatesChanged(absl::nullopt,
+                                           updated_identity_pairs);
       }
     }
     // Notify this watcher if the certs it is watching already had some errors.
     if (root_error != GRPC_ERROR_NONE || identity_error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "%s", "2");
-      watcher_ptr->OnError(GRPC_ERROR_REF(root_error), GRPC_ERROR_REF(identity_error));
+      watcher_ptr->OnError(GRPC_ERROR_REF(root_error),
+                           GRPC_ERROR_REF(identity_error));
     }
     GRPC_ERROR_UNREF(root_error);
     GRPC_ERROR_UNREF(identity_error);
   }
   // Invoke watch status callback if needed.
-  if (watch_status_callback_ != nullptr){
+  if (watch_status_callback_ != nullptr) {
     grpc_core::MutexLock lock(&callback_mu_);
     if (root_cert_name == identity_cert_name &&
         (start_watching_root_cert || start_watching_identity_cert)) {
@@ -252,8 +238,11 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
       CertificateInfo& cert_info = it->second;
       cert_info.root_cert_watchers.erase(watcher);
       stop_watching_root_cert = cert_info.root_cert_watchers.empty();
-      already_watching_identity_for_root_cert = !cert_info.identity_cert_watchers.empty();
-      if (stop_watching_root_cert && !already_watching_identity_for_root_cert && cert_info.root_cert_error == GRPC_ERROR_NONE && cert_info.identity_cert_error == GRPC_ERROR_NONE) {
+      already_watching_identity_for_root_cert =
+          !cert_info.identity_cert_watchers.empty();
+      if (stop_watching_root_cert && !already_watching_identity_for_root_cert &&
+          cert_info.root_cert_error == GRPC_ERROR_NONE &&
+          cert_info.identity_cert_error == GRPC_ERROR_NONE) {
         certificate_info_map_.erase(it);
       }
     }
@@ -263,8 +252,12 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
       CertificateInfo& cert_info = it->second;
       cert_info.identity_cert_watchers.erase(watcher);
       stop_watching_identity_cert = cert_info.identity_cert_watchers.empty();
-      already_watching_root_for_identity_cert = !cert_info.root_cert_watchers.empty();
-      if (stop_watching_identity_cert && !already_watching_root_for_identity_cert && cert_info.root_cert_error == GRPC_ERROR_NONE && cert_info.identity_cert_error == GRPC_ERROR_NONE) {
+      already_watching_root_for_identity_cert =
+          !cert_info.root_cert_watchers.empty();
+      if (stop_watching_identity_cert &&
+          !already_watching_root_for_identity_cert &&
+          cert_info.root_cert_error == GRPC_ERROR_NONE &&
+          cert_info.identity_cert_error == GRPC_ERROR_NONE) {
         certificate_info_map_.erase(it);
       }
     }
@@ -289,13 +282,16 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
   }
 };
 
-void grpc_tls_certificate_distributor::CertificatesUpdated(const std::string& cert_name, bool root_cert_changed, bool identity_cert_changed) {
+void grpc_tls_certificate_distributor::CertificatesUpdated(
+    const std::string& cert_name, bool root_cert_changed,
+    bool identity_cert_changed) {
   GPR_ASSERT(root_cert_changed || identity_cert_changed);
   const auto it = certificate_info_map_.find(cert_name);
   GPR_ASSERT(it != certificate_info_map_.end());
   CertificateInfo& cert_info = it->second;
   // Go through each affected watchers and invoke OnCertificatesChanged.
   if (root_cert_changed) {
+    cert_info.ClearError(true, false);
     for (const auto watcher_ptr : cert_info.root_cert_watchers) {
       GPR_ASSERT(watcher_ptr != nullptr);
       const auto watcher_it = watchers_.find(watcher_ptr);
@@ -308,7 +304,6 @@ void grpc_tls_certificate_distributor::CertificatesUpdated(const std::string& ce
             cert_name == *watcher_it->second.identity_cert_name) {
           watcher_ptr->OnCertificatesChanged(cert_info.pem_root_certs,
                                              cert_info.pem_key_cert_pairs);
-          cert_info.ClearError(true, true);
           continue;
         }
         // Find the contents of the identity certs this watcher is watching,
@@ -317,16 +312,17 @@ void grpc_tls_certificate_distributor::CertificatesUpdated(const std::string& ce
             certificate_info_map_.find(*watcher_it->second.identity_cert_name);
         if (cert_info_map_it != certificate_info_map_.end()) {
           watcher_ptr->OnCertificatesChanged(
-              cert_info.pem_root_certs, cert_info_map_it->second.pem_key_cert_pairs);
-          cert_info.ClearError(true, false);
+              cert_info.pem_root_certs,
+              cert_info_map_it->second.pem_key_cert_pairs);
           continue;
         }
       }
-      watcher_ptr->OnCertificatesChanged(cert_info.pem_root_certs, absl::nullopt);
-      cert_info.ClearError(true, false);
+      watcher_ptr->OnCertificatesChanged(cert_info.pem_root_certs,
+                                         absl::nullopt);
     }
   }
   if (identity_cert_changed) {
+    cert_info.ClearError(false, true);
     for (const auto watcher_ptr : cert_info.identity_cert_watchers) {
       GPR_ASSERT(watcher_ptr != nullptr);
       const auto watcher_it = watchers_.find(watcher_ptr);
@@ -334,8 +330,8 @@ void grpc_tls_certificate_distributor::CertificatesUpdated(const std::string& ce
       GPR_ASSERT(watcher_it->second.identity_cert_name.has_value());
       if (watcher_it->second.root_cert_name.has_value()) {
         // If the root certs this watcher is watching are just the one we are
-        // updating, we already invoked OnCertificatesChanged and cleared the error when checking
-        // root_cert_name, so we will skip here.
+        // updating, we already invoked OnCertificatesChanged and cleared the
+        // error when checking root_cert_name, so we will skip here.
         if (root_cert_changed &&
             cert_name == *watcher_it->second.root_cert_name) {
           continue;
@@ -346,13 +342,13 @@ void grpc_tls_certificate_distributor::CertificatesUpdated(const std::string& ce
             certificate_info_map_.find(*watcher_it->second.root_cert_name);
         if (cert_info_map_it != certificate_info_map_.end()) {
           watcher_ptr->OnCertificatesChanged(
-              cert_info_map_it->second.pem_root_certs, cert_info.pem_key_cert_pairs);
-          cert_info.ClearError(false, true);
+              cert_info_map_it->second.pem_root_certs,
+              cert_info.pem_key_cert_pairs);
           continue;
         }
       }
-      watcher_ptr->OnCertificatesChanged(absl::nullopt, cert_info.pem_key_cert_pairs);
-      cert_info.ClearError(false, true);
+      watcher_ptr->OnCertificatesChanged(absl::nullopt,
+                                         cert_info.pem_key_cert_pairs);
     }
   }
 };
