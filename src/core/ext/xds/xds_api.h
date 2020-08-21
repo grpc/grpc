@@ -295,12 +295,11 @@ class XdsApi {
 
   // Creates an ADS request.
   // Takes ownership of \a error.
-  grpc_slice CreateAdsRequest(
-      const std::string& type_url,
-      const std::set<absl::string_view>& resource_names,
-      const std::string& version, const std::string& nonce, grpc_error* error,
-      bool populate_node,
-      const std::vector<grpc_resolved_address>& listening_addresses);
+  grpc_slice CreateAdsRequest(const std::string& type_url,
+                              const std::set<absl::string_view>& resource_names,
+                              const std::string& version,
+                              const std::string& nonce, grpc_error* error,
+                              bool populate_node);
 
   // Parses an ADS response.
   // If the response can't be parsed at the top level, the resulting
