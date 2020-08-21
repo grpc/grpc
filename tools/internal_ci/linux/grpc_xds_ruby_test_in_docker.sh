@@ -46,6 +46,18 @@ touch "$TOOLS_DIR"/src/proto/grpc/testing/__init__.py
     "$PROTO_SOURCE_DIR"/messages.proto \
     "$PROTO_SOURCE_DIR"/empty.proto
 
+HEALTH_PROTO_SOURCE_DIR=src/proto/grpc/health/v1
+HEALTH_PROTO_DEST_DIR=${TOOLS_DIR}/${HEALTH_PROTO_SOURCE_DIR}
+mkdir -p ${HEALTH_PROTO_DEST_DIR}
+touch "$TOOLS_DIR"/src/proto/grpc/health/__init__.py
+touch "$TOOLS_DIR"/src/proto/grpc/health/v1/__init__.py
+
+"$PYTHON" -m grpc_tools.protoc \
+    --proto_path=. \
+    --python_out=${TOOLS_DIR} \
+    --grpc_python_out=${TOOLS_DIR} \
+    ${HEALTH_PROTO_SOURCE_DIR}/health.proto
+
 (cd src/ruby && bundle && rake compile)
 
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_routing_lb,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \

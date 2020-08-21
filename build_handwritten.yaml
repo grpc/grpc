@@ -196,7 +196,7 @@ configs:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
 defaults:
   abseil:
-    CPPFLAGS: -g -maes -msse4 -Ithird_party/abseil-cpp
+    CPPFLAGS: -g $(ABSL_RANDOM_HWAES_FLAGS) -Ithird_party/abseil-cpp
   ares:
     CFLAGS: -g
     CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE
@@ -215,7 +215,7 @@ defaults:
     CFLAGS: -g
     COREFLAGS: -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2
-      -Ithird_party/upb -Isrc/core/ext/upb-generated
+      -Ithird_party/upb -Isrc/core/ext/upb-generated -Isrc/core/ext/upbdefs-generated
     LDFLAGS: -g
   zlib:
     CFLAGS: -fvisibility=hidden

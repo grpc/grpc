@@ -1786,8 +1786,9 @@ grpc_error* CdsResponseParse(
     }
     // Fail on duplicate resources.
     if (cds_update_map->find(cluster_name) != cds_update_map->end()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
-          "duplicate resource name \"", cluster_name, "\"").c_str());
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate resource name \"", cluster_name, "\"")
+              .c_str());
     }
     XdsApi::CdsUpdate& cds_update = (*cds_update_map)[std::move(cluster_name)];
     // Check the cluster_discovery_type.
@@ -1985,8 +1986,9 @@ grpc_error* EdsResponseParse(
     }
     // Fail on duplicate resources.
     if (eds_update_map->find(eds_service_name) != eds_update_map->end()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
-          "duplicate resource name \"", eds_service_name, "\"").c_str());
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate resource name \"", eds_service_name, "\"")
+              .c_str());
     }
     XdsApi::EdsUpdate& eds_update =
         (*eds_update_map)[std::move(eds_service_name)];

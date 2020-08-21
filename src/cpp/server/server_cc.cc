@@ -295,20 +295,15 @@ class Server::UnimplementedAsyncRequest final
     : private grpc::UnimplementedAsyncRequestContext,
       public GenericAsyncRequest {
  public:
-  UnimplementedAsyncRequest(Server* server, grpc::ServerCompletionQueue* cq)
+  UnimplementedAsyncRequest(ServerInterface* server,
+                            grpc::ServerCompletionQueue* cq)
       : GenericAsyncRequest(server, &server_context_, &generic_stream_, cq, cq,
-                            nullptr, false),
-        server_(server),
-        cq_(cq) {}
+                            nullptr, false) {}
 
   bool FinalizeResult(void** tag, bool* status) override;
 
   grpc::ServerContext* context() { return &server_context_; }
   grpc::GenericServerAsyncReaderWriter* stream() { return &generic_stream_; }
-
- private:
-  Server* const server_;
-  grpc::ServerCompletionQueue* const cq_;
 };
 
 /// UnimplementedAsyncResponse should not post user-visible completions to the
@@ -1320,7 +1315,9 @@ bool Server::UnimplementedAsyncRequest::FinalizeResult(void** tag,
   if (GenericAsyncRequest::FinalizeResult(tag, status)) {
     // We either had no interceptors run or we are done intercepting
     if (*status) {
-      new UnimplementedAsyncRequest(server_, cq_);
+      // Create a new request/response pair using the server and CQ values
+      // stored in this object's base class.
+      new UnimplementedAsyncRequest(server_, notification_cq_);
       new UnimplementedAsyncResponse(this);
     } else {
       delete this;
