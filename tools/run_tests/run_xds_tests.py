@@ -48,7 +48,6 @@ _TEST_CASES = [
     'backends_restart',
     'change_backend_service',
     'gentle_failover',
-    'new_instance_group_receives_traffic',
     'ping_pong',
     'remove_instance_group',
     'round_robin',
@@ -247,9 +246,7 @@ _BOOTSTRAP_TEMPLATE = """
 # TODO(ericgribkoff) Add change_backend_service to this list once TD no longer
 # sends an update with no localities when adding the MIG to the backend service
 # can race with the URL map patch.
-_TESTS_TO_FAIL_ON_RPC_FAILURE = [
-    'new_instance_group_receives_traffic', 'ping_pong', 'round_robin'
-]
+_TESTS_TO_FAIL_ON_RPC_FAILURE = ['ping_pong', 'round_robin']
 # Tests that run UnaryCall and EmptyCall.
 _TESTS_TO_RUN_MULTIPLE_RPCS = ['path_matching', 'header_matching']
 # Tests that make UnaryCall with test metadata.
@@ -496,32 +493,6 @@ def test_gentle_failover(gcp,
         instance_names = get_instance_names(gcp, primary_instance_group)
         wait_until_all_rpcs_go_to_given_backends(instance_names,
                                                  _WAIT_FOR_BACKEND_SEC)
-
-
-def test_new_instance_group_receives_traffic(gcp, backend_service,
-                                             instance_group,
-                                             same_zone_instance_group):
-    logger.info('Running test_new_instance_group_receives_traffic')
-    instance_names = get_instance_names(gcp, instance_group)
-    # TODO(ericgribkoff) Reduce this timeout. When running sequentially, this
-    # occurs after patching the url map in test_change_backend_service, so we
-    # need the extended timeout here as well.
-    wait_until_all_rpcs_go_to_given_backends(instance_names,
-                                             _WAIT_FOR_URL_MAP_PATCH_SEC)
-    try:
-        patch_backend_instances(gcp,
-                                backend_service,
-                                [instance_group, same_zone_instance_group],
-                                balancing_mode='RATE')
-        wait_for_healthy_backends(gcp, backend_service, instance_group)
-        wait_for_healthy_backends(gcp, backend_service,
-                                  same_zone_instance_group)
-        combined_instance_names = instance_names + get_instance_names(
-            gcp, same_zone_instance_group)
-        wait_until_all_rpcs_go_to_given_backends(combined_instance_names,
-                                                 _WAIT_FOR_BACKEND_SEC)
-    finally:
-        patch_backend_instances(gcp, backend_service, [instance_group])
 
 
 def test_ping_pong(gcp, backend_service, instance_group):
@@ -1817,10 +1788,6 @@ try:
                 elif test_case == 'gentle_failover':
                     test_gentle_failover(gcp, backend_service, instance_group,
                                          secondary_zone_instance_group)
-                elif test_case == 'new_instance_group_receives_traffic':
-                    test_new_instance_group_receives_traffic(
-                        gcp, backend_service, instance_group,
-                        same_zone_instance_group)
                 elif test_case == 'ping_pong':
                     test_ping_pong(gcp, backend_service, instance_group)
                 elif test_case == 'remove_instance_group':
