@@ -20,5 +20,5 @@ CLANG_TIDY=${CLANG_TIDY:-clang-tidy}
 
 cd ${CLANG_TIDY_ROOT}
 
-find src/core src/cpp test/core test/cpp ! -path 'src/core/ext/upb-generated/*' -name '*.h' -or -name '*.cc' -print0 \
+find src/core src/cpp test/core test/cpp ! -path 'src/core/ext/upb-generated/*' ! -path 'src/core/ext/upbdefs-generated/*' -name '*.h' -or -name '*.cc' -print0 \
   | xargs -0 tools/distrib/run_clang_tidy.py "$@"
