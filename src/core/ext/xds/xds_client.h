@@ -46,7 +46,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
    public:
     virtual ~ListenerWatcherInterface() = default;
 
-    virtual void OnListenerChanged(XdsApi::LdsUpdate listener_data) = 0;
+    virtual void OnListenerChanged(std::vector<XdsApi::Route> routes) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
 

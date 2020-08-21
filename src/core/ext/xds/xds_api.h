@@ -146,8 +146,9 @@ class XdsApi {
     bool operator==(const RdsUpdate& other) const {
       return virtual_hosts == other.virtual_hosts;
     }
-
-    const VirtualHost* FindVirtualHost(const std::string& domain) const;
+    std::string ToString() const;
+    const VirtualHost* FindVirtualHostForDomain(
+        const std::string& domain) const;
   };
 
   // TODO(roth): When we can use absl::variant<>, consider using that
@@ -155,12 +156,13 @@ class XdsApi {
   struct LdsUpdate {
     // The name to use in the RDS request.
     std::string route_config_name;
-    // The list of routes.  Populated if the LDS response has it inlined.
-    std::vector<Route> routes;
+    // The RouteConfiguration to use for this listener.
+    // Present only if it is inlined in the LDS response.
+    absl::optional<RdsUpdate> rds_update;
 
     bool operator==(const LdsUpdate& other) const {
       return route_config_name == other.route_config_name &&
-             routes == other.routes;
+             rds_update == other.rds_update;
     }
   };
 

@@ -895,11 +895,15 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
-              "[xds_client %p] LDS resource \"%s\": route_config_name=%s, "
-              "routes=%s",
+              "[xds_client %p] LDS resource %s: route_config_name=%s",
               xds_client(), listener_name.c_str(),
-              lds_update.route_config_name.c_str(),
-              lds_update.routes.empty() ? "(N/A)" : "(present)");
+              (!lds_update.route_config_name.empty()
+                   ? lds_update.route_config_name.c_str()
+                   : "<inlined>"));
+      if (lds_update.rds_update.has_value()) {
+        gpr_log(GPR_INFO, "RouteConfiguration: %s",
+                lds_update.rds_update->ToString().c_str());
+      }
     }
     // Update listener_map_ in XdsClient.
     ListenerState& listener_state = xds_client()->listener_map_[listener_name];
@@ -941,9 +945,22 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     // Update the listener state.
     listener_state.update = std::move(lds_update);
     // If the Listener includes the route config, notify all watchers.
-    if (!listener_state.update->routes.empty()) {
-      for (const auto& p : listener_state.watchers) {
-        p.first->OnListenerChanged(*listener_state.update);
+    if (listener_state.update->rds_update.has_value()) {
+      const XdsApi::RdsUpdate::VirtualHost* vhost =
+          listener_state.update->rds_update->FindVirtualHostForDomain(
+              listener_name);
+      if (vhost == nullptr) {
+        grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("No virtual host found in the route config for \"",
+                         listener_name, "\".").c_str());
+        for (const auto& p : listener_state.watchers) {
+          p.first->OnError(GRPC_ERROR_REF(error));
+        }
+        GRPC_ERROR_UNREF(error);
+      } else {
+        for (const auto& p : listener_state.watchers) {
+          p.first->OnListenerChanged(vhost->routes);
+        }
       }
     } else {
       // Otherwise, check the RDS resource.
@@ -953,7 +970,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
       route_config_state.listener_names.insert(listener_name);
       if (route_config_state.update.has_value()) {
         const XdsApi::RdsUpdate::VirtualHost* vhost =
-            route_config_state.update->FindVirtualHost(listener_name);
+            route_config_state.update->FindVirtualHostForDomain(listener_name);
         if (vhost == nullptr) {
           grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
               absl::StrCat("No virtual host found in the route config for \"",
@@ -963,10 +980,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
           }
           GRPC_ERROR_UNREF(error);
         } else {
-          XdsApi::LdsUpdate lds_update;
-          lds_update.routes = vhost->routes;
           for (const auto& p : listener_state.watchers) {
-            p.first->OnListenerChanged(lds_update);
+            p.first->OnListenerChanged(vhost->routes);
           }
         }
       }
@@ -1023,11 +1038,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
     auto& state = rds_state.subscribed_resources[route_config_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-// FIXME: more logging
-      gpr_log(GPR_INFO,
-              "[xds_client %p] RDS response received with %" PRIuPTR
-              " virtual hosts",
-              xds_client(), rds_update.virtual_hosts.size());
+      gpr_log(GPR_INFO, "[xds_client %p] RDS resource:\n%s", xds_client(),
+              rds_update.ToString().c_str());
     }
     RouteConfigState& route_config_state =
         xds_client()->route_config_map_[route_config_name];
@@ -1049,7 +1061,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
       ListenerState& listener_state =
           xds_client()->listener_map_[listener_name];
       const XdsApi::RdsUpdate::VirtualHost* vhost =
-          route_config_state.update->FindVirtualHost(listener_name);
+          route_config_state.update->FindVirtualHostForDomain(listener_name);
       if (vhost == nullptr) {
         grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrCat("No virtual host found for \"", listener_name,
@@ -1060,10 +1072,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
         }
         GRPC_ERROR_UNREF(error);
       } else {
-        XdsApi::LdsUpdate lds_update;
-        lds_update.routes = vhost->routes;
         for (const auto& p : listener_state.watchers) {
-          p.first->OnListenerChanged(lds_update);
+          p.first->OnListenerChanged(vhost->routes);
         }
       }
     }
@@ -1933,9 +1943,19 @@ void XdsClient::WatchListenerData(
       gpr_log(GPR_INFO, "[xds_client %p] returning cached cluster data for %s",
               this, listener_name_str.c_str());
     }
-    if (!listener_state.update->routes.empty()) {
+    if (listener_state.update->rds_update.has_value()) {
       // Inline route config, notify directly.
-      w->OnListenerChanged(listener_state.update.value());
+      const XdsApi::RdsUpdate::VirtualHost* vhost =
+          listener_state.update->rds_update->FindVirtualHostForDomain(
+              listener_name_str);
+      if (vhost == nullptr) {
+        grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("No virtual host found for \"", listener_name,
+                         "\" in route config").c_str());
+        w->OnError(error);
+      } else {
+        w->OnListenerChanged(vhost->routes);
+      }
     } else {
       // Route config needs to be obtained via RDS.  Start watch.
       absl::optional<XdsApi::RdsUpdate> rds_update =
@@ -1944,7 +1964,7 @@ void XdsClient::WatchListenerData(
       if (rds_update.has_value()) {
         // Already have the RDS resource.  Notify immediately.
         const XdsApi::RdsUpdate::VirtualHost* vhost =
-            rds_update->FindVirtualHost(listener_name_str);
+            rds_update->FindVirtualHostForDomain(listener_name_str);
         if (vhost == nullptr) {
           grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
               absl::StrCat("No virtual host found for \"", listener_name,
@@ -1953,9 +1973,7 @@ void XdsClient::WatchListenerData(
                            "\".").c_str());
           w->OnError(error);
         } else {
-          XdsApi::LdsUpdate lds_result;
-          lds_result.routes = vhost->routes;
-          w->OnListenerChanged(std::move(lds_result));
+          w->OnListenerChanged(vhost->routes);
         }
       }
     }
