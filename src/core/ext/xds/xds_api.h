@@ -179,6 +179,12 @@ class XdsApi {
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
+
+    bool operator==(const CdsUpdate& other) const {
+      return eds_service_name == other.eds_service_name &&
+             lrs_load_reporting_server_name ==
+                 other.lrs_load_reporting_server_name;
+    }
   };
 
   using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;
@@ -287,6 +293,13 @@ class XdsApi {
   struct EdsUpdate {
     PriorityListUpdate priority_list_update;
     RefCountedPtr<DropConfig> drop_config;
+
+    bool operator==(const EdsUpdate& other) const {
+      return priority_list_update == other.priority_list_update &&
+             ((drop_config == nullptr && other.drop_config == nullptr) ||
+              (drop_config != nullptr && other.drop_config != nullptr &&
+               *drop_config == *other.drop_config));
+    }
   };
 
   using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;

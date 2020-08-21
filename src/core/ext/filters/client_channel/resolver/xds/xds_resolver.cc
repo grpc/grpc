@@ -70,6 +70,10 @@ class XdsResolver : public Resolver {
       xds_client_->CancelListenerDataWatch(server_name_, listener_watcher_,
                                            /*delay_unsubscription=*/false);
     }
+    if (route_config_watcher_ != nullptr) {
+      xds_client_->CancelRouteConfigDataWatch(
+          server_name_, route_config_watcher_, /*delay_unsubscription=*/false);
+    }
     xds_client_.reset();
   }
 
@@ -78,7 +82,19 @@ class XdsResolver : public Resolver {
    public:
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
-    void OnListenerChanged(std::vector<XdsApi::Route> routes) override;
+    void OnListenerChanged(XdsApi::LdsUpdate listener) override;
+    void OnError(grpc_error* error) override;
+    void OnResourceDoesNotExist() override;
+
+   private:
+    RefCountedPtr<XdsResolver> resolver_;
+  };
+
+  class RouteConfigWatcher : public XdsClient::RouteConfigWatcherInterface {
+   public:
+    explicit RouteConfigWatcher(RefCountedPtr<XdsResolver> resolver)
+        : resolver_(std::move(resolver)) {}
+    void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) override;
     void OnError(grpc_error* error) override;
     void OnResourceDoesNotExist() override;
 
@@ -106,11 +122,17 @@ class XdsResolver : public Resolver {
   grpc_error* CreateServiceConfig(const std::vector<XdsApi::Route>& routes,
                                   RefCountedPtr<ServiceConfig>* service_config);
 
+  void OnError(grpc_error* error);
+  void OnRouteConfigUpdate(std::vector<XdsApi::Route> routes);
+  void OnResourceDoesNotExist();
+
   std::string server_name_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
   XdsClient::ListenerWatcherInterface* listener_watcher_ = nullptr;
+  std::string route_config_name_;
+  XdsClient::RouteConfigWatcherInterface* route_config_watcher_ = nullptr;
   RefCountedPtr<XdsConfigSelector> config_selector_;
 
   // 2-level map to store WeightedCluster action names.
@@ -135,56 +157,81 @@ class XdsResolver : public Resolver {
 //
 
 void XdsResolver::ListenerWatcher::OnListenerChanged(
-    std::vector<XdsApi::Route> routes) {
+    XdsApi::LdsUpdate listener) {
   if (resolver_->xds_client_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data",
             resolver_.get());
   }
-  Result result;
-  grpc_error* error =
-      resolver_->CreateServiceConfig(routes, &result.service_config);
-  if (error != GRPC_ERROR_NONE) {
-    OnError(error);
+  if (listener.route_config_name != resolver_->route_config_name_) {
+    if (resolver_->route_config_watcher_ != nullptr) {
+      resolver_->xds_client_->CancelRouteConfigDataWatch(
+          resolver_->route_config_name_, resolver_->route_config_watcher_,
+          /*delay_unsubscription=*/!listener.route_config_name.empty());
+    }
+    resolver_->route_config_name_ = std::move(listener.route_config_name);
+    if (!listener.route_config_name.empty()) {
+      auto watcher = absl::make_unique<RouteConfigWatcher>(resolver_->Ref());
+      resolver_->route_config_watcher_ = watcher.get();
+      resolver_->xds_client_->WatchRouteConfigData(listener.route_config_name,
+                                                   std::move(watcher));
+    } else {
+      resolver_->route_config_watcher_ = nullptr;
+    }
     return;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-    gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s",
-            resolver_.get(), result.service_config->json_string().c_str());
+  GPR_ASSERT(listener.rds_update.has_value());
+  const XdsApi::RdsUpdate::VirtualHost* vhost =
+      listener.rds_update->FindVirtualHostForDomain(resolver_->server_name_);
+  if (vhost == nullptr) {
+    resolver_->OnError(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("could not find VirtualHost for ", resolver_->server_name_,
+                     " in Listener resource").c_str()));
+  } else {
+    resolver_->OnRouteConfigUpdate(vhost->routes);
   }
-  grpc_arg new_args[] = {
-      resolver_->xds_client_->MakeChannelArg(),
-      resolver_->config_selector_->MakeChannelArg(),
-  };
-  result.args = grpc_channel_args_copy_and_add(resolver_->args_, new_args,
-                                               GPR_ARRAY_SIZE(new_args));
-  resolver_->result_handler()->ReturnResult(std::move(result));
 }
 
 void XdsResolver::ListenerWatcher::OnError(grpc_error* error) {
   if (resolver_->xds_client_ == nullptr) return;
-  gpr_log(GPR_ERROR, "[xds_resolver %p] received error: %s", resolver_.get(),
-          grpc_error_string(error));
-  grpc_arg xds_client_arg = resolver_->xds_client_->MakeChannelArg();
-  Result result;
-  result.args =
-      grpc_channel_args_copy_and_add(resolver_->args_, &xds_client_arg, 1);
-  result.service_config_error = error;
-  resolver_->result_handler()->ReturnResult(std::move(result));
+  resolver_->OnError(error);
 }
 
 void XdsResolver::ListenerWatcher::OnResourceDoesNotExist() {
   if (resolver_->xds_client_ == nullptr) return;
-  gpr_log(GPR_ERROR,
-          "[xds_resolver %p] LDS/RDS resource does not exist -- returning "
-          "empty service config",
-          resolver_.get());
-  Result result;
-  result.service_config =
-      ServiceConfig::Create("{}", &result.service_config_error);
-  GPR_ASSERT(result.service_config != nullptr);
-  result.args = grpc_channel_args_copy(resolver_->args_);
-  resolver_->result_handler()->ReturnResult(std::move(result));
+  resolver_->OnResourceDoesNotExist();
+}
+
+//
+// XdsResolver::RouteConfigWatcher
+//
+
+void XdsResolver::RouteConfigWatcher::OnRouteConfigChanged(
+    XdsApi::RdsUpdate route_config) {
+  if (resolver_->xds_client_ == nullptr) return;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] received updated route config data",
+            resolver_.get());
+  }
+  const XdsApi::RdsUpdate::VirtualHost* vhost =
+      route_config.FindVirtualHostForDomain(resolver_->server_name_);
+  if (vhost == nullptr) {
+    resolver_->OnError(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("could not find VirtualHost for ", resolver_->server_name_,
+                     " in RouteConfig resource").c_str()));
+  } else {
+    resolver_->OnRouteConfigUpdate(vhost->routes);
+  }
+}
+
+void XdsResolver::RouteConfigWatcher::OnError(grpc_error* error) {
+  if (resolver_->xds_client_ == nullptr) return;
+  resolver_->OnError(error);
+}
+
+void XdsResolver::RouteConfigWatcher::OnResourceDoesNotExist() {
+  if (resolver_->xds_client_ == nullptr) return;
+  resolver_->OnResourceDoesNotExist();
 }
 
 //
@@ -507,6 +554,49 @@ grpc_error* XdsResolver::CreateServiceConfig(
   grpc_error* error = GRPC_ERROR_NONE;
   *service_config = ServiceConfig::Create(json.c_str(), &error);
   return error;
+}
+
+void XdsResolver::OnError(grpc_error* error) {
+  gpr_log(GPR_ERROR, "[xds_resolver %p] received error: %s", this,
+          grpc_error_string(error));
+  grpc_arg xds_client_arg = xds_client_->MakeChannelArg();
+  Result result;
+  result.args = grpc_channel_args_copy_and_add(args_, &xds_client_arg, 1);
+  result.service_config_error = error;
+  result_handler()->ReturnResult(std::move(result));
+}
+
+void XdsResolver::OnRouteConfigUpdate(std::vector<XdsApi::Route> routes) {
+  Result result;
+  grpc_error* error = CreateServiceConfig(routes, &result.service_config);
+  if (error != GRPC_ERROR_NONE) {
+    OnError(error);
+    return;
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s",
+            this, result.service_config->json_string().c_str());
+  }
+  grpc_arg new_args[] = {
+      xds_client_->MakeChannelArg(),
+      config_selector_->MakeChannelArg(),
+  };
+  result.args =
+      grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
+  result_handler()->ReturnResult(std::move(result));
+}
+
+void XdsResolver::OnResourceDoesNotExist() {
+  gpr_log(GPR_ERROR,
+          "[xds_resolver %p] LDS/RDS resource does not exist -- returning "
+          "empty service config",
+          this);
+  Result result;
+  result.service_config =
+      ServiceConfig::Create("{}", &result.service_config_error);
+  GPR_ASSERT(result.service_config != nullptr);
+  result.args = grpc_channel_args_copy(args_);
+  result_handler()->ReturnResult(std::move(result));
 }
 
 //

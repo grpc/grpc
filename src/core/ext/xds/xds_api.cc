@@ -1673,7 +1673,7 @@ grpc_error* LdsResponseParse(
           RouteConfigParse(client, tracer, route_config, &rds_update);
       if (error != GRPC_ERROR_NONE) return error;
       lds_update.rds_update = std::move(rds_update);
-      return GRPC_ERROR_NONE;
+      continue;
     }
     // Validate that RDS must be used to get the route_config dynamically.
     if (!envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_rds(

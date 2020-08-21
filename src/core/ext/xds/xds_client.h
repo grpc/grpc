@@ -46,7 +46,19 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
    public:
     virtual ~ListenerWatcherInterface() = default;
 
-    virtual void OnListenerChanged(std::vector<XdsApi::Route> routes) = 0;
+    virtual void OnListenerChanged(XdsApi::LdsUpdate listener) = 0;
+
+    virtual void OnError(grpc_error* error) = 0;
+
+    virtual void OnResourceDoesNotExist() = 0;
+  };
+
+  // RouteConfiguration data watcher interface.  Implemented by callers.
+  class RouteConfigWatcherInterface {
+   public:
+    virtual ~RouteConfigWatcherInterface() = default;
+
+    virtual void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
 
@@ -100,6 +112,20 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   void CancelListenerDataWatch(absl::string_view listener_name,
                                ListenerWatcherInterface* watcher,
                                bool delay_unsubscription = false);
+
+  // Start and cancel route config data watch for a listener.
+  // The XdsClient takes ownership of the watcher, but the caller may
+  // keep a raw pointer to the watcher, which may be used only for
+  // cancellation.  (Because the caller does not own the watcher, the
+  // pointer must not be used for any other purpose.)
+  // If the caller is going to start a new watch after cancelling the
+  // old one, it should set delay_unsubscription to true.
+  void WatchRouteConfigData(
+      absl::string_view route_config_name,
+      std::unique_ptr<RouteConfigWatcherInterface> watcher);
+  void CancelRouteConfigDataWatch(absl::string_view route_config_name,
+                                  RouteConfigWatcherInterface* watcher,
+                                  bool delay_unsubscription = false);
 
   // Start and cancel cluster data watch for a cluster.
   // The XdsClient takes ownership of the watcher, but the caller may
@@ -224,8 +250,9 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   };
 
   struct RouteConfigState {
-    // Names of listeners that refer to this route config.
-    std::set<std::string> listener_names;
+    std::map<RouteConfigWatcherInterface*,
+             std::unique_ptr<RouteConfigWatcherInterface>>
+        watchers;
     // The latest data seen from RDS.
     absl::optional<XdsApi::RdsUpdate> update;
   };
@@ -258,14 +285,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
         locality_stats;
     grpc_millis last_report_time = ExecCtx::Get()->Now();
   };
-
-// FIXME: consider making this API public and having it work like any
-// other watcher
-  absl::optional<XdsApi::RdsUpdate> WatchRouteConfigData(
-      absl::string_view route_config_name, const std::string& listener_name);
-  void CancelRouteConfigDataWatch(absl::string_view route_config_name,
-                                  const std::string& listener_name,
-                                  bool delay_unsubscription = false);
 
   // Sends an error notification to all watchers.
   void NotifyOnError(grpc_error* error);
