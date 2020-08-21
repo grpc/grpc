@@ -34,6 +34,13 @@ ifeq ($(SYSTEM),MINGW64)
 SYSTEM = MINGW32
 endif
 
+# Basic machine detection
+HOST_MACHINE = $(shell uname -m)
+ifeq ($(HOST_MACHINE),x86_64)
+HOST_IS_X86_64 = true
+else
+HOST_IS_X86_64 = false
+endif
 
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 ifndef BUILDDIR
@@ -696,6 +703,11 @@ CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
 GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
 GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+ifeq ($(HOST_IS_X86_64),true)
+ABSL_RANDOM_HWAES_FLAGS = -maes -msse4
+else
+ABSL_RANDOM_HWAES_FLAGS =
+endif
 
 RE2_DEP = $(LIBDIR)/$(CONFIG)/libre2.a
 RE2_MERGE_OBJS = $(LIBRE2_OBJS)
@@ -4508,7 +4520,7 @@ LIBGRPC_ABSEIL_SRC = \
 
 LIBGRPC_ABSEIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ABSEIL_SRC))))
 
-$(LIBGRPC_ABSEIL_OBJS): CPPFLAGS += -g -maes -msse4 -Ithird_party/abseil-cpp
+$(LIBGRPC_ABSEIL_OBJS): CPPFLAGS += -g $(ABSL_RANDOM_HWAES_FLAGS) -Ithird_party/abseil-cpp
 
 $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a:  $(LIBGRPC_ABSEIL_OBJS) 
 	$(E) "[AR]      Creating $@"
