@@ -53,7 +53,6 @@ class ExternalConnectionAcceptorImpl;
 }  // namespace grpc
 
 namespace grpc_impl {
-class HealthCheckServiceInterface;
 class ServerContext;
 class ServerInitializer;
 
