@@ -1115,19 +1115,22 @@ grpcsharp_ssl_server_credentials_create_options_using_config(
 }
 
 // Definition of grpcsharp_ssl_server_certificate_config_callback_handler
-// needs to be the same as the definition of the callback.
+// needs to be the same as the definition of the HandleUniversalCallback (minus
+// the first parametar which is the tag). Do note that user_data is actually the
+// cb passed from
+// grpcsharp_ssl_server_credentials_create_options_using_config_fetcher.
 static grpc_ssl_certificate_config_reload_status
 grpcsharp_ssl_server_certificate_config_callback_handler(
     void* user_data, grpc_ssl_server_certificate_config** config) {
-  return native_callback_dispatcher(user_data, (void**)config, NULL, NULL,
-                                    NULL, NULL, NULL);
+  return native_callback_dispatcher(user_data, (void**)config, NULL, NULL, NULL,
+                                    NULL, NULL);
 }
 
 GPR_EXPORT grpc_ssl_server_credentials_options* GPR_CALLTYPE
 grpcsharp_ssl_server_credentials_create_options_using_config_fetcher(
     grpc_ssl_client_certificate_request_type client_certificate_request,
-    grpc_ssl_server_certificate_config_callback cb, void* user_data) {
-  // Passing cb as user_data. Disregarding user_data. TODO: remove user_data.
+    grpc_ssl_server_certificate_config_callback cb) {
+  // Passing cb as user_data.
   return grpc_ssl_server_credentials_create_options_using_config_fetcher(
       client_certificate_request,
       grpcsharp_ssl_server_certificate_config_callback_handler, cb);

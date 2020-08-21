@@ -294,8 +294,7 @@ namespace Grpc.Core
                 certChains,
                 keys,
                 clientCertificateRequest,
-                serverCertificateConfigCallbackTag,
-                userData: IntPtr.Zero);
+                serverCertificateConfigCallbackTag);
         }
     }
 }

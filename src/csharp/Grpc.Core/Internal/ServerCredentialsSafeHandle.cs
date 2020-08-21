@@ -37,8 +37,7 @@ namespace Grpc.Core.Internal
             string[] keyCertPairCertChainArray,
             string[] keyCertPairPrivateKeyArray,
             SslClientCertificateRequestType clientCertificateRequest,
-            IntPtr serverCertificateConfigCallbackTag,
-            IntPtr userData)
+            IntPtr serverCertificateConfigCallbackTag)
         {
             ServerCredentialsOptionsSafeHandle serverCredentialsOptions;
             if (serverCertificateConfigCallbackTag == IntPtr.Zero)
@@ -52,7 +51,7 @@ namespace Grpc.Core.Internal
             else
             {
                 serverCredentialsOptions =
-                    ServerCredentialsOptionsSafeHandle.CreateSslServerCredentialsOptionsUsingConfigFetcher(clientCertificateRequest, serverCertificateConfigCallbackTag, userData);
+                    ServerCredentialsOptionsSafeHandle.CreateSslServerCredentialsOptionsUsingConfigFetcher(clientCertificateRequest, serverCertificateConfigCallbackTag);
             }
 
             return Native.grpcsharp_ssl_server_credentials_create_with_options(serverCredentialsOptions);

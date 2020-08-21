@@ -37,9 +37,9 @@ namespace Grpc.Core.Internal
             return Native.grpcsharp_ssl_server_credentials_create_options_using_config(sslClientCertificateRequest, serverCertificateConfig);
         }
 
-        public static ServerCredentialsOptionsSafeHandle CreateSslServerCredentialsOptionsUsingConfigFetcher(SslClientCertificateRequestType sslClientCertificateRequest, IntPtr serverCertificateConfigCallbackTag, IntPtr userData)
+        public static ServerCredentialsOptionsSafeHandle CreateSslServerCredentialsOptionsUsingConfigFetcher(SslClientCertificateRequestType sslClientCertificateRequest, IntPtr serverCertificateConfigCallbackTag)
         {
-            return Native.grpcsharp_ssl_server_credentials_create_options_using_config_fetcher(sslClientCertificateRequest, serverCertificateConfigCallbackTag, userData);
+            return Native.grpcsharp_ssl_server_credentials_create_options_using_config_fetcher(sslClientCertificateRequest, serverCertificateConfigCallbackTag);
         }
 
         protected override bool ReleaseHandle()

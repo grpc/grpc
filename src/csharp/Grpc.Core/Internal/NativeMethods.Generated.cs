@@ -570,7 +570,7 @@ namespace Grpc.Core.Internal
             public delegate ServerCertificateConfigSafeHandle grpcsharp_ssl_server_certificate_config_create_delegate(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs);
             public delegate void grpcsharp_ssl_server_certificate_config_destroy_delegate(IntPtr serverCertificateConfig);
             public delegate ServerCredentialsOptionsSafeHandle grpcsharp_ssl_server_credentials_create_options_using_config_delegate(SslClientCertificateRequestType clientCertificateRequest, ServerCertificateConfigSafeHandle serverCertificateConfig);
-            public delegate ServerCredentialsOptionsSafeHandle grpcsharp_ssl_server_credentials_create_options_using_config_fetcher_delegate(SslClientCertificateRequestType clientCertificateRequest, IntPtr cbTag, IntPtr userData);
+            public delegate ServerCredentialsOptionsSafeHandle grpcsharp_ssl_server_credentials_create_options_using_config_fetcher_delegate(SslClientCertificateRequestType clientCertificateRequest, IntPtr cbTag);
             public delegate void grpcsharp_write_ssl_server_certificate_config_to_pointer_delegate(IntPtr pointerToLocation, ServerCertificateConfigSafeHandle config);
             public delegate void grpcsharp_ssl_server_credentials_options_destroy_delegate(IntPtr serverCredentialsOptions);
             public delegate ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create_with_options_delegate(ServerCredentialsOptionsSafeHandle serverCredentialsOptions);
@@ -842,7 +842,7 @@ namespace Grpc.Core.Internal
             public static extern ServerCredentialsOptionsSafeHandle grpcsharp_ssl_server_credentials_create_options_using_config(SslClientCertificateRequestType clientCertificateRequest, ServerCertificateConfigSafeHandle serverCertificateConfig);
             
             [DllImport(ImportName)]
-            public static extern ServerCredentialsOptionsSafeHandle grpcsharp_ssl_server_credentials_create_options_using_config_fetcher(SslClientCertificateRequestType clientCertificateRequest, IntPtr cbTag, IntPtr userData);
+            public static extern ServerCredentialsOptionsSafeHandle grpcsharp_ssl_server_credentials_create_options_using_config_fetcher(SslClientCertificateRequestType clientCertificateRequest, IntPtr cbTag);
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_write_ssl_server_certificate_config_to_pointer(IntPtr pointerToLocation, ServerCertificateConfigSafeHandle config);
@@ -1180,7 +1180,7 @@ namespace Grpc.Core.Internal
             public static extern ServerCredentialsOptionsSafeHandle grpcsharp_ssl_server_credentials_create_options_using_config(SslClientCertificateRequestType clientCertificateRequest, ServerCertificateConfigSafeHandle serverCertificateConfig);
             
             [DllImport(ImportName)]
-            public static extern ServerCredentialsOptionsSafeHandle grpcsharp_ssl_server_credentials_create_options_using_config_fetcher(SslClientCertificateRequestType clientCertificateRequest, IntPtr cbTag, IntPtr userData);
+            public static extern ServerCredentialsOptionsSafeHandle grpcsharp_ssl_server_credentials_create_options_using_config_fetcher(SslClientCertificateRequestType clientCertificateRequest, IntPtr cbTag);
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_write_ssl_server_certificate_config_to_pointer(IntPtr pointerToLocation, ServerCertificateConfigSafeHandle config);

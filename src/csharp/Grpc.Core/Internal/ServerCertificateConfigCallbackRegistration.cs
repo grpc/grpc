@@ -55,7 +55,11 @@ namespace Grpc.Core.Internal
                 ServerCertificateConfigSafeHandle nativeServerCertificateConfig = serverCertificateConfig.ToNative();
                 Native.grpcsharp_write_ssl_server_certificate_config_to_pointer(arg0, nativeServerCertificateConfig);
 
-                // We could somehow retrieve the old cert config and compare instead of passing .New unconditinally.
+                // Should we pass .New unconditionally? If we pass .Unchanged
+                // then native try_replace_server_handshaker_factory will not be invoked,
+                // effectively saving a small number of CPU cycles.
+                // However, the cost of obtaining the current certificate from native and inspecting it
+                // is probably orders of magnitude higher then unconditionally reloading certs every time.
                 return (int)SslCertificateConfigReloadStatus.New;
             }
             catch (Exception e)
