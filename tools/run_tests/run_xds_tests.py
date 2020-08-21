@@ -403,7 +403,6 @@ def test_backends_restart(gcp, backend_service, instance_group):
     start_time = time.time()
     wait_until_all_rpcs_go_to_given_backends(instance_names,
                                              _WAIT_FOR_STATS_SEC)
-    stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
     try:
         resize_instance_group(gcp, instance_group, 0)
         wait_until_all_rpcs_go_to_given_backends_or_fail([],
@@ -414,15 +413,6 @@ def test_backends_restart(gcp, backend_service, instance_group):
     new_instance_names = get_instance_names(gcp, instance_group)
     wait_until_all_rpcs_go_to_given_backends(new_instance_names,
                                              _WAIT_FOR_BACKEND_SEC)
-    new_stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
-    original_distribution = list(stats.rpcs_by_peer.values())
-    original_distribution.sort()
-    new_distribution = list(new_stats.rpcs_by_peer.values())
-    new_distribution.sort()
-    threshold = 3
-    for i in range(len(original_distribution)):
-        if abs(original_distribution[i] - new_distribution[i]) > threshold:
-            raise Exception('Distributions do not match: ', stats, new_stats)
 
 
 def test_change_backend_service(gcp, original_backend_service, instance_group,
