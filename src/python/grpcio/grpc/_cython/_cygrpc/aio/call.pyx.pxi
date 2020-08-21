@@ -46,6 +46,7 @@ cdef class _AioCall(GrpcCallWrapper):
 
     def __cinit__(self, AioChannel channel, object deadline,
                   bytes method, CallCredentials call_credentials, object wait_for_ready):
+        init_grpc_aio()
         self.call = NULL
         self._channel = channel
         self._loop = channel.loop
@@ -63,6 +64,7 @@ cdef class _AioCall(GrpcCallWrapper):
     def __dealloc__(self):
         if self.call:
             grpc_call_unref(self.call)
+        shutdown_grpc_aio()
 
     def _repr(self) -> str:
         """Assembles the RPC representation string."""
