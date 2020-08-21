@@ -561,7 +561,9 @@ def test_round_robin(gcp, backend_service, instance_group):
     # may result in briefly receiving an empty EDS update, resulting in failed
     # RPCs. Retry distribution validation if this occurs; long-term fix is
     # creating new backend resources for each individual test case.
-    max_attempts = 10
+    # Each attempt takes 10 seconds. Config propagation can take several
+    # minutes.
+    max_attempts = 40
     for i in range(max_attempts):
         stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
         requests_received = [stats.rpcs_by_peer[x] for x in stats.rpcs_by_peer]
