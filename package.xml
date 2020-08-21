@@ -747,6 +747,11 @@
     <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/mock_cel/activation.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/mock_cel/cel_value.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/provider.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/store.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/alts_credentials.cc" role="src" />
