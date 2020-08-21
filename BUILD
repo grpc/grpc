@@ -1863,7 +1863,11 @@ grpc_cc_library(
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/evaluate_args.h",
         "src/core/lib/security/authorization/mock_cel/activation.h",
+        "src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h",
+        "src/core/lib/security/authorization/mock_cel/cel_expression.h",
         "src/core/lib/security/authorization/mock_cel/cel_value.h",
+        "src/core/lib/security/authorization/mock_cel/evaluator_core.h",
+        "src/core/lib/security/authorization/mock_cel/statusor.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
