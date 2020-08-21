@@ -33,6 +33,8 @@ from oauth2client.client import GoogleCredentials
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
 
+from src.proto.grpc.health.v1 import health_pb2
+from src.proto.grpc.health.v1 import health_pb2_grpc
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
@@ -973,14 +975,30 @@ def test_header_matching(gcp, original_backend_service, instance_group,
 
 
 def set_serving_status(instances, service_port, serving):
+    logger.info('setting %s serving status to %s', instances, serving)
     for instance in instances:
         with grpc.insecure_channel('%s:%d' %
                                    (instance, service_port)) as channel:
+            logger.info('setting %s serving status to %s', instance, serving)
             stub = test_pb2_grpc.XdsUpdateHealthServiceStub(channel)
-            if serving:
-                stub.SetServing(empty_pb2.Empty())
-            else:
-                stub.SetNotServing(empty_pb2.Empty())
+            health_stub = health_pb2_grpc.HealthStub(channel)
+
+            retry_count = 5
+            for i in range(5):
+                if serving:
+                    stub.SetServing(empty_pb2.Empty())
+                else:
+                    stub.SetNotServing(empty_pb2.Empty())
+                serving_status = health_stub.Check(
+                    health_pb2.HealthCheckRequest())
+                logger.info('got instance service status %s', serving_status)
+                want_status = health_pb2.HealthCheckResponse.SERVING if serving else health_pb2.HealthCheckResponse.NOT_SERVING
+                if serving_status.status == want_status:
+                    break
+                if i == retry_count - 1:
+                    raise Exception(
+                        'failed to set instance service status after %d retries'
+                        % retry_count)
 
 
 def is_primary_instance_group(gcp, instance_group):
