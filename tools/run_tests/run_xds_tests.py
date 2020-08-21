@@ -223,7 +223,7 @@ if args.verbose:
 
 _DEFAULT_SERVICE_PORT = 80
 _WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
-_WAIT_FOR_OPERATION_SEC = 300
+_WAIT_FOR_OPERATION_SEC = 1200
 _INSTANCE_GROUP_SIZE = args.instance_group_size
 _NUM_TEST_RPCS = 10 * args.qps
 _WAIT_FOR_STATS_SEC = 180
