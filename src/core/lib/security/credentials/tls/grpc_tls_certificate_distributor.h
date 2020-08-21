@@ -56,14 +56,15 @@ struct grpc_tls_certificate_distributor
     // Note that if a watcher sees an error, it simply means the Provider is
     // having problems renewing new data. If the watcher has previously received
     // several OnCertificatesChanged, all the data received from that function
-    // is valid old data. In that case, watcher might simply log the error. If
-    // the watcher hasn't received any OnCertificatesChanged before error
-    // occurs, this means no valid data yet, and the watcher should either fail
-    // or "waiting" for the valid data in a non-blocking way.
+    // is valid.
+    // In that case, watcher might simply log the error. If the watcher hasn't
+    // received any OnCertificatesChanged before the error occurs, no valid
+    // data is available yet, and the watcher should either fail or "waiting"
+    // for the valid data in a non-blocking way.
     //
     // @param root_cert_error the error occurred while reloading root
     // certificates.
-    // @param root_cert_error the error occurred while reloading root
+    // @param identity_cert_error the error occurred while reloading identity
     // certificates.
     virtual void OnError(grpc_error* root_cert_error,
                          grpc_error* identity_cert_error) = 0;
@@ -225,8 +226,6 @@ struct grpc_tls_certificate_distributor
   // @param root_cert_changed If the root cert with name "cert_name" changed.
   // @param identity_cert_changed If the identity cert with name "cert_name"
   // changed.
-  // @param watchers A reference to watchers_.
-  // @param certificate_info_map A reference to certificate_info_map_.
   void CertificatesUpdated(const std::string& cert_name, bool root_cert_changed,
                            bool identity_cert_changed);
 

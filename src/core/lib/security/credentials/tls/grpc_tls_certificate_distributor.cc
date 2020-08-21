@@ -177,17 +177,13 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     // occurred while trying to fetch the latest cert, but the updated_*_certs
     // should always be valid. So we will send the updates regardless of
     // *_cert_error.
-    if (!updated_root_certs.empty() && !updated_identity_pairs.empty()) {
-      watcher_ptr->OnCertificatesChanged(updated_root_certs,
-                                         updated_identity_pairs);
-    } else {
-      if (!updated_root_certs.empty()) {
-        watcher_ptr->OnCertificatesChanged(updated_root_certs, absl::nullopt);
-      }
-      if (!updated_identity_pairs.empty()) {
-        watcher_ptr->OnCertificatesChanged(absl::nullopt,
-                                           updated_identity_pairs);
-      }
+    if (!updated_root_certs.empty() || !updated_identity_pairs.empty()) {
+      watcher_ptr->OnCertificatesChanged(
+          updated_root_certs.empty() ? absl::nullopt
+                                     : absl::make_optional(updated_root_certs),
+          updated_identity_pairs.empty()
+              ? absl::nullopt
+              : absl::make_optional(updated_identity_pairs));
     }
     // Notify this watcher if the certs it is watching already had some errors.
     if (root_error != GRPC_ERROR_NONE || identity_error != GRPC_ERROR_NONE) {
