@@ -14,9 +14,10 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/client_channel/config_selector.h"
+#include <grpc/support/port_platform.h>
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
 
 #include "src/core/lib/channel/channel_args.h"
 
@@ -57,6 +58,16 @@ RefCountedPtr<ConfigSelector> ConfigSelector::GetFromChannelArgs(
       grpc_channel_args_find_pointer<ConfigSelector>(&args,
                                                      GRPC_ARG_CONFIG_SELECTOR);
   return config_selector != nullptr ? config_selector->Ref() : nullptr;
+}
+
+grpc_channel_args* ConfigSelector::RemoveFromChannelArgs(
+    const grpc_channel_args& args) {
+  ConfigSelector* config_selector =
+      grpc_channel_args_find_pointer<ConfigSelector>(&args,
+                                                     GRPC_ARG_CONFIG_SELECTOR);
+  if (config_selector != nullptr) config_selector->Unref();
+  const char* arg_name = GRPC_ARG_CONFIG_SELECTOR;
+  return grpc_channel_args_copy_and_remove(&args, &arg_name, 1);
 }
 
 }  // namespace grpc_core
