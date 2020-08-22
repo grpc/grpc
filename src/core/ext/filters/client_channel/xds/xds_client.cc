@@ -1034,6 +1034,13 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     const std::string& cluster_name = p.first;
     if (cds_update_map.find(cluster_name) == cds_update_map.end()) {
       ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
+      // If the resource was newly requested but has not yet been received,
+      // we don't want to generate an error for the watchers, because this CDS
+      // response may be in reaction to an earlier request that did not yet
+      // request the new resource, so its absence from the response does not
+      // necessarily indicate that the resource does not exist.
+      // For that case, we rely on the request timeout instead.
+      if (!cluster_state.update.has_value()) continue;
       cluster_state.update.reset();
       for (const auto& p : cluster_state.watchers) {
         p.first->OnResourceDoesNotExist();
