@@ -19,12 +19,12 @@ _REQUIRED_SYMBOLS = ("_protos", "_services", "_protos_and_services")
 
 def _uninstalled_protos(*args, **kwargs):
     raise NotImplementedError(
-        "Install grpcio-tools package (1.32.0+) to use the protos function.")
+        "Install the grpcio-tools package (1.32.0+) to use the protos function.")
 
 
 def _uninstalled_services(*args, **kwargs):
     raise NotImplementedError(
-        "Install the grpcio-tools (1.32.0+) package to use the services function."
+        "Install the grpcio-tools package (1.32.0+) to use the services function."
     )
 
 
