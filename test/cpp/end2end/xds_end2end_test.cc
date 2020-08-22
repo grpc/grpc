@@ -1356,6 +1356,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             "Performed %d warm up requests against the backends. "
             "%d succeeded, %d failed, %d dropped.",
             num_total, num_ok, num_failure, num_drops);
+    EXPECT_EQ(num_failure, 0);
     return std::make_tuple(num_ok, num_failure, num_drops);
   }
 
