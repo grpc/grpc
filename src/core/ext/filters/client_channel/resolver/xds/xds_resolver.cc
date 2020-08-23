@@ -230,10 +230,7 @@ class XdsResolver : public Resolver {
             cluster_actions_.emplace(action_name);
             {
               MutexLock lock(&resolver_->cluster_state_map_mu_);
-              if (resolver_->cluster_state_map_.find(action_name) ==
-                  resolver_->cluster_state_map_.end()) {
-                resolver_->cluster_state_map_[action_name].refcount++;
-              }
+              resolver_->cluster_state_map_[action_name].refcount++;
             }
           }
         } else {
@@ -258,10 +255,7 @@ class XdsResolver : public Resolver {
               MutexLock lock(&resolver_->cluster_state_map_mu_);
               for (const auto& weighted_cluster : route.weighted_clusters) {
                 const std::string cluster_name = weighted_cluster.name;
-                if (resolver_->cluster_state_map_.find(cluster_name) ==
-                    resolver_->cluster_state_map_.end()) {
-                  resolver_->cluster_state_map_[cluster_name].refcount++;
-                }
+                resolver_->cluster_state_map_[cluster_name].refcount++;
               }
             }
           }
