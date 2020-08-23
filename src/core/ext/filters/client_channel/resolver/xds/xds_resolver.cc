@@ -40,15 +40,6 @@ const char* kCallAttributeRoutingAction = "routing_action";
 
 namespace {
 
-//
-// XdsResolver
-//
-
-struct WeightedClustersKeys {
-  std::string cluster_weights_key;
-};
-
-// Returns the cluster names and weights key or the cluster names only key.
 std::string GetWeightedClustersKey(
     const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
         weighted_clusters) {
@@ -175,6 +166,9 @@ bool UnderFraction(const uint32_t fraction_per_million) {
   return random_number < fraction_per_million;
 }
 
+//
+// XdsResolver
+//
 class XdsResolver : public Resolver {
  public:
   explicit XdsResolver(ResolverArgs args)
@@ -229,13 +223,10 @@ class XdsResolver : public Resolver {
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
                       const XdsApi::RdsUpdate& rds_update)
         : resolver_(std::move(resolver)), route_table_(rds_update) {
-      // UpdateWeightedClusterIndexMap(rds_update);
       for (auto& route : route_table_.routes) {
         if (route.weighted_clusters.empty()) {
           const std::string action_name = route.cluster_name;
           if (cluster_actions_.find(action_name) == cluster_actions_.end()) {
-            // Keep a set of clusters from this update and take a reference for
-            // every cluster. Ref count will be unset in the destructor.
             cluster_actions_.emplace(action_name);
             {
               MutexLock lock(&resolver_->cluster_state_map_mu_);
@@ -248,12 +239,14 @@ class XdsResolver : public Resolver {
         } else {
           const std::string action_name = absl::StrFormat(
               "weighted:%s", GetWeightedClustersKey(route.weighted_clusters));
-          gpr_log(GPR_INFO, "DONNAAA weighted action name %s",
-                  action_name.c_str());
+          // Store in route table as cluster name so that it can be used to
+          // lookup the picker list in the picker list map.
+          route.cluster_name = action_name;
           if (weighted_actions_.find(action_name) == weighted_actions_.end()) {
-            // Store in table as cluster name.
-            route.cluster_name = action_name;
             weighted_actions_.emplace(action_name);
+            // Construct a new picker list where each picker is represented by a
+            // portion of the range proportional to its weight, such that the
+            // total range is the sum of the weights of all pickers.
             PickerList picker_list;
             uint32_t end = 0;
             for (const auto& weighted_cluster : route.weighted_clusters) {
@@ -349,16 +342,13 @@ class XdsResolver : public Resolver {
       *service_config = ServiceConfig::Create(json.c_str(), &error);
       gpr_log(GPR_INFO, "DONNAAA NEW service config json: %s", json.c_str());
       return error;
-
-      // grpc_arg new_args[] = {resolver_->xds_client_->MakeChannelArg()};
-      // result.args = grpc_channel_args_copy_and_add(resolver_->args_,
-      // new_args,
-      //                                             GPR_ARRAY_SIZE(new_args));
-      // resolver_->result_handler()->ReturnResult(std::move(result));
     }
 
     void UpdateServiceConfig() {
-      gpr_log(GPR_INFO, "DONNAAA UpdateServiceConfig");
+      gpr_log(GPR_INFO,
+              "DONNAAA UpdateServiceConfig this method has issues of "
+              "destructing XdsConfigSelector too early as we let the pointer "
+              "unref in Dataplane method");
       Result result;
       grpc_error* error = CreateServiceConfig(&result.service_config);
       if (error != GRPC_ERROR_NONE) {
@@ -372,8 +362,6 @@ class XdsResolver : public Resolver {
     }
 
     void OnCallCommited(const std::string& routing_action) {
-      // gpr_log(GPR_INFO, "DONNAAA: OnCallCommitted %s",
-      // routing_action.c_str());
       MutexLock lock(&resolver_->cluster_state_map_mu_);
       resolver_->cluster_state_map_[routing_action].refcount--;
       if (resolver_->cluster_state_map_[routing_action].refcount == 0) {
@@ -382,27 +370,9 @@ class XdsResolver : public Resolver {
                 routing_action.c_str());
         resolver_->cluster_state_map_.erase(routing_action);
       }
-      /*void *stack[128];
-      int size = absl::GetStackTrace(stack, 128, 1);
-      for (int i = 0; i < size; ++i) {
-        char out[256];
-        if (absl::Symbolize(stack[i], out, 256)) {
-          gpr_log(GPR_INFO, "donna stack trace per call minus:[%s]", out);
-        }
-      }*/
     }
 
     CallConfig GetCallConfig(GetCallConfigArgs args) override {
-      /*gpr_log(GPR_INFO, "DONNAA NEW path is %s",
-              GRPC_SLICE_START_PTR(*(args.path)));
-      for (grpc_linked_mdelem* md = args.initial_metadata->list.head;
-           md != nullptr; md = md->next) {
-        char* key = grpc_slice_to_c_string(GRPC_MDKEY(md->md));
-        char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md->md));
-        gpr_log(GPR_INFO, "key[%s]: value[%s]", key, value);
-        gpr_free(key);
-        gpr_free(value);
-      }*/
       for (size_t i = 0; i < route_table_.routes.size(); ++i) {
         // Path matching.
         if (!PathMatch(StringViewFromSlice(*args.path),
@@ -420,93 +390,58 @@ class XdsResolver : public Resolver {
           continue;
         }
         // Found a route match
-        {
-          // gpr_log(GPR_INFO, "DONNAAA match chose action: %s",
-          //        route_table_.routes[i].cluster_name.c_str());
-          for (size_t j = 0;
-               j < route_table_.routes[i].weighted_clusters.size(); ++j) {
-            // gpr_log(
-            //    GPR_INFO, "DONNAAA match chose action: %s",
-            //    route_table_.routes[i].weighted_clusters[j].ToString().c_str());
-          }
-          if (route_table_.routes[i].weighted_clusters.empty()) {
-            char* routing_action_str = static_cast<char*>(args.arena->Alloc(
-                route_table_.routes[i].cluster_name.size() + 1));
+        char* routing_action_str;
+        if (route_table_.routes[i].weighted_clusters.empty()) {
+          routing_action_str = static_cast<char*>(args.arena->Alloc(
+              route_table_.routes[i].cluster_name.size() + 1));
+          strcpy(routing_action_str,
+                 route_table_.routes[i].cluster_name.c_str());
+        } else {
+          const auto picker_list = picker_list_map_.find(
+              route_table_.routes[i].cluster_name.c_str());
+          // Put target weight picking in a separate static method.
+          if (picker_list != picker_list_map_.end()) {
+            // Generate a random number in [0, total weight).
+            const uint32_t key =
+                rand() %
+                picker_list->second[picker_list->second.size() - 1].first;
+            // Find the index in pickers_ corresponding to key.
+            size_t mid = 0;
+            size_t start_index = 0;
+            size_t end_index = picker_list->second.size() - 1;
+            size_t index = 0;
+            while (end_index > start_index) {
+              mid = (start_index + end_index) / 2;
+              if (picker_list->second[mid].first > key) {
+                end_index = mid;
+              } else if (picker_list->second[mid].first < key) {
+                start_index = mid + 1;
+              } else {
+                index = mid + 1;
+                break;
+              }
+            }
+            if (index == 0) index = start_index;
+            GPR_ASSERT(picker_list->second[index].first > key);
+            routing_action_str = static_cast<char*>(args.arena->Alloc(
+                picker_list->second[index].second.size() + 1));
             strcpy(routing_action_str,
-                   route_table_.routes[i].cluster_name.c_str());
-            CallConfig call_config;
-            call_config.call_attributes[kCallAttributeRoutingAction] =
-                absl::string_view(routing_action_str);
-            call_config.on_call_committed = absl::bind_front(
-                &XdsResolver::XdsConfigSelector::OnCallCommited, this,
-                route_table_.routes[i].cluster_name);
-            {
-              MutexLock lock(&resolver_->cluster_state_map_mu_);
-              resolver_->cluster_state_map_[route_table_.routes[i].cluster_name]
-                  .refcount++;
-            }
-            return call_config;
-          } else {
-            // gpr_log(GPR_INFO, "DONNAAA match weighted %s",
-            //        route_table_.routes[i].cluster_name.c_str());
-            const auto picker_list = picker_list_map_.find(
-                route_table_.routes[i].cluster_name.c_str());
-            if (picker_list != picker_list_map_.end()) {
-              // gpr_log(GPR_INFO, "DONNAAA match weighted found it");
-              // Generate a random number in [0, total weight).
-              const uint32_t key =
-                  rand() %
-                  picker_list->second[picker_list->second.size() - 1].first;
-              // Find the index in pickers_ corresponding to key.
-              size_t mid = 0;
-              size_t start_index = 0;
-              size_t end_index = picker_list->second.size() - 1;
-              size_t index = 0;
-              while (end_index > start_index) {
-                mid = (start_index + end_index) / 2;
-                if (picker_list->second[mid].first > key) {
-                  end_index = mid;
-                } else if (picker_list->second[mid].first < key) {
-                  start_index = mid + 1;
-                } else {
-                  index = mid + 1;
-                  break;
-                }
-              }
-              if (index == 0) index = start_index;
-              GPR_ASSERT(picker_list->second[index].first > key);
-              // Delegate to the child picker.
-              // gpr_log(GPR_INFO, "DONNAAA match weighted selected a name %s",
-              //        picker_list->second[index].second.c_str());
-              char* routing_action_str = static_cast<char*>(args.arena->Alloc(
-                  picker_list->second[index].second.size() + 1));
-              strcpy(routing_action_str,
-                     picker_list->second[index].second.c_str());
-              CallConfig call_config;
-              call_config.call_attributes[kCallAttributeRoutingAction] =
-                  absl::string_view(routing_action_str);
-              call_config.on_call_committed = absl::bind_front(
-                  &XdsResolver::XdsConfigSelector::OnCallCommited, this,
-                  picker_list->second[index].second);
-              {
-                MutexLock lock(&resolver_->cluster_state_map_mu_);
-                resolver_->cluster_state_map_[picker_list->second[index].second]
-                    .refcount++;
-              }
-              return call_config;
-            } else {
-              gpr_log(GPR_INFO, "DONNAAA match weighted did not find it");
-            }
-            /*for (const auto& picker_list : picker_list_map_) {
-              gpr_log(GPR_INFO, "DONNAAA picker list %s",
-                      picker_list.first.c_str());
-              for (const auto& picker : picker_list.second) {
-                gpr_log(GPR_INFO, "DONNAAA picker %s and weight %d",
-                        picker.second.c_str(), picker.first);
-              }
-            }*/
+                   picker_list->second[index].second.c_str());
           }
         }
+        // TODO: what if there is no match
+        CallConfig call_config;
+        call_config.call_attributes[kCallAttributeRoutingAction] =
+            absl::string_view(routing_action_str);
+        call_config.on_call_committed =
+            absl::bind_front(&XdsResolver::XdsConfigSelector::OnCallCommited,
+                             this, std::string(routing_action_str));
+        {
+          MutexLock lock(&resolver_->cluster_state_map_mu_);
+          resolver_->cluster_state_map_[std::string(routing_action_str)]
+              .refcount++;
+        }
+        return call_config;
       }
       return CallConfig();
     }
@@ -524,22 +459,6 @@ class XdsResolver : public Resolver {
     using PickerListMap =
         std::map<std::string /*weighted action name*/, PickerList>;
     PickerListMap picker_list_map_;
-
-    // 2-level map to store WeightedCluster action names.
-    // Top level map is keyed by cluster names without weight like a_b_c; bottom
-    // level map is keyed by cluster names + weights like a10_b50_c40.
-    struct ClusterNamesInfo {
-      uint64_t next_index = 0;
-      std::map<std::string /*cluster names + weights*/,
-               uint64_t /*policy index number*/>
-          cluster_weights_map;
-    };
-    using WeightedClusterIndexMap =
-        std::map<std::string /*cluster names*/, ClusterNamesInfo>;
-
-    // Cache of action names for WeightedCluster targets in the current
-    // service config.
-    WeightedClusterIndexMap weighted_cluster_index_map_;
   };
 
   // Create the service config generated by the RdsUpdate.
@@ -552,22 +471,6 @@ class XdsResolver : public Resolver {
   OrphanablePtr<XdsClient> xds_client_;
   std::map<std::string /* cluster_name */, ClusterState> cluster_state_map_;
   Mutex cluster_state_map_mu_;  // protects the cluster state map.
-
-  // 2-level map to store WeightedCluster action names.
-  // Top level map is keyed by cluster names without weight like a_b_c; bottom
-  // level map is keyed by cluster names + weights like a10_b50_c40.
-  struct ClusterNamesInfo {
-    uint64_t next_index = 0;
-    std::map<std::string /*cluster names + weights*/,
-             uint64_t /*policy index number*/>
-        cluster_weights_map;
-  };
-  using WeightedClusterIndexMap =
-      std::map<std::string /*cluster names*/, ClusterNamesInfo>;
-
-  // Cache of action names for WeightedCluster targets in the current
-  // service config.
-  WeightedClusterIndexMap weighted_cluster_index_map_;
 };
 
 //
