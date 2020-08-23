@@ -1545,7 +1545,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             "Performed %d warm up requests against the backends. "
             "%d succeeded, %d failed, %d dropped.",
             num_total, num_ok, num_failure, num_drops);
-    EXPECT_EQ(num_failure, 0);
+    // Warm up failures are expected again because we chose the cluster without
+    // knowing the connection status as per new design.
     return std::make_tuple(num_ok, num_failure, num_drops);
   }
 
