@@ -18,7 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
+#include "absl/functional/bind_front.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "re2/re2.h"
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
@@ -30,20 +36,146 @@ namespace grpc_core {
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
+const char* kXdsClusterAttribute = "xds_cluster_name";
+
 namespace {
+
+std::string GetWeightedClustersKey(
+    const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
+        weighted_clusters) {
+  std::set<std::string> cluster_weights;
+  for (const auto& cluster_weight : weighted_clusters) {
+    cluster_weights.emplace(
+        absl::StrFormat("%s_%d", cluster_weight.name, cluster_weight.weight));
+  }
+  return absl::StrJoin(cluster_weights, "_");
+}
+
+bool PathMatch(
+    const absl::string_view& path,
+    const XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher& path_matcher) {
+  switch (path_matcher.type) {
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        PREFIX:
+      return absl::StartsWith(path, path_matcher.string_matcher);
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        PATH:
+      return path == path_matcher.string_matcher;
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
+        REGEX:
+      return RE2::FullMatch(path.data(), *path_matcher.regex_matcher);
+    default:
+      return false;
+  }
+}
+
+absl::optional<std::string> GetMetadataValue(
+    const std::string& target_key, grpc_metadata_batch* initial_metadata,
+    std::string* concatenated_value) {
+  // Find all values for the specified key.
+  GPR_DEBUG_ASSERT(initial_metadata != nullptr);
+  absl::InlinedVector<std::string, 1> values;
+  for (grpc_linked_mdelem* md = initial_metadata->list.head; md != nullptr;
+       md = md->next) {
+    char* key = grpc_slice_to_c_string(GRPC_MDKEY(md->md));
+    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md->md));
+    gpr_log(GPR_INFO, "key[%s]: value[%s]", key, value);
+    if (target_key == key) values.push_back(std::string(value));
+    gpr_free(key);
+    gpr_free(value);
+  }
+  // If none found, no match.
+  if (values.empty()) return absl::nullopt;
+  // If exactly one found, return it as-is.
+  if (values.size() == 1) return values.front();
+  // If more than one found, concatenate the values, using
+  // *concatenated_values as a temporary holding place for the
+  // concatenated string.
+  *concatenated_value = absl::StrJoin(values, ",");
+  return *concatenated_value;
+}
+
+bool HeaderMatchHelper(
+    const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher& header_matcher,
+    grpc_metadata_batch* initial_metadata) {
+  std::string concatenated_value;
+  absl::optional<std::string> value;
+  // Note: If we ever allow binary headers here, we still need to
+  // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
+  // they are not visible to the LB policy in grpc-go.
+  if (absl::EndsWith(header_matcher.name, "-bin") ||
+      header_matcher.name == "grpc-previous-rpc-attempts") {
+    value = absl::nullopt;
+  } else if (header_matcher.name == "content-type") {
+    value = "application/grpc";
+  } else {
+    value = GetMetadataValue(header_matcher.name, initial_metadata,
+                             &concatenated_value);
+  }
+  if (!value.has_value()) {
+    if (header_matcher.type == XdsApi::RdsUpdate::RdsRoute::Matchers::
+                                   HeaderMatcher::HeaderMatcherType::PRESENT) {
+      return !header_matcher.present_match;
+    } else {
+      // For all other header matcher types, we need the header value to
+      // exist to consider matches.
+      return false;
+    }
+  }
+  switch (header_matcher.type) {
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+        HeaderMatcherType::EXACT:
+      return value.value() == header_matcher.string_matcher;
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+        HeaderMatcherType::REGEX:
+      return RE2::FullMatch(value.value().data(), *header_matcher.regex_match);
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+        HeaderMatcherType::RANGE:
+      int64_t int_value;
+      if (!absl::SimpleAtoi(value.value(), &int_value)) {
+        return false;
+      }
+      return int_value >= header_matcher.range_start &&
+             int_value < header_matcher.range_end;
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+        HeaderMatcherType::PREFIX:
+      return absl::StartsWith(value.value(), header_matcher.string_matcher);
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+        HeaderMatcherType::SUFFIX:
+      return absl::EndsWith(value.value(), header_matcher.string_matcher);
+    default:
+      return false;
+  }
+}
+
+bool HeadersMatch(
+    const std::vector<XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher>&
+        header_matchers,
+    grpc_metadata_batch* initial_metadata) {
+  for (const auto& header_matcher : header_matchers) {
+    bool match = HeaderMatchHelper(header_matcher, initial_metadata);
+    if (header_matcher.invert_match) match = !match;
+    if (!match) return false;
+  }
+  return true;
+}
+
+bool UnderFraction(const uint32_t fraction_per_million) {
+  // Generate a random number in [0, 1000000).
+  const uint32_t random_number = rand() % 1000000;
+  return random_number < fraction_per_million;
+}
 
 //
 // XdsResolver
 //
-
 class XdsResolver : public Resolver {
  public:
   explicit XdsResolver(ResolverArgs args)
       : Resolver(std::move(args.work_serializer),
                  std::move(args.result_handler)),
         args_(grpc_channel_args_copy(args.args)),
-        interested_parties_(args.pollset_set),
-        config_selector_(MakeRefCounted<XdsConfigSelector>()) {
+        interested_parties_(args.pollset_set) {
     char* path = args.uri->path;
     if (path[0] == '/') ++path;
     server_name_ = path;
@@ -84,20 +216,243 @@ class XdsResolver : public Resolver {
 
   class XdsConfigSelector : public ConfigSelector {
    public:
+    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
+                      const XdsApi::RdsUpdate& rds_update)
+        : resolver_(std::move(resolver)), route_table_(rds_update) {
+      for (auto& route : route_table_.routes) {
+        if (route.weighted_clusters.empty()) {
+          const std::string action_name = route.cluster_name;
+          if (clusters_.find(action_name) == clusters_.end()) {
+            clusters_.emplace(action_name);
+            {
+              MutexLock lock(&resolver_->cluster_state_map_mu_);
+              ++resolver_->cluster_state_map_[action_name].refcount;
+            }
+          }
+        } else {
+          const std::string action_name = absl::StrFormat(
+              "weighted:%s", GetWeightedClustersKey(route.weighted_clusters));
+          // Store in route table as cluster name so that it can be used to
+          // lookup the weighted clusters  list in the weighted clusterslist
+          // map.
+          route.cluster_name = action_name;
+          if (weighted_clusters_.find(action_name) ==
+              weighted_clusters_.end()) {
+            weighted_clusters_.emplace(action_name);
+            // Construct a new weighted cluster list where each weighted cluster
+            // is represented by a portion of the range proportional to its
+            // weight, such that the total range is the sum of the weights of
+            // all weighted clusters.
+            WeightedClustersList weighted_clusters_list;
+            uint32_t end = 0;
+            for (const auto& weighted_cluster : route.weighted_clusters) {
+              end += weighted_cluster.weight;
+              weighted_clusters_list.push_back(
+                  std::make_pair(end, weighted_cluster.name));
+            }
+            weighted_clusters_list_map_[action_name] =
+                std::move(weighted_clusters_list);
+            {
+              MutexLock lock(&resolver_->cluster_state_map_mu_);
+              for (const auto& weighted_cluster : route.weighted_clusters) {
+                const std::string cluster_name = weighted_cluster.name;
+                ++resolver_->cluster_state_map_[cluster_name].refcount;
+              }
+            }
+          }
+        }
+      }
+      gpr_log(
+          GPR_INFO,
+          "DONNAAA constructor %p added: RDS update copied to route_table %s",
+          this, route_table_.ToString().c_str());
+      {
+        MutexLock lock(&resolver_->cluster_state_map_mu_);
+        for (const auto& state : resolver_->cluster_state_map_) {
+          gpr_log(GPR_INFO, "DONNAAA: in constructor: cluster %s and count %d",
+                  state.first.c_str(), state.second.refcount);
+        }
+      }
+    }
+
+    ~XdsConfigSelector() {
+      gpr_log(GPR_INFO, "DONNAAA: destructor per selector %p minus", this);
+      void* stack[128];
+      int size = absl::GetStackTrace(stack, 128, 1);
+      for (int i = 0; i < size; ++i) {
+        char out[256];
+        if (absl::Symbolize(stack[i], out, 256)) {
+          gpr_log(GPR_INFO, "donna stack trace per selector %p minus:[%s]",
+                  this, out);
+        }
+      }
+      bool update = false;
+      {
+        MutexLock lock(&resolver_->cluster_state_map_mu_);
+        for (const auto& action : clusters_) {
+          --resolver_->cluster_state_map_[action].refcount;
+          if (resolver_->cluster_state_map_[action].refcount == 0) {
+            gpr_log(GPR_INFO,
+                    "DONNAAA: destructor ERASING from cluster state map: %s",
+                    action.c_str());
+            resolver_->cluster_state_map_.erase(action);
+            update = true;
+          }
+        }
+        for (const auto& state : resolver_->cluster_state_map_) {
+          gpr_log(GPR_INFO, "DONNAAA: in destructor: cluster %s and count %d",
+                  state.first.c_str(), state.second.refcount);
+        }
+      }
+      if (update) UpdateServiceConfig();
+    }
+
+    // Create the service config generated by the RdsUpdate.
+    grpc_error* CreateServiceConfig(
+        RefCountedPtr<ServiceConfig>* service_config) {
+      std::vector<std::string> actions_vector;
+      for (const auto& cluster : resolver_->cluster_state_map_) {
+        actions_vector.push_back(
+            absl::StrFormat("      \"%s\":{\n"
+                            "        \"childPolicy\":[ {\n"
+                            "          \"cds_experimental\":{\n"
+                            "            \"cluster\": \"%s\"\n"
+                            "          }\n"
+                            "        } ]\n"
+                            "       }",
+                            cluster.first, cluster.first));
+      }
+      std::vector<std::string> config_parts;
+      config_parts.push_back(
+          "{\n"
+          "  \"loadBalancingConfig\":[\n"
+          "    { \"xds_routing_experimental\":{\n"
+          "      \"actions\":{\n");
+      config_parts.push_back(absl::StrJoin(actions_vector, ",\n"));
+      config_parts.push_back(
+          "    }\n"
+          "    } }\n"
+          "  ]\n"
+          "}");
+      std::string json = absl::StrJoin(config_parts, "");
+      grpc_error* error = GRPC_ERROR_NONE;
+      *service_config = ServiceConfig::Create(json.c_str(), &error);
+      gpr_log(GPR_INFO, "DONNAAA NEW service config json: %s", json.c_str());
+      return error;
+    }
+
+    void UpdateServiceConfig() {
+      Result result;
+      grpc_error* error = CreateServiceConfig(&result.service_config);
+      if (error != GRPC_ERROR_NONE) {
+        return;
+      }
+      grpc_arg new_args[] = {resolver_->xds_client_->MakeChannelArg()};
+      result.args = grpc_channel_args_copy_and_add(resolver_->args_, new_args,
+                                                   GPR_ARRAY_SIZE(new_args));
+      resolver_->result_handler()->ReturnResult(std::move(result));
+    }
+
+    void OnCallCommitted(const std::string& cluster_name) {
+      MutexLock lock(&resolver_->cluster_state_map_mu_);
+      --resolver_->cluster_state_map_[cluster_name].refcount;
+      if (resolver_->cluster_state_map_[cluster_name].refcount == 0) {
+        gpr_log(GPR_INFO,
+                "DONNAAA: OnCallCommitted ERASING from cluster state map: %s",
+                cluster_name.c_str());
+        resolver_->cluster_state_map_.erase(cluster_name);
+        UpdateServiceConfig();
+      }
+    }
+
     CallConfig GetCallConfig(GetCallConfigArgs args) override {
+      for (size_t i = 0; i < route_table_.routes.size(); ++i) {
+        // Path matching.
+        if (!PathMatch(StringViewFromSlice(*args.path),
+                       route_table_.routes[i].matchers.path_matcher))
+          continue;
+        // Header Matching.
+        if (!HeadersMatch(route_table_.routes[i].matchers.header_matchers,
+                          args.initial_metadata)) {
+          continue;
+        }
+        // Match fraction check
+        if (route_table_.routes[i].matchers.fraction_per_million.has_value() &&
+            !UnderFraction(
+                route_table_.routes[i].matchers.fraction_per_million.value())) {
+          continue;
+        }
+        // Found a route match
+        char* cluster_name_str = nullptr;
+        if (route_table_.routes[i].weighted_clusters.empty()) {
+          cluster_name_str = static_cast<char*>(args.arena->Alloc(
+              route_table_.routes[i].cluster_name.size() + 1));
+          strcpy(cluster_name_str, route_table_.routes[i].cluster_name.c_str());
+        } else {
+          const auto weighted_clusters_list = weighted_clusters_list_map_.find(
+              route_table_.routes[i].cluster_name.c_str());
+          // Put target weight picking in a separate static method.
+          if (weighted_clusters_list != weighted_clusters_list_map_.end()) {
+            // Generate a random number in [0, total weight).
+            const uint32_t key =
+                rand() % weighted_clusters_list
+                             ->second[weighted_clusters_list->second.size() - 1]
+                             .first;
+            // Find the index in weighted clusters corresponding to key.
+            size_t mid = 0;
+            size_t start_index = 0;
+            size_t end_index = weighted_clusters_list->second.size() - 1;
+            size_t index = 0;
+            while (end_index > start_index) {
+              mid = (start_index + end_index) / 2;
+              if (weighted_clusters_list->second[mid].first > key) {
+                end_index = mid;
+              } else if (weighted_clusters_list->second[mid].first < key) {
+                start_index = mid + 1;
+              } else {
+                index = mid + 1;
+                break;
+              }
+            }
+            if (index == 0) index = start_index;
+            GPR_ASSERT(weighted_clusters_list->second[index].first > key);
+            cluster_name_str = static_cast<char*>(args.arena->Alloc(
+                weighted_clusters_list->second[index].second.size() + 1));
+            strcpy(cluster_name_str,
+                   weighted_clusters_list->second[index].second.c_str());
+          }
+        }
+        // TODO: what if there is no match: cluster_name_str == nullptr
+        CallConfig call_config;
+        call_config.call_attributes[kXdsClusterAttribute] =
+            absl::string_view(cluster_name_str);
+        call_config.on_call_committed = [this, cluster_name_str]() {
+          OnCallCommitted(cluster_name_str);
+        };
+        {
+          MutexLock lock(&resolver_->cluster_state_map_mu_);
+          resolver_->cluster_state_map_[cluster_name_str].refcount++;
+        }
+        return call_config;
+      }
       return CallConfig();
     }
+
+   private:
+    RefCountedPtr<XdsResolver> resolver_;
+    XdsApi::RdsUpdate route_table_;
+    std::set<std::string> clusters_;
+    std::set<std::string> weighted_clusters_;
+    // Maintains a weighted list of clusters.  The first element in the pair
+    // represents the end of a range proportional to the cluster's weight. The
+    // start of the range is the previous value in the vector and is 0 for the
+    // first element.
+    using WeightedClustersList =
+        absl::InlinedVector<std::pair<uint32_t, std::string>, 1>;
+    using WeightedClustersListMap =
+        std::map<std::string /*weighted action name*/, WeightedClustersList>;
+    WeightedClustersListMap weighted_clusters_list_map_;
   };
-
-  // Returns the weighted_clusters action name to use from
-  // weighted_cluster_index_map_ for a WeightedClusters route action.
-  std::string WeightedClustersActionName(
-      const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
-          weighted_clusters);
-
-  // Updates weighted_cluster_index_map_ that will
-  // determine the names of the WeightedCluster actions for the current update.
-  void UpdateWeightedClusterIndexMap(const XdsApi::RdsUpdate& rds_update);
 
   // Create the service config generated by the RdsUpdate.
   grpc_error* CreateServiceConfig(const XdsApi::RdsUpdate& rds_update,
@@ -107,23 +462,11 @@ class XdsResolver : public Resolver {
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
-  RefCountedPtr<XdsConfigSelector> config_selector_;
-
-  // 2-level map to store WeightedCluster action names.
-  // Top level map is keyed by cluster names without weight like a_b_c; bottom
-  // level map is keyed by cluster names + weights like a10_b50_c40.
-  struct ClusterNamesInfo {
-    uint64_t next_index = 0;
-    std::map<std::string /*cluster names + weights*/,
-             uint64_t /*policy index number*/>
-        cluster_weights_map;
+  struct ClusterState {
+    int refcount = 0;
   };
-  using WeightedClusterIndexMap =
-      std::map<std::string /*cluster names*/, ClusterNamesInfo>;
-
-  // Cache of action names for WeightedCluster targets in the current
-  // service config.
-  WeightedClusterIndexMap weighted_cluster_index_map_;
+  std::map<std::string /* cluster_name */, ClusterState> cluster_state_map_;
+  Mutex cluster_state_map_mu_;  // protects the cluster state map.
 };
 
 //
@@ -137,9 +480,13 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data",
             resolver_.get());
   }
+  // First create XdsConfigSelector, which will create the cluster state
+  // map, and then CreateServiceConfig for LB policies.
+  auto config_selector =
+      MakeRefCounted<XdsConfigSelector>(resolver_, *listener_data.rds_update);
   Result result;
-  grpc_error* error = resolver_->CreateServiceConfig(*listener_data.rds_update,
-                                                     &result.service_config);
+  grpc_error* error =
+      config_selector->CreateServiceConfig(&result.service_config);
   if (error != GRPC_ERROR_NONE) {
     OnError(error);
     return;
@@ -150,7 +497,7 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
   }
   grpc_arg new_args[] = {
       resolver_->xds_client_->MakeChannelArg(),
-      resolver_->config_selector_->MakeChannelArg(),
+      config_selector->MakeChannelArg(),
   };
   result.args = grpc_channel_args_copy_and_add(resolver_->args_, new_args,
                                                GPR_ARRAY_SIZE(new_args));
@@ -199,319 +546,6 @@ void XdsResolver::StartLocked() {
             grpc_error_string(error));
     result_handler()->ReturnError(error);
   }
-}
-
-std::string CreateServiceConfigActionCluster(const std::string& cluster_name) {
-  return absl::StrFormat(
-      "      \"cds:%s\":{\n"
-      "        \"childPolicy\":[ {\n"
-      "          \"cds_experimental\":{\n"
-      "            \"cluster\": \"%s\"\n"
-      "          }\n"
-      "        } ]\n"
-      "       }",
-      cluster_name, cluster_name);
-}
-
-std::string CreateServiceConfigRoute(const std::string& action_name,
-                                     const XdsApi::RdsUpdate::RdsRoute& route) {
-  std::vector<std::string> headers;
-  for (const auto& header : route.matchers.header_matchers) {
-    std::string header_matcher;
-    switch (header.type) {
-      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
-          HeaderMatcherType::EXACT:
-        header_matcher = absl::StrFormat("             \"exact_match\": \"%s\"",
-                                         header.string_matcher);
-        break;
-      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
-          HeaderMatcherType::REGEX:
-        header_matcher = absl::StrFormat("             \"regex_match\": \"%s\"",
-                                         header.regex_match->pattern());
-        break;
-      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
-          HeaderMatcherType::RANGE:
-        header_matcher = absl::StrFormat(
-            "             \"range_match\":{\n"
-            "              \"start\":%d,\n"
-            "              \"end\":%d\n"
-            "             }",
-            header.range_start, header.range_end);
-        break;
-      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
-          HeaderMatcherType::PRESENT:
-        header_matcher =
-            absl::StrFormat("             \"present_match\": %s",
-                            header.present_match ? "true" : "false");
-        break;
-      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
-          HeaderMatcherType::PREFIX:
-        header_matcher = absl::StrFormat(
-            "             \"prefix_match\": \"%s\"", header.string_matcher);
-        break;
-      case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
-          HeaderMatcherType::SUFFIX:
-        header_matcher = absl::StrFormat(
-            "             \"suffix_match\": \"%s\"", header.string_matcher);
-        break;
-      default:
-        break;
-    }
-    std::vector<std::string> header_parts;
-    header_parts.push_back(
-        absl::StrFormat("           { \n"
-                        "             \"name\": \"%s\",\n",
-                        header.name));
-    header_parts.push_back(header_matcher);
-    if (header.invert_match) {
-      header_parts.push_back(
-          absl::StrFormat(",\n"
-                          "             \"invert_match\": true"));
-    }
-    header_parts.push_back(
-        absl::StrFormat("\n"
-                        "           }"));
-    headers.push_back(absl::StrJoin(header_parts, ""));
-  }
-  std::vector<std::string> headers_service_config;
-  if (!headers.empty()) {
-    headers_service_config.push_back("\"headers\":[\n");
-    headers_service_config.push_back(absl::StrJoin(headers, ","));
-    headers_service_config.push_back("           ],\n");
-  }
-  std::string path_match_str;
-  switch (route.matchers.path_matcher.type) {
-    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
-        PREFIX:
-      path_match_str = absl::StrFormat(
-          "\"prefix\": \"%s\",\n", route.matchers.path_matcher.string_matcher);
-      break;
-    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
-        PATH:
-      path_match_str = absl::StrFormat(
-          "\"path\": \"%s\",\n", route.matchers.path_matcher.string_matcher);
-      break;
-    case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
-        REGEX:
-      path_match_str =
-          absl::StrFormat("\"regex\": \"%s\",\n",
-                          route.matchers.path_matcher.regex_matcher->pattern());
-      break;
-  }
-  return absl::StrFormat(
-      "      { \n"
-      "           %s"
-      "           %s"
-      "           %s"
-      "           \"action\": \"%s\"\n"
-      "      }",
-      path_match_str, absl::StrJoin(headers_service_config, ""),
-      route.matchers.fraction_per_million.has_value()
-          ? absl::StrFormat("\"match_fraction\":%d,\n",
-                            route.matchers.fraction_per_million.value())
-          : "",
-      action_name);
-}
-
-// Create the service config for one weighted cluster.
-std::string CreateServiceConfigActionWeightedCluster(
-    const std::string& name,
-    const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>& clusters) {
-  std::vector<std::string> config_parts;
-  config_parts.push_back(
-      absl::StrFormat("      \"weighted:%s\":{\n"
-                      "        \"childPolicy\":[ {\n"
-                      "          \"weighted_target_experimental\":{\n"
-                      "            \"targets\":{\n",
-                      name));
-  std::vector<std::string> weighted_targets;
-  weighted_targets.reserve(clusters.size());
-  for (const auto& cluster_weight : clusters) {
-    weighted_targets.push_back(absl::StrFormat(
-        "              \"%s\":{\n"
-        "                \"weight\":%d,\n"
-        "                \"childPolicy\":[ {\n"
-        "                  \"cds_experimental\":{\n"
-        "                    \"cluster\": \"%s\"\n"
-        "                  }\n"
-        "                } ]\n"
-        "               }",
-        cluster_weight.name, cluster_weight.weight, cluster_weight.name));
-  }
-  config_parts.push_back(absl::StrJoin(weighted_targets, ",\n"));
-  config_parts.push_back(
-      "            }\n"
-      "          }\n"
-      "        } ]\n"
-      "       }");
-  return absl::StrJoin(config_parts, "");
-}
-
-struct WeightedClustersKeys {
-  std::string cluster_names_key;
-  std::string cluster_weights_key;
-};
-
-// Returns the cluster names and weights key or the cluster names only key.
-WeightedClustersKeys GetWeightedClustersKey(
-    const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
-        weighted_clusters) {
-  std::set<std::string> cluster_names;
-  std::set<std::string> cluster_weights;
-  for (const auto& cluster_weight : weighted_clusters) {
-    cluster_names.emplace(absl::StrFormat("%s", cluster_weight.name));
-    cluster_weights.emplace(
-        absl::StrFormat("%s_%d", cluster_weight.name, cluster_weight.weight));
-  }
-  return {absl::StrJoin(cluster_names, "_"),
-          absl::StrJoin(cluster_weights, "_")};
-}
-
-std::string XdsResolver::WeightedClustersActionName(
-    const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
-        weighted_clusters) {
-  WeightedClustersKeys keys = GetWeightedClustersKey(weighted_clusters);
-  auto cluster_names_map_it =
-      weighted_cluster_index_map_.find(keys.cluster_names_key);
-  GPR_ASSERT(cluster_names_map_it != weighted_cluster_index_map_.end());
-  const auto& cluster_weights_map =
-      cluster_names_map_it->second.cluster_weights_map;
-  auto cluster_weights_map_it =
-      cluster_weights_map.find(keys.cluster_weights_key);
-  GPR_ASSERT(cluster_weights_map_it != cluster_weights_map.end());
-  return absl::StrFormat("%s_%d", keys.cluster_names_key,
-                         cluster_weights_map_it->second);
-}
-
-void XdsResolver::UpdateWeightedClusterIndexMap(
-    const XdsApi::RdsUpdate& rds_update) {
-  // Construct a list of unique WeightedCluster
-  // actions which we need to process: to find action names
-  std::map<std::string /* cluster_weights_key */,
-           std::string /* cluster_names_key */>
-      actions_to_process;
-  for (const auto& route : rds_update.routes) {
-    if (!route.weighted_clusters.empty()) {
-      WeightedClustersKeys keys =
-          GetWeightedClustersKey(route.weighted_clusters);
-      auto action_it = actions_to_process.find(keys.cluster_weights_key);
-      if (action_it == actions_to_process.end()) {
-        actions_to_process[std::move(keys.cluster_weights_key)] =
-            std::move(keys.cluster_names_key);
-      }
-    }
-  }
-  // First pass of all unique WeightedCluster actions: if the exact same
-  // weighted target policy (same clusters and weights) appears in the old map,
-  // then that old action name is taken again and should be moved to the new
-  // map; any other action names from the old set of actions are candidates for
-  // reuse.
-  XdsResolver::WeightedClusterIndexMap new_weighted_cluster_index_map;
-  for (auto action_it = actions_to_process.begin();
-       action_it != actions_to_process.end();) {
-    const std::string& cluster_names_key = action_it->second;
-    const std::string& cluster_weights_key = action_it->first;
-    auto old_cluster_names_map_it =
-        weighted_cluster_index_map_.find(cluster_names_key);
-    if (old_cluster_names_map_it != weighted_cluster_index_map_.end()) {
-      // Add cluster_names_key to the new map and copy next_index.
-      auto& new_cluster_names_info =
-          new_weighted_cluster_index_map[cluster_names_key];
-      new_cluster_names_info.next_index =
-          old_cluster_names_map_it->second.next_index;
-      // Lookup cluster_weights_key in old map.
-      auto& old_cluster_weights_map =
-          old_cluster_names_map_it->second.cluster_weights_map;
-      auto old_cluster_weights_map_it =
-          old_cluster_weights_map.find(cluster_weights_key);
-      if (old_cluster_weights_map_it != old_cluster_weights_map.end()) {
-        // same policy found, move from old map to new map.
-        new_cluster_names_info.cluster_weights_map[cluster_weights_key] =
-            old_cluster_weights_map_it->second;
-        old_cluster_weights_map.erase(old_cluster_weights_map_it);
-        // This action has been added to new map, so no need to process it
-        // again.
-        action_it = actions_to_process.erase(action_it);
-        continue;
-      }
-    }
-    ++action_it;
-  }
-  // Second pass of all remaining unique WeightedCluster actions: if clusters
-  // for a new action are the same as an old unused action, reuse the name.  If
-  // clusters differ, use a brand new name.
-  for (const auto& action : actions_to_process) {
-    const std::string& cluster_names_key = action.second;
-    const std::string& cluster_weights_key = action.first;
-    auto& new_cluster_names_info =
-        new_weighted_cluster_index_map[cluster_names_key];
-    auto& old_cluster_weights_map =
-        weighted_cluster_index_map_[cluster_names_key].cluster_weights_map;
-    auto old_cluster_weights_it = old_cluster_weights_map.begin();
-    if (old_cluster_weights_it != old_cluster_weights_map.end()) {
-      // There is something to reuse: this action uses the same set
-      // of clusters as a previous action and that action name is not
-      // already taken.
-      new_cluster_names_info.cluster_weights_map[cluster_weights_key] =
-          old_cluster_weights_it->second;
-      // Remove the name from being able to reuse again.
-      old_cluster_weights_map.erase(old_cluster_weights_it);
-    } else {
-      // There is nothing to reuse, take the next index to use and
-      // increment.
-      new_cluster_names_info.cluster_weights_map[cluster_weights_key] =
-          new_cluster_names_info.next_index++;
-    }
-  }
-  weighted_cluster_index_map_ = std::move(new_weighted_cluster_index_map);
-}
-
-grpc_error* XdsResolver::CreateServiceConfig(
-    const XdsApi::RdsUpdate& rds_update,
-    RefCountedPtr<ServiceConfig>* service_config) {
-  UpdateWeightedClusterIndexMap(rds_update);
-  std::vector<std::string> actions_vector;
-  std::vector<std::string> route_table;
-  std::set<std::string> actions_set;
-  for (const auto& route : rds_update.routes) {
-    const std::string action_name =
-        route.weighted_clusters.empty()
-            ? route.cluster_name
-            : WeightedClustersActionName(route.weighted_clusters);
-    if (actions_set.find(action_name) == actions_set.end()) {
-      actions_set.emplace(action_name);
-      actions_vector.push_back(
-          route.weighted_clusters.empty()
-              ? CreateServiceConfigActionCluster(action_name)
-              : CreateServiceConfigActionWeightedCluster(
-                    action_name, route.weighted_clusters));
-    }
-    route_table.push_back(CreateServiceConfigRoute(
-        absl::StrFormat("%s:%s",
-                        route.weighted_clusters.empty() ? "cds" : "weighted",
-                        action_name),
-        route));
-  }
-  std::vector<std::string> config_parts;
-  config_parts.push_back(
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"xds_routing_experimental\":{\n"
-      "      \"actions\":{\n");
-  config_parts.push_back(absl::StrJoin(actions_vector, ",\n"));
-  config_parts.push_back(
-      "    },\n"
-      "      \"routes\":[\n");
-  config_parts.push_back(absl::StrJoin(route_table, ",\n"));
-  config_parts.push_back(
-      "    ]\n"
-      "    } }\n"
-      "  ]\n"
-      "}");
-  std::string json = absl::StrJoin(config_parts, "");
-  grpc_error* error = GRPC_ERROR_NONE;
-  *service_config = ServiceConfig::Create(json.c_str(), &error);
-  return error;
 }
 
 //

@@ -1825,7 +1825,11 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked(
   // Check if ConfigSelector has changed.
   const bool config_selector_changed =
       saved_config_selector_ != config_selector;
-  saved_config_selector_ = config_selector;
+  if (config_selector != nullptr) {
+    saved_config_selector_ = config_selector;
+  } else {
+    config_selector = saved_config_selector_;
+  }
   // We want to set the service config at least once, even if the
   // resolver does not return a config, because that ensures that we
   // disable retries if they are not enabled in the service config.
@@ -4162,7 +4166,9 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
         connected_subchannel_ =
             chand->GetConnectedSubchannelInDataPlane(result.subchannel.get());
         GPR_ASSERT(connected_subchannel_ != nullptr);
-        if (retry_committed_) MaybeInvokeConfigSelectorCommitCallback();
+        if (!enable_retries_ || retry_committed_) {
+          MaybeInvokeConfigSelectorCommitCallback();
+        }
       }
       lb_recv_trailing_metadata_ready_ = result.recv_trailing_metadata_ready;
       *error = result.error;
