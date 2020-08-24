@@ -220,8 +220,7 @@ XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
   for (const Route& route : route_table_) {
     if (route.action ==
         std::string(args.call_state->ExperimentalGetCallAttribute(
-            kCallAttributeRoutingAction))) {
-      // gpr_log(GPR_INFO, "DONNAAA found a match %s", route.action.c_str());
+            kXdsClusterAttribute))) {
       return route.picker->Pick(args);
     }
   }

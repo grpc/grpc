@@ -36,7 +36,7 @@ namespace grpc_core {
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
-const char* kCallAttributeRoutingAction = "routing_action";
+const char* kXdsClusterAttribute = "xds_cluster_name";
 
 namespace {
 
@@ -202,10 +202,6 @@ class XdsResolver : public Resolver {
   }
 
  private:
-  struct ClusterState {
-    int refcount = 0;
-  };
-
   class ListenerWatcher : public XdsClient::ListenerWatcherInterface {
    public:
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
@@ -230,7 +226,7 @@ class XdsResolver : public Resolver {
             cluster_actions_.emplace(action_name);
             {
               MutexLock lock(&resolver_->cluster_state_map_mu_);
-              resolver_->cluster_state_map_[action_name].refcount++;
+              ++resolver_->cluster_state_map_[action_name].refcount;
             }
           }
         } else {
@@ -255,7 +251,7 @@ class XdsResolver : public Resolver {
               MutexLock lock(&resolver_->cluster_state_map_mu_);
               for (const auto& weighted_cluster : route.weighted_clusters) {
                 const std::string cluster_name = weighted_cluster.name;
-                resolver_->cluster_state_map_[cluster_name].refcount++;
+                ++resolver_->cluster_state_map_[cluster_name].refcount;
               }
             }
           }
@@ -289,7 +285,7 @@ class XdsResolver : public Resolver {
       {
         MutexLock lock(&resolver_->cluster_state_map_mu_);
         for (const auto& action : cluster_actions_) {
-          resolver_->cluster_state_map_[action].refcount--;
+          --resolver_->cluster_state_map_[action].refcount;
           if (resolver_->cluster_state_map_[action].refcount == 0) {
             gpr_log(GPR_INFO,
                     "DONNAAA: destructor ERASING from cluster state map: %s",
@@ -361,14 +357,15 @@ class XdsResolver : public Resolver {
       resolver_->result_handler()->ReturnResult(std::move(result));
     }
 
-    void OnCallCommited(const std::string& routing_action) {
+    void OnCallCommitted(const std::string& cluster_name) {
       MutexLock lock(&resolver_->cluster_state_map_mu_);
-      resolver_->cluster_state_map_[routing_action].refcount--;
-      if (resolver_->cluster_state_map_[routing_action].refcount == 0) {
+      --resolver_->cluster_state_map_[cluster_name].refcount;
+      if (resolver_->cluster_state_map_[cluster_name].refcount == 0) {
         gpr_log(GPR_INFO,
                 "DONNAAA: OnCallCommitted ERASING from cluster state map: %s",
-                routing_action.c_str());
-        resolver_->cluster_state_map_.erase(routing_action);
+                cluster_name.c_str());
+        resolver_->cluster_state_map_.erase(cluster_name);
+        UpdateServiceConfig();
       }
     }
 
@@ -390,12 +387,11 @@ class XdsResolver : public Resolver {
           continue;
         }
         // Found a route match
-        char* routing_action_str;
+        char* cluster_name_str = nullptr;
         if (route_table_.routes[i].weighted_clusters.empty()) {
-          routing_action_str = static_cast<char*>(args.arena->Alloc(
+          cluster_name_str = static_cast<char*>(args.arena->Alloc(
               route_table_.routes[i].cluster_name.size() + 1));
-          strcpy(routing_action_str,
-                 route_table_.routes[i].cluster_name.c_str());
+          strcpy(cluster_name_str, route_table_.routes[i].cluster_name.c_str());
         } else {
           const auto picker_list = picker_list_map_.find(
               route_table_.routes[i].cluster_name.c_str());
@@ -423,25 +419,24 @@ class XdsResolver : public Resolver {
             }
             if (index == 0) index = start_index;
             GPR_ASSERT(picker_list->second[index].first > key);
-            routing_action_str = static_cast<char*>(args.arena->Alloc(
+            cluster_name_str = static_cast<char*>(args.arena->Alloc(
                 picker_list->second[index].second.size() + 1));
-            strcpy(routing_action_str,
-                   picker_list->second[index].second.c_str());
+            strcpy(cluster_name_str, picker_list->second[index].second.c_str());
           }
         }
-        // TODO: what if there is no match
-        // gpr_log(GPR_INFO, "DONNAAA: GetCallConfig from selector %p:%s", this,
-        // std::string(routing_action_str).c_str());
+        // TODO: what if there is no match: cluster_name_str == nullptr
         CallConfig call_config;
-        call_config.call_attributes[kCallAttributeRoutingAction] =
-            absl::string_view(routing_action_str);
-        call_config.on_call_committed =
-            absl::bind_front(&XdsResolver::XdsConfigSelector::OnCallCommited,
-                             this, std::string(routing_action_str));
+        call_config.call_attributes[kXdsClusterAttribute] =
+            absl::string_view(cluster_name_str);
+        call_config.on_call_committed = [this, cluster_name_str]() {
+          OnCallCommitted(cluster_name_str);
+        };
+        // call_config.on_call_committed =
+        //    absl::bind_front(&XdsResolver::XdsConfigSelector::OnCallCommitted,
+        //                     this, cluster_name_str);
         {
           MutexLock lock(&resolver_->cluster_state_map_mu_);
-          resolver_->cluster_state_map_[std::string(routing_action_str)]
-              .refcount++;
+          resolver_->cluster_state_map_[cluster_name_str].refcount++;
         }
         return call_config;
       }
@@ -471,6 +466,9 @@ class XdsResolver : public Resolver {
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
+  struct ClusterState {
+    int refcount = 0;
+  };
   std::map<std::string /* cluster_name */, ClusterState> cluster_state_map_;
   Mutex cluster_state_map_mu_;  // protects the cluster state map.
 };
@@ -488,7 +486,7 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
   }
   // First create XdsConfigSelector, which will create the cluster state
   // map, and then CreateServiceConfig for LB policies.
-  RefCountedPtr<XdsConfigSelector> config_selector =
+  auto config_selector =
       MakeRefCounted<XdsConfigSelector>(resolver_, *listener_data.rds_update);
   Result result;
   grpc_error* error =
