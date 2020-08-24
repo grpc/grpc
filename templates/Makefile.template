@@ -320,8 +320,7 @@
   USE_BUILT_PROTOC = false
   endif
 
-  GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc -Ithird_party/googletest/googlemock/include -Ithird_party/googletest/googlemock third_party/googletest/googlemock/src/gmock-all.cc
-  GTEST_LIB += -lgflags -std=c++11
+  # V=1 can be used to print commands run by make
   ifeq ($(V),1)
   E = @:
   Q =
@@ -1539,11 +1538,6 @@
    $(HOST_LDLIBS_PROTOC)\
   % elif tgt.get('secure', 'check') == True or tgt.get('secure', 'check') == 'check':
    $(LDLIBS_SECURE)\
-  % endif
-  % if tgt.language == 'c++' and tgt.build == 'test':
-   $(GTEST_LIB)\
-  % elif tgt.language == 'c++' and tgt.build == 'benchmark':
-   $(GTEST_LIB)\
   % endif
   % if tgt.build == 'fuzzer':
    -lFuzzer\
