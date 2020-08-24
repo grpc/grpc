@@ -77,7 +77,7 @@ OBJDIR = $(BUILDDIR_ABSOLUTE)/objs
 LIBDIR = $(BUILDDIR_ABSOLUTE)/libs
 GENDIR = $(BUILDDIR_ABSOLUTE)/gens
 
-# Configurations
+# Configurations (as defined under "configs" section in build_handwritten.yaml)
 
 VALID_CONFIG_opt = 1
 CC_opt = $(DEFAULT_CC)
@@ -446,8 +446,7 @@ ARFLAGS += $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
 USE_BUILT_PROTOC = false
 endif
 
-GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc -Ithird_party/googletest/googlemock/include -Ithird_party/googletest/googlemock third_party/googletest/googlemock/src/gmock-all.cc
-GTEST_LIB += -lgflags -std=c++11
+# V=1 can be used to print commands run by make
 ifeq ($(V),1)
 E = @:
 Q =
@@ -488,12 +487,6 @@ HOST_LDLIBS += $(LDLIBS)
 
 CACHE_MK =
 
-HAS_PKG_CONFIG ?= $(shell command -v $(PKG_CONFIG) >/dev/null 2>&1 && echo true || echo false)
-
-ifeq ($(HAS_PKG_CONFIG), true)
-CACHE_MK += HAS_PKG_CONFIG = true,
-endif
-
 ifeq ($(SYSTEM),MINGW32)
 EXECUTABLE_SUFFIX = .exe
 SHARED_EXT_CORE = dll
@@ -529,107 +522,7 @@ else
 IS_GIT_FOLDER = true
 endif
 
-ifeq ($(HAS_PKG_CONFIG),true)
-OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
-ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
-PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.12.0 protobuf
-CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
-else # HAS_PKG_CONFIG
-
-ifeq ($(SYSTEM),MINGW32)
-OPENSSL_LIBS = ssl32 eay32
-else
-OPENSSL_LIBS = ssl crypto
-endif
-
-OPENSSL_ALPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
-BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(CFLAGS) -g -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
-ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
-PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
-CARES_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/c-ares.c -lcares $(LDFLAGS)
-
-endif # HAS_PKG_CONFIG
-
-PERFTOOLS_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
-
-PROTOC_CHECK_CMD = which protoc > /dev/null
-PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
-DTRACE_CHECK_CMD = which dtrace > /dev/null
-SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
-
-ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
-HAS_SYSTEM_PERFTOOLS ?= $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
-ifeq ($(HAS_SYSTEM_PERFTOOLS),true)
-DEFINES += GRPC_HAVE_PERFTOOLS
-LIBS += profiler
-CACHE_MK += HAS_SYSTEM_PERFTOOLS = true,
-endif
-endif
-
-HAS_SYSTEM_PROTOBUF_VERIFY = $(shell $(PROTOBUF_CHECK_CMD) 2> /dev/null && echo true || echo false)
-ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
-HAS_SYSTEM_OPENSSL_ALPN ?= $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
-ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
-CACHE_MK += HAS_SYSTEM_OPENSSL_ALPN = true,
-endif
-HAS_SYSTEM_ZLIB ?= $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
-ifeq ($(HAS_SYSTEM_ZLIB),true)
-CACHE_MK += HAS_SYSTEM_ZLIB = true,
-endif
-HAS_SYSTEM_PROTOBUF ?= $(HAS_SYSTEM_PROTOBUF_VERIFY)
-ifeq ($(HAS_SYSTEM_PROTOBUF),true)
-CACHE_MK += HAS_SYSTEM_PROTOBUF = true,
-endif
-HAS_SYSTEM_CARES ?=  $(shell $(CARES_CHECK_CMD) 2> /dev/null && echo true || echo false)
-ifeq ($(HAS_SYSTEM_CARES),true)
-CACHE_MK += HAS_SYSTEM_CARES = true,
-endif
-else
-# override system libraries if the config requires a custom compiled library
-HAS_SYSTEM_OPENSSL_ALPN = false
-HAS_SYSTEM_ZLIB = false
-HAS_SYSTEM_PROTOBUF = false
-HAS_SYSTEM_CARES = false
-endif
-
-HAS_PROTOC ?= $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
-ifeq ($(HAS_PROTOC),true)
-CACHE_MK += HAS_PROTOC = true,
-HAS_VALID_PROTOC ?= $(shell $(PROTOC_CHECK_VERSION_CMD) 2> /dev/null && echo true || echo false)
-ifeq ($(HAS_VALID_PROTOC),true)
-CACHE_MK += HAS_VALID_PROTOC = true,
-endif
-else
-HAS_VALID_PROTOC = false
-endif
-
-# Check for Systemtap (https://sourceware.org/systemtap/), first by making sure <sys/sdt.h> is present
-# in the system and secondly by checking for the "dtrace" binary (on Linux, this is part of the Systemtap
-# distribution. It's part of the base system on BSD/Solaris machines).
-ifndef HAS_SYSTEMTAP
-HAS_SYSTEMTAP_HEADERS = $(shell $(SYSTEMTAP_HEADERS_CHECK_CMD) 2> /dev/null && echo true || echo false)
-HAS_DTRACE = $(shell $(DTRACE_CHECK_CMD) 2> /dev/null && echo true || echo false)
-HAS_SYSTEMTAP = false
-ifeq ($(HAS_SYSTEMTAP_HEADERS),true)
-ifeq ($(HAS_DTRACE),true)
-HAS_SYSTEMTAP = true
-endif
-endif
-endif
-
-ifeq ($(HAS_SYSTEMTAP),true)
-CACHE_MK += HAS_SYSTEMTAP = true,
-endif
-
-# Note that for testing purposes, one can do:
-#   make HAS_EMBEDDED_OPENSSL_ALPN=false
-# to emulate the fact we do not have OpenSSL in the third_party folder.
-ifeq ($(wildcard third_party/boringssl-with-bazel/src/include/openssl/ssl.h),)
-HAS_EMBEDDED_OPENSSL_ALPN = false
-else
-CAN_COMPILE_EMBEDDED_OPENSSL ?= $(shell $(BORINGSSL_COMPILE_CHECK_CMD) 2> /dev/null && echo true || echo false)
-HAS_EMBEDDED_OPENSSL_ALPN = $(CAN_COMPILE_EMBEDDED_OPENSSL)
-endif
+# Setup zlib dependency
 
 ifeq ($(wildcard third_party/zlib/zlib.h),)
 HAS_EMBEDDED_ZLIB = false
@@ -637,34 +530,11 @@ else
 HAS_EMBEDDED_ZLIB = true
 endif
 
-ifeq ($(wildcard third_party/protobuf/src/google/protobuf/descriptor.pb.h),)
-HAS_EMBEDDED_PROTOBUF = false
-ifneq ($(HAS_VALID_PROTOC),true)
-NO_PROTOC = true
-endif
-else
-HAS_EMBEDDED_PROTOBUF = true
-endif
-
-ifeq ($(wildcard third_party/cares/cares/ares.h),)
-HAS_EMBEDDED_CARES = false
-else
-HAS_EMBEDDED_CARES = true
-endif
-
-PC_REQUIRES_GRPC =
-PC_LIBS_GRPC =
-
-ifeq ($(HAS_SYSTEM_ZLIB),false)
-ifeq ($(HAS_EMBEDDED_ZLIB), true)
-EMBED_ZLIB ?= true
-else
-DEP_MISSING += zlib
-EMBED_ZLIB ?= broken
-endif
-else
+# for zlib, we support building both from submodule
+# and from system-installed zlib. In some builds,
+# embedding zlib is not desirable.
+# By default we use the system zlib (to match legacy behavior)
 EMBED_ZLIB ?= false
-endif
 
 ifeq ($(EMBED_ZLIB),true)
 ZLIB_DEP = $(LIBDIR)/$(CONFIG)/libz.a
@@ -672,34 +542,40 @@ ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libz.a
 ZLIB_MERGE_OBJS = $(LIBZ_OBJS)
 CPPFLAGS += -Ithird_party/zlib
 else
-ifeq ($(HAS_PKG_CONFIG),true)
-CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
-LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L zlib)
-LIBS += $(patsubst -l%,%,$(shell $(PKG_CONFIG) --libs-only-l zlib))
-PC_REQUIRES_GRPC += zlib
-else
-PC_LIBS_GRPC += -lz
 LIBS += z
 endif
+
+# Setup c-ares dependency
+
+ifeq ($(wildcard third_party/cares/cares/ares.h),)
+HAS_EMBEDDED_CARES = false
+else
+HAS_EMBEDDED_CARES = true
 endif
 
-CARES_PKG_CONFIG = false
-
-ifeq ($(HAS_SYSTEM_CARES),false)
-ifeq ($(HAS_EMBEDDED_CARES), true)
+ifeq ($(HAS_EMBEDDED_CARES),true)
 EMBED_CARES ?= true
 else
+# only building with c-ares from submodule is supported
 DEP_MISSING += cares
 EMBED_CARES ?= broken
 endif
-else
-EMBED_CARES ?= false
+
+ifeq ($(EMBED_CARES),true)
+CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
+CARES_MERGE_OBJS = $(LIBARES_OBJS)
+CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
+CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
 endif
+
+# Setup address_sorting dependency
 
 ADDRESS_SORTING_DEP = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
 ADDRESS_SORTING_MERGE_OBJS = $(LIBADDRESS_SORTING_OBJS)
 ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
 CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
+
+# Setup abseil dependency
 
 GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
 GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
@@ -709,144 +585,80 @@ else
 ABSL_RANDOM_HWAES_FLAGS =
 endif
 
+# Setup re2 dependency
+
 RE2_DEP = $(LIBDIR)/$(CONFIG)/libre2.a
 RE2_MERGE_OBJS = $(LIBRE2_OBJS)
 RE2_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libre2.a
+
+# Setup upb dependency
 
 UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
 UPB_MERGE_OBJS = $(LIBUPB_OBJS)
 UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
 
-ifeq ($(EMBED_CARES),true)
-CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
-CARES_MERGE_OBJS = $(LIBARES_OBJS)
-CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
-CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
+# Setup boringssl dependency
+
+ifeq ($(wildcard third_party/boringssl-with-bazel/src/include/openssl/ssl.h),)
+HAS_EMBEDDED_OPENSSL = false
 else
-ifeq ($(HAS_PKG_CONFIG),true)
-PC_REQUIRES_GRPC += libcares
-CPPFLAGS += $(shell $(PKG_CONFIG) --cflags libcares)
-LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L libcares)
-LIBS += $(patsubst -l%,%,$(shell $(PKG_CONFIG) --libs-only-l libcares))
-else
-PC_LIBS_GRPC += -lcares
-LIBS += cares
-endif
+HAS_EMBEDDED_OPENSSL = true
 endif
 
-OPENSSL_PKG_CONFIG = false
+ifeq ($(HAS_EMBEDDED_OPENSSL),true)
+EMBED_OPENSSL ?= true
+else
+# only support building boringssl from submodule
+DEP_MISSING += openssl
+EMBED_OPENSSL ?= broken
+endif
 
-PC_REQUIRES_SECURE =
-PC_LIBS_SECURE =
-
-ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
-EMBED_OPENSSL ?= false
-NO_SECURE ?= false
-else # HAS_SYSTEM_OPENSSL_ALPN=false
-ifneq ($(HAS_EMBEDDED_OPENSSL_ALPN),false)
-EMBED_OPENSSL ?= $(HAS_EMBEDDED_OPENSSL_ALPN)
-NO_SECURE ?= false
-else # HAS_EMBEDDED_OPENSSL_ALPN=false
-NO_SECURE ?= true
-endif # HAS_EMBEDDED_OPENSSL_ALPN
-endif # HAS_SYSTEM_OPENSSL_ALPN
-
-OPENSSL_DEP :=
-OPENSSL_MERGE_LIBS :=
-ifeq ($(NO_SECURE),false)
 ifeq ($(EMBED_OPENSSL),true)
 OPENSSL_DEP += $(LIBDIR)/$(CONFIG)/libboringssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
 OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
 # need to prefix these to ensure overriding system libraries
-CPPFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CPPFLAGS)
-else ifneq ($(EMBED_OPENSSL),false)
-OPENSSL_DEP += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
-OPENSSL_MERGE_LIBS += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
-OPENSSL_MERGE_OBJS += $(wildcard $(EMBED_OPENSSL)/grpc_obj/*.o)
-# need to prefix these to ensure overriding system libraries
-CPPFLAGS := -I$(EMBED_OPENSSL)/include $(CPPFLAGS)
-else # EMBED_OPENSSL=false
-ifeq ($(HAS_PKG_CONFIG),true)
-OPENSSL_PKG_CONFIG = true
-PC_REQUIRES_SECURE = openssl
-CPPFLAGS := $(shell $(PKG_CONFIG) --cflags openssl) $(CPPFLAGS)
-LDFLAGS_OPENSSL_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L openssl)
-ifeq ($(SYSTEM),Linux)
-ifneq ($(LDFLAGS_OPENSSL_PKG_CONFIG),)
-LDFLAGS_OPENSSL_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L openssl | sed s/L/Wl,-rpath,/)
-endif # LDFLAGS_OPENSSL_PKG_CONFIG=''
-endif # System=Linux
-LDFLAGS := $(LDFLAGS_OPENSSL_PKG_CONFIG) $(LDFLAGS)
-else # HAS_PKG_CONFIG=false
-LIBS_SECURE = $(OPENSSL_LIBS)
-endif # HAS_PKG_CONFIG
+CPPFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CPPFLAGS)  
 ifeq ($(DISABLE_ALPN),true)
 CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
 LIBS_SECURE = $(OPENSSL_LIBS)
 endif # DISABLE_ALPN
-PC_LIBS_SECURE = $(addprefix -l, $(LIBS_SECURE))
 endif # EMBED_OPENSSL
-endif # NO_SECURE
 
-ifeq ($(OPENSSL_PKG_CONFIG),true)
-LDLIBS_SECURE += $(shell $(PKG_CONFIG) --libs-only-l openssl)
-else
 LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
+
+# Setup protobuf dependency
+
+# we only support building protobuf from submodule
+HAS_SYSTEM_PROTOBUF = false
+HAS_PROTOC = false
+HAS_VALID_PROTOC = false
+ifeq ($(wildcard third_party/protobuf/src/google/protobuf/descriptor.pb.h),)
+HAS_EMBEDDED_PROTOBUF = false
+ifneq ($(HAS_VALID_PROTOC),true)
+NO_PROTOC = true
+endif
+else
+HAS_EMBEDDED_PROTOBUF = true
 endif
 
-PROTOBUF_PKG_CONFIG = false
-
-PC_REQUIRES_GRPCXX =
-PC_LIBS_GRPCXX =
-
-CPPFLAGS := -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googlemock/include $(CPPFLAGS)
-
-PROTOC_PLUGINS_ALL = $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(BINDIR)/$(CONFIG)/grpc_csharp_plugin $(BINDIR)/$(CONFIG)/grpc_node_plugin $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(BINDIR)/$(CONFIG)/grpc_php_plugin $(BINDIR)/$(CONFIG)/grpc_python_plugin $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 PROTOC_PLUGINS_DIR = $(BINDIR)/$(CONFIG)
 
-ifeq ($(HAS_SYSTEM_PROTOBUF),true)
-ifeq ($(HAS_PKG_CONFIG),true)
-PROTOBUF_PKG_CONFIG = true
-PC_REQUIRES_GRPCXX = protobuf
-CPPFLAGS := $(CPPFLAGS) $(shell $(PKG_CONFIG) --cflags protobuf)
-LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L protobuf)
-ifeq ($(SYSTEM),Linux)
-ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
-LDFLAGS_PROTOBUF_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L protobuf | sed s/L/Wl,-rpath,/)
-endif
-endif
-else
-PC_LIBS_GRPCXX = -lprotobuf
-endif
-PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
-else
+PROTOC_PLUGINS_ALL = $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(BINDIR)/$(CONFIG)/grpc_csharp_plugin $(BINDIR)/$(CONFIG)/grpc_node_plugin $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(BINDIR)/$(CONFIG)/grpc_php_plugin $(BINDIR)/$(CONFIG)/grpc_python_plugin $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
 PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
 CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
 LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
-ifneq ($(USE_BUILT_PROTOC),false)
 PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
 PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
 else
-PROTOC_PLUGINS =
-PROTOC_PLUGINS_DIR = $(prefix)/bin
-endif
-else
 NO_PROTOBUF = true
-endif
 endif
 
 LIBS_PROTOBUF = protobuf
 LIBS_PROTOC = protoc protobuf
-
 HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
-
-ifeq ($(PROTOBUF_PKG_CONFIG),true)
-LDLIBS_PROTOBUF += $(shell $(PKG_CONFIG) --libs-only-l protobuf)
-else
 LDLIBS_PROTOBUF += $(addprefix -l, $(LIBS_PROTOBUF))
-endif
 
 ifeq ($(MAKECMDGOALS),clean)
 NO_DEPS = true
@@ -969,12 +781,7 @@ grpc_python_plugin: $(BINDIR)/$(CONFIG)/grpc_python_plugin
 grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 
 run_dep_checks:
-	$(OPENSSL_ALPN_CHECK_CMD) || true
-	$(ZLIB_CHECK_CMD) || true
-	$(PERFTOOLS_CHECK_CMD) || true
-	$(PROTOBUF_CHECK_CMD) || true
-	$(PROTOC_CHECK_VERSION_CMD) || true
-	$(CARES_CHECK_CMD) || true
+	@echo "run_dep_checks target has been deprecated."
 
 third_party/protobuf/configure:
 	$(E) "[AUTOGEN] Preparing protobuf"
@@ -4778,6 +4585,7 @@ endif
 
 
 
+# TODO(jtattermusch): is there a way to get around this hack?
 ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
