@@ -1671,18 +1671,33 @@ else:
 
 try:
     gcp = GcpState(compute, alpha_compute, args.project_id)
-    health_check_name = _BASE_HEALTH_CHECK_NAME + args.gcp_suffix
-    firewall_name = _BASE_FIREWALL_RULE_NAME + args.gcp_suffix
-    backend_service_name = _BASE_BACKEND_SERVICE_NAME + args.gcp_suffix
-    alternate_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-alternate' + args.gcp_suffix
-    url_map_name = _BASE_URL_MAP_NAME + args.gcp_suffix
-    service_host_name = _BASE_SERVICE_HOST + args.gcp_suffix
-    target_proxy_name = _BASE_TARGET_PROXY_NAME + args.gcp_suffix
-    forwarding_rule_name = _BASE_FORWARDING_RULE_NAME + args.gcp_suffix
-    template_name = _BASE_TEMPLATE_NAME + args.gcp_suffix
-    instance_group_name = _BASE_INSTANCE_GROUP_NAME + args.gcp_suffix
-    same_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-same-zone' + args.gcp_suffix
-    secondary_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-secondary-zone' + args.gcp_suffix
+    gcp_suffix = args.gcp_suffix
+    health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
+    if not args.use_existing_gcp_resources:
+        num_attempts = 5
+        for i in range(num_attempts):
+            try:
+                logger.info('Using GCP suffix %s', gcp_suffix)
+                create_health_check(gcp, health_check_name)
+                break
+            except googleapiclient.errors.HttpError as http_error:
+                gcp_suffix = '%s-%04d' % (gcp_suffix, random.randint(0, 9999))
+                health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
+                logger.exception('HttpError when creating health check')
+        if gcp.health_check is None:
+            raise Exception('Failed to create health check name after %d '
+                            'attempts' % num_attempts)
+    firewall_name = _BASE_FIREWALL_RULE_NAME + gcp_suffix
+    backend_service_name = _BASE_BACKEND_SERVICE_NAME + gcp_suffix
+    alternate_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-alternate' + gcp_suffix
+    url_map_name = _BASE_URL_MAP_NAME + gcp_suffix
+    service_host_name = _BASE_SERVICE_HOST + gcp_suffix
+    target_proxy_name = _BASE_TARGET_PROXY_NAME + gcp_suffix
+    forwarding_rule_name = _BASE_FORWARDING_RULE_NAME + gcp_suffix
+    template_name = _BASE_TEMPLATE_NAME + gcp_suffix
+    instance_group_name = _BASE_INSTANCE_GROUP_NAME + gcp_suffix
+    same_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-same-zone' + gcp_suffix
+    secondary_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-secondary-zone' + gcp_suffix
     if args.use_existing_gcp_resources:
         logger.info('Reusing existing GCP resources')
         get_health_check(gcp, health_check_name)
@@ -1706,7 +1721,6 @@ try:
         secondary_zone_instance_group = get_instance_group(
             gcp, args.secondary_zone, secondary_zone_instance_group_name)
     else:
-        create_health_check(gcp, health_check_name)
         create_health_check_firewall_rule(gcp, firewall_name)
         backend_service = add_backend_service(gcp, backend_service_name)
         alternate_backend_service = add_backend_service(
