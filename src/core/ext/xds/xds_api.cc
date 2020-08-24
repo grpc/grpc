@@ -74,11 +74,10 @@
 namespace grpc_core {
 
 //
-// XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher
+// XdsApi::Route::Matchers::PathMatcher
 //
 
-XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcher(
-    const PathMatcher& other)
+XdsApi::Route::Matchers::PathMatcher::PathMatcher(const PathMatcher& other)
     : type(other.type) {
   if (type == PathMatcherType::REGEX) {
     regex_matcher = absl::make_unique<RE2>(other.regex_matcher->pattern());
@@ -87,9 +86,8 @@ XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcher(
   }
 }
 
-XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher&
-XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::operator=(
-    const PathMatcher& other) {
+XdsApi::Route::Matchers::PathMatcher& XdsApi::Route::Matchers::PathMatcher::
+operator=(const PathMatcher& other) {
   type = other.type;
   if (type == PathMatcherType::REGEX) {
     regex_matcher = absl::make_unique<RE2>(other.regex_matcher->pattern());
@@ -99,7 +97,7 @@ XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::operator=(
   return *this;
 }
 
-bool XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::operator==(
+bool XdsApi::Route::Matchers::PathMatcher::operator==(
     const PathMatcher& other) const {
   if (type != other.type) return false;
   if (type == PathMatcherType::REGEX) {
@@ -112,8 +110,7 @@ bool XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::operator==(
   return string_matcher == other.string_matcher;
 }
 
-std::string XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::ToString()
-    const {
+std::string XdsApi::Route::Matchers::PathMatcher::ToString() const {
   std::string path_type_string;
   switch (type) {
     case PathMatcherType::PATH:
@@ -135,10 +132,10 @@ std::string XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::ToString()
 }
 
 //
-// XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher
+// XdsApi::Route::Matchers::HeaderMatcher
 //
 
-XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::HeaderMatcher(
+XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcher(
     const HeaderMatcher& other)
     : name(other.name), type(other.type), invert_match(other.invert_match) {
   switch (type) {
@@ -157,9 +154,8 @@ XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::HeaderMatcher(
   }
 }
 
-XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher&
-XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::operator=(
-    const HeaderMatcher& other) {
+XdsApi::Route::Matchers::HeaderMatcher& XdsApi::Route::Matchers::HeaderMatcher::
+operator=(const HeaderMatcher& other) {
   name = other.name;
   type = other.type;
   invert_match = other.invert_match;
@@ -180,7 +176,7 @@ XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::operator=(
   return *this;
 }
 
-bool XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::operator==(
+bool XdsApi::Route::Matchers::HeaderMatcher::operator==(
     const HeaderMatcher& other) const {
   if (name != other.name) return false;
   if (type != other.type) return false;
@@ -197,8 +193,7 @@ bool XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::operator==(
   }
 }
 
-std::string XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::ToString()
-    const {
+std::string XdsApi::Route::Matchers::HeaderMatcher::ToString() const {
   switch (type) {
     case HeaderMatcherType::EXACT:
       return absl::StrFormat("Header exact match:%s %s:%s",
@@ -226,7 +221,11 @@ std::string XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::ToString()
   }
 }
 
-std::string XdsApi::RdsUpdate::RdsRoute::Matchers::ToString() const {
+//
+// XdsApi::Route
+//
+
+std::string XdsApi::Route::Matchers::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(path_matcher.ToString());
   for (const auto& header_it : header_matchers) {
@@ -239,11 +238,11 @@ std::string XdsApi::RdsUpdate::RdsRoute::Matchers::ToString() const {
   return absl::StrJoin(contents, "\n");
 }
 
-std::string XdsApi::RdsUpdate::RdsRoute::ClusterWeight::ToString() const {
+std::string XdsApi::Route::ClusterWeight::ToString() const {
   return absl::StrFormat("{cluster=%s, weight=%d}", name, weight);
 }
 
-std::string XdsApi::RdsUpdate::RdsRoute::ToString() const {
+std::string XdsApi::Route::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(matchers.ToString());
   if (!cluster_name.empty()) {
@@ -255,12 +254,124 @@ std::string XdsApi::RdsUpdate::RdsRoute::ToString() const {
   return absl::StrJoin(contents, "\n");
 }
 
+//
+// XdsApi::RdsUpdate
+//
+
 std::string XdsApi::RdsUpdate::ToString() const {
-  std::vector<std::string> contents;
-  for (const auto& route_it : routes) {
-    contents.push_back(route_it.ToString());
+  std::vector<std::string> vhosts;
+  for (const VirtualHost& vhost : virtual_hosts) {
+    vhosts.push_back(
+        absl::StrCat("vhost={\n"
+                     "  domains=[",
+                     absl::StrJoin(vhost.domains, ", "),
+                     "]\n"
+                     "  routes=[\n"));
+    for (const XdsApi::Route& route : vhost.routes) {
+      vhosts.push_back("    {\n");
+      vhosts.push_back(route.ToString());
+      vhosts.push_back("\n    }\n");
+    }
+    vhosts.push_back("  ]\n");
+    vhosts.push_back("]\n");
   }
-  return absl::StrJoin(contents, ",\n");
+  return absl::StrJoin(vhosts, "");
+}
+
+namespace {
+
+// Better match type has smaller value.
+enum MatchType {
+  EXACT_MATCH,
+  SUFFIX_MATCH,
+  PREFIX_MATCH,
+  UNIVERSE_MATCH,
+  INVALID_MATCH,
+};
+
+// Returns true if match succeeds.
+bool DomainMatch(MatchType match_type, std::string domain_pattern,
+                 std::string expected_host_name) {
+  // Normalize the args to lower-case. Domain matching is case-insensitive.
+  std::transform(domain_pattern.begin(), domain_pattern.end(),
+                 domain_pattern.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  std::transform(expected_host_name.begin(), expected_host_name.end(),
+                 expected_host_name.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  if (match_type == EXACT_MATCH) {
+    return domain_pattern == expected_host_name;
+  } else if (match_type == SUFFIX_MATCH) {
+    // Asterisk must match at least one char.
+    if (expected_host_name.size() < domain_pattern.size()) return false;
+    absl::string_view pattern_suffix(domain_pattern.c_str() + 1);
+    absl::string_view host_suffix(expected_host_name.c_str() +
+                                  expected_host_name.size() -
+                                  pattern_suffix.size());
+    return pattern_suffix == host_suffix;
+  } else if (match_type == PREFIX_MATCH) {
+    // Asterisk must match at least one char.
+    if (expected_host_name.size() < domain_pattern.size()) return false;
+    absl::string_view pattern_prefix(domain_pattern.c_str(),
+                                     domain_pattern.size() - 1);
+    absl::string_view host_prefix(expected_host_name.c_str(),
+                                  pattern_prefix.size());
+    return pattern_prefix == host_prefix;
+  } else {
+    return match_type == UNIVERSE_MATCH;
+  }
+}
+
+MatchType DomainPatternMatchType(const std::string& domain_pattern) {
+  if (domain_pattern.empty()) return INVALID_MATCH;
+  if (domain_pattern.find('*') == std::string::npos) return EXACT_MATCH;
+  if (domain_pattern == "*") return UNIVERSE_MATCH;
+  if (domain_pattern[0] == '*') return SUFFIX_MATCH;
+  if (domain_pattern[domain_pattern.size() - 1] == '*') return PREFIX_MATCH;
+  return INVALID_MATCH;
+}
+
+}  // namespace
+
+const XdsApi::RdsUpdate::VirtualHost*
+XdsApi::RdsUpdate::FindVirtualHostForDomain(const std::string& domain) const {
+  // Find the best matched virtual host.
+  // The search order for 4 groups of domain patterns:
+  //   1. Exact match.
+  //   2. Suffix match (e.g., "*ABC").
+  //   3. Prefix match (e.g., "ABC*").
+  //   4. Universe match (i.e., "*").
+  // Within each group, longest match wins.
+  // If the same best matched domain pattern appears in multiple virtual hosts,
+  // the first matched virtual host wins.
+  const VirtualHost* target_vhost = nullptr;
+  MatchType best_match_type = INVALID_MATCH;
+  size_t longest_match = 0;
+  // Check each domain pattern in each virtual host to determine the best
+  // matched virtual host.
+  for (const VirtualHost& vhost : virtual_hosts) {
+    for (const std::string& domain_pattern : vhost.domains) {
+      // Check the match type first. Skip the pattern if it's not better than
+      // current match.
+      const MatchType match_type = DomainPatternMatchType(domain_pattern);
+      // This should be caught by RouteConfigParse().
+      GPR_ASSERT(match_type != INVALID_MATCH);
+      if (match_type > best_match_type) continue;
+      if (match_type == best_match_type &&
+          domain_pattern.size() <= longest_match) {
+        continue;
+      }
+      // Skip if match fails.
+      if (!DomainMatch(match_type, domain_pattern, domain)) continue;
+      // Choose this match.
+      target_vhost = &vhost;
+      best_match_type = match_type;
+      longest_match = domain_pattern.size();
+      if (best_match_type == EXACT_MATCH) break;
+    }
+    if (best_match_type == EXACT_MATCH) break;
+  }
+  return target_vhost;
 }
 
 //
@@ -1163,60 +1274,8 @@ void MaybeLogClusterLoadAssignment(
   }
 }
 
-// Better match type has smaller value.
-enum MatchType {
-  EXACT_MATCH,
-  SUFFIX_MATCH,
-  PREFIX_MATCH,
-  UNIVERSE_MATCH,
-  INVALID_MATCH,
-};
-
-// Returns true if match succeeds.
-bool DomainMatch(MatchType match_type, std::string domain_pattern,
-                 std::string expected_host_name) {
-  // Normalize the args to lower-case. Domain matching is case-insensitive.
-  std::transform(domain_pattern.begin(), domain_pattern.end(),
-                 domain_pattern.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-  std::transform(expected_host_name.begin(), expected_host_name.end(),
-                 expected_host_name.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-  if (match_type == EXACT_MATCH) {
-    return domain_pattern == expected_host_name;
-  } else if (match_type == SUFFIX_MATCH) {
-    // Asterisk must match at least one char.
-    if (expected_host_name.size() < domain_pattern.size()) return false;
-    absl::string_view pattern_suffix(domain_pattern.c_str() + 1);
-    absl::string_view host_suffix(expected_host_name.c_str() +
-                                  expected_host_name.size() -
-                                  pattern_suffix.size());
-    return pattern_suffix == host_suffix;
-  } else if (match_type == PREFIX_MATCH) {
-    // Asterisk must match at least one char.
-    if (expected_host_name.size() < domain_pattern.size()) return false;
-    absl::string_view pattern_prefix(domain_pattern.c_str(),
-                                     domain_pattern.size() - 1);
-    absl::string_view host_prefix(expected_host_name.c_str(),
-                                  pattern_prefix.size());
-    return pattern_prefix == host_prefix;
-  } else {
-    return match_type == UNIVERSE_MATCH;
-  }
-}
-
-MatchType DomainPatternMatchType(const std::string& domain_pattern) {
-  if (domain_pattern.empty()) return INVALID_MATCH;
-  if (domain_pattern.find('*') == std::string::npos) return EXACT_MATCH;
-  if (domain_pattern == "*") return UNIVERSE_MATCH;
-  if (domain_pattern[0] == '*') return SUFFIX_MATCH;
-  if (domain_pattern[domain_pattern.size() - 1] == '*') return PREFIX_MATCH;
-  return INVALID_MATCH;
-}
-
 grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
-                                XdsApi::RdsUpdate::RdsRoute* rds_route,
-                                bool* ignore_route) {
+                                XdsApi::Route* route, bool* ignore_route) {
   if (envoy_config_route_v3_RouteMatch_has_prefix(match)) {
     absl::string_view prefix =
         UpbStringToAbsl(envoy_config_route_v3_RouteMatch_prefix(match));
@@ -1241,9 +1300,9 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
         return GRPC_ERROR_NONE;
       }
     }
-    rds_route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
-        Matchers::PathMatcher::PathMatcherType::PREFIX;
-    rds_route->matchers.path_matcher.string_matcher = std::string(prefix);
+    route->matchers.path_matcher.type =
+        XdsApi::Route::Matchers::PathMatcher::PathMatcherType::PREFIX;
+    route->matchers.path_matcher.string_matcher = std::string(prefix);
   } else if (envoy_config_route_v3_RouteMatch_has_path(match)) {
     absl::string_view path =
         UpbStringToAbsl(envoy_config_route_v3_RouteMatch_path(match));
@@ -1276,9 +1335,9 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
       *ignore_route = true;
       return GRPC_ERROR_NONE;
     }
-    rds_route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
-        Matchers::PathMatcher::PathMatcherType::PATH;
-    rds_route->matchers.path_matcher.string_matcher = std::string(path);
+    route->matchers.path_matcher.type =
+        XdsApi::Route::Matchers::PathMatcher::PathMatcherType::PATH;
+    route->matchers.path_matcher.string_matcher = std::string(path);
   } else if (envoy_config_route_v3_RouteMatch_has_safe_regex(match)) {
     const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
         envoy_config_route_v3_RouteMatch_safe_regex(match);
@@ -1290,9 +1349,9 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Invalid regex string specified in path matcher.");
     }
-    rds_route->matchers.path_matcher.type = XdsApi::RdsUpdate::RdsRoute::
-        Matchers::PathMatcher::PathMatcherType::REGEX;
-    rds_route->matchers.path_matcher.regex_matcher = std::move(regex);
+    route->matchers.path_matcher.type =
+        XdsApi::Route::Matchers::PathMatcher::PathMatcherType::REGEX;
+    route->matchers.path_matcher.regex_matcher = std::move(regex);
   } else {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid route path specifier specified.");
@@ -1301,19 +1360,18 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
 }
 
 grpc_error* RouteHeaderMatchersParse(
-    const envoy_config_route_v3_RouteMatch* match,
-    XdsApi::RdsUpdate::RdsRoute* rds_route) {
+    const envoy_config_route_v3_RouteMatch* match, XdsApi::Route* route) {
   size_t size;
   const envoy_config_route_v3_HeaderMatcher* const* headers =
       envoy_config_route_v3_RouteMatch_headers(match, &size);
   for (size_t i = 0; i < size; ++i) {
     const envoy_config_route_v3_HeaderMatcher* header = headers[i];
-    XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher header_matcher;
+    XdsApi::Route::Matchers::HeaderMatcher header_matcher;
     header_matcher.name =
         UpbStringToStdString(envoy_config_route_v3_HeaderMatcher_name(header));
     if (envoy_config_route_v3_HeaderMatcher_has_exact_match(header)) {
-      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
-          HeaderMatcher::HeaderMatcherType::EXACT;
+      header_matcher.type =
+          XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::EXACT;
       header_matcher.string_matcher = UpbStringToStdString(
           envoy_config_route_v3_HeaderMatcher_exact_match(header));
     } else if (envoy_config_route_v3_HeaderMatcher_has_safe_regex_match(
@@ -1328,12 +1386,12 @@ grpc_error* RouteHeaderMatchersParse(
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Invalid regex string specified in header matcher.");
       }
-      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
-          HeaderMatcher::HeaderMatcherType::REGEX;
+      header_matcher.type =
+          XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::REGEX;
       header_matcher.regex_match = std::move(regex);
     } else if (envoy_config_route_v3_HeaderMatcher_has_range_match(header)) {
-      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
-          HeaderMatcher::HeaderMatcherType::RANGE;
+      header_matcher.type =
+          XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::RANGE;
       const envoy_type_v3_Int64Range* range_matcher =
           envoy_config_route_v3_HeaderMatcher_range_match(header);
       header_matcher.range_start =
@@ -1345,18 +1403,18 @@ grpc_error* RouteHeaderMatchersParse(
             "cannot be smaller than start.");
       }
     } else if (envoy_config_route_v3_HeaderMatcher_has_present_match(header)) {
-      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
-          HeaderMatcher::HeaderMatcherType::PRESENT;
+      header_matcher.type =
+          XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::PRESENT;
       header_matcher.present_match =
           envoy_config_route_v3_HeaderMatcher_present_match(header);
     } else if (envoy_config_route_v3_HeaderMatcher_has_prefix_match(header)) {
-      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
-          HeaderMatcher::HeaderMatcherType::PREFIX;
+      header_matcher.type =
+          XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::PREFIX;
       header_matcher.string_matcher = UpbStringToStdString(
           envoy_config_route_v3_HeaderMatcher_prefix_match(header));
     } else if (envoy_config_route_v3_HeaderMatcher_has_suffix_match(header)) {
-      header_matcher.type = XdsApi::RdsUpdate::RdsRoute::Matchers::
-          HeaderMatcher::HeaderMatcherType::SUFFIX;
+      header_matcher.type =
+          XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::SUFFIX;
       header_matcher.string_matcher = UpbStringToStdString(
           envoy_config_route_v3_HeaderMatcher_suffix_match(header));
     } else {
@@ -1365,14 +1423,13 @@ grpc_error* RouteHeaderMatchersParse(
     }
     header_matcher.invert_match =
         envoy_config_route_v3_HeaderMatcher_invert_match(header);
-    rds_route->matchers.header_matchers.emplace_back(std::move(header_matcher));
+    route->matchers.header_matchers.emplace_back(std::move(header_matcher));
   }
   return GRPC_ERROR_NONE;
 }
 
 grpc_error* RouteRuntimeFractionParse(
-    const envoy_config_route_v3_RouteMatch* match,
-    XdsApi::RdsUpdate::RdsRoute* rds_route) {
+    const envoy_config_route_v3_RouteMatch* match, XdsApi::Route* route) {
   const envoy_config_core_v3_RuntimeFractionalPercent* runtime_fraction =
       envoy_config_route_v3_RouteMatch_runtime_fraction(match);
   if (runtime_fraction != nullptr) {
@@ -1398,26 +1455,25 @@ grpc_error* RouteRuntimeFractionParse(
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Unknown denominator type");
       }
-      rds_route->matchers.fraction_per_million = numerator;
+      route->matchers.fraction_per_million = numerator;
     }
   }
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route,
-                             XdsApi::RdsUpdate::RdsRoute* rds_route,
-                             bool* ignore_route) {
-  if (!envoy_config_route_v3_Route_has_route(route)) {
+grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
+                             XdsApi::Route* route, bool* ignore_route) {
+  if (!envoy_config_route_v3_Route_has_route(route_msg)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No RouteAction found in route.");
   }
   const envoy_config_route_v3_RouteAction* route_action =
-      envoy_config_route_v3_Route_route(route);
+      envoy_config_route_v3_Route_route(route_msg);
   // Get the cluster or weighted_clusters in the RouteAction.
   if (envoy_config_route_v3_RouteAction_has_cluster(route_action)) {
-    rds_route->cluster_name = UpbStringToStdString(
+    route->cluster_name = UpbStringToStdString(
         envoy_config_route_v3_RouteAction_cluster(route_action));
-    if (rds_route->cluster_name.size() == 0) {
+    if (route->cluster_name.size() == 0) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains empty cluster name.");
     }
@@ -1439,7 +1495,7 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route,
     for (size_t j = 0; j < clusters_size; ++j) {
       const envoy_config_route_v3_WeightedCluster_ClusterWeight*
           cluster_weight = clusters[j];
-      XdsApi::RdsUpdate::RdsRoute::ClusterWeight cluster;
+      XdsApi::Route::ClusterWeight cluster;
       cluster.name = UpbStringToStdString(
           envoy_config_route_v3_WeightedCluster_ClusterWeight_name(
               cluster_weight));
@@ -1457,13 +1513,13 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route,
       }
       cluster.weight = google_protobuf_UInt32Value_value(weight);
       sum_of_weights += cluster.weight;
-      rds_route->weighted_clusters.emplace_back(std::move(cluster));
+      route->weighted_clusters.emplace_back(std::move(cluster));
     }
     if (total_weight != sum_of_weights) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has incorrect total weight");
     }
-    if (rds_route->weighted_clusters.empty()) {
+    if (route->weighted_clusters.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has no valid clusters specified.");
     }
@@ -1478,101 +1534,73 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route,
 grpc_error* RouteConfigParse(
     XdsClient* client, TraceFlag* tracer,
     const envoy_config_route_v3_RouteConfiguration* route_config,
-    const std::string& expected_server_name, XdsApi::RdsUpdate* rds_update) {
+    XdsApi::RdsUpdate* rds_update) {
   MaybeLogRouteConfiguration(client, tracer, route_config);
   // Get the virtual hosts.
   size_t size;
   const envoy_config_route_v3_VirtualHost* const* virtual_hosts =
       envoy_config_route_v3_RouteConfiguration_virtual_hosts(route_config,
                                                              &size);
-  // Find the best matched virtual host.
-  // The search order for 4 groups of domain patterns:
-  //   1. Exact match.
-  //   2. Suffix match (e.g., "*ABC").
-  //   3. Prefix match (e.g., "ABC*").
-  //   4. Universe match (i.e., "*").
-  // Within each group, longest match wins.
-  // If the same best matched domain pattern appears in multiple virtual hosts,
-  // the first matched virtual host wins.
-  const envoy_config_route_v3_VirtualHost* target_virtual_host = nullptr;
-  MatchType best_match_type = INVALID_MATCH;
-  size_t longest_match = 0;
-  // Check each domain pattern in each virtual host to determine the best
-  // matched virtual host.
   for (size_t i = 0; i < size; ++i) {
+    rds_update->virtual_hosts.emplace_back();
+    XdsApi::RdsUpdate::VirtualHost& vhost = rds_update->virtual_hosts.back();
+    // Parse domains.
     size_t domain_size;
     upb_strview const* domains = envoy_config_route_v3_VirtualHost_domains(
         virtual_hosts[i], &domain_size);
     for (size_t j = 0; j < domain_size; ++j) {
-      const std::string domain_pattern(domains[j].data, domains[j].size);
-      // Check the match type first. Skip the pattern if it's not better than
-      // current match.
+      std::string domain_pattern = UpbStringToStdString(domains[j]);
       const MatchType match_type = DomainPatternMatchType(domain_pattern);
       if (match_type == INVALID_MATCH) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid domain pattern.");
       }
-      if (match_type > best_match_type) continue;
-      if (match_type == best_match_type &&
-          domain_pattern.size() <= longest_match) {
-        continue;
-      }
-      // Skip if match fails.
-      if (!DomainMatch(match_type, domain_pattern, expected_server_name)) {
-        continue;
-      }
-      // Choose this match.
-      target_virtual_host = virtual_hosts[i];
-      best_match_type = match_type;
-      longest_match = domain_pattern.size();
-      if (best_match_type == EXACT_MATCH) break;
+      vhost.domains.emplace_back(std::move(domain_pattern));
     }
-    if (best_match_type == EXACT_MATCH) break;
-  }
-  if (target_virtual_host == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No matched virtual host found in the route config.");
-  }
-  // Get the route list from the matched virtual host.
-  const envoy_config_route_v3_Route* const* routes =
-      envoy_config_route_v3_VirtualHost_routes(target_virtual_host, &size);
-  if (size < 1) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No route found in the virtual host.");
-  }
-  // Loop over the whole list of routes
-  for (size_t i = 0; i < size; ++i) {
-    const envoy_config_route_v3_Route* route = routes[i];
-    const envoy_config_route_v3_RouteMatch* match =
-        envoy_config_route_v3_Route_match(route);
-    size_t query_parameters_size;
-    static_cast<void>(envoy_config_route_v3_RouteMatch_query_parameters(
-        match, &query_parameters_size));
-    if (query_parameters_size > 0) {
-      continue;
+    if (vhost.domains.empty()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("VirtualHost has no domains");
     }
-    XdsApi::RdsUpdate::RdsRoute rds_route;
-    bool ignore_route = false;
-    grpc_error* error = RoutePathMatchParse(match, &rds_route, &ignore_route);
-    if (error != GRPC_ERROR_NONE) return error;
-    if (ignore_route) continue;
-    error = RouteHeaderMatchersParse(match, &rds_route);
-    if (error != GRPC_ERROR_NONE) return error;
-    error = RouteRuntimeFractionParse(match, &rds_route);
-    if (error != GRPC_ERROR_NONE) return error;
-    error = RouteActionParse(route, &rds_route, &ignore_route);
-    if (error != GRPC_ERROR_NONE) return error;
-    if (ignore_route) continue;
-    const google_protobuf_BoolValue* case_sensitive =
-        envoy_config_route_v3_RouteMatch_case_sensitive(match);
-    if (case_sensitive != nullptr &&
-        !google_protobuf_BoolValue_value(case_sensitive)) {
+    // Parse routes.
+    size_t num_routes;
+    const envoy_config_route_v3_Route* const* routes =
+        envoy_config_route_v3_VirtualHost_routes(virtual_hosts[i], &num_routes);
+    if (num_routes < 1) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "case_sensitive if set must be set to true.");
+          "No route found in the virtual host.");
     }
-    rds_update->routes.emplace_back(std::move(rds_route));
-  }
-  if (rds_update->routes.empty()) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid routes specified.");
+    // Loop over the whole list of routes
+    for (size_t j = 0; j < num_routes; ++j) {
+      const envoy_config_route_v3_RouteMatch* match =
+          envoy_config_route_v3_Route_match(routes[j]);
+      size_t query_parameters_size;
+      static_cast<void>(envoy_config_route_v3_RouteMatch_query_parameters(
+          match, &query_parameters_size));
+      if (query_parameters_size > 0) {
+        continue;
+      }
+      XdsApi::Route route;
+      bool ignore_route = false;
+      grpc_error* error = RoutePathMatchParse(match, &route, &ignore_route);
+      if (error != GRPC_ERROR_NONE) return error;
+      if (ignore_route) continue;
+      error = RouteHeaderMatchersParse(match, &route);
+      if (error != GRPC_ERROR_NONE) return error;
+      error = RouteRuntimeFractionParse(match, &route);
+      if (error != GRPC_ERROR_NONE) return error;
+      error = RouteActionParse(routes[j], &route, &ignore_route);
+      if (error != GRPC_ERROR_NONE) return error;
+      if (ignore_route) continue;
+      const google_protobuf_BoolValue* case_sensitive =
+          envoy_config_route_v3_RouteMatch_case_sensitive(match);
+      if (case_sensitive != nullptr &&
+          !google_protobuf_BoolValue_value(case_sensitive)) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "case_sensitive if set must be set to true.");
+      }
+      vhost.routes.emplace_back(std::move(route));
+    }
+    if (vhost.routes.empty()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid routes specified.");
+    }
   }
   return GRPC_ERROR_NONE;
 }
@@ -1630,11 +1658,11 @@ grpc_error* LdsResponseParse(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
               http_connection_manager);
       XdsApi::RdsUpdate rds_update;
-      grpc_error* error = RouteConfigParse(client, tracer, route_config,
-                                           expected_server_name, &rds_update);
+      grpc_error* error =
+          RouteConfigParse(client, tracer, route_config, &rds_update);
       if (error != GRPC_ERROR_NONE) return error;
       lds_update->emplace();
-      (*lds_update)->rds_update.emplace(std::move(rds_update));
+      (*lds_update)->rds_update = std::move(rds_update);
       return GRPC_ERROR_NONE;
     }
     // Validate that RDS must be used to get the route_config dynamically.
@@ -1671,7 +1699,6 @@ grpc_error* LdsResponseParse(
 grpc_error* RdsResponseParse(
     XdsClient* client, TraceFlag* tracer,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
-    const std::string& expected_server_name,
     const std::set<absl::string_view>& expected_route_configuration_names,
     absl::optional<XdsApi::RdsUpdate>* rds_update, upb_arena* arena) {
   // Get the resources from the response.
@@ -1703,8 +1730,8 @@ grpc_error* RdsResponseParse(
     }
     // Parse the route_config.
     XdsApi::RdsUpdate local_rds_update;
-    grpc_error* error = RouteConfigParse(
-        client, tracer, route_config, expected_server_name, &local_rds_update);
+    grpc_error* error =
+        RouteConfigParse(client, tracer, route_config, &local_rds_update);
     if (error != GRPC_ERROR_NONE) return error;
     rds_update->emplace(std::move(local_rds_update));
     return GRPC_ERROR_NONE;
@@ -2043,9 +2070,9 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
         LdsResponseParse(client_, tracer_, response, expected_server_name,
                          &result.lds_update, arena.ptr());
   } else if (IsRds(result.type_url)) {
-    result.parse_error = RdsResponseParse(
-        client_, tracer_, response, expected_server_name,
-        expected_route_configuration_names, &result.rds_update, arena.ptr());
+    result.parse_error = RdsResponseParse(client_, tracer_, response,
+                                          expected_route_configuration_names,
+                                          &result.rds_update, arena.ptr());
   } else if (IsCds(result.type_url)) {
     result.parse_error =
         CdsResponseParse(client_, tracer_, response, expected_cluster_names,
