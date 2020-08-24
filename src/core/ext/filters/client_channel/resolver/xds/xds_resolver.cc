@@ -261,8 +261,10 @@ class XdsResolver : public Resolver {
           }
         }
       }
-      gpr_log(GPR_INFO, "DONNAAA constructor %p added: RDS update copied to route_table %s",
-              this, route_table_.ToString().c_str());
+      gpr_log(
+          GPR_INFO,
+          "DONNAAA constructor %p added: RDS update copied to route_table %s",
+          this, route_table_.ToString().c_str());
       {
         MutexLock lock(&resolver_->cluster_state_map_mu_);
         for (const auto& state : resolver_->cluster_state_map_) {
@@ -343,15 +345,15 @@ class XdsResolver : public Resolver {
               "DONNAAA UpdateServiceConfig this method has issues of "
               "destructing XdsConfigSelector too early as we let the pointer "
               "unref in Dataplane method");
-      //RefCountedPtr<XdsConfigSelector> config_selector =
-      //MakeRefCounted<XdsConfigSelector>(resolver_, route_table_);
+      // RefCountedPtr<XdsConfigSelector> config_selector =
+      // MakeRefCounted<XdsConfigSelector>(resolver_, route_table_);
       Result result;
       grpc_error* error = CreateServiceConfig(&result.service_config);
       if (error != GRPC_ERROR_NONE) {
         gpr_log(GPR_INFO, "DONNAAA Update create service config failed");
         return;
       }
-      //grpc_arg new_args[] = {resolver_->xds_client_->MakeChannelArg(),
+      // grpc_arg new_args[] = {resolver_->xds_client_->MakeChannelArg(),
       //                       config_selector->MakeChannelArg()};
       grpc_arg new_args[] = {resolver_->xds_client_->MakeChannelArg()};
       result.args = grpc_channel_args_copy_and_add(resolver_->args_, new_args,
@@ -428,7 +430,8 @@ class XdsResolver : public Resolver {
           }
         }
         // TODO: what if there is no match
-        // gpr_log(GPR_INFO, "DONNAAA: GetCallConfig from selector %p:%s", this, std::string(routing_action_str).c_str());
+        // gpr_log(GPR_INFO, "DONNAAA: GetCallConfig from selector %p:%s", this,
+        // std::string(routing_action_str).c_str());
         CallConfig call_config;
         call_config.call_attributes[kCallAttributeRoutingAction] =
             absl::string_view(routing_action_str);

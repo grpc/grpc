@@ -3604,9 +3604,6 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   const char* kNewCluster3Name = "new_cluster_3";
   const size_t kNumEcho1Rpcs = 10;
   const size_t kNumEchoRpcs = 5;
-  const size_t kWeight75 = 75;
-  const size_t kWeight25 = 25;
-  const size_t kWeight50 = 50;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -3656,32 +3653,13 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
-  int weight_25_request_count =
-      backends_[0]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  int weight_75_request_count =
-      backends_[1]->backend_service1()->request_count();
+  EXPECT_EQ(kNumEcho1Rpcs, backends_[1]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
-          weight_75_request_count, weight_25_request_count);
-  /*const double kErrorTolerance = 0.2;
-  EXPECT_THAT(weight_75_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 + kErrorTolerance))));
-  // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
-  // test from flaking while debugging potential root cause.
-  const double kErrorToleranceSmallLoad = 0.3;
-  EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 - kErrorToleranceSmallLoad)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 +
-  kErrorToleranceSmallLoad))));*/
   // Change Route Configurations: new set of clusters with different weights.
   route1->mutable_route()->set_cluster(kNewCluster2Name);
   SetRouteConfiguration(0, new_route_config);
@@ -3693,25 +3671,11 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  const int weight_50_request_count_1 =
-      backends_[1]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[1]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  const int weight_50_request_count_2 =
-      backends_[2]->backend_service1()->request_count();
+  EXPECT_EQ(kNumEcho1Rpcs, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  gpr_log(GPR_INFO, "target_50 received %d rpcs and target_50 received %d rpcs",
-          weight_50_request_count_1, weight_50_request_count_2);
-  /*EXPECT_THAT(weight_50_request_count_1,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 + kErrorTolerance))));
-  EXPECT_THAT(weight_50_request_count_2,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 + kErrorTolerance))));*/
   // Change Route Configurations.
   route1->mutable_route()->set_cluster(kNewCluster3Name);
   SetRouteConfiguration(0, new_route_config);
@@ -3723,28 +3687,11 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  weight_75_request_count = backends_[1]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[1]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
-  weight_25_request_count = backends_[3]->backend_service1()->request_count();
-  gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
-          weight_75_request_count, weight_25_request_count);
-  /*EXPECT_THAT(weight_75_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 + kErrorTolerance))));
-  // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
-  // test from flaking while debugging potential root cause.
-  gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
-          weight_75_request_count, weight_25_request_count);
-  EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 - kErrorToleranceSmallLoad)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 +
-  kErrorToleranceSmallLoad))));*/
+  EXPECT_EQ(kNumEcho1Rpcs, backends_[3]->backend_service1()->request_count());
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {

@@ -1822,7 +1822,8 @@ void ChannelData::UpdateStateAndPickerLocked(
 void ChannelData::UpdateServiceConfigInDataPlaneLocked(
     bool service_config_changed,
     RefCountedPtr<ConfigSelector> config_selector) {
-  gpr_log(GPR_INFO, "DONNAAA start config_selector %p, saved %p", config_selector.get(), saved_config_selector_.get());
+  gpr_log(GPR_INFO, "DONNAAA start config_selector %p, saved %p",
+          config_selector.get(), saved_config_selector_.get());
   // Check if ConfigSelector has changed.
   const bool config_selector_changed =
       saved_config_selector_ != config_selector;
@@ -1872,8 +1873,10 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked(
   RefCountedPtr<ServiceConfig> service_config_to_unref = saved_service_config_;
   RefCountedPtr<ConfigSelector> config_selector_to_unref =
       std::move(config_selector);
-  gpr_log(GPR_INFO, "DONNAAA config_selector_to_unref %p", config_selector_to_unref.get()); 
-  gpr_log(GPR_INFO, "DONNAAA after config_selector %p, saved %p", config_selector.get(), saved_config_selector_.get());
+  gpr_log(GPR_INFO, "DONNAAA config_selector_to_unref %p",
+          config_selector_to_unref.get());
+  gpr_log(GPR_INFO, "DONNAAA after config_selector %p, saved %p",
+          config_selector.get(), saved_config_selector_.get());
   {
     MutexLock lock(&data_plane_mu_);
     GRPC_ERROR_UNREF(resolver_transient_failure_error_);
