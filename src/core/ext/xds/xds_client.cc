@@ -787,7 +787,7 @@ void XdsClient::ChannelState::AdsCallState::Orphan() {
   // on_status_received_ will complete the cancellation and clean up. Otherwise,
   // we are here because xds_client has to orphan a failed call, then the
   // following cancellation will be a no-op.
-  grpc_call_cancel(call_, nullptr);
+  grpc_call_cancel_internal(call_);
   state_map_.clear();
   // Note that the initial ref is hold by on_status_received_. So the
   // corresponding unref happens in on_status_received_ instead of here.
@@ -1553,7 +1553,7 @@ void XdsClient::ChannelState::LrsCallState::Orphan() {
   // on_status_received_ will complete the cancellation and clean up. Otherwise,
   // we are here because xds_client has to orphan a failed call, then the
   // following cancellation will be a no-op.
-  grpc_call_cancel(call_, nullptr);
+  grpc_call_cancel_internal(call_);
   // Note that the initial ref is hold by on_status_received_. So the
   // corresponding unref happens in on_status_received_ instead of here.
 }
