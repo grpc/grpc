@@ -20,9 +20,8 @@ set -ex
 # Some Python package installation requires permission to change homedir. But
 # due to the user-override in all_lang_docgen.sh, the user in the container
 # doesn't have a home dir which leads to permission denied error.
-HOME="/tmp/$(id -u)"
+HOME="$(mktemp -d)"
 export HOME
-mkdir -p "${HOME}"
 
 pip install -r requirements.bazel.txt
 tools/run_tests/run_tests.py -c opt -l python --compiler python3.8 --newline_on_success -j 8 --build_only
