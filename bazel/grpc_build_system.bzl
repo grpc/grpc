@@ -110,6 +110,7 @@ def grpc_cc_library(
         includes = [
             "include",
             "src/core/ext/upb-generated",  # Once upb code-gen issue is resolved, remove this.
+            "src/core/ext/upbdefs-generated",  # Once upb code-gen issue is resolved, remove this.
         ],
         alwayslink = alwayslink,
         data = data,

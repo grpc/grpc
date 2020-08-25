@@ -179,7 +179,17 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      */
     public function getPayload()
     {
-        return $this->payload;
+        return isset($this->payload) ? $this->payload : null;
+    }
+
+    public function hasPayload()
+    {
+        return isset($this->payload);
+    }
+
+    public function clearPayload()
+    {
+        unset($this->payload);
     }
 
     /**
@@ -260,7 +270,17 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      */
     public function getResponseCompressed()
     {
-        return $this->response_compressed;
+        return isset($this->response_compressed) ? $this->response_compressed : null;
+    }
+
+    public function hasResponseCompressed()
+    {
+        return isset($this->response_compressed);
+    }
+
+    public function clearResponseCompressed()
+    {
+        unset($this->response_compressed);
     }
 
     /**
@@ -289,7 +309,17 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      */
     public function getResponseStatus()
     {
-        return $this->response_status;
+        return isset($this->response_status) ? $this->response_status : null;
+    }
+
+    public function hasResponseStatus()
+    {
+        return isset($this->response_status);
+    }
+
+    public function clearResponseStatus()
+    {
+        unset($this->response_status);
     }
 
     /**
@@ -315,7 +345,17 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      */
     public function getExpectCompressed()
     {
-        return $this->expect_compressed;
+        return isset($this->expect_compressed) ? $this->expect_compressed : null;
+    }
+
+    public function hasExpectCompressed()
+    {
+        return isset($this->expect_compressed);
+    }
+
+    public function clearExpectCompressed()
+    {
+        unset($this->expect_compressed);
     }
 
     /**

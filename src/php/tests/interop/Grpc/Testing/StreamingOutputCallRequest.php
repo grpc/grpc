@@ -133,7 +133,17 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      */
     public function getPayload()
     {
-        return $this->payload;
+        return isset($this->payload) ? $this->payload : null;
+    }
+
+    public function hasPayload()
+    {
+        return isset($this->payload);
+    }
+
+    public function clearPayload()
+    {
+        unset($this->payload);
     }
 
     /**
@@ -159,7 +169,17 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      */
     public function getResponseStatus()
     {
-        return $this->response_status;
+        return isset($this->response_status) ? $this->response_status : null;
+    }
+
+    public function hasResponseStatus()
+    {
+        return isset($this->response_status);
+    }
+
+    public function clearResponseStatus()
+    {
+        unset($this->response_status);
     }
 
     /**

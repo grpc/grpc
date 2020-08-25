@@ -7,6 +7,7 @@ if test "$PHP_GRPC" != "no"; then
   dnl # --with-grpc -> add include path
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/include)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upb-generated)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upbdefs-generated)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/abseil-cpp)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/address_sorting/include)

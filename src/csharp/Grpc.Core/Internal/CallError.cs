@@ -42,12 +42,25 @@ namespace Grpc.Core.Internal
         /* this method must be called after invoke */
         NotInvoked,
         /* this call is already finished
-     (writes_done or write_status has already been called) */
+           (writes_done or write_status has already been called) */
         AlreadyFinished,
         /* there is already an outstanding read/write operation on the call */
         TooManyOperations,
         /* the flags value was illegal for this call */
-        InvalidFlags
+        InvalidFlags,
+        /* invalid metadata was passed to this call */
+        InvalidMetadata,
+        /* invalid message was passed to this call */
+        InvalidMessage,
+        /* completion queue for notification has not been registered
+           with the server */
+        NotServerCompletionQueue,
+        /* this batch of operations leads to more operations than allowed */
+        BatchTooBig,
+        /* payload type requested is not the type registered */
+        PayloadTypeMismatch,
+        /* completion queue has been shutdown */
+        CompletionQueueShutdown
     }
 
     internal static class CallErrorExtensions
