@@ -62,10 +62,11 @@ cd "${dir}/../../.."
 # Clones the API reference GitHub Pages branch
 PAGES_PATH="/tmp/gh-pages"
 rm -rf "${PAGES_PATH}"
-git clone --depth 1 https://github.com/grpc/grpc -b gh-pages "${PAGES_PATH}"
+git clone --single-branch https://github.com/grpc/grpc -b gh-pages "${PAGES_PATH}"
 
 # Generates Core / C++ / ObjC / PHP documents
 rm -rf "${PAGES_PATH}/core" "${PAGES_PATH}/cpp" "${PAGES_PATH}/objc" "${PAGES_PATH}/php"
+echo "Generating Core / C++ / ObjC / PHP documents in Docker..."
 docker run --rm -it \
     -v "$(pwd)":/work/grpc \
     --user "$(id -u):$(id -g)" \
@@ -77,6 +78,7 @@ mv doc/ref/php/html "${PAGES_PATH}/php"
 
 # Generates C# documents
 rm -rf "${PAGES_PATH}/csharp"
+echo "Generating C# documents in Docker..."
 docker run --rm -it \
     -v "$(pwd)":/work \
     -w /work/src/csharp/docfx \
@@ -86,6 +88,7 @@ mv src/csharp/docfx/html "${PAGES_PATH}/csharp"
 
 # Generates Python documents
 rm -rf "${PAGES_PATH}/python"
+echo "Generating Python documents in Docker..."
 docker run --rm -it \
     -v "$(pwd)":/work \
     -w /work \
