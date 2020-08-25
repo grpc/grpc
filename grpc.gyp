@@ -59,6 +59,7 @@
       '-Ithird_party/re2',
       '-Ithird_party/upb',
       '-Isrc/core/ext/upb-generated',
+      '-Isrc/core/ext/upbdefs-generated',
     ],
     'ldflags': [
       '-g',
@@ -137,6 +138,7 @@
             '-Ithird_party/re2',
             '-Ithird_party/upb',
             '-Isrc/core/ext/upb-generated',
+            '-Isrc/core/ext/upbdefs-generated',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
             '-g',
@@ -147,6 +149,7 @@
             '-Ithird_party/re2',
             '-Ithird_party/upb',
             '-Isrc/core/ext/upb-generated',
+            '-Isrc/core/ext/upbdefs-generated',
             '-stdlib=libc++',
             '-std=c++11',
             '-Wno-error=deprecated-declarations',

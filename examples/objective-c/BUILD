@@ -27,12 +27,12 @@ objc_grpc_library(
     deps = ["//examples:helloworld_proto"],
 )
 
-# This one works with import "external/com_github_grpc_grpc/examples/protos/Helloworld.pbrpc.h"
+# This one works with import "external/com_github_grpc_grpc/examples/protos/Keyvaluestore.pbrpc.h"
 objc_grpc_library(
-    name = "HelloWorld_grpc_proto_external",
-    srcs = ["//external/com_github_grpc_grpc/examples:protos/helloworld.proto"],
+    name = "Keyvaluestore_grpc_proto_external",
+    srcs = ["//external/com_github_grpc_grpc/examples:protos/keyvaluestore.proto"],
     tags = ["manual"],
-    deps = ["@com_github_grpc_grpc//examples:helloworld_proto"],
+    deps = ["@com_github_grpc_grpc//examples:keyvaluestore_proto"],
 )
 
 objc_library(

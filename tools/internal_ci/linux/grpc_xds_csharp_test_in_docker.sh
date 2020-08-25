@@ -46,6 +46,18 @@ touch "$TOOLS_DIR"/src/proto/grpc/testing/__init__.py
     "$PROTO_SOURCE_DIR"/messages.proto \
     "$PROTO_SOURCE_DIR"/empty.proto
 
+HEALTH_PROTO_SOURCE_DIR=src/proto/grpc/health/v1
+HEALTH_PROTO_DEST_DIR=${TOOLS_DIR}/${HEALTH_PROTO_SOURCE_DIR}
+mkdir -p ${HEALTH_PROTO_DEST_DIR}
+touch "$TOOLS_DIR"/src/proto/grpc/health/__init__.py
+touch "$TOOLS_DIR"/src/proto/grpc/health/v1/__init__.py
+
+"$PYTHON" -m grpc_tools.protoc \
+    --proto_path=. \
+    --python_out=${TOOLS_DIR} \
+    --grpc_python_out=${TOOLS_DIR} \
+    ${HEALTH_PROTO_SOURCE_DIR}/health.proto
+
 python tools/run_tests/run_tests.py -l csharp -c opt --build_only
 
 # Test cases "path_matching" and "header_matching" are not included in "all",
