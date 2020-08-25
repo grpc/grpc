@@ -2500,7 +2500,7 @@ TEST_P(LdsRdsTest, ListenerRemoved) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that LDS client ACKS but fails if matching domain can't be found in
+// Tests that LDS client ACKs but fails if matching domain can't be found in
 // the LDS response.
 TEST_P(LdsRdsTest, NoMatchedDomain) {
   RouteConfiguration route_config =
@@ -2512,7 +2512,7 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
   // Do a bit of polling, to allow the ACK to get to the ADS server.
-  channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10));
+  channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
 }
