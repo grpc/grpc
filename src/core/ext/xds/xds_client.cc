@@ -143,14 +143,14 @@ class XdsClient::ChannelState::AdsCallState
 
     void Orphan() override {
       Finish();
-      Unref();
+      Unref(DEBUG_LOCATION, "Orphan");
     }
 
     void Start(RefCountedPtr<AdsCallState> ads_calld) {
       if (sent_) return;
       sent_ = true;
       ads_calld_ = std::move(ads_calld);
-      Ref().release();
+      Ref(DEBUG_LOCATION, "timer").release();
       timer_pending_ = true;
       grpc_timer_init(
           &timer_,
@@ -212,7 +212,7 @@ class XdsClient::ChannelState::AdsCallState
         GRPC_ERROR_UNREF(watcher_error);
       }
       ads_calld_.reset();
-      Unref();
+      Unref(DEBUG_LOCATION, "timer");
       GRPC_ERROR_UNREF(error);
     }
 
@@ -497,6 +497,7 @@ XdsClient::ChannelState::~ChannelState() {
             this);
   }
   grpc_channel_destroy(channel_);
+  xds_client_.reset(DEBUG_LOCATION, "ChannelState");
 }
 
 void XdsClient::ChannelState::Orphan() {
@@ -533,7 +534,7 @@ void XdsClient::ChannelState::StartConnectivityWatchLocked() {
   grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
   GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-  watcher_ = new StateWatcher(Ref());
+  watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "ChannelState+watch"));
   grpc_client_channel_start_connectivity_watch(
       client_channel_elem, GRPC_CHANNEL_IDLE,
       OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
@@ -1340,7 +1341,7 @@ XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
     for (auto& p : it->second.subscribed_resources) {
       resource_names.insert(p.first);
       OrphanablePtr<ResourceState>& state = p.second;
-      state->Start(Ref());
+      state->Start(Ref(DEBUG_LOCATION, "ResourceState"));
     }
   }
   return resource_names;
@@ -2208,8 +2209,8 @@ RefCountedPtr<XdsClient> XdsClient::GetFromChannelArgs(
     const grpc_channel_args& args) {
   XdsClient* xds_client =
       grpc_channel_args_find_pointer<XdsClient>(&args, GRPC_ARG_XDS_CLIENT);
-  if (xds_client != nullptr) return xds_client->Ref();
-  return nullptr;
+  if (xds_client == nullptr) return nullptr;
+  return xds_client->Ref(DEBUG_LOCATION, "GetFromChannelArgs");
 }
 
 grpc_channel_args* XdsClient::RemoveFromChannelArgs(

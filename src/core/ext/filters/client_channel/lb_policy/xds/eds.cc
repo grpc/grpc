@@ -400,7 +400,6 @@ EdsLb::~EdsLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
     gpr_log(GPR_INFO, "[edslb %p] destroying xds LB policy", this);
   }
-  grpc_channel_args_destroy(args_);
 }
 
 void EdsLb::ShutdownLocked() {
@@ -426,9 +425,11 @@ void EdsLb::ShutdownLocked() {
       xds_client()->CancelEndpointDataWatch(GetEdsResourceName(),
                                             endpoint_watcher_);
     }
-    xds_client_from_channel_.reset();
+    xds_client_from_channel_.reset(DEBUG_LOCATION, "EdsLb");
   }
   xds_client_.reset();
+  grpc_channel_args_destroy(args_);
+  args_ = nullptr;
 }
 
 void EdsLb::MaybeDestroyChildPolicyLocked() {
