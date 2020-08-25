@@ -30,13 +30,13 @@
 set -e
 
 # Find out the gRPC version and print it
-GRPC_VERSION="$(cat build_handwritten.yaml | grep -m1 -Eo ' version: .*' | grep -Eo '[0-9].*')"
+GRPC_VERSION="$(grep -m1 -Eo ' version: .*' build_handwritten.yaml | grep -Eo '[0-9].*')"
 echo "Generating documents for version ${GRPC_VERSION}..."
 
 # Specifies your GitHub user name or generates documents locally
 if [ $# -eq 0 ]; then
     read -r -p "- Are you sure to generate documents without push to GitHub? [y/N] " response
-    if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    if [[ "${response[0]}" =~ ^([yY][eE][sS]|[yY])$ ]]; then
         GITHUB_USER=''
     else
         echo "Generation stopped"
@@ -99,7 +99,7 @@ echo "  Successfully generated documents for version ${GRPC_VERSION}."
 echo "================================================================="
 
 # Uploads to GitHub
-if [[ ! -z "${GITHUB_USER}" ]]; then
+if [[ -n "${GITHUB_USER}" ]]; then
     BRANCH_NAME="doc-${GRPC_VERSION}"
 
     cd "${PAGES_PATH}"
