@@ -892,8 +892,13 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
                  ? lds_update->route_config_name.c_str()
                  : "<inlined>"));
     if (lds_update->rds_update.has_value()) {
-      gpr_log(GPR_INFO, "RouteConfiguration: %s",
-              lds_update->rds_update->ToString().c_str());
+      gpr_log(GPR_INFO, "RouteConfiguration contains %" PRIuPTR " routes",
+              lds_update->rds_update.value().routes.size());
+      for (size_t i = 0; i < lds_update->rds_update.value().routes.size();
+           ++i) {
+        gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
+                lds_update->rds_update.value().routes[i].ToString().c_str());
+      }
     }
   }
   auto& lds_state = state_map_[XdsApi::kLdsTypeUrl];
@@ -919,16 +924,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
   if (xds_client()->lds_result_->rds_update.has_value()) {
     // If the RouteConfiguration was found inlined in LDS response, notify
     // the watcher immediately.
-    const XdsApi::RdsUpdate::VirtualHost* vhost =
-        xds_client()->lds_result_->rds_update->FindVirtualHostForDomain(
-            xds_client()->server_name_);
-    if (vhost == nullptr) {
-      xds_client()->listener_watcher_->OnError(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "no VirtualHost found for domain"));
-    } else {
-      xds_client()->listener_watcher_->OnListenerChanged(vhost->routes);
-    }
+    xds_client()->listener_watcher_->OnListenerChanged(
+        *xds_client()->lds_result_);
   } else {
     // Send RDS request for dynamic resolution.
     Subscribe(XdsApi::kRdsTypeUrl,
@@ -947,8 +944,14 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] RDS update received:\n%s", xds_client(),
-            rds_update->ToString().c_str());
+    gpr_log(GPR_INFO,
+            "[xds_client %p] RDS update received;  RouteConfiguration contains "
+            "%" PRIuPTR " routes",
+            this, rds_update.value().routes.size());
+    for (size_t i = 0; i < rds_update.value().routes.size(); ++i) {
+      gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
+              rds_update.value().routes[i].ToString().c_str());
+    }
   }
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   auto& state =
@@ -966,16 +969,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
   }
   xds_client()->rds_result_ = std::move(rds_update);
   // Notify the watcher.
-  const XdsApi::RdsUpdate::VirtualHost* vhost =
-      xds_client()->rds_result_->FindVirtualHostForDomain(
-          xds_client()->server_name_);
-  if (vhost == nullptr) {
-    xds_client()->listener_watcher_->OnError(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "no VirtualHost found for domain"));
-  } else {
-    xds_client()->listener_watcher_->OnListenerChanged(vhost->routes);
-  }
+  XdsApi::LdsUpdate lds_result = *xds_client()->lds_result_;
+  lds_result.rds_update = xds_client()->rds_result_;
+  xds_client()->listener_watcher_->OnListenerChanged(lds_result);
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
