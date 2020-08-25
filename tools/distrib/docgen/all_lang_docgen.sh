@@ -30,12 +30,12 @@
 set -e
 
 # Find out the gRPC version and print it
-GRPC_VERSION="$(grep -m1 -Eo ' version: .*' build_handwritten.yaml | grep -Eo '[0-9].*')"
+GRPC_VERSION="$(grep -m1 -Eo ' version: .*' build_handwritten.yaml | grep -Eo '[0-9][^ ]*')"
 echo "Generating documents for version ${GRPC_VERSION}..."
 
 # Specifies your GitHub user name or generates documents locally
 if [ $# -eq 0 ]; then
-    read -r -p "- Are you sure to generate documents without push to GitHub? [y/N] " response
+    read -r -p "- Are you sure to generate documents without pushing to GitHub? [y/N] " response
     if [[ "${response[0]}" =~ ^([yY][eE][sS]|[yY])$ ]]; then
         GITHUB_USER=''
     else
@@ -62,7 +62,7 @@ cd "${dir}/../../.."
 # Clones the API reference GitHub Pages branch
 PAGES_PATH="/tmp/gh-pages"
 rm -rf "${PAGES_PATH}"
-git clone https://github.com/grpc/grpc -b gh-pages "${PAGES_PATH}"
+git clone --depth 1 https://github.com/grpc/grpc -b gh-pages "${PAGES_PATH}"
 
 # Generates Core / C++ / ObjC / PHP documents
 rm -rf "${PAGES_PATH}/core" "${PAGES_PATH}/cpp" "${PAGES_PATH}/objc" "${PAGES_PATH}/php"
@@ -102,13 +102,13 @@ echo "================================================================="
 if [[ -n "${GITHUB_USER}" ]]; then
     BRANCH_NAME="doc-${GRPC_VERSION}"
 
-    cd "${PAGES_PATH}"
-    git remote add "${GITHUB_USER}" "git@github.com:${GITHUB_USER}/grpc.git"
-    git checkout -b "${BRANCH_NAME}"
-    git add --all
-    git commit -m "Auto-update documentation for gRPC ${GRPC_VERSION}"
-    git push --set-upstream "${GITHUB_USER}" "${BRANCH_NAME}"
-    cd -
+    (cd "${PAGES_PATH}"
+        git remote add "${GITHUB_USER}" "git@github.com:${GITHUB_USER}/grpc.git"
+        git checkout -b "${BRANCH_NAME}"
+        git add --all
+        git commit -m "Auto-update documentation for gRPC ${GRPC_VERSION}"
+        git push --set-upstream "${GITHUB_USER}" "${BRANCH_NAME}"
+    )
 
     echo "Please check https://github.com/${GITHUB_USER}/grpc/tree/${BRANCH_NAME} for generated documents."
     echo "Click https://github.com/grpc/grpc/compare/gh-pages...${GITHUB_USER}:${BRANCH_NAME} to create a PR."
