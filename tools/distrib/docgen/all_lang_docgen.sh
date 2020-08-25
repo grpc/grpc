@@ -111,6 +111,7 @@ if [[ -n "${GITHUB_USER}" ]]; then
     cd -
 
     echo "Please check https://github.com/${GITHUB_USER}/grpc/tree/${BRANCH_NAME} for generated documents."
+    echo "Click https://github.com/grpc/grpc/compare/gh-pages...${GITHUB_USER}:${BRANCH_NAME} to create a PR."
 else
     echo "Please check ${PAGES_PATH} for generated documents."
 fi
