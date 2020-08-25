@@ -2514,7 +2514,8 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   // Do a bit of polling, to allow the ACK to get to the ADS server.
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10));
   const auto& response_state = RouteConfigurationResponseState(0);
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+  EXPECT_GT(response_state.state, AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_LT(response_state.state, AdsServiceImpl::ResponseState::NACKED);
 }
 
 // Tests that LDS client should choose the virtual host with matching domain if
