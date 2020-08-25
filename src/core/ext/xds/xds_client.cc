@@ -883,6 +883,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
             xds_client(), lds_update_map.size());
   }
   auto& lds_state = state_map_[XdsApi::kLdsTypeUrl];
+  std::set<std::string> rds_resource_names_seen;
   for (auto& p : lds_update_map) {
     const std::string& listener_name = p.first;
     XdsApi::LdsUpdate& lds_update = p.second;
@@ -900,8 +901,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
                 lds_update.rds_update->ToString().c_str());
       }
     }
-    ListenerState& listener_state = xds_client()->listener_map_[listener_name];
+    // Record the RDS resource names seen.
+    if (!lds_update.route_config_name.empty()) {
+      rds_resource_names_seen.insert(lds_update.route_config_name);
+    }
     // Ignore identical update.
+    ListenerState& listener_state = xds_client()->listener_map_[listener_name];
     if (listener_state.update.has_value() &&
         *listener_state.update == lds_update) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -926,11 +931,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     if (lds_update_map.find(listener_name) == lds_update_map.end()) {
       ListenerState& listener_state =
           xds_client()->listener_map_[listener_name];
-      // Don't generate an error for resources for which we have newly
-      // subscribed but have not yet received any config, because this
-      // response could have been sent by the server before it saw the
-      // subscription to this resource.  Instead, we rely on the request
-      // timeout to handle that case.
+      // If the resource was newly requested but has not yet been received,
+      // we don't want to generate an error for the watchers, because this LDS
+      // response may be in reaction to an earlier request that did not yet
+      // request the new resource, so its absence from the response does not
+      // necessarily indicate that the resource does not exist.
+      // For that case, we rely on the request timeout instead.
       if (!listener_state.update.has_value()) continue;
       listener_state.update.reset();
       for (const auto& p : listener_state.watchers) {
@@ -938,8 +944,22 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
       }
     }
   }
-// FIXME: nuke RDS resources that are no longer referred to by any LDS resource
-// (copy code from CDS)
+  // For any RDS resource that is no longer referred to by any LDS
+  // resources, remove it from the cache and notify watchers that it
+  // does not exist.
+  auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
+  for (const auto& p : rds_state.subscribed_resources) {
+    const std::string& rds_resource_name = p.first;
+    if (rds_resource_names_seen.find(rds_resource_name) ==
+        rds_resource_names_seen.end()) {
+      RouteConfigState& route_config_state =
+          xds_client()->route_config_map_[rds_resource_name];
+      route_config_state.update.reset();
+      for (const auto& p : route_config_state.watchers) {
+        p.first->OnResourceDoesNotExist();
+      }
+    }
+  }
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
