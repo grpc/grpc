@@ -38,10 +38,14 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <string>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
+#include <grpc/support/alloc.h>
+
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/tls.h"
@@ -63,10 +67,6 @@
 //#define GRPC_EPOLLEX_CREATE_WORKERS_ON_HEAP 1
 
 #define MAX_EPOLL_EVENTS 100
-// TODO(juanlishen): We use a greater-than-one value here as a workaround fix to
-// a keepalive ping timeout issue. We may want to revert https://github
-// .com/grpc/grpc/pull/14943 once we figure out the root cause.
-#define MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL 16
 #define MAX_FDS_IN_CACHE 32
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_pollable_refcount(false,
@@ -124,11 +124,10 @@ static const char* pollable_type_string(pollable_type t) {
   return "<invalid>";
 }
 
-static char* pollable_desc(pollable* p) {
-  char* out;
-  gpr_asprintf(&out, "type=%s epfd=%d wakeup=%d", pollable_type_string(p->type),
-               p->epfd, p->wakeup.read_fd);
-  return out;
+static std::string pollable_desc(pollable* p) {
+  return absl::StrFormat("type=%s epfd=%d wakeup=%d",
+                         pollable_type_string(p->type), p->epfd,
+                         p->wakeup.read_fd);
 }
 
 /// Shared empty pollable - used by pollset to poll on until the first fd is
@@ -170,15 +169,13 @@ struct grpc_fd {
     write_closure.InitEvent();
     error_closure.InitEvent();
 
-    char* fd_name;
-    gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
-    grpc_iomgr_register_object(&iomgr_object, fd_name);
+    std::string fd_name = absl::StrCat(name, " fd=", fd);
+    grpc_iomgr_register_object(&iomgr_object, fd_name.c_str());
 #ifndef NDEBUG
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_fd_refcount)) {
-      gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, this, fd_name);
+      gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, this, fd_name.c_str());
     }
 #endif
-    gpr_free(fd_name);
   }
 
   // This is really the dtor, but the poller threads waking up from
@@ -263,11 +260,10 @@ static void fd_global_shutdown(void);
  * Pollset Declarations
  */
 
-typedef struct {
+struct pwlink {
   grpc_pollset_worker* next;
   grpc_pollset_worker* prev;
-} pwlink;
-
+};
 typedef enum { PWLINK_POLLABLE = 0, PWLINK_POLLSET, PWLINK_COUNT } pwlinks;
 
 struct grpc_pollset_worker {
@@ -873,8 +869,6 @@ static grpc_error* pollable_process_events(grpc_pollset* pollset,
       (pollable_obj->event_count - pollable_obj->event_cursor) / worker_count;
   if (handle_count == 0) {
     handle_count = 1;
-  } else if (handle_count > MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL) {
-    handle_count = MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL;
   }
   grpc_error* error = GRPC_ERROR_NONE;
   for (int i = 0; (drain || i < handle_count) &&
@@ -935,9 +929,8 @@ static grpc_error* pollable_epoll(pollable* p, grpc_millis deadline) {
   int timeout = poll_deadline_to_millis_timeout(deadline);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-    char* desc = pollable_desc(p);
-    gpr_log(GPR_INFO, "POLLABLE:%p[%s] poll for %dms", p, desc, timeout);
-    gpr_free(desc);
+    gpr_log(GPR_INFO, "POLLABLE:%p[%s] poll for %dms", p,
+            pollable_desc(p).c_str(), timeout);
   }
 
   if (timeout != 0) {

@@ -23,7 +23,8 @@
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/gprpp/inlined_vector.h"
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
@@ -44,8 +45,7 @@ struct grpc_tls_error_details
 struct grpc_tls_key_materials_config
     : public grpc_core::RefCounted<grpc_tls_key_materials_config> {
  public:
-  typedef grpc_core::InlinedVector<grpc_core::PemKeyCertPair, 1>
-      PemKeyCertPairList;
+  typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
 
   /** Getters for member fields. **/
   const char* pem_root_certs() const { return pem_root_certs_.get(); }
@@ -264,6 +264,8 @@ struct grpc_tls_credentials_options
   grpc_tls_server_verification_option server_verification_option() const {
     return server_verification_option_;
   }
+  grpc_tls_version min_tls_version() const { return min_tls_version_; }
+  grpc_tls_version max_tls_version() const { return max_tls_version_; }
   grpc_tls_key_materials_config* key_materials_config() const {
     return key_materials_config_.get();
   }
@@ -284,6 +286,12 @@ struct grpc_tls_credentials_options
       const grpc_tls_server_verification_option server_verification_option) {
     server_verification_option_ = server_verification_option;
   }
+  void set_min_tls_version(grpc_tls_version min_tls_version) {
+    min_tls_version_ = min_tls_version;
+  }
+  void set_max_tls_version(grpc_tls_version max_tls_version) {
+    max_tls_version_ = max_tls_version;
+  }
   void set_key_materials_config(
       grpc_core::RefCountedPtr<grpc_tls_key_materials_config> config) {
     key_materials_config_ = std::move(config);
@@ -302,6 +310,8 @@ struct grpc_tls_credentials_options
   grpc_ssl_client_certificate_request_type cert_request_type_;
   grpc_tls_server_verification_option server_verification_option_ =
       GRPC_TLS_SERVER_VERIFICATION;
+  grpc_tls_version min_tls_version_ = grpc_tls_version::TLS1_2;
+  grpc_tls_version max_tls_version_ = grpc_tls_version::TLS1_3;
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
   grpc_core::RefCountedPtr<grpc_tls_credential_reload_config>
       credential_reload_config_;

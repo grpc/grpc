@@ -22,7 +22,6 @@
 #include <grpc/grpc_security.h>
 
 #include <grpcpp/security/credentials.h>
-#include <grpcpp/security/credentials_impl.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/config.h>
 
@@ -30,7 +29,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
-namespace grpc_impl {
+namespace grpc {
 
 class Channel;
 
@@ -43,13 +42,13 @@ class SecureChannelCredentials final : public ChannelCredentials {
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
   std::shared_ptr<Channel> CreateChannelImpl(
-      const grpc::string& target, const ChannelArguments& args) override;
+      const std::string& target, const ChannelArguments& args) override;
 
   SecureChannelCredentials* AsSecureCredentials() override { return this; }
 
  private:
   std::shared_ptr<Channel> CreateChannelWithInterceptors(
-      const grpc::string& target, const ChannelArguments& args,
+      const std::string& target, const ChannelArguments& args,
       std::vector<std::unique_ptr<
           ::grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override;
@@ -66,9 +65,9 @@ class SecureCallCredentials final : public CallCredentials {
 
   bool ApplyToCall(grpc_call* call) override;
   SecureCallCredentials* AsSecureCredentials() override { return this; }
-  grpc::string DebugString() override {
+  std::string DebugString() override {
     return absl::StrCat("SecureCallCredentials{",
-                        grpc::string(c_creds_->debug_string()), "}");
+                        std::string(c_creds_->debug_string()), "}");
   }
 
  private:
@@ -84,10 +83,6 @@ grpc_sts_credentials_options StsCredentialsCppToCoreOptions(
     const StsCredentialsOptions& options);
 
 }  // namespace experimental
-
-}  // namespace grpc_impl
-
-namespace grpc {
 
 class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
  public:

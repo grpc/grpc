@@ -46,6 +46,8 @@ grpc_server_security_connector::grpc_server_security_connector(
     : grpc_security_connector(url_scheme),
       server_creds_(std::move(server_creds)) {}
 
+grpc_server_security_connector::~grpc_server_security_connector() = default;
+
 grpc_channel_security_connector::grpc_channel_security_connector(
     const char* url_scheme,
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,

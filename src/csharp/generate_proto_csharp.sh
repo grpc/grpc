@@ -14,11 +14,14 @@
 # limitations under the License.
 
 # Regenerates gRPC service stubs from proto files.
-set +e
+set -e
 cd $(dirname $0)/../..
 
-PROTOC=bins/opt/protobuf/protoc
-PLUGIN=protoc-gen-grpc=bins/opt/grpc_csharp_plugin
+# protoc and grpc_*_plugin binaries can be obtained by running
+# $ bazel build @com_google_protobuf//:protoc //src/compiler:all
+PROTOC=bazel-bin/external/com_google_protobuf/protoc
+PLUGIN=protoc-gen-grpc=bazel-bin/src/compiler/grpc_csharp_plugin
+
 EXAMPLES_DIR=src/csharp/Grpc.Examples
 HEALTHCHECK_DIR=src/csharp/Grpc.HealthCheck
 REFLECTION_DIR=src/csharp/Grpc.Reflection
@@ -33,7 +36,7 @@ $PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_D
 $PROTOC --plugin=$PLUGIN --csharp_out=$REFLECTION_DIR --grpc_out=$REFLECTION_DIR \
     -I src/proto src/proto/grpc/reflection/v1alpha/reflection.proto
 
-# Put grp/core/stats.proto in a subdirectory to avoid collision with grpc/testing/stats.proto
+# Put grpc/core/stats.proto in a subdirectory to avoid collision with grpc/testing/stats.proto
 mkdir -p $TESTING_DIR/CoreStats
 $PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR/CoreStats --grpc_out=$TESTING_DIR/CoreStats \
     -I src/proto src/proto/grpc/core/stats.proto

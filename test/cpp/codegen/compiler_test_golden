@@ -839,7 +839,14 @@ class ServiceA final {
    public:
     WithStreamedUnaryMethod_MethodA1() {
       ::grpc::Service::MarkMethodStreamed(0,
-        new ::grpc::internal::StreamedUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(std::bind(&WithStreamedUnaryMethod_MethodA1<BaseClass>::StreamedMethodA1, this, std::placeholders::_1, std::placeholders::_2)));
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::grpc::testing::Request, ::grpc::testing::Response>(
+            [this](::grpc_impl::ServerContext* context,
+                   ::grpc_impl::ServerUnaryStreamer<
+                     ::grpc::testing::Request, ::grpc::testing::Response>* streamer) {
+                       return this->StreamedMethodA1(context,
+                         streamer);
+                  }));
     }
     ~WithStreamedUnaryMethod_MethodA1() override {
       BaseClassMustBeDerivedFromService(this);
@@ -860,7 +867,14 @@ class ServiceA final {
    public:
     WithSplitStreamingMethod_MethodA3() {
       ::grpc::Service::MarkMethodStreamed(2,
-        new ::grpc::internal::SplitServerStreamingHandler< ::grpc::testing::Request, ::grpc::testing::Response>(std::bind(&WithSplitStreamingMethod_MethodA3<BaseClass>::StreamedMethodA3, this, std::placeholders::_1, std::placeholders::_2)));
+        new ::grpc::internal::SplitServerStreamingHandler<
+          ::grpc::testing::Request, ::grpc::testing::Response>(
+            [this](::grpc_impl::ServerContext* context,
+                   ::grpc_impl::ServerSplitStreamer<
+                     ::grpc::testing::Request, ::grpc::testing::Response>* streamer) {
+                       return this->StreamedMethodA3(context,
+                         streamer);
+                  }));
     }
     ~WithSplitStreamingMethod_MethodA3() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1129,7 +1143,14 @@ class ServiceB final {
    public:
     WithStreamedUnaryMethod_MethodB1() {
       ::grpc::Service::MarkMethodStreamed(0,
-        new ::grpc::internal::StreamedUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(std::bind(&WithStreamedUnaryMethod_MethodB1<BaseClass>::StreamedMethodB1, this, std::placeholders::_1, std::placeholders::_2)));
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::grpc::testing::Request, ::grpc::testing::Response>(
+            [this](::grpc_impl::ServerContext* context,
+                   ::grpc_impl::ServerUnaryStreamer<
+                     ::grpc::testing::Request, ::grpc::testing::Response>* streamer) {
+                       return this->StreamedMethodB1(context,
+                         streamer);
+                  }));
     }
     ~WithStreamedUnaryMethod_MethodB1() override {
       BaseClassMustBeDerivedFromService(this);

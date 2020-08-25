@@ -55,6 +55,9 @@ const size_t kSessionTicketEncryptionKeySize = 80;
 const size_t kSessionTicketEncryptionKeySize = 48;
 #endif
 
+// Indicates the TLS version used for the test.
+static tsi_tls_version test_tls_version = tsi_tls_version::TSI_TLS1_3;
+
 typedef enum AlpnMode {
   NO_ALPN,
   ALPN_CLIENT_NO_SERVER,
@@ -127,6 +130,8 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   if (ssl_fixture->session_cache != nullptr) {
     client_options.session_cache = ssl_fixture->session_cache;
   }
+  client_options.min_tls_version = test_tls_version;
+  client_options.max_tls_version = test_tls_version;
   GPR_ASSERT(tsi_create_ssl_client_handshaker_factory_with_options(
                  &client_options, &ssl_fixture->client_handshaker_factory) ==
              TSI_OK);
@@ -159,6 +164,8 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   }
   server_options.session_ticket_key = ssl_fixture->session_ticket_key;
   server_options.session_ticket_key_size = ssl_fixture->session_ticket_key_size;
+  server_options.min_tls_version = test_tls_version;
+  server_options.max_tls_version = test_tls_version;
   GPR_ASSERT(tsi_create_ssl_server_handshaker_factory_with_options(
                  &server_options, &ssl_fixture->server_handshaker_factory) ==
              TSI_OK);
@@ -236,6 +243,9 @@ void check_server0_peer(tsi_peer* peer) {
              nullptr);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "foo.test.google.com.au") == 1);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "bar.test.google.com.au") == 1);
+  GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "BAR.TEST.GOOGLE.COM.AU") == 1);
+  GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "Bar.Test.Google.Com.Au") == 1);
+  GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "bAr.TeST.gOOgle.cOm.AU") == 1);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "bar.test.google.blah") == 0);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "foo.bar.test.google.com.au") ==
              0);
@@ -248,7 +258,21 @@ static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
     const tsi_peer_property* prop = &peer->properties[i];
     if (strcmp(prop->name, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) ==
         0) {
-      if (memcmp(prop->value.data, name, prop->value.length) == 0) {
+      if (strlen(name) == prop->value.length &&
+          memcmp(prop->value.data, name, prop->value.length) == 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+static bool check_uri(tsi_peer* peer, const char* name) {
+  for (size_t i = 0; i < peer->property_count; i++) {
+    const tsi_peer_property* prop = &peer->properties[i];
+    if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
+      if (strlen(name) == prop->value.length &&
+          memcmp(prop->value.data, name, prop->value.length) == 0) {
         return true;
       }
     }
@@ -300,10 +324,18 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
   GPR_ASSERT(ssl_fixture->key_cert_lib != nullptr);
   ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib;
   tsi_peer peer;
-  bool expect_success =
+  // In TLS 1.3, the client-side handshake succeeds even if the client sends a
+  // bad certificate. In such a case, the server would fail the TLS handshake
+  // and send an alert to the client as the first application data message. In
+  // TLS 1.2, the client-side handshake will fail if the client sends a bad
+  // certificate.
+  bool expect_server_success =
       !(key_cert_lib->use_bad_server_cert ||
         (key_cert_lib->use_bad_client_cert && ssl_fixture->force_client_auth));
-  if (expect_success) {
+  bool expect_client_success = test_tls_version == tsi_tls_version::TSI_TLS1_2
+                                   ? expect_server_success
+                                   : !key_cert_lib->use_bad_server_cert;
+  if (expect_client_success) {
     GPR_ASSERT(tsi_handshaker_result_extract_peer(
                    ssl_fixture->base.client_result, &peer) == TSI_OK);
     check_session_reusage(ssl_fixture, &peer);
@@ -321,7 +353,7 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
   } else {
     GPR_ASSERT(ssl_fixture->base.client_result == nullptr);
   }
-  if (expect_success) {
+  if (expect_server_success) {
     GPR_ASSERT(tsi_handshaker_result_extract_peer(
                    ssl_fixture->base.server_result, &peer) == TSI_OK);
     check_session_reusage(ssl_fixture, &peer);
@@ -404,7 +436,7 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   ssl_tsi_test_fixture* ssl_fixture =
       static_cast<ssl_tsi_test_fixture*>(gpr_zalloc(sizeof(*ssl_fixture)));
   tsi_test_fixture_init(&ssl_fixture->base);
-  ssl_fixture->base.test_unused_bytes = false;
+  ssl_fixture->base.test_unused_bytes = true;
   ssl_fixture->base.vtable = &vtable;
   /* Create ssl_key_cert_lib. */
   ssl_key_cert_lib* key_cert_lib =
@@ -477,6 +509,9 @@ void ssl_tsi_test_do_handshake_tiny_handshake_buffer() {
   gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_tiny_handshake_buffer");
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
   fixture->handshake_buffer_size = TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE;
+  // Handshake buffer is too small to hold both handshake messages and the
+  // unused bytes.
+  fixture->test_unused_bytes = false;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
 }
@@ -656,10 +691,14 @@ void ssl_tsi_test_do_round_trip_for_all_configs() {
 
 void ssl_tsi_test_do_round_trip_odd_buffer_size() {
   gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_odd_buffer_size");
-#ifndef MEMORY_SANITIZER
+#if !defined(MEMORY_SANITIZER) && !defined(GPR_ARCH_32) && !defined(__APPLE__)
   const size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
 #else
-  // avoid test being extremely slow under MSAN
+  // 1. avoid test being extremely slow under MSAN
+  // 2. on 32-bit, the test is much slower (probably due to lack of boringssl
+  // asm optimizations) so we only run a subset of tests to avoid timeout
+  // 3. on Mac OS, we have slower testing machines so we only run a subset
+  // of tests to avoid timeout
   const size_t odd_sizes[] = {1025};
 #endif
   const size_t size = sizeof(odd_sizes) / sizeof(size_t);
@@ -855,9 +894,9 @@ void ssl_tsi_test_extract_x509_subject_names() {
   tsi_peer peer;
   GPR_ASSERT(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer) ==
              TSI_OK);
-  // One for common name, one for certificate, one for security level, and six
-  // for SAN fields.
-  size_t expected_property_count = 8;
+  // tsi_peer should include one common name, one certificate, one security
+  // level, seven SAN fields, three URI fields.
+  size_t expected_property_count = 12;
   GPR_ASSERT(peer.property_count == expected_property_count);
   // Check common name
   const char* expected_cn = "xpigors";
@@ -874,10 +913,15 @@ void ssl_tsi_test_extract_x509_subject_names() {
   GPR_ASSERT(check_subject_alt_name(&peer, "foo.test.domain.com") == 1);
   GPR_ASSERT(check_subject_alt_name(&peer, "bar.test.domain.com") == 1);
   // Check URI
+  // Note that a valid SPIFFE certificate should only have one URI.
+  GPR_ASSERT(check_subject_alt_name(&peer, "spiffe://foo.com/bar/baz") == 1);
   GPR_ASSERT(
       check_subject_alt_name(&peer, "https://foo.test.domain.com/test") == 1);
   GPR_ASSERT(
       check_subject_alt_name(&peer, "https://bar.test.domain.com/test") == 1);
+  GPR_ASSERT(check_uri(&peer, "spiffe://foo.com/bar/baz") == 1);
+  GPR_ASSERT(check_uri(&peer, "https://foo.test.domain.com/test") == 1);
+  GPR_ASSERT(check_uri(&peer, "https://bar.test.domain.com/test") == 1);
   // Check email address
   GPR_ASSERT(check_subject_alt_name(&peer, "foo@test.domain.com") == 1);
   GPR_ASSERT(check_subject_alt_name(&peer, "bar@test.domain.com") == 1);
@@ -925,31 +969,39 @@ void ssl_tsi_test_extract_cert_chain() {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  ssl_tsi_test_do_handshake_tiny_handshake_buffer();
-  ssl_tsi_test_do_handshake_small_handshake_buffer();
-  ssl_tsi_test_do_handshake();
-  ssl_tsi_test_do_handshake_with_root_store();
-  ssl_tsi_test_do_handshake_with_client_authentication();
-  ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
-  ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
-  ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
-  ssl_tsi_test_do_handshake_with_wrong_server_name_indication();
-  ssl_tsi_test_do_handshake_with_bad_server_cert();
-  ssl_tsi_test_do_handshake_with_bad_client_cert();
+  const size_t number_tls_versions = 2;
+  const tsi_tls_version tls_versions[] = {tsi_tls_version::TSI_TLS1_2,
+                                          tsi_tls_version::TSI_TLS1_3};
+  for (size_t i = 0; i < number_tls_versions; i++) {
+    // Set the TLS version to be used in the tests.
+    test_tls_version = tls_versions[i];
+    // Run all the tests using that TLS version for both the client and server.
+    ssl_tsi_test_do_handshake_tiny_handshake_buffer();
+    ssl_tsi_test_do_handshake_small_handshake_buffer();
+    ssl_tsi_test_do_handshake();
+    ssl_tsi_test_do_handshake_with_root_store();
+    ssl_tsi_test_do_handshake_with_client_authentication();
+    ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
+    ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
+    ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
+    ssl_tsi_test_do_handshake_with_wrong_server_name_indication();
+    ssl_tsi_test_do_handshake_with_bad_server_cert();
+    ssl_tsi_test_do_handshake_with_bad_client_cert();
 #ifdef OPENSSL_IS_BORINGSSL
-  // BoringSSL and OpenSSL have different behaviors on mismatched ALPN.
-  ssl_tsi_test_do_handshake_alpn_client_no_server();
-  ssl_tsi_test_do_handshake_alpn_client_server_mismatch();
+    // BoringSSL and OpenSSL have different behaviors on mismatched ALPN.
+    ssl_tsi_test_do_handshake_alpn_client_no_server();
+    ssl_tsi_test_do_handshake_alpn_client_server_mismatch();
 #endif
-  ssl_tsi_test_do_handshake_alpn_server_no_client();
-  ssl_tsi_test_do_handshake_alpn_client_server_ok();
-  ssl_tsi_test_do_handshake_session_cache();
-  ssl_tsi_test_do_round_trip_for_all_configs();
-  ssl_tsi_test_do_round_trip_odd_buffer_size();
-  ssl_tsi_test_handshaker_factory_internals();
-  ssl_tsi_test_duplicate_root_certificates();
-  ssl_tsi_test_extract_x509_subject_names();
-  ssl_tsi_test_extract_cert_chain();
+    ssl_tsi_test_do_handshake_alpn_server_no_client();
+    ssl_tsi_test_do_handshake_alpn_client_server_ok();
+    ssl_tsi_test_do_handshake_session_cache();
+    ssl_tsi_test_do_round_trip_for_all_configs();
+    ssl_tsi_test_do_round_trip_odd_buffer_size();
+    ssl_tsi_test_handshaker_factory_internals();
+    ssl_tsi_test_duplicate_root_certificates();
+    ssl_tsi_test_extract_x509_subject_names();
+    ssl_tsi_test_extract_cert_chain();
+  }
   grpc_shutdown();
   return 0;
 }

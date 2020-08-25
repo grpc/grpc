@@ -79,6 +79,6 @@ void grpc_custom_close_server_callback(grpc_tcp_listener* listener);
 
 grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
                                           grpc_resource_quota* resource_quota,
-                                          char* peer_string);
+                                          const char* peer_string);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CUSTOM_H */

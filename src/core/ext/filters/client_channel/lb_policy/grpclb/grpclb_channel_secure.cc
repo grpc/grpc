@@ -22,61 +22,27 @@
 
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
 
-namespace {
-
-int BalancerNameCmp(const grpc_core::UniquePtr<char>& a,
-                    const grpc_core::UniquePtr<char>& b) {
-  return strcmp(a.get(), b.get());
-}
-
-RefCountedPtr<TargetAuthorityTable> CreateTargetAuthorityTable(
-    const ServerAddressList& addresses) {
-  TargetAuthorityTable::Entry* target_authority_entries =
-      static_cast<TargetAuthorityTable::Entry*>(
-          gpr_zalloc(sizeof(*target_authority_entries) * addresses.size()));
-  for (size_t i = 0; i < addresses.size(); ++i) {
-    char* addr_str;
-    GPR_ASSERT(
-        grpc_sockaddr_to_string(&addr_str, &addresses[i].address(), true) > 0);
-    target_authority_entries[i].key = grpc_slice_from_copied_string(addr_str);
-    gpr_free(addr_str);
-    char* balancer_name = grpc_channel_arg_get_string(grpc_channel_args_find(
-        addresses[i].args(), GRPC_ARG_ADDRESS_BALANCER_NAME));
-    target_authority_entries[i].value.reset(gpr_strdup(balancer_name));
-  }
-  RefCountedPtr<TargetAuthorityTable> target_authority_table =
-      TargetAuthorityTable::Create(addresses.size(), target_authority_entries,
-                                   BalancerNameCmp);
-  gpr_free(target_authority_entries);
-  return target_authority_table;
-}
-
-}  // namespace
-
 grpc_channel_args* ModifyGrpclbBalancerChannelArgs(
     const ServerAddressList& addresses, grpc_channel_args* args) {
-  InlinedVector<const char*, 1> args_to_remove;
-  InlinedVector<grpc_arg, 2> args_to_add;
-  // Add arg for targets info table.
-  RefCountedPtr<TargetAuthorityTable> target_authority_table =
-      CreateTargetAuthorityTable(addresses);
-  args_to_add.emplace_back(
-      CreateTargetAuthorityTableChannelArg(target_authority_table.get()));
+  absl::InlinedVector<const char*, 1> args_to_remove;
+  absl::InlinedVector<grpc_arg, 1> args_to_add;
   // Substitute the channel credentials with a version without call
   // credentials: the load balancer is not necessarily trusted to handle
   // bearer token credentials.

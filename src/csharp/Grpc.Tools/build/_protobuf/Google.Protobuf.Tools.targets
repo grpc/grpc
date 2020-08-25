@@ -68,9 +68,9 @@
 
     <PropertyGroup>
       <!-- First try environment variable. -->
-      <Protobuf_ToolsOs>$(PROTOBUF_TOOLS_OS)</Protobuf_ToolsOs>
-      <Protobuf_ToolsCpu>$(PROTOBUF_TOOLS_CPU)</Protobuf_ToolsCpu>
-      <Protobuf_ProtocFullPath>$(PROTOBUF_PROTOC)</Protobuf_ProtocFullPath>
+      <Protobuf_ToolsOs Condition=" '$(Protobuf_ToolsOs)' == '' ">$(PROTOBUF_TOOLS_OS)</Protobuf_ToolsOs>
+      <Protobuf_ToolsCpu Condition=" '$(Protobuf_ToolsCpu)' == '' ">$(PROTOBUF_TOOLS_CPU)</Protobuf_ToolsCpu>
+      <Protobuf_ProtocFullPath Condition=" '$(Protobuf_ProtocFullPath)' == '' ">$(PROTOBUF_PROTOC)</Protobuf_ProtocFullPath>
 
       <!-- Next try OS and CPU resolved by ProtoToolsPlatform. -->
       <Protobuf_ToolsOs Condition=" '$(Protobuf_ToolsOs)' == '' ">$(_Protobuf_ToolsOs)</Protobuf_ToolsOs>
@@ -115,7 +115,7 @@
           DependsOnTargets="Protobuf_Compile"
           Condition=" '$(Language)' == 'C#' " />
 
-  <Target Name="_Protobuf_SelectFiles">
+  <Target Name="_Protobuf_SetProtoRoot">
     <!-- Guess .proto root for the files. Whenever the root is set for a file explicitly,
          leave it as is. Otherwise, for files under the project directory, set the root
          to "." for the project's directory, as it is the current when compiling; for the
@@ -127,17 +127,27 @@
     </FindUnderPath>
     <ItemGroup>
       <!-- Files with explicit metadata. -->
-      <Protobuf_Compile Include="@(Protobuf->HasMetadata('ProtoRoot'))" />
+      <Protobuf_Rooted Include="@(Protobuf->HasMetadata('ProtoRoot'))" />
       <!-- In-project files will have ProtoRoot='.'. -->
-      <Protobuf_Compile Include="@(_Protobuf_NoRootInProject)">
+      <Protobuf_Rooted Include="@(_Protobuf_NoRootInProject)">
         <ProtoRoot>.</ProtoRoot>
-      </Protobuf_Compile>
+      </Protobuf_Rooted>
       <!-- Out-of-project files will have respective ProtoRoot='%(RelativeDir)'. -->
-      <Protobuf_Compile Include="@(_Protobuf_NoRootElsewhere)">
+      <Protobuf_Rooted Include="@(_Protobuf_NoRootElsewhere)">
         <ProtoRoot>%(RelativeDir)</ProtoRoot>
-      </Protobuf_Compile>
+        <ProtoRoot Condition=" '$(Protobuf_ProtoRoot)' != '' ">$(Protobuf_ProtoRoot)</ProtoRoot>
+      </Protobuf_Rooted>
+    </ItemGroup>
+  </Target>
+
+  <!-- Select files that should be compiled. -->
+  <Target Name="_Protobuf_SelectFiles"
+          DependsOnTargets=" _Protobuf_SetProtoRoot">
+    <ItemGroup>
+      <!-- Files with explicit metadata. -->
+      <Protobuf_Compile Include="@(Protobuf_Rooted)" />
       <!-- Remove files not for compile. -->
-      <Protobuf_Compile Remove="@(Protobuf_Compile)" Condition=" !%(ProtoCompile) " />
+      <Protobuf_Compile Remove="@(Protobuf_Compile)" Condition=" '%(ProtoCompile)' != 'true' " />
       <!-- Ensure invariant Source=%(Identity). -->
       <Protobuf_Compile>
         <Source>%(Identity)</Source>
@@ -158,7 +168,13 @@
                           Protobuf="@(Protobuf_Compile)"
                           Generator="$(Protobuf_Generator)">
       <Output TaskParameter="PossibleOutputs" ItemName="Protobuf_ExpectedOutputs" />
+      <Output TaskParameter="PatchedProtobuf" ItemName="_PatchedProtobuf" />
     </ProtoCompilerOutputs>
+    <!-- Replace Protobuf_Compile with PatchedProtobuf. -->
+    <ItemGroup>
+       <Protobuf_Compile Remove="@(_PatchedProtobuf)"/>
+       <Protobuf_Compile Include ="@(_PatchedProtobuf)"/>
+    </ItemGroup>
     <!-- Read any dependency files from previous compiles. -->
     <ProtoReadDependencies Condition=" '$(Protobuf_DepFilesPath)' != '' and '$(DisableProtobufDesignTimeBuild)' != 'true' "
                            Protobuf="@(Protobuf_Compile)"
@@ -329,6 +345,7 @@
   <Target Name="Protobuf_Clean"
           Condition=" '@(Protobuf)' != '' "
           DependsOnTargets=" Protobuf_BeforeClean;
+                             _Protobuf_SetProtoRoot;
                              Protobuf_PrepareClean;
                              _Protobuf_CoreClean;
                              Protobuf_AfterClean" />
@@ -346,15 +363,15 @@
        Protobuf_ExpectedOutputs with all possible output. An option is to include
        all existing outputs using Include with a wildcard, if you know where to look.
 
-       Note this is like Protobuf_PrepareCompile, but uses @(Protobuf) regardless
+       Note this is like Protobuf_PrepareCompile, but uses @(Protobuf_Rooted) regardless
        of the Compile metadata, to remove all possible outputs. Plugins should err
        on the side of overextending the Protobuf_ExpectedOutputs here.
 
        All ExpectedOutputs will be removed. -->
-  <Target Name="Protobuf_PrepareClean" Condition=" '@(Protobuf)' != '' ">
+  <Target Name="Protobuf_PrepareClean" Condition=" '@(Protobuf_Rooted)' != '' ">
     <!-- Predict expected names. -->
     <ProtoCompilerOutputs Condition=" '$(Language)' == 'C#' "
-                          Protobuf="@(Protobuf)"
+                          Protobuf="@(Protobuf_Rooted)"
                           Generator="$(Protobuf_Generator)">
       <Output TaskParameter="PossibleOutputs" ItemName="Protobuf_ExpectedOutputs" />
     </ProtoCompilerOutputs>

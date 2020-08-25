@@ -55,8 +55,11 @@ void RegisterOpenCensusPlugin() {
   RpcServerReceivedMessagesPerRpc();
 }
 
-::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context) {
-  return reinterpret_cast<const CensusContext*>(context->census_context())
+::opencensus::trace::Span GetSpanFromServerContext(
+    grpc::ServerContext* context) {
+  if (context == nullptr) return opencensus::trace::Span::BlankSpan();
+
+  return reinterpret_cast<const grpc::CensusContext*>(context->census_context())
       ->Span();
 }
 
@@ -127,5 +130,4 @@ ABSL_CONST_INIT const absl::string_view
 
 ABSL_CONST_INIT const absl::string_view kRpcServerServerLatencyMeasureName =
     "grpc.io/server/server_latency";
-
 }  // namespace grpc

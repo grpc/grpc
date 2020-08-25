@@ -27,6 +27,10 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -148,11 +152,18 @@ static void me_destroy(grpc_endpoint* ep) {
   }
 }
 
-static char* me_get_peer(grpc_endpoint* ep) {
+static absl::string_view me_get_peer(grpc_endpoint* ep) {
   passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
   return (reinterpret_cast<half*>(ep)) == &p->client
-             ? gpr_strdup("fake:mock_client_endpoint")
-             : gpr_strdup("fake:mock_server_endpoint");
+             ? "fake:mock_client_endpoint"
+             : "fake:mock_server_endpoint";
+}
+
+static absl::string_view me_get_local_address(grpc_endpoint* ep) {
+  passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
+  return (reinterpret_cast<half*>(ep)) == &p->client
+             ? "fake:mock_client_endpoint"
+             : "fake:mock_server_endpoint";
 }
 
 static int me_get_fd(grpc_endpoint* /*ep*/) { return -1; }
@@ -174,6 +185,7 @@ static const grpc_endpoint_vtable vtable = {
     me_destroy,
     me_get_resource_user,
     me_get_peer,
+    me_get_local_address,
     me_get_fd,
     me_can_track_err,
 };
@@ -185,11 +197,9 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->parent = parent;
   grpc_slice_buffer_init(&m->read_buffer);
   m->on_read = nullptr;
-  char* name;
-  gpr_asprintf(&name, "passthru_endpoint_%s_%" PRIxPTR, half_name,
-               (intptr_t)parent);
-  m->resource_user = grpc_resource_user_create(resource_quota, name);
-  gpr_free(name);
+  std::string name = absl::StrFormat("passthru_endpoint_%s_%" PRIxPTR,
+                                     half_name, (intptr_t)parent);
+  m->resource_user = grpc_resource_user_create(resource_quota, name.c_str());
 }
 
 void grpc_passthru_endpoint_create(grpc_endpoint** client,

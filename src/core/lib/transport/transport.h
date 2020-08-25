@@ -242,6 +242,12 @@ struct grpc_transport_stream_op_batch_payload {
 
   struct {
     grpc_metadata_batch* send_trailing_metadata = nullptr;
+    // Set by the transport to true if the stream successfully wrote the
+    // trailing metadata. If this is not set but there was a send trailing
+    // metadata op present, this can indicate that a server call can be marked
+    // as  a cancellation (since the stream was write-closed before status could
+    // be delivered).
+    bool* sent = nullptr;
   } send_trailing_metadata;
 
   struct {
@@ -408,8 +414,9 @@ void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* op, grpc_error* error,
     grpc_core::CallCombiner* call_combiner);
 
-char* grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch* op);
-char* grpc_transport_op_string(grpc_transport_op* op);
+std::string grpc_transport_stream_op_batch_string(
+    grpc_transport_stream_op_batch* op);
+std::string grpc_transport_op_string(grpc_transport_op* op);
 
 /* Send a batch of operations on a transport
 
@@ -451,5 +458,12 @@ grpc_transport_op* grpc_make_transport_op(grpc_closure* on_consumed);
    to \a on_consumed and then delete the returned transport op */
 grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
     grpc_closure* on_consumed);
+
+namespace grpc_core {
+// This is the key to be used for loading/storing keepalive_throttling in the
+// absl::Status object.
+constexpr const char* kKeepaliveThrottlingKey =
+    "grpc.internal.keepalive_throttling";
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H */

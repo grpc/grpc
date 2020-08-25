@@ -28,8 +28,8 @@ import big_query_utils
 
 _DATASET_ID = 'jenkins_test_results'
 _DESCRIPTION = 'Test results from master RBE builds on Kokoro'
-# 90 days in milliseconds
-_EXPIRATION_MS = 90 * 24 * 60 * 60 * 1000
+# 365 days in milliseconds
+_EXPIRATION_MS = 365 * 24 * 60 * 60 * 1000
 _PARTITION_TYPE = 'DAY'
 _PROJECT_ID = 'grpc-testing'
 _RESULTS_SCHEMA = [
@@ -37,6 +37,7 @@ _RESULTS_SCHEMA = [
     ('build_id', 'INTEGER', 'Build ID of Kokoro job'),
     ('build_url', 'STRING', 'URL of Kokoro build'),
     ('test_target', 'STRING', 'Bazel target path'),
+    ('test_class_name', 'STRING', 'Name of test class'),
     ('test_case', 'STRING', 'Name of test case'),
     ('result', 'STRING', 'Test or build result'),
     ('timestamp', 'TIMESTAMP', 'Timestamp of test run'),
@@ -241,6 +242,8 @@ if __name__ == "__main__":
                             % invocation_id,
                         'test_target':
                             action['id']['targetId'],
+                        'test_class_name':
+                            test_case['testCase'].get('className', ''),
                         'test_case':
                             test_case['testCase']['caseName'],
                         'result':
@@ -266,6 +269,8 @@ if __name__ == "__main__":
                             % invocation_id,
                         'test_target':
                             action['id']['targetId'],
+                        'test_class_name':
+                            'N/A',
                         'test_case':
                             'N/A',
                         'result':

@@ -97,16 +97,16 @@ class CXXLanguage:
         self.safename = 'cxx'
 
     def client_cmd(self, args):
-        return ['bins/opt/interop_client'] + args
+        return ['cmake/build/interop_client'] + args
 
     def client_cmd_http2interop(self, args):
-        return ['bins/opt/http2_client'] + args
+        return ['cmake/build/http2_client'] + args
 
     def cloud_to_prod_env(self):
         return {}
 
     def server_cmd(self, args):
-        return ['bins/opt/interop_server'] + args
+        return ['cmake/build/interop_server'] + args
 
     def global_env(self):
         return {}
@@ -190,8 +190,8 @@ class CSharpCoreCLRLanguage:
 class AspNetCoreLanguage:
 
     def __init__(self):
-        self.client_cwd = '../grpc-dotnet/testassets/InteropTestsClient/bin/Debug/netcoreapp3.0'
-        self.server_cwd = '../grpc-dotnet/testassets/InteropTestsWebsite/bin/Debug/netcoreapp3.0'
+        self.client_cwd = '../grpc-dotnet/output/InteropTestsClient'
+        self.server_cwd = '../grpc-dotnet/output/InteropTestsWebsite'
         self.safename = str(self)
 
     def cloud_to_prod_env(self):
@@ -499,7 +499,7 @@ class PHPLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + \
+        return _SKIP_SERVER_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
             _SKIP_SPECIAL_STATUS_MESSAGE + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
@@ -528,7 +528,7 @@ class PHP7Language:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + \
+        return _SKIP_SERVER_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
             _SKIP_SPECIAL_STATUS_MESSAGE + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
@@ -786,9 +786,9 @@ _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
     'java', 'go', 'python', 'c++'
 ]
 
-_LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
+_LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++', 'python']
 
-_SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
+_SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++', 'python']
 
 _TRANSPORT_SECURITY_OPTIONS = ['tls', 'alts', 'insecure']
 

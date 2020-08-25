@@ -84,9 +84,9 @@ fi
 # on OSX use md5 instead of sha1sum
 if command -v sha1sum > /dev/null;
 then
-  BASE_IMAGE=${BASE_NAME}_$(sha1sum "tools/dockerfile/interoptest/$BASE_NAME/Dockerfile" | cut -f1 -d\ )
+  BASE_IMAGE=${BASE_NAME}:$(sha1sum "tools/dockerfile/interoptest/$BASE_NAME/Dockerfile" | cut -f1 -d\ )
 else
-  BASE_IMAGE=${BASE_NAME}_$(md5 -r "tools/dockerfile/interoptest/$BASE_NAME/Dockerfile" | cut -f1 -d\ )
+  BASE_IMAGE=${BASE_NAME}:$(md5 -r "tools/dockerfile/interoptest/$BASE_NAME/Dockerfile" | cut -f1 -d\ )
 fi
 
 if [ "$DOCKERHUB_ORGANIZATION" != "" ]

@@ -121,12 +121,11 @@ inline grpc_closure* grpc_closure_init(grpc_closure* closure,
 
 namespace closure_impl {
 
-typedef struct {
+struct wrapped_closure {
   grpc_iomgr_cb_func cb;
   void* cb_arg;
   grpc_closure wrapper;
-} wrapped_closure;
-
+};
 inline void closure_wrapper(void* arg, grpc_error* error) {
   wrapped_closure* wc = static_cast<wrapped_closure*>(arg);
   grpc_iomgr_cb_func cb = wc->cb;

@@ -22,10 +22,13 @@
 
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/percent_encoding.h"
@@ -35,34 +38,25 @@
 /** a size_t default value... maps to all 1's */
 #define NOT_SET (~(size_t)0)
 
-static grpc_uri* bad_uri(const char* uri_text, size_t pos, const char* section,
-                         bool suppress_errors) {
-  char* line_prefix;
-  size_t pfx_len;
-
+static grpc_uri* bad_uri(absl::string_view uri_text, size_t pos,
+                         const char* section, bool suppress_errors) {
   if (!suppress_errors) {
-    gpr_asprintf(&line_prefix, "bad uri.%s: '", section);
-    pfx_len = strlen(line_prefix) + pos;
-    gpr_log(GPR_ERROR, "%s%s'", line_prefix, uri_text);
-    gpr_free(line_prefix);
-
-    line_prefix = static_cast<char*>(gpr_malloc(pfx_len + 1));
-    memset(line_prefix, ' ', pfx_len);
-    line_prefix[pfx_len] = 0;
-    gpr_log(GPR_ERROR, "%s^ here", line_prefix);
-    gpr_free(line_prefix);
+    std::string line_prefix = absl::StrFormat("bad uri.%s: '", section);
+    gpr_log(GPR_ERROR, "%s%s'", line_prefix.c_str(),
+            std::string(uri_text).c_str());
+    size_t pfx_len = line_prefix.size() + pos;
+    gpr_log(GPR_ERROR, "%s^ here", std::string(pfx_len, ' ').c_str());
   }
-
   return nullptr;
 }
 
 /** Returns a copy of percent decoded \a src[begin, end) */
-static char* decode_and_copy_component(const char* src, size_t begin,
+static char* decode_and_copy_component(absl::string_view src, size_t begin,
                                        size_t end) {
   grpc_slice component =
       (begin == NOT_SET || end == NOT_SET)
           ? grpc_empty_slice()
-          : grpc_slice_from_copied_buffer(src + begin, end - begin);
+          : grpc_slice_from_copied_buffer(src.data() + begin, end - begin);
   grpc_slice decoded_component =
       grpc_permissive_percent_decode_slice(component);
   char* out = grpc_dump_slice(decoded_component, GPR_DUMP_ASCII);
@@ -79,7 +73,7 @@ static bool valid_hex(char c) {
 /** Returns how many chars to advance if \a uri_text[i] begins a valid \a pchar
  * production. If \a uri_text[i] introduces an invalid \a pchar (such as percent
  * sign not followed by two hex digits), NOT_SET is returned. */
-static size_t parse_pchar(const char* uri_text, size_t i) {
+static size_t parse_pchar(absl::string_view uri_text, size_t i) {
   /* pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
    * unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
    * pct-encoded = "%" HEXDIG HEXDIG
@@ -112,7 +106,8 @@ static size_t parse_pchar(const char* uri_text, size_t i) {
     case '=':
       return 1;
     case '%': /* pct-encoded */
-      if (valid_hex(uri_text[i + 1]) && valid_hex(uri_text[i + 2])) {
+      if (uri_text.size() > i + 2 && valid_hex(uri_text[i + 1]) &&
+          valid_hex(uri_text[i + 2])) {
         return 2;
       }
       return NOT_SET;
@@ -121,9 +116,8 @@ static size_t parse_pchar(const char* uri_text, size_t i) {
 }
 
 /* *( pchar / "?" / "/" ) */
-static int parse_fragment_or_query(const char* uri_text, size_t* i) {
-  char c;
-  while ((c = uri_text[*i]) != 0) {
+static int parse_fragment_or_query(absl::string_view uri_text, size_t* i) {
+  while (uri_text.size() > *i) {
     const size_t advance = parse_pchar(uri_text, *i); /* pchar */
     switch (advance) {
       case 0: /* uri_text[i] isn't in pchar */
@@ -185,7 +179,7 @@ static void parse_query_parts(grpc_uri* uri) {
   }
 }
 
-grpc_uri* grpc_uri_parse(const char* uri_text, bool suppress_errors) {
+grpc_uri* grpc_uri_parse(absl::string_view uri_text, bool suppress_errors) {
   grpc_uri* uri;
   size_t scheme_begin = 0;
   size_t scheme_end = NOT_SET;
@@ -199,7 +193,7 @@ grpc_uri* grpc_uri_parse(const char* uri_text, bool suppress_errors) {
   size_t fragment_end = NOT_SET;
   size_t i;
 
-  for (i = scheme_begin; uri_text[i] != 0; i++) {
+  for (i = scheme_begin; i < uri_text.size(); ++i) {
     if (uri_text[i] == ':') {
       scheme_end = i;
       break;
@@ -218,15 +212,16 @@ grpc_uri* grpc_uri_parse(const char* uri_text, bool suppress_errors) {
     return bad_uri(uri_text, i, "scheme", suppress_errors);
   }
 
-  if (uri_text[scheme_end + 1] == '/' && uri_text[scheme_end + 2] == '/') {
+  if (uri_text.size() > scheme_end + 2 && uri_text[scheme_end + 1] == '/' &&
+      uri_text[scheme_end + 2] == '/') {
     authority_begin = scheme_end + 3;
-    for (i = authority_begin; uri_text[i] != 0 && authority_end == NOT_SET;
+    for (i = authority_begin; uri_text.size() > i && authority_end == NOT_SET;
          i++) {
       if (uri_text[i] == '/' || uri_text[i] == '?' || uri_text[i] == '#') {
         authority_end = i;
       }
     }
-    if (authority_end == NOT_SET && uri_text[i] == 0) {
+    if (authority_end == NOT_SET && uri_text.size() == i) {
       authority_end = i;
     }
     if (authority_end == NOT_SET) {
@@ -238,34 +233,34 @@ grpc_uri* grpc_uri_parse(const char* uri_text, bool suppress_errors) {
     path_begin = scheme_end + 1;
   }
 
-  for (i = path_begin; uri_text[i] != 0; i++) {
+  for (i = path_begin; i < uri_text.size(); ++i) {
     if (uri_text[i] == '?' || uri_text[i] == '#') {
       path_end = i;
       break;
     }
   }
-  if (path_end == NOT_SET && uri_text[i] == 0) {
+  if (path_end == NOT_SET && uri_text.size() == i) {
     path_end = i;
   }
   if (path_end == NOT_SET) {
     return bad_uri(uri_text, i, "path", suppress_errors);
   }
 
-  if (uri_text[i] == '?') {
+  if (uri_text.size() > i && uri_text[i] == '?') {
     query_begin = ++i;
     if (!parse_fragment_or_query(uri_text, &i)) {
       return bad_uri(uri_text, i, "query", suppress_errors);
-    } else if (uri_text[i] != 0 && uri_text[i] != '#') {
+    } else if (uri_text.size() > i && uri_text[i] != '#') {
       /* We must be at the end or at the beginning of a fragment */
       return bad_uri(uri_text, i, "query", suppress_errors);
     }
     query_end = i;
   }
-  if (uri_text[i] == '#') {
+  if (uri_text.size() > i && uri_text[i] == '#') {
     fragment_begin = ++i;
     if (!parse_fragment_or_query(uri_text, &i)) {
       return bad_uri(uri_text, i - fragment_end, "fragment", suppress_errors);
-    } else if (uri_text[i] != 0) {
+    } else if (uri_text.size() > i) {
       /* We must be at the end */
       return bad_uri(uri_text, i, "fragment", suppress_errors);
     }

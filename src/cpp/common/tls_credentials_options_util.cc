@@ -16,10 +16,12 @@
  *
  */
 
-#include "src/cpp/common/tls_credentials_options_util.h"
-#include <grpcpp/security/tls_credentials_options.h>
+#include "absl/container/inlined_vector.h"
 
-namespace grpc_impl {
+#include <grpcpp/security/tls_credentials_options.h>
+#include "src/cpp/common/tls_credentials_options_util.h"
+
+namespace grpc {
 namespace experimental {
 
 /** Converts the Cpp key materials to C key materials; this allocates memory for
@@ -35,7 +37,7 @@ grpc_tls_key_materials_config* ConvertToCKeyMaterialsConfig(
   }
   grpc_tls_key_materials_config* c_config =
       grpc_tls_key_materials_config_create();
-  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
+  ::absl::InlinedVector<::grpc_core::PemKeyCertPair, 1>
       c_pem_key_cert_pair_list;
   for (const auto& key_cert_pair : config->pem_key_cert_pair_list()) {
     grpc_ssl_pem_key_cert_pair* ssl_pair =
@@ -144,4 +146,4 @@ void TlsServerAuthorizationCheckArgDestroyContext(void* context) {
 }
 
 }  // namespace experimental
-}  // namespace grpc_impl
+}  // namespace grpc

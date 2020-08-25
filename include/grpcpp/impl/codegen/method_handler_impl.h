@@ -303,10 +303,13 @@ class BidiStreamingHandler
           ::grpc_impl::ServerReaderWriter<ResponseType, RequestType>*)>
           func,
       ServiceType* service)
+      // TODO(vjpai): When gRPC supports C++14, move-capture func in the below
       : TemplatedBidiStreamingHandler<
             ::grpc_impl::ServerReaderWriter<ResponseType, RequestType>, false>(
-            std::bind(func, service, std::placeholders::_1,
-                      std::placeholders::_2)) {}
+            [func, service](
+                ::grpc_impl::ServerContext* ctx,
+                ::grpc_impl::ServerReaderWriter<ResponseType, RequestType>*
+                    streamer) { return func(service, ctx, streamer); }) {}
 };
 
 template <class RequestType, class ResponseType>
@@ -321,7 +324,7 @@ class StreamedUnaryHandler
           func)
       : TemplatedBidiStreamingHandler<
             ::grpc_impl::ServerUnaryStreamer<RequestType, ResponseType>, true>(
-            func) {}
+            std::move(func)) {}
 };
 
 template <class RequestType, class ResponseType>
@@ -336,7 +339,7 @@ class SplitServerStreamingHandler
           func)
       : TemplatedBidiStreamingHandler<
             ::grpc_impl::ServerSplitStreamer<RequestType, ResponseType>, false>(
-            func) {}
+            std::move(func)) {}
 };
 
 /// General method handler class for errors that prevent real method use

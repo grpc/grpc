@@ -16,15 +16,25 @@ class RequestResultCount extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>int32 status_code = 1;</code>
      */
-    private $status_code = 0;
+    protected $status_code = 0;
     /**
      * Generated from protobuf field <code>int64 count = 2;</code>
      */
-    private $count = 0;
+    protected $count = 0;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type int $status_code
+     *     @type int|string $count
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Stats::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

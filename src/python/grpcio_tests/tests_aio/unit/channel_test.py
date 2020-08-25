@@ -226,5 +226,5 @@ class TestChannel(AioTestBase):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

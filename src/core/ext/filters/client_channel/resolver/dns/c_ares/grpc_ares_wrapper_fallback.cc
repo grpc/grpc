@@ -29,18 +29,21 @@ struct grpc_ares_request {
 static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addrs, bool check_grpclb,
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms,
-    grpc_core::Combiner* combiner) {
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   return NULL;
 }
 
 grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addrs, bool check_grpclb,
+    std::unique_ptr<grpc_core::ServerAddressList>* addrs,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms,
-    grpc_core::Combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) =
+    grpc_dns_lookup_ares_locked_impl;
 
 static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {}
 

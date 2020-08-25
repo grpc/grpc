@@ -29,8 +29,8 @@ import sys
 
 import grpc
 
-from examples.python.multiprocessing import prime_pb2
-from examples.python.multiprocessing import prime_pb2_grpc
+import prime_pb2
+import prime_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,12 +66,6 @@ def _run_server(bind_address):
     """Start a server in a subprocess."""
     _LOGGER.info('Starting new server.')
     options = (('grpc.so_reuseport', 1),)
-
-    # WARNING: This example takes advantage of SO_REUSEPORT. Due to the
-    # limitations of manylinux1, none of our precompiled Linux wheels currently
-    # support this option. (https://github.com/grpc/grpc/issues/18210). To take
-    # advantage of this feature, install from source with
-    # `pip install grpcio --no-binary grpcio`.
 
     server = grpc.server(futures.ThreadPoolExecutor(
         max_workers=_THREAD_CONCURRENCY,),

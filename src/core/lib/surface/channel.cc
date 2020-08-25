@@ -329,6 +329,7 @@ char* grpc_channel_get_target(grpc_channel* channel) {
 
 void grpc_channel_get_info(grpc_channel* channel,
                            const grpc_channel_info* channel_info) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_channel_element* elem =
       grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
@@ -336,6 +337,7 @@ void grpc_channel_get_info(grpc_channel* channel,
 }
 
 void grpc_channel_reset_connect_backoff(grpc_channel* channel) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_channel_reset_connect_backoff(channel=%p)", 1,
                  (channel));
@@ -386,6 +388,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
                                     grpc_slice method, const grpc_slice* host,
                                     gpr_timespec deadline, void* reserved) {
   GPR_ASSERT(!reserved);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_call* call = grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, cq, nullptr,
@@ -412,26 +415,33 @@ grpc_call* grpc_channel_create_pollset_set_call(
 
 namespace grpc_core {
 
-RegisteredCall::RegisteredCall(const char* method, const char* host) {
-  path = grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
-                                 grpc_core::ExternallyManagedSlice(method));
-  authority =
-      host ? grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
-                                     grpc_core::ExternallyManagedSlice(host))
-           : GRPC_MDNULL;
-}
+RegisteredCall::RegisteredCall(const char* method_arg, const char* host_arg)
+    : method(method_arg != nullptr ? method_arg : ""),
+      host(host_arg != nullptr ? host_arg : ""),
+      path(grpc_mdelem_from_slices(
+          GRPC_MDSTR_PATH, grpc_core::ExternallyManagedSlice(method.c_str()))),
+      authority(!host.empty()
+                    ? grpc_mdelem_from_slices(
+                          GRPC_MDSTR_AUTHORITY,
+                          grpc_core::ExternallyManagedSlice(host.c_str()))
+                    : GRPC_MDNULL) {}
 
 // TODO(vjpai): Delete copy-constructor when allowed by all supported compilers.
-RegisteredCall::RegisteredCall(const RegisteredCall& other) {
-  path = other.path;
-  authority = other.authority;
-  GRPC_MDELEM_REF(path);
-  GRPC_MDELEM_REF(authority);
-}
+RegisteredCall::RegisteredCall(const RegisteredCall& other)
+    : RegisteredCall(other.method.c_str(), other.host.c_str()) {}
 
-RegisteredCall::RegisteredCall(RegisteredCall&& other) noexcept {
-  path = other.path;
-  authority = other.authority;
+RegisteredCall::RegisteredCall(RegisteredCall&& other) noexcept
+    : method(std::move(other.method)),
+      host(std::move(other.host)),
+      path(grpc_mdelem_from_slices(
+          GRPC_MDSTR_PATH, grpc_core::ExternallyManagedSlice(method.c_str()))),
+      authority(!host.empty()
+                    ? grpc_mdelem_from_slices(
+                          GRPC_MDSTR_AUTHORITY,
+                          grpc_core::ExternallyManagedSlice(host.c_str()))
+                    : GRPC_MDNULL) {
+  GRPC_MDELEM_UNREF(other.path);
+  GRPC_MDELEM_UNREF(other.authority);
   other.path = GRPC_MDNULL;
   other.authority = GRPC_MDNULL;
 }
@@ -449,17 +459,19 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
       "grpc_channel_register_call(channel=%p, method=%s, host=%s, reserved=%p)",
       4, (channel, method, host, reserved));
   GPR_ASSERT(!reserved);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   grpc_core::MutexLock lock(&channel->registration_table->mu);
   channel->registration_table->method_registration_attempts++;
-  auto key = std::make_pair(host, method);
+  auto key = std::make_pair(std::string(host != nullptr ? host : ""),
+                            std::string(method != nullptr ? method : ""));
   auto rc_posn = channel->registration_table->map.find(key);
   if (rc_posn != channel->registration_table->map.end()) {
     return &rc_posn->second;
   }
   auto insertion_result = channel->registration_table->map.insert(
-      {key, grpc_core::RegisteredCall(method, host)});
+      {std::move(key), grpc_core::RegisteredCall(method, host)});
   return &insertion_result.first->second;
 }
 
@@ -481,6 +493,7 @@ grpc_call* grpc_channel_create_registered_call(
        registered_call_handle, deadline.tv_sec, deadline.tv_nsec,
        (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_call* call = grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, completion_queue, nullptr,
@@ -532,6 +545,7 @@ void grpc_channel_destroy_internal(grpc_channel* channel) {
 }
 
 void grpc_channel_destroy(grpc_channel* channel) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_channel_destroy_internal(channel);
 }

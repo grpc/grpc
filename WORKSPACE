@@ -39,6 +39,11 @@ rbe_autoconfig(
         # that want to use other machines (such as LARGE_MACHINE) will override
         # this value.
         gce_machine_type = "n1-highmem-2",
+        # WARNING: the os_family constraint has only been introduced recently
+        # and older release branches select workers solely based on gce_machine_type.
+        # Worker pools needs to be configured with care to avoid accidentally running
+        # linux jobs on windows pool and vice versa (which would lead to a test breakage)
+        os_family = "Linux",
     ),
     # use exec_properties instead of deprecated remote_execution_properties
     use_legacy_platform_definition = False,

@@ -35,8 +35,8 @@ using std::map;
 namespace grpc_php_generator {
 namespace {
 
-grpc::string ConvertToPhpNamespace(const grpc::string& name) {
-  std::vector<grpc::string> tokens = grpc_generator::tokenize(name, ".");
+std::string ConvertToPhpNamespace(const std::string& name) {
+  std::vector<std::string> tokens = grpc_generator::tokenize(name, ".");
   std::ostringstream oss;
   for (unsigned int i = 0; i < tokens.size(); i++) {
     oss << (i == 0 ? "" : "\\")
@@ -45,7 +45,7 @@ grpc::string ConvertToPhpNamespace(const grpc::string& name) {
   return oss.str();
 }
 
-grpc::string PackageName(const FileDescriptor* file) {
+std::string PackageName(const FileDescriptor* file) {
   if (file->options().has_php_namespace()) {
     return file->options().php_namespace();
   } else {
@@ -53,9 +53,9 @@ grpc::string PackageName(const FileDescriptor* file) {
   }
 }
 
-grpc::string MessageIdentifierName(const grpc::string& name,
-                                   const FileDescriptor* file) {
-  std::vector<grpc::string> tokens = grpc_generator::tokenize(name, ".");
+std::string MessageIdentifierName(const std::string& name,
+                                  const FileDescriptor* file) {
+  std::vector<std::string> tokens = grpc_generator::tokenize(name, ".");
   std::ostringstream oss;
   if (PackageName(file) != "") {
     oss << PackageName(file) << "\\";
@@ -67,7 +67,7 @@ grpc::string MessageIdentifierName(const grpc::string& name,
 void PrintMethod(const MethodDescriptor* method, Printer* out) {
   const Descriptor* input_type = method->input_type();
   const Descriptor* output_type = method->output_type();
-  map<grpc::string, grpc::string> vars;
+  map<std::string, std::string> vars;
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
   vars["input_type_id"] =
@@ -78,9 +78,15 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
   out->Print("/**\n");
   out->Print(GetPHPComments(method, " *").c_str());
   if (method->client_streaming()) {
+    if (method->server_streaming()) {
+      vars["return_type_id"] = "\\Grpc\\BidiStreamingCall";
+    } else {
+      vars["return_type_id"] = "\\Grpc\\ClientStreamingCall";
+    }
     out->Print(vars,
                " * @param array $$metadata metadata\n"
-               " * @param array $$options call options\n */\n"
+               " * @param array $$options call options\n"
+               " * @return $return_type_id$\n */\n"
                "public function $name$($$metadata = [], "
                "$$options = []) {\n");
     out->Indent();
@@ -95,10 +101,16 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
                "['\\$output_type_id$','decode'],\n"
                "$$metadata, $$options);\n");
   } else {
+    if (method->server_streaming()) {
+      vars["return_type_id"] = "\\Grpc\\ServerStreamingCall";
+    } else {
+      vars["return_type_id"] = "\\Grpc\\UnaryCall";
+    }
     out->Print(vars,
                " * @param \\$input_type_id$ $$argument input argument\n"
                " * @param array $$metadata metadata\n"
-               " * @param array $$options call options\n */\n"
+               " * @param array $$options call options\n"
+               " * @return $return_type_id$\n */\n"
                "public function $name$(\\$input_type_id$ $$argument,\n"
                "  $$metadata = [], $$options = []) {\n");
     out->Indent();
@@ -121,8 +133,8 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
 
 // Prints out the service descriptor object
 void PrintService(const ServiceDescriptor* service,
-                  const grpc::string& class_suffix, Printer* out) {
-  map<grpc::string, grpc::string> vars;
+                  const std::string& class_suffix, Printer* out) {
+  map<std::string, std::string> vars;
   out->Print("/**\n");
   out->Print(GetPHPComments(service, " *").c_str());
   out->Print(" */\n");
@@ -144,7 +156,7 @@ void PrintService(const ServiceDescriptor* service,
   out->Outdent();
   out->Print("}\n\n");
   for (int i = 0; i < service->method_count(); i++) {
-    grpc::string method_name =
+    std::string method_name =
         grpc_generator::LowercaseFirstLetter(service->method(i)->name());
     PrintMethod(service->method(i), out);
   }
@@ -154,10 +166,10 @@ void PrintService(const ServiceDescriptor* service,
 }
 }  // namespace
 
-grpc::string GenerateFile(const FileDescriptor* file,
-                          const ServiceDescriptor* service,
-                          const grpc::string& class_suffix) {
-  grpc::string output;
+std::string GenerateFile(const FileDescriptor* file,
+                         const ServiceDescriptor* service,
+                         const std::string& class_suffix) {
+  std::string output;
   {
     StringOutputStream output_stream(&output);
     Printer out(&output_stream, '$');
@@ -165,14 +177,14 @@ grpc::string GenerateFile(const FileDescriptor* file,
     out.Print("<?php\n");
     out.Print("// GENERATED CODE -- DO NOT EDIT!\n\n");
 
-    grpc::string leading_comments = GetPHPComments(file, "//");
+    std::string leading_comments = GetPHPComments(file, "//");
     if (!leading_comments.empty()) {
       out.Print("// Original file comments:\n");
       out.PrintRaw(leading_comments.c_str());
     }
 
-    map<grpc::string, grpc::string> vars;
-    grpc::string php_namespace = PackageName(file);
+    map<std::string, std::string> vars;
+    std::string php_namespace = PackageName(file);
     vars["package"] = php_namespace;
     out.Print(vars, "namespace $package$;\n\n");
 

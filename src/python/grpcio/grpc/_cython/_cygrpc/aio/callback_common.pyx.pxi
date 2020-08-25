@@ -70,7 +70,8 @@ cdef CallbackFailureHandler CQ_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler
     InternalError)
 
 
-class ExecuteBatchError(Exception): pass
+class ExecuteBatchError(InternalError):
+    """Raised when execute batch returns a failure from Core."""
 
 
 async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
@@ -128,7 +129,7 @@ async def _receive_message(GrpcCallWrapper grpc_call_wrapper,
         # the callback (e.g. cancelled).
         #
         # Since they all indicates finish, they are better be merged.
-        _LOGGER.debug(e)
+        _LOGGER.debug('Failed to receive any message from Core')
     return receive_op.message()
 
 

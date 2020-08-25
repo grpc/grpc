@@ -36,7 +36,11 @@ class BuildFileFunctions(object):
     pass
 
   def cc_library(self, **kwargs):
-    if kwargs["name"] == "amalgamation" or kwargs["name"] == "upbc_generator":
+    if kwargs["name"].endswith("amalgamation"):
+      return
+    if kwargs["name"] == "upbc_generator":
+      return
+    if kwargs["name"] == "lupb":
       return
     files = kwargs.get("srcs", []) + kwargs.get("hdrs", [])
     found_files = []
@@ -98,16 +102,7 @@ class BuildFileFunctions(object):
   def py_binary(self, **kwargs):
     pass
 
-  def lua_cclibrary(self, **kwargs):
-    pass
-
-  def lua_library(self, **kwargs):
-    pass
-
-  def lua_binary(self, **kwargs):
-    pass
-
-  def lua_test(self, **kwargs):
+  def lua_proto_library(self, **kwargs):
     pass
 
   def sh_test(self, **kwargs):

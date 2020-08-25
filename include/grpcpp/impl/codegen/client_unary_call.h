@@ -25,18 +25,15 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/status.h>
 
-namespace grpc_impl {
-
-class ClientContext;
-}  // namespace grpc_impl
 namespace grpc {
 
+class ClientContext;
 namespace internal {
 class RpcMethod;
 /// Wrapper that performs a blocking unary call
 template <class InputMessage, class OutputMessage>
 Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                         grpc_impl::ClientContext* context,
+                         grpc::ClientContext* context,
                          const InputMessage& request, OutputMessage* result) {
   return BlockingUnaryCallImpl<InputMessage, OutputMessage>(
              channel, method, context, request, result)
@@ -47,9 +44,9 @@ template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl {
  public:
   BlockingUnaryCallImpl(ChannelInterface* channel, const RpcMethod& method,
-                        grpc_impl::ClientContext* context,
+                        grpc::ClientContext* context,
                         const InputMessage& request, OutputMessage* result) {
-    ::grpc_impl::CompletionQueue cq(grpc_completion_queue_attributes{
+    ::grpc::CompletionQueue cq(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
         nullptr});  // Pluckable completion queue
     ::grpc::internal::Call call(channel->CreateCall(method, context, &cq));

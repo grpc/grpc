@@ -31,7 +31,7 @@ using grpc::Status;
 std::atomic<int> DummyInterceptor::num_times_run_;
 std::atomic<int> DummyInterceptor::num_times_run_reverse_;
 
-grpc::string ToString(const grpc::string_ref& r) { return grpc::string(r.data(), r.size()); }
+std::string ToString(const grpc::string_ref& r) { return std::string(r.data(), r.size()); }
 
 void configureCronet(void) {
   static dispatch_once_t configureCronet;
@@ -46,10 +46,10 @@ void configureCronet(void) {
   });
 }
 
-bool CheckIsLocalhost(const grpc::string& addr) {
-  const grpc::string kIpv6("[::1]:");
-  const grpc::string kIpv4MappedIpv6("[::ffff:127.0.0.1]:");
-  const grpc::string kIpv4("127.0.0.1:");
+bool CheckIsLocalhost(const std::string& addr) {
+  const std::string kIpv6("[::1]:");
+  const std::string kIpv4MappedIpv6("[::ffff:127.0.0.1]:");
+  const std::string kIpv4("127.0.0.1:");
   return addr.substr(0, kIpv4.size()) == kIpv4 ||
          addr.substr(0, kIpv4MappedIpv6.size()) == kIpv4MappedIpv6 ||
          addr.substr(0, kIpv6.size()) == kIpv6;
@@ -110,7 +110,7 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
     // Terminate rpc with error and debug info in trailer.
     if (request->param().debug_info().stack_entries_size() ||
         !request->param().debug_info().detail().empty()) {
-      grpc::string serialized_debug_info = request->param().debug_info().SerializeAsString();
+      std::string serialized_debug_info = request->param().debug_info().SerializeAsString();
       context->AddTrailingMetadata(kDebugInfoTrailerKey, serialized_debug_info);
       return Status::CANCELLED;
     }
@@ -141,7 +141,7 @@ Status TestServiceImpl::ResponseStream(ServerContext* context, const EchoRequest
       GetIntValueFromMetadata(kServerResponseStreamsToSend, context->client_metadata(),
                               kServerDefaultResponseStreamsToSend);
   for (int i = 0; i < server_responses_to_send; i++) {
-    response.set_message(request->message() + grpc::to_string(i));
+    response.set_message(request->message() + std::to_string(i));
     if (i == server_responses_to_send - 1) {
       writer->WriteLast(response, grpc::WriteOptions());
     } else {

@@ -98,7 +98,7 @@ class grpc_channel_security_connector : public grpc_security_connector {
   /// Returns true if completed synchronously, in which case \a error will
   /// be set to indicate the result.  Otherwise, \a on_call_host_checked
   /// will be invoked when complete.
-  virtual bool check_call_host(grpc_core::StringView host,
+  virtual bool check_call_host(absl::string_view host,
                                grpc_auth_context* auth_context,
                                grpc_closure* on_call_host_checked,
                                grpc_error** error) = 0;
@@ -151,7 +151,7 @@ class grpc_server_security_connector : public grpc_security_connector {
   grpc_server_security_connector(
       const char* url_scheme,
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
-  ~grpc_server_security_connector() override = default;
+  ~grpc_server_security_connector() override;
 
   virtual void add_handshakers(const grpc_channel_args* args,
                                grpc_pollset_set* interested_parties,

@@ -38,9 +38,15 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <string>
+#include <vector>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
@@ -346,16 +352,14 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
 
   new_fd->freelist_next = nullptr;
 
-  char* fd_name;
-  gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
-  grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name);
+  std::string fd_name = absl::StrCat(name, " fd=", fd);
+  grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name.c_str());
   fork_fd_list_add_grpc_fd(new_fd);
 #ifndef NDEBUG
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_fd_refcount)) {
-    gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, new_fd, fd_name);
+    gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, new_fd, fd_name.c_str());
   }
 #endif
-  gpr_free(fd_name);
 
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
@@ -1064,30 +1068,23 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
   GRPC_STATS_INC_POLLSET_KICK();
   grpc_error* ret_err = GRPC_ERROR_NONE;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-    gpr_strvec log;
-    gpr_strvec_init(&log);
-    char* tmp;
-    gpr_asprintf(&tmp, "PS:%p KICK:%p curps=%p curworker=%p root=%p", pollset,
-                 specific_worker, (void*)gpr_tls_get(&g_current_thread_pollset),
-                 (void*)gpr_tls_get(&g_current_thread_worker),
-                 pollset->root_worker);
-    gpr_strvec_add(&log, tmp);
+    std::vector<std::string> log;
+    log.push_back(absl::StrFormat(
+        "PS:%p KICK:%p curps=%p curworker=%p root=%p", pollset, specific_worker,
+        (void*)gpr_tls_get(&g_current_thread_pollset),
+        (void*)gpr_tls_get(&g_current_thread_worker), pollset->root_worker));
     if (pollset->root_worker != nullptr) {
-      gpr_asprintf(&tmp, " {kick_state=%s next=%p {kick_state=%s}}",
-                   kick_state_string(pollset->root_worker->state),
-                   pollset->root_worker->next,
-                   kick_state_string(pollset->root_worker->next->state));
-      gpr_strvec_add(&log, tmp);
+      log.push_back(absl::StrFormat(
+          " {kick_state=%s next=%p {kick_state=%s}}",
+          kick_state_string(pollset->root_worker->state),
+          pollset->root_worker->next,
+          kick_state_string(pollset->root_worker->next->state)));
     }
     if (specific_worker != nullptr) {
-      gpr_asprintf(&tmp, " worker_kick_state=%s",
-                   kick_state_string(specific_worker->state));
-      gpr_strvec_add(&log, tmp);
+      log.push_back(absl::StrFormat(" worker_kick_state=%s",
+                                    kick_state_string(specific_worker->state)));
     }
-    tmp = gpr_strvec_flatten(&log, nullptr);
-    gpr_strvec_destroy(&log);
-    gpr_log(GPR_DEBUG, "%s", tmp);
-    gpr_free(tmp);
+    gpr_log(GPR_DEBUG, "%s", absl::StrJoin(log, "").c_str());
   }
 
   if (specific_worker == nullptr) {

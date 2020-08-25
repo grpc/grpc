@@ -30,9 +30,8 @@ _LOGGER.setLevel(logging.DEBUG)
 async def serve():
     args = interop_server_lib.parse_interop_server_arguments()
 
-    if args.use_tls:
-        credentials = interop_server_lib.get_server_credentials()
-
+    if args.use_tls or args.use_alts:
+        credentials = interop_server_lib.get_server_credentials(args.use_tls)
         address, server = await _test_server.start_test_server(
             port=args.port, secure=True, server_credentials=credentials)
     else:

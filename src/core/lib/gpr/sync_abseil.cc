@@ -108,6 +108,8 @@ void gpr_cv_broadcast(gpr_cv* cv) {
 /*----------------------------------------*/
 
 void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
+  static_assert(sizeof(gpr_once) == sizeof(absl::once_flag),
+                "gpr_once and absl::once_flag must be the same size");
   absl::call_once(*reinterpret_cast<absl::once_flag*>(once), init_function);
 }
 

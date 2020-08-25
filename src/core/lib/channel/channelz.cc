@@ -156,9 +156,7 @@ void CallCountingHelper::PopulateCallCounts(Json::Object* object) {
     gpr_timespec ts = gpr_convert_clock_type(
         gpr_cycle_counter_to_time(data.last_call_started_cycle),
         GPR_CLOCK_REALTIME);
-    char* ts_str = gpr_format_timespec(ts);
-    (*object)["lastCallStartedTimestamp"] = ts_str;
-    gpr_free(ts_str);
+    (*object)["lastCallStartedTimestamp"] = gpr_format_timespec(ts);
   }
   if (data.calls_succeeded != 0) {
     (*object)["callsSucceeded"] = std::to_string(data.calls_succeeded);
@@ -285,7 +283,7 @@ void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
 // ServerNode
 //
 
-ServerNode::ServerNode(grpc_server* /*server*/, size_t channel_tracer_max_nodes)
+ServerNode::ServerNode(size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kServer, ""), trace_(channel_tracer_max_nodes) {}
 
 ServerNode::~ServerNode() {}
@@ -312,27 +310,26 @@ void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {
 
 std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
                                             intptr_t max_results) {
+  GPR_ASSERT(start_socket_id >= 0);
+  GPR_ASSERT(max_results >= 0);
   // If user does not set max_results, we choose 500.
   size_t pagination_limit = max_results == 0 ? 500 : max_results;
   Json::Object object;
   {
     MutexLock lock(&child_mu_);
     size_t sockets_rendered = 0;
-    if (!child_sockets_.empty()) {
-      // Create list of socket refs.
-      Json::Array array;
-      const size_t limit = GPR_MIN(child_sockets_.size(), pagination_limit);
-      for (auto it = child_sockets_.lower_bound(start_socket_id);
-           it != child_sockets_.end() && sockets_rendered < limit;
-           ++it, ++sockets_rendered) {
-        array.emplace_back(Json::Object{
-            {"socketId", std::to_string(it->first)},
-            {"name", it->second->name()},
-        });
-      }
-      object["socketRef"] = std::move(array);
+    // Create list of socket refs.
+    Json::Array array;
+    auto it = child_sockets_.lower_bound(start_socket_id);
+    for (; it != child_sockets_.end() && sockets_rendered < pagination_limit;
+         ++it, ++sockets_rendered) {
+      array.emplace_back(Json::Object{
+          {"socketId", std::to_string(it->first)},
+          {"name", it->second->name()},
+      });
     }
-    if (sockets_rendered == child_sockets_.size()) object["end"] = true;
+    object["socketRef"] = std::move(array);
+    if (it == child_sockets_.end()) object["end"] = true;
   }
   Json json = std::move(object);
   return json.Dump();
@@ -387,15 +384,14 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
                            (strcmp(uri->scheme, "ipv6") == 0))) {
     const char* host_port = uri->path;
     if (*host_port == '/') ++host_port;
-    grpc_core::UniquePtr<char> host;
-    grpc_core::UniquePtr<char> port;
+    std::string host;
+    std::string port;
     GPR_ASSERT(SplitHostPort(host_port, &host, &port));
     int port_num = -1;
-    if (port != nullptr) {
-      port_num = atoi(port.get());
+    if (!port.empty()) {
+      port_num = atoi(port.data());
     }
-    char* b64_host =
-        grpc_base64_encode(host.get(), strlen(host.get()), false, false);
+    char* b64_host = grpc_base64_encode(host.data(), host.size(), false, false);
     data["tcpip_address"] = Json::Object{
         {"port", port_num},
         {"ip_address", b64_host},
@@ -457,9 +453,7 @@ Json SocketNode::RenderJson() {
       ts = gpr_convert_clock_type(
           gpr_cycle_counter_to_time(last_local_stream_created_cycle),
           GPR_CLOCK_REALTIME);
-      char* ts_str = gpr_format_timespec(ts);
-      data["lastLocalStreamCreatedTimestamp"] = ts_str;
-      gpr_free(ts_str);
+      data["lastLocalStreamCreatedTimestamp"] = gpr_format_timespec(ts);
     }
     gpr_cycle_counter last_remote_stream_created_cycle =
         last_remote_stream_created_cycle_.Load(MemoryOrder::RELAXED);
@@ -467,9 +461,7 @@ Json SocketNode::RenderJson() {
       ts = gpr_convert_clock_type(
           gpr_cycle_counter_to_time(last_remote_stream_created_cycle),
           GPR_CLOCK_REALTIME);
-      char* ts_str = gpr_format_timespec(ts);
-      data["lastRemoteStreamCreatedTimestamp"] = ts_str;
-      gpr_free(ts_str);
+      data["lastRemoteStreamCreatedTimestamp"] = gpr_format_timespec(ts);
     }
   }
   int64_t streams_succeeded = streams_succeeded_.Load(MemoryOrder::RELAXED);
@@ -487,9 +479,7 @@ Json SocketNode::RenderJson() {
         gpr_cycle_counter_to_time(
             last_message_sent_cycle_.Load(MemoryOrder::RELAXED)),
         GPR_CLOCK_REALTIME);
-    char* ts_str = gpr_format_timespec(ts);
-    data["lastMessageSentTimestamp"] = ts_str;
-    gpr_free(ts_str);
+    data["lastMessageSentTimestamp"] = gpr_format_timespec(ts);
   }
   int64_t messages_received = messages_received_.Load(MemoryOrder::RELAXED);
   if (messages_received != 0) {
@@ -498,9 +488,7 @@ Json SocketNode::RenderJson() {
         gpr_cycle_counter_to_time(
             last_message_received_cycle_.Load(MemoryOrder::RELAXED)),
         GPR_CLOCK_REALTIME);
-    char* ts_str = gpr_format_timespec(ts);
-    data["lastMessageReceivedTimestamp"] = ts_str;
-    gpr_free(ts_str);
+    data["lastMessageReceivedTimestamp"] = gpr_format_timespec(ts);
   }
   int64_t keepalives_sent = keepalives_sent_.Load(MemoryOrder::RELAXED);
   if (keepalives_sent != 0) {

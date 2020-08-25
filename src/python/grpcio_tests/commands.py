@@ -220,11 +220,17 @@ class TestGevent(setuptools.Command):
         'unit._cython._channel_test.ChannelTest.test_negative_deadline_connectivity',
         # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
         'unit._local_credentials_test.LocalCredentialsTest',
+        # TODO(https://github.com/grpc/grpc/issues/22020) LocalCredentials
+        # aren't supported with custom io managers.
+        'unit._contextvars_propagation_test',
         'testing._time_test.StrictRealTimeTest',
     )
     BANNED_WINDOWS_TESTS = (
         # TODO(https://github.com/grpc/grpc/pull/15411) enable this test
-        'unit._dns_resolver_test.DNSResolverTest.test_connect_loopback',)
+        'unit._dns_resolver_test.DNSResolverTest.test_connect_loopback',
+        # TODO(https://github.com/grpc/grpc/pull/15411) enable this test
+        'unit._server_test.ServerTest.test_failed_port_binding_exception',
+    )
     description = 'run tests with gevent.  Assumes grpc/gevent are installed'
     user_options = []
 

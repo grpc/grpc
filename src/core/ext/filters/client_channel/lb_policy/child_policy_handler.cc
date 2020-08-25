@@ -45,19 +45,21 @@ class ChildPolicyHandler::Helper
     return parent_->channel_control_helper()->CreateSubchannel(args);
   }
 
-  void UpdateState(grpc_connectivity_state state,
+  void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                    std::unique_ptr<SubchannelPicker> picker) override {
     if (parent_->shutting_down_) return;
     // If this request is from the pending child policy, ignore it until
-    // it reports READY, at which point we swap it into place.
+    // it reports something other than CONNECTING, at which point we swap it
+    // into place.
     if (CalledByPendingChild()) {
       if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
         gpr_log(GPR_INFO,
                 "[child_policy_handler %p] helper %p: pending child policy %p "
-                "reports state=%s",
-                parent_.get(), this, child_, ConnectivityStateName(state));
+                "reports state=%s (%s)",
+                parent_.get(), this, child_, ConnectivityStateName(state),
+                status.ToString().c_str());
       }
-      if (state != GRPC_CHANNEL_READY) return;
+      if (state == GRPC_CHANNEL_CONNECTING) return;
       grpc_pollset_set_del_pollset_set(
           parent_->child_policy_->interested_parties(),
           parent_->interested_parties());
@@ -66,7 +68,8 @@ class ChildPolicyHandler::Helper
       // This request is from an outdated child, so ignore it.
       return;
     }
-    parent_->channel_control_helper()->UpdateState(state, std::move(picker));
+    parent_->channel_control_helper()->UpdateState(state, status,
+                                                   std::move(picker));
   }
 
   void RequestReresolution() override {
@@ -86,7 +89,8 @@ class ChildPolicyHandler::Helper
     parent_->channel_control_helper()->RequestReresolution();
   }
 
-  void AddTraceEvent(TraceSeverity severity, StringView message) override {
+  void AddTraceEvent(TraceSeverity severity,
+                     absl::string_view message) override {
     if (parent_->shutting_down_) return;
     if (!CalledByPendingChild() && !CalledByCurrentChild()) return;
     parent_->channel_control_helper()->AddTraceEvent(severity, message);
@@ -201,6 +205,10 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
     // Cases 1, 2b, and 3b: create a new child policy.
     // If child_policy_ is null, we set it (case 1), else we set
     // pending_child_policy_ (cases 2b and 3b).
+    // TODO(roth): In cases 2b and 3b, we should start a timer here, so
+    // that there's an upper bound on the amount of time it takes us to
+    // switch to the new policy, even if the new policy stays in
+    // CONNECTING for a very long period of time.
     if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
       gpr_log(GPR_INFO,
               "[child_policy_handler %p] creating new %schild policy %s", this,
@@ -251,7 +259,7 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
     const char* child_policy_name, const grpc_channel_args& args) {
   Helper* helper = new Helper(Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner();
+  lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.channel_control_helper =
       std::unique_ptr<ChannelControlHelper>(helper);
   lb_policy_args.args = &args;

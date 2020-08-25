@@ -1,0 +1,51 @@
+// Copyright 2019 Istio Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.security.meshca.v1;
+
+import "google/protobuf/duration.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "MeshCaProto";
+option java_package = "com.google.security.meshca.v1";
+
+// Certificate request message.
+message MeshCertificateRequest {
+  // The request ID must be a valid UUID with the exception that zero UUID is
+  // not supported (00000000-0000-0000-0000-000000000000).
+  string request_id = 1;
+  // PEM-encoded certificate request.
+  string csr = 2;
+  // Optional: requested certificate validity period.
+  google.protobuf.Duration validity = 3;
+  // Reserved 4
+}
+
+// Certificate response message.
+message MeshCertificateResponse {
+  // PEM-encoded certificate chain.
+  // Leaf cert is element '0'. Root cert is element 'n'.
+  repeated string cert_chain = 1;
+}
+
+// Service for managing certificates issued by the CSM CA.
+service MeshCertificateService {
+  // Using provided CSR, returns a signed certificate that represents a GCP
+  // service account identity.
+  rpc CreateCertificate(MeshCertificateRequest)
+    returns (MeshCertificateResponse) {
+  }
+}

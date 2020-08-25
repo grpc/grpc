@@ -31,7 +31,7 @@ bool leak_check = true;
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::Json::Parse(
-      grpc_core::StringView(reinterpret_cast<const char*>(data), size), &error);
+      absl::string_view(reinterpret_cast<const char*>(data), size), &error);
   GRPC_ERROR_UNREF(error);
   return 0;
 }

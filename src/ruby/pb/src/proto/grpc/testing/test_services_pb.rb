@@ -36,31 +36,31 @@ module Grpc
         self.service_name = 'grpc.testing.TestService'
 
         # One empty request followed by one empty response.
-        rpc :EmptyCall, Empty, Empty
+        rpc :EmptyCall, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
         # One request followed by one response.
-        rpc :UnaryCall, SimpleRequest, SimpleResponse
+        rpc :UnaryCall, ::Grpc::Testing::SimpleRequest, ::Grpc::Testing::SimpleResponse
         # One request followed by one response. Response has cache control
         # headers set such that a caching HTTP proxy (such as GFE) can
         # satisfy subsequent requests.
-        rpc :CacheableUnaryCall, SimpleRequest, SimpleResponse
+        rpc :CacheableUnaryCall, ::Grpc::Testing::SimpleRequest, ::Grpc::Testing::SimpleResponse
         # One request followed by a sequence of responses (streamed download).
         # The server returns the payload with client desired type and sizes.
-        rpc :StreamingOutputCall, StreamingOutputCallRequest, stream(StreamingOutputCallResponse)
+        rpc :StreamingOutputCall, ::Grpc::Testing::StreamingOutputCallRequest, stream(::Grpc::Testing::StreamingOutputCallResponse)
         # A sequence of requests followed by one response (streamed upload).
         # The server returns the aggregated size of client payload as the result.
-        rpc :StreamingInputCall, stream(StreamingInputCallRequest), StreamingInputCallResponse
+        rpc :StreamingInputCall, stream(::Grpc::Testing::StreamingInputCallRequest), ::Grpc::Testing::StreamingInputCallResponse
         # A sequence of requests with each request served by the server immediately.
         # As one request could lead to multiple responses, this interface
         # demonstrates the idea of full duplexing.
-        rpc :FullDuplexCall, stream(StreamingOutputCallRequest), stream(StreamingOutputCallResponse)
+        rpc :FullDuplexCall, stream(::Grpc::Testing::StreamingOutputCallRequest), stream(::Grpc::Testing::StreamingOutputCallResponse)
         # A sequence of requests followed by a sequence of responses.
         # The server buffers all the client requests and then serves them in order. A
         # stream of responses are returned to the client when the server starts with
         # first request.
-        rpc :HalfDuplexCall, stream(StreamingOutputCallRequest), stream(StreamingOutputCallResponse)
+        rpc :HalfDuplexCall, stream(::Grpc::Testing::StreamingOutputCallRequest), stream(::Grpc::Testing::StreamingOutputCallResponse)
         # The test server will not implement this method. It will be used
         # to test the behavior when clients call unimplemented methods.
-        rpc :UnimplementedCall, Empty, Empty
+        rpc :UnimplementedCall, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
       end
 
       Stub = Service.rpc_stub_class
@@ -77,7 +77,7 @@ module Grpc
         self.service_name = 'grpc.testing.UnimplementedService'
 
         # A call that no server should implement
-        rpc :UnimplementedCall, Empty, Empty
+        rpc :UnimplementedCall, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
       end
 
       Stub = Service.rpc_stub_class
@@ -92,8 +92,40 @@ module Grpc
         self.unmarshal_class_method = :decode
         self.service_name = 'grpc.testing.ReconnectService'
 
-        rpc :Start, ReconnectParams, Empty
-        rpc :Stop, Empty, ReconnectInfo
+        rpc :Start, ::Grpc::Testing::ReconnectParams, ::Grpc::Testing::Empty
+        rpc :Stop, ::Grpc::Testing::Empty, ::Grpc::Testing::ReconnectInfo
+      end
+
+      Stub = Service.rpc_stub_class
+    end
+    module LoadBalancerStatsService
+      # A service used to obtain stats for verifying LB behavior.
+      class Service
+
+        include GRPC::GenericService
+
+        self.marshal_class_method = :encode
+        self.unmarshal_class_method = :decode
+        self.service_name = 'grpc.testing.LoadBalancerStatsService'
+
+        # Gets the backend distribution for RPCs sent by a test client.
+        rpc :GetClientStats, ::Grpc::Testing::LoadBalancerStatsRequest, ::Grpc::Testing::LoadBalancerStatsResponse
+      end
+
+      Stub = Service.rpc_stub_class
+    end
+    module XdsUpdateHealthService
+      # A service to remotely control health status of an xDS test server.
+      class Service
+
+        include GRPC::GenericService
+
+        self.marshal_class_method = :encode
+        self.unmarshal_class_method = :decode
+        self.service_name = 'grpc.testing.XdsUpdateHealthService'
+
+        rpc :SetServing, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
+        rpc :SetNotServing, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
       end
 
       Stub = Service.rpc_stub_class

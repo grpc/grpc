@@ -202,11 +202,6 @@ struct inproc_stream {
     }
 
     t->unref();
-
-    if (closure_at_destroy) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure_at_destroy,
-                              GRPC_ERROR_NONE);
-    }
   }
 
 #ifndef NDEBUG
@@ -249,7 +244,6 @@ struct inproc_stream {
   bool other_side_closed = false;               // won't talk anymore
   bool write_buffer_other_side_closed = false;  // on hold
   grpc_stream_refcount* refs;
-  grpc_closure* closure_at_destroy = nullptr;
 
   grpc_core::Arena* arena;
 
@@ -267,6 +261,11 @@ struct inproc_stream {
   bool trailing_md_sent = false;
   bool initial_md_recvd = false;
   bool trailing_md_recvd = false;
+  // The following tracks if the server-side only pretends to have received
+  // trailing metadata since it no longer cares about the RPC. If that is the
+  // case, it is still ok for the client to send trailing metadata (in which
+  // case it will be ignored).
+  bool trailing_md_recvd_implicit_only = false;
 
   bool closed = false;
 
@@ -617,7 +616,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error* error) {
       s->send_message_op->payload->send_message.send_message.reset();
       complete_if_batch_end_locked(
           s, GRPC_ERROR_NONE, s->send_message_op,
-          "op_state_machine scheduling send-message-on-complete");
+          "op_state_machine scheduling send-message-on-complete case 1");
       s->send_message_op = nullptr;
     }
   }
@@ -652,6 +651,9 @@ void op_state_machine_locked(inproc_stream* s, grpc_error* error) {
                          0, dest, nullptr, destfilled);
       }
       s->trailing_md_sent = true;
+      if (s->send_trailing_md_op->payload->send_trailing_metadata.sent) {
+        *s->send_trailing_md_op->payload->send_trailing_metadata.sent = true;
+      }
       if (!s->t->is_client && s->trailing_md_recvd && s->recv_trailing_md_op) {
         INPROC_LOG(GPR_INFO,
                    "op_state_machine %p scheduling trailing-metadata-ready", s);
@@ -736,15 +738,25 @@ void op_state_machine_locked(inproc_stream* s, grpc_error* error) {
   }
   if (s->to_read_trailing_md_filled) {
     if (s->trailing_md_recvd) {
-      new_err =
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already recvd trailing md");
-      INPROC_LOG(
-          GPR_INFO,
-          "op_state_machine %p scheduling on_complete errors for already "
-          "recvd trailing md %p",
-          s, new_err);
-      fail_helper_locked(s, GRPC_ERROR_REF(new_err));
-      goto done;
+      if (s->trailing_md_recvd_implicit_only) {
+        INPROC_LOG(GPR_INFO,
+                   "op_state_machine %p already implicitly received trailing "
+                   "metadata, so ignoring new trailing metadata from client",
+                   s);
+        grpc_metadata_batch_clear(&s->to_read_trailing_md);
+        s->to_read_trailing_md_filled = false;
+        s->trailing_md_recvd_implicit_only = false;
+      } else {
+        new_err =
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already recvd trailing md");
+        INPROC_LOG(
+            GPR_INFO,
+            "op_state_machine %p scheduling on_complete errors for already "
+            "recvd trailing md %p",
+            s, new_err);
+        fail_helper_locked(s, GRPC_ERROR_REF(new_err));
+        goto done;
+      }
     }
     if (s->recv_message_op != nullptr) {
       // This message needs to be wrapped up because it will never be
@@ -764,9 +776,10 @@ void op_state_machine_locked(inproc_stream* s, grpc_error* error) {
       // Nothing further will try to receive from this stream, so finish off
       // any outstanding send_message op
       s->send_message_op->payload->send_message.send_message.reset();
+      s->send_message_op->payload->send_message.stream_write_closed = true;
       complete_if_batch_end_locked(
           s, new_err, s->send_message_op,
-          "op_state_machine scheduling send-message-on-complete");
+          "op_state_machine scheduling send-message-on-complete case 2");
       s->send_message_op = nullptr;
     }
     if (s->recv_trailing_md_op != nullptr) {
@@ -805,11 +818,32 @@ void op_state_machine_locked(inproc_stream* s, grpc_error* error) {
                    "trailing-md-on-complete %p",
                    s, new_err);
       }
-    } else {
+    } else if (!s->trailing_md_recvd) {
       INPROC_LOG(
           GPR_INFO,
           "op_state_machine %p has trailing md but not yet waiting for it", s);
     }
+  }
+  if (!s->t->is_client && s->trailing_md_sent &&
+      (s->recv_trailing_md_op != nullptr)) {
+    // In this case, we don't care to receive the write-close from the client
+    // because we have already sent status and the RPC is over as far as we
+    // are concerned.
+    INPROC_LOG(GPR_INFO, "op_state_machine %p scheduling trailing-md-ready %p",
+               s, new_err);
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION,
+        s->recv_trailing_md_op->payload->recv_trailing_metadata
+            .recv_trailing_metadata_ready,
+        GRPC_ERROR_REF(new_err));
+    complete_if_batch_end_locked(
+        s, new_err, s->recv_trailing_md_op,
+        "op_state_machine scheduling recv-trailing-md-on-complete");
+    s->trailing_md_recvd = true;
+    s->recv_trailing_md_op = nullptr;
+    // Since we are only pretending to have received the trailing MD, it would
+    // be ok (not an error) if the client actually sends it later.
+    s->trailing_md_recvd_implicit_only = true;
   }
   if (s->trailing_md_recvd && s->recv_message_op) {
     // No further message will come on this stream, so finish off the
@@ -825,14 +859,13 @@ void op_state_machine_locked(inproc_stream* s, grpc_error* error) {
         "op_state_machine scheduling recv-message-on-complete");
     s->recv_message_op = nullptr;
   }
-  if (s->trailing_md_recvd && (s->trailing_md_sent || s->t->is_client) &&
-      s->send_message_op) {
+  if (s->trailing_md_recvd && s->send_message_op && s->t->is_client) {
     // Nothing further will try to receive from this stream, so finish off
     // any outstanding send_message op
     s->send_message_op->payload->send_message.send_message.reset();
     complete_if_batch_end_locked(
         s, new_err, s->send_message_op,
-        "op_state_machine scheduling send-message-on-complete");
+        "op_state_machine scheduling send-message-on-complete case 3");
     s->send_message_op = nullptr;
   }
   if (s->send_message_op || s->send_trailing_md_op || s->recv_initial_md_op ||
@@ -1093,7 +1126,8 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 
 void close_transport_locked(inproc_transport* t) {
   INPROC_LOG(GPR_INFO, "close_transport %p %d", t, t->is_closed);
-  t->state_tracker.SetState(GRPC_CHANNEL_SHUTDOWN, "close transport");
+  t->state_tracker.SetState(GRPC_CHANNEL_SHUTDOWN, absl::Status(),
+                            "close transport");
   if (!t->is_closed) {
     t->is_closed = true;
     /* Also end all streams on this transport */
@@ -1143,12 +1177,17 @@ void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   gpr_mu_unlock(&t->mu->mu);
 }
 
-void destroy_stream(grpc_transport* /*gt*/, grpc_stream* gs,
+void destroy_stream(grpc_transport* gt, grpc_stream* gs,
                     grpc_closure* then_schedule_closure) {
   INPROC_LOG(GPR_INFO, "destroy_stream %p %p", gs, then_schedule_closure);
+  inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
   inproc_stream* s = reinterpret_cast<inproc_stream*>(gs);
-  s->closure_at_destroy = then_schedule_closure;
+  gpr_mu_lock(&t->mu->mu);
+  close_stream_locked(s);
+  gpr_mu_unlock(&t->mu->mu);
   s->~inproc_stream();
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure,
+                          GRPC_ERROR_NONE);
 }
 
 void destroy_transport(grpc_transport* gt) {
@@ -1236,7 +1275,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   const char* args_to_remove[] = {GRPC_ARG_MAX_CONNECTION_IDLE_MS,
                                   GRPC_ARG_MAX_CONNECTION_AGE_MS};
   const grpc_channel_args* server_args = grpc_channel_args_copy_and_remove(
-      grpc_server_get_channel_args(server), args_to_remove,
+      server->core_server->channel_args(), args_to_remove,
       GPR_ARRAY_SIZE(args_to_remove));
 
   // Add a default authority channel argument for the client
@@ -1253,8 +1292,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                            client_args);
 
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
-  grpc_server_setup_transport(server, server_transport, nullptr, server_args,
-                              nullptr);
+  server->core_server->SetupTransport(server_transport, nullptr, server_args,
+                                      nullptr);
   grpc_channel* channel = grpc_channel_create(
       "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
 

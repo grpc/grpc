@@ -49,8 +49,6 @@ struct grpc_call;
 struct census_context;
 
 namespace grpc_impl {
-class ClientContext;
-class CompletionQueue;
 class Server;
 template <class W, class R>
 class ServerAsyncReader;
@@ -95,6 +93,8 @@ class ErrorMethodHandler;
 
 }  // namespace grpc_impl
 namespace grpc {
+class ClientContext;
+class CompletionQueue;
 class GenericServerContext;
 class ServerInterface;
 
@@ -151,7 +151,7 @@ class ServerContextBase {
   /// ASCII-Header -> Header-Name ASCII-Value
   /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
   /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
-  void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
+  void AddInitialMetadata(const std::string& key, const std::string& value);
 
   /// Add the (\a key, \a value) pair to the initial metadata
   /// associated with a server call. These are made available at the client
@@ -172,8 +172,16 @@ class ServerContextBase {
   /// ASCII-Header -> Header-Name ASCII-Value
   /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
   /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
-  void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
+  void AddTrailingMetadata(const std::string& key, const std::string& value);
 
+  /// Return whether this RPC failed before the server could provide its status
+  /// back to the client. This could be because of explicit API cancellation
+  /// from the client-side or server-side, because of deadline exceeded, network
+  /// connection reset, HTTP/2 parameter configuration (e.g., max message size,
+  /// max connection age), etc. It does NOT include failure due to a non-OK
+  /// status return from the server application's request handler, including
+  /// Status::CANCELLED.
+  ///
   /// IsCancelled is always safe to call when using sync or callback API.
   /// When using async API, it is only safe to call IsCancelled after
   /// the AsyncNotifyWhenDone tag has been delivered. Thread-safe.
@@ -181,16 +189,18 @@ class ServerContextBase {
 
   /// Cancel the Call from the server. This is a best-effort API and
   /// depending on when it is called, the RPC may still appear successful to
-  /// the client.
-  /// For example, if TryCancel() is called on a separate thread, it might race
-  /// with the server handler which might return success to the client before
-  /// TryCancel() was even started by the thread.
+  /// the client. For example, if TryCancel() is called on a separate thread, it
+  /// might race with the server handler which might return success to the
+  /// client before TryCancel() was even started by the thread.
   ///
   /// It is the caller's responsibility to prevent such races and ensure that if
   /// TryCancel() is called, the serverhandler must return Status::CANCELLED.
   /// The only exception is that if the serverhandler is already returning an
   /// error status code, it is ok to not return Status::CANCELLED even if
   /// TryCancel() was called.
+  ///
+  /// For reasons such as the above, it is generally preferred to explicitly
+  /// finish an RPC by returning Status::CANCELLED rather than using TryCancel.
   ///
   /// Note that TryCancel() does not change any of the tags that are pending
   /// on the completion queue. All pending tags will still be delivered
@@ -242,7 +252,7 @@ class ServerContextBase {
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
   /// Set the serialized load reporting costs in \a cost_data for the call.
-  void SetLoadReportingCosts(const std::vector<grpc::string>& cost_data);
+  void SetLoadReportingCosts(const std::vector<std::string>& cost_data);
 
   /// Return the authentication context for this server call.
   ///
@@ -258,7 +268,7 @@ class ServerContextBase {
   /// WARNING: this value is never authenticated or subject to any security
   /// related code. It must not be used for any authentication related
   /// functionality. Instead, use auth_context.
-  grpc::string peer() const;
+  std::string peer() const;
 
   /// Get the census context associated with this server call.
   const struct census_context* census_context() const;
@@ -363,7 +373,7 @@ class ServerContextBase {
   friend class ::grpc_impl::internal::ErrorMethodHandler;
   template <class Base>
   friend class ::grpc_impl::internal::FinishOnlyReactor;
-  friend class ::grpc_impl::ClientContext;
+  friend class ::grpc::ClientContext;
   friend class ::grpc::GenericServerContext;
 #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   friend class ::grpc::GenericCallbackServerContext;
@@ -416,12 +426,12 @@ class ServerContextBase {
 
   gpr_timespec deadline_;
   grpc_call* call_;
-  ::grpc_impl::CompletionQueue* cq_;
+  ::grpc::CompletionQueue* cq_;
   bool sent_initial_metadata_;
   mutable std::shared_ptr<const ::grpc::AuthContext> auth_context_;
   mutable ::grpc::internal::MetadataMap client_metadata_;
-  std::multimap<grpc::string, grpc::string> initial_metadata_;
-  std::multimap<grpc::string, grpc::string> trailing_metadata_;
+  std::multimap<std::string, std::string> initial_metadata_;
+  std::multimap<std::string, std::string> trailing_metadata_;
 
   bool compression_level_set_;
   grpc_compression_level compression_level_;

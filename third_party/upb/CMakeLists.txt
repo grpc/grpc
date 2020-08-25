@@ -65,7 +65,6 @@ add_library(port
 add_library(upb
   upb/decode.c
   upb/encode.c
-  upb/generated_util.h
   upb/msg.c
   upb/msg.h
   upb/table.c
@@ -73,33 +72,44 @@ add_library(upb
   upb/upb.c
   upb/decode.h
   upb/encode.h
-  upb/upb.h)
+  upb/upb.h
+  upb/upb.hpp)
 target_link_libraries(upb
   port)
 add_library(generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE)
 target_link_libraries(generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE
+  table
   upb)
 add_library(reflection
   upb/def.c
-  upb/msgfactory.c
+  upb/msg.h
+  upb/reflection.c
   upb/def.h
-  upb/msgfactory.h)
+  upb/def.hpp
+  upb/reflection.h)
 target_link_libraries(reflection
-  descriptor_upbproto
+  descriptor_upb_proto
   port
   table
+  upb)
+add_library(textformat
+  upb/text_encode.c
+  upb/text_encode.h)
+target_link_libraries(textformat
+  port
+  reflection)
+add_library(json
+  upb/json_decode.c
+  upb/json_encode.c
+  upb/json_decode.h
+  upb/json_encode.h)
+target_link_libraries(json
+  port
+  reflection
   upb)
 add_library(table INTERFACE)
 target_link_libraries(table INTERFACE
   port
-  upb)
-add_library(legacy_msg_reflection
-  upb/msg.h
-  upb/legacy_msg_reflection.c
-  upb/legacy_msg_reflection.h)
-target_link_libraries(legacy_msg_reflection
-  port
-  table
   upb)
 add_library(handlers
   upb/handlers.c
@@ -108,8 +118,8 @@ add_library(handlers
   upb/handlers.h
   upb/sink.h)
 target_link_libraries(handlers
-  reflection
   port
+  reflection
   table
   upb)
 add_library(upb_pb
@@ -124,10 +134,10 @@ add_library(upb_pb
   upb/pb/encoder.h
   upb/pb/textprinter.h)
 target_link_libraries(upb_pb
-  descriptor_upbproto
+  descriptor_upb_proto
   handlers
-  reflection
   port
+  reflection
   table
   upb)
 add_library(upb_json
@@ -140,7 +150,7 @@ target_link_libraries(upb_json
   upb_pb)
 add_library(upb_cc_bindings INTERFACE)
 target_link_libraries(upb_cc_bindings INTERFACE
-  descriptor_upbproto
+  descriptor_upb_proto
   handlers
   port
   upb)

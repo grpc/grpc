@@ -31,6 +31,8 @@
 #include <set>
 #include <thread>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -103,7 +105,7 @@ class FakeHandshakeServer {
  public:
   FakeHandshakeServer(bool check_num_concurrent_rpcs) {
     int port = grpc_pick_unused_port_or_die();
-    grpc_core::JoinHostPort(&address_, "localhost", port);
+    address_ = grpc_core::JoinHostPort("localhost", port);
     if (check_num_concurrent_rpcs) {
       service_ = grpc::gcp::
           CreateFakeHandshakerService(kFakeHandshakeServerMaxConcurrentStreams /* expected max concurrent rpcs */);
@@ -112,22 +114,24 @@ class FakeHandshakeServer {
           0 /* expected max concurrent rpcs unset */);
     }
     grpc::ServerBuilder builder;
-    builder.AddListeningPort(address_.get(), grpc::InsecureServerCredentials());
+    builder.AddListeningPort(address_.c_str(),
+                             grpc::InsecureServerCredentials());
     builder.RegisterService(service_.get());
     // TODO(apolcyn): when removing the global concurrent handshake limiting
     // queue, set MAX_CONCURRENT_STREAMS on this server.
     server_ = builder.BuildAndStart();
-    gpr_log(GPR_INFO, "Fake handshaker server listening on %s", address_.get());
+    gpr_log(GPR_INFO, "Fake handshaker server listening on %s",
+            address_.c_str());
   }
 
   ~FakeHandshakeServer() {
     server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   }
 
-  const char* address() { return address_.get(); }
+  const char* address() { return address_.c_str(); }
 
  private:
-  grpc_core::UniquePtr<char> address_;
+  std::string address_;
   std::unique_ptr<grpc::Service> service_;
   std::unique_ptr<grpc::Server> server_;
 };
@@ -147,13 +151,13 @@ class TestServer {
     server_cq_ = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(server_, server_cq_, nullptr);
     int port = grpc_pick_unused_port_or_die();
-    GPR_ASSERT(grpc_core::JoinHostPort(&server_addr_, "localhost", port));
-    GPR_ASSERT(grpc_server_add_secure_http2_port(server_, server_addr_.get(),
+    server_addr_ = grpc_core::JoinHostPort("localhost", port);
+    GPR_ASSERT(grpc_server_add_secure_http2_port(server_, server_addr_.c_str(),
                                                  server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     gpr_log(GPR_DEBUG, "Start TestServer %p. listen on %s", this,
-            server_addr_.get());
+            server_addr_.c_str());
     server_thd_ =
         std::unique_ptr<std::thread>(new std::thread(PollUntilShutdown, this));
   }
@@ -168,7 +172,7 @@ class TestServer {
     grpc_completion_queue_destroy(server_cq_);
   }
 
-  const char* address() { return server_addr_.get(); }
+  const char* address() { return server_addr_.c_str(); }
 
   static void PollUntilShutdown(const TestServer* self) {
     grpc_event ev = grpc_completion_queue_next(
@@ -182,7 +186,7 @@ class TestServer {
   grpc_server* server_;
   grpc_completion_queue* server_cq_;
   std::unique_ptr<std::thread> server_thd_;
-  grpc_core::UniquePtr<char> server_addr_;
+  std::string server_addr_;
   // Give this test server its own ALTS handshake server
   // so that we avoid competing for ALTS handshake server resources (e.g.
   // available HTTP2 streams on a globally shared handshaker subchannel)
@@ -330,14 +334,20 @@ class FakeTcpServer {
     CLOSE_SOCKET,
   };
 
-  FakeTcpServer(
+  enum class AcceptMode {
+    kWaitForClientToSendFirstBytes,  // useful for emulating ALTS based
+                                     // grpc servers
+    kEagerlySendSettings,  // useful for emulating insecure grpc servers (e.g.
+                           // ALTS handshake servers)
+  };
+
+  explicit FakeTcpServer(
+      AcceptMode accept_mode,
       const std::function<ProcessReadResult(int, int, int)>& process_read_cb)
-      : process_read_cb_(process_read_cb) {
+      : accept_mode_(accept_mode), process_read_cb_(process_read_cb) {
     port_ = grpc_pick_unused_port_or_die();
     accept_socket_ = socket(AF_INET6, SOCK_STREAM, 0);
-    char* addr_str;
-    GPR_ASSERT(gpr_asprintf(&addr_str, "[::]:%d", port_));
-    address_ = grpc_core::UniquePtr<char>(addr_str);
+    address_ = absl::StrCat("[::]:", port_);
     GPR_ASSERT(accept_socket_ != -1);
     if (accept_socket_ == -1) {
       gpr_log(GPR_ERROR, "Failed to create socket: %d", errno);
@@ -386,7 +396,7 @@ class FakeTcpServer {
             "thread complete");
   }
 
-  const char* address() { return address_.get(); }
+  const char* address() { return address_.c_str(); }
 
   static ProcessReadResult CloseSocketUponReceivingBytesFromPeer(
       int bytes_received_size, int read_error, int s) {
@@ -427,12 +437,51 @@ class FakeTcpServer {
     return CONTINUE_READING;
   }
 
+  class FakeTcpServerPeer {
+   public:
+    explicit FakeTcpServerPeer(int fd) : fd_(fd) {}
+
+    ~FakeTcpServerPeer() { close(fd_); }
+
+    void MaybeContinueSendingSettings() {
+      // https://tools.ietf.org/html/rfc7540#section-4.1
+      const std::vector<uint8_t> kEmptyHttp2SettingsFrame = {
+          0x00, 0x00, 0x00,       // length
+          0x04,                   // settings type
+          0x00,                   // flags
+          0x00, 0x00, 0x00, 0x00  // stream identifier
+      };
+      if (total_bytes_sent_ < kEmptyHttp2SettingsFrame.size()) {
+        int bytes_to_send = kEmptyHttp2SettingsFrame.size() - total_bytes_sent_;
+        int bytes_sent =
+            send(fd_, kEmptyHttp2SettingsFrame.data() + total_bytes_sent_,
+                 bytes_to_send, 0);
+        if (bytes_sent < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+          gpr_log(GPR_ERROR,
+                  "Fake TCP server encountered unexpected error:%d |%s| "
+                  "sending %d bytes on fd:%d",
+                  errno, strerror(errno), bytes_to_send, fd_);
+          GPR_ASSERT(0);
+        } else if (bytes_sent > 0) {
+          total_bytes_sent_ += bytes_sent;
+          GPR_ASSERT(total_bytes_sent_ <= kEmptyHttp2SettingsFrame.size());
+        }
+      }
+    }
+
+    int fd() { return fd_; }
+
+   private:
+    int fd_;
+    int total_bytes_sent_ = 0;
+  };
+
   // Run a loop that periodically, every 10 ms:
   //   1) Checks if there are any new TCP connections to accept.
   //   2) Checks if any data has arrived yet on established connections,
   //      and reads from them if so, processing the sockets as configured.
   static void RunServerLoop(FakeTcpServer* self) {
-    std::set<int> peers;
+    std::set<std::unique_ptr<FakeTcpServerPeer>> peers;
     while (!gpr_event_get(&self->stop_ev_)) {
       int p = accept(self->accept_socket_, nullptr, nullptr);
       if (p == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
@@ -447,17 +496,19 @@ class FakeTcpServer {
                   errno);
           abort();
         }
-        peers.insert(p);
+        peers.insert(absl::make_unique<FakeTcpServerPeer>(p));
       }
       auto it = peers.begin();
       while (it != peers.end()) {
-        int p = *it;
+        FakeTcpServerPeer* peer = (*it).get();
+        if (self->accept_mode_ == AcceptMode::kEagerlySendSettings) {
+          peer->MaybeContinueSendingSettings();
+        }
         char buf[100];
-        int bytes_received_size = recv(p, buf, 100, 0);
+        int bytes_received_size = recv(peer->fd(), buf, 100, 0);
         ProcessReadResult r =
-            self->process_read_cb_(bytes_received_size, errno, p);
+            self->process_read_cb_(bytes_received_size, errno, peer->fd());
         if (r == CLOSE_SOCKET) {
-          close(p);
           it = peers.erase(it);
         } else {
           GPR_ASSERT(r == CONTINUE_READING);
@@ -467,9 +518,6 @@ class FakeTcpServer {
       gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                    gpr_time_from_millis(10, GPR_TIMESPAN)));
     }
-    for (auto it = peers.begin(); it != peers.end(); it++) {
-      close(*it);
-    }
     close(self->accept_socket_);
   }
 
@@ -477,8 +525,9 @@ class FakeTcpServer {
   int accept_socket_;
   int port_;
   gpr_event stop_ev_;
-  grpc_core::UniquePtr<char> address_;
+  std::string address_;
   std::unique_ptr<std::thread> run_server_loop_thd_;
+  const AcceptMode accept_mode_;
   std::function<ProcessReadResult(int, int, int)> process_read_cb_;
 };
 
@@ -498,7 +547,10 @@ TEST(AltsConcurrentConnectivityTest,
   // RPCs at the fake handshake server would be inherently racey.
   FakeHandshakeServer fake_handshake_server(
       false /* check num concurrent rpcs */);
-  FakeTcpServer fake_tcp_server(
+  // The fake_backend_server emulates a secure (ALTS based) gRPC backend. So
+  // it waits for the client to send the first bytes.
+  FakeTcpServer fake_backend_server(
+      FakeTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
       FakeTcpServer::CloseSocketUponReceivingBytesFromPeer);
   {
     gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(20);
@@ -508,7 +560,7 @@ TEST(AltsConcurrentConnectivityTest,
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(
           std::unique_ptr<ConnectLoopRunner>(new ConnectLoopRunner(
-              fake_tcp_server.address(), fake_handshake_server.address(),
+              fake_backend_server.address(), fake_handshake_server.address(),
               10 /* per connect deadline seconds */, 3 /* loops */,
               GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
               0 /* reconnect_backoff_ms unset */)));
@@ -528,9 +580,16 @@ TEST(AltsConcurrentConnectivityTest,
  * fail fast when the ALTS handshake server fails incoming handshakes fast. */
 TEST(AltsConcurrentConnectivityTest,
      TestHandshakeFailsFastWhenHandshakeServerClosesConnectionAfterAccepting) {
+  // The fake_handshake_server emulates a broken ALTS handshaker, which
+  // is an insecure server. So send settings to the client eagerly.
   FakeTcpServer fake_handshake_server(
+      FakeTcpServer::AcceptMode::kEagerlySendSettings,
       FakeTcpServer::CloseSocketUponReceivingBytesFromPeer);
-  FakeTcpServer fake_tcp_server(FakeTcpServer::CloseSocketUponCloseFromPeer);
+  // The fake_backend_server emulates a secure (ALTS based) server, so wait
+  // for the client to send the first bytes.
+  FakeTcpServer fake_backend_server(
+      FakeTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
+      FakeTcpServer::CloseSocketUponCloseFromPeer);
   {
     gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(20);
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
@@ -539,8 +598,8 @@ TEST(AltsConcurrentConnectivityTest,
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(
           std::unique_ptr<ConnectLoopRunner>(new ConnectLoopRunner(
-              fake_tcp_server.address(), fake_handshake_server.address(),
-              10 /* per connect deadline seconds */, 2 /* loops */,
+              fake_backend_server.address(), fake_handshake_server.address(),
+              20 /* per connect deadline seconds */, 2 /* loops */,
               GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
               0 /* reconnect_backoff_ms unset */)));
     }
@@ -560,9 +619,16 @@ TEST(AltsConcurrentConnectivityTest,
  * the overall connection deadline kicks in. */
 TEST(AltsConcurrentConnectivityTest,
      TestHandshakeFailsFastWhenHandshakeServerHangsAfterAccepting) {
+  // fake_handshake_server emulates an insecure server, so send settings first.
+  // It will be unresponsive for the rest of the connection, though.
   FakeTcpServer fake_handshake_server(
+      FakeTcpServer::AcceptMode::kEagerlySendSettings,
       FakeTcpServer::CloseSocketUponCloseFromPeer);
-  FakeTcpServer fake_tcp_server(FakeTcpServer::CloseSocketUponCloseFromPeer);
+  // fake_backend_server emulates an ALTS based server, so wait for the client
+  // to send the first bytes.
+  FakeTcpServer fake_backend_server(
+      FakeTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
+      FakeTcpServer::CloseSocketUponCloseFromPeer);
   {
     gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(20);
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
@@ -571,7 +637,7 @@ TEST(AltsConcurrentConnectivityTest,
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(
           std::unique_ptr<ConnectLoopRunner>(new ConnectLoopRunner(
-              fake_tcp_server.address(), fake_handshake_server.address(),
+              fake_backend_server.address(), fake_handshake_server.address(),
               10 /* per connect deadline seconds */, 2 /* loops */,
               GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
               100 /* reconnect_backoff_ms */)));

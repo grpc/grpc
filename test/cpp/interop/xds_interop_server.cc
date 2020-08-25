@@ -46,6 +46,7 @@ using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
 using grpc::Status;
+using grpc::testing::Empty;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
 using grpc::testing::TestService;
@@ -58,6 +59,13 @@ class TestServiceImpl : public TestService::Service {
                    SimpleResponse* response) {
     response->set_server_id(FLAGS_server_id);
     response->set_hostname(hostname_);
+    context->AddInitialMetadata("hostname", hostname_);
+    return Status::OK;
+  }
+
+  Status EmptyCall(ServerContext* context, const Empty* request,
+                   Empty* response) {
+    context->AddInitialMetadata("hostname", hostname_);
     return Status::OK;
   }
 

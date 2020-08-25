@@ -216,9 +216,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   gpr_free(b64);
   GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(slice));
   grpc_error* error = GRPC_ERROR_NONE;
-  grpc_core::StringView string(
-      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
-      GRPC_SLICE_LENGTH(slice));
+  absl::string_view string = grpc_core::StringViewFromSlice(slice);
   Json json = Json::Parse(string, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));

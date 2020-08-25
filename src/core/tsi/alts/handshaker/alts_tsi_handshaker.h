@@ -38,6 +38,11 @@
 
 const size_t kTsiAltsNumOfPeerProperties = 5;
 
+// Frame size negotiation extends send frame size range to
+// [kTsiAltsMinFrameSize, kTsiAltsMaxFrameSize].
+const size_t kTsiAltsMinFrameSize = 16 * 1024;
+const size_t kTsiAltsMaxFrameSize = 128 * 1024;
+
 typedef struct alts_tsi_handshaker alts_tsi_handshaker;
 
 /**
@@ -54,6 +59,8 @@ typedef struct alts_tsi_handshaker alts_tsi_handshaker;
  * - interested_parties: set of pollsets interested in this connection.
  * - self: address of ALTS TSI handshaker instance to be returned from the
  *   method.
+ * - user_specified_max_frame_size: Determines the maximum frame size used by
+ *   frame protector that is specified via user. If unspecified, the value is 0.
  *
  * It returns TSI_OK on success and an error status code on failure. Note that
  * if interested_parties is nullptr, a dedicated TSI thread will be created and
@@ -62,7 +69,8 @@ typedef struct alts_tsi_handshaker alts_tsi_handshaker;
 tsi_result alts_tsi_handshaker_create(
     const grpc_alts_credentials_options* options, const char* target_name,
     const char* handshaker_service_url, bool is_client,
-    grpc_pollset_set* interested_parties, tsi_handshaker** self);
+    grpc_pollset_set* interested_parties, tsi_handshaker** self,
+    size_t user_specified_max_frame_size);
 
 /**
  * This method creates an ALTS TSI handshaker result instance.

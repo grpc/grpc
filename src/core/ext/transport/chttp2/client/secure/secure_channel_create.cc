@@ -33,11 +33,10 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/security/transport/target_authority_table.h"
-#include "src/core/lib/slice/slice_hash_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/authority_override.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -75,39 +74,16 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
               "channel args.");
       return nullptr;
     }
-    // To which address are we connecting? By default, use the server URI.
-    const grpc_arg* server_uri_arg =
-        grpc_channel_args_find(args, GRPC_ARG_SERVER_URI);
-    const char* server_uri_str = grpc_channel_arg_get_string(server_uri_arg);
-    GPR_ASSERT(server_uri_str != nullptr);
-    grpc_uri* server_uri =
-        grpc_uri_parse(server_uri_str, true /* suppress errors */);
-    GPR_ASSERT(server_uri != nullptr);
-    const TargetAuthorityTable* target_authority_table =
-        FindTargetAuthorityTableInArgs(args);
-    grpc_core::UniquePtr<char> authority;
-    if (target_authority_table != nullptr) {
-      // Find the authority for the target.
-      const char* target_uri_str =
-          Subchannel::GetUriFromSubchannelAddressArg(args);
-      grpc_uri* target_uri =
-          grpc_uri_parse(target_uri_str, false /* suppress errors */);
-      GPR_ASSERT(target_uri != nullptr);
-      if (target_uri->path[0] != '\0') {  // "path" may be empty
-        const grpc_slice key = grpc_slice_from_static_string(
-            target_uri->path[0] == '/' ? target_uri->path + 1
-                                       : target_uri->path);
-        const grpc_core::UniquePtr<char>* value =
-            target_authority_table->Get(key);
-        if (value != nullptr) authority.reset(gpr_strdup(value->get()));
-        grpc_slice_unref_internal(key);
-      }
-      grpc_uri_destroy(target_uri);
-    }
-    // If the authority hasn't already been set (either because no target
-    // authority table was present or because the target was not present
-    // in the table), fall back to using the original server URI.
+    // Find the authority to use in the security connector.
+    // First, check the authority override channel arg.
+    // Otherwise, get it from the server name used to construct the
+    // channel.
+    grpc_core::UniquePtr<char> authority(
+        gpr_strdup(FindAuthorityOverrideInArgs(args)));
     if (authority == nullptr) {
+      const char* server_uri_str =
+          grpc_channel_args_find_string(args, GRPC_ARG_SERVER_URI);
+      GPR_ASSERT(server_uri_str != nullptr);
       authority = ResolverRegistry::GetDefaultAuthority(server_uri_str);
     }
     grpc_arg args_to_add[2];
@@ -120,7 +96,6 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
     }
     grpc_channel_args* args_with_authority =
         grpc_channel_args_copy_and_add(args, args_to_add, num_args_to_add);
-    grpc_uri_destroy(server_uri);
     // Create the security connector using the credentials and target name.
     grpc_channel_args* new_args_from_connector = nullptr;
     RefCountedPtr<grpc_channel_security_connector>

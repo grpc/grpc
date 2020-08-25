@@ -22,9 +22,11 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -85,18 +87,15 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
     case GRPC_DTS_CLIENT_PREFIX_23:
       while (cur != end && t->deframe_state != GRPC_DTS_FH_0) {
         if (*cur != GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state]) {
-          char* msg;
-          gpr_asprintf(
-              &msg,
-              "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
-              "at byte %d",
-              GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state],
-              static_cast<int>(static_cast<uint8_t>(
-                  GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state])),
-              *cur, static_cast<int>(*cur), t->deframe_state);
-          err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-          gpr_free(msg);
-          return err;
+          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrFormat(
+                  "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
+                  "at byte %d",
+                  GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state],
+                  static_cast<int>(static_cast<uint8_t>(
+                      GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state])),
+                  *cur, static_cast<int>(*cur), t->deframe_state)
+                  .c_str());
         }
         ++cur;
         t->deframe_state = static_cast<grpc_chttp2_deframe_transport_state>(
@@ -194,14 +193,12 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
                  t->incoming_frame_size >
                      t->settings[GRPC_ACKED_SETTINGS]
                                 [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]) {
-        char* msg;
-        gpr_asprintf(&msg, "Frame size %d is larger than max frame size %d",
-                     t->incoming_frame_size,
-                     t->settings[GRPC_ACKED_SETTINGS]
-                                [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]);
-        err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-        gpr_free(msg);
-        return err;
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrFormat("Frame size %d is larger than max frame size %d",
+                            t->incoming_frame_size,
+                            t->settings[GRPC_ACKED_SETTINGS]
+                                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE])
+                .c_str());
       }
       if (++cur == end) {
         return GRPC_ERROR_NONE;
@@ -255,34 +252,27 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
 static grpc_error* init_frame_parser(grpc_chttp2_transport* t) {
   if (t->is_first_frame &&
       t->incoming_frame_type != GRPC_CHTTP2_FRAME_SETTINGS) {
-    char* msg;
-    gpr_asprintf(
-        &msg, "Expected SETTINGS frame as the first frame, got frame type %d",
-        t->incoming_frame_type);
-    grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return err;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat(
+            "Expected SETTINGS frame as the first frame, got frame type ",
+            t->incoming_frame_type)
+            .c_str());
   }
   t->is_first_frame = false;
   if (t->expect_continuation_stream_id != 0) {
     if (t->incoming_frame_type != GRPC_CHTTP2_FRAME_CONTINUATION) {
-      char* msg;
-      gpr_asprintf(&msg, "Expected CONTINUATION frame, got frame type %02x",
-                   t->incoming_frame_type);
-      grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-      gpr_free(msg);
-      return err;
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrFormat("Expected CONTINUATION frame, got frame type %02x",
+                          t->incoming_frame_type)
+              .c_str());
     }
     if (t->expect_continuation_stream_id != t->incoming_stream_id) {
-      char* msg;
-      gpr_asprintf(
-          &msg,
-          "Expected CONTINUATION frame for grpc_chttp2_stream %08x, got "
-          "grpc_chttp2_stream %08x",
-          t->expect_continuation_stream_id, t->incoming_stream_id);
-      grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-      gpr_free(msg);
-      return err;
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrFormat(
+              "Expected CONTINUATION frame for grpc_chttp2_stream %08x, got "
+              "grpc_chttp2_stream %08x",
+              t->expect_continuation_stream_id, t->incoming_stream_id)
+              .c_str());
     }
     return init_header_frame_parser(t, 1);
   }
@@ -401,27 +391,6 @@ static bool md_key_cmp(grpc_mdelem md, const grpc_slice& reference) {
   return GRPC_MDKEY(md).refcount == reference.refcount;
 }
 
-static bool md_cmp(grpc_mdelem md, grpc_mdelem ref_md,
-                   const grpc_slice& ref_key) {
-  if (GPR_LIKELY(GRPC_MDELEM_IS_INTERNED(md))) {
-    return md.payload == ref_md.payload;
-  }
-  if (md_key_cmp(md, ref_key)) {
-    return grpc_slice_eq_static_interned(GRPC_MDVALUE(md),
-                                         GRPC_MDVALUE(ref_md));
-  }
-  return false;
-}
-
-static bool is_nonzero_status(grpc_mdelem md) {
-  // If md.payload == GRPC_MDELEM_GRPC_STATUS_1 or GRPC_MDELEM_GRPC_STATUS_2,
-  // then we have seen an error. In fact, if it is a GRPC_STATUS and it's
-  // not equal to GRPC_MDELEM_GRPC_STATUS_0, then we have seen an error.
-  // TODO(ctiller): check for a status like " 0"
-  return md_key_cmp(md, GRPC_MDSTR_GRPC_STATUS) &&
-         !md_cmp(md, GRPC_MDELEM_GRPC_STATUS_0, GRPC_MDSTR_GRPC_STATUS);
-}
-
 static void GPR_ATTRIBUTE_NOINLINE on_initial_header_log(
     grpc_chttp2_transport* t, grpc_chttp2_stream* s, grpc_mdelem md) {
   char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
@@ -503,9 +472,7 @@ static grpc_error* on_initial_header(void* tp, grpc_mdelem md) {
     on_initial_header_log(t, s, md);
   }
 
-  if (is_nonzero_status(md)) {  // not GRPC_MDELEM_GRPC_STATUS_0?
-    s->seen_error = true;
-  } else if (md_key_cmp(md, GRPC_MDSTR_GRPC_TIMEOUT)) {
+  if (md_key_cmp(md, GRPC_MDSTR_GRPC_TIMEOUT)) {
     return handle_timeout(s, md);
   }
 
@@ -542,10 +509,6 @@ static grpc_error* on_trailing_header(void* tp, grpc_mdelem md) {
             t->is_client ? "CLI" : "SVR", key, value);
     gpr_free(key);
     gpr_free(value);
-  }
-
-  if (is_nonzero_status(md)) {  // not GRPC_MDELEM_GRPC_STATUS_0?
-    s->seen_error = true;
   }
 
   const size_t new_size = s->metadata_buffer[1].size + GRPC_MDELEM_LENGTH(md);

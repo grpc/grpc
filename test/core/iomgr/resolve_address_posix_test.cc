@@ -22,10 +22,13 @@
 #include <string.h>
 #include <sys/un.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -200,19 +203,15 @@ static void test_named_and_numeric_scope_ids(void) {
   GPR_ASSERT(strlen(arbitrary_interface_name) > 0);
   // Test resolution of an ipv6 address with a named scope ID
   gpr_log(GPR_DEBUG, "test resolution with a named scope ID");
-  char* target_with_named_scope_id = nullptr;
-  gpr_asprintf(&target_with_named_scope_id, "fe80::1234%%%s",
-               arbitrary_interface_name);
-  resolve_address_must_succeed(target_with_named_scope_id);
-  gpr_free(target_with_named_scope_id);
+  std::string target_with_named_scope_id =
+      absl::StrFormat("fe80::1234%%%s", arbitrary_interface_name);
+  resolve_address_must_succeed(target_with_named_scope_id.c_str());
   gpr_free(arbitrary_interface_name);
   // Test resolution of an ipv6 address with a numeric scope ID
   gpr_log(GPR_DEBUG, "test resolution with a numeric scope ID");
-  char* target_with_numeric_scope_id = nullptr;
-  gpr_asprintf(&target_with_numeric_scope_id, "fe80::1234%%%d",
-               interface_index);
-  resolve_address_must_succeed(target_with_numeric_scope_id);
-  gpr_free(target_with_numeric_scope_id);
+  std::string target_with_numeric_scope_id =
+      absl::StrFormat("fe80::1234%%%d", interface_index);
+  resolve_address_must_succeed(target_with_numeric_scope_id.c_str());
 }
 
 int main(int argc, char** argv) {

@@ -49,6 +49,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :messages_per_stream, :int32, 18
       optional :use_coalesce_api, :bool, 19
       optional :median_latency_collection_interval_millis, :int32, 20
+      optional :client_processes, :int32, 21
     end
     add_message "grpc.testing.ClientStatus" do
       optional :stats, :message, 1, "grpc.testing.ClientStats"
@@ -74,6 +75,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :threads_per_cq, :int32, 12
       optional :resource_quota_size, :int32, 1001
       repeated :channel_args, :message, 1002, "grpc.testing.ChannelArg"
+      optional :server_processes, :int32, 21
     end
     add_message "grpc.testing.ServerArgs" do
       oneof :argtype do

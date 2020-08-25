@@ -15,8 +15,9 @@
 
 import argparse
 import asyncio
-import enum
 import collections
+import datetime
+import enum
 import inspect
 import json
 import os
@@ -220,12 +221,15 @@ async def _cancel_after_first_response(stub: test_pb2_grpc.TestServiceStub):
 
 async def _timeout_on_sleeping_server(stub: test_pb2_grpc.TestServiceStub):
     request_payload_size = 27182
+    time_limit = datetime.timedelta(seconds=1)
 
-    call = stub.FullDuplexCall(timeout=0.001)
+    call = stub.FullDuplexCall(timeout=time_limit.total_seconds())
 
     request = messages_pb2.StreamingOutputCallRequest(
         response_type=messages_pb2.COMPRESSABLE,
-        payload=messages_pb2.Payload(body=b'\x00' * request_payload_size))
+        payload=messages_pb2.Payload(body=b'\x00' * request_payload_size),
+        response_parameters=(messages_pb2.ResponseParameters(
+            interval_us=int(time_limit.total_seconds() * 2 * 10**6)),))
     await call.write(request)
     await call.done_writing()
     try:
@@ -267,6 +271,10 @@ async def _status_code_and_message(stub: test_pb2_grpc.TestServiceStub):
                                                 message=details))
     await call.write(request)  # sends the initial request.
     await call.done_writing()
+    try:
+        await call.read()
+    except aio.AioRpcError as rpc_error:
+        assert rpc_error.code() == status
     await _validate_status_code_and_details(call, status, details)
 
 
@@ -283,16 +291,19 @@ async def _unimplemented_service(stub: test_pb2_grpc.UnimplementedServiceStub):
 async def _custom_metadata(stub: test_pb2_grpc.TestServiceStub):
     initial_metadata_value = "test_initial_metadata_value"
     trailing_metadata_value = b"\x0a\x0b\x0a\x0b\x0a\x0b"
-    metadata = ((_INITIAL_METADATA_KEY, initial_metadata_value),
-                (_TRAILING_METADATA_KEY, trailing_metadata_value))
+    metadata = aio.Metadata(
+        (_INITIAL_METADATA_KEY, initial_metadata_value),
+        (_TRAILING_METADATA_KEY, trailing_metadata_value),
+    )
 
     async def _validate_metadata(call):
-        initial_metadata = dict(await call.initial_metadata())
+        initial_metadata = await call.initial_metadata()
         if initial_metadata[_INITIAL_METADATA_KEY] != initial_metadata_value:
             raise ValueError('expected initial metadata %s, got %s' %
                              (initial_metadata_value,
                               initial_metadata[_INITIAL_METADATA_KEY]))
-        trailing_metadata = dict(await call.trailing_metadata())
+
+        trailing_metadata = await call.trailing_metadata()
         if trailing_metadata[_TRAILING_METADATA_KEY] != trailing_metadata_value:
             raise ValueError('expected trailing metadata %s, got %s' %
                              (trailing_metadata_value,

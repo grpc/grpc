@@ -35,7 +35,7 @@ class TestChannel(AioTestBase):
         channel = aio.insecure_channel(server_target)
         self.assertIsInstance(channel, aio.Channel)
 
-    async def tests_secure_channel(self):
+    async def test_secure_channel(self):
         server_target, _ = await start_test_server(secure=True)  # pylint: disable=unused-variable
         credentials = grpc.ssl_channel_credentials(
             root_certificates=_TEST_ROOT_CERTIFICATES,
@@ -48,5 +48,5 @@ class TestChannel(AioTestBase):
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

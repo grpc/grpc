@@ -22,6 +22,34 @@ package grpc.testing;
 
 service EchoTestService {
   rpc Echo(EchoRequest) returns (EchoResponse);
+  rpc Echo1(EchoRequest) returns (EchoResponse);
+  rpc Echo2(EchoRequest) returns (EchoResponse);
+  // A service which checks that the initial metadata sent over contains some
+  // expected key value pair
+  rpc CheckClientInitialMetadata(SimpleRequest) returns (SimpleResponse);
+  rpc RequestStream(stream EchoRequest) returns (EchoResponse);
+  rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
+  rpc BidiStream(stream EchoRequest) returns (stream EchoResponse);
+  rpc Unimplemented(EchoRequest) returns (EchoResponse);
+}
+
+service EchoTest1Service {
+  rpc Echo(EchoRequest) returns (EchoResponse);
+  rpc Echo1(EchoRequest) returns (EchoResponse);
+  rpc Echo2(EchoRequest) returns (EchoResponse);
+  // A service which checks that the initial metadata sent over contains some
+  // expected key value pair
+  rpc CheckClientInitialMetadata(SimpleRequest) returns (SimpleResponse);
+  rpc RequestStream(stream EchoRequest) returns (EchoResponse);
+  rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
+  rpc BidiStream(stream EchoRequest) returns (stream EchoResponse);
+  rpc Unimplemented(EchoRequest) returns (EchoResponse);
+}
+
+service EchoTest2Service {
+  rpc Echo(EchoRequest) returns (EchoResponse);
+  rpc Echo1(EchoRequest) returns (EchoResponse);
+  rpc Echo2(EchoRequest) returns (EchoResponse);
   // A service which checks that the initial metadata sent over contains some
   // expected key value pair
   rpc CheckClientInitialMetadata(SimpleRequest) returns (SimpleResponse);
