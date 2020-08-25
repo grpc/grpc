@@ -173,6 +173,10 @@ ResolvingLoadBalancingPolicy::~ResolvingLoadBalancingPolicy() {
 
 void ResolvingLoadBalancingPolicy::ShutdownLocked() {
   if (resolver_ != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
+      gpr_log(GPR_INFO, "resolving_lb=%p: shutting down resolver=%p", this,
+              resolver_.get());
+    }
     resolver_.reset();
     if (lb_policy_ != nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {

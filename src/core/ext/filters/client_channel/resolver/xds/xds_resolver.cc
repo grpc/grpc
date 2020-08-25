@@ -168,15 +168,14 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
       resolver_->xds_client_->CancelRouteConfigDataWatch(
           resolver_->route_config_name_, resolver_->route_config_watcher_,
           /*delay_unsubscription=*/!listener.route_config_name.empty());
+      resolver_->route_config_watcher_ = nullptr;
     }
     resolver_->route_config_name_ = std::move(listener.route_config_name);
-    if (!listener.route_config_name.empty()) {
+    if (!resolver_->route_config_name_.empty()) {
       auto watcher = absl::make_unique<RouteConfigWatcher>(resolver_->Ref());
       resolver_->route_config_watcher_ = watcher.get();
-      resolver_->xds_client_->WatchRouteConfigData(listener.route_config_name,
-                                                   std::move(watcher));
-    } else {
-      resolver_->route_config_watcher_ = nullptr;
+      resolver_->xds_client_->WatchRouteConfigData(
+          resolver_->route_config_name_, std::move(watcher));
     }
     return;
   }
