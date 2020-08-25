@@ -123,7 +123,7 @@ class XdsResolver : public Resolver {
                                   RefCountedPtr<ServiceConfig>* service_config);
 
   void OnError(grpc_error* error);
-  void OnRouteConfigUpdate(std::vector<XdsApi::Route> routes);
+  void OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update);
   void OnResourceDoesNotExist();
 
   std::string server_name_;
@@ -181,16 +181,7 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
     return;
   }
   GPR_ASSERT(listener.rds_update.has_value());
-// FIXME: refactor this code into a method of XdsResolver
-  const XdsApi::RdsUpdate::VirtualHost* vhost =
-      listener.rds_update->FindVirtualHostForDomain(resolver_->server_name_);
-  if (vhost == nullptr) {
-    resolver_->OnError(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("could not find VirtualHost for ", resolver_->server_name_,
-                     " in Listener resource").c_str()));
-  } else {
-    resolver_->OnRouteConfigUpdate(vhost->routes);
-  }
+  resolver_->OnRouteConfigUpdate(std::move(*listener.rds_update));
 }
 
 void XdsResolver::ListenerWatcher::OnError(grpc_error* error) {
@@ -214,15 +205,7 @@ void XdsResolver::RouteConfigWatcher::OnRouteConfigChanged(
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated route config data",
             resolver_.get());
   }
-  const XdsApi::RdsUpdate::VirtualHost* vhost =
-      route_config.FindVirtualHostForDomain(resolver_->server_name_);
-  if (vhost == nullptr) {
-    resolver_->OnError(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("could not find VirtualHost for ", resolver_->server_name_,
-                     " in RouteConfig resource").c_str()));
-  } else {
-    resolver_->OnRouteConfigUpdate(vhost->routes);
-  }
+  resolver_->OnRouteConfigUpdate(std::move(route_config));
 }
 
 void XdsResolver::RouteConfigWatcher::OnError(grpc_error* error) {
@@ -567,9 +550,18 @@ void XdsResolver::OnError(grpc_error* error) {
   result_handler()->ReturnResult(std::move(result));
 }
 
-void XdsResolver::OnRouteConfigUpdate(std::vector<XdsApi::Route> routes) {
+void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
+  const XdsApi::RdsUpdate::VirtualHost* vhost =
+      rds_update.FindVirtualHostForDomain(server_name_);
+  if (vhost == nullptr) {
+    OnError(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("could not find VirtualHost for ", server_name_,
+                     " in Listener resource").c_str()));
+    return;
+  }
   Result result;
-  grpc_error* error = CreateServiceConfig(routes, &result.service_config);
+  grpc_error* error =
+      CreateServiceConfig(vhost->routes, &result.service_config);
   if (error != GRPC_ERROR_NONE) {
     OnError(error);
     return;
