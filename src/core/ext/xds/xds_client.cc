@@ -938,6 +938,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
       }
     }
   }
+// FIXME: nuke RDS resources that are no longer referred to by any LDS resource
+// (copy code from CDS)
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(

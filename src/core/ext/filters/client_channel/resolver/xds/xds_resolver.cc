@@ -181,6 +181,7 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
     return;
   }
   GPR_ASSERT(listener.rds_update.has_value());
+// FIXME: refactor this code into a method of XdsResolver
   const XdsApi::RdsUpdate::VirtualHost* vhost =
       listener.rds_update->FindVirtualHostForDomain(resolver_->server_name_);
   if (vhost == nullptr) {

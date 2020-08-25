@@ -1136,6 +1136,11 @@ static int grpcsharp_get_metadata_handler(
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t* num_creds_md, grpc_status_code* status,
     const char** error_details) {
+  // the "context" object and its contents are only guaranteed to live until
+  // this handler returns (which could result in use-after-free for async
+  // handling of the callback), so the C# counterpart of this handler
+  // must make a copy of the "service_url" and "method_name" strings before
+  // it returns if it wants to uses these strings.
   native_callback_dispatcher(state, (void*)context.service_url,
                              (void*)context.method_name, cb, user_data,
                              (void*)0, NULL);

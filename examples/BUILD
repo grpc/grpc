@@ -56,6 +56,11 @@ grpc_proto_library(
     srcs = ["protos/route_guide.proto"],
 )
 
+proto_library(
+    name = "keyvaluestore_proto",
+    srcs = ["protos/keyvaluestore.proto"],
+)
+
 grpc_proto_library(
     name = "keyvaluestore",
     srcs = ["protos/keyvaluestore.proto"],
