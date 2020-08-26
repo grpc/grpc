@@ -40,17 +40,6 @@ const char* kXdsClusterAttribute = "xds_cluster_name";
 
 namespace {
 
-std::string GetWeightedClustersKey(
-    const std::vector<XdsApi::RdsUpdate::RdsRoute::ClusterWeight>&
-        weighted_clusters) {
-  std::set<std::string> cluster_weights;
-  for (const auto& cluster_weight : weighted_clusters) {
-    cluster_weights.emplace(
-        absl::StrFormat("%s_%d", cluster_weight.name, cluster_weight.weight));
-  }
-  return absl::StrJoin(cluster_weights, "_");
-}
-
 bool PathMatch(
     const absl::string_view& path,
     const XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher& path_matcher) {
@@ -218,54 +207,50 @@ class XdsResolver : public Resolver {
    public:
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
                       const XdsApi::RdsUpdate& rds_update)
-        : resolver_(std::move(resolver)), route_table_(rds_update) {
-      for (auto& route : route_table_.routes) {
-        if (route.weighted_clusters.empty()) {
-          const std::string action_name = route.cluster_name;
-          if (clusters_.find(action_name) == clusters_.end()) {
-            clusters_.emplace(action_name);
+        : resolver_(std::move(resolver)) {
+      // Save the update in the resolver in case of rebuild of
+      // XdsConfigSelector.
+      resolver_->current_update = rds_update;
+      // Construct the route table.
+      for (const auto& rds_route : rds_update.routes) {
+        route_table_.emplace_back();
+        auto& route = route_table_.back();
+        route.route = rds_route;
+        uint32_t end = 0;
+        for (const auto& cluster_weight : rds_route.weighted_clusters) {
+          end += cluster_weight.weight;
+          route.weighted_cluster_state.emplace_back(end, cluster_weight.name);
+        }
+      }
+      // Update cluster state map and current update cluster list.
+      for (auto& route : route_table_) {
+        if (route.route.weighted_clusters.empty()) {
+          if (clusters_.find(route.route.cluster_name) == clusters_.end()) {
+            clusters_.emplace(route.route.cluster_name);
             {
               MutexLock lock(&resolver_->cluster_state_map_mu_);
-              ++resolver_->cluster_state_map_[action_name].refcount;
+              ++resolver_->cluster_state_map_[route.route.cluster_name]
+                    .refcount;
             }
           }
         } else {
-          const std::string action_name = absl::StrFormat(
-              "weighted:%s", GetWeightedClustersKey(route.weighted_clusters));
-          // Store in route table as cluster name so that it can be used to
-          // lookup the weighted clusters  list in the weighted clusterslist
-          // map.
-          route.cluster_name = action_name;
-          if (weighted_clusters_.find(action_name) ==
-              weighted_clusters_.end()) {
-            weighted_clusters_.emplace(action_name);
-            // Construct a new weighted cluster list where each weighted cluster
-            // is represented by a portion of the range proportional to its
-            // weight, such that the total range is the sum of the weights of
-            // all weighted clusters.
-            WeightedClustersList weighted_clusters_list;
-            uint32_t end = 0;
-            for (const auto& weighted_cluster : route.weighted_clusters) {
-              end += weighted_cluster.weight;
-              weighted_clusters_list.push_back(
-                  std::make_pair(end, weighted_cluster.name));
-            }
-            weighted_clusters_list_map_[action_name] =
-                std::move(weighted_clusters_list);
-            {
-              MutexLock lock(&resolver_->cluster_state_map_mu_);
-              for (const auto& weighted_cluster : route.weighted_clusters) {
-                const std::string cluster_name = weighted_cluster.name;
-                ++resolver_->cluster_state_map_[cluster_name].refcount;
+          for (const auto& weighted_cluster : route.route.weighted_clusters) {
+            if (clusters_.find(weighted_cluster.name) == clusters_.end()) {
+              clusters_.emplace(weighted_cluster.name);
+              {
+                MutexLock lock(&resolver_->cluster_state_map_mu_);
+                ++resolver_->cluster_state_map_[weighted_cluster.name].refcount;
               }
             }
           }
         }
       }
-      gpr_log(
-          GPR_INFO,
-          "DONNAAA constructor %p added: RDS update copied to route_table %s",
-          this, route_table_.ToString().c_str());
+      for (const auto& route : route_table_) {
+        gpr_log(
+            GPR_INFO,
+            "DONNAAA constructor %p added: RDS update copied to route_table %s",
+            this, route.route.ToString().c_str());
+      }
       {
         MutexLock lock(&resolver_->cluster_state_map_mu_);
         for (const auto& state : resolver_->cluster_state_map_) {
@@ -374,61 +359,58 @@ class XdsResolver : public Resolver {
     }
 
     CallConfig GetCallConfig(GetCallConfigArgs args) override {
-      for (size_t i = 0; i < route_table_.routes.size(); ++i) {
+      for (size_t i = 0; i < route_table_.size(); ++i) {
         // Path matching.
         if (!PathMatch(StringViewFromSlice(*args.path),
-                       route_table_.routes[i].matchers.path_matcher))
+                       route_table_[i].route.matchers.path_matcher))
           continue;
         // Header Matching.
-        if (!HeadersMatch(route_table_.routes[i].matchers.header_matchers,
+        if (!HeadersMatch(route_table_[i].route.matchers.header_matchers,
                           args.initial_metadata)) {
           continue;
         }
         // Match fraction check
-        if (route_table_.routes[i].matchers.fraction_per_million.has_value() &&
+        if (route_table_[i].route.matchers.fraction_per_million.has_value() &&
             !UnderFraction(
-                route_table_.routes[i].matchers.fraction_per_million.value())) {
+                route_table_[i].route.matchers.fraction_per_million.value())) {
           continue;
         }
         // Found a route match
         char* cluster_name_str = nullptr;
-        if (route_table_.routes[i].weighted_clusters.empty()) {
-          cluster_name_str = static_cast<char*>(args.arena->Alloc(
-              route_table_.routes[i].cluster_name.size() + 1));
-          strcpy(cluster_name_str, route_table_.routes[i].cluster_name.c_str());
+        if (route_table_[i].route.weighted_clusters.empty()) {
+          cluster_name_str = static_cast<char*>(
+              args.arena->Alloc(route_table_[i].route.cluster_name.size() + 1));
+          strcpy(cluster_name_str, route_table_[i].route.cluster_name.c_str());
         } else {
-          const auto weighted_clusters_list = weighted_clusters_list_map_.find(
-              route_table_.routes[i].cluster_name.c_str());
-          // Put target weight picking in a separate static method.
-          if (weighted_clusters_list != weighted_clusters_list_map_.end()) {
-            // Generate a random number in [0, total weight).
-            const uint32_t key =
-                rand() % weighted_clusters_list
-                             ->second[weighted_clusters_list->second.size() - 1]
-                             .first;
-            // Find the index in weighted clusters corresponding to key.
-            size_t mid = 0;
-            size_t start_index = 0;
-            size_t end_index = weighted_clusters_list->second.size() - 1;
-            size_t index = 0;
-            while (end_index > start_index) {
-              mid = (start_index + end_index) / 2;
-              if (weighted_clusters_list->second[mid].first > key) {
-                end_index = mid;
-              } else if (weighted_clusters_list->second[mid].first < key) {
-                start_index = mid + 1;
-              } else {
-                index = mid + 1;
-                break;
-              }
+          const uint32_t key =
+              rand() %
+              route_table_[i]
+                  .weighted_cluster_state
+                      [route_table_[i].weighted_cluster_state.size() - 1]
+                  .first;
+          // Find the index in weighted clusters corresponding to key.
+          size_t mid = 0;
+          size_t start_index = 0;
+          size_t end_index = route_table_[i].weighted_cluster_state.size() - 1;
+          size_t index = 0;
+          while (end_index > start_index) {
+            mid = (start_index + end_index) / 2;
+            if (route_table_[i].weighted_cluster_state[mid].first > key) {
+              end_index = mid;
+            } else if (route_table_[i].weighted_cluster_state[mid].first <
+                       key) {
+              start_index = mid + 1;
+            } else {
+              index = mid + 1;
+              break;
             }
-            if (index == 0) index = start_index;
-            GPR_ASSERT(weighted_clusters_list->second[index].first > key);
-            cluster_name_str = static_cast<char*>(args.arena->Alloc(
-                weighted_clusters_list->second[index].second.size() + 1));
-            strcpy(cluster_name_str,
-                   weighted_clusters_list->second[index].second.c_str());
           }
+          if (index == 0) index = start_index;
+          GPR_ASSERT(route_table_[i].weighted_cluster_state[index].first > key);
+          cluster_name_str = static_cast<char*>(args.arena->Alloc(
+              route_table_[i].weighted_cluster_state[index].second.size() + 1));
+          strcpy(cluster_name_str,
+                 route_table_[i].weighted_cluster_state[index].second.c_str());
         }
         // TODO: what if there is no match: cluster_name_str == nullptr
         CallConfig call_config;
@@ -448,18 +430,14 @@ class XdsResolver : public Resolver {
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
-    XdsApi::RdsUpdate route_table_;
+    struct Route {
+      XdsApi::RdsUpdate::RdsRoute route;
+      absl::InlinedVector<std::pair<uint32_t, std::string>, 2>
+          weighted_cluster_state;
+    };
+    using RouteTable = std::vector<Route>;
+    RouteTable route_table_;
     std::set<std::string> clusters_;
-    std::set<std::string> weighted_clusters_;
-    // Maintains a weighted list of clusters.  The first element in the pair
-    // represents the end of a range proportional to the cluster's weight. The
-    // start of the range is the previous value in the vector and is 0 for the
-    // first element.
-    using WeightedClustersList =
-        absl::InlinedVector<std::pair<uint32_t, std::string>, 1>;
-    using WeightedClustersListMap =
-        std::map<std::string /*weighted action name*/, WeightedClustersList>;
-    WeightedClustersListMap weighted_clusters_list_map_;
   };
 
   // Create the service config generated by the RdsUpdate.
@@ -475,6 +453,7 @@ class XdsResolver : public Resolver {
   };
   std::map<std::string /* cluster_name */, ClusterState> cluster_state_map_;
   Mutex cluster_state_map_mu_;  // protects the cluster state map.
+  XdsApi::RdsUpdate current_update;
 };
 
 //
