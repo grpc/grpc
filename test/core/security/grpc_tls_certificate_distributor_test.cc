@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2020 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 
@@ -708,8 +706,7 @@ TEST(GrpcTlsCertificateDistributorTest, WatchACertInfoWithValidCredentials) {
   distributor.CancelTlsCertificatesWatch(watcher_3_ptr);
 }
 
-TEST(GrpcTlsCertificateDistributorTest,
-     WatchCertInfoThenInvokeSetErrorForCert) {
+TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForBothRootAndIdentity) {
   grpc_tls_certificate_distributor distributor;
   // Register watcher 1.
   std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_1_err_deque;
@@ -728,80 +725,211 @@ TEST(GrpcTlsCertificateDistributorTest,
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
                       {kRootErrorMessage, kIdentityErrorMessage}}));
   watcher_1_err_deque.clear();
+  // Calling SetErrorForCert on both cert names again should call OnError
+  // on watcher 1 again.
+  distributor.SetErrorForCert(
+      kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+  EXPECT_THAT(watcher_1_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
+                      {kRootErrorMessage, kIdentityErrorMessage}}));
+  watcher_1_err_deque.clear();
+  distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
+}
+
+TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootOrIdentity) {
+  grpc_tls_certificate_distributor distributor;
+  // Register watcher 1.
+  std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_1_err_deque;
+  auto watcher_1 =
+      absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
+  TlsCertificatesTestWatcher* watcher_1_ptr = watcher_1.get();
+  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName1,
+                                   absl::nullopt);
+  // Calling SetErrorForCert on root name should only call one OnError
+  // on watcher 1.
+  distributor.SetErrorForCert(
+      kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
+      GRPC_ERROR_NONE);
+  EXPECT_THAT(watcher_1_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
+                      {kRootErrorMessage, ""}}));
+  watcher_1_err_deque.clear();
+  // Calling SetErrorForCert on identity name should do nothing.
+  distributor.SetErrorForCert(
+      kCertName1, GRPC_ERROR_NONE, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+  EXPECT_THAT(watcher_1_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
+  watcher_1_err_deque.clear();
+  distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
   // Register watcher 2.
   std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_2_err_deque;
   auto watcher_2 =
       absl::make_unique<TlsCertificatesTestWatcher>(&watcher_2_err_deque);
   TlsCertificatesTestWatcher* watcher_2_ptr = watcher_2.get();
-  distributor.WatchTlsCertificates(std::move(watcher_2), kCertName1,
-                                   absl::nullopt);
-  // Should trigger OnError call on watcher 2 right away since the error isn't
-  // erased yet.
-  EXPECT_THAT(watcher_2_err_deque,
-              testing::ElementsAreArray(
-                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
-                      {kRootErrorMessage, ""}}));
-  watcher_2_err_deque.clear();
-  // Calling SetErrorForCert on root name again should trigger another OnError
-  // call on watcher 2.
-  distributor.SetErrorForCert(
-      kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      GRPC_ERROR_NONE);
-  EXPECT_THAT(watcher_2_err_deque,
-              testing::ElementsAreArray(
-                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
-                      {kRootErrorMessage, ""}}));
-  watcher_2_err_deque.clear();
-  // Calling SetErrorForCert on identity name again shouldn't trigger another
-  // OnError call on watcher 2.
-  distributor.SetErrorForCert(
-      kCertName1, GRPC_ERROR_NONE,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
-  EXPECT_THAT(watcher_2_err_deque,
-              testing::ElementsAreArray(
-                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
-  watcher_2_err_deque.clear();
-  // Register watcher 3.
-  std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_3_err_deque;
-  auto watcher_3 =
-      absl::make_unique<TlsCertificatesTestWatcher>(&watcher_3_err_deque);
-  TlsCertificatesTestWatcher* watcher_3_ptr = watcher_3.get();
-  distributor.WatchTlsCertificates(std::move(watcher_3), absl::nullopt,
+  distributor.WatchTlsCertificates(std::move(watcher_2), absl::nullopt,
                                    kCertName1);
-  // Should trigger OnError call on watcher 3 right away since the error isn't
-  // erased yet.
-  EXPECT_THAT(watcher_3_err_deque,
-              testing::ElementsAreArray(
-                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
-                      {"", kIdentityErrorMessage}}));
-  watcher_3_err_deque.clear();
-  // Calling SetErrorForCert on root name again shouldn't trigger another
-  // OnError call on watcher 3.
-  distributor.SetErrorForCert(
-      kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      GRPC_ERROR_NONE);
-  EXPECT_THAT(watcher_3_err_deque,
-              testing::ElementsAreArray(
-                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
-  watcher_3_err_deque.clear();
-  // Calling SetErrorForCert on identity name again should trigger another
-  // OnError call on
-  //  // watcher 3.
+  // Calling SetErrorForCert on identity name should only call one OnError
+  // on watcher 2.
   distributor.SetErrorForCert(
       kCertName1, GRPC_ERROR_NONE,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
-  EXPECT_THAT(watcher_3_err_deque,
+  EXPECT_THAT(watcher_2_err_deque,
               testing::ElementsAreArray(
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
                       {"", kIdentityErrorMessage}}));
-  watcher_3_err_deque.clear();
-  // Calling SetErrorForCert on a non-existing name shouldn't produce any error.
+  watcher_2_err_deque.clear();
+  // Calling SetErrorForCert on root name should do nothing.
   distributor.SetErrorForCert(
-      kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
-  distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
+      kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage), GRPC_ERROR_NONE);
+  EXPECT_THAT(watcher_2_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
+  watcher_2_err_deque.clear();
   distributor.CancelTlsCertificatesWatch(watcher_2_ptr);
-  distributor.CancelTlsCertificatesWatch(watcher_3_ptr);
+}
+
+TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForIdentityNameWithSameNameForRootErrored) {
+  grpc_tls_certificate_distributor distributor;
+  // SetErrorForCert for kCertName1.
+  distributor.SetErrorForCert(
+      kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+  // Register watcher 1 for kCertName1 as root and kCertName2 as identity.
+  std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_1_err_deque;
+  auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
+  TlsCertificatesTestWatcher* watcher_1_ptr = watcher_1.get();
+  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName1, kCertName2);
+  // Should trigger OnError call right away since kCertName1 has error.
+  EXPECT_THAT(watcher_1_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
+                      {kRootErrorMessage, ""}}));
+  watcher_1_err_deque.clear();
+//   Calling SetErrorForCert on kCertName2 should trigger OnError with both errors, because
+//   kCertName1 also has error.
+  distributor.SetErrorForCert(
+      kCertName2, GRPC_ERROR_NONE,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+  EXPECT_THAT(watcher_1_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
+                      {kRootErrorMessage, kIdentityErrorMessage}}));
+  watcher_1_err_deque.clear();
+  distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
+}
+
+TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootNameWithSameNameForIdentityErrored) {
+  grpc_tls_certificate_distributor distributor;
+  // SetErrorForCert for kCertName1.
+  distributor.SetErrorForCert(
+      kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+  // Register watcher 1 for kCertName2 as root and kCertName1 as identity.
+  std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_1_err_deque;
+  auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
+  TlsCertificatesTestWatcher* watcher_1_ptr = watcher_1.get();
+  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName2, kCertName1);
+  // Should trigger OnError call right away since kCertName2 has error.
+  EXPECT_THAT(watcher_1_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
+                      {"", kIdentityErrorMessage}}));
+  watcher_1_err_deque.clear();
+  // Calling SetErrorForCert on kCertName2 should trigger OnError with both errors, because
+  // kCertName1 also has error.
+  distributor.SetErrorForCert(
+      kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage), GRPC_ERROR_NONE);
+  EXPECT_THAT(watcher_1_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
+                      {kRootErrorMessage, kIdentityErrorMessage}}));
+  watcher_1_err_deque.clear();
+  distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
+}
+
+TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForIdentityNameWithSameNameForRootNoError) {
+  grpc_tls_certificate_distributor distributor;
+  // Register watcher 1 for kCertName1 as root and kCertName2 as identity.
+  std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_1_err_deque;
+  auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
+  TlsCertificatesTestWatcher* watcher_1_ptr = watcher_1.get();
+  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName1, kCertName2);
+  // Should not trigger OnError.
+  EXPECT_THAT(watcher_1_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
+  // Calling SetErrorForCert on kCertName2 should trigger OnError.
+  distributor.SetErrorForCert(
+      kCertName2, GRPC_ERROR_NONE,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+  EXPECT_THAT(watcher_1_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
+                      {"", kIdentityErrorMessage}}));
+  watcher_1_err_deque.clear();
+  distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
+  // Register watcher 2 for kCertName2 as identity and a non-existing name kRootCert1Name as root.
+  std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_2_err_deque;
+  auto watcher_2 = absl::make_unique<TlsCertificatesTestWatcher>(&watcher_2_err_deque);
+  TlsCertificatesTestWatcher* watcher_2_ptr = watcher_2.get();
+  distributor.WatchTlsCertificates(std::move(watcher_2), kRootCert1Name, kCertName2);
+  // Should not trigger OnError.
+  EXPECT_THAT(watcher_2_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
+  // Calling SetErrorForCert on kCertName2 should trigger OnError.
+  distributor.SetErrorForCert(
+      kCertName2, GRPC_ERROR_NONE,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+  EXPECT_THAT(watcher_2_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
+                      {"", kIdentityErrorMessage}}));
+  watcher_2_err_deque.clear();
+  distributor.CancelTlsCertificatesWatch(watcher_2_ptr);
+}
+
+TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootNameWithSameNameForIdentityNoError) {
+  grpc_tls_certificate_distributor distributor;
+  std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_1_err_deque;
+  auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
+  TlsCertificatesTestWatcher* watcher_1_ptr = watcher_1.get();
+  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName2, kCertName1);
+  // Should not trigger OnError.
+  EXPECT_THAT(watcher_1_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
+  // Calling SetErrorForCert on kCertName2 should trigger OnError.
+  distributor.SetErrorForCert(
+      kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage), GRPC_ERROR_NONE);
+  EXPECT_THAT(watcher_1_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
+                      {kRootErrorMessage, ""}}));
+  watcher_1_err_deque.clear();
+  distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
+  // Register watcher 2 for kCertName2 as root and a non-existing name kIdentityCert1Name as identity.
+  std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_2_err_deque;
+  auto watcher_2 = absl::make_unique<TlsCertificatesTestWatcher>(&watcher_2_err_deque);
+  TlsCertificatesTestWatcher* watcher_2_ptr = watcher_2.get();
+  distributor.WatchTlsCertificates(std::move(watcher_2), kCertName2, kIdentityCert1Name);
+  // Should not trigger OnError.
+  EXPECT_THAT(watcher_2_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
+  // Calling SetErrorForCert on kCertName2 should trigger OnError.
+  distributor.SetErrorForCert(
+      kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage), GRPC_ERROR_NONE);
+  EXPECT_THAT(watcher_2_err_deque,
+              testing::ElementsAreArray(
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
+                      {kRootErrorMessage, ""}}));
+  watcher_2_err_deque.clear();
+  distributor.CancelTlsCertificatesWatch(watcher_2_ptr);
 }
 
 TEST(GrpcTlsCertificateDistributorTest,
@@ -824,9 +952,7 @@ TEST(GrpcTlsCertificateDistributorTest,
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
                       {kRootErrorMessage, kIdentityErrorMessage}}));
   watcher_1_err_deque.clear();
-  // When watcher 1 is removed, the cert info entry shouldn't be removed since
-  // the error is still there. We test this by registering another watcher and
-  // see if it can get error updates right away.
+  // When watcher 1 is removed, the cert info entry should be removed.
   distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
   // Register watcher 2 on the same cert name.
   std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_2_err_deque;
@@ -835,11 +961,10 @@ TEST(GrpcTlsCertificateDistributorTest,
   TlsCertificatesTestWatcher* watcher_2_ptr = watcher_2.get();
   distributor.WatchTlsCertificates(std::move(watcher_2), kCertName1,
                                    kCertName1);
-  // Should trigger OnError call on watcher 2 right away.
+  // Should not trigger OnError call on watcher 2 right away.
   EXPECT_THAT(watcher_2_err_deque,
               testing::ElementsAreArray(
-                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
-                      {kRootErrorMessage, kIdentityErrorMessage}}));
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
   watcher_2_err_deque.clear();
   distributor.CancelTlsCertificatesWatch(watcher_2_ptr);
 }
@@ -879,45 +1004,6 @@ TEST(GrpcTlsCertificateDistributorTest,
                       {kRootErrorMessage, kIdentityErrorMessage}}));
   watcher_1_err_deque.clear();
   distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
-}
-
-TEST(GrpcTlsCertificateDistributorTest,
-     WatchCertInfoErroredOnTheCertNotWatched) {
-  grpc_tls_certificate_distributor distributor;
-  // Calling SetErrorForCert on root certs.
-  distributor.SetErrorForCert(
-      kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      GRPC_ERROR_NONE);
-  // Register watcher 1 watching on identity certs only.
-  std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_1_err_deque;
-  auto watcher_1 =
-      absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
-  TlsCertificatesTestWatcher* watcher_1_ptr = watcher_1.get();
-  distributor.WatchTlsCertificates(std::move(watcher_1), absl::nullopt,
-                                   kCertName1);
-  // watcher 1 shouldn't receive any error updates.
-  EXPECT_THAT(watcher_1_err_deque,
-              testing::ElementsAreArray(
-                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
-  watcher_1_err_deque.clear();
-  distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
-  // Calling SetErrorForCert on identity certs.
-  distributor.SetErrorForCert(
-      kCertName2, GRPC_ERROR_NONE,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
-  // Register watcher 2 watching on root certs only.
-  std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_2_err_deque;
-  auto watcher_2 =
-      absl::make_unique<TlsCertificatesTestWatcher>(&watcher_2_err_deque);
-  TlsCertificatesTestWatcher* watcher_2_ptr = watcher_2.get();
-  distributor.WatchTlsCertificates(std::move(watcher_2), kCertName2,
-                                   absl::nullopt);
-  // watcher 2 shouldn't receive any error updates.
-  EXPECT_THAT(watcher_2_err_deque,
-              testing::ElementsAreArray(
-                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
-  watcher_2_err_deque.clear();
-  distributor.CancelTlsCertificatesWatch(watcher_2_ptr);
 }
 
 TEST(GrpcTlsCertificateDistributorTest,
@@ -1022,7 +1108,7 @@ TEST(GrpcTlsCertificateDistributorTest, WatchErroredCertInfoBySetError) {
   distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
   distributor.CancelTlsCertificatesWatch(watcher_2_ptr);
   // Register watcher 3 watching kCertName1 as root and kCertName2 as identity
-  // should get the error updates directly.
+  // should not get the error updates.
   std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_3_err_deque;
   auto watcher_3 =
       absl::make_unique<TlsCertificatesTestWatcher>(&watcher_3_err_deque);
@@ -1031,12 +1117,10 @@ TEST(GrpcTlsCertificateDistributorTest, WatchErroredCertInfoBySetError) {
                                    kCertName2);
   EXPECT_THAT(watcher_3_err_deque,
               testing::ElementsAreArray(
-                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
-                      {kErrorMessage, kErrorMessage}}));
-  watcher_3_err_deque.clear();
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
   distributor.CancelTlsCertificatesWatch(watcher_3_ptr);
   // Register watcher 4 watching kCertName2 as root and kCertName1 as identity
-  // should also get the error updates, because all the entries are errored out.
+  // should not get the error updates.
   std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_4_err_deque;
   auto watcher_4 =
       absl::make_unique<TlsCertificatesTestWatcher>(&watcher_4_err_deque);
@@ -1045,9 +1129,7 @@ TEST(GrpcTlsCertificateDistributorTest, WatchErroredCertInfoBySetError) {
                                    kCertName1);
   EXPECT_THAT(watcher_4_err_deque,
               testing::ElementsAreArray(
-                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
-                      {kErrorMessage, kErrorMessage}}));
-  watcher_4_err_deque.clear();
+                  std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
   distributor.CancelTlsCertificatesWatch(watcher_4_ptr);
 }
 

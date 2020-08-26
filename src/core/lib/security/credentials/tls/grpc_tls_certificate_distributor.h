@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2020 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
@@ -118,10 +116,10 @@ struct grpc_tls_certificate_distributor
   // certificate name is watched by a newly registered watcher, or when a
   // certificate name is no longer watched by any watchers.
   // Note that when the callback shows a cert is no longer being watched, the
-  // distributor will delete the corresponding certificate data from its cache.
+  // distributor will delete the corresponding certificate data from its cache, and clear the corresponding error, if there is any.
   // This means that if the callback subsequently says the same cert is now
-  // being watched again, the provider must re-provide the credentials to the
-  // distributor.
+  // being watched again, the provider must re-provide the credentials or re-invoke the errors to the
+  // distributor, to indicate a successful or failed reloading.
   // @param callback The callback function being set by the caller, e.g the
   // Producer. Note that this callback will be invoked for each certificate
   // name.
@@ -176,6 +174,10 @@ struct grpc_tls_certificate_distributor
     absl::string_view pem_root_certs;
     // The contents of the identity key-certificate pairs.
     PemKeyCertPairList pem_key_cert_pairs;
+    // The root cert reloading error propagated by the caller.
+    grpc_error* root_cert_error = GRPC_ERROR_NONE;
+    // The identity cert reloading error propagated by the caller.
+    grpc_error* identity_cert_error = GRPC_ERROR_NONE;
     // The set of watchers watching root certificates.
     // This is mainly used for quickly looking up the affected watchers while
     // performing a credential reloading.
@@ -184,10 +186,6 @@ struct grpc_tls_certificate_distributor
     // for quickly looking up the affected watchers while performing a
     // credential reloading.
     std::set<TlsCertificatesWatcherInterface*> identity_cert_watchers;
-    // The root cert reloading error propagated by the caller.
-    grpc_error* root_cert_error = GRPC_ERROR_NONE;
-    // The identity cert reloading error propagated by the caller.
-    grpc_error* identity_cert_error = GRPC_ERROR_NONE;
 
     ~CertificateInfo() {
       GRPC_ERROR_UNREF(root_cert_error);
@@ -221,12 +219,13 @@ struct grpc_tls_certificate_distributor
   // CertificateUpdated will be invoked to send updates to each of the
   // watchers in root_cert_watchers and identity_cert_watchers whenever
   // pem_root_certs or pem_key_cert_pair changes.
+  // The lock mu_ must be held while calling this function.
   //
   // @param cert_name The name of the certificates being changed.
   // @param root_cert_changed If the root cert with name "cert_name" changed.
   // @param identity_cert_changed If the identity cert with name "cert_name"
   // changed.
-  void CertificatesUpdated(const std::string& cert_name, bool root_cert_changed,
+  void CertificatesUpdatedLocked(const std::string& cert_name, bool root_cert_changed,
                            bool identity_cert_changed);
 
   grpc_core::Mutex mu_;
