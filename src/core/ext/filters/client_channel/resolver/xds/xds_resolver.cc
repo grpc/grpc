@@ -354,14 +354,22 @@ class XdsResolver : public Resolver {
     }
 
     void OnCallCommitted(const std::string& cluster_name) {
-      MutexLock lock(&resolver_->cluster_state_map_mu_);
-      --resolver_->cluster_state_map_[cluster_name].refcount;
-      if (resolver_->cluster_state_map_[cluster_name].refcount == 0) {
-        gpr_log(GPR_INFO,
-                "DONNAAA: OnCallCommitted ERASING from cluster state map: %s",
-                cluster_name.c_str());
-        resolver_->cluster_state_map_.erase(cluster_name);
-        UpdateServiceConfig();
+      bool erase = false;
+      {
+        MutexLock lock(&resolver_->cluster_state_map_mu_);
+        --resolver_->cluster_state_map_[cluster_name].refcount;
+        if (resolver_->cluster_state_map_[cluster_name].refcount == 0) {
+          gpr_log(GPR_INFO,
+                  "DONNAAA: OnCallCommitted ERASING (have not seen!) from "
+                  "cluster state map: %s",
+                  cluster_name.c_str());
+          resolver_->cluster_state_map_.erase(cluster_name);
+          erase = true;
+        }
+      }
+      if (erase) {
+        resolver_->work_serializer()->Run([this]() { UpdateServiceConfig(); },
+                                          DEBUG_LOCATION);
       }
     }
 

@@ -21,9 +21,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 
-// Channel arg key for ConfigSelector.
-#define GRPC_ARG_CONFIG_SELECTOR "grpc.internal.config_selector"
-
 namespace grpc_core {
 
 namespace {
@@ -58,16 +55,6 @@ RefCountedPtr<ConfigSelector> ConfigSelector::GetFromChannelArgs(
       grpc_channel_args_find_pointer<ConfigSelector>(&args,
                                                      GRPC_ARG_CONFIG_SELECTOR);
   return config_selector != nullptr ? config_selector->Ref() : nullptr;
-}
-
-grpc_channel_args* ConfigSelector::RemoveFromChannelArgs(
-    const grpc_channel_args& args) {
-  ConfigSelector* config_selector =
-      grpc_channel_args_find_pointer<ConfigSelector>(&args,
-                                                     GRPC_ARG_CONFIG_SELECTOR);
-  if (config_selector != nullptr) config_selector->Unref();
-  const char* arg_name = GRPC_ARG_CONFIG_SELECTOR;
-  return grpc_channel_args_copy_and_remove(&args, &arg_name, 1);
 }
 
 }  // namespace grpc_core
