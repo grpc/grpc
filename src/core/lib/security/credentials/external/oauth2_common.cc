@@ -1,160 +1,141 @@
-/*
- *
- * Copyright 2020 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include "oauth2_common.h"
 
 #include <iostream>
 
-#include "src/core/lib/slice/b64.h"
-#include "src/core/lib/uri/uri_parser.h"
-
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
-bool grpc_oauth2_token_exchange_request_is_valid(
-    const grpc_oauth2_token_exchange_request* request) {
-  if (request == nullptr) {
+#include "src/core/lib/slice/b64.h"
+#include "src/core/lib/uri/uri_parser.h"
+
+namespace grpc_core {
+
+bool TokenExchangeRequest::isValid() {
+  if (this->grantType.empty()) {
     return false;
   }
-  if (request->grant_type.empty()) {
+  if (this->subjectToken.empty()) {
     return false;
   }
-  if (request->subject_token.empty()) {
+  if (this->subjectTokenType.empty()) {
     return false;
   }
-  if (request->subject_token_type.empty()) {
-    return false;
-  }
-  if (request->actor_token.empty() != request->actor_token_type.empty()) {
+  if (this->actorToken.empty() != this->actorTokenType.empty()) {
     return false;
   }
   return true;
 }
 
-grpc_httpcli_request grpc_generate_token_exchange_request(
-    const std::string token_url,
-    const grpc_oauth2_token_exchange_request* request,
-    const grpc_oauth2_client_authentication* client_auth) {
+grpc_httpcli_request TokenExchangeRequest::generateHttpRequest(
+    const std::string tokenUrl, const ClientAuthentication* clientAuth) {
   grpc_httpcli_request result;
   memset(&result, 0, sizeof(grpc_httpcli_request));
-
-  if (!grpc_oauth2_token_exchange_request_is_valid(request)) {
+  if (!this->isValid()) {
     return result;
   }
 
-  grpc_uri* uri = grpc_uri_parse(token_url, false);
+  grpc_uri* uri = grpc_uri_parse(tokenUrl, false);
   result.host = (char*)uri->authority;
   result.http.path = (char*)uri->path;
   result.handshaker = (strcmp(uri->scheme, "https") == 0)
                           ? &grpc_httpcli_ssl
                           : &grpc_httpcli_plaintext;
-
   grpc_http_header* headers = nullptr;
-  if (client_auth != nullptr &&
-      client_auth->client_type == grpc_oauth2_client_authentication::basic) {
+  if (clientAuth != nullptr &&
+      clientAuth->clientType == ClientAuthentication::basic) {
     result.http.hdr_count = 2;
-
     headers = static_cast<grpc_http_header*>(
         gpr_malloc(sizeof(grpc_http_header) * 2));
-
-    headers[0].key = const_cast<char*>("Content-Type");
-    headers[0].value = const_cast<char*>("application/x-www-form-urlencoded");
-
-    std::string raw_cred = absl::StrFormat("%s:%s", client_auth->client_id,
-                                           client_auth->client_secret);
-    char* encoded_cred =
-        grpc_base64_encode(raw_cred.c_str(), raw_cred.length(), 0, 0);
-    std::string str = absl::StrFormat("Basic %s", std::string(encoded_cred));
-    headers[1].key = const_cast<char*>("Authorization");
+    headers[0].key = gpr_strdup(const_cast<char*>("Content-Type"));
+    headers[0].value =
+        gpr_strdup(const_cast<char*>("application/x-www-form-urlencoded"));
+    std::string rawCred = absl::StrFormat("%s:%s", clientAuth->clientId,
+                                          clientAuth->clientSecret);
+    char* encodedCred =
+        grpc_base64_encode(rawCred.c_str(), rawCred.length(), 0, 0);
+    std::string str = absl::StrFormat("Basic %s", std::string(encodedCred));
+    gpr_free(encodedCred);
+    headers[1].key = gpr_strdup(const_cast<char*>("Authorization"));
     char* cstr = new char[str.length() + 1];
     strcpy(cstr, str.c_str());
-    headers[1].value = const_cast<char*>(cstr);
+    headers[1].value = gpr_strdup(const_cast<char*>(cstr));
+    gpr_free(cstr);
   } else {
     result.http.hdr_count = 1;
     headers = static_cast<grpc_http_header*>(
         gpr_malloc(sizeof(grpc_http_header) * 1));
-
-    headers[0].key = const_cast<char*>("Content-Type");
-    headers[0].value = const_cast<char*>("application/x-www-form-urlencoded");
+    headers[0].key = gpr_strdup(const_cast<char*>("Content-Type"));
+    headers[0].value =
+        gpr_strdup(const_cast<char*>("application/x-www-form-urlencoded"));
   }
-
   result.http.hdrs = headers;
-
   return result;
 }
 
-std::string grpc_generate_token_exchange_request_body(
-    const std::string token_url,
-    const grpc_oauth2_token_exchange_request* request,
-    const grpc_oauth2_client_authentication* client_auth) {
-  std::string result = "";
-
-  if (!grpc_oauth2_token_exchange_request_is_valid(request)) {
+std::string TokenExchangeRequest::generateHttpRequestBody(
+    const std::string tokenUrl, const ClientAuthentication* clientAuth) {
+  std::string result;
+  if (!this->isValid()) {
     return result;
   }
-
   std::vector<std::string> body_parts;
-  if (!request->grant_type.empty()) {
+  if (!this->grantType.empty()) {
     body_parts.push_back(
-        absl::StrFormat("%s=%s", "grant_type", request->grant_type));
+        absl::StrFormat("%s=%s", "grant_type", this->grantType));
   }
-  if (!request->resource.empty()) {
-    body_parts.push_back(
-        absl::StrFormat("%s=%s", "resource", request->resource));
+  if (!this->resource.empty()) {
+    body_parts.push_back(absl::StrFormat("%s=%s", "resource", this->resource));
   }
-  if (!request->audience.empty()) {
-    body_parts.push_back(
-        absl::StrFormat("%s=%s", "audience", request->audience));
+  if (!this->audience.empty()) {
+    body_parts.push_back(absl::StrFormat("%s=%s", "audience", this->audience));
   }
-  if (!request->scope.empty()) {
-    body_parts.push_back(absl::StrFormat("%s=%s", "scope", request->scope));
+  if (!this->scope.empty()) {
+    body_parts.push_back(absl::StrFormat("%s=%s", "scope", this->scope));
   }
-  if (!request->requested_token_type.empty()) {
+  if (!this->requestedTokenType.empty()) {
     body_parts.push_back(absl::StrFormat("%s=%s", "requested_token_type",
-                                         request->requested_token_type));
+                                         this->requestedTokenType));
   }
-  if (!request->subject_token.empty()) {
+  if (!this->subjectToken.empty()) {
     body_parts.push_back(
-        absl::StrFormat("%s=%s", "subject_token", request->subject_token));
+        absl::StrFormat("%s=%s", "subject_token", this->subjectToken));
   }
-  if (!request->subject_token_type.empty()) {
-    body_parts.push_back(absl::StrFormat("%s=%s", "subject_token_type",
-                                         request->subject_token_type));
-  }
-  if (!request->actor_token.empty()) {
+  if (!this->subjectTokenType.empty()) {
     body_parts.push_back(
-        absl::StrFormat("%s=%s", "actor_token", request->actor_token));
+        absl::StrFormat("%s=%s", "subject_token_type", this->subjectTokenType));
   }
-  if (!request->actor_token_type.empty()) {
-    body_parts.push_back(absl::StrFormat("%s=%s", "actor_token_type",
-                                         request->actor_token_type));
-  }
-
-  if (client_auth != nullptr &&
-      client_auth->client_type ==
-          grpc_oauth2_client_authentication::request_body) {
+  if (!this->actorToken.empty()) {
     body_parts.push_back(
-        absl::StrFormat("%s=%s", "client_id", client_auth->client_id));
-    body_parts.push_back(
-        absl::StrFormat("%s=%s", "client_secret", client_auth->client_secret));
+        absl::StrFormat("%s=%s", "actor_token", this->actorToken));
   }
-
+  if (!this->actorTokenType.empty()) {
+    body_parts.push_back(
+        absl::StrFormat("%s=%s", "actor_token_type", this->actorTokenType));
+  }
+  if (clientAuth != nullptr &&
+      clientAuth->clientType == ClientAuthentication::requestBody) {
+    body_parts.push_back(
+        absl::StrFormat("%s=%s", "client_id", clientAuth->clientId));
+    body_parts.push_back(
+        absl::StrFormat("%s=%s", "client_secret", clientAuth->clientSecret));
+  }
   result = absl::StrJoin(body_parts, "&");
-
   return result;
 }
+
+}  // namespace grpc_core
