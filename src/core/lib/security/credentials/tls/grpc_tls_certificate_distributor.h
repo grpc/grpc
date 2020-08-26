@@ -116,9 +116,10 @@ struct grpc_tls_certificate_distributor
   // certificate name is watched by a newly registered watcher, or when a
   // certificate name is no longer watched by any watchers.
   // Note that when the callback shows a cert is no longer being watched, the
-  // distributor will delete the corresponding certificate data from its cache, and clear the corresponding error, if there is any.
-  // This means that if the callback subsequently says the same cert is now
-  // being watched again, the provider must re-provide the credentials or re-invoke the errors to the
+  // distributor will delete the corresponding certificate data from its cache,
+  // and clear the corresponding error, if there is any. This means that if the
+  // callback subsequently says the same cert is now being watched again, the
+  // provider must re-provide the credentials or re-invoke the errors to the
   // distributor, to indicate a successful or failed reloading.
   // @param callback The callback function being set by the caller, e.g the
   // Producer. Note that this callback will be invoked for each certificate
@@ -191,28 +192,25 @@ struct grpc_tls_certificate_distributor
       GRPC_ERROR_UNREF(root_cert_error);
       GRPC_ERROR_UNREF(identity_cert_error);
     }
-    void SetError(grpc_error* new_root_error, grpc_error* new_identity_error) {
-      GPR_ASSERT(new_root_error != GRPC_ERROR_NONE ||
-                 new_identity_error != GRPC_ERROR_NONE);
-      if (new_root_error != GRPC_ERROR_NONE) {
+    void SetRootError(grpc_error* error) {
+      if (error != GRPC_ERROR_NONE) {
         GRPC_ERROR_UNREF(root_cert_error);
-        root_cert_error = new_root_error;
-      }
-      if (new_identity_error != GRPC_ERROR_NONE) {
-        GRPC_ERROR_UNREF(identity_cert_error);
-        identity_cert_error = new_identity_error;
+        root_cert_error = error;
       }
     }
-    void ClearError(bool clear_root, bool clear_identity) {
-      GPR_ASSERT(clear_root || clear_identity);
-      if (clear_root) {
-        GRPC_ERROR_UNREF(root_cert_error);
-        root_cert_error = GRPC_ERROR_NONE;
-      }
-      if (clear_identity) {
+    void SetIdentityError(grpc_error* error) {
+      if (error != GRPC_ERROR_NONE) {
         GRPC_ERROR_UNREF(identity_cert_error);
-        identity_cert_error = GRPC_ERROR_NONE;
+        identity_cert_error = error;
       }
+    }
+    void ClearRootError() {
+      GRPC_ERROR_UNREF(root_cert_error);
+      root_cert_error = GRPC_ERROR_NONE;
+    }
+    void ClearIdentityError() {
+      GRPC_ERROR_UNREF(identity_cert_error);
+      identity_cert_error = GRPC_ERROR_NONE;
     }
   };
 
@@ -225,8 +223,11 @@ struct grpc_tls_certificate_distributor
   // @param root_cert_changed If the root cert with name "cert_name" changed.
   // @param identity_cert_changed If the identity cert with name "cert_name"
   // changed.
-  void CertificatesUpdatedLocked(const std::string& cert_name, bool root_cert_changed,
-                           bool identity_cert_changed);
+  // @param cert_info the entry being modified in certificate_info_map_.
+  void CertificatesUpdatedLocked(const std::string& cert_name,
+                                 bool root_cert_changed,
+                                 bool identity_cert_changed,
+                                 CertificateInfo& cert_info);
 
   grpc_core::Mutex mu_;
   // We need a dedicated mutex for watch_status_callback_ for allowing

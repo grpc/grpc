@@ -22,7 +22,7 @@
 #include <grpc/support/string_util.h>
 #include <gtest/gtest.h>
 
-#include <queue>
+#include <deque>
 #include <thread>
 
 #include "src/core/lib/slice/slice_internal.h"
@@ -54,6 +54,9 @@ class TlsCertificatesTestWatcher
   struct ErrorInfo {
     std::string root_cert_str;
     std::string identity_cert_str;
+    ErrorInfo(std::string root, std::string identity)
+        : root_cert_str(std::move(root)),
+          identity_cert_str(std::move(identity)) {}
     bool operator==(const ErrorInfo& other) const {
       return root_cert_str == other.root_cert_str &&
              identity_cert_str == other.identity_cert_str;
@@ -63,8 +66,13 @@ class TlsCertificatesTestWatcher
   TlsCertificatesTestWatcher() {}
   TlsCertificatesTestWatcher(std::deque<ErrorInfo>* err_queue)
       : err_queue_(err_queue) {}
+  TlsCertificatesTestWatcher(bool* is_destroyed) : destroyed(is_destroyed) {}
 
-  ~TlsCertificatesTestWatcher() {}
+  ~TlsCertificatesTestWatcher() {
+    if (destroyed != nullptr) {
+      *destroyed = true;
+    }
+  }
 
   void OnCertificatesChanged(
       absl::optional<absl::string_view> root_certs,
@@ -75,29 +83,35 @@ class TlsCertificatesTestWatcher
   }
 
   void OnError(grpc_error* root_cert_error, grpc_error* identity_cert_error) {
-    GPR_ASSERT(err_queue_ != nullptr);
-    GPR_ASSERT(root_cert_error != GRPC_ERROR_NONE ||
-               identity_cert_error != GRPC_ERROR_NONE);
-    std::string root_error_str;
-    std::string identity_error_str;
-    if (root_cert_error != GRPC_ERROR_NONE) {
-      grpc_slice root_error_slice;
-      GPR_ASSERT(grpc_error_get_str(root_cert_error, GRPC_ERROR_STR_DESCRIPTION,
-                                    &root_error_slice));
-      root_error_str =
-          std::string(grpc_core::StringViewFromSlice(root_error_slice));
+    if (err_queue_ != nullptr) {
+      GPR_ASSERT(root_cert_error != GRPC_ERROR_NONE ||
+                 identity_cert_error != GRPC_ERROR_NONE);
+      std::string root_error_str;
+      std::string identity_error_str;
+      if (root_cert_error != GRPC_ERROR_NONE) {
+        grpc_slice root_error_slice;
+        GPR_ASSERT(grpc_error_get_str(
+            root_cert_error, GRPC_ERROR_STR_DESCRIPTION, &root_error_slice));
+        root_error_str =
+            std::string(grpc_core::StringViewFromSlice(root_error_slice));
+        GRPC_ERROR_UNREF(root_cert_error);
+      }
+      if (identity_cert_error != GRPC_ERROR_NONE) {
+        grpc_slice identity_error_slice;
+        GPR_ASSERT(grpc_error_get_str(identity_cert_error,
+                                      GRPC_ERROR_STR_DESCRIPTION,
+                                      &identity_error_slice));
+        identity_error_str =
+            std::string(grpc_core::StringViewFromSlice(identity_error_slice));
+        GRPC_ERROR_UNREF(identity_cert_error);
+      }
+      (*err_queue_)
+          .emplace_back(std::move(root_error_str),
+                        std::move(identity_error_str));
+    } else {
       GRPC_ERROR_UNREF(root_cert_error);
-    }
-    if (identity_cert_error != GRPC_ERROR_NONE) {
-      grpc_slice identity_error_slice;
-      GPR_ASSERT(grpc_error_get_str(identity_cert_error,
-                                    GRPC_ERROR_STR_DESCRIPTION,
-                                    &identity_error_slice));
-      identity_error_str =
-          std::string(grpc_core::StringViewFromSlice(identity_error_slice));
       GRPC_ERROR_UNREF(identity_cert_error);
     }
-    (*err_queue_).push_back(ErrorInfo{root_error_str, identity_error_str});
   }
 
   const absl::optional<absl::string_view>& GetRootCerts() {
@@ -113,7 +127,8 @@ class TlsCertificatesTestWatcher
   absl::optional<absl::string_view> root_certs_;
   absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
       key_cert_pairs_;
-  std::deque<ErrorInfo>* err_queue_;
+  std::deque<ErrorInfo>* err_queue_ = nullptr;
+  bool* destroyed = nullptr;
 };
 
 // CallbackStatus contains the parameters in  the watch_status_callback_ of
@@ -142,25 +157,25 @@ grpc_tls_certificate_distributor::PemKeyCertPairList MakeCertKeyPairs(
   ssl_pair->private_key = gpr_strdup(private_key);
   ssl_pair->cert_chain = gpr_strdup(certs);
   grpc_tls_certificate_distributor::PemKeyCertPairList pem_key_cert_pairs;
-  pem_key_cert_pairs.emplace_back(grpc_core::PemKeyCertPair(ssl_pair));
+  pem_key_cert_pairs.emplace_back(ssl_pair);
   return pem_key_cert_pairs;
 }
 
 TEST(GrpcTlsCertificateDistributorTest, BasicCredentialBehaviors) {
   grpc_tls_certificate_distributor distributor;
-  EXPECT_EQ(distributor.HasRootCerts(kRootCert1Name), false);
-  EXPECT_EQ(distributor.HasKeyCertPairs(kIdentityCert1Name), false);
+  EXPECT_FALSE(distributor.HasRootCerts(kRootCert1Name));
+  EXPECT_FALSE(distributor.HasKeyCertPairs(kIdentityCert1Name));
   // After setting the certificates to the corresponding cert names, the
   // distributor should possess the corresponding certs.
   distributor.SetRootCerts(kRootCert1Name, kRootCert1Contents);
-  EXPECT_EQ(distributor.HasRootCerts(kRootCert1Name), true);
+  EXPECT_TRUE(distributor.HasRootCerts(kRootCert1Name));
   distributor.SetKeyCertPairs(
       kIdentityCert1Name,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
-  EXPECT_EQ(distributor.HasKeyCertPairs(kIdentityCert1Name), true);
+  EXPECT_TRUE(distributor.HasKeyCertPairs(kIdentityCert1Name));
   // Querying a non-existing cert name should return false.
-  EXPECT_EQ(distributor.HasRootCerts(kRootCert2Name), false);
-  EXPECT_EQ(distributor.HasKeyCertPairs(kIdentityCert2Name), false);
+  EXPECT_FALSE(distributor.HasRootCerts(kRootCert2Name));
+  EXPECT_FALSE(distributor.HasKeyCertPairs(kIdentityCert2Name));
 }
 
 TEST(GrpcTlsCertificateDistributorTest, CredentialUpdatesWithoutCallbacks) {
@@ -174,9 +189,7 @@ TEST(GrpcTlsCertificateDistributorTest, CredentialUpdatesWithoutCallbacks) {
   distributor.SetKeyMaterials(
       kCertName1, kRootCert1Contents,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
-  EXPECT_EQ(watcher_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_ptr->GetRootCerts()), kRootCert1Contents);
-  EXPECT_EQ(watcher_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_EQ(watcher_ptr->GetRootCerts(), kRootCert1Contents);
   EXPECT_THAT(
       *watcher_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -186,9 +199,7 @@ TEST(GrpcTlsCertificateDistributorTest, CredentialUpdatesWithoutCallbacks) {
                               ::testing::StrEq(kIdentityCert1Contents)))));
   // SetRootCerts should trigger watcher's OnCertificatesChanged again.
   distributor.SetRootCerts(kCertName1, kRootCert2Contents);
-  EXPECT_EQ(watcher_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_ptr->GetRootCerts()), kRootCert2Contents);
-  EXPECT_EQ(watcher_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_EQ(watcher_ptr->GetRootCerts(), kRootCert2Contents);
   EXPECT_THAT(
       *watcher_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -200,9 +211,8 @@ TEST(GrpcTlsCertificateDistributorTest, CredentialUpdatesWithoutCallbacks) {
   distributor.SetKeyCertPairs(
       kCertName1,
       MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
-  EXPECT_EQ(watcher_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_ptr->GetRootCerts()), kRootCert2Contents);
-  EXPECT_EQ(watcher_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_EQ(watcher_ptr->GetRootCerts(), kRootCert2Contents);
+  EXPECT_TRUE(watcher_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -219,8 +229,8 @@ TEST(GrpcTlsCertificateDistributorTest, SameIdentityNameDiffRootName) {
   distributor.SetWatchStatusCallback([&cb_deque](std::string cert_name,
                                                  bool root_being_watched,
                                                  bool identity_being_watched) {
-    cb_deque.push_back(
-        CallbackStatus(cert_name, root_being_watched, identity_being_watched));
+    cb_deque.emplace_back(cert_name, root_being_watched,
+                          identity_being_watched);
   });
   // Register watcher 1.
   auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>();
@@ -243,20 +253,18 @@ TEST(GrpcTlsCertificateDistributorTest, SameIdentityNameDiffRootName) {
   // expected.
   distributor.SetRootCerts(kRootCert1Name, kRootCert1Contents);
   // Check the updates are delivered to watcher 1.
-  EXPECT_EQ(watcher_1_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_1_ptr->GetRootCerts()), kRootCert1Contents);
+  EXPECT_EQ(watcher_1_ptr->GetRootCerts(), kRootCert1Contents);
   // Push credential updates to kRootCert2Name.
   distributor.SetRootCerts(kRootCert2Name, kRootCert2Contents);
   // Check the updates are delivered to watcher 2.
-  EXPECT_EQ(watcher_2_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_2_ptr->GetRootCerts()), kRootCert2Contents);
+  EXPECT_EQ(watcher_2_ptr->GetRootCerts(), kRootCert2Contents);
   // Push credential updates to kIdentityCert1Name and check if the status works
   // as expected.
   distributor.SetKeyCertPairs(
       kIdentityCert1Name,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   // Check the updates are delivered to watcher 1 and watcher 2.
-  EXPECT_EQ(watcher_1_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_TRUE(watcher_1_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_1_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -264,7 +272,7 @@ TEST(GrpcTlsCertificateDistributorTest, SameIdentityNameDiffRootName) {
                               ::testing::StrEq(kIdentityCert1PrivateKey)),
           ::testing::Property(&grpc_core::PemKeyCertPair::cert_chain,
                               ::testing::StrEq(kIdentityCert1Contents)))));
-  EXPECT_EQ(watcher_2_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_TRUE(watcher_2_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_2_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -291,8 +299,8 @@ TEST(GrpcTlsCertificateDistributorTest, SameRootNameDiffIdentityName) {
   distributor.SetWatchStatusCallback([&cb_deque](std::string cert_name,
                                                  bool root_being_watched,
                                                  bool identity_being_watched) {
-    cb_deque.push_back(
-        CallbackStatus(cert_name, root_being_watched, identity_being_watched));
+    cb_deque.emplace_back(cert_name, root_being_watched,
+                          identity_being_watched);
   });
   // Register watcher 1.
   auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>();
@@ -315,17 +323,15 @@ TEST(GrpcTlsCertificateDistributorTest, SameRootNameDiffIdentityName) {
   // expected.
   distributor.SetRootCerts(kRootCert1Name, kRootCert1Contents);
   // Check the updates are delivered to watcher 1.
-  EXPECT_EQ(watcher_1_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_1_ptr->GetRootCerts()), kRootCert1Contents);
+  EXPECT_EQ(watcher_1_ptr->GetRootCerts(), kRootCert1Contents);
   // Check the updates are delivered to watcher 2.
-  EXPECT_EQ(watcher_2_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_2_ptr->GetRootCerts()), kRootCert1Contents);
+  EXPECT_EQ(watcher_2_ptr->GetRootCerts(), kRootCert1Contents);
   // Push credential updates to kIdentityCert1Name.
   distributor.SetKeyCertPairs(
       kIdentityCert1Name,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   // Check the updates are delivered to watcher 1 .
-  EXPECT_EQ(watcher_1_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_TRUE(watcher_1_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_1_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -338,7 +344,7 @@ TEST(GrpcTlsCertificateDistributorTest, SameRootNameDiffIdentityName) {
       kIdentityCert2Name,
       MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
   // Check the updates are delivered to watcher 2.
-  EXPECT_EQ(watcher_2_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_TRUE(watcher_2_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_2_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -366,8 +372,8 @@ TEST(GrpcTlsCertificateDistributorTest,
   distributor.SetWatchStatusCallback([&cb_deque](std::string cert_name,
                                                  bool root_being_watched,
                                                  bool identity_being_watched) {
-    cb_deque.push_back(
-        CallbackStatus(cert_name, root_being_watched, identity_being_watched));
+    cb_deque.emplace_back(cert_name, root_being_watched,
+                          identity_being_watched);
   });
   // Register watcher 1 watching kCertName1 for both root and identity certs.
   auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>();
@@ -383,9 +389,8 @@ TEST(GrpcTlsCertificateDistributorTest,
       kCertName1, kRootCert1Contents,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   // Check the updates are delivered to watcher 1.
-  EXPECT_EQ(watcher_1_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_1_ptr->GetRootCerts()), kRootCert1Contents);
-  EXPECT_EQ(watcher_1_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_EQ(watcher_1_ptr->GetRootCerts(), kRootCert1Contents);
+  EXPECT_TRUE(watcher_1_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_1_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -407,8 +412,8 @@ TEST(GrpcTlsCertificateDistributorTest,
   distributor.SetWatchStatusCallback([&cb_deque](std::string cert_name,
                                                  bool root_being_watched,
                                                  bool identity_being_watched) {
-    cb_deque.push_back(
-        CallbackStatus(cert_name, root_being_watched, identity_being_watched));
+    cb_deque.emplace_back(cert_name, root_being_watched,
+                          identity_being_watched);
   });
   // Register watcher 1 watching kCertName1 for root certs.
   auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>();
@@ -432,12 +437,11 @@ TEST(GrpcTlsCertificateDistributorTest,
       kCertName1, kRootCert1Contents,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   // Check the updates are delivered to watcher 1.
-  EXPECT_EQ(watcher_1_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_1_ptr->GetRootCerts()), kRootCert1Contents);
-  EXPECT_EQ(watcher_1_ptr->GetKeyCertPairs().has_value(), false);
+  EXPECT_EQ(watcher_1_ptr->GetRootCerts(), kRootCert1Contents);
+  EXPECT_FALSE(watcher_1_ptr->GetKeyCertPairs().has_value());
   // Check the updates are delivered to watcher 2.
-  EXPECT_EQ(watcher_2_ptr->GetRootCerts().has_value(), false);
-  EXPECT_EQ(watcher_2_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_FALSE(watcher_2_ptr->GetRootCerts().has_value());
+  EXPECT_TRUE(watcher_2_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_2_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -464,8 +468,8 @@ TEST(GrpcTlsCertificateDistributorTest,
   distributor.SetWatchStatusCallback([&cb_deque](std::string cert_name,
                                                  bool root_being_watched,
                                                  bool identity_being_watched) {
-    cb_deque.push_back(
-        CallbackStatus(cert_name, root_being_watched, identity_being_watched));
+    cb_deque.emplace_back(cert_name, root_being_watched,
+                          identity_being_watched);
   });
   // Register watcher 1 watching kCertName1 for identity certs.
   auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>();
@@ -489,8 +493,8 @@ TEST(GrpcTlsCertificateDistributorTest,
       kCertName1, kRootCert1Contents,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   // Check the updates are delivered to watcher 1.
-  EXPECT_EQ(watcher_1_ptr->GetRootCerts().has_value(), false);
-  EXPECT_EQ(watcher_1_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_FALSE(watcher_1_ptr->GetRootCerts().has_value());
+  EXPECT_TRUE(watcher_1_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_1_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -499,9 +503,8 @@ TEST(GrpcTlsCertificateDistributorTest,
           ::testing::Property(&grpc_core::PemKeyCertPair::cert_chain,
                               ::testing::StrEq(kIdentityCert1Contents)))));
   // Check the updates are delivered to watcher 2.
-  EXPECT_EQ(watcher_2_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_2_ptr->GetRootCerts()), kRootCert1Contents);
-  EXPECT_EQ(watcher_2_ptr->GetKeyCertPairs().has_value(), false);
+  EXPECT_EQ(watcher_2_ptr->GetRootCerts(), kRootCert1Contents);
+  EXPECT_FALSE(watcher_2_ptr->GetKeyCertPairs().has_value());
   // Cancel watcher 2.
   distributor.CancelTlsCertificatesWatch(watcher_2_ptr);
   EXPECT_THAT(cb_deque, testing::ElementsAreArray(std::vector<CallbackStatus>{
@@ -521,8 +524,8 @@ TEST(GrpcTlsCertificateDistributorTest,
   distributor.SetWatchStatusCallback([&cb_deque](std::string cert_name,
                                                  bool root_being_watched,
                                                  bool identity_being_watched) {
-    cb_deque.push_back(
-        CallbackStatus(cert_name, root_being_watched, identity_being_watched));
+    cb_deque.emplace_back(cert_name, root_being_watched,
+                          identity_being_watched);
   });
   // Register watcher 1 and watcher 2 watching kCertName1 for root and identity
   // certs.
@@ -567,9 +570,8 @@ TEST(GrpcTlsCertificateDistributorTest,
       kCertName1, kRootCert2Contents,
       MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
   // Check the updates are delivered to watcher 3.
-  EXPECT_EQ(watcher_3_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_3_ptr->GetRootCerts()), kRootCert2Contents);
-  EXPECT_EQ(watcher_3_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_EQ(watcher_3_ptr->GetRootCerts(), kRootCert2Contents);
+  EXPECT_TRUE(watcher_3_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_3_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -590,8 +592,8 @@ TEST(GrpcTlsCertificateDistributorTest, ResetCallbackToNull) {
   distributor.SetWatchStatusCallback([&cb_deque](std::string cert_name,
                                                  bool root_being_watched,
                                                  bool identity_being_watched) {
-    cb_deque.push_back(
-        CallbackStatus(cert_name, root_being_watched, identity_being_watched));
+    cb_deque.emplace_back(cert_name, root_being_watched,
+                          identity_being_watched);
   });
   // Register watcher 1 watching kCertName1 for root and identity certs.
   auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>();
@@ -624,9 +626,8 @@ TEST(GrpcTlsCertificateDistributorTest, SetKeyMaterialsInCallback) {
     TlsCertificatesTestWatcher* watcher_ptr = watcher.get();
     distributor.WatchTlsCertificates(std::move(watcher), cert_name, cert_name);
     // Check the updates are delivered to watcher 1.
-    EXPECT_EQ(watcher_ptr->GetRootCerts().has_value(), true);
-    EXPECT_EQ(std::string(*watcher_ptr->GetRootCerts()), kRootCert1Contents);
-    EXPECT_EQ(watcher_ptr->GetKeyCertPairs().has_value(), true);
+    EXPECT_EQ(watcher_ptr->GetRootCerts(), kRootCert1Contents);
+    EXPECT_TRUE(watcher_ptr->GetKeyCertPairs().has_value());
     EXPECT_THAT(
         *watcher_ptr->GetKeyCertPairs(),
         ::testing::ElementsAre(::testing::AllOf(
@@ -642,7 +643,7 @@ TEST(GrpcTlsCertificateDistributorTest, SetKeyMaterialsInCallback) {
   std::vector<std::thread> threads;
   threads.reserve(1000);
   for (int i = 0; i < 1000; ++i) {
-    threads.emplace_back(std::thread(verify_function, std::to_string(i)));
+    threads.emplace_back(verify_function, std::to_string(i));
   }
   for (auto& th : threads) {
     th.join();
@@ -667,9 +668,8 @@ TEST(GrpcTlsCertificateDistributorTest, WatchACertInfoWithValidCredentials) {
   distributor.WatchTlsCertificates(std::move(watcher_1), kCertName1,
                                    kCertName1);
   // watcher 1 should receive the credentials right away.
-  EXPECT_EQ(watcher_1_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_1_ptr->GetRootCerts()), kRootCert1Contents);
-  EXPECT_EQ(watcher_1_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_EQ(watcher_1_ptr->GetRootCerts(), kRootCert1Contents);
+  EXPECT_TRUE(watcher_1_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_1_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -684,17 +684,16 @@ TEST(GrpcTlsCertificateDistributorTest, WatchACertInfoWithValidCredentials) {
   distributor.WatchTlsCertificates(std::move(watcher_2), kRootCert2Name,
                                    absl::nullopt);
   // watcher 2 should receive the root credentials right away.
-  EXPECT_EQ(watcher_2_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_2_ptr->GetRootCerts()), kRootCert2Contents);
-  EXPECT_EQ(watcher_2_ptr->GetKeyCertPairs().has_value(), false);
+  EXPECT_EQ(watcher_2_ptr->GetRootCerts(), kRootCert2Contents);
+  EXPECT_FALSE(watcher_2_ptr->GetKeyCertPairs().has_value());
   // Register watcher 3.
   auto watcher_3 = absl::make_unique<TlsCertificatesTestWatcher>();
   TlsCertificatesTestWatcher* watcher_3_ptr = watcher_3.get();
   distributor.WatchTlsCertificates(std::move(watcher_3), absl::nullopt,
                                    kIdentityCert2Name);
   // watcher 3 should received the identity credentials right away.
-  EXPECT_EQ(watcher_3_ptr->GetRootCerts().has_value(), false);
-  EXPECT_EQ(watcher_3_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_FALSE(watcher_3_ptr->GetRootCerts().has_value());
+  EXPECT_TRUE(watcher_3_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_3_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -759,7 +758,8 @@ TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootOrIdentity) {
   watcher_1_err_deque.clear();
   // Calling SetErrorForCert on identity name should do nothing.
   distributor.SetErrorForCert(
-      kCertName1, GRPC_ERROR_NONE, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+      kCertName1, GRPC_ERROR_NONE,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_1_err_deque,
               testing::ElementsAreArray(
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
@@ -784,7 +784,8 @@ TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootOrIdentity) {
   watcher_2_err_deque.clear();
   // Calling SetErrorForCert on root name should do nothing.
   distributor.SetErrorForCert(
-      kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage), GRPC_ERROR_NONE);
+      kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
+      GRPC_ERROR_NONE);
   EXPECT_THAT(watcher_2_err_deque,
               testing::ElementsAreArray(
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
@@ -792,7 +793,8 @@ TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootOrIdentity) {
   distributor.CancelTlsCertificatesWatch(watcher_2_ptr);
 }
 
-TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForIdentityNameWithSameNameForRootErrored) {
+TEST(GrpcTlsCertificateDistributorTest,
+     SetErrorForCertForIdentityNameWithSameNameForRootErrored) {
   grpc_tls_certificate_distributor distributor;
   // SetErrorForCert for kCertName1.
   distributor.SetErrorForCert(
@@ -800,17 +802,19 @@ TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForIdentityNameWithSameNa
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   // Register watcher 1 for kCertName1 as root and kCertName2 as identity.
   std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_1_err_deque;
-  auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
+  auto watcher_1 =
+      absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
   TlsCertificatesTestWatcher* watcher_1_ptr = watcher_1.get();
-  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName1, kCertName2);
+  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName1,
+                                   kCertName2);
   // Should trigger OnError call right away since kCertName1 has error.
   EXPECT_THAT(watcher_1_err_deque,
               testing::ElementsAreArray(
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
                       {kRootErrorMessage, ""}}));
   watcher_1_err_deque.clear();
-//   Calling SetErrorForCert on kCertName2 should trigger OnError with both errors, because
-//   kCertName1 also has error.
+  //   Calling SetErrorForCert on kCertName2 should trigger OnError with both
+  //   errors, because kCertName1 also has error.
   distributor.SetErrorForCert(
       kCertName2, GRPC_ERROR_NONE,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
@@ -822,7 +826,8 @@ TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForIdentityNameWithSameNa
   distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
 }
 
-TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootNameWithSameNameForIdentityErrored) {
+TEST(GrpcTlsCertificateDistributorTest,
+     SetErrorForCertForRootNameWithSameNameForIdentityErrored) {
   grpc_tls_certificate_distributor distributor;
   // SetErrorForCert for kCertName1.
   distributor.SetErrorForCert(
@@ -830,19 +835,22 @@ TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootNameWithSameNameFo
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   // Register watcher 1 for kCertName2 as root and kCertName1 as identity.
   std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_1_err_deque;
-  auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
+  auto watcher_1 =
+      absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
   TlsCertificatesTestWatcher* watcher_1_ptr = watcher_1.get();
-  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName2, kCertName1);
+  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName2,
+                                   kCertName1);
   // Should trigger OnError call right away since kCertName2 has error.
   EXPECT_THAT(watcher_1_err_deque,
               testing::ElementsAreArray(
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
                       {"", kIdentityErrorMessage}}));
   watcher_1_err_deque.clear();
-  // Calling SetErrorForCert on kCertName2 should trigger OnError with both errors, because
-  // kCertName1 also has error.
+  // Calling SetErrorForCert on kCertName2 should trigger OnError with both
+  // errors, because kCertName1 also has error.
   distributor.SetErrorForCert(
-      kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage), GRPC_ERROR_NONE);
+      kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
+      GRPC_ERROR_NONE);
   EXPECT_THAT(watcher_1_err_deque,
               testing::ElementsAreArray(
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
@@ -851,13 +859,16 @@ TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootNameWithSameNameFo
   distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
 }
 
-TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForIdentityNameWithSameNameForRootNoError) {
+TEST(GrpcTlsCertificateDistributorTest,
+     SetErrorForCertForIdentityNameWithSameNameForRootNoError) {
   grpc_tls_certificate_distributor distributor;
   // Register watcher 1 for kCertName1 as root and kCertName2 as identity.
   std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_1_err_deque;
-  auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
+  auto watcher_1 =
+      absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
   TlsCertificatesTestWatcher* watcher_1_ptr = watcher_1.get();
-  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName1, kCertName2);
+  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName1,
+                                   kCertName2);
   // Should not trigger OnError.
   EXPECT_THAT(watcher_1_err_deque,
               testing::ElementsAreArray(
@@ -872,11 +883,14 @@ TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForIdentityNameWithSameNa
                       {"", kIdentityErrorMessage}}));
   watcher_1_err_deque.clear();
   distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
-  // Register watcher 2 for kCertName2 as identity and a non-existing name kRootCert1Name as root.
+  // Register watcher 2 for kCertName2 as identity and a non-existing name
+  // kRootCert1Name as root.
   std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_2_err_deque;
-  auto watcher_2 = absl::make_unique<TlsCertificatesTestWatcher>(&watcher_2_err_deque);
+  auto watcher_2 =
+      absl::make_unique<TlsCertificatesTestWatcher>(&watcher_2_err_deque);
   TlsCertificatesTestWatcher* watcher_2_ptr = watcher_2.get();
-  distributor.WatchTlsCertificates(std::move(watcher_2), kRootCert1Name, kCertName2);
+  distributor.WatchTlsCertificates(std::move(watcher_2), kRootCert1Name,
+                                   kCertName2);
   // Should not trigger OnError.
   EXPECT_THAT(watcher_2_err_deque,
               testing::ElementsAreArray(
@@ -893,37 +907,45 @@ TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForIdentityNameWithSameNa
   distributor.CancelTlsCertificatesWatch(watcher_2_ptr);
 }
 
-TEST(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootNameWithSameNameForIdentityNoError) {
+TEST(GrpcTlsCertificateDistributorTest,
+     SetErrorForCertForRootNameWithSameNameForIdentityNoError) {
   grpc_tls_certificate_distributor distributor;
   std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_1_err_deque;
-  auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
+  auto watcher_1 =
+      absl::make_unique<TlsCertificatesTestWatcher>(&watcher_1_err_deque);
   TlsCertificatesTestWatcher* watcher_1_ptr = watcher_1.get();
-  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName2, kCertName1);
+  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName2,
+                                   kCertName1);
   // Should not trigger OnError.
   EXPECT_THAT(watcher_1_err_deque,
               testing::ElementsAreArray(
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
   // Calling SetErrorForCert on kCertName2 should trigger OnError.
   distributor.SetErrorForCert(
-      kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage), GRPC_ERROR_NONE);
+      kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
+      GRPC_ERROR_NONE);
   EXPECT_THAT(watcher_1_err_deque,
               testing::ElementsAreArray(
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
                       {kRootErrorMessage, ""}}));
   watcher_1_err_deque.clear();
   distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
-  // Register watcher 2 for kCertName2 as root and a non-existing name kIdentityCert1Name as identity.
+  // Register watcher 2 for kCertName2 as root and a non-existing name
+  // kIdentityCert1Name as identity.
   std::deque<TlsCertificatesTestWatcher::ErrorInfo> watcher_2_err_deque;
-  auto watcher_2 = absl::make_unique<TlsCertificatesTestWatcher>(&watcher_2_err_deque);
+  auto watcher_2 =
+      absl::make_unique<TlsCertificatesTestWatcher>(&watcher_2_err_deque);
   TlsCertificatesTestWatcher* watcher_2_ptr = watcher_2.get();
-  distributor.WatchTlsCertificates(std::move(watcher_2), kCertName2, kIdentityCert1Name);
+  distributor.WatchTlsCertificates(std::move(watcher_2), kCertName2,
+                                   kIdentityCert1Name);
   // Should not trigger OnError.
   EXPECT_THAT(watcher_2_err_deque,
               testing::ElementsAreArray(
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
   // Calling SetErrorForCert on kCertName2 should trigger OnError.
   distributor.SetErrorForCert(
-      kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage), GRPC_ERROR_NONE);
+      kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
+      GRPC_ERROR_NONE);
   EXPECT_THAT(watcher_2_err_deque,
               testing::ElementsAreArray(
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{
@@ -988,9 +1010,8 @@ TEST(GrpcTlsCertificateDistributorTest,
   distributor.WatchTlsCertificates(std::move(watcher_1), kCertName1,
                                    kCertName1);
   // watcher 1 should receive both the old credentials and the error right away.
-  EXPECT_EQ(watcher_1_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_1_ptr->GetRootCerts()), kRootCert1Contents);
-  EXPECT_EQ(watcher_1_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_EQ(watcher_1_ptr->GetRootCerts(), kRootCert1Contents);
+  EXPECT_TRUE(watcher_1_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_1_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -1029,9 +1050,8 @@ TEST(GrpcTlsCertificateDistributorTest,
   EXPECT_THAT(watcher_1_err_deque,
               testing::ElementsAreArray(
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
-  EXPECT_EQ(watcher_1_ptr->GetRootCerts().has_value(), true);
-  EXPECT_EQ(std::string(*watcher_1_ptr->GetRootCerts()), kRootCert1Contents);
-  EXPECT_EQ(watcher_1_ptr->GetKeyCertPairs().has_value(), true);
+  EXPECT_EQ(watcher_1_ptr->GetRootCerts(), kRootCert1Contents);
+  EXPECT_TRUE(watcher_1_ptr->GetKeyCertPairs().has_value());
   EXPECT_THAT(
       *watcher_1_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
@@ -1131,6 +1151,27 @@ TEST(GrpcTlsCertificateDistributorTest, WatchErroredCertInfoBySetError) {
               testing::ElementsAreArray(
                   std::vector<TlsCertificatesTestWatcher::ErrorInfo>{}));
   distributor.CancelTlsCertificatesWatch(watcher_4_ptr);
+}
+
+TEST(GrpcTlsCertificateDistributorTest, WatcherDestroyedAfterCancelled) {
+  grpc_tls_certificate_distributor distributor;
+  // Push credential updates to kCertName1.
+  distributor.SetKeyMaterials(
+      kCertName1, kRootCert1Contents,
+      MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
+  // Calling SetErrorForCert on both cert names.
+  distributor.SetErrorForCert(
+      kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+  // Register watcher 1.
+  bool destroyed = false;
+  auto watcher_1 = absl::make_unique<TlsCertificatesTestWatcher>(&destroyed);
+  TlsCertificatesTestWatcher* watcher_1_ptr = watcher_1.get();
+  distributor.WatchTlsCertificates(std::move(watcher_1), kCertName1,
+                                   kCertName1);
+  distributor.CancelTlsCertificatesWatch(watcher_1_ptr);
+  // Cancel watcher 1 should make destroyed to true.
+  EXPECT_TRUE(destroyed);
 }
 
 }  // namespace testing
