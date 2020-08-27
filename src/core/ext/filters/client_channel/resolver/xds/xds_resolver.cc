@@ -210,7 +210,7 @@ class XdsResolver : public Resolver {
         : resolver_(std::move(resolver)) {
       // Save the update in the resolver in case of rebuild of
       // XdsConfigSelector.
-      resolver_->current_update = rds_update;
+      resolver_->current_update_ = rds_update;
       // Construct the route table.
       for (const auto& rds_route : rds_update.routes) {
         route_table_.emplace_back();
@@ -327,12 +327,17 @@ class XdsResolver : public Resolver {
     }
 
     void UpdateServiceConfig() {
+      // First create XdsConfigSelector, which will create the cluster state
+      // map, and then CreateServiceConfig for LB policies.
+      auto config_selector = MakeRefCounted<XdsConfigSelector>(
+          resolver_, resolver_->current_update_);
       Result result;
       grpc_error* error = CreateServiceConfig(&result.service_config);
       if (error != GRPC_ERROR_NONE) {
         return;
       }
-      grpc_arg new_args[] = {resolver_->xds_client_->MakeChannelArg()};
+      grpc_arg new_args[] = {resolver_->xds_client_->MakeChannelArg(),
+                             config_selector->MakeChannelArg()};
       result.args = grpc_channel_args_copy_and_add(resolver_->args_, new_args,
                                                    GPR_ARRAY_SIZE(new_args));
       resolver_->result_handler()->ReturnResult(std::move(result));
@@ -453,7 +458,7 @@ class XdsResolver : public Resolver {
   };
   std::map<std::string /* cluster_name */, ClusterState> cluster_state_map_;
   Mutex cluster_state_map_mu_;  // protects the cluster state map.
-  XdsApi::RdsUpdate current_update;
+  XdsApi::RdsUpdate current_update_;
 };
 
 //
