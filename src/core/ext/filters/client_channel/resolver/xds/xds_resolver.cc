@@ -228,9 +228,14 @@ class XdsResolver : public Resolver {
           if (clusters_.find(route.route.cluster_name) == clusters_.end()) {
             clusters_.emplace(route.route.cluster_name);
             {
-              MutexLock lock(&resolver_->cluster_state_map_mu_);
-              ++resolver_->cluster_state_map_[route.route.cluster_name]
-                    .refcount;
+              auto cluster_state = resolver_->cluster_state_map_.find(route.route.cluster_name);
+              if (cluster_state != resolver_->cluster_state_map_.end()) {
+                ++cluster_state->second->refcount;
+              } else {
+                auto new_cluster_state = MakeRefCounted<ClusterState>();
+                ++new_cluster_state->refcount;
+                resolver_->cluster_state_map_[route.route.cluster_name] = new_cluster_state;
+              }
             }
           }
         } else {
@@ -238,8 +243,14 @@ class XdsResolver : public Resolver {
             if (clusters_.find(weighted_cluster.name) == clusters_.end()) {
               clusters_.emplace(weighted_cluster.name);
               {
-                MutexLock lock(&resolver_->cluster_state_map_mu_);
-                ++resolver_->cluster_state_map_[weighted_cluster.name].refcount;
+                auto cluster_state = resolver_->cluster_state_map_.find(weighted_cluster.name);
+                if (cluster_state != resolver_->cluster_state_map_.end()) {
+                  ++cluster_state->second->refcount;
+                } else {
+                  auto new_cluster_state = MakeRefCounted<ClusterState>();
+                  ++new_cluster_state->refcount;
+                  resolver_->cluster_state_map_[weighted_cluster.name] = new_cluster_state;
+                }
               }
             }
           }
@@ -252,10 +263,9 @@ class XdsResolver : public Resolver {
             this, route.route.ToString().c_str());
       }
       {
-        MutexLock lock(&resolver_->cluster_state_map_mu_);
         for (const auto& state : resolver_->cluster_state_map_) {
           gpr_log(GPR_INFO, "DONNAAA: in constructor: cluster %s and count %d",
-                  state.first.c_str(), state.second.refcount);
+                  state.first.c_str(), state.second->refcount);
         }
       }
     }
@@ -273,10 +283,9 @@ class XdsResolver : public Resolver {
       }
       bool update = false;
       {
-        MutexLock lock(&resolver_->cluster_state_map_mu_);
         for (const auto& action : clusters_) {
-          --resolver_->cluster_state_map_[action].refcount;
-          if (resolver_->cluster_state_map_[action].refcount == 0) {
+          --resolver_->cluster_state_map_[action]->refcount;
+          if (resolver_->cluster_state_map_[action]->refcount == 0) {
             gpr_log(GPR_INFO,
                     "DONNAAA: destructor ERASING from cluster state map: %s",
                     action.c_str());
@@ -286,7 +295,7 @@ class XdsResolver : public Resolver {
         }
         for (const auto& state : resolver_->cluster_state_map_) {
           gpr_log(GPR_INFO, "DONNAAA: in destructor: cluster %s and count %d",
-                  state.first.c_str(), state.second.refcount);
+                  state.first.c_str(), state.second->refcount);
         }
       }
       if (update) UpdateServiceConfig();
@@ -297,6 +306,7 @@ class XdsResolver : public Resolver {
         RefCountedPtr<ServiceConfig>* service_config) {
       std::vector<std::string> actions_vector;
       for (const auto& cluster : resolver_->cluster_state_map_) {
+        if (!cluster.second->RefIfNonZero()) continue;
         actions_vector.push_back(
             absl::StrFormat("      \"%s\":{\n"
                             "        \"childPolicy\":[ {\n"
@@ -346,9 +356,8 @@ class XdsResolver : public Resolver {
     void OnCallCommitted(const std::string& cluster_name) {
       bool erase = false;
       {
-        MutexLock lock(&resolver_->cluster_state_map_mu_);
-        --resolver_->cluster_state_map_[cluster_name].refcount;
-        if (resolver_->cluster_state_map_[cluster_name].refcount == 0) {
+        --resolver_->cluster_state_map_[cluster_name]->refcount;
+        if (resolver_->cluster_state_map_[cluster_name]->refcount == 0) {
           gpr_log(GPR_INFO,
                   "DONNAAA: OnCallCommitted ERASING (have not seen!) from "
                   "cluster state map: %s",
@@ -425,8 +434,7 @@ class XdsResolver : public Resolver {
           OnCallCommitted(cluster_name_str);
         };
         {
-          MutexLock lock(&resolver_->cluster_state_map_mu_);
-          resolver_->cluster_state_map_[cluster_name_str].refcount++;
+          ++resolver_->cluster_state_map_[cluster_name_str]->refcount;
         }
         return call_config;
       }
@@ -445,6 +453,12 @@ class XdsResolver : public Resolver {
     std::set<std::string> clusters_;
   };
 
+  class ClusterState : public RefCounted<ClusterState> {
+   public:
+    ClusterState() : refcount(0) {}
+    int refcount;
+  };
+
   // Create the service config generated by the RdsUpdate.
   grpc_error* CreateServiceConfig(const XdsApi::RdsUpdate& rds_update,
                                   RefCountedPtr<ServiceConfig>* service_config);
@@ -453,11 +467,7 @@ class XdsResolver : public Resolver {
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
-  struct ClusterState {
-    int refcount = 0;
-  };
-  std::map<std::string /* cluster_name */, ClusterState> cluster_state_map_;
-  Mutex cluster_state_map_mu_;  // protects the cluster state map.
+  std::map<std::string /* cluster_name */, RefCountedPtr<ClusterState>> cluster_state_map_;
   XdsApi::RdsUpdate current_update_;
 };
 
