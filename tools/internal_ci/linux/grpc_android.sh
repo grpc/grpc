@@ -15,7 +15,7 @@
 
 set -ex
 
-# Install packages which werer not preinstalled yet.
+# Install packages which were not preinstalled yet.
 # Protobuf needs autoconf & automake to build
 sudo apt-get install -y autoconf automake 
 
