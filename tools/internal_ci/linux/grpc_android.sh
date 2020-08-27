@@ -15,6 +15,10 @@
 
 set -ex
 
+# Install packages which werer not preinstalled yet.
+# Protobuf needs autoconf & automake to build
+sudo apt-get install -y autoconf automake 
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
