@@ -448,7 +448,7 @@ grpc_channel_args* BuildXdsChannelArgs(const grpc_channel_args& args) {
   absl::InlinedVector<grpc_arg, 3> args_to_add;
   // Keepalive interval.
   args_to_add.emplace_back(grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 5000));
+      const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 5 * 60 * GPR_MS_PER_SEC));
   // A channel arg indicating that the target is an xds server.
   // TODO(roth): Once we figure out our fallback and credentials story, decide
   // whether this is actually needed.  Note that it's currently used by the
