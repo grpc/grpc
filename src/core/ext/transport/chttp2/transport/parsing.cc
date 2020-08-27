@@ -437,7 +437,8 @@ static grpc_error* GPR_ATTRIBUTE_NOINLINE handle_metadata_size_limit_exceeded(
     size_t new_size, size_t metadata_size_limit) {
   gpr_log(GPR_DEBUG,
           "received initial metadata size exceeds limit (%" PRIuPTR
-          " vs. %" PRIuPTR ")",
+          " vs. %" PRIuPTR
+          "). GRPC_ARG_MAX_METADATA_SIZE can be set to increase this limit.",
           new_size, metadata_size_limit);
   grpc_chttp2_cancel_stream(
       t, s,
@@ -518,7 +519,10 @@ static grpc_error* on_trailing_header(void* tp, grpc_mdelem md) {
   if (new_size > metadata_size_limit) {
     gpr_log(GPR_DEBUG,
             "received trailing metadata size exceeds limit (%" PRIuPTR
-            " vs. %" PRIuPTR ")",
+            " vs. %" PRIuPTR
+            "). Please note that the status is also included in the trailing "
+            "metadata and a large status message can also trigger this. "
+            "GRPC_ARG_MAX_METADATA_SIZE can be set to increase this limit.",
             new_size, metadata_size_limit);
     grpc_chttp2_cancel_stream(
         t, s,
