@@ -40,6 +40,9 @@ grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
 namespace grpc_core {
 namespace chttp2 {
 
+TestOnlyTransportTargetWindowEstimatesMocker*
+    g_test_only_transport_target_window_estimates_mocker;
+
 namespace {
 
 static constexpr const int kTracePadding = 30;
@@ -355,8 +358,13 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     // target might change based on how much memory pressure we are under
     // TODO(ncteisen): experiment with setting target to be huge under low
     // memory pressure.
-    const double target = pow(2, SmoothLogBdp(TargetLogBdp()));
-
+    double target = pow(2, SmoothLogBdp(TargetLogBdp()));
+    if (g_test_only_transport_target_window_estimates_mocker != nullptr) {
+      // Hook for simulating unusual flow control situations in tests.
+      target = g_test_only_transport_target_window_estimates_mocker
+                   ->ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
+                       target_initial_window_size_ /* current target */);
+    }
     // Though initial window 'could' drop to 0, we keep the floor at 128
     target_initial_window_size_ =
         static_cast<int32_t> GPR_CLAMP(target, 128, INT32_MAX);
