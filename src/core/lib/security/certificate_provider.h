@@ -43,8 +43,7 @@ struct grpc_tls_certificate_provider
     : public RefCounted<grpc_tls_certificate_provider> {
  public:
   grpc_tls_certificate_provider()
-      : distributor_(new grpc_tls_certificate_distributor(this)),
-        interested_parties_(grpc_pollset_set_create()) {}
+      : interested_parties_(grpc_pollset_set_create()) {}
 
   virtual ~grpc_tls_certificate_provider() {
     grpc_pollset_set_destroy(interested_parties_);
@@ -57,7 +56,6 @@ struct grpc_tls_certificate_provider
   }
 
  private:
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   grpc_pollset_set* interested_parties_;
 };
 
