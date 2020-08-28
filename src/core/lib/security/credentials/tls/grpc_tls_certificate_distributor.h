@@ -193,24 +193,12 @@ struct grpc_tls_certificate_distributor
       GRPC_ERROR_UNREF(identity_cert_error);
     }
     void SetRootError(grpc_error* error) {
-      if (error != GRPC_ERROR_NONE) {
-        GRPC_ERROR_UNREF(root_cert_error);
-        root_cert_error = error;
-      }
+      GRPC_ERROR_UNREF(root_cert_error);
+      root_cert_error = error;
     }
     void SetIdentityError(grpc_error* error) {
-      if (error != GRPC_ERROR_NONE) {
-        GRPC_ERROR_UNREF(identity_cert_error);
-        identity_cert_error = error;
-      }
-    }
-    void ClearRootError() {
-      GRPC_ERROR_UNREF(root_cert_error);
-      root_cert_error = GRPC_ERROR_NONE;
-    }
-    void ClearIdentityError() {
       GRPC_ERROR_UNREF(identity_cert_error);
-      identity_cert_error = GRPC_ERROR_NONE;
+      identity_cert_error = error;
     }
   };
 
