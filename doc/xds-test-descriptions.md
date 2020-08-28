@@ -218,31 +218,6 @@ Test driver asserts:
 1.  All backends in the primary locality receive at least 1 RPC.
 1.  No backends in the secondary locality receive RPCs.
 
-### new_instance_group_receives_traffic
-
-This test verifies that new instance groups added to a backend service in the
-same zone receive traffic.
-
-Client parameters:
-
-1.  --num_channels=1
-1.  --qps=100
-1.  --fail_on_failed_rpc=true
-
-Load balancer configuration:
-
-1.  One MIG with two backends, using rate balancing mode.
-
-Test driver asserts:
-
-1.  All backends receive at least one RPC.
-
-The test driver adds a new MIG with two backends in the same zone.
-
-Test driver asserts:
-
-1.  All backends in each MIG receive at least one RPC.
-
 ### remove_instance_group
 
 This test verifies that a remaining instance group can successfully serve RPCs
