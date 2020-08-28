@@ -39,6 +39,8 @@ Clients should accept these arguments:
 *   --stats_port=PORT
     *   The port for to expose the client's `LoadBalancerStatsService`
         implementation.
+*   --rpc_timeout_sec=SEC
+    *   The timeout to set on all outbound RPCs. Default is 20.
 
 ## Test Driver
 
