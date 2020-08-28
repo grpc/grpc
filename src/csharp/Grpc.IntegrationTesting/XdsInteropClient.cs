@@ -152,8 +152,6 @@ namespace Grpc.IntegrationTesting
                 // only cleanup calls that have already completed, calls that are still inflight will be cleaned up later.
                 await CleanupCompletedTasksAsync(inflightTasks);
 
-                Console.WriteLine($"Currently {inflightTasks.Count} in-flight RPCs");
-
                 // if needed, wait a bit before we start the next RPC.
                 int nextDueInMillis = (int) Math.Max(0, (1000 * rpcsStarted / options.Qps / rpcs.Count) - stopwatch.ElapsedMilliseconds);
                 if (nextDueInMillis > 0)
@@ -173,8 +171,6 @@ namespace Grpc.IntegrationTesting
             long rpcId = statsWatcher.RpcIdGenerator.Increment();
             try
             {
-                Console.WriteLine($"Starting RPC {rpcId} of type {rpcType}");
-
                 // metadata to send with the RPC
                 var headers = new Metadata();
                 if (metadata.ContainsKey(rpcType))
@@ -183,7 +179,6 @@ namespace Grpc.IntegrationTesting
                     if (headers.Count > 0)
                     {
                         var printableHeaders = "[" + string.Join(", ", headers) + "]";
-                        Console.WriteLine($"Will send metadata {printableHeaders}");
                     }
                 }
 
@@ -218,12 +213,14 @@ namespace Grpc.IntegrationTesting
                 {
                     throw new InvalidOperationException($"Unsupported RPC type ${rpcType}");
                 }
-                Console.WriteLine($"RPC {rpcId} succeeded");
             }
             catch (RpcException ex)
             {
                 statsWatcher.OnRpcComplete(rpcId, rpcType, null);
-                Console.WriteLine($"RPC {rpcId} failed: {ex}");
+                if (options.PrintResponse)
+                {
+                    Console.WriteLine($"RPC {rpcId} failed: {ex}");
+                }
             }
         }
 
