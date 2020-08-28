@@ -2112,10 +2112,7 @@ TEST_P(XdsResolverOnlyTest, ChangeClusters) {
   Listener listener =
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  // Wait for all new backends to be used.
-  std::tuple<int, int, int> counts = WaitForAllBackends(2, 4);
-  // Make sure no RPCs failed in the transition.
-  EXPECT_EQ(0, std::get<1>(counts));
+  WaitForAllBackends(2, 4);
 }
 
 // Tests that we go into TRANSIENT_FAILURE if the Cluster disappears.
@@ -2181,9 +2178,7 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
       ->set_cluster(kNewClusterName);
   balancers_[0]->ads_service()->SetRdsResource(new_route_config);
   // Wait for all new backends to be used.
-  std::tuple<int, int, int> counts = WaitForAllBackends(2, 4);
-  // Make sure no RPCs failed in the transition.
-  EXPECT_EQ(0, std::get<1>(counts));
+  WaitForAllBackends(2, 4);
 }
 
 TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
@@ -2334,7 +2329,6 @@ TEST_P(XdsResolverLoadReportingOnlyTest, ChangeClusters) {
     total_failure += client_stats.total_error_requests();
   }
   EXPECT_EQ(total_ok, num_ok);
-  EXPECT_EQ(total_failure, num_failure);
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->lrs_service()->request_count());
   EXPECT_EQ(1U, balancers_[0]->lrs_service()->response_count());
