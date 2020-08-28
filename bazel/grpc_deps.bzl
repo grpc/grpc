@@ -251,11 +251,11 @@ def grpc_deps():
         # list of releases is at https://releases.bazel.build/bazel-toolchains.html
         http_archive(
             name = "bazel_toolchains",
-            sha256 = "e754d6028845423b2cc7a6c375f9657fe0b0bbb196d76c8de6dd129c3aa74023",
-            strip_prefix = "bazel-toolchains-2.2.3",
+            sha256 = "caf516464966470c075c33fae53c33ada5f32f1d43dbeaaea7388fe6e006d001",
+            strip_prefix = "bazel-toolchains-3.4.2",
             urls = [
-                "https://github.com/bazelbuild/bazel-toolchains/releases/download/2.2.3/bazel-toolchains-2.2.3.tar.gz",
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/releases/download/2.2.3/bazel-toolchains-2.2.4.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/releases/download/3.4.2/bazel-toolchains-3.4.2.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/releases/download/3.4.2/bazel-toolchains-3.4.2.tar.gz",
             ],
         )
 
