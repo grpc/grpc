@@ -1883,27 +1883,27 @@ static void test_auth_metadata_context(void) {
 }
 
 static void test_generate_token_exchange_request(void) {
-  const std::string kTokenUrl = "https://TOKEN/URL";
+  const char* kTokenUrl = "https://TOKEN/URL";
 
-  const std::string kGrantType = "GRANT_TYPE";
-  const std::string kResource = "RESOURCE";
-  const std::string kAudience = "AUDIENCE";
-  const std::string kScope = "SCOPE";
-  const std::string kRequestedTokenType = "REQUESTED_TOKEN_TYPE";
-  const std::string kSubjectToken = "SUBJECT_TOKEN";
-  const std::string kSubjectTokenType = "SUBJECT_TOKEN_TYPE";
-  const std::string kActorToken = "ACTOR_TOKEN";
-  const std::string kActorTokenType = "ACTOR_TOKEN_TYPE";
+  const char* kGrantType = "GRANT_TYPE";
+  const char* kResource = "RESOURCE";
+  const char* kAudience = "AUDIENCE";
+  const char* kScope = "SCOPE";
+  const char* kRequestedTokenType = "REQUESTED_TOKEN_TYPE";
+  const char* kSubjectToken = "SUBJECT_TOKEN";
+  const char* kSubjectTokenType = "SUBJECT_TOKEN_TYPE";
+  const char* kActorToken = "ACTOR_TOKEN";
+  const char* kActorTokenType = "ACTOR_TOKEN_TYPE";
 
-  const std::string kClientId = "CLIENT_ID";
-  const std::string kClientSecret = "CLIENT_SECRET";
+  const char* kClientId = "CLIENT_ID";
+  const char* kClientSecret = "CLIENT_SECRET";
 
-  const std::string kExpectedRequestBody =
+  const char* kExpectedRequestBody =
       "grant_type=GRANT_TYPE&resource=RESOURCE&audience=AUDIENCE&scope=SCOPE&"
       "requested_token_type=REQUESTED_TOKEN_TYPE&subject_token=SUBJECT_TOKEN&"
       "subject_token_type=SUBJECT_TOKEN_TYPE&actor_token=ACTOR_TOKEN&actor_"
       "token_type=ACTOR_TOKEN_TYPE";
-  const std::string kExpectedRequestBodyAuth =
+  const char* kExpectedRequestBodyAuth =
       "grant_type=GRANT_TYPE&resource=RESOURCE&audience=AUDIENCE&scope=SCOPE&"
       "requested_token_type=REQUESTED_TOKEN_TYPE&subject_token=SUBJECT_TOKEN&"
       "subject_token_type=SUBJECT_TOKEN_TYPE&actor_token=ACTOR_TOKEN&actor_"
@@ -1912,55 +1912,64 @@ static void test_generate_token_exchange_request(void) {
 
   grpc_core::TokenExchangeRequest request;
   memset(&request, 0, sizeof(grpc_core::TokenExchangeRequest));
-  request.grantType = kGrantType;
+  request.grant_type = kGrantType;
   request.resource = kResource;
   request.audience = kAudience;
   request.scope = kScope;
-  request.requestedTokenType = kRequestedTokenType;
-  request.subjectToken = kSubjectToken;
-  request.subjectTokenType = kSubjectTokenType;
-  request.actorToken = kActorToken;
-  request.actorTokenType = kActorTokenType;
+  request.requested_token_type = kRequestedTokenType;
+  request.subject_token = kSubjectToken;
+  request.subject_token_type = kSubjectTokenType;
+  request.actor_token = kActorToken;
+  request.actor_token_type = kActorTokenType;
 
-  grpc_core::ClientAuthentication clientAuth;
-  clientAuth.clientType = grpc_core::ClientAuthentication::requestBody;
-  clientAuth.clientId = kClientId;
-  clientAuth.clientSecret = kClientSecret;
+  grpc_core::ClientAuthentication client_auth;
+  client_auth.client_type =
+      grpc_core::ClientAuthentication::ConfidentialClientType::kRequestBody;
+  client_auth.client_id = kClientId;
+  client_auth.client_secret = kClientSecret;
 
   // Auth request body
-  grpc_httpcli_request request_auth_request_body =
-      request.generateHttpRequest(kTokenUrl, &clientAuth);
-  GPR_ASSERT(strcmp(request_auth_request_body.host, "TOKEN") == 0);
-  GPR_ASSERT(strcmp(request_auth_request_body.http.path, "/URL") == 0);
-  GPR_ASSERT(request_auth_request_body.handshaker == &grpc_httpcli_ssl);
-  GPR_ASSERT(request_auth_request_body.http.hdr_count == 1);
+  grpc_httpcli_request* request_auth_request_body =
+      grpc_core::GenerateHttpCliRequest(kTokenUrl, &request, &client_auth);
+  GPR_ASSERT(strcmp(request_auth_request_body->host, "TOKEN") == 0);
+  GPR_ASSERT(strcmp(request_auth_request_body->http.path, "/URL") == 0);
+  GPR_ASSERT(request_auth_request_body->handshaker == &grpc_httpcli_ssl);
+  GPR_ASSERT(request_auth_request_body->http.hdr_count == 1);
   GPR_ASSERT(
-      strcmp(request_auth_request_body.http.hdrs[0].key, "Content-Type") == 0);
-  GPR_ASSERT(strcmp(request_auth_request_body.http.hdrs[0].value,
+      strcmp(request_auth_request_body->http.hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request_auth_request_body->http.hdrs[0].value,
                     "application/x-www-form-urlencoded") == 0);
+  gpr_free(request_auth_request_body->host);
+  grpc_http_request_destroy(&request_auth_request_body->http);
+  gpr_free(request_auth_request_body);
 
   std::string request_body_auth_request_body =
-      request.generateHttpRequestBody(kTokenUrl, &clientAuth);
+      grpc_core::GenerateHttpCliRequestBody(kTokenUrl, &request, &client_auth);
   GPR_ASSERT(request_body_auth_request_body == kExpectedRequestBodyAuth);
 
   // Auth basic
-  clientAuth.clientType = grpc_core::ClientAuthentication::basic;
+  client_auth.client_type =
+      grpc_core::ClientAuthentication::ConfidentialClientType::kBasic;
 
-  grpc_httpcli_request request_auth_basic =
-      request.generateHttpRequest(kTokenUrl, &clientAuth);
-  GPR_ASSERT(strcmp(request_auth_basic.host, "TOKEN") == 0);
-  GPR_ASSERT(strcmp(request_auth_basic.http.path, "/URL") == 0);
-  GPR_ASSERT(request_auth_basic.handshaker == &grpc_httpcli_ssl);
-  GPR_ASSERT(request_auth_basic.http.hdr_count == 2);
-  GPR_ASSERT(strcmp(request_auth_basic.http.hdrs[0].key, "Content-Type") == 0);
-  GPR_ASSERT(strcmp(request_auth_basic.http.hdrs[0].value,
+  grpc_httpcli_request* request_auth_basic =
+      grpc_core::GenerateHttpCliRequest(kTokenUrl, &request, &client_auth);
+  GPR_ASSERT(strcmp(request_auth_basic->host, "TOKEN") == 0);
+  GPR_ASSERT(strcmp(request_auth_basic->http.path, "/URL") == 0);
+  GPR_ASSERT(request_auth_basic->handshaker == &grpc_httpcli_ssl);
+  GPR_ASSERT(request_auth_basic->http.hdr_count == 2);
+  GPR_ASSERT(strcmp(request_auth_basic->http.hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request_auth_basic->http.hdrs[0].value,
                     "application/x-www-form-urlencoded") == 0);
-  GPR_ASSERT(strcmp(request_auth_basic.http.hdrs[1].key, "Authorization") == 0);
-  GPR_ASSERT(strcmp(request_auth_basic.http.hdrs[1].value,
+  GPR_ASSERT(strcmp(request_auth_basic->http.hdrs[1].key, "Authorization") ==
+             0);
+  GPR_ASSERT(strcmp(request_auth_basic->http.hdrs[1].value,
                     "Basic Q0xJRU5UX0lEOkNMSUVOVF9TRUNSRVQ=") == 0);
+  gpr_free(request_auth_basic->host);
+  grpc_http_request_destroy(&request_auth_basic->http);
+  gpr_free(request_auth_basic);
 
   std::string request_body_auth_basic =
-      request.generateHttpRequestBody(kTokenUrl, &clientAuth);
+      grpc_core::GenerateHttpCliRequestBody(kTokenUrl, &request, &client_auth);
   GPR_ASSERT(request_body_auth_basic == kExpectedRequestBody);
 }
 

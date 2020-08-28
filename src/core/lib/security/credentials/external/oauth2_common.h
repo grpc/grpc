@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_OAUTH2_COMMON_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_OAUTH2_COMMON_H
+#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_OAUTH2_COMMON_H_
+#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_OAUTH2_COMMON_H_
 
 #include <string>
 
@@ -28,46 +28,44 @@ namespace grpc_core {
 // Defines the client authentication credentials for basic and request-body
 // types.
 // Based on https://tools.ietf.org/html/rfc6749#section-2.3.1
-class ClientAuthentication {
- public:
-  enum ConfidentialClientType { basic, requestBody };
+typedef struct {
+  enum class ConfidentialClientType { kBasic, kRequestBody };
 
- public:
-  ConfidentialClientType clientType;
-  std::string clientId;
-  std::string clientSecret;
-};
+  ConfidentialClientType client_type;
+  std::string client_id;
+  std::string client_secret;
+} ClientAuthentication;
 
 // Defines the OAuth 2.0 token exchange request based on
 // https://tools.ietf.org/html/rfc8693#section-2.2.1
-class TokenExchangeRequest {
- public:
-  std::string grantType;
+typedef struct {
+  std::string grant_type;
   std::string resource;
   std::string audience;
   std::string scope;
-  std::string requestedTokenType;
-  std::string subjectToken;
-  std::string subjectTokenType;
-  std::string actorToken;
-  std::string actorTokenType;
+  std::string requested_token_type;
+  std::string subject_token;
+  std::string subject_token_type;
+  std::string actor_token;
+  std::string actor_token_type;
+} TokenExchangeRequest;
 
- public:
-  // Returns true if the request is valid, false otherwise.
-  bool isValid();
+// Returns true if the request is valid, false otherwise.
+bool IsTokenExchangeRequestValid(const TokenExchangeRequest* request);
 
-  // Build the http request with token url, sts request and client auth.
-  grpc_httpcli_request generateHttpRequest(
-      const std::string tokenUrl, const ClientAuthentication* clientAuth);
+// Build the http request with token url, sts request and client auth.
+grpc_httpcli_request* GenerateHttpCliRequest(
+    const std::string token_url, const TokenExchangeRequest* request,
+    const ClientAuthentication* client_auth);
 
-  // Build the http request body with token url, sts request and client auth.
-  std::string generateHttpRequestBody(const std::string tokenTrl,
-                                      const ClientAuthentication* clientAuth);
-};
+// Build the http request body with token url, sts request and client auth.
+std::string GenerateHttpCliRequestBody(const std::string token_url,
+                                       const TokenExchangeRequest* request,
+                                       const ClientAuthentication* client_auth);
 
 // Defines the OAuth 2.0 token exchange response based on
 // https://tools.ietf.org/html/rfc8693#section-2.2.1
-class TokenExchangeResponse {
+typedef struct {
  public:
   std::string accessToken;
   std::string issuedTokenType;
@@ -75,8 +73,8 @@ class TokenExchangeResponse {
   std::string expiresIn;
   std::string refreshToken;
   std::string scope;
-};
+} TokenExchangeResponse;
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_OAUTH2_COMMON_H
+#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_OAUTH2_COMMON_H_
