@@ -68,7 +68,6 @@ absl::optional<std::string> GetMetadataValue(
        md = md->next) {
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(md->md));
     char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md->md));
-    gpr_log(GPR_INFO, "key[%s]: value[%s]", key, value);
     if (target_key == key) values.push_back(std::string(value));
     gpr_free(key);
     gpr_free(value);
@@ -483,8 +482,8 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data",
             resolver_.get());
   }
-  // First create XdsConfigSelector, which will create the cluster state
-  // map, and then CreateServiceConfig for LB policies.
+  // First create XdsConfigSelector, which may add new entries to the cluster
+  // state map, and then CreateServiceConfig for LB policies.
   auto config_selector =
       MakeRefCounted<XdsConfigSelector>(resolver_, *listener_data.rds_update);
   Result result;

@@ -60,18 +60,18 @@ constexpr char kXdsRouting[] = "xds_routing_experimental";
 // Config for xds_routing LB policy.
 class XdsRoutingLbConfig : public LoadBalancingPolicy::Config {
  public:
-  using ActionMap =
+  using ClusterMap =
       std::map<std::string, RefCountedPtr<LoadBalancingPolicy::Config>>;
 
-  XdsRoutingLbConfig(ActionMap action_map)
-      : action_map_(std::move(action_map)) {}
+  XdsRoutingLbConfig(ClusterMap cluster_map)
+      : cluster_map_(std::move(cluster_map)) {}
 
   const char* name() const override { return kXdsRouting; }
 
-  const ActionMap& action_map() const { return action_map_; }
+  const ClusterMap& cluster_map() const { return cluster_map_; }
 
  private:
-  ActionMap action_map_;
+  ClusterMap cluster_map_;
 };
 
 // xds_routing LB policy.
@@ -106,7 +106,6 @@ class XdsRoutingLb : public LoadBalancingPolicy {
   class RoutePicker : public SubchannelPicker {
    public:
     struct Route {
-      const XdsApi::RdsUpdate::RdsRoute::Matchers* matchers;
       std::string action;
       RefCountedPtr<ChildPickerWrapper> picker;
     };
@@ -273,12 +272,12 @@ void XdsRoutingLb::UpdateLocked(UpdateArgs args) {
   for (const auto& p : actions_) {
     const std::string& name = p.first;
     XdsRoutingChild* child = p.second.get();
-    if (config_->action_map().find(name) == config_->action_map().end()) {
+    if (config_->cluster_map().find(name) == config_->cluster_map().end()) {
       child->DeactivateLocked();
     }
   }
   // Add or update the actions in the new config.
-  for (const auto& p : config_->action_map()) {
+  for (const auto& p : config_->cluster_map()) {
     const std::string& name = p.first;
     const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second;
     auto it = actions_.find(name);
@@ -303,7 +302,8 @@ void XdsRoutingLb::UpdateStateLocked() {
     const auto& child_name = p.first;
     const XdsRoutingChild* child = p.second.get();
     // Skip the actions that are not in the latest update.
-    if (config_->action_map().find(child_name) == config_->action_map().end()) {
+    if (config_->cluster_map().find(child_name) ==
+        config_->cluster_map().end()) {
       continue;
     }
     switch (child->connectivity_state()) {
@@ -347,7 +347,7 @@ void XdsRoutingLb::UpdateStateLocked() {
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY: {
       RoutePicker::RouteTable route_table;
-      for (const auto& action : config_->action_map()) {
+      for (const auto& action : config_->cluster_map()) {
         RoutePicker::Route route;
         route.action = action.first;
         route.picker = actions_[action.first]->picker_wrapper();
@@ -609,7 +609,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     }
     std::vector<grpc_error*> error_list;
     // action map.
-    XdsRoutingLbConfig::ActionMap action_map;
+    XdsRoutingLbConfig::ClusterMap cluster_map;
     std::set<std::string /*action_name*/> actions_to_be_used;
     auto it = json.object_value().find("actions");
     if (it == json.object_value().end()) {
@@ -638,12 +638,12 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           }
           error_list.push_back(error);
         } else {
-          action_map[p.first] = std::move(child_config);
+          cluster_map[p.first] = std::move(child_config);
           actions_to_be_used.insert(p.first);
         }
       }
     }
-    if (action_map.empty()) {
+    if (cluster_map.empty()) {
       error_list.push_back(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no valid actions configured"));
     }
@@ -652,7 +652,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           "xds_routing_experimental LB policy config", &error_list);
       return nullptr;
     }
-    return MakeRefCounted<XdsRoutingLbConfig>(std::move(action_map));
+    return MakeRefCounted<XdsRoutingLbConfig>(std::move(cluster_map));
   }
 
  private:
