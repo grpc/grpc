@@ -29,19 +29,19 @@
 
 namespace grpc_core {
 
-// Global map for the xDS based CertificateProvider instances.
+// Map for xDS based grpc_tls_certificate_provider instances.
 class CertificateProviderStore {
  public:
-  // If a provider corresponding to the config is found, the wrapper in the map
-  // is returned. If no provider is found for a key, a new wrapper is created
-  // and returned to the caller.
-  RefCountedPtr<grpc_tls_certificate_distributor> CreateOrGetProvider(
-      std::string key);
+  // If a provider corresponding to the config is found, a raw pointer to the
+  // grpc_tls_certificate_provider in the map is returned. If no provider is
+  // found for a key, a new provider is created. The CertificateProviderStore
+  // maintains a ref to the grpc_tls_certificate_provider for its entire
+  // lifetime.
+  RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetProvider(std::string key);
 
  private:
   // Underlying map for the providers.
-  std::unordered_map<std::string,
-                     RefCountedPtr<grpc_tls_certificate_distributor>>
+  std::unordered_map<std::string, RefCountedPtr<grpc_tls_certificate_provider>>
       map_;
   // Protects map_.
   Mutex mu_;

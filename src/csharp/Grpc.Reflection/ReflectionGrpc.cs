@@ -29,8 +29,38 @@ namespace Grpc.Reflection.V1Alpha {
   {
     static readonly string __ServiceName = "grpc.reflection.v1alpha.ServerReflection";
 
-    static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest> __Marshaller_grpc_reflection_v1alpha_ServerReflectionRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Reflection.V1Alpha.ServerReflectionRequest.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> __Marshaller_grpc_reflection_v1alpha_ServerReflectionResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Reflection.V1Alpha.ServerReflectionResponse.Parser.ParseFrom);
+    static void __Helper_SerializeMessage(global::Google.Protobuf.IMessage message, grpc::SerializationContext context)
+    {
+      #if !GRPC_DISABLE_PROTOBUF_BUFFER_SERIALIZATION
+      if (message is global::Google.Protobuf.IBufferMessage)
+      {
+        context.SetPayloadLength(message.CalculateSize());
+        global::Google.Protobuf.MessageExtensions.WriteTo(message, context.GetBufferWriter());
+        context.Complete();
+        return;
+      }
+      #endif
+      context.Complete(global::Google.Protobuf.MessageExtensions.ToByteArray(message));
+    }
+
+    static class __Helper_MessageCache<T>
+    {
+      public static readonly bool IsBufferMessage = global::System.Reflection.IntrospectionExtensions.GetTypeInfo(typeof(global::Google.Protobuf.IBufferMessage)).IsAssignableFrom(typeof(T));
+    }
+
+    static T __Helper_DeserializeMessage<T>(grpc::DeserializationContext context, global::Google.Protobuf.MessageParser<T> parser) where T : global::Google.Protobuf.IMessage<T>
+    {
+      #if !GRPC_DISABLE_PROTOBUF_BUFFER_SERIALIZATION
+      if (__Helper_MessageCache<T>.IsBufferMessage)
+      {
+        return parser.ParseFrom(context.PayloadAsReadOnlySequence());
+      }
+      #endif
+      return parser.ParseFrom(context.PayloadAsNewBuffer());
+    }
+
+    static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest> __Marshaller_grpc_reflection_v1alpha_ServerReflectionRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Reflection.V1Alpha.ServerReflectionRequest.Parser));
+    static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> __Marshaller_grpc_reflection_v1alpha_ServerReflectionResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse.Parser));
 
     static readonly grpc::Method<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> __Method_ServerReflectionInfo = new grpc::Method<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse>(
         grpc::MethodType.DuplexStreaming,

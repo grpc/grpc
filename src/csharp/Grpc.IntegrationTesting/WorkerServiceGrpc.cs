@@ -29,13 +29,43 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.WorkerService";
 
-    static readonly grpc::Marshaller<global::Grpc.Testing.ServerArgs> __Marshaller_grpc_testing_ServerArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ServerArgs.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.ServerStatus> __Marshaller_grpc_testing_ServerStatus = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ServerStatus.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.ClientArgs> __Marshaller_grpc_testing_ClientArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ClientArgs.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.ClientStatus> __Marshaller_grpc_testing_ClientStatus = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ClientStatus.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.CoreRequest> __Marshaller_grpc_testing_CoreRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.CoreRequest.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.CoreResponse> __Marshaller_grpc_testing_CoreResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.CoreResponse.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.Void> __Marshaller_grpc_testing_Void = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Void.Parser.ParseFrom);
+    static void __Helper_SerializeMessage(global::Google.Protobuf.IMessage message, grpc::SerializationContext context)
+    {
+      #if !GRPC_DISABLE_PROTOBUF_BUFFER_SERIALIZATION
+      if (message is global::Google.Protobuf.IBufferMessage)
+      {
+        context.SetPayloadLength(message.CalculateSize());
+        global::Google.Protobuf.MessageExtensions.WriteTo(message, context.GetBufferWriter());
+        context.Complete();
+        return;
+      }
+      #endif
+      context.Complete(global::Google.Protobuf.MessageExtensions.ToByteArray(message));
+    }
+
+    static class __Helper_MessageCache<T>
+    {
+      public static readonly bool IsBufferMessage = global::System.Reflection.IntrospectionExtensions.GetTypeInfo(typeof(global::Google.Protobuf.IBufferMessage)).IsAssignableFrom(typeof(T));
+    }
+
+    static T __Helper_DeserializeMessage<T>(grpc::DeserializationContext context, global::Google.Protobuf.MessageParser<T> parser) where T : global::Google.Protobuf.IMessage<T>
+    {
+      #if !GRPC_DISABLE_PROTOBUF_BUFFER_SERIALIZATION
+      if (__Helper_MessageCache<T>.IsBufferMessage)
+      {
+        return parser.ParseFrom(context.PayloadAsReadOnlySequence());
+      }
+      #endif
+      return parser.ParseFrom(context.PayloadAsNewBuffer());
+    }
+
+    static readonly grpc::Marshaller<global::Grpc.Testing.ServerArgs> __Marshaller_grpc_testing_ServerArgs = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.ServerArgs.Parser));
+    static readonly grpc::Marshaller<global::Grpc.Testing.ServerStatus> __Marshaller_grpc_testing_ServerStatus = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.ServerStatus.Parser));
+    static readonly grpc::Marshaller<global::Grpc.Testing.ClientArgs> __Marshaller_grpc_testing_ClientArgs = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.ClientArgs.Parser));
+    static readonly grpc::Marshaller<global::Grpc.Testing.ClientStatus> __Marshaller_grpc_testing_ClientStatus = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.ClientStatus.Parser));
+    static readonly grpc::Marshaller<global::Grpc.Testing.CoreRequest> __Marshaller_grpc_testing_CoreRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.CoreRequest.Parser));
+    static readonly grpc::Marshaller<global::Grpc.Testing.CoreResponse> __Marshaller_grpc_testing_CoreResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.CoreResponse.Parser));
+    static readonly grpc::Marshaller<global::Grpc.Testing.Void> __Marshaller_grpc_testing_Void = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.Void.Parser));
 
     static readonly grpc::Method<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> __Method_RunServer = new grpc::Method<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus>(
         grpc::MethodType.DuplexStreaming,

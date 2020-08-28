@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.12'
+  s.add_dependency 'google-protobuf', '~> 3.13'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -769,7 +769,12 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/authorization/evaluate_args.cc )
   s.files += %w( src/core/lib/security/authorization/evaluate_args.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/activation.h )
+  s.files += %w( src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h )
+  s.files += %w( src/core/lib/security/authorization/mock_cel/cel_expression.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/cel_value.h )
+  s.files += %w( src/core/lib/security/authorization/mock_cel/evaluator_core.h )
+  s.files += %w( src/core/lib/security/authorization/mock_cel/flat_expr_builder.h )
+  s.files += %w( src/core/lib/security/authorization/mock_cel/statusor.h )
   s.files += %w( src/core/lib/security/certificate_provider.h )
   s.files += %w( src/core/lib/security/context/security_context.cc )
   s.files += %w( src/core/lib/security/context/security_context.h )

@@ -70,4 +70,4 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_routing_lb,cds_lb,ed
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
     --gcp_suffix=$(date '+%s') \
     --verbose \
-    --client_cmd='bazel run //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client -- --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} --verbose {rpcs_to_send} {metadata_to_send}'
+    --client_cmd='bazel run --test_env="PYTHONUNBUFFERED=true" //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client -- --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} --verbose {rpcs_to_send} {metadata_to_send}'

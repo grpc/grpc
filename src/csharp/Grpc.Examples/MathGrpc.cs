@@ -27,10 +27,40 @@ namespace Math {
   {
     static readonly string __ServiceName = "math.Math";
 
-    static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_math_DivArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivArgs.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_math_DivReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivReply.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Math.FibArgs> __Marshaller_math_FibArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.FibArgs.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Math.Num> __Marshaller_math_Num = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.Num.Parser.ParseFrom);
+    static void __Helper_SerializeMessage(global::Google.Protobuf.IMessage message, grpc::SerializationContext context)
+    {
+      #if !GRPC_DISABLE_PROTOBUF_BUFFER_SERIALIZATION
+      if (message is global::Google.Protobuf.IBufferMessage)
+      {
+        context.SetPayloadLength(message.CalculateSize());
+        global::Google.Protobuf.MessageExtensions.WriteTo(message, context.GetBufferWriter());
+        context.Complete();
+        return;
+      }
+      #endif
+      context.Complete(global::Google.Protobuf.MessageExtensions.ToByteArray(message));
+    }
+
+    static class __Helper_MessageCache<T>
+    {
+      public static readonly bool IsBufferMessage = global::System.Reflection.IntrospectionExtensions.GetTypeInfo(typeof(global::Google.Protobuf.IBufferMessage)).IsAssignableFrom(typeof(T));
+    }
+
+    static T __Helper_DeserializeMessage<T>(grpc::DeserializationContext context, global::Google.Protobuf.MessageParser<T> parser) where T : global::Google.Protobuf.IMessage<T>
+    {
+      #if !GRPC_DISABLE_PROTOBUF_BUFFER_SERIALIZATION
+      if (__Helper_MessageCache<T>.IsBufferMessage)
+      {
+        return parser.ParseFrom(context.PayloadAsReadOnlySequence());
+      }
+      #endif
+      return parser.ParseFrom(context.PayloadAsNewBuffer());
+    }
+
+    static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_math_DivArgs = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Math.DivArgs.Parser));
+    static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_math_DivReply = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Math.DivReply.Parser));
+    static readonly grpc::Marshaller<global::Math.FibArgs> __Marshaller_math_FibArgs = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Math.FibArgs.Parser));
+    static readonly grpc::Marshaller<global::Math.Num> __Marshaller_math_Num = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Math.Num.Parser));
 
     static readonly grpc::Method<global::Math.DivArgs, global::Math.DivReply> __Method_Div = new grpc::Method<global::Math.DivArgs, global::Math.DivReply>(
         grpc::MethodType.Unary,

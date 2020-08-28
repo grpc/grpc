@@ -23,41 +23,41 @@
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
 namespace grpc_core {
 
-// Interface for a CertificateProvider that handles the process to fetch
-// credentials and validation contexts. Implementations are free to rely on
-// local or remote sources to fetch the latest secrets, and free to share any
+// TODO(yashkt): After https://github.com/grpc/grpc/pull/23572, remove this
+// forward declaration and include the header for the distributor instead.
+struct grpc_tls_certificate_distributor;
+
+// Interface for a grpc_tls_certificate_provider that handles the process to
+// fetch credentials and validation contexts. Implementations are free to rely
+// on local or remote sources to fetch the latest secrets, and free to share any
 // state among different instances as they deem fit.
 //
-// On creation, CertificateProvider creates a grpc_tls_certificate_distributor
-// object. When the credentials and validation contexts become valid or changed,
-// a CertificateProvider should notify its distributor so as to propagate the
-// update to the watchers. This distributor also owns an OrphanablePtr to this
-// CertificateProvider, thereby orphaning the CertificateProvider when it is no
-// longer needed, serving as an indication to start shutdown.
-class CertificateProvider : public InternallyRefCounted<CertificateProvider> {
+// On creation, grpc_tls_certificate_provider creates a
+// grpc_tls_certificate_distributor object. When the credentials and validation
+// contexts become valid or changed, a grpc_tls_certificate_provider should
+// notify its distributor so as to propagate the update to the watchers.
+struct grpc_tls_certificate_provider
+    : public RefCounted<grpc_tls_certificate_provider> {
  public:
-  CertificateProvider()
+  grpc_tls_certificate_provider()
       : distributor_(new grpc_tls_certificate_distributor(this)),
         interested_parties_(grpc_pollset_set_create()) {}
 
-  virtual ~CertificateProvider() {
+  virtual ~grpc_tls_certificate_provider() {
     grpc_pollset_set_destroy(interested_parties_);
   }
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
-  grpc_tls_certificate_distributor* distributor() const {
-    return distributor_.get();
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const {
+    return distributor_;
   }
 
  private:
-  // We don't need to hold a ref to \a distributor. It should not be used after
-  // distributor_ has shutdown (notified by Orphan()).
-  grpc_tls_certificate_distributor* distributor_;
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   grpc_pollset_set* interested_parties_;
 };
 

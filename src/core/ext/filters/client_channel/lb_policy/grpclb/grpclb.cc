@@ -801,7 +801,7 @@ void GrpcLb::BalancerCallState::Orphan() {
   // lb_on_balancer_status_received_ will complete the cancellation and clean
   // up. Otherwise, we are here because grpclb_policy has to orphan a failed
   // call, then the following cancellation will be a no-op.
-  grpc_call_cancel(lb_call_, nullptr);
+  grpc_call_cancel_internal(lb_call_);
   if (client_load_report_timer_callback_pending_) {
     grpc_timer_cancel(&client_load_report_timer_);
   }

@@ -325,13 +325,76 @@ std::vector<const Descriptor*> GetUsedMessages(
 
 void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
   std::vector<const Descriptor*> used_messages = GetUsedMessages(service);
+  if (used_messages.size() != 0) {
+    // Generate static helper methods for serialization/deserialization
+    out->Print(
+        "static void __Helper_SerializeMessage("
+        "global::Google.Protobuf.IMessage message, "
+        "grpc::SerializationContext context)\n"
+        "{\n");
+    out->Indent();
+    out->Print(
+        "#if !GRPC_DISABLE_PROTOBUF_BUFFER_SERIALIZATION\n"
+        "if (message is global::Google.Protobuf.IBufferMessage)\n"
+        "{\n");
+    out->Indent();
+    out->Print(
+        "context.SetPayloadLength(message.CalculateSize());\n"
+        "global::Google.Protobuf.MessageExtensions.WriteTo(message, "
+        "context.GetBufferWriter());\n"
+        "context.Complete();\n"
+        "return;\n");
+    out->Outdent();
+    out->Print(
+        "}\n"
+        "#endif\n");
+    out->Print(
+        "context.Complete("
+        "global::Google.Protobuf.MessageExtensions.ToByteArray(message));\n");
+    out->Outdent();
+    out->Print("}\n\n");
+
+    out->Print(
+        "static class __Helper_MessageCache<T>\n"
+        "{\n");
+    out->Indent();
+    out->Print(
+        "public static readonly bool IsBufferMessage = "
+        "global::System.Reflection.IntrospectionExtensions.GetTypeInfo(typeof("
+        "global::Google.Protobuf.IBufferMessage)).IsAssignableFrom(typeof(T));"
+        "\n");
+    out->Outdent();
+    out->Print("}\n\n");
+
+    out->Print(
+        "static T __Helper_DeserializeMessage<T>("
+        "grpc::DeserializationContext context, "
+        "global::Google.Protobuf.MessageParser<T> parser) "
+        "where T : global::Google.Protobuf.IMessage<T>\n"
+        "{\n");
+    out->Indent();
+    out->Print(
+        "#if !GRPC_DISABLE_PROTOBUF_BUFFER_SERIALIZATION\n"
+        "if (__Helper_MessageCache<T>.IsBufferMessage)\n"
+        "{\n");
+    out->Indent();
+    out->Print(
+        "return parser.ParseFrom(context.PayloadAsReadOnlySequence());\n");
+    out->Outdent();
+    out->Print(
+        "}\n"
+        "#endif\n");
+    out->Print("return parser.ParseFrom(context.PayloadAsNewBuffer());\n");
+    out->Outdent();
+    out->Print("}\n\n");
+  }
+
   for (size_t i = 0; i < used_messages.size(); i++) {
     const Descriptor* message = used_messages[i];
     out->Print(
         "static readonly grpc::Marshaller<$type$> $fieldname$ = "
-        "grpc::Marshallers.Create((arg) => "
-        "global::Google.Protobuf.MessageExtensions.ToByteArray(arg), "
-        "$type$.Parser.ParseFrom);\n",
+        "grpc::Marshallers.Create(__Helper_SerializeMessage, "
+        "context => __Helper_DeserializeMessage(context, $type$.Parser));\n",
         "fieldname", GetMarshallerFieldName(message), "type",
         GetClassName(message));
   }

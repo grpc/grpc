@@ -223,7 +223,7 @@ if args.verbose:
 
 _DEFAULT_SERVICE_PORT = 80
 _WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
-_WAIT_FOR_OPERATION_SEC = 300
+_WAIT_FOR_OPERATION_SEC = 1200
 _INSTANCE_GROUP_SIZE = args.instance_group_size
 _NUM_TEST_RPCS = 10 * args.qps
 _WAIT_FOR_STATS_SEC = 180
@@ -966,6 +966,12 @@ def test_header_matching(gcp, original_backend_service, instance_group,
         set_validate_for_proxyless(gcp, True)
 
 
+def get_serving_status(instance, service_port):
+    with grpc.insecure_channel('%s:%d' % (instance, service_port)) as channel:
+        health_stub = health_pb2_grpc.HealthStub(channel)
+        return health_stub.Check(health_pb2.HealthCheckRequest())
+
+
 def set_serving_status(instances, service_port, serving):
     logger.info('setting %s serving status to %s', instances, serving)
     for instance in instances:
@@ -973,16 +979,13 @@ def set_serving_status(instances, service_port, serving):
                                    (instance, service_port)) as channel:
             logger.info('setting %s serving status to %s', instance, serving)
             stub = test_pb2_grpc.XdsUpdateHealthServiceStub(channel)
-            health_stub = health_pb2_grpc.HealthStub(channel)
-
             retry_count = 5
             for i in range(5):
                 if serving:
                     stub.SetServing(empty_pb2.Empty())
                 else:
                     stub.SetNotServing(empty_pb2.Empty())
-                serving_status = health_stub.Check(
-                    health_pb2.HealthCheckRequest())
+                serving_status = get_serving_status(instance, service_port)
                 logger.info('got instance service status %s', serving_status)
                 want_status = health_pb2.HealthCheckResponse.SERVING if serving else health_pb2.HealthCheckResponse.NOT_SERVING
                 if serving_status.status == want_status:
@@ -1550,14 +1553,23 @@ def wait_for_healthy_backends(gcp,
                               timeout_sec=_WAIT_FOR_BACKEND_SEC):
     start_time = time.time()
     config = {'group': instance_group.url}
-    expected_size = len(get_instance_names(gcp, instance_group))
+    instance_names = get_instance_names(gcp, instance_group)
+    expected_size = len(instance_names)
     while time.time() - start_time <= timeout_sec:
+        for instance_name in instance_names:
+            try:
+                status = get_serving_status(instance_name, gcp.service_port)
+                logger.info('serving status response from %s: %s',
+                            instance_name, status)
+            except grpc.RpcError as rpc_error:
+                logger.info('checking serving status of %s failed: %s',
+                            instance_name, rpc_error)
         result = gcp.compute.backendServices().getHealth(
             project=gcp.project,
             backendService=backend_service.name,
             body=config).execute(num_retries=_GCP_API_RETRIES)
         if 'healthStatus' in result:
-            logger.info('received healthStatus: %s', result['healthStatus'])
+            logger.info('received GCP healthStatus: %s', result['healthStatus'])
             healthy = True
             for instance in result['healthStatus']:
                 if instance['healthState'] != 'HEALTHY':
@@ -1565,7 +1577,9 @@ def wait_for_healthy_backends(gcp,
                     break
             if healthy and expected_size == len(result['healthStatus']):
                 return
-        time.sleep(2)
+        else:
+            logger.info('no healthStatus received from GCP')
+        time.sleep(5)
     raise Exception('Not all backends became healthy within %d seconds: %s' %
                     (timeout_sec, result))
 
@@ -1657,18 +1671,33 @@ else:
 
 try:
     gcp = GcpState(compute, alpha_compute, args.project_id)
-    health_check_name = _BASE_HEALTH_CHECK_NAME + args.gcp_suffix
-    firewall_name = _BASE_FIREWALL_RULE_NAME + args.gcp_suffix
-    backend_service_name = _BASE_BACKEND_SERVICE_NAME + args.gcp_suffix
-    alternate_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-alternate' + args.gcp_suffix
-    url_map_name = _BASE_URL_MAP_NAME + args.gcp_suffix
-    service_host_name = _BASE_SERVICE_HOST + args.gcp_suffix
-    target_proxy_name = _BASE_TARGET_PROXY_NAME + args.gcp_suffix
-    forwarding_rule_name = _BASE_FORWARDING_RULE_NAME + args.gcp_suffix
-    template_name = _BASE_TEMPLATE_NAME + args.gcp_suffix
-    instance_group_name = _BASE_INSTANCE_GROUP_NAME + args.gcp_suffix
-    same_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-same-zone' + args.gcp_suffix
-    secondary_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-secondary-zone' + args.gcp_suffix
+    gcp_suffix = args.gcp_suffix
+    health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
+    if not args.use_existing_gcp_resources:
+        num_attempts = 5
+        for i in range(num_attempts):
+            try:
+                logger.info('Using GCP suffix %s', gcp_suffix)
+                create_health_check(gcp, health_check_name)
+                break
+            except googleapiclient.errors.HttpError as http_error:
+                gcp_suffix = '%s-%04d' % (gcp_suffix, random.randint(0, 9999))
+                health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
+                logger.exception('HttpError when creating health check')
+        if gcp.health_check is None:
+            raise Exception('Failed to create health check name after %d '
+                            'attempts' % num_attempts)
+    firewall_name = _BASE_FIREWALL_RULE_NAME + gcp_suffix
+    backend_service_name = _BASE_BACKEND_SERVICE_NAME + gcp_suffix
+    alternate_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-alternate' + gcp_suffix
+    url_map_name = _BASE_URL_MAP_NAME + gcp_suffix
+    service_host_name = _BASE_SERVICE_HOST + gcp_suffix
+    target_proxy_name = _BASE_TARGET_PROXY_NAME + gcp_suffix
+    forwarding_rule_name = _BASE_FORWARDING_RULE_NAME + gcp_suffix
+    template_name = _BASE_TEMPLATE_NAME + gcp_suffix
+    instance_group_name = _BASE_INSTANCE_GROUP_NAME + gcp_suffix
+    same_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-same-zone' + gcp_suffix
+    secondary_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-secondary-zone' + gcp_suffix
     if args.use_existing_gcp_resources:
         logger.info('Reusing existing GCP resources')
         get_health_check(gcp, health_check_name)
@@ -1692,7 +1721,6 @@ try:
         secondary_zone_instance_group = get_instance_group(
             gcp, args.secondary_zone, secondary_zone_instance_group_name)
     else:
-        create_health_check(gcp, health_check_name)
         create_health_check_firewall_rule(gcp, firewall_name)
         backend_service = add_backend_service(gcp, backend_service_name)
         alternate_backend_service = add_backend_service(

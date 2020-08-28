@@ -675,9 +675,6 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
     grpc_slice_buffer_destroy_internal(&decompressed_data_buffer);
   }
 
-  grpc_chttp2_list_remove_stalled_by_transport(t, this);
-  grpc_chttp2_list_remove_stalled_by_stream(t, this);
-
   for (int i = 0; i < STREAM_LIST_COUNT; i++) {
     if (GPR_UNLIKELY(included[i])) {
       gpr_log(GPR_ERROR, "%s stream %d still included in list %d",
@@ -2030,6 +2027,8 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
   if (grpc_chttp2_list_remove_writable_stream(t, s)) {
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:remove_stream");
   }
+  grpc_chttp2_list_remove_stalled_by_stream(t, s);
+  grpc_chttp2_list_remove_stalled_by_transport(t, s);
 
   GRPC_ERROR_UNREF(error);
 

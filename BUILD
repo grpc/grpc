@@ -75,11 +75,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "giggle"
+g_stands_for = "geeky"
 
-core_version = "11.0.0"
+core_version = "12.0.0"
 
-version = "1.32.0-dev"
+version = "1.33.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1858,6 +1858,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_mock_cel",
+    hdrs = [
+        "src/core/lib/security/authorization/mock_cel/activation.h",
+        "src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h",
+        "src/core/lib/security/authorization/mock_cel/cel_expression.h",
+        "src/core/lib/security/authorization/mock_cel/cel_value.h",
+        "src/core/lib/security/authorization/mock_cel/evaluator_core.h",
+        "src/core/lib/security/authorization/mock_cel/flat_expr_builder.h",
+        "src/core/lib/security/authorization/mock_cel/statusor.h",
+    ],
+    language = "c++",
+    deps = [
+        "google_api_upb",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_authorization_engine",
     srcs = [
         "src/core/lib/security/authorization/authorization_engine.cc",
@@ -1866,8 +1884,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/evaluate_args.h",
-        "src/core/lib/security/authorization/mock_cel/activation.h",
-        "src/core/lib/security/authorization/mock_cel/cel_value.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
@@ -1877,6 +1893,7 @@ grpc_cc_library(
         "envoy_ads_upb",
         "google_api_upb",
         "grpc_base",
+        "grpc_mock_cel",
         "grpc_secure",
     ],
 )
