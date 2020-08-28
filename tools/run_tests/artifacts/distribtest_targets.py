@@ -235,7 +235,9 @@ class PHPDistribTest(object):
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ['distribtest', 'php', platform, arch, docker_suffix]
+        self.labels = ['distribtest', 'php', platform, arch]
+        if docker_suffix:
+            self.labels.append(docker_suffix)
 
     def pre_build_jobspecs(self):
         return []
@@ -275,8 +277,14 @@ class CppDistribTest(object):
         self.docker_suffix = docker_suffix
         self.testcase = testcase
         self.labels = [
-            'distribtest', 'cpp', platform, arch, docker_suffix, testcase
+            'distribtest',
+            'cpp',
+            platform,
+            arch,
+            testcase,
         ]
+        if docker_suffix:
+            self.labels.append(docker_suffix)
 
     def pre_build_jobspecs(self):
         return []
