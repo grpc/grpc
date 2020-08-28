@@ -203,6 +203,21 @@ class XdsResolver : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
   };
 
+  class ClusterState
+      : public RefCounted<ClusterState, PolymorphicRefCount, false> {
+   public:
+   public:
+    using ClusterStateMap = std::map<std::string, ClusterState*>;
+
+    ClusterState(const std::string& cluster_name,
+                 ClusterStateMap* cluster_state_map)
+        : it_(cluster_state_map->insert({cluster_name.c_str(), this}).first) {}
+    const std::string& cluster() const { return it_->first; }
+
+   private:
+    ClusterStateMap::iterator it_;
+  };
+
   class XdsConfigSelector : public ConfigSelector {
    public:
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
@@ -225,32 +240,44 @@ class XdsResolver : public Resolver {
       // Update cluster state map and current update cluster list.
       for (auto& route : route_table_) {
         if (route.route.weighted_clusters.empty()) {
-          if (clusters_.find(route.route.cluster_name) == clusters_.end()) {
-            clusters_.emplace(route.route.cluster_name);
-            {
-              auto cluster_state = resolver_->cluster_state_map_.find(route.route.cluster_name);
-              if (cluster_state != resolver_->cluster_state_map_.end()) {
-                ++cluster_state->second->refcount;
-              } else {
-                auto new_cluster_state = MakeRefCounted<ClusterState>();
-                ++new_cluster_state->refcount;
-                resolver_->cluster_state_map_[route.route.cluster_name] = new_cluster_state;
-              }
+          auto cluster_state =
+              resolver_->cluster_state_map_.find(route.route.cluster_name);
+          if (cluster_state != resolver_->cluster_state_map_.end()) {
+            gpr_log(GPR_INFO, "DONNAAA constructor ref an existing one");
+            // cluster_state->second->Ref(); does nothing
+            cluster_state->second->RefIfNonZero();
+          } else {
+            if (clusters_.find(route.route.cluster_name) == clusters_.end()) {
+              auto new_cluster_state = MakeRefCounted<ClusterState>(
+                  route.route.cluster_name, &resolver_->cluster_state_map_);
+              clusters_[new_cluster_state->cluster()] =
+                  std::move(new_cluster_state);
+              gpr_log(GPR_INFO, "DONNAAA constructor create a new  one");
+            } else {
+              gpr_log(GPR_INFO, "DONNAAA DONT THINK this is possible");
             }
           }
+          // For debugging
+          auto after_cluster_state =
+              resolver_->cluster_state_map_.find(route.route.cluster_name);
+          after_cluster_state->second->PrintRef();
         } else {
           for (const auto& weighted_cluster : route.route.weighted_clusters) {
-            if (clusters_.find(weighted_cluster.name) == clusters_.end()) {
-              clusters_.emplace(weighted_cluster.name);
-              {
-                auto cluster_state = resolver_->cluster_state_map_.find(weighted_cluster.name);
-                if (cluster_state != resolver_->cluster_state_map_.end()) {
-                  ++cluster_state->second->refcount;
-                } else {
-                  auto new_cluster_state = MakeRefCounted<ClusterState>();
-                  ++new_cluster_state->refcount;
-                  resolver_->cluster_state_map_[weighted_cluster.name] = new_cluster_state;
-                }
+            auto cluster_state =
+                resolver_->cluster_state_map_.find(weighted_cluster.name);
+            if (cluster_state != resolver_->cluster_state_map_.end()) {
+              gpr_log(GPR_INFO, "DONNAAA constructor ref an existing one");
+              // cluster_state->second->Ref(); does nothing
+              cluster_state->second->RefIfNonZero();
+            } else {
+              if (clusters_.find(weighted_cluster.name) == clusters_.end()) {
+                auto new_cluster_state = MakeRefCounted<ClusterState>(
+                    weighted_cluster.name, &resolver_->cluster_state_map_);
+                clusters_[new_cluster_state->cluster()] =
+                    std::move(new_cluster_state);
+                gpr_log(GPR_INFO, "DONNAAA constructor create a new  one");
+              } else {
+                gpr_log(GPR_INFO, "DONNAAA DONT THINK this is possible");
               }
             }
           }
@@ -261,12 +288,6 @@ class XdsResolver : public Resolver {
             GPR_INFO,
             "DONNAAA constructor %p added: RDS update copied to route_table %s",
             this, route.route.ToString().c_str());
-      }
-      {
-        for (const auto& state : resolver_->cluster_state_map_) {
-          gpr_log(GPR_INFO, "DONNAAA: in constructor: cluster %s and count %d",
-                  state.first.c_str(), state.second->refcount);
-        }
       }
     }
 
@@ -283,19 +304,11 @@ class XdsResolver : public Resolver {
       }
       bool update = false;
       {
-        for (const auto& action : clusters_) {
-          --resolver_->cluster_state_map_[action]->refcount;
-          if (resolver_->cluster_state_map_[action]->refcount == 0) {
-            gpr_log(GPR_INFO,
-                    "DONNAAA: destructor ERASING from cluster state map: %s",
-                    action.c_str());
-            resolver_->cluster_state_map_.erase(action);
-            update = true;
-          }
-        }
-        for (const auto& state : resolver_->cluster_state_map_) {
-          gpr_log(GPR_INFO, "DONNAAA: in destructor: cluster %s and count %d",
-                  state.first.c_str(), state.second->refcount);
+        for (const auto& cluster_state : clusters_) {
+          gpr_log(GPR_INFO, "DONNAAA: destructor cluster %s",
+                  cluster_state.first);
+          cluster_state.second->PrintRef();
+          // No need to call Unref, its automatic with the destructor
         }
       }
       if (update) UpdateServiceConfig();
@@ -305,17 +318,28 @@ class XdsResolver : public Resolver {
     grpc_error* CreateServiceConfig(
         RefCountedPtr<ServiceConfig>* service_config) {
       std::vector<std::string> actions_vector;
-      for (const auto& cluster : resolver_->cluster_state_map_) {
-        if (!cluster.second->RefIfNonZero()) continue;
-        actions_vector.push_back(
-            absl::StrFormat("      \"%s\":{\n"
-                            "        \"childPolicy\":[ {\n"
-                            "          \"cds_experimental\":{\n"
-                            "            \"cluster\": \"%s\"\n"
-                            "          }\n"
-                            "        } ]\n"
-                            "       }",
-                            cluster.first, cluster.first));
+      for (auto it = resolver_->cluster_state_map_.begin();
+           it != resolver_->cluster_state_map_.end();) {
+        gpr_log(GPR_INFO, "DONNAAA create config for cluster %s",
+                it->first.c_str());
+        if (it->second->RefIfNonZero()) {
+          gpr_log(GPR_INFO, "DONNAAA good cluster: %s", it->first.c_str());
+          it->second->Unref();
+          actions_vector.push_back(
+              absl::StrFormat("      \"%s\":{\n"
+                              "        \"childPolicy\":[ {\n"
+                              "          \"cds_experimental\":{\n"
+                              "            \"cluster\": \"%s\"\n"
+                              "          }\n"
+                              "        } ]\n"
+                              "       }",
+                              it->first, it->first));
+          ++it;
+        } else {
+          gpr_log(GPR_INFO, "DONNAAA bad cluste: %s do something",
+                  it->first.c_str());
+          it = resolver_->cluster_state_map_.erase(it);
+        }
       }
       std::vector<std::string> config_parts;
       config_parts.push_back(
@@ -354,22 +378,9 @@ class XdsResolver : public Resolver {
     }
 
     void OnCallCommitted(const std::string& cluster_name) {
-      bool erase = false;
-      {
-        --resolver_->cluster_state_map_[cluster_name]->refcount;
-        if (resolver_->cluster_state_map_[cluster_name]->refcount == 0) {
-          gpr_log(GPR_INFO,
-                  "DONNAAA: OnCallCommitted ERASING (have not seen!) from "
-                  "cluster state map: %s",
-                  cluster_name.c_str());
-          resolver_->cluster_state_map_.erase(cluster_name);
-          erase = true;
-        }
-      }
-      if (erase) {
-        resolver_->work_serializer()->Run([this]() { UpdateServiceConfig(); },
-                                          DEBUG_LOCATION);
-      }
+      // cluster_state->Unref();
+      //  resolver_->work_serializer()->Run([this]() { UpdateServiceConfig(); },
+      //                                    DEBUG_LOCATION);
     }
 
     CallConfig GetCallConfig(GetCallConfigArgs args) override {
@@ -430,12 +441,11 @@ class XdsResolver : public Resolver {
         CallConfig call_config;
         call_config.call_attributes[kXdsClusterAttribute] =
             absl::string_view(cluster_name_str);
+        // ClusterState* cluster_state =
+        //    clusters_[cluster_name_str]->Ref().release();
         call_config.on_call_committed = [this, cluster_name_str]() {
           OnCallCommitted(cluster_name_str);
         };
-        {
-          ++resolver_->cluster_state_map_[cluster_name_str]->refcount;
-        }
         return call_config;
       }
       return CallConfig();
@@ -450,13 +460,7 @@ class XdsResolver : public Resolver {
     };
     using RouteTable = std::vector<Route>;
     RouteTable route_table_;
-    std::set<std::string> clusters_;
-  };
-
-  class ClusterState : public RefCounted<ClusterState> {
-   public:
-    ClusterState() : refcount(0) {}
-    int refcount;
+    std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
   };
 
   // Create the service config generated by the RdsUpdate.
@@ -467,7 +471,7 @@ class XdsResolver : public Resolver {
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<XdsClient> xds_client_;
-  std::map<std::string /* cluster_name */, RefCountedPtr<ClusterState>> cluster_state_map_;
+  ClusterState::ClusterStateMap cluster_state_map_;
   XdsApi::RdsUpdate current_update_;
 };
 
