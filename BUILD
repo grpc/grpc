@@ -75,11 +75,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "giggle"
+g_stands_for = "geeky"
 
-core_version = "11.0.0"
+core_version = "12.0.0"
 
-version = "1.32.0-dev"
+version = "1.33.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
