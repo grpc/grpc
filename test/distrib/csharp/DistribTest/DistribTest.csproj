@@ -61,6 +61,10 @@
          Use GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE to still allow building the protobuf
          generate code -->
     <DefineConstants>$(DefineConstants);GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE</DefineConstants>
+    <!-- Create a binding redirect to avoid mismatch between different versions of System.Memory
+         being referenced by Grpc.Core and Google.Protobuf.
+         See http://go.microsoft.com/fwlink/?LinkId=294190  -->
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Grpc.Auth">
