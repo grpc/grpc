@@ -1825,6 +1825,7 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked(
   // Check if ConfigSelector has changed.
   const bool config_selector_changed =
       saved_config_selector_ != config_selector;
+  saved_config_selector_ = config_selector;
   // We want to set the service config at least once, even if the
   // resolver does not return a config, because that ensures that we
   // disable retries if they are not enabled in the service config.
