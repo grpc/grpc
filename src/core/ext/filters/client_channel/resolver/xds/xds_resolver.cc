@@ -189,6 +189,7 @@ class XdsResolver : public Resolver {
     xds_client_.reset();
   }
 
+  void OnListenerChanged(XdsApi::LdsUpdate listener_data);
   void UpdateServiceConfig2();
 
  private:
@@ -207,7 +208,6 @@ class XdsResolver : public Resolver {
   class ClusterState
       : public RefCounted<ClusterState, PolymorphicRefCount, false> {
    public:
-   public:
     using ClusterStateMap = std::map<std::string, ClusterState*>;
 
     ClusterState(const std::string& cluster_name,
@@ -224,9 +224,6 @@ class XdsResolver : public Resolver {
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
                       const XdsApi::RdsUpdate& rds_update)
         : resolver_(std::move(resolver)) {
-      // Save the update in the resolver in case of rebuild of
-      // XdsConfigSelector.
-      resolver_->current_update_ = rds_update;
       // Construct the route table.
       for (const auto& rds_route : rds_update.routes) {
         route_table_.emplace_back();
@@ -498,6 +495,9 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data",
             resolver_.get());
   }
+  // Update entries in cluster state map.
+  resolver_->OnListenerChanged(listener_data);
+
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
   auto config_selector =
@@ -564,6 +564,12 @@ void XdsResolver::StartLocked() {
             grpc_error_string(error));
     result_handler()->ReturnError(error);
   }
+}
+
+void XdsResolver::OnListenerChanged(XdsApi::LdsUpdate listener_data) {
+  // Save the update in the resolver in case of rebuild of
+  // XdsConfigSelector.
+  current_update_ = *listener_data.rds_update;
 }
 
 void XdsResolver::UpdateServiceConfig2() {
