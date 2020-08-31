@@ -37,27 +37,24 @@ namespace {
 TEST(PortPickerTest, TestPortPickingIsThreadSafe) {
   // Test that port-picking is thread safe, so that we don't
   // get suprising behavior in tests that assume it.
-  // 64 threads is small enough so as to not overload the port server
+  // 32 threads is small enough so as to not overload the port server
   // (used in some environments), but large enough to hit concurrency issues
   // if they exist.
   const int kNumConcurrentPicks = 64;
-  std::vector<int> ports;
-  ports.resize(kNumConcurrentPicks);
   std::vector<std::unique_ptr<std::thread>> port_picking_threads;
   port_picking_threads.reserve(kNumConcurrentPicks);
   for (int i = 0; i < kNumConcurrentPicks; i++) {
-    port_picking_threads.push_back(absl::make_unique<std::thread>([&ports, i]() {
-      GPR_ASSERT(ports[i] == 0);
-      ports[i] = grpc_pick_unused_port_or_die();
+    port_picking_threads.push_back(absl::make_unique<std::thread>([]() {
+      const int kNumPicksPerThread = 20;
+      for (int k = 0; k < kNumPicksPerThread; k++) {
+        int selected_port = grpc_pick_unused_port_or_die();
+        GPR_ASSERT(selected_port != 0);
+        grpc_recycle_unused_port(selected_port);
+      }
     }));
   }
   for (auto &t : port_picking_threads) {
     t->join();
-  }
-  std::sort(ports.begin(), ports.end());
-  for (int i = 1; i < kNumConcurrentPicks; i++) {
-    ASSERT_NE(ports[i], 0);
-    ASSERT_NE(ports[i - 1], ports[i]) << "expected all picked ports to be unique, but found two which are the same";
   }
 }
 
