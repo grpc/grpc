@@ -69,6 +69,8 @@ then
   # set xcode version for Obj-C tests
   sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
 
+
+  export SETUPTOOLS_USE_DISTUTILS=stdlib
   # Needed for ios-binary-size
   time pip install --user pyyaml pyjwt cryptography requests
 
