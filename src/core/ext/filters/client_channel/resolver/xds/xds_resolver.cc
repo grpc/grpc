@@ -77,8 +77,7 @@ class XdsResolver : public Resolver {
 
   void OnListenerChanged(XdsApi::LdsUpdate listener_data);
   grpc_error* CreateServiceConfig(RefCountedPtr<ServiceConfig>* service_config);
-  void UpdateServiceConfig();
-  void UpdateServiceConfig2();
+  void MaybeRemoveUnusedClusters();
 
  private:
   class ListenerWatcher : public XdsClient::ListenerWatcherInterface {
@@ -359,14 +358,13 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
               out);
     }
   }
-  for (const auto& cluster_state : clusters_) {
-    gpr_log(GPR_INFO, "DONNAAA: destructor cluster %s", cluster_state.first);
-    cluster_state.second->PrintRef();
+  for (const auto& p : clusters_) {
+    gpr_log(GPR_INFO, "DONNAAA: destructor cluster %s", p.first);
+    p.second->PrintRef();
     // No need to call Unref, its automatic with the destructor
   }
   clusters_.clear();
-  // How to decide if this update is necessary?
-  resolver_->UpdateServiceConfig();
+  resolver_->MaybeRemoveUnusedClusters();
 }
 
 void XdsResolver::XdsConfigSelector::ClusterStateUpdate(
@@ -390,7 +388,7 @@ void XdsResolver::XdsConfigSelector::OnCallCommitted(
   cluster_state->Unref();
   XdsResolver* resolver = resolver_.get();
   resolver_->work_serializer()->Run(
-      [resolver]() { resolver->UpdateServiceConfig2(); }, DEBUG_LOCATION);
+      [resolver]() { resolver->MaybeRemoveUnusedClusters(); }, DEBUG_LOCATION);
 }
 
 ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
@@ -489,28 +487,16 @@ void XdsResolver::OnListenerChanged(XdsApi::LdsUpdate listener_data) {
 grpc_error* XdsResolver::CreateServiceConfig(
     RefCountedPtr<ServiceConfig>* service_config) {
   std::vector<std::string> actions_vector;
-  for (auto it = cluster_state_map_.begin(); it != cluster_state_map_.end();) {
-    gpr_log(GPR_INFO, "DONNAAA create config for cluster %s",
-            it->first.c_str());
-    if (it->second->RefIfNonZero()) {
-      gpr_log(GPR_INFO, "DONNAAA service config for cluster: %s",
-              it->first.c_str());
-      it->second->Unref();
-      actions_vector.push_back(
-          absl::StrFormat("      \"%s\":{\n"
-                          "        \"childPolicy\":[ {\n"
-                          "          \"cds_experimental\":{\n"
-                          "            \"cluster\": \"%s\"\n"
-                          "          }\n"
-                          "        } ]\n"
-                          "       }",
-                          it->first, it->first));
-      ++it;
-    } else {
-      gpr_log(GPR_INFO, "DONNAAA unrefed cluster: %s remove from map",
-              it->first.c_str());
-      it = cluster_state_map_.erase(it);
-    }
+  for (const auto& cluster : cluster_state_map_) {
+    actions_vector.push_back(
+        absl::StrFormat("      \"%s\":{\n"
+                        "        \"childPolicy\":[ {\n"
+                        "          \"cds_experimental\":{\n"
+                        "            \"cluster\": \"%s\"\n"
+                        "          }\n"
+                        "        } ]\n"
+                        "       }",
+                        cluster.first, cluster.first));
   }
   std::vector<std::string> config_parts;
   config_parts.push_back(
@@ -531,7 +517,7 @@ grpc_error* XdsResolver::CreateServiceConfig(
   return error;
 }
 
-void XdsResolver::UpdateServiceConfig() {
+void XdsResolver::MaybeRemoveUnusedClusters() {
   bool update_needed = false;
   for (auto it = cluster_state_map_.begin(); it != cluster_state_map_.end();) {
     if (it->second->RefIfNonZero()) {
@@ -557,21 +543,6 @@ void XdsResolver::UpdateServiceConfig() {
   result.args =
       grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
   result_handler()->ReturnResult(std::move(result));
-}
-
-void XdsResolver::UpdateServiceConfig2() {
-  bool update_needed = false;
-  for (auto it = cluster_state_map_.begin(); it != cluster_state_map_.end();) {
-    if (it->second->RefIfNonZero()) {
-      it->second->Unref();
-      ++it;
-    } else {
-      update_needed = true;
-      it = cluster_state_map_.erase(it);
-    }
-  }
-  if (!update_needed) return;
-  gpr_log(GPR_INFO, "DONNAAA update needed from OnCallCommitted");
 }
 
 //
