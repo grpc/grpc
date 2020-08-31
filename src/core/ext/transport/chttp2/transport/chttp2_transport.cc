@@ -2661,8 +2661,8 @@ static void next_bdp_ping_timer_expired_locked(void* tp, grpc_error* error) {
   }
   if (t->flow_control->bdp_estimator()->accumulator() == 0) {
     // Block the bdp ping till we receive more data.
-    GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
     t->bdp_ping_blocked = true;
+    GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
   } else {
     schedule_bdp_ping_locked(t);
   }
