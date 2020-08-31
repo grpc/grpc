@@ -111,17 +111,10 @@ class XdsResolver : public Resolver {
    public:
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
                       const XdsApi::RdsUpdate& rds_update);
-
     ~XdsConfigSelector();
-
+    void ClusterStateUpdate(const std::string& name);
     void OnCallCommitted(ClusterState* cluster_state,
-                         const std::string& cluster_name_str) {
-      cluster_state->Unref();
-      XdsResolver* resolver = resolver_.get();
-      resolver_->work_serializer()->Run(
-          [resolver]() { resolver->UpdateServiceConfig2(); }, DEBUG_LOCATION);
-    }
-
+                         const std::string& cluster_name_str);
     CallConfig GetCallConfig(GetCallConfigArgs args) override;
 
    private:
@@ -337,40 +330,14 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     auto& route_entry = route_table_.back();
     route_entry.route = route;
     if (route.weighted_clusters.empty()) {
-      auto cluster_state =
-          resolver_->cluster_state_map_.find(route.cluster_name);
-      if (clusters_.find(route.cluster_name) == clusters_.end()) {
-        if (cluster_state == resolver_->cluster_state_map_.end()) {
-          auto new_cluster_state = MakeRefCounted<ClusterState>(
-              route.cluster_name, &resolver_->cluster_state_map_);
-          clusters_[new_cluster_state->cluster()] =
-              std::move(new_cluster_state);
-        } else {
-          cluster_state->second->RefIfNonZero();
-          clusters_[cluster_state->second->cluster()] =
-              RefCountedPtr<ClusterState>(cluster_state->second);
-        }
-      }
+      ClusterStateUpdate(route.cluster_name);
     } else {
       uint32_t end = 0;
       for (const auto& weighted_cluster : route.weighted_clusters) {
         end += weighted_cluster.weight;
         route_entry.weighted_cluster_state.emplace_back(end,
                                                         weighted_cluster.name);
-        auto cluster_state =
-            resolver_->cluster_state_map_.find(weighted_cluster.name);
-        if (clusters_.find(weighted_cluster.name) == clusters_.end()) {
-          if (cluster_state == resolver_->cluster_state_map_.end()) {
-            auto new_cluster_state = MakeRefCounted<ClusterState>(
-                weighted_cluster.name, &resolver_->cluster_state_map_);
-            clusters_[new_cluster_state->cluster()] =
-                std::move(new_cluster_state);
-          } else {
-            cluster_state->second->RefIfNonZero();
-            clusters_[cluster_state->second->cluster()] =
-                RefCountedPtr<ClusterState>(cluster_state->second);
-          }
-        }
+        ClusterStateUpdate(weighted_cluster.name);
       }
     }
   }
@@ -400,6 +367,30 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
   clusters_.clear();
   // How to decide if this update is necessary?
   resolver_->UpdateServiceConfig();
+}
+
+void XdsResolver::XdsConfigSelector::ClusterStateUpdate(
+    const std::string& name) {
+  auto cluster_state = resolver_->cluster_state_map_.find(name);
+  if (clusters_.find(name) == clusters_.end()) {
+    if (cluster_state == resolver_->cluster_state_map_.end()) {
+      auto new_cluster_state =
+          MakeRefCounted<ClusterState>(name, &resolver_->cluster_state_map_);
+      clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
+    } else {
+      cluster_state->second->RefIfNonZero();
+      clusters_[cluster_state->second->cluster()] =
+          RefCountedPtr<ClusterState>(cluster_state->second);
+    }
+  }
+}
+
+void XdsResolver::XdsConfigSelector::OnCallCommitted(
+    ClusterState* cluster_state, const std::string& cluster_name_str) {
+  cluster_state->Unref();
+  XdsResolver* resolver = resolver_.get();
+  resolver_->work_serializer()->Run(
+      [resolver]() { resolver->UpdateServiceConfig2(); }, DEBUG_LOCATION);
 }
 
 ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
