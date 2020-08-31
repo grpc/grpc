@@ -108,6 +108,13 @@ class XdsResolver : public Resolver {
 
   class XdsConfigSelector : public ConfigSelector {
    public:
+    struct Route {
+      XdsApi::RdsUpdate::RdsRoute route;
+      absl::InlinedVector<std::pair<uint32_t, std::string>, 2>
+          weighted_cluster_state;
+    };
+    using RouteTable = std::vector<Route>;
+
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
                       const XdsApi::RdsUpdate& rds_update);
     ~XdsConfigSelector();
@@ -117,12 +124,6 @@ class XdsResolver : public Resolver {
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
-    struct Route {
-      XdsApi::RdsUpdate::RdsRoute route;
-      absl::InlinedVector<std::pair<uint32_t, std::string>, 2>
-          weighted_cluster_state;
-    };
-    using RouteTable = std::vector<Route>;
     RouteTable route_table_;
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
   };
@@ -220,19 +221,17 @@ bool PathMatch(
   }
 }
 
-absl::optional<std::string> GetMetadataValue(
+absl::optional<absl::string_view> GetMetadataValue(
     const std::string& target_key, grpc_metadata_batch* initial_metadata,
     std::string* concatenated_value) {
   // Find all values for the specified key.
   GPR_DEBUG_ASSERT(initial_metadata != nullptr);
-  absl::InlinedVector<std::string, 1> values;
+  absl::InlinedVector<absl::string_view, 1> values;
   for (grpc_linked_mdelem* md = initial_metadata->list.head; md != nullptr;
        md = md->next) {
-    char* key = grpc_slice_to_c_string(GRPC_MDKEY(md->md));
-    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md->md));
-    if (target_key == key) values.push_back(std::string(value));
-    gpr_free(key);
-    gpr_free(value);
+    absl::string_view key = StringViewFromSlice(GRPC_MDKEY(md->md));
+    absl::string_view value = StringViewFromSlice(GRPC_MDVALUE(md->md));
+    if (target_key == key) values.push_back(value);
   }
   // If none found, no match.
   if (values.empty()) return absl::nullopt;
@@ -249,7 +248,7 @@ bool HeaderMatchHelper(
     const XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher& header_matcher,
     grpc_metadata_batch* initial_metadata) {
   std::string concatenated_value;
-  absl::optional<std::string> value;
+  absl::optional<absl::string_view> value;
   // Note: If we ever allow binary headers here, we still need to
   // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
   // they are not visible to the LB policy in grpc-go.
