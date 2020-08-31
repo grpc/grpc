@@ -55,7 +55,7 @@ TraceFlag grpc_xds_routing_lb_trace(false, "xds_routing_lb");
 
 namespace {
 
-constexpr char kXdsRouting[] = "xds_routing_experimental";
+constexpr char kXdsRouting[] = "xds_cluster_manager_experimental";
 
 // Config for xds_routing LB policy.
 class XdsRoutingLbConfig : public LoadBalancingPolicy::Config {
@@ -103,24 +103,33 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 
   // Picks a child using prefix or path matching and then delegates to that
   // child's picker.
-  class RoutePicker : public SubchannelPicker {
+  class ClusterPicker : public SubchannelPicker {
    public:
-    struct Route {
-      std::string action;
-      RefCountedPtr<ChildPickerWrapper> picker;
-    };
+    // Maintains a map of cluster names to pickers.
+    // This uses absl::string_view instead of std::string as the key.
+    using ClusterMap = std::map<absl::string_view /*cluster_name*/,
+                                RefCountedPtr<ChildPickerWrapper>>;
 
-    // Maintains an ordered xds route table as provided by RDS response.
-    using RouteTable = std::vector<Route>;
-
-    RoutePicker(RouteTable route_table,
-                RefCountedPtr<XdsRoutingLbConfig> config)
-        : route_table_(std::move(route_table)), config_(std::move(config)) {}
+    ClusterPicker(ClusterMap cluster_map,
+                  RefCountedPtr<XdsRoutingLbConfig> config)
+        : config_(std::move(config)) {
+      // Make an internal copy of the cluster name strings used in the map keys.
+      for (const auto& p : cluster_map) {
+        cluster_name_storage_.emplace_back(p.first);
+        // The [] of this line below causes heap-use-after-free
+        // cluster_map_[absl::string_view(cluster_name_storage_.back())] =
+        // std::move(p.second); Doing this line below is the same as
+        // cluster_map_(cluster_map) works; I made sure the input cluster_map
+        // has keys that will not go out of scope.
+        cluster_map_[p.first] = std::move(p.second);
+      }
+    }
 
     PickResult Pick(PickArgs args) override;
 
    private:
-    RouteTable route_table_;
+    std::vector<std::string> cluster_name_storage_;
+    ClusterMap cluster_map_;
     // Take a reference to config so that we can use
     // XdsApi::RdsUpdate::RdsRoute::Matchers from it.
     RefCountedPtr<XdsRoutingLbConfig> config_;
@@ -213,15 +222,13 @@ class XdsRoutingLb : public LoadBalancingPolicy {
 };
 
 //
-// XdsRoutingLb::RoutePicker
+// XdsRoutingLb::ClusterPicker
 //
-XdsRoutingLb::PickResult XdsRoutingLb::RoutePicker::Pick(PickArgs args) {
-  for (const Route& route : route_table_) {
-    if (route.action ==
-        std::string(args.call_state->ExperimentalGetCallAttribute(
-            kXdsClusterAttribute))) {
-      return route.picker->Pick(args);
-    }
+XdsRoutingLb::PickResult XdsRoutingLb::ClusterPicker::Pick(PickArgs args) {
+  auto cluster = cluster_map_.find(
+      args.call_state->ExperimentalGetCallAttribute(kXdsClusterAttribute));
+  if (cluster != cluster_map_.end()) {
+    return cluster->second->Pick(args);
   }
   PickResult result;
   result.type = PickResult::PICK_FAILED;
@@ -346,25 +353,27 @@ void XdsRoutingLb::UpdateStateLocked() {
   absl::Status status;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY: {
-      RoutePicker::RouteTable route_table;
+      ClusterPicker::ClusterMap cluster_map;
       for (const auto& action : config_->cluster_map()) {
-        RoutePicker::Route route;
-        route.action = action.first;
-        route.picker = actions_[action.first]->picker_wrapper();
-        if (route.picker == nullptr) {
+        if (actions_[action.first]->picker_wrapper() == nullptr) {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
             gpr_log(GPR_INFO,
                     "[xds_routing_lb %p] child %s has not yet returned a "
                     "picker; creating a QueuePicker.",
                     this, action.first.c_str());
           }
-          route.picker = MakeRefCounted<ChildPickerWrapper>(
+          auto picker = MakeRefCounted<ChildPickerWrapper>(
               action.first, absl::make_unique<QueuePicker>(
                                 Ref(DEBUG_LOCATION, "QueuePicker")));
+          cluster_map[absl::string_view(picker->name())] = picker;
+        } else {
+          cluster_map[absl::string_view(
+              actions_[action.first]->picker_wrapper()->name())] =
+              actions_[action.first]->picker_wrapper();
         }
-        route_table.push_back(std::move(route));
       }
-      picker = absl::make_unique<RoutePicker>(std::move(route_table), config_);
+      picker =
+          absl::make_unique<ClusterPicker>(std::move(cluster_map), config_);
       break;
     }
     case GRPC_CHANNEL_CONNECTING:
@@ -611,7 +620,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     // action map.
     XdsRoutingLbConfig::ClusterMap cluster_map;
     std::set<std::string /*action_name*/> actions_to_be_used;
-    auto it = json.object_value().find("actions");
+    auto it = json.object_value().find("children");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:actions error:required field not present"));
@@ -649,7 +658,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
     }
     if (!error_list.empty()) {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
-          "xds_routing_experimental LB policy config", &error_list);
+          "xds_cluster_manager_experimental LB policy config", &error_list);
       return nullptr;
     }
     return MakeRefCounted<XdsRoutingLbConfig>(std::move(cluster_map));

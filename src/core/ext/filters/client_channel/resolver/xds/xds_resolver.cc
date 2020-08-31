@@ -494,8 +494,8 @@ grpc_error* XdsResolver::CreateServiceConfig(
   config_parts.push_back(
       "{\n"
       "  \"loadBalancingConfig\":[\n"
-      "    { \"xds_routing_experimental\":{\n"
-      "      \"actions\":{\n");
+      "    { \"xds_cluster_manager_experimental\":{\n"
+      "      \"children\":{\n");
   config_parts.push_back(absl::StrJoin(actions_vector, ",\n"));
   config_parts.push_back(
       "    }\n"
