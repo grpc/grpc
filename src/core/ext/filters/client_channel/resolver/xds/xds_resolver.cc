@@ -224,53 +224,47 @@ class XdsResolver : public Resolver {
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
                       const XdsApi::RdsUpdate& rds_update)
         : resolver_(std::move(resolver)) {
-      // Construct the route table.
-      for (const auto& rds_route : rds_update.routes) {
+      // 1. Construct the route table,
+      // 2  Update resolver's cluster state map
+      // 3. Construct cluster list to hold on to entries in the cluster state
+      // map.
+      for (auto& route : rds_update.routes) {
         route_table_.emplace_back();
-        auto& route = route_table_.back();
-        route.route = rds_route;
-        uint32_t end = 0;
-        for (const auto& cluster_weight : rds_route.weighted_clusters) {
-          end += cluster_weight.weight;
-          route.weighted_cluster_state.emplace_back(end, cluster_weight.name);
-        }
-      }
-      // Update cluster state map and current update cluster list.
-      for (auto& route : route_table_) {
-        if (route.route.weighted_clusters.empty()) {
+        auto& route_entry = route_table_.back();
+        route_entry.route = route;
+        if (route.weighted_clusters.empty()) {
           auto cluster_state =
-              resolver_->cluster_state_map_.find(route.route.cluster_name);
-          if (cluster_state != resolver_->cluster_state_map_.end()) {
-            // cluster_state->second->Ref(); does nothing
-            cluster_state->second->RefIfNonZero();
-            if (clusters_.find(route.route.cluster_name) == clusters_.end()) {
-              clusters_[route.route.cluster_name] =
-                  RefCountedPtr<ClusterState>(cluster_state->second);
-            }
-          } else {
-            if (clusters_.find(route.route.cluster_name) == clusters_.end()) {
+              resolver_->cluster_state_map_.find(route.cluster_name);
+          if (clusters_.find(route.cluster_name) == clusters_.end()) {
+            if (cluster_state == resolver_->cluster_state_map_.end()) {
               auto new_cluster_state = MakeRefCounted<ClusterState>(
-                  route.route.cluster_name, &resolver_->cluster_state_map_);
-              clusters_[route.route.cluster_name] =
+                  route.cluster_name, &resolver_->cluster_state_map_);
+              clusters_[new_cluster_state->cluster()] =
                   std::move(new_cluster_state);
+            } else {
+              cluster_state->second->RefIfNonZero();
+              clusters_[cluster_state->second->cluster()] =
+                  RefCountedPtr<ClusterState>(cluster_state->second);
             }
           }
         } else {
-          for (const auto& weighted_cluster : route.route.weighted_clusters) {
+          uint32_t end = 0;
+          for (const auto& weighted_cluster : route.weighted_clusters) {
+            end += weighted_cluster.weight;
+            route_entry.weighted_cluster_state.emplace_back(
+                end, weighted_cluster.name);
             auto cluster_state =
                 resolver_->cluster_state_map_.find(weighted_cluster.name);
-            if (cluster_state != resolver_->cluster_state_map_.end()) {
-              // cluster_state->second->Ref(); does nothing
-              cluster_state->second->RefIfNonZero();
-              if (clusters_.find(weighted_cluster.name) == clusters_.end()) {
-                clusters_[weighted_cluster.name] =
-                    RefCountedPtr<ClusterState>(cluster_state->second);
-              }
-            } else {
-              if (clusters_.find(weighted_cluster.name) == clusters_.end()) {
+            if (clusters_.find(weighted_cluster.name) == clusters_.end()) {
+              if (cluster_state == resolver_->cluster_state_map_.end()) {
                 auto new_cluster_state = MakeRefCounted<ClusterState>(
                     weighted_cluster.name, &resolver_->cluster_state_map_);
-                clusters_[weighted_cluster.name] = std::move(new_cluster_state);
+                clusters_[new_cluster_state->cluster()] =
+                    std::move(new_cluster_state);
+              } else {
+                cluster_state->second->RefIfNonZero();
+                clusters_[cluster_state->second->cluster()] =
+                    RefCountedPtr<ClusterState>(cluster_state->second);
               }
             }
           }
