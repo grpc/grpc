@@ -186,8 +186,10 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     // occurred while trying to fetch the latest cert, but the updated_*_certs
     // should always be valid. So we will send the updates regardless of
     // *_cert_error.
-    watcher_ptr->OnCertificatesChanged(updated_root_certs,
+    if ((updated_root_certs.has_value() && updated_root_certs != "") || (updated_identity_pairs.has_value() && (*updated_identity_pairs).size() > 0)) {
+      watcher_ptr->OnCertificatesChanged(updated_root_certs,
                                        std::move(updated_identity_pairs));
+    }
     // Notify this watcher if the certs it is watching already had some errors.
     if (root_error != GRPC_ERROR_NONE || identity_error != GRPC_ERROR_NONE) {
       watcher_ptr->OnError(GRPC_ERROR_REF(root_error),
