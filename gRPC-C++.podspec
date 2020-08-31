@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.32.0-dev'
+  version = '1.33.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -523,6 +523,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
                       'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
                       'src/core/lib/security/authorization/mock_cel/statusor.h',
+                      'src/core/lib/security/certificate_provider.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -1022,6 +1023,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
                               'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
                               'src/core/lib/security/authorization/mock_cel/statusor.h',
+                              'src/core/lib/security/certificate_provider.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',

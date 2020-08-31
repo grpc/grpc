@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.32.0-dev'
+  version = '1.33.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -854,6 +854,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
                       'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
                       'src/core/lib/security/authorization/mock_cel/statusor.h',
+                      'src/core/lib/security/certificate_provider.h',
                       'src/core/lib/security/context/security_context.cc',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.cc',
@@ -1433,6 +1434,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
                               'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
                               'src/core/lib/security/authorization/mock_cel/statusor.h',
+                              'src/core/lib/security/certificate_provider.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
