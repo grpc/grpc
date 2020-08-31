@@ -174,9 +174,9 @@ class PemKeyCertPair {
     return *this;
   }
 
-  bool operator==(const PemKeyCertPair& other) {
+  bool operator==(const PemKeyCertPair& other) const {
     return std::strcmp(this->private_key(), other.private_key()) == 0 &&
-           std::strcmp(this->cert_chain(), other.cert_chain());
+           std::strcmp(this->cert_chain(), other.cert_chain()) == 0;
   }
 
   char* private_key() const { return private_key_.get(); }

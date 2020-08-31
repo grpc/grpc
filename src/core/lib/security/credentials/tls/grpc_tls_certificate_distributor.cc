@@ -147,12 +147,12 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
   bool already_watching_identity_for_root_cert = false;
   bool start_watching_identity_cert = false;
   bool already_watching_root_for_identity_cert = false;
+  GPR_ASSERT(root_cert_name.has_value() || identity_cert_name.has_value());
+  TlsCertificatesWatcherInterface* watcher_ptr = watcher.get();
+  GPR_ASSERT(watcher_ptr != nullptr);
   // Update watchers_ and certificate_info_map_.
   {
     grpc_core::MutexLock lock(&mu_);
-    GPR_ASSERT(root_cert_name.has_value() || identity_cert_name.has_value());
-    TlsCertificatesWatcherInterface* watcher_ptr = watcher.get();
-    GPR_ASSERT(watcher_ptr != nullptr);
     const auto watcher_it = watchers_.find(watcher_ptr);
     // The caller needs to cancel the watcher first if it wants to re-register
     // the watcher.

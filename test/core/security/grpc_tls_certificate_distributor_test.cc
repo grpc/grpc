@@ -187,7 +187,7 @@ TEST(GrpcTlsCertificateDistributorTest, CredentialUpdatesWithoutCallbacks) {
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   EXPECT_EQ(watcher_ptr->GetRootCerts(), kRootCert1Contents);
   EXPECT_THAT(
-      *watcher_ptr->GetKeyCertPairs(),
+      watcher_ptr->GetKeyCertPairs(),
       ::testing::ElementsAre(::testing::AllOf(
           ::testing::Property(&grpc_core::PemKeyCertPair::private_key,
                               ::testing::StrEq(kIdentityCert1PrivateKey)),
