@@ -112,8 +112,7 @@ class XdsResolver : public Resolver {
                       const XdsApi::RdsUpdate& rds_update);
     ~XdsConfigSelector();
     void ClusterStateUpdate(const std::string& name);
-    void OnCallCommitted(ClusterState* cluster_state,
-                         const std::string& cluster_name_str);
+    void OnCallCommitted(ClusterState* cluster_state);
     CallConfig GetCallConfig(GetCallConfigArgs args) override;
 
    private:
@@ -384,7 +383,7 @@ void XdsResolver::XdsConfigSelector::ClusterStateUpdate(
 }
 
 void XdsResolver::XdsConfigSelector::OnCallCommitted(
-    ClusterState* cluster_state, const std::string& cluster_name_str) {
+    ClusterState* cluster_state) {
   cluster_state->Unref();
   XdsResolver* resolver = resolver_.get();
   resolver_->work_serializer()->Run(
@@ -393,44 +392,40 @@ void XdsResolver::XdsConfigSelector::OnCallCommitted(
 
 ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     GetCallConfigArgs args) {
-  for (size_t i = 0; i < route_table_.size(); ++i) {
+  for (const auto& entry : route_table_) {
     // Path matching.
     if (!PathMatch(StringViewFromSlice(*args.path),
-                   route_table_[i].route.matchers.path_matcher))
+                   entry.route.matchers.path_matcher))
       continue;
     // Header Matching.
-    if (!HeadersMatch(route_table_[i].route.matchers.header_matchers,
+    if (!HeadersMatch(entry.route.matchers.header_matchers,
                       args.initial_metadata)) {
       continue;
     }
     // Match fraction check
-    if (route_table_[i].route.matchers.fraction_per_million.has_value() &&
-        !UnderFraction(
-            route_table_[i].route.matchers.fraction_per_million.value())) {
+    if (entry.route.matchers.fraction_per_million.has_value() &&
+        !UnderFraction(entry.route.matchers.fraction_per_million.value())) {
       continue;
     }
     // Found a route match
-    char* cluster_name_str = nullptr;
-    if (route_table_[i].route.weighted_clusters.empty()) {
-      cluster_name_str = static_cast<char*>(
-          args.arena->Alloc(route_table_[i].route.cluster_name.size() + 1));
-      strcpy(cluster_name_str, route_table_[i].route.cluster_name.c_str());
+    absl::string_view cluster_name;
+    if (entry.route.weighted_clusters.empty()) {
+      cluster_name = entry.route.cluster_name;
     } else {
       const uint32_t key =
-          rand() % route_table_[i]
-                       .weighted_cluster_state
-                           [route_table_[i].weighted_cluster_state.size() - 1]
-                       .first;
+          rand() %
+          entry.weighted_cluster_state[entry.weighted_cluster_state.size() - 1]
+              .first;
       // Find the index in weighted clusters corresponding to key.
       size_t mid = 0;
       size_t start_index = 0;
-      size_t end_index = route_table_[i].weighted_cluster_state.size() - 1;
+      size_t end_index = entry.weighted_cluster_state.size() - 1;
       size_t index = 0;
       while (end_index > start_index) {
         mid = (start_index + end_index) / 2;
-        if (route_table_[i].weighted_cluster_state[mid].first > key) {
+        if (entry.weighted_cluster_state[mid].first > key) {
           end_index = mid;
-        } else if (route_table_[i].weighted_cluster_state[mid].first < key) {
+        } else if (entry.weighted_cluster_state[mid].first < key) {
           start_index = mid + 1;
         } else {
           index = mid + 1;
@@ -438,21 +433,18 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         }
       }
       if (index == 0) index = start_index;
-      GPR_ASSERT(route_table_[i].weighted_cluster_state[index].first > key);
-      cluster_name_str = static_cast<char*>(args.arena->Alloc(
-          route_table_[i].weighted_cluster_state[index].second.size() + 1));
-      strcpy(cluster_name_str,
-             route_table_[i].weighted_cluster_state[index].second.c_str());
+      GPR_ASSERT(entry.weighted_cluster_state[index].first > key);
+      cluster_name = entry.weighted_cluster_state[index].second;
     }
     // TODO: what if there is no match: cluster_name_str == nullptr
-    CallConfig call_config;
-    call_config.call_attributes[kXdsClusterAttribute] =
-        absl::string_view(cluster_name_str);
-    if (clusters_[cluster_name_str]->RefIfNonZero()) {
-      ClusterState* cluster_state = clusters_[cluster_name_str].get();
-      call_config.on_call_committed = [this, cluster_state,
-                                       cluster_name_str]() {
-        OnCallCommitted(cluster_state, cluster_name_str);
+    auto it = clusters_.find(cluster_name);
+    GPR_ASSERT(it != clusters_.end());
+    if (it->second->RefIfNonZero()) {
+      CallConfig call_config;
+      call_config.call_attributes[kXdsClusterAttribute] = it->first;
+      ClusterState* cluster_state = it->second.get();
+      call_config.on_call_committed = [this, cluster_state]() {
+        OnCallCommitted(cluster_state);
       };
       return call_config;
     }
