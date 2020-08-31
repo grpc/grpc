@@ -170,3 +170,14 @@ grpc_cc_library(
         "//:grpc",
     ],
 )
+
+grpc_cc_test(
+    name = "concurrent_port_picking_test",
+    srcs = ["concurrent_port_picking_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":grpc_test_util",
+    ],
+)
