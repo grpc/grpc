@@ -110,26 +110,17 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     using ClusterMap = std::map<absl::string_view /*cluster_name*/,
                                 RefCountedPtr<ChildPickerWrapper>>;
 
+    // It is required that the keys of cluster_map have to live at least as long
+    // as the ClusterPick instance.
     ClusterPicker(ClusterMap cluster_map,
                   RefCountedPtr<XdsRoutingLbConfig> config)
-        : config_(std::move(config)) {
-      // Make an internal copy of the cluster name strings used in the map keys.
-      for (const auto& p : cluster_map) {
-        cluster_name_storage_.emplace_back(p.first);
-        // The [] of this line below causes heap-use-after-free
-        // cluster_map_[absl::string_view(cluster_name_storage_.back())] =
-        // std::move(p.second); Doing this line below is the same as
-        // cluster_map_(cluster_map) works; I made sure the input cluster_map
-        // has keys that will not go out of scope.
-        cluster_map_[p.first] = std::move(p.second);
-      }
-    }
+        : cluster_map_(cluster_map), config_(std::move(config)) {}
 
     PickResult Pick(PickArgs args) override;
 
    private:
-    std::vector<std::string> cluster_name_storage_;
     ClusterMap cluster_map_;
+    std::vector<std::string> cluster_name_storage_;
     // Take a reference to config so that we can use
     // XdsApi::RdsUpdate::RdsRoute::Matchers from it.
     RefCountedPtr<XdsRoutingLbConfig> config_;
@@ -189,7 +180,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
     // The owning LB policy.
     RefCountedPtr<XdsRoutingLb> xds_routing_policy_;
 
-    // Points to the corresponding key in XdsRoutingLb::actions_.
+    // Points to the corresponding key in children map.
     const std::string name_;
 
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
@@ -218,7 +209,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
   bool shutting_down_ = false;
 
   // Children.
-  std::map<std::string, OrphanablePtr<XdsRoutingChild>> actions_;
+  std::map<std::string, OrphanablePtr<XdsRoutingChild>> children_;
 };
 
 //
@@ -257,15 +248,15 @@ void XdsRoutingLb::ShutdownLocked() {
     gpr_log(GPR_INFO, "[xds_routing_lb %p] shutting down", this);
   }
   shutting_down_ = true;
-  actions_.clear();
+  children_.clear();
 }
 
 void XdsRoutingLb::ExitIdleLocked() {
-  for (auto& p : actions_) p.second->ExitIdleLocked();
+  for (auto& p : children_) p.second->ExitIdleLocked();
 }
 
 void XdsRoutingLb::ResetBackoffLocked() {
-  for (auto& p : actions_) p.second->ResetBackoffLocked();
+  for (auto& p : children_) p.second->ResetBackoffLocked();
 }
 
 void XdsRoutingLb::UpdateLocked(UpdateArgs args) {
@@ -275,21 +266,21 @@ void XdsRoutingLb::UpdateLocked(UpdateArgs args) {
   }
   // Update config.
   config_ = std::move(args.config);
-  // Deactivate the actions not in the new config.
-  for (const auto& p : actions_) {
+  // Deactivate the children not in the new config.
+  for (const auto& p : children_) {
     const std::string& name = p.first;
     XdsRoutingChild* child = p.second.get();
     if (config_->cluster_map().find(name) == config_->cluster_map().end()) {
       child->DeactivateLocked();
     }
   }
-  // Add or update the actions in the new config.
+  // Add or update the children in the new config.
   for (const auto& p : config_->cluster_map()) {
     const std::string& name = p.first;
     const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second;
-    auto it = actions_.find(name);
-    if (it == actions_.end()) {
-      it = actions_
+    auto it = children_.find(name);
+    if (it == children_.end()) {
+      it = children_
                .emplace(name, MakeOrphanable<XdsRoutingChild>(
                                   Ref(DEBUG_LOCATION, "XdsRoutingChild"), name))
                .first;
@@ -305,10 +296,10 @@ void XdsRoutingLb::UpdateStateLocked() {
   size_t num_connecting = 0;
   size_t num_idle = 0;
   size_t num_transient_failures = 0;
-  for (const auto& p : actions_) {
+  for (const auto& p : children_) {
     const auto& child_name = p.first;
     const XdsRoutingChild* child = p.second.get();
-    // Skip the actions that are not in the latest update.
+    // Skip the children that are not in the latest update.
     if (config_->cluster_map().find(child_name) ==
         config_->cluster_map().end()) {
       continue;
@@ -354,22 +345,22 @@ void XdsRoutingLb::UpdateStateLocked() {
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY: {
       ClusterPicker::ClusterMap cluster_map;
-      for (const auto& action : config_->cluster_map()) {
-        if (actions_[action.first]->picker_wrapper() == nullptr) {
+      for (const auto& p : config_->cluster_map()) {
+        if (children_[p.first]->picker_wrapper() == nullptr) {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
             gpr_log(GPR_INFO,
                     "[xds_routing_lb %p] child %s has not yet returned a "
                     "picker; creating a QueuePicker.",
-                    this, action.first.c_str());
+                    this, p.first.c_str());
           }
           auto picker = MakeRefCounted<ChildPickerWrapper>(
-              action.first, absl::make_unique<QueuePicker>(
-                                Ref(DEBUG_LOCATION, "QueuePicker")));
+              p.first, absl::make_unique<QueuePicker>(
+                           Ref(DEBUG_LOCATION, "QueuePicker")));
           cluster_map[absl::string_view(picker->name())] = picker;
         } else {
           cluster_map[absl::string_view(
-              actions_[action.first]->picker_wrapper()->name())] =
-              actions_[action.first]->picker_wrapper();
+              children_[p.first]->picker_wrapper()->name())] =
+              children_[p.first]->picker_wrapper();
         }
       }
       picker =
@@ -527,7 +518,7 @@ void XdsRoutingLb::XdsRoutingChild::OnDelayedRemovalTimerLocked(
     grpc_error* error) {
   delayed_removal_timer_callback_pending_ = false;
   if (error == GRPC_ERROR_NONE && !shutdown_) {
-    xds_routing_policy_->actions_.erase(name_);
+    xds_routing_policy_->children_.erase(name_);
   }
   Unref(DEBUG_LOCATION, "XdsRoutingChild+timer");
   GRPC_ERROR_UNREF(error);
@@ -617,21 +608,20 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
       return nullptr;
     }
     std::vector<grpc_error*> error_list;
-    // action map.
     XdsRoutingLbConfig::ClusterMap cluster_map;
-    std::set<std::string /*action_name*/> actions_to_be_used;
+    std::set<std::string /*cluster_name*/> clusters_to_be_used;
     auto it = json.object_value().find("children");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:actions error:required field not present"));
+          "field:children error:required field not present"));
     } else if (it->second.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:actions error:type should be object"));
+          "field:children error:type should be object"));
     } else {
       for (const auto& p : it->second.object_value()) {
         if (p.first.empty()) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:actions element error: name cannot be empty"));
+              "field:children element error: name cannot be empty"));
           continue;
         }
         RefCountedPtr<LoadBalancingPolicy::Config> child_config;
@@ -641,20 +631,20 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
           // string is not static in this case.
           grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("field:actions name:", p.first).c_str());
+              absl::StrCat("field:children name:", p.first).c_str());
           for (grpc_error* child_error : child_errors) {
             error = grpc_error_add_child(error, child_error);
           }
           error_list.push_back(error);
         } else {
           cluster_map[p.first] = std::move(child_config);
-          actions_to_be_used.insert(p.first);
+          clusters_to_be_used.insert(p.first);
         }
       }
     }
     if (cluster_map.empty()) {
       error_list.push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no valid actions configured"));
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no valid children configured"));
     }
     if (!error_list.empty()) {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(

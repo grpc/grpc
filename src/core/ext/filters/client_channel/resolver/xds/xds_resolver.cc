@@ -108,21 +108,22 @@ class XdsResolver : public Resolver {
 
   class XdsConfigSelector : public ConfigSelector {
    public:
+    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
+                      const XdsApi::RdsUpdate& rds_update);
+    ~XdsConfigSelector();
+    CallConfig GetCallConfig(GetCallConfigArgs args) override;
+
+   private:
     struct Route {
       XdsApi::RdsUpdate::RdsRoute route;
-      absl::InlinedVector<std::pair<uint32_t, std::string>, 2>
+      absl::InlinedVector<std::pair<uint32_t, absl::string_view>, 2>
           weighted_cluster_state;
     };
     using RouteTable = std::vector<Route>;
 
-    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
-                      const XdsApi::RdsUpdate& rds_update);
-    ~XdsConfigSelector();
     void ClusterStateUpdate(const std::string& name);
     void OnCallCommitted(ClusterState* cluster_state);
-    CallConfig GetCallConfig(GetCallConfigArgs args) override;
 
-   private:
     RefCountedPtr<XdsResolver> resolver_;
     RouteTable route_table_;
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
@@ -331,10 +332,10 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     } else {
       uint32_t end = 0;
       for (const auto& weighted_cluster : route.weighted_clusters) {
-        end += weighted_cluster.weight;
-        route_entry.weighted_cluster_state.emplace_back(end,
-                                                        weighted_cluster.name);
         ClusterStateUpdate(weighted_cluster.name);
+        end += weighted_cluster.weight;
+        route_entry.weighted_cluster_state.emplace_back(
+            end, clusters_[weighted_cluster.name]->cluster());
       }
     }
   }
