@@ -375,12 +375,6 @@ grpc_cc_test(
     ],
     flaky = True,  # TODO(b/162087149)
     language = "C++",
-    tags = [
-        # TODO(apolcyn): This test is failing on Windows at entry, enable once passing.
-        # See e.g. https://source.cloud.google.com/results/invocations/03e2c2bc-1742-48b4-a33d-b4cdaee5c8f9/targets
-        # E0717 23:43:56.391000000  5488 src/core/lib/surface/server.cc:1630] assertion failed: server->listeners_destroyed == server->listeners.size()
-        "no_windows",
-    ],
     deps = [
         "//:gpr",
         "//:grpc",
