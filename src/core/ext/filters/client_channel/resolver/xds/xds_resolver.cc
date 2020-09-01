@@ -121,7 +121,7 @@ class XdsResolver : public Resolver {
     };
     using RouteTable = std::vector<Route>;
 
-    void ClusterStateUpdate(const std::string& name);
+    void MaybeAddCluster(const std::string& name);
     void OnCallCommitted(ClusterState* cluster_state);
 
     RefCountedPtr<XdsResolver> resolver_;
@@ -216,11 +216,11 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     auto& route_entry = route_table_.back();
     route_entry.route = route;
     if (route.weighted_clusters.empty()) {
-      ClusterStateUpdate(route.cluster_name);
+      MaybeAddCluster(route.cluster_name);
     } else {
       uint32_t end = 0;
       for (const auto& weighted_cluster : route.weighted_clusters) {
-        ClusterStateUpdate(weighted_cluster.name);
+        MaybeAddCluster(weighted_cluster.name);
         end += weighted_cluster.weight;
         route_entry.weighted_cluster_state.emplace_back(
             end, clusters_[weighted_cluster.name]->cluster());
@@ -254,18 +254,15 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
   resolver_->MaybeRemoveUnusedClusters();
 }
 
-void XdsResolver::XdsConfigSelector::ClusterStateUpdate(
-    const std::string& name) {
-  auto cluster_state = resolver_->cluster_state_map_.find(name);
+void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   if (clusters_.find(name) == clusters_.end()) {
-    if (cluster_state == resolver_->cluster_state_map_.end()) {
+    auto it = resolver_->cluster_state_map_.find(name);
+    if (it == resolver_->cluster_state_map_.end()) {
       auto new_cluster_state =
           MakeRefCounted<ClusterState>(name, &resolver_->cluster_state_map_);
       clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
     } else {
-      cluster_state->second->RefIfNonZero();
-      clusters_[cluster_state->second->cluster()] =
-          RefCountedPtr<ClusterState>(cluster_state->second);
+      clusters_[it->second->cluster()] = it->second->Ref();
     }
   }
 }
@@ -436,18 +433,16 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       GPR_ASSERT(entry.weighted_cluster_state[index].first > key);
       cluster_name = entry.weighted_cluster_state[index].second;
     }
-    // TODO: what if there is no match: cluster_name_str == nullptr
     auto it = clusters_.find(cluster_name);
     GPR_ASSERT(it != clusters_.end());
-    if (it->second->RefIfNonZero()) {
-      CallConfig call_config;
-      call_config.call_attributes[kXdsClusterAttribute] = it->first;
-      ClusterState* cluster_state = it->second.get();
-      call_config.on_call_committed = [this, cluster_state]() {
-        OnCallCommitted(cluster_state);
-      };
-      return call_config;
-    }
+    ClusterState* cluster_state = it->second.get();
+    cluster_state->Ref().release();
+    CallConfig call_config;
+    call_config.call_attributes[kXdsClusterAttribute] = it->first;
+    call_config.on_call_committed = [this, cluster_state]() {
+      OnCallCommitted(cluster_state);
+    };
+    return call_config;
   }
   return CallConfig();
 }
@@ -521,8 +516,8 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
     }
   }
   if (!update_needed) return;
-  // First create XdsConfigSelector, which will create the cluster state
-  // map, and then CreateServiceConfig for LB policies.
+  // First create XdsConfigSelector, which may add new entries to the cluster
+  // state map, and then CreateServiceConfig for LB policies.
   auto config_selector =
       MakeRefCounted<XdsConfigSelector>(Ref(), current_update_);
   Result result;
