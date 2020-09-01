@@ -23,8 +23,6 @@ export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 export PREPARE_BUILD_INSTALL_DEPS_RUBY=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
-export SETUPTOOLS_USE_DISTUTILS=stdlib
-
 # install cython for all python versions
 python2.7 -m pip install -U cython setuptools wheel --user
 python3.5 -m pip install -U cython setuptools wheel --user

@@ -15,8 +15,6 @@
 @rem set path to python & mingw compiler
 set PATH=C:\%1;C:\%1\scripts;C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 
-set SETUPTOOLS_USE_DISTUTILS=stdlib
-
 python -m pip install --upgrade six
 @rem some artifacts are broken for setuptools 38.5.0. See https://github.com/grpc/grpc/issues/14317
 python -m pip install --upgrade setuptools==38.2.4

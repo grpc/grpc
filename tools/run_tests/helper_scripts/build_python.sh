@@ -119,7 +119,6 @@ ROOT=$(pwd)
 export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export LANG=en_US.UTF-8
-export SETUPTOOLS_USE_DISTUTILS=stdlib
 
 # Allow build_ext to build C/C++ files in parallel
 # by enabling a monkeypatch. It speeds up the build a lot.
