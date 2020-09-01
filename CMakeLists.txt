@@ -25,12 +25,12 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.32.0-dev")
-set(gRPC_CORE_VERSION     "11.0.0")
-set(gRPC_CORE_SOVERSION   "11")
-set(gRPC_CPP_VERSION      "1.32.0-dev")
+set(PACKAGE_VERSION       "1.33.0-dev")
+set(gRPC_CORE_VERSION     "12.0.0")
+set(gRPC_CORE_SOVERSION   "12")
+set(gRPC_CPP_VERSION      "1.33.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
-set(gRPC_CSHARP_VERSION   "2.32.0-dev")
+set(gRPC_CSHARP_VERSION   "2.33.0-dev")
 set(gRPC_CSHARP_SOVERSION "2")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
@@ -2856,7 +2856,6 @@ foreach(_hdr
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
-  include/grpcpp/server_impl.h
   include/grpcpp/server_posix.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_stream_impl.h
@@ -3540,7 +3539,6 @@ foreach(_hdr
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
-  include/grpcpp/server_impl.h
   include/grpcpp/server_posix.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_stream_impl.h
