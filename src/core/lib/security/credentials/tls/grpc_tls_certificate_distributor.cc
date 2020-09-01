@@ -228,6 +228,7 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
   bool already_watching_identity_for_root_cert = false;
   bool stop_watching_identity_cert = false;
   bool already_watching_root_for_identity_cert = false;
+  gpr_log(GPR_ERROR, "%s", "in cancel-------------------------");
   // Update watchers_ and certificate_info_map_.
   {
     grpc_core::MutexLock lock(&mu_);
@@ -263,6 +264,7 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
       }
     }
   }
+  gpr_log(GPR_ERROR, "%s", "invoke callback");
   // Invoke watch status callback if needed.
   {
     grpc_core::MutexLock lock(&callback_mu_);
