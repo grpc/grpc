@@ -263,9 +263,6 @@ class BuildExt(build_ext.build_ext):
         try:
             build_ext.build_ext.build_extensions(self)
         except Exception as error:
-            print("************************* {}".format(dir(error)))
-            print("************************* {}".format(error.args))
-            print("************************* {}".format(dir(error.args)))
             formatted_exception = traceback.format_exc()
             support.diagnose_build_ext_error(self, error, formatted_exception)
             raise CommandError(
