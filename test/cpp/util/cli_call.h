@@ -27,6 +27,8 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
+#include "test/cpp/util/cli_flags.h"
+
 namespace grpc {
 
 class ClientContext;
