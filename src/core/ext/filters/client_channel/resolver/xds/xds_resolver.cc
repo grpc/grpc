@@ -204,6 +204,80 @@ void XdsResolver::ListenerWatcher::OnResourceDoesNotExist() {
 /// XdsResolver::XdsConfigSelector
 ///
 
+XdsResolver::XdsConfigSelector::XdsConfigSelector(
+    RefCountedPtr<XdsResolver> resolver, const XdsApi::RdsUpdate& rds_update)
+    : resolver_(std::move(resolver)) {
+  // 1. Construct the route table,
+  // 2  Update resolver's cluster state map
+  // 3. Construct cluster list to hold on to entries in the cluster state
+  // map.
+  for (auto& route : rds_update.routes) {
+    route_table_.emplace_back();
+    auto& route_entry = route_table_.back();
+    route_entry.route = route;
+    if (route.weighted_clusters.empty()) {
+      ClusterStateUpdate(route.cluster_name);
+    } else {
+      uint32_t end = 0;
+      for (const auto& weighted_cluster : route.weighted_clusters) {
+        ClusterStateUpdate(weighted_cluster.name);
+        end += weighted_cluster.weight;
+        route_entry.weighted_cluster_state.emplace_back(
+            end, clusters_[weighted_cluster.name]->cluster());
+      }
+    }
+  }
+  for (const auto& route : route_table_) {
+    gpr_log(GPR_INFO,
+            "DONNAAA constructor %p added: RDS update copied to route_table %s",
+            this, route.route.ToString().c_str());
+  }
+}
+
+XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
+  gpr_log(GPR_INFO, "DONNAAA: destructor per selector %p minus", this);
+  void* stack[128];
+  int size = absl::GetStackTrace(stack, 128, 1);
+  for (int i = 0; i < size; ++i) {
+    char out[256];
+    if (absl::Symbolize(stack[i], out, 256)) {
+      gpr_log(GPR_INFO, "donna stack trace per selector %p minus:[%s]", this,
+              out);
+    }
+  }
+  for (const auto& p : clusters_) {
+    gpr_log(GPR_INFO, "DONNAAA: destructor cluster %s", p.first);
+    p.second->PrintRef();
+    // No need to call Unref, its automatic with the destructor
+  }
+  clusters_.clear();
+  resolver_->MaybeRemoveUnusedClusters();
+}
+
+void XdsResolver::XdsConfigSelector::ClusterStateUpdate(
+    const std::string& name) {
+  auto cluster_state = resolver_->cluster_state_map_.find(name);
+  if (clusters_.find(name) == clusters_.end()) {
+    if (cluster_state == resolver_->cluster_state_map_.end()) {
+      auto new_cluster_state =
+          MakeRefCounted<ClusterState>(name, &resolver_->cluster_state_map_);
+      clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
+    } else {
+      cluster_state->second->RefIfNonZero();
+      clusters_[cluster_state->second->cluster()] =
+          RefCountedPtr<ClusterState>(cluster_state->second);
+    }
+  }
+}
+
+void XdsResolver::XdsConfigSelector::OnCallCommitted(
+    ClusterState* cluster_state) {
+  cluster_state->Unref();
+  XdsResolver* resolver = resolver_.get();
+  resolver_->work_serializer()->Run(
+      [resolver]() { resolver->MaybeRemoveUnusedClusters(); }, DEBUG_LOCATION);
+}
+
 bool PathMatch(
     const absl::string_view& path,
     const XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher& path_matcher) {
@@ -314,80 +388,6 @@ bool UnderFraction(const uint32_t fraction_per_million) {
   // Generate a random number in [0, 1000000).
   const uint32_t random_number = rand() % 1000000;
   return random_number < fraction_per_million;
-}
-
-XdsResolver::XdsConfigSelector::XdsConfigSelector(
-    RefCountedPtr<XdsResolver> resolver, const XdsApi::RdsUpdate& rds_update)
-    : resolver_(std::move(resolver)) {
-  // 1. Construct the route table,
-  // 2  Update resolver's cluster state map
-  // 3. Construct cluster list to hold on to entries in the cluster state
-  // map.
-  for (auto& route : rds_update.routes) {
-    route_table_.emplace_back();
-    auto& route_entry = route_table_.back();
-    route_entry.route = route;
-    if (route.weighted_clusters.empty()) {
-      ClusterStateUpdate(route.cluster_name);
-    } else {
-      uint32_t end = 0;
-      for (const auto& weighted_cluster : route.weighted_clusters) {
-        ClusterStateUpdate(weighted_cluster.name);
-        end += weighted_cluster.weight;
-        route_entry.weighted_cluster_state.emplace_back(
-            end, clusters_[weighted_cluster.name]->cluster());
-      }
-    }
-  }
-  for (const auto& route : route_table_) {
-    gpr_log(GPR_INFO,
-            "DONNAAA constructor %p added: RDS update copied to route_table %s",
-            this, route.route.ToString().c_str());
-  }
-}
-
-XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
-  gpr_log(GPR_INFO, "DONNAAA: destructor per selector %p minus", this);
-  void* stack[128];
-  int size = absl::GetStackTrace(stack, 128, 1);
-  for (int i = 0; i < size; ++i) {
-    char out[256];
-    if (absl::Symbolize(stack[i], out, 256)) {
-      gpr_log(GPR_INFO, "donna stack trace per selector %p minus:[%s]", this,
-              out);
-    }
-  }
-  for (const auto& p : clusters_) {
-    gpr_log(GPR_INFO, "DONNAAA: destructor cluster %s", p.first);
-    p.second->PrintRef();
-    // No need to call Unref, its automatic with the destructor
-  }
-  clusters_.clear();
-  resolver_->MaybeRemoveUnusedClusters();
-}
-
-void XdsResolver::XdsConfigSelector::ClusterStateUpdate(
-    const std::string& name) {
-  auto cluster_state = resolver_->cluster_state_map_.find(name);
-  if (clusters_.find(name) == clusters_.end()) {
-    if (cluster_state == resolver_->cluster_state_map_.end()) {
-      auto new_cluster_state =
-          MakeRefCounted<ClusterState>(name, &resolver_->cluster_state_map_);
-      clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
-    } else {
-      cluster_state->second->RefIfNonZero();
-      clusters_[cluster_state->second->cluster()] =
-          RefCountedPtr<ClusterState>(cluster_state->second);
-    }
-  }
-}
-
-void XdsResolver::XdsConfigSelector::OnCallCommitted(
-    ClusterState* cluster_state) {
-  cluster_state->Unref();
-  XdsResolver* resolver = resolver_.get();
-  resolver_->work_serializer()->Run(
-      [resolver]() { resolver->MaybeRemoveUnusedClusters(); }, DEBUG_LOCATION);
 }
 
 ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(

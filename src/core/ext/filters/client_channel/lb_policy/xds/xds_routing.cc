@@ -346,21 +346,18 @@ void XdsRoutingLb::UpdateStateLocked() {
     case GRPC_CHANNEL_READY: {
       ClusterPicker::ClusterMap cluster_map;
       for (const auto& p : config_->cluster_map()) {
-        if (children_[p.first]->picker_wrapper() == nullptr) {
+        RefCountedPtr<ChildPickerWrapper>& child_picker = cluster_map[p.first];
+        child_picker = children_[p.first]->picker_wrapper();
+        if (child_picker == nullptr) {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_routing_lb_trace)) {
             gpr_log(GPR_INFO,
                     "[xds_routing_lb %p] child %s has not yet returned a "
                     "picker; creating a QueuePicker.",
                     this, p.first.c_str());
           }
-          auto picker = MakeRefCounted<ChildPickerWrapper>(
+          child_picker = MakeRefCounted<ChildPickerWrapper>(
               p.first, absl::make_unique<QueuePicker>(
                            Ref(DEBUG_LOCATION, "QueuePicker")));
-          cluster_map[absl::string_view(picker->name())] = picker;
-        } else {
-          cluster_map[absl::string_view(
-              children_[p.first]->picker_wrapper()->name())] =
-              children_[p.first]->picker_wrapper();
         }
       }
       picker =
