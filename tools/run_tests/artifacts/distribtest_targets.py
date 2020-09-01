@@ -235,7 +235,9 @@ class PHPDistribTest(object):
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ['distribtest', 'php', platform, arch, docker_suffix]
+        self.labels = ['distribtest', 'php', platform, arch]
+        if docker_suffix:
+            self.labels.append(docker_suffix)
 
     def pre_build_jobspecs(self):
         return []
@@ -275,8 +277,14 @@ class CppDistribTest(object):
         self.docker_suffix = docker_suffix
         self.testcase = testcase
         self.labels = [
-            'distribtest', 'cpp', platform, arch, docker_suffix, testcase
+            'distribtest',
+            'cpp',
+            platform,
+            arch,
+            testcase,
         ]
+        if docker_suffix:
+            self.labels.append(docker_suffix)
 
     def pre_build_jobspecs(self):
         return []
@@ -306,6 +314,7 @@ class CppDistribTest(object):
 def targets():
     """Gets list of supported targets"""
     return [
+        # C++
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_submodule'),
         CppDistribTest('linux', 'x64', 'stretch', 'cmake'),
         CppDistribTest('linux', 'x64', 'stretch', 'cmake_as_externalproject'),
@@ -317,6 +326,7 @@ def targets():
         CppDistribTest('linux', 'x64', 'stretch', 'raspberry_pi'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
         CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
+        # C#
         CSharpDistribTest('linux', 'x64', 'jessie'),
         CSharpDistribTest('linux', 'x86', 'jessie'),
         CSharpDistribTest('linux', 'x64', 'stretch'),
@@ -328,6 +338,7 @@ def targets():
         CSharpDistribTest('macos', 'x86'),
         CSharpDistribTest('windows', 'x86'),
         CSharpDistribTest('windows', 'x64'),
+        # Python
         PythonDistribTest('linux', 'x64', 'jessie'),
         PythonDistribTest('linux', 'x86', 'jessie'),
         PythonDistribTest('linux', 'x64', 'centos6'),
@@ -335,16 +346,17 @@ def targets():
         PythonDistribTest('linux', 'x64', 'fedora23'),
         PythonDistribTest('linux', 'x64', 'opensuse'),
         PythonDistribTest('linux', 'x64', 'arch'),
-        PythonDistribTest('linux', 'x64', 'ubuntu1404'),
         PythonDistribTest('linux', 'x64', 'ubuntu1604'),
+        PythonDistribTest('linux', 'x64', 'ubuntu1804'),
         PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
         PythonDistribTest('linux', 'x64', 'jessie', source=True),
         PythonDistribTest('linux', 'x86', 'jessie', source=True),
         PythonDistribTest('linux', 'x64', 'centos7', source=True),
         PythonDistribTest('linux', 'x64', 'fedora23', source=True),
         PythonDistribTest('linux', 'x64', 'arch', source=True),
-        PythonDistribTest('linux', 'x64', 'ubuntu1404', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1604', source=True),
+        PythonDistribTest('linux', 'x64', 'ubuntu1804', source=True),
+        # Ruby
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_3'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_4'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_5'),
@@ -359,8 +371,9 @@ def targets():
         RubyDistribTest('linux', 'x64', 'centos7'),
         RubyDistribTest('linux', 'x64', 'fedora23'),
         RubyDistribTest('linux', 'x64', 'opensuse'),
-        RubyDistribTest('linux', 'x64', 'ubuntu1404'),
         RubyDistribTest('linux', 'x64', 'ubuntu1604'),
+        RubyDistribTest('linux', 'x64', 'ubuntu1804'),
+        # PHP
         PHPDistribTest('linux', 'x64', 'jessie'),
         PHPDistribTest('macos', 'x64'),
     ]

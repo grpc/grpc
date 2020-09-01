@@ -88,6 +88,18 @@ py_library(
     ],
 )
 
+py_binary(
+    name = "server_bin",
+    srcs = ["server.py"],
+    main = "server.py",
+    python_version = "PY3",
+    deps = [
+        ":server",
+        ":service",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
+    ],
+)
+
 py2and3_test(
     name = "_insecure_intraop_test",
     size = "small",

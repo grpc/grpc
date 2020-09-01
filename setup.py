@@ -71,6 +71,8 @@ SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src',
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext',
                                            'upb-generated'),)
+UPBDEFS_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext',
+                                               'upbdefs-generated'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
 README = os.path.join(PYTHON_STEM, 'README.rst')
 
@@ -164,12 +166,22 @@ def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (b'#include <atomic>\n' +
                  b'int main() { return std::atomic<int64_t>{}; }')
-    cc_test = subprocess.Popen(['cc', '-x', 'c++', '-std=c++11', '-'],
-                               stdin=PIPE,
-                               stdout=PIPE,
-                               stderr=PIPE)
-    cc_test.communicate(input=code_test)
-    return cc_test.returncode != 0
+    cpp_test = subprocess.Popen(['c++', '-x', 'c++', '-std=c++11', '-'],
+                                stdin=PIPE,
+                                stdout=PIPE,
+                                stderr=PIPE)
+    cpp_test.communicate(input=code_test)
+    if cpp_test.returncode == 0:
+        return False
+    # Double-check to see if -latomic actually can solve the problem.
+    # https://github.com/grpc/grpc/issues/22491
+    cpp_test = subprocess.Popen(
+        ['c++', '-x', 'c++', '-std=c++11', '-latomic', '-'],
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=PIPE)
+    cpp_test.communicate(input=code_test)
+    return cpp_test.returncode == 0
 
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
@@ -247,7 +259,8 @@ if BUILD_WITH_SYSTEM_CARES:
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
                                  RE2_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
-                                 UPB_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE)
+                                 UPB_GRPC_GENERATED_INCLUDE +
+                                 UPBDEFS_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:

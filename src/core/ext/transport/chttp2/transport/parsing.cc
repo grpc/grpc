@@ -334,6 +334,16 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t) {
 }
 
 static grpc_error* init_data_frame_parser(grpc_chttp2_transport* t) {
+  // Update BDP accounting since we have received a data frame.
+  grpc_core::BdpEstimator* bdp_est = t->flow_control->bdp_estimator();
+  if (bdp_est) {
+    if (t->bdp_ping_blocked) {
+      t->bdp_ping_blocked = false;
+      GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
+      schedule_bdp_ping_locked(t);
+    }
+    bdp_est->AddIncomingBytes(t->incoming_frame_size);
+  }
   grpc_chttp2_stream* s =
       grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   grpc_error* err = GRPC_ERROR_NONE;
@@ -391,27 +401,6 @@ static bool md_key_cmp(grpc_mdelem md, const grpc_slice& reference) {
   return GRPC_MDKEY(md).refcount == reference.refcount;
 }
 
-static bool md_cmp(grpc_mdelem md, grpc_mdelem ref_md,
-                   const grpc_slice& ref_key) {
-  if (GPR_LIKELY(GRPC_MDELEM_IS_INTERNED(md))) {
-    return md.payload == ref_md.payload;
-  }
-  if (md_key_cmp(md, ref_key)) {
-    return grpc_slice_eq_static_interned(GRPC_MDVALUE(md),
-                                         GRPC_MDVALUE(ref_md));
-  }
-  return false;
-}
-
-static bool is_nonzero_status(grpc_mdelem md) {
-  // If md.payload == GRPC_MDELEM_GRPC_STATUS_1 or GRPC_MDELEM_GRPC_STATUS_2,
-  // then we have seen an error. In fact, if it is a GRPC_STATUS and it's
-  // not equal to GRPC_MDELEM_GRPC_STATUS_0, then we have seen an error.
-  // TODO(ctiller): check for a status like " 0"
-  return md_key_cmp(md, GRPC_MDSTR_GRPC_STATUS) &&
-         !md_cmp(md, GRPC_MDELEM_GRPC_STATUS_0, GRPC_MDSTR_GRPC_STATUS);
-}
-
 static void GPR_ATTRIBUTE_NOINLINE on_initial_header_log(
     grpc_chttp2_transport* t, grpc_chttp2_stream* s, grpc_mdelem md) {
   char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
@@ -458,7 +447,8 @@ static grpc_error* GPR_ATTRIBUTE_NOINLINE handle_metadata_size_limit_exceeded(
     size_t new_size, size_t metadata_size_limit) {
   gpr_log(GPR_DEBUG,
           "received initial metadata size exceeds limit (%" PRIuPTR
-          " vs. %" PRIuPTR ")",
+          " vs. %" PRIuPTR
+          "). GRPC_ARG_MAX_METADATA_SIZE can be set to increase this limit.",
           new_size, metadata_size_limit);
   grpc_chttp2_cancel_stream(
       t, s,
@@ -493,9 +483,7 @@ static grpc_error* on_initial_header(void* tp, grpc_mdelem md) {
     on_initial_header_log(t, s, md);
   }
 
-  if (is_nonzero_status(md)) {  // not GRPC_MDELEM_GRPC_STATUS_0?
-    s->seen_error = true;
-  } else if (md_key_cmp(md, GRPC_MDSTR_GRPC_TIMEOUT)) {
+  if (md_key_cmp(md, GRPC_MDSTR_GRPC_TIMEOUT)) {
     return handle_timeout(s, md);
   }
 
@@ -534,10 +522,6 @@ static grpc_error* on_trailing_header(void* tp, grpc_mdelem md) {
     gpr_free(value);
   }
 
-  if (is_nonzero_status(md)) {  // not GRPC_MDELEM_GRPC_STATUS_0?
-    s->seen_error = true;
-  }
-
   const size_t new_size = s->metadata_buffer[1].size + GRPC_MDELEM_LENGTH(md);
   const size_t metadata_size_limit =
       t->settings[GRPC_ACKED_SETTINGS]
@@ -545,7 +529,10 @@ static grpc_error* on_trailing_header(void* tp, grpc_mdelem md) {
   if (new_size > metadata_size_limit) {
     gpr_log(GPR_DEBUG,
             "received trailing metadata size exceeds limit (%" PRIuPTR
-            " vs. %" PRIuPTR ")",
+            " vs. %" PRIuPTR
+            "). Please note that the status is also included in the trailing "
+            "metadata and a large status message can also trigger this. "
+            "GRPC_ARG_MAX_METADATA_SIZE can be set to increase this limit.",
             new_size, metadata_size_limit);
     grpc_chttp2_cancel_stream(
         t, s,

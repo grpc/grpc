@@ -43,7 +43,7 @@ BANNED_EXCEPT = {
     'grpc_wsa_error(': ['src/core/lib/iomgr/error.cc'],
     'grpc_log_if_error(': ['src/core/lib/iomgr/error.cc'],
     'grpc_slice_malloc(': ['src/core/lib/slice/slice.cc'],
-    'grpc_call_cancel_internal(': ['src/core/lib/surface/call.cc'],
+    'grpc_call_cancel(': ['src/core/lib/surface/call.cc'],
     'grpc_closure_create(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_init(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_sched(': ['src/core/lib/iomgr/closure.cc'],

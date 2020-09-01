@@ -448,7 +448,7 @@ grpc_channel_args* BuildXdsChannelArgs(const grpc_channel_args& args) {
   absl::InlinedVector<grpc_arg, 3> args_to_add;
   // Keepalive interval.
   args_to_add.emplace_back(grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 5000));
+      const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 5 * 60 * GPR_MS_PER_SEC));
   // A channel arg indicating that the target is an xds server.
   // TODO(roth): Once we figure out our fallback and credentials story, decide
   // whether this is actually needed.  Note that it's currently used by the
@@ -679,6 +679,7 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
+  GPR_ASSERT(!xds_client()->server_name_.empty());
   // Create a call with the specified method name.
   const auto& method =
       xds_client()->bootstrap_->server().ShouldUseV3()
@@ -786,7 +787,7 @@ void XdsClient::ChannelState::AdsCallState::Orphan() {
   // on_status_received_ will complete the cancellation and clean up. Otherwise,
   // we are here because xds_client has to orphan a failed call, then the
   // following cancellation will be a no-op.
-  grpc_call_cancel(call_, nullptr);
+  grpc_call_cancel_internal(call_);
   state_map_.clear();
   // Note that the initial ref is hold by on_status_received_. So the
   // corresponding unref happens in on_status_received_ instead of here.
@@ -805,8 +806,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
       ResourceNamesForRequest(type_url);
   request_payload_slice = xds_client()->api_.CreateAdsRequest(
       type_url, resource_names, state.version, state.nonce,
-      GRPC_ERROR_REF(state.error), !sent_initial_message_,
-      xds_client()->listening_addresses_);
+      GRPC_ERROR_REF(state.error), !sent_initial_message_);
   if (type_url != XdsApi::kLdsTypeUrl && type_url != XdsApi::kRdsTypeUrl &&
       type_url != XdsApi::kCdsTypeUrl && type_url != XdsApi::kEdsTypeUrl) {
     state_map_.erase(type_url);
@@ -892,13 +892,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
                  ? lds_update->route_config_name.c_str()
                  : "<inlined>"));
     if (lds_update->rds_update.has_value()) {
-      gpr_log(GPR_INFO, "RouteConfiguration contains %" PRIuPTR " routes",
-              lds_update->rds_update.value().routes.size());
-      for (size_t i = 0; i < lds_update->rds_update.value().routes.size();
-           ++i) {
-        gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
-                lds_update->rds_update.value().routes[i].ToString().c_str());
-      }
+      gpr_log(GPR_INFO, "RouteConfiguration: %s",
+              lds_update->rds_update->ToString().c_str());
     }
   }
   auto& lds_state = state_map_[XdsApi::kLdsTypeUrl];
@@ -924,8 +919,16 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
   if (xds_client()->lds_result_->rds_update.has_value()) {
     // If the RouteConfiguration was found inlined in LDS response, notify
     // the watcher immediately.
-    xds_client()->listener_watcher_->OnListenerChanged(
-        *xds_client()->lds_result_);
+    const XdsApi::RdsUpdate::VirtualHost* vhost =
+        xds_client()->lds_result_->rds_update->FindVirtualHostForDomain(
+            xds_client()->server_name_);
+    if (vhost == nullptr) {
+      xds_client()->listener_watcher_->OnError(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "no VirtualHost found for domain"));
+    } else {
+      xds_client()->listener_watcher_->OnListenerChanged(vhost->routes);
+    }
   } else {
     // Send RDS request for dynamic resolution.
     Subscribe(XdsApi::kRdsTypeUrl,
@@ -944,14 +947,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] RDS update received;  RouteConfiguration contains "
-            "%" PRIuPTR " routes",
-            this, rds_update.value().routes.size());
-    for (size_t i = 0; i < rds_update.value().routes.size(); ++i) {
-      gpr_log(GPR_INFO, "Route %" PRIuPTR ":\n%s", i,
-              rds_update.value().routes[i].ToString().c_str());
-    }
+    gpr_log(GPR_INFO, "[xds_client %p] RDS update received:\n%s", xds_client(),
+            rds_update->ToString().c_str());
   }
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   auto& state =
@@ -969,9 +966,16 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
   }
   xds_client()->rds_result_ = std::move(rds_update);
   // Notify the watcher.
-  XdsApi::LdsUpdate lds_result = *xds_client()->lds_result_;
-  lds_result.rds_update = xds_client()->rds_result_;
-  xds_client()->listener_watcher_->OnListenerChanged(lds_result);
+  const XdsApi::RdsUpdate::VirtualHost* vhost =
+      xds_client()->rds_result_->FindVirtualHostForDomain(
+          xds_client()->server_name_);
+  if (vhost == nullptr) {
+    xds_client()->listener_watcher_->OnError(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "no VirtualHost found for domain"));
+  } else {
+    xds_client()->listener_watcher_->OnListenerChanged(vhost->routes);
+  }
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
@@ -1022,6 +1026,13 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     const std::string& cluster_name = p.first;
     if (cds_update_map.find(cluster_name) == cds_update_map.end()) {
       ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
+      // If the resource was newly requested but has not yet been received,
+      // we don't want to generate an error for the watchers, because this CDS
+      // response may be in reaction to an earlier request that did not yet
+      // request the new resource, so its absence from the response does not
+      // necessarily indicate that the resource does not exist.
+      // For that case, we rely on the request timeout instead.
+      if (!cluster_state.update.has_value()) continue;
       cluster_state.update.reset();
       for (const auto& p : cluster_state.watchers) {
         p.first->OnResourceDoesNotExist();
@@ -1546,7 +1557,7 @@ void XdsClient::ChannelState::LrsCallState::Orphan() {
   // on_status_received_ will complete the cancellation and clean up. Otherwise,
   // we are here because xds_client has to orphan a failed call, then the
   // following cancellation will be a no-op.
-  grpc_call_cancel(call_, nullptr);
+  grpc_call_cancel_internal(call_);
   // Note that the initial ref is hold by on_status_received_. So the
   // corresponding unref happens in on_status_received_ instead of here.
 }
@@ -1745,7 +1756,6 @@ grpc_millis GetRequestTimeout(const grpc_channel_args& args) {
 XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
                      grpc_pollset_set* interested_parties,
                      absl::string_view server_name,
-                     std::vector<grpc_resolved_address> listening_addresses,
                      std::unique_ptr<ListenerWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
@@ -1756,7 +1766,6 @@ XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
           XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
       api_(this, &grpc_xds_client_trace, bootstrap_.get()),
       server_name_(server_name),
-      listening_addresses_(std::move(listening_addresses)),
       listener_watcher_(std::move(watcher)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);

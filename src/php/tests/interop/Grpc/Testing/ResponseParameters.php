@@ -126,7 +126,17 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      */
     public function getCompressed()
     {
-        return $this->compressed;
+        return isset($this->compressed) ? $this->compressed : null;
+    }
+
+    public function hasCompressed()
+    {
+        return isset($this->compressed);
+    }
+
+    public function clearCompressed()
+    {
+        unset($this->compressed);
     }
 
     /**

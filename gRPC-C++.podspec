@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.32.0-dev'
+  version = '1.33.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -106,7 +106,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/client_callback.h',
                       'include/grpcpp/impl/codegen/client_callback_impl.h',
                       'include/grpcpp/impl/codegen/client_context.h',
-                      'include/grpcpp/impl/codegen/client_context_impl.h',
                       'include/grpcpp/impl/codegen/client_interceptor.h',
                       'include/grpcpp/impl/codegen/client_unary_call.h',
                       'include/grpcpp/impl/codegen/completion_queue.h',
@@ -132,7 +131,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/server_callback_handlers.h',
                       'include/grpcpp/impl/codegen/server_callback_impl.h',
                       'include/grpcpp/impl/codegen/server_context.h',
-                      'include/grpcpp/impl/codegen/server_context_impl.h',
                       'include/grpcpp/impl/codegen/server_interceptor.h',
                       'include/grpcpp/impl/codegen/server_interface.h',
                       'include/grpcpp/impl/codegen/service_type.h',
@@ -165,7 +163,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/server.h',
                       'include/grpcpp/server_builder.h',
                       'include/grpcpp/server_context.h',
-                      'include/grpcpp/server_impl.h',
                       'include/grpcpp/server_posix.h',
                       'include/grpcpp/support/async_stream.h',
                       'include/grpcpp/support/async_stream_impl.h',
@@ -202,6 +199,7 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-Core', version
     abseil_version = '1.20200225.0'
     ss.dependency 'abseil/base/base', abseil_version
+    ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
@@ -236,7 +234,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy_factory.h',
                       'src/core/ext/filters/client_channel/lb_policy_registry.h',
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
-                      'src/core/ext/filters/client_channel/parse_address.h',
                       'src/core/ext/filters/client_channel/proxy_mapper.h',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
                       'src/core/ext/filters/client_channel/resolver.h',
@@ -535,6 +532,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.h',
                       'src/core/lib/iomgr/nameser.h',
+                      'src/core/lib/iomgr/parse_address.h',
                       'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                       'src/core/lib/iomgr/polling_entity.h',
                       'src/core/lib/iomgr/pollset.h',
@@ -580,6 +578,16 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/work_serializer.h',
                       'src/core/lib/json/json.h',
                       'src/core/lib/profiling/timers.h',
+                      'src/core/lib/security/authorization/authorization_engine.h',
+                      'src/core/lib/security/authorization/evaluate_args.h',
+                      'src/core/lib/security/authorization/mock_cel/activation.h',
+                      'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
+                      'src/core/lib/security/authorization/mock_cel/cel_expression.h',
+                      'src/core/lib/security/authorization/mock_cel/cel_value.h',
+                      'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
+                      'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
+                      'src/core/lib/security/authorization/mock_cel/statusor.h',
+                      'src/core/lib/security/certificate_provider.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -796,7 +804,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy_factory.h',
                               'src/core/ext/filters/client_channel/lb_policy_registry.h',
                               'src/core/ext/filters/client_channel/local_subchannel_pool.h',
-                              'src/core/ext/filters/client_channel/parse_address.h',
                               'src/core/ext/filters/client_channel/proxy_mapper.h',
                               'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
                               'src/core/ext/filters/client_channel/resolver.h',
@@ -1095,6 +1102,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
                               'src/core/lib/iomgr/nameser.h',
+                              'src/core/lib/iomgr/parse_address.h',
                               'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                               'src/core/lib/iomgr/polling_entity.h',
                               'src/core/lib/iomgr/pollset.h',
@@ -1140,6 +1148,16 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/work_serializer.h',
                               'src/core/lib/json/json.h',
                               'src/core/lib/profiling/timers.h',
+                              'src/core/lib/security/authorization/authorization_engine.h',
+                              'src/core/lib/security/authorization/evaluate_args.h',
+                              'src/core/lib/security/authorization/mock_cel/activation.h',
+                              'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
+                              'src/core/lib/security/authorization/mock_cel/cel_expression.h',
+                              'src/core/lib/security/authorization/mock_cel/cel_value.h',
+                              'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
+                              'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
+                              'src/core/lib/security/authorization/mock_cel/statusor.h',
+                              'src/core/lib/security/certificate_provider.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -1317,7 +1335,8 @@ Pod::Spec.new do |s|
     sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
-    find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
+    find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
+    find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upbdefs.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upbdefs-generated/\\1.upbdefs.h"\\\n#else\\\n  #include  "\\1.upbdefs.h"\\\n#endif;g'
     find src/core/ src/cpp/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
     find third_party/re2/re2/ third_party/re2/util/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g;s;#include "util/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/util/\\1"\\\n#else\\\n  #include  "util/\\1"\\\n#endif;g'
     find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g'

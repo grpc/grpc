@@ -100,6 +100,7 @@ libs:
   - test/core/end2end/tests/retry_throttled.cc
   - test/core/end2end/tests/retry_too_many_attempts.cc
   - test/core/end2end/tests/server_finishes_request.cc
+  - test/core/end2end/tests/server_streaming.cc
   - test/core/end2end/tests/shutdown_finishes_calls.cc
   - test/core/end2end/tests/shutdown_finishes_tags.cc
   - test/core/end2end/tests/simple_cacheable_request.cc
@@ -209,6 +210,7 @@ libs:
   - test/core/end2end/tests/retry_throttled.cc
   - test/core/end2end/tests/retry_too_many_attempts.cc
   - test/core/end2end/tests/server_finishes_request.cc
+  - test/core/end2end/tests/server_streaming.cc
   - test/core/end2end/tests/shutdown_finishes_calls.cc
   - test/core/end2end/tests/shutdown_finishes_tags.cc
   - test/core/end2end/tests/simple_cacheable_request.cc
@@ -399,7 +401,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy_factory.h
   - src/core/ext/filters/client_channel/lb_policy_registry.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
-  - src/core/ext/filters/client_channel/parse_address.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
   - src/core/ext/filters/client_channel/resolver.h
@@ -670,6 +671,7 @@ libs:
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/nameser.h
+  - src/core/lib/iomgr/parse_address.h
   - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
@@ -714,6 +716,16 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
+  - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/mock_cel/activation.h
+  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
+  - src/core/lib/security/authorization/mock_cel/cel_expression.h
+  - src/core/lib/security/authorization/mock_cel/cel_value.h
+  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
+  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
+  - src/core/lib/security/authorization/mock_cel/statusor.h
+  - src/core/lib/security/certificate_provider.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -841,7 +853,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
-  - src/core/ext/filters/client_channel/parse_address.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -1131,6 +1142,7 @@ libs:
   - src/core/lib/iomgr/is_epollexclusive_available.cc
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
+  - src/core/lib/iomgr/parse_address.cc
   - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
@@ -1187,6 +1199,8 @@ libs:
   - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_writer.cc
+  - src/core/lib/security/authorization/authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -1305,6 +1319,7 @@ libs:
   - absl/strings:strings
   - absl/status:status
   - absl/container:inlined_vector
+  - absl/container:flat_hash_set
   baselib: true
   deps_linkage: static
   dll: true
@@ -1331,6 +1346,7 @@ libs:
   headers:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
+  - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -1350,6 +1366,7 @@ libs:
   src:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
+  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1380,6 +1397,7 @@ libs:
   headers:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
+  - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -1399,6 +1417,7 @@ libs:
   src:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
+  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1466,7 +1485,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy_factory.h
   - src/core/ext/filters/client_channel/lb_policy_registry.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
-  - src/core/ext/filters/client_channel/parse_address.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
   - src/core/ext/filters/client_channel/resolver.h
@@ -1734,6 +1752,7 @@ libs:
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/nameser.h
+  - src/core/lib/iomgr/parse_address.h
   - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
@@ -1845,7 +1864,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
-  - src/core/ext/filters/client_channel/parse_address.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -2129,6 +2147,7 @@ libs:
   - src/core/lib/iomgr/is_epollexclusive_available.cc
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
+  - src/core/lib/iomgr/parse_address.cc
   - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
@@ -2374,7 +2393,6 @@ libs:
   - include/grpcpp/impl/codegen/client_callback.h
   - include/grpcpp/impl/codegen/client_callback_impl.h
   - include/grpcpp/impl/codegen/client_context.h
-  - include/grpcpp/impl/codegen/client_context_impl.h
   - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
@@ -2404,7 +2422,6 @@ libs:
   - include/grpcpp/impl/codegen/server_callback_handlers.h
   - include/grpcpp/impl/codegen/server_callback_impl.h
   - include/grpcpp/impl/codegen/server_context.h
-  - include/grpcpp/impl/codegen/server_context_impl.h
   - include/grpcpp/impl/codegen/server_interceptor.h
   - include/grpcpp/impl/codegen/server_interface.h
   - include/grpcpp/impl/codegen/service_type.h
@@ -2437,7 +2454,6 @@ libs:
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
-  - include/grpcpp/server_impl.h
   - include/grpcpp/server_posix.h
   - include/grpcpp/support/async_stream.h
   - include/grpcpp/support/async_stream_impl.h
@@ -2752,7 +2768,6 @@ libs:
   - include/grpcpp/impl/codegen/client_callback.h
   - include/grpcpp/impl/codegen/client_callback_impl.h
   - include/grpcpp/impl/codegen/client_context.h
-  - include/grpcpp/impl/codegen/client_context_impl.h
   - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
@@ -2782,7 +2797,6 @@ libs:
   - include/grpcpp/impl/codegen/server_callback_handlers.h
   - include/grpcpp/impl/codegen/server_callback_impl.h
   - include/grpcpp/impl/codegen/server_context.h
-  - include/grpcpp/impl/codegen/server_context_impl.h
   - include/grpcpp/impl/codegen/server_interceptor.h
   - include/grpcpp/impl/codegen/server_interface.h
   - include/grpcpp/impl/codegen/service_type.h
@@ -2815,7 +2829,6 @@ libs:
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
-  - include/grpcpp/server_impl.h
   - include/grpcpp/server_posix.h
   - include/grpcpp/support/async_stream.h
   - include/grpcpp/support/async_stream_impl.h
@@ -4203,7 +4216,7 @@ targets:
   language: c
   headers: []
   src:
-  - test/core/client_channel/parse_address_test.cc
+  - test/core/iomgr/parse_address_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -4215,7 +4228,7 @@ targets:
   language: c
   headers: []
   src:
-  - test/core/client_channel/parse_address_with_named_scope_id_test.cc
+  - test/core/iomgr/parse_address_with_named_scope_id_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -4836,7 +4849,7 @@ targets:
   language: c
   headers: []
   src:
-  - test/core/client_channel/uri_parser_test.cc
+  - test/core/uri/uri_parser_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -5029,12 +5042,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/mock_cel/activation.h
-  - src/core/lib/security/authorization/mock_cel/cel_value.h
+  headers: []
   src:
-  - src/core/lib/security/authorization/authorization_engine.cc
   - test/core/security/authorization_engine_test.cc
   deps:
   - grpc_test_util
@@ -6073,6 +6082,19 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: evaluate_args_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/evaluate_args_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: eventmanager_libuv_test
   gtest: true
   build: test
@@ -7106,6 +7128,23 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: remove_stream_from_stalled_lists_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/remove_stream_from_stalled_lists_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: retry_throttle_test
   gtest: true
   build: test
@@ -7708,7 +7747,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/client_channel/uri_fuzzer_test.cc
+  - test/core/uri/uri_fuzzer_test.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
   - grpc_test_util
@@ -7718,7 +7757,7 @@ targets:
   - address_sorting
   - upb
   corpus_dirs:
-  - test/core/client_channel/uri_corpus
+  - test/core/uri/uri_corpus
   maxlen: 128
 - name: window_overflow_bad_client_test
   gtest: true
@@ -7761,6 +7800,7 @@ targets:
   headers:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
+  - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -7783,6 +7823,7 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
+  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc

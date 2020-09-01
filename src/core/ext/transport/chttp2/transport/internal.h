@@ -52,8 +52,12 @@ class ContextList;
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
 typedef enum {
+  /* If a stream is in the following two lists, an explicit ref is associated
+     with the stream */
   GRPC_CHTTP2_LIST_WRITABLE,
   GRPC_CHTTP2_LIST_WRITING,
+  /* No additional ref is taken for the following refs. Make sure to remove the
+     stream from these lists when the stream is removed. */
   GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT,
   GRPC_CHTTP2_LIST_STALLED_BY_STREAM,
   /** streams that are waiting to start because there are too many concurrent
@@ -430,6 +434,8 @@ struct grpc_chttp2_transport {
   grpc_chttp2_write_cb* write_cb_pool = nullptr;
 
   /* bdp estimator */
+  bool bdp_ping_blocked =
+      false; /* Is the BDP blocked due to not receiving any data? */
   grpc_closure next_bdp_ping_timer_expired_locked;
   grpc_closure start_bdp_ping_locked;
   grpc_closure finish_bdp_ping_locked;
@@ -873,5 +879,7 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
 
 void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error* error);
+
+void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

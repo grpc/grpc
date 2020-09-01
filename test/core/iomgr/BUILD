@@ -388,3 +388,27 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "parse_address_test",
+    srcs = ["parse_address_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "parse_address_with_named_scope_id_test",
+    srcs = ["parse_address_with_named_scope_id_test.cc"],
+    language = "C++",
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)

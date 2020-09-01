@@ -110,6 +110,7 @@ def grpc_cc_library(
         includes = [
             "include",
             "src/core/ext/upb-generated",  # Once upb code-gen issue is resolved, remove this.
+            "src/core/ext/upbdefs-generated",  # Once upb code-gen issue is resolved, remove this.
         ],
         alwayslink = alwayslink,
         data = data,
@@ -230,7 +231,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         **args
     )
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = [], features = []):
     copts = []
     if language.upper() == "C":
         copts = ["-std=c99"]
@@ -245,6 +246,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         copts = copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
+        features = features,
     )
 
 def grpc_generate_one_off_targets():

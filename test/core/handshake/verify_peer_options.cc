@@ -235,6 +235,7 @@ static void verify_destruct(void* userdata) { destruct_userdata = userdata; }
 
 int main(int argc, char* argv[]) {
   grpc::testing::TestEnvironment env(argc, argv);
+  grpc_init();
 
   int userdata = 42;
   verify_peer_options verify_options;
@@ -272,6 +273,7 @@ int main(int argc, char* argv[]) {
 
   grpc_slice_unref(cert_slice);
 
+  grpc_shutdown();
   return 0;
 }
 

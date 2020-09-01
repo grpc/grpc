@@ -65,41 +65,6 @@ _POLLING_STRATEGIES = {
     'mac': ['poll'],
 }
 
-BigQueryTestData = collections.namedtuple('BigQueryTestData', 'name flaky cpu')
-
-
-def get_bqtest_data(limit=None):
-    import big_query_utils
-
-    bq = big_query_utils.create_big_query()
-    query = """
-SELECT
-  filtered_test_name,
-  SUM(result != 'PASSED' AND result != 'SKIPPED') > 0 as flaky,
-  MAX(cpu_measured) + 0.01 as cpu
-  FROM (
-  SELECT
-    REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
-    result, cpu_measured
-  FROM
-    [grpc-testing:jenkins_test_results.aggregate_results]
-  WHERE
-    timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
-    AND platform = '""" + platform_string() + """'
-    AND NOT REGEXP_MATCH(job_name, '.*portability.*') )
-GROUP BY
-  filtered_test_name"""
-    if limit:
-        query += " limit {}".format(limit)
-    query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
-    page = bq.jobs().getQueryResults(
-        pageToken=None, **query_job['jobReference']).execute(num_retries=3)
-    test_data = [
-        BigQueryTestData(row['f'][0]['v'], row['f'][1]['v'] == 'true',
-                         float(row['f'][2]['v'])) for row in page['rows']
-    ]
-    return test_data
-
 
 def platform_string():
     return jobset.platform_string()
@@ -272,24 +237,40 @@ class CLanguage(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
+        self._make_options = []
+        self._use_cmake = True
         if self.platform == 'windows':
-            _check_compiler(
-                self.args.compiler,
-                ['default', 'cmake', 'cmake_vs2015', 'cmake_vs2017'])
+            _check_compiler(self.args.compiler, [
+                'default', 'cmake', 'cmake_vs2015', 'cmake_vs2017',
+                'cmake_vs2019'
+            ])
             _check_arch(self.args.arch, ['default', 'x64', 'x86'])
-            self._cmake_generator_option = 'Visual Studio 15 2017' if self.args.compiler == 'cmake_vs2017' else 'Visual Studio 14 2015'
-            self._cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
-            self._use_cmake = True
-            self._make_options = []
-        elif self.args.compiler == 'cmake':
-            _check_arch(self.args.arch, ['default'])
-            self._use_cmake = True
-            self._docker_distro = 'jessie'
-            self._make_options = []
+            if self.args.compiler == 'cmake_vs2019':
+                cmake_generator_option = 'Visual Studio 16 2019'
+            elif self.args.compiler == 'cmake_vs2017':
+                cmake_generator_option = 'Visual Studio 15 2017'
+            else:
+                cmake_generator_option = 'Visual Studio 14 2015'
+            cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
+            self._cmake_configure_extra_args = [
+                '-G', cmake_generator_option, '-A', cmake_arch_option
+            ]
         else:
-            self._use_cmake = False
-            self._docker_distro, self._make_options = self._compiler_options(
+            if self.platform == 'linux':
+                # Allow all the known architectures. _check_arch_option has already checked that we're not doing
+                # something illegal when not running under docker.
+                _check_arch(self.args.arch, ['default', 'x64', 'x86'])
+            else:
+                _check_arch(self.args.arch, ['default'])
+
+            self._docker_distro, self._cmake_configure_extra_args = self._compiler_options(
                 self.args.use_docker, self.args.compiler)
+
+            if self.args.arch == 'x86':
+                # disable boringssl asm optimizations when on x86
+                # see https://github.com/grpc/grpc/blob/b5b8578b3f8b4a9ce61ed6677e19d546e43c5c68/tools/run_tests/artifacts/artifact_targets.py#L253
+                self._cmake_configure_extra_args.append('-DOPENSSL_NO_ASM=ON')
+
         if args.iomgr_platform == "uv":
             cflags = '-DGRPC_UV -DGRPC_CUSTOM_IOMGR_THREAD_CHECK -DGRPC_CUSTOM_SOCKET '
             try:
@@ -457,12 +438,11 @@ class CLanguage(object):
 
     def pre_build_steps(self):
         if self.platform == 'windows':
-            return [[
-                'tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
-                self._cmake_generator_option, self._cmake_arch_option
-            ]]
+            return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat'] +
+                    self._cmake_configure_extra_args]
         elif self._use_cmake:
-            return [['tools/run_tests/helper_scripts/pre_build_cmake.sh']]
+            return [['tools/run_tests/helper_scripts/pre_build_cmake.sh'] +
+                    self._cmake_configure_extra_args]
         else:
             return []
 
@@ -481,36 +461,20 @@ class CLanguage(object):
         else:
             return 'Makefile'
 
-    def _clang_make_options(self, version_suffix=''):
-        if self.args.config == 'ubsan':
-            return [
-                'CC=clang%s' % version_suffix,
-                'CXX=clang++%s' % version_suffix,
-                'LD=clang++%s' % version_suffix,
-                'LDXX=clang++%s' % version_suffix
-            ]
-
+    def _clang_cmake_configure_extra_args(self, version_suffix=''):
         return [
-            'CC=clang%s' % version_suffix,
-            'CXX=clang++%s' % version_suffix,
-            'LD=clang%s' % version_suffix,
-            'LDXX=clang++%s' % version_suffix
-        ]
-
-    def _gcc_make_options(self, version_suffix):
-        return [
-            'CC=gcc%s' % version_suffix,
-            'CXX=g++%s' % version_suffix,
-            'LD=gcc%s' % version_suffix,
-            'LDXX=g++%s' % version_suffix
+            '-DCMAKE_C_COMPILER=clang%s' % version_suffix,
+            '-DCMAKE_CXX_COMPILER=clang++%s' % version_suffix,
         ]
 
     def _compiler_options(self, use_docker, compiler):
-        """Returns docker distro and make options to use for given compiler."""
+        """Returns docker distro and cmake configure args to use for given compiler."""
         if not use_docker and not _is_use_docker_child():
-            _check_compiler(compiler, ['default'])
+            # if not running under docker, we cannot ensure the right compiler version will be used,
+            # so we only allow the non-specific choices.
+            _check_compiler(compiler, ['default', 'cmake'])
 
-        if compiler == 'gcc4.9' or compiler == 'default':
+        if compiler == 'gcc4.9' or compiler == 'default' or compiler == 'cmake':
             return ('jessie', [])
         elif compiler == 'gcc5.3':
             return ('ubuntu1604', [])
@@ -520,21 +484,14 @@ class CLanguage(object):
             return ('buster', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang3.4':
-            # on ubuntu1404, clang-3.4 alias doesn't exist, just use 'clang'
-            return ('ubuntu1404', self._clang_make_options())
-        elif compiler == 'clang3.5':
-            return ('jessie', self._clang_make_options(version_suffix='-3.5'))
         elif compiler == 'clang3.6':
             return ('ubuntu1604',
-                    self._clang_make_options(version_suffix='-3.6'))
+                    self._clang_cmake_configure_extra_args(
+                        version_suffix='-3.6'))
         elif compiler == 'clang3.7':
             return ('ubuntu1604',
-                    self._clang_make_options(version_suffix='-3.7'))
-        elif compiler == 'clang7.0':
-            # clang++-7.0 alias doesn't exist and there are no other clang versions
-            # installed.
-            return ('sanitizers_jessie', self._clang_make_options())
+                    self._clang_cmake_configure_extra_args(
+                        version_suffix='-3.7'))
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -862,25 +819,30 @@ class PythonLanguage(object):
 
         if args.compiler == 'default':
             if os.name == 'nt':
-                return (python36_config,)
+                if args.iomgr_platform == 'gevent':
+                    # TODO(https://github.com/grpc/grpc/issues/23784) allow
+                    # gevent to run on later version once issue solved.
+                    return (python36_config,)
+                else:
+                    return (python38_config,)
             else:
                 if args.iomgr_platform == 'asyncio':
-                    return (python36_config,)
+                    return (python36_config, python38_config)
                 elif os.uname()[0] == 'Darwin':
                     # NOTE(rbellevi): Testing takes significantly longer on
                     # MacOS, so we restrict the number of interpreter versions
                     # tested.
                     return (
                         python27_config,
-                        python36_config,
                         python37_config,
+                        python38_config,
                     )
                 else:
                     return (
                         python27_config,
                         python35_config,
-                        python36_config,
                         python37_config,
+                        python38_config,
                     )
         elif args.compiler == 'python2.7':
             return (python27_config,)
@@ -1495,11 +1457,30 @@ argp.add_argument(
 argp.add_argument(
     '--compiler',
     choices=[
-        'default', 'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl',
-        'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0', 'python2.7',
-        'python3.5', 'python3.6', 'python3.7', 'python3.8', 'pypy', 'pypy3',
-        'python_alpine', 'all_the_cpythons', 'electron1.3', 'electron1.6',
-        'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
+        'default',
+        'gcc4.9',
+        'gcc5.3',
+        'gcc7.4',
+        'gcc8.3',
+        'gcc_musl',
+        'clang3.6',
+        'clang3.7',
+        'python2.7',
+        'python3.5',
+        'python3.6',
+        'python3.7',
+        'python3.8',
+        'pypy',
+        'pypy3',
+        'python_alpine',
+        'all_the_cpythons',
+        'electron1.3',
+        'electron1.6',
+        'coreclr',
+        'cmake',
+        'cmake_vs2015',
+        'cmake_vs2017',
+        'cmake_vs2019',
     ],
     default='default',
     help=
@@ -1575,26 +1556,10 @@ argp.add_argument('--bq_result_table',
                   type=str,
                   nargs='?',
                   help='Upload test results to a specified BQ table.')
-argp.add_argument(
-    '--auto_set_flakes',
-    default=False,
-    const=True,
-    action='store_const',
-    help=
-    'Allow repeated runs for tests that have been failing recently (based on BQ historical data).'
-)
 args = argp.parse_args()
 
 flaky_tests = set()
 shortname_to_cpu = {}
-if args.auto_set_flakes:
-    try:
-        for test in get_bqtest_data():
-            if test.flaky: flaky_tests.add(test.name)
-            if test.cpu > 0: shortname_to_cpu[test.name] = test.cpu
-    except:
-        print("Unexpected error getting flaky tests: %s" %
-              traceback.format_exc())
 
 if args.force_default_poller:
     _POLLING_STRATEGIES = {}

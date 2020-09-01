@@ -283,10 +283,6 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
 };
 }  // namespace
 
-}  // namespace grpc
-
-namespace grpc_impl {
-
 /// Use private inheritance rather than composition only to establish order
 /// of construction, since the public base class should be constructed after the
 /// elements belonging to the private base class are constructed. This is not
@@ -295,20 +291,15 @@ class Server::UnimplementedAsyncRequest final
     : private grpc::UnimplementedAsyncRequestContext,
       public GenericAsyncRequest {
  public:
-  UnimplementedAsyncRequest(Server* server, grpc::ServerCompletionQueue* cq)
+  UnimplementedAsyncRequest(ServerInterface* server,
+                            grpc::ServerCompletionQueue* cq)
       : GenericAsyncRequest(server, &server_context_, &generic_stream_, cq, cq,
-                            nullptr, false),
-        server_(server),
-        cq_(cq) {}
+                            nullptr, false) {}
 
   bool FinalizeResult(void** tag, bool* status) override;
 
   grpc::ServerContext* context() { return &server_context_; }
   grpc::GenericServerAsyncReaderWriter* stream() { return &generic_stream_; }
-
- private:
-  Server* const server_;
-  grpc::ServerCompletionQueue* const cq_;
 };
 
 /// UnimplementedAsyncResponse should not post user-visible completions to the
@@ -981,7 +972,10 @@ Server::~Server() {
       }
     }
   }
-
+  // Destroy health check service before we destroy the C server so that
+  // it does not call grpc_server_request_registered_call() after the C
+  // server has been destroyed.
+  health_check_service_.reset();
   grpc_server_destroy(server_);
 }
 
@@ -1317,7 +1311,9 @@ bool Server::UnimplementedAsyncRequest::FinalizeResult(void** tag,
   if (GenericAsyncRequest::FinalizeResult(tag, status)) {
     // We either had no interceptors run or we are done intercepting
     if (*status) {
-      new UnimplementedAsyncRequest(server_, cq_);
+      // Create a new request/response pair using the server and CQ values
+      // stored in this object's base class.
+      new UnimplementedAsyncRequest(server_, notification_cq_);
       new UnimplementedAsyncResponse(this);
     } else {
       delete this;
@@ -1358,4 +1354,4 @@ grpc::CompletionQueue* Server::CallbackCQ() {
   return callback_cq_;
 }
 
-}  // namespace grpc_impl
+}  // namespace grpc
