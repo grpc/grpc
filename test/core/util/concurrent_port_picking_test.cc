@@ -45,7 +45,7 @@ TEST(PortPickerTest, TestPortPickingIsThreadSafe) {
   port_picking_threads.reserve(kNumConcurrentPicks);
   for (int i = 0; i < kNumConcurrentPicks; i++) {
     port_picking_threads.push_back(absl::make_unique<std::thread>([]() {
-      const int kNumPicksPerThread = 20;
+      const int kNumPicksPerThread = 100;
       for (int k = 0; k < kNumPicksPerThread; k++) {
         int selected_port = grpc_pick_unused_port_or_die();
         GPR_ASSERT(selected_port != 0);
