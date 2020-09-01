@@ -6870,6 +6870,23 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: remove_stream_from_stalled_lists_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/remove_stream_from_stalled_lists_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: retry_throttle_test
   gtest: true
   build: test
