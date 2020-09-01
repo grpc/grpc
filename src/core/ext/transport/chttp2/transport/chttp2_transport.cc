@@ -140,6 +140,7 @@ static void post_destructive_reclaimer(grpc_chttp2_transport* t);
 static void close_transport_locked(grpc_chttp2_transport* t, grpc_error* error);
 static void end_all_the_calls(grpc_chttp2_transport* t, grpc_error* error);
 
+static void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
 static void start_bdp_ping(void* tp, grpc_error* error);
 static void finish_bdp_ping(void* tp, grpc_error* error);
 static void start_bdp_ping_locked(void* tp, grpc_error* error);
@@ -510,7 +511,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   init_keepalive_pings_if_enabled(this);
 
   if (enable_bdp) {
-    bdp_ping_blocked = true;
+    GRPC_CHTTP2_REF_TRANSPORT(this, "bdp_ping");
+    schedule_bdp_ping_locked(this);
+    // bdp_ping_blocked = true;
     grpc_chttp2_act_on_flowctl_action(flow_control->PeriodicUpdate(), this,
                                       nullptr);
   }
@@ -2493,6 +2496,11 @@ static void read_action_locked(void* tp, grpc_error* error) {
     grpc_error* errors[3] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE,
                              GRPC_ERROR_NONE};
     for (; i < t->read_buffer.count && errors[1] == GRPC_ERROR_NONE; i++) {
+      grpc_core::BdpEstimator* bdp_est = t->flow_control->bdp_estimator();
+      if (bdp_est) {
+        bdp_est->AddIncomingBytes(
+            static_cast<int64_t> GRPC_SLICE_LENGTH(t->read_buffer.slices[i]));
+      }
       errors[1] = grpc_chttp2_perform_read(t, t->read_buffer.slices[i]);
     }
     if (errors[1] != GRPC_ERROR_NONE) {
@@ -2571,7 +2579,8 @@ static void continue_read_action_locked(grpc_chttp2_transport* t) {
 
 // t is reffed prior to calling the first time, and once the callback chain
 // that kicks off finishes, it's unreffed
-void schedule_bdp_ping_locked(grpc_chttp2_transport* t) {
+// void schedule_bdp_ping_locked(grpc_chttp2_transport* t) {
+static void schedule_bdp_ping_locked(grpc_chttp2_transport* t) {
   t->flow_control->bdp_estimator()->SchedulePing();
   send_ping_locked(
       t,
@@ -2658,13 +2667,14 @@ static void next_bdp_ping_timer_expired_locked(void* tp, grpc_error* error) {
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
     return;
   }
-  if (t->flow_control->bdp_estimator()->accumulator() == 0) {
-    // Block the bdp ping till we receive more data.
-    t->bdp_ping_blocked = true;
-    GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
-  } else {
-    schedule_bdp_ping_locked(t);
-  }
+  schedule_bdp_ping_locked(t);
+  // if (t->flow_control->bdp_estimator()->accumulator() == 0) {
+  //   // Block the bdp ping till we receive more data.
+  //   t->bdp_ping_blocked = true;
+  //   GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
+  // } else {
+  //   schedule_bdp_ping_locked(t);
+  // }
 }
 
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,

@@ -68,13 +68,14 @@ class BdpEstimator {
     }
     GPR_ASSERT(ping_state_ == PingState::SCHEDULED);
     ping_state_ = PingState::STARTED;
+    accumulator_ = 0;
     ping_start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);
   }
 
   // Completes a previously started ping, returns when to schedule the next one
   grpc_millis CompletePing();
 
-  int64_t accumulator() { return accumulator_; }
+  // int64_t accumulator() { return accumulator_; }
 
  private:
   enum class PingState { UNSCHEDULED, SCHEDULED, STARTED };
