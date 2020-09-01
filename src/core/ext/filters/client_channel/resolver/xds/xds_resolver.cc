@@ -77,6 +77,8 @@ class XdsResolver : public Resolver {
 
   void OnListenerChanged(XdsApi::LdsUpdate listener_data);
   grpc_error* CreateServiceConfig(RefCountedPtr<ServiceConfig>* service_config);
+  void OnError(grpc_error* error);
+  void PropagateUpdate(const XdsApi::RdsUpdate& rds_update);
   void MaybeRemoveUnusedClusters();
 
  private:
@@ -151,27 +153,9 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
   // Update entries in cluster state map.
   resolver_->OnListenerChanged(listener_data);
 
-  // First create XdsConfigSelector, which may add new entries to the cluster
-  // state map, and then CreateServiceConfig for LB policies.
-  auto config_selector =
-      MakeRefCounted<XdsConfigSelector>(resolver_, *listener_data.rds_update);
-  Result result;
-  grpc_error* error = resolver_->CreateServiceConfig(&result.service_config);
-  if (error != GRPC_ERROR_NONE) {
-    OnError(error);
-    return;
-  }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-    gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s",
-            resolver_.get(), result.service_config->json_string().c_str());
-  }
-  grpc_arg new_args[] = {
-      resolver_->xds_client_->MakeChannelArg(),
-      config_selector->MakeChannelArg(),
-  };
-  result.args = grpc_channel_args_copy_and_add(resolver_->args_, new_args,
-                                               GPR_ARRAY_SIZE(new_args));
-  resolver_->result_handler()->ReturnResult(std::move(result));
+  // Progapage the update by creating XdsConfigSelector, CreateServiceConfig,
+  // and ReturnResult.
+  resolver_->PropagateUpdate(*listener_data.rds_update);
 }
 
 void XdsResolver::ListenerWatcher::OnError(grpc_error* error) {
@@ -504,6 +488,40 @@ grpc_error* XdsResolver::CreateServiceConfig(
   return error;
 }
 
+void XdsResolver::OnError(grpc_error* error) {
+  if (xds_client_ == nullptr) return;
+  gpr_log(GPR_ERROR, "[xds_resolver %p] received error: %s", this,
+          grpc_error_string(error));
+  grpc_arg xds_client_arg = xds_client_->MakeChannelArg();
+  Result result;
+  result.args = grpc_channel_args_copy_and_add(args_, &xds_client_arg, 1);
+  result.service_config_error = error;
+  result_handler()->ReturnResult(std::move(result));
+}
+
+void XdsResolver::PropagateUpdate(const XdsApi::RdsUpdate& rds_update) {
+  // First create XdsConfigSelector, which may add new entries to the cluster
+  // state map, and then CreateServiceConfig for LB policies.
+  auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), rds_update);
+  Result result;
+  grpc_error* error = CreateServiceConfig(&result.service_config);
+  if (error != GRPC_ERROR_NONE) {
+    OnError(error);
+    return;
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
+            result.service_config->json_string().c_str());
+  }
+  grpc_arg new_args[] = {
+      xds_client_->MakeChannelArg(),
+      config_selector->MakeChannelArg(),
+  };
+  result.args =
+      grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
+  result_handler()->ReturnResult(std::move(result));
+}
+
 void XdsResolver::MaybeRemoveUnusedClusters() {
   bool update_needed = false;
   for (auto it = cluster_state_map_.begin(); it != cluster_state_map_.end();) {
@@ -515,21 +533,11 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
       it = cluster_state_map_.erase(it);
     }
   }
-  if (!update_needed) return;
-  // First create XdsConfigSelector, which may add new entries to the cluster
-  // state map, and then CreateServiceConfig for LB policies.
-  auto config_selector =
-      MakeRefCounted<XdsConfigSelector>(Ref(), current_update_);
-  Result result;
-  grpc_error* error = CreateServiceConfig(&result.service_config);
-  if (error != GRPC_ERROR_NONE) {
-    return;
+  if (update_needed) {
+    // Progapage the update by creating XdsConfigSelector, CreateServiceConfig,
+    // and ReturnResult.
+    PropagateUpdate(current_update_);
   }
-  grpc_arg new_args[] = {xds_client_->MakeChannelArg(),
-                         config_selector->MakeChannelArg()};
-  result.args =
-      grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
-  result_handler()->ReturnResult(std::move(result));
 }
 
 //
