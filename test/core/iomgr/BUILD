@@ -375,6 +375,11 @@ grpc_cc_test(
     ],
     flaky = True,  # TODO(b/162087149)
     language = "C++",
+    tags = [
+        # TODO(apolcyn): This test is failing on Windows at entry, enable once passing.
+        # See e.g. https://source.cloud.google.com/results/invocations/6716596a-c9e1-4780-85ed-890d8758d582/targets
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",

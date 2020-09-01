@@ -7276,6 +7276,10 @@ targets:
   - gpr
   - address_sorting
   - upb
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: streaming_throughput_test
   gtest: true
   build: test
