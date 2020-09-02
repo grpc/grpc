@@ -841,7 +841,7 @@ class ServiceA final {
       ::grpc::Service::MarkMethodStreamed(0,
         new ::grpc::internal::StreamedUnaryHandler<
           ::grpc::testing::Request, ::grpc::testing::Response>(
-            [this](::grpc::ServerContext* context,
+            [this](::grpc_impl::ServerContext* context,
                    ::grpc_impl::ServerUnaryStreamer<
                      ::grpc::testing::Request, ::grpc::testing::Response>* streamer) {
                        return this->StreamedMethodA1(context,
@@ -869,7 +869,7 @@ class ServiceA final {
       ::grpc::Service::MarkMethodStreamed(2,
         new ::grpc::internal::SplitServerStreamingHandler<
           ::grpc::testing::Request, ::grpc::testing::Response>(
-            [this](::grpc::ServerContext* context,
+            [this](::grpc_impl::ServerContext* context,
                    ::grpc_impl::ServerSplitStreamer<
                      ::grpc::testing::Request, ::grpc::testing::Response>* streamer) {
                        return this->StreamedMethodA3(context,
@@ -1145,7 +1145,7 @@ class ServiceB final {
       ::grpc::Service::MarkMethodStreamed(0,
         new ::grpc::internal::StreamedUnaryHandler<
           ::grpc::testing::Request, ::grpc::testing::Response>(
-            [this](::grpc::ServerContext* context,
+            [this](::grpc_impl::ServerContext* context,
                    ::grpc_impl::ServerUnaryStreamer<
                      ::grpc::testing::Request, ::grpc::testing::Response>* streamer) {
                        return this->StreamedMethodB1(context,
