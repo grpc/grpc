@@ -53,8 +53,10 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   // Forward declaration.
   class TlsCertificatesTestWatcher;
 
-  // CredentialInfo contains the parameters when calling OnCertificatesChanged of a watcher. When OnCertificatesChanged is invoked, we will push a
-  // CredentialInfo to the cert_update_queue of state_, and check in each test if the status updates are correct.
+  // CredentialInfo contains the parameters when calling OnCertificatesChanged
+  // of a watcher. When OnCertificatesChanged is invoked, we will push a
+  // CredentialInfo to the cert_update_queue of state_, and check in each test
+  // if the status updates are correct.
   struct CredentialInfo {
     absl::string_view root_certs;
     grpc_tls_certificate_distributor::PemKeyCertPairList key_cert_pairs;
@@ -68,8 +70,9 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
     }
   };
 
-  // ErrorInfo contains the parameters when calling OnError of a watcher. When OnError is invoked, we will push a
-  // ErrorInfo to the error_queue of state_, and check in each test if the status updates are correct.
+  // ErrorInfo contains the parameters when calling OnError of a watcher. When
+  // OnError is invoked, we will push a ErrorInfo to the error_queue of state_,
+  // and check in each test if the status updates are correct.
   struct ErrorInfo {
     std::string root_cert_str;
     std::string identity_cert_str;
@@ -146,9 +149,10 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
     WatcherState* state_;
   };
 
-  // CallbackStatus contains the parameters when calling watch_status_callback_ of
-  // the distributor. When a particular callback is invoked, we will push a
-  // CallbackStatus to a callback_queue_, and check in each test if the status updates are correct.
+  // CallbackStatus contains the parameters when calling watch_status_callback_
+  // of the distributor. When a particular callback is invoked, we will push a
+  // CallbackStatus to a callback_queue_, and check in each test if the status
+  // updates are correct.
   struct CallbackStatus {
     std::string cert_name;
     bool root_being_watched;
@@ -165,9 +169,12 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   };
 
   void SetUp() override {
-    distributor_.SetWatchStatusCallback([this](std::string cert_name, bool root_being_watched, bool identity_being_watched) {
-      this->callback_queue_.emplace_back(cert_name, root_being_watched, identity_being_watched);
-  });
+    distributor_.SetWatchStatusCallback([this](std::string cert_name,
+                                               bool root_being_watched,
+                                               bool identity_being_watched) {
+      this->callback_queue_.emplace_back(cert_name, root_being_watched,
+                                         identity_being_watched);
+    });
   }
 
   WatcherState* MakeWatcher(absl::optional<std::string> root_cert_name,
@@ -180,8 +187,9 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
     // to nullptr to indicate that it's been destroyed.
     auto watcher =
         absl::make_unique<TlsCertificatesTestWatcher>(&watchers_.back());
-    distributor_.WatchTlsCertificates(std::move(watcher), root_cert_name,
-                                      identity_cert_name);
+    distributor_.WatchTlsCertificates(std::move(watcher),
+                                      std::move(root_cert_name),
+                                      std::move(identity_cert_name));
     return &watchers_.back();
   }
 
@@ -219,10 +227,11 @@ TEST_F(GrpcTlsCertificateDistributorTest, BasicCredentialBehaviors) {
   EXPECT_FALSE(distributor_.HasKeyCertPairs(kIdentityCert1Name));
   // After setting the certificates to the corresponding cert names, the
   // distributor should possess the corresponding certs.
-  distributor_.SetRootCerts(kRootCert1Name, kRootCert1Contents);
+  distributor_.SetKeyMaterials(kRootCert1Name, kRootCert1Contents,
+                               absl::nullopt);
   EXPECT_TRUE(distributor_.HasRootCerts(kRootCert1Name));
-  distributor_.SetKeyCertPairs(
-      kIdentityCert1Name,
+  distributor_.SetKeyMaterials(
+      kIdentityCert1Name, absl::nullopt,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   EXPECT_TRUE(distributor_.HasKeyCertPairs(kIdentityCert1Name));
   // Querying a non-existing cert name should return false.
@@ -230,8 +239,11 @@ TEST_F(GrpcTlsCertificateDistributorTest, BasicCredentialBehaviors) {
   EXPECT_FALSE(distributor_.HasKeyCertPairs(kIdentityCert2Name));
 }
 
-TEST_F(GrpcTlsCertificateDistributorTest, CredentialUpdatesWithoutCallbacks) {
+TEST_F(GrpcTlsCertificateDistributorTest, UpdateCredentialsOnAnySide) {
   WatcherState* watcher_state_1 = MakeWatcher(kCertName1, kCertName1);
+  EXPECT_THAT(callback_queue_,
+              testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
+  callback_queue_.clear();
   // SetKeyMaterials should trigger watcher's OnCertificatesChanged method.
   distributor_.SetKeyMaterials(
       kCertName1, kRootCert1Contents,
@@ -242,17 +254,17 @@ TEST_F(GrpcTlsCertificateDistributorTest, CredentialUpdatesWithoutCallbacks) {
           kRootCert1Contents,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   watcher_state_1->cert_update_queue.clear();
-  // SetRootCerts should trigger watcher's OnCertificatesChanged again.
-  distributor_.SetRootCerts(kCertName1, kRootCert2Contents);
+  // Set root certs should trigger watcher's OnCertificatesChanged again.
+  distributor_.SetKeyMaterials(kCertName1, kRootCert2Contents, absl::nullopt);
   EXPECT_THAT(
       watcher_state_1->cert_update_queue,
       testing::ElementsAre(CredentialInfo(
           kRootCert2Contents,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   watcher_state_1->cert_update_queue.clear();
-  // SetKeyCertPairs should trigger watcher's OnCertificatesChanged again.
-  distributor_.SetKeyCertPairs(
-      kCertName1,
+  // Set identity certs should trigger watcher's OnCertificatesChanged again.
+  distributor_.SetKeyMaterials(
+      kCertName1, absl::nullopt,
       MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
   EXPECT_THAT(
       watcher_state_1->cert_update_queue,
@@ -267,33 +279,36 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameIdentityNameDiffRootName) {
   // Register watcher 1.
   WatcherState* watcher_state_1 =
       MakeWatcher(kRootCert1Name, kIdentityCert1Name);
-  EXPECT_THAT(callback_queue_, testing::ElementsAre(
-                            CallbackStatus(kRootCert1Name, true, false),
-                            CallbackStatus(kIdentityCert1Name, false, true)));
+  EXPECT_THAT(
+      callback_queue_,
+      testing::ElementsAre(CallbackStatus(kRootCert1Name, true, false),
+                           CallbackStatus(kIdentityCert1Name, false, true)));
   callback_queue_.clear();
   // Register watcher 2.
   WatcherState* watcher_state_2 =
       MakeWatcher(kRootCert2Name, kIdentityCert1Name);
-  EXPECT_THAT(callback_queue_, testing::ElementsAre(
-                            CallbackStatus(kRootCert2Name, true, false)));
+  EXPECT_THAT(callback_queue_, testing::ElementsAre(CallbackStatus(
+                                   kRootCert2Name, true, false)));
   callback_queue_.clear();
   // Push credential updates to kRootCert1Name and check if the status works as
   // expected.
-  distributor_.SetRootCerts(kRootCert1Name, kRootCert1Contents);
+  distributor_.SetKeyMaterials(kRootCert1Name, kRootCert1Contents,
+                               absl::nullopt);
   // Check the updates are delivered to watcher 1.
   EXPECT_THAT(watcher_state_1->cert_update_queue,
               testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
   watcher_state_1->cert_update_queue.clear();
   // Push credential updates to kRootCert2Name.
-  distributor_.SetRootCerts(kRootCert2Name, kRootCert2Contents);
+  distributor_.SetKeyMaterials(kRootCert2Name, kRootCert2Contents,
+                               absl::nullopt);
   // Check the updates are delivered to watcher 2.
   EXPECT_THAT(watcher_state_2->cert_update_queue,
               testing::ElementsAre(CredentialInfo(kRootCert2Contents, {})));
   watcher_state_2->cert_update_queue.clear();
   // Push credential updates to kIdentityCert1Name and check if the status works
   // as expected.
-  distributor_.SetKeyCertPairs(
-      kIdentityCert1Name,
+  distributor_.SetKeyMaterials(
+      kIdentityCert1Name, absl::nullopt,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   // Check the updates are delivered to watcher 1 and watcher 2.
   EXPECT_THAT(
@@ -310,14 +325,15 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameIdentityNameDiffRootName) {
   watcher_state_2->cert_update_queue.clear();
   // Cancel watcher 1.
   CancelWatch(watcher_state_1);
-  EXPECT_THAT(callback_queue_, testing::ElementsAre(
-                            CallbackStatus(kRootCert1Name, false, false)));
+  EXPECT_THAT(callback_queue_, testing::ElementsAre(CallbackStatus(
+                                   kRootCert1Name, false, false)));
   callback_queue_.clear();
   // Cancel watcher 2.
   CancelWatch(watcher_state_2);
-  EXPECT_THAT(callback_queue_, testing::ElementsAre(
-                            CallbackStatus(kRootCert2Name, false, false),
-                            CallbackStatus(kIdentityCert1Name, false, false)));
+  EXPECT_THAT(
+      callback_queue_,
+      testing::ElementsAre(CallbackStatus(kRootCert2Name, false, false),
+                           CallbackStatus(kIdentityCert1Name, false, false)));
   callback_queue_.clear();
 }
 
@@ -325,19 +341,21 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameRootNameDiffIdentityName) {
   // Register watcher 1.
   WatcherState* watcher_state_1 =
       MakeWatcher(kRootCert1Name, kIdentityCert1Name);
-  EXPECT_THAT(callback_queue_, testing::ElementsAre(
-                            CallbackStatus(kRootCert1Name, true, false),
-                            CallbackStatus(kIdentityCert1Name, false, true)));
+  EXPECT_THAT(
+      callback_queue_,
+      testing::ElementsAre(CallbackStatus(kRootCert1Name, true, false),
+                           CallbackStatus(kIdentityCert1Name, false, true)));
   callback_queue_.clear();
   // Register watcher 2.
   WatcherState* watcher_state_2 =
       MakeWatcher(kRootCert1Name, kIdentityCert2Name);
-  EXPECT_THAT(callback_queue_, testing::ElementsAre(
-                            CallbackStatus(kIdentityCert2Name, false, true)));
+  EXPECT_THAT(callback_queue_, testing::ElementsAre(CallbackStatus(
+                                   kIdentityCert2Name, false, true)));
   callback_queue_.clear();
   // Push credential updates to kRootCert1Name and check if the status works as
   // expected.
-  distributor_.SetRootCerts(kRootCert1Name, kRootCert1Contents);
+  distributor_.SetKeyMaterials(kRootCert1Name, kRootCert1Contents,
+                               absl::nullopt);
   // Check the updates are delivered to watcher 1.
   EXPECT_THAT(watcher_state_1->cert_update_queue,
               testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
@@ -346,9 +364,9 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameRootNameDiffIdentityName) {
   EXPECT_THAT(watcher_state_2->cert_update_queue,
               testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
   watcher_state_2->cert_update_queue.clear();
-  // Push credential updates to kIdentityCert1Name.
-  distributor_.SetKeyCertPairs(
-      kIdentityCert1Name,
+  // Push credential updates to SetKeyMaterials.
+  distributor_.SetKeyMaterials(
+      kIdentityCert1Name, absl::nullopt,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   // Check the updates are delivered to watcher 1.
   EXPECT_THAT(
@@ -358,8 +376,8 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameRootNameDiffIdentityName) {
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   watcher_state_1->cert_update_queue.clear();
   // Push credential updates to kIdentityCert2Name.
-  distributor_.SetKeyCertPairs(
-      kIdentityCert2Name,
+  distributor_.SetKeyMaterials(
+      kIdentityCert2Name, absl::nullopt,
       MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
   // Check the updates are delivered to watcher 2.
   EXPECT_THAT(
@@ -370,20 +388,20 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameRootNameDiffIdentityName) {
   watcher_state_2->cert_update_queue.clear();
   // Cancel watcher 1.
   CancelWatch(watcher_state_1);
-  EXPECT_THAT(callback_queue_, testing::ElementsAre(
-                            CallbackStatus(kIdentityCert1Name, false, false)));
+  EXPECT_THAT(callback_queue_, testing::ElementsAre(CallbackStatus(
+                                   kIdentityCert1Name, false, false)));
   callback_queue_.clear();
   // Cancel watcher 2.
   CancelWatch(watcher_state_2);
-  EXPECT_THAT(callback_queue_, testing::ElementsAre(
-                            CallbackStatus(kRootCert1Name, false, false),
-                            CallbackStatus(kIdentityCert2Name, false, false)));
+  EXPECT_THAT(
+      callback_queue_,
+      testing::ElementsAre(CallbackStatus(kRootCert1Name, false, false),
+                           CallbackStatus(kIdentityCert2Name, false, false)));
   callback_queue_.clear();
 }
 
 TEST_F(GrpcTlsCertificateDistributorTest,
        AddAndCancelFirstWatcherForSameRootAndIdentityCertName) {
-
   // Register watcher 1 watching kCertName1 for both root and identity certs.
   WatcherState* watcher_state_1 = MakeWatcher(kCertName1, kCertName1);
   EXPECT_THAT(callback_queue_,
@@ -410,7 +428,6 @@ TEST_F(GrpcTlsCertificateDistributorTest,
 
 TEST_F(GrpcTlsCertificateDistributorTest,
        AddAndCancelFirstWatcherForIdentityCertNameWithRootBeingWatched) {
-
   // Register watcher 1 watching kCertName1 for root certs.
   WatcherState* watcher_state_1 = MakeWatcher(kCertName1, absl::nullopt);
   EXPECT_THAT(callback_queue_,
@@ -437,7 +454,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
                                        kIdentityCert1Contents))));
   watcher_state_2->cert_update_queue.clear();
   // Push root cert updates to kCertName1.
-  distributor_.SetRootCerts(kCertName1, kRootCert2Contents);
+  distributor_.SetKeyMaterials(kCertName1, kRootCert2Contents, absl::nullopt);
   // Check the updates are delivered to watcher 1.
   EXPECT_THAT(watcher_state_1->cert_update_queue,
               testing::ElementsAre(CredentialInfo(kRootCert2Contents, {})));
@@ -445,8 +462,8 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // Check the updates are not delivered to watcher 2.
   EXPECT_THAT(watcher_state_2->cert_update_queue, testing::ElementsAre());
   // Push identity cert updates to kCertName1.
-  distributor_.SetKeyCertPairs(
-      kCertName1,
+  distributor_.SetKeyMaterials(
+      kCertName1, absl::nullopt,
       MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
   // Check the updates are not delivered to watcher 1.
   EXPECT_THAT(watcher_state_1->cert_update_queue, testing::ElementsAre());
@@ -496,7 +513,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
               testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
   watcher_state_2->cert_update_queue.clear();
   // Push root cert updates to kCertName1.
-  distributor_.SetRootCerts(kCertName1, kRootCert2Contents);
+  distributor_.SetKeyMaterials(kCertName1, kRootCert2Contents, absl::nullopt);
   // Check the updates are delivered to watcher 2.
   EXPECT_THAT(watcher_state_2->cert_update_queue,
               testing::ElementsAre(CredentialInfo(kRootCert2Contents, {})));
@@ -504,8 +521,8 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // Check the updates are not delivered to watcher 1.
   EXPECT_THAT(watcher_state_1->cert_update_queue, testing::ElementsAre());
   // Push identity cert updates to kCertName1.
-  distributor_.SetKeyCertPairs(
-      kCertName1,
+  distributor_.SetKeyMaterials(
+      kCertName1, absl::nullopt,
       MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
   // Check the updates are not delivered to watcher 2.
   EXPECT_THAT(watcher_state_2->cert_update_queue, testing::ElementsAre());
@@ -624,10 +641,11 @@ TEST_F(GrpcTlsCertificateDistributorTest, WatchACertInfoWithValidCredentials) {
       kCertName1, kRootCert1Contents,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   // Push root credential updates to kCertName2.
-  distributor_.SetRootCerts(kRootCert2Name, kRootCert2Contents);
+  distributor_.SetKeyMaterials(kRootCert2Name, kRootCert2Contents,
+                               absl::nullopt);
   // Push identity credential updates to kCertName2.
-  distributor_.SetKeyCertPairs(
-      kIdentityCert2Name,
+  distributor_.SetKeyMaterials(
+      kIdentityCert2Name, absl::nullopt,
       MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
   // Register watcher 1.
   WatcherState* watcher_state_1 = MakeWatcher(kCertName1, kCertName1);

@@ -79,14 +79,8 @@ struct grpc_tls_certificate_distributor
   // @param pem_root_certs The content of root certificates.
   // @param pem_key_cert_pairs The content of identity key-cert pairs.
   void SetKeyMaterials(const std::string& cert_name,
-                       absl::string_view pem_root_certs,
-                       PemKeyCertPairList pem_key_cert_pairs);
-
-  void SetRootCerts(const std::string& root_cert_name,
-                    absl::string_view pem_root_certs);
-
-  void SetKeyCertPairs(const std::string& identity_cert_name,
-                       PemKeyCertPairList pem_key_cert_pairs);
+                       absl::optional<absl::string_view> pem_root_certs,
+                       absl::optional<PemKeyCertPairList> pem_key_cert_pairs);
 
   bool HasRootCerts(const std::string& root_cert_name);
 
@@ -201,21 +195,6 @@ struct grpc_tls_certificate_distributor
       identity_cert_error = error;
     }
   };
-
-  // CertificateUpdated will be invoked to send updates to each of the
-  // watchers in root_cert_watchers and identity_cert_watchers whenever
-  // pem_root_certs or pem_key_cert_pair changes.
-  // The lock mu_ must be held while calling this function.
-  //
-  // @param cert_name The name of the certificates being changed.
-  // @param root_cert_changed If the root cert with name "cert_name" changed.
-  // @param identity_cert_changed If the identity cert with name "cert_name"
-  // changed.
-  // @param cert_info the entry being modified in certificate_info_map_.
-  void CertificatesUpdatedLocked(const std::string& cert_name,
-                                 bool root_cert_changed,
-                                 bool identity_cert_changed,
-                                 CertificateInfo* cert_info);
 
   grpc_core::Mutex mu_;
   // We need a dedicated mutex for watch_status_callback_ for allowing
