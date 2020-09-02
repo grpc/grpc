@@ -124,7 +124,6 @@ class XdsResolver : public Resolver {
     using RouteTable = std::vector<Route>;
 
     void MaybeAddCluster(const std::string& name);
-    void OnCallCommitted(ClusterState* cluster_state);
 
     RefCountedPtr<XdsResolver> resolver_;
     RouteTable route_table_;
@@ -249,14 +248,6 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
       clusters_[it->second->cluster()] = it->second->Ref();
     }
   }
-}
-
-void XdsResolver::XdsConfigSelector::OnCallCommitted(
-    ClusterState* cluster_state) {
-  cluster_state->Unref();
-  XdsResolver* resolver = resolver_.get();
-  resolver_->work_serializer()->Run(
-      [resolver]() { resolver->MaybeRemoveUnusedClusters(); }, DEBUG_LOCATION);
 }
 
 bool PathMatch(
@@ -419,12 +410,26 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     auto it = clusters_.find(cluster_name);
     GPR_ASSERT(it != clusters_.end());
+    RefCountedPtr<XdsResolver> resolver_ref = resolver_->Ref();
     ClusterState* cluster_state = it->second.get();
     cluster_state->Ref().release();
     CallConfig call_config;
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
-    call_config.on_call_committed = [this, cluster_state]() {
-      OnCallCommitted(cluster_state);
+    call_config.on_call_committed = [resolver_ref = std::move(resolver_ref),
+                                     cluster_state]() {
+      cluster_state->Unref();
+      XdsResolver* resolver = resolver_ref.get();
+      ExecCtx::Run(
+          DEBUG_LOCATION,
+          GRPC_CLOSURE_CREATE(
+              [](void* arg, grpc_error* /*error*/) {
+                auto* resolver = static_cast<XdsResolver*>(arg);
+                resolver->work_serializer()->Run(
+                    [resolver]() { resolver->MaybeRemoveUnusedClusters(); },
+                    DEBUG_LOCATION);
+              },
+              resolver, nullptr),
+          GRPC_ERROR_NONE);
     };
     return call_config;
   }
