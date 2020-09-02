@@ -143,6 +143,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   std::vector<std::string> GetSecureCredentialsTypeList() override {
     std::vector<std::string> types;
     types.push_back(grpc::testing::kTlsCredentialsType);
+    types.push_back(grpc::testing::kInsecureCredentialsType);
+    types.push_back(grpc::testing::kAltsCredentialsType);
+    types.push_back(grpc::testing::kGoogleDefaultCredentialsType);
     std::unique_lock<std::mutex> lock(mu_);
     for (auto it = added_secure_type_names_.begin();
          it != added_secure_type_names_.end(); it++) {
