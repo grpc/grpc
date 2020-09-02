@@ -201,7 +201,6 @@ CORE_SOURCE_FILES = [
     'src/core/ext/upb-generated/validate/validate.upb.c',
     'src/core/ext/xds/xds_api.cc',
     'src/core/ext/xds/xds_bootstrap.cc',
-    'src/core/ext/xds/xds_channel_secure.cc',
     'src/core/ext/xds/xds_client.cc',
     'src/core/ext/xds/xds_client_stats.cc',
     'src/core/lib/avl/avl.cc',
