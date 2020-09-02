@@ -215,7 +215,7 @@ struct grpc_tls_certificate_distributor
   void CertificatesUpdatedLocked(const std::string& cert_name,
                                  bool root_cert_changed,
                                  bool identity_cert_changed,
-                                 CertificateInfo& cert_info);
+                                 CertificateInfo* cert_info);
 
   grpc_core::Mutex mu_;
   // We need a dedicated mutex for watch_status_callback_ for allowing
