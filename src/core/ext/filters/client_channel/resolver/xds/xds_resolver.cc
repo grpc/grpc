@@ -80,6 +80,7 @@ class XdsResolver : public Resolver {
   void OnError(grpc_error* error);
   void PropagateUpdate(const XdsApi::RdsUpdate& rds_update);
   void MaybeRemoveUnusedClusters();
+  void MaybeRemoveUnusedClustersFromCommitted();
 
  private:
   class ListenerWatcher : public XdsClient::ListenerWatcherInterface {
@@ -417,19 +418,29 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.on_call_committed = [resolver_ref = std::move(resolver_ref),
                                      cluster_state]() {
-      cluster_state->Unref();
+      XdsResolver* resolver = resolver_ref.get();
+      resolver->work_serializer()->Run(
+          [resolver, cluster_state]() {
+            cluster_state->Unref();
+            // gpr_log(GPR_INFO, "DONNAAA unref time");
+            // cluster_state->PrintRef();
+            resolver->MaybeRemoveUnusedClustersFromCommitted();
+          },
+          DEBUG_LOCATION);
+      /*cluster_state->Unref();
       XdsResolver* resolver = resolver_ref.get();
       ExecCtx::Run(
           DEBUG_LOCATION,
           GRPC_CLOSURE_CREATE(
-              [](void* arg, grpc_error* /*error*/) {
+              [](void* arg, grpc_error* /*error*) {
                 auto* resolver = static_cast<XdsResolver*>(arg);
                 resolver->work_serializer()->Run(
-                    [resolver]() { resolver->MaybeRemoveUnusedClusters(); },
+                    [resolver]() {
+                      resolver->MaybeRemoveUnusedClustersFromCommitted(); },
                     DEBUG_LOCATION);
               },
               resolver, nullptr),
-          GRPC_ERROR_NONE);
+          GRPC_ERROR_NONE);*/
     };
     return call_config;
   }
@@ -514,10 +525,10 @@ void XdsResolver::PropagateUpdate(const XdsApi::RdsUpdate& rds_update) {
     OnError(error);
     return;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-    gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
-            result.service_config->json_string().c_str());
-  }
+  // if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+  gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
+          result.service_config->json_string().c_str());
+  //}
   grpc_arg new_args[] = {
       xds_client_->MakeChannelArg(),
       config_selector->MakeChannelArg(),
@@ -539,6 +550,26 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
     }
   }
   if (update_needed) {
+    gpr_log(GPR_INFO, "DONNAAA code coverage for remove update");
+    // Progapage the update by creating XdsConfigSelector, CreateServiceConfig,
+    // and ReturnResult.
+    PropagateUpdate(current_update_);
+  }
+}
+
+void XdsResolver::MaybeRemoveUnusedClustersFromCommitted() {
+  bool update_needed = false;
+  for (auto it = cluster_state_map_.begin(); it != cluster_state_map_.end();) {
+    if (it->second->RefIfNonZero()) {
+      it->second->Unref();
+      ++it;
+    } else {
+      update_needed = true;
+      it = cluster_state_map_.erase(it);
+    }
+  }
+  if (update_needed) {
+    gpr_log(GPR_INFO, "DONNAAA code coverage from committed for remove update");
     // Progapage the update by creating XdsConfigSelector, CreateServiceConfig,
     // and ReturnResult.
     PropagateUpdate(current_update_);

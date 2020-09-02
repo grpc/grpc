@@ -1433,6 +1433,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     bool wait_for_ready = false;
     bool server_fail = false;
     std::vector<std::pair<std::string, std::string>> metadata;
+    int client_cancel_after_us = 0;
 
     RpcOptions() {}
 
@@ -1464,6 +1465,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     RpcOptions& set_metadata(
         std::vector<std::pair<std::string, std::string>> rpc_metadata) {
       metadata = rpc_metadata;
+      return *this;
+    }
+
+    RpcOptions& set_client_cancel_after_us(int time) {
+      client_cancel_after_us = time;
       return *this;
     }
   };
@@ -1671,6 +1677,19 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       request.mutable_param()->mutable_expected_error()->set_code(
           GRPC_STATUS_FAILED_PRECONDITION);
     }
+    std::thread cancel_thread;
+    if (rpc_options.client_cancel_after_us != 0) {
+      request.mutable_param()->set_client_cancel_after_us(
+          rpc_options.client_cancel_after_us);
+      cancel_thread = std::thread(
+          [&context](int delay_us) {
+            gpr_sleep_until(
+                gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                             gpr_time_from_micros(delay_us, GPR_TIMESPAN)));
+            context.TryCancel();
+          },
+          rpc_options.client_cancel_after_us);
+    }
     Status status;
     switch (rpc_options.service) {
       case SERVICE_ECHO:
@@ -1685,6 +1704,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         status =
             SendRpcMethod(&stub2_, rpc_options, &context, request, response);
         break;
+    }
+    if (rpc_options.client_cancel_after_us != 0) {
+      cancel_thread.join();
     }
     if (local_response) delete response;
     return status;
@@ -1734,6 +1756,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     GPR_ASSERT(delay_ms > 0);
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
     balancers_[i]->ads_service()->SetEdsResource(assignment);
+  }
+
+  void SetRouteConfigurationWithDelay(int idx,
+                                      const RouteConfiguration& route_config,
+                                      int delay_ms) {
+    GPR_ASSERT(delay_ms > 0);
+    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
+    SetRouteConfiguration(idx, route_config);
   }
 
  protected:
@@ -3672,9 +3702,26 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   // Change Route Configurations.
   route1->mutable_route()->set_cluster(kNewCluster3Name);
-  SetRouteConfiguration(0, new_route_config);
+  gpr_log(GPR_INFO, "DONNAAA set delayed update for kNewCluster3Name");
+  std::thread delayed_resource_setter(
+      std::bind(&BasicTest::SetRouteConfigurationWithDelay, this, 0,
+                new_route_config, 500));
   ResetBackendCounters();
+  gpr_timespec deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(10000, GPR_TIMESPAN));
+  // Send 10 second worth of RPCs.
+  gpr_log(GPR_INFO, "DONNAAA send RPCs");
+  do {
+    // gpr_log(GPR_INFO, "DONNAAA send");
+    // SendRpc(RpcOptions().set_rpc_service(SERVICE_ECHO1).set_client_cancel_after_us(2000000));
+    SendRpc(RpcOptions().set_rpc_service(SERVICE_ECHO1));
+    // gpr_log(GPR_INFO, "DONNAAA done");
+  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
+  gpr_log(GPR_INFO, "DONNAAA send RPCs finished");
   WaitForAllBackends(3, 4, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  gpr_log(GPR_INFO, "DONNAAA send RPCs finished 2");
+  delayed_resource_setter.join();
+  gpr_log(GPR_INFO, "DONNAAA send RPCs finished 3");
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
