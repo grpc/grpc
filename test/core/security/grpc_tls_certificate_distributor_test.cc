@@ -675,7 +675,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // on watcher 1 again.
   distributor_.SetErrorForCert(
       kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage),
-      GRPC_ERROR_NONE);
+      absl::nullopt);
   EXPECT_THAT(
       watcher_state_1->error_queue,
       testing::ElementsAre(ErrorInfo(kErrorMessage, kIdentityErrorMessage)));
@@ -683,7 +683,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // Calling SetErrorForCert on identity cert name should call OnError
   // on watcher 1 again.
   distributor_.SetErrorForCert(
-      kCertName1, GRPC_ERROR_NONE,
+      kCertName1, absl::nullopt,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage));
   EXPECT_THAT(watcher_state_1->error_queue,
               testing::ElementsAre(ErrorInfo(kErrorMessage, kErrorMessage)));
@@ -699,13 +699,13 @@ TEST_F(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootOrIdentity) {
   // on watcher 1.
   distributor_.SetErrorForCert(
       kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      GRPC_ERROR_NONE);
+      absl::nullopt);
   EXPECT_THAT(watcher_state_1->error_queue,
               testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
   watcher_state_1->error_queue.clear();
   // Calling SetErrorForCert on identity name should do nothing.
   distributor_.SetErrorForCert(
-      kCertName1, GRPC_ERROR_NONE,
+      kCertName1, absl::nullopt,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_1->error_queue, testing::ElementsAre());
   // Calling SetErrorForCert on both names should still get one OnError call.
@@ -721,7 +721,7 @@ TEST_F(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootOrIdentity) {
   // Calling SetErrorForCert on identity name should only call one OnError
   // on watcher 2.
   distributor_.SetErrorForCert(
-      kCertName1, GRPC_ERROR_NONE,
+      kCertName1, absl::nullopt,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_2->error_queue,
               testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
@@ -729,7 +729,7 @@ TEST_F(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootOrIdentity) {
   // Calling SetErrorForCert on root name should do nothing.
   distributor_.SetErrorForCert(
       kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      GRPC_ERROR_NONE);
+      absl::nullopt);
   EXPECT_THAT(watcher_state_2->error_queue, testing::ElementsAre());
   // Calling SetErrorForCert on both names should still get one OnError call.
   distributor_.SetErrorForCert(
@@ -756,7 +756,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // Calling SetErrorForCert on kCertName2 should trigger OnError with both
   // errors, because kCertName1 also has error.
   distributor_.SetErrorForCert(
-      kCertName2, GRPC_ERROR_NONE,
+      kCertName2, absl::nullopt,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_1->error_queue,
               testing::ElementsAre(
@@ -781,7 +781,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // errors, because kCertName1 also has error.
   distributor_.SetErrorForCert(
       kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      GRPC_ERROR_NONE);
+      absl::nullopt);
   EXPECT_THAT(watcher_state_1->error_queue,
               testing::ElementsAre(
                   ErrorInfo(kRootErrorMessage, kIdentityErrorMessage)));
@@ -797,7 +797,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   EXPECT_THAT(watcher_state_1->error_queue, testing::ElementsAre());
   // Calling SetErrorForCert on kCertName2 should trigger OnError.
   distributor_.SetErrorForCert(
-      kCertName2, GRPC_ERROR_NONE,
+      kCertName2, absl::nullopt,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_1->error_queue,
               testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
@@ -810,7 +810,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   EXPECT_THAT(watcher_state_2->error_queue, testing::ElementsAre());
   // Calling SetErrorForCert on kCertName2 should trigger OnError.
   distributor_.SetErrorForCert(
-      kCertName2, GRPC_ERROR_NONE,
+      kCertName2, absl::nullopt,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_2->error_queue,
               testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
@@ -826,7 +826,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // Calling SetErrorForCert on kCertName2 should trigger OnError.
   distributor_.SetErrorForCert(
       kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      GRPC_ERROR_NONE);
+      absl::nullopt);
   EXPECT_THAT(watcher_state_1->error_queue,
               testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
   watcher_state_1->error_queue.clear();
@@ -839,7 +839,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // Calling SetErrorForCert on kCertName2 should trigger OnError.
   distributor_.SetErrorForCert(
       kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      GRPC_ERROR_NONE);
+      absl::nullopt);
   EXPECT_THAT(watcher_state_2->error_queue,
               testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
   watcher_state_2->error_queue.clear();

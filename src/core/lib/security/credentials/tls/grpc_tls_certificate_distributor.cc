@@ -68,13 +68,12 @@ bool grpc_tls_certificate_distributor::HasKeyCertPairs(
 };
 
 void grpc_tls_certificate_distributor::SetErrorForCert(
-    const std::string& cert_name, grpc_error* root_cert_error,
-    grpc_error* identity_cert_error) {
-  GPR_ASSERT(root_cert_error != GRPC_ERROR_NONE ||
-             identity_cert_error != GRPC_ERROR_NONE);
+    const std::string& cert_name, absl::optional<grpc_error*> root_cert_error,
+    absl::optional<grpc_error*> identity_cert_error) {
+  GPR_ASSERT(root_cert_error.has_value() || identity_cert_error.has_value());
   grpc_core::MutexLock lock(&mu_);
   CertificateInfo& cert_info = certificate_info_map_[cert_name];
-  if (root_cert_error != GRPC_ERROR_NONE) {
+  if (root_cert_error.has_value()) {
     for (auto* watcher_ptr : cert_info.root_cert_watchers) {
       GPR_ASSERT(watcher_ptr != nullptr);
       const auto watcher_it = watchers_.find(watcher_ptr);
@@ -82,19 +81,20 @@ void grpc_tls_certificate_distributor::SetErrorForCert(
       // identity_cert_error_to_report is the error of the identity cert this
       // watcher is watching, if there is any.
       grpc_error* identity_cert_error_to_report = GRPC_ERROR_NONE;
-      if (identity_cert_error != GRPC_ERROR_NONE &&
+      if (identity_cert_error.has_value() &&
           watcher_it->second.identity_cert_name == cert_name) {
-        identity_cert_error_to_report = identity_cert_error;
+        identity_cert_error_to_report = *identity_cert_error;
       } else if (watcher_it->second.identity_cert_name.has_value()) {
         auto& identity_cert_info =
             certificate_info_map_[*watcher_it->second.identity_cert_name];
         identity_cert_error_to_report = identity_cert_info.identity_cert_error;
       }
-      watcher_ptr->OnError(GRPC_ERROR_REF(root_cert_error),
+      watcher_ptr->OnError(GRPC_ERROR_REF(*root_cert_error),
                            GRPC_ERROR_REF(identity_cert_error_to_report));
     }
+    cert_info.SetRootError(*root_cert_error);
   }
-  if (identity_cert_error != GRPC_ERROR_NONE) {
+  if (identity_cert_error.has_value()) {
     for (auto* watcher_ptr : cert_info.identity_cert_watchers) {
       GPR_ASSERT(watcher_ptr != nullptr);
       const auto watcher_it = watchers_.find(watcher_ptr);
@@ -102,7 +102,7 @@ void grpc_tls_certificate_distributor::SetErrorForCert(
       // root_cert_error_to_report is the error of the root cert this watcher is
       // watching, if there is any.
       grpc_error* root_cert_error_to_report = GRPC_ERROR_NONE;
-      if (root_cert_error != GRPC_ERROR_NONE &&
+      if (root_cert_error.has_value() &&
           watcher_it->second.root_cert_name == cert_name) {
         continue;
       } else if (watcher_it->second.root_cert_name.has_value()) {
@@ -111,11 +111,10 @@ void grpc_tls_certificate_distributor::SetErrorForCert(
         root_cert_error_to_report = root_cert_info.root_cert_error;
       }
       watcher_ptr->OnError(GRPC_ERROR_REF(root_cert_error_to_report),
-                           GRPC_ERROR_REF(identity_cert_error));
+                           GRPC_ERROR_REF(*identity_cert_error));
     }
+    cert_info.SetIdentityError(*identity_cert_error);
   }
-  cert_info.SetRootError(root_cert_error);
-  cert_info.SetIdentityError(identity_cert_error);
 };
 
 void grpc_tls_certificate_distributor::SetError(grpc_error* error) {

@@ -102,8 +102,8 @@ struct grpc_tls_certificate_distributor
   // @param identity_cert_error The error that the caller encounters when
   // reloading identity certs.
   void SetErrorForCert(const std::string& cert_name,
-                       grpc_error* root_cert_error,
-                       grpc_error* identity_cert_error);
+                       absl::optional<grpc_error*> root_cert_error,
+                       absl::optional<grpc_error*> identity_cert_error);
 
   // Propagates the error that the caller (e.g. Producer) encounters to all
   // watchers.
