@@ -305,12 +305,7 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc_common",
-        "grpc_lb_policy_cds",
-        "grpc_lb_policy_eds",
         "grpc_lb_policy_grpclb",
-        "grpc_lb_policy_lrs",
-        "grpc_lb_policy_xds_routing",
-        "grpc_resolver_xds",
     ],
 )
 
@@ -326,12 +321,12 @@ grpc_cc_library(
     deps = [
         "grpc_authorization_engine",
         "grpc_common",
-        "grpc_lb_policy_cds_secure",
-        "grpc_lb_policy_eds_secure",
+        "grpc_lb_policy_cds",
+        "grpc_lb_policy_eds",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_lb_policy_lrs_secure",
+        "grpc_lb_policy_lrs",
         "grpc_lb_policy_xds_routing",
-        "grpc_resolver_xds_secure",
+        "grpc_resolver_xds",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
@@ -1309,36 +1304,10 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/xds/xds_api.cc",
         "src/core/ext/xds/xds_bootstrap.cc",
-        "src/core/ext/xds/xds_channel.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
     ],
     hdrs = [
-        "src/core/ext/xds/xds_channel.h",
-        "src/core/ext/xds/xds_channel_args.h",
-        "src/core/ext/xds/xds_client.h",
-    ],
-    language = "c++",
-    deps = [
-        "envoy_ads_upb",
-        "envoy_ads_upbdefs",
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_api_header",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_xds_client_secure",
-    srcs = [
-        "src/core/ext/xds/xds_api.cc",
-        "src/core/ext/xds/xds_bootstrap.cc",
-        "src/core/ext/xds/xds_channel_secure.cc",
-        "src/core/ext/xds/xds_client.cc",
-        "src/core/ext/xds/xds_client_stats.cc",
-    ],
-    hdrs = [
-        "src/core/ext/xds/xds_channel.h",
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/ext/xds/xds_client.h",
     ],
@@ -1367,19 +1336,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_cds_secure",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_client_secure",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_lb_policy_eds",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/eds.cc",
@@ -1400,26 +1356,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_eds_secure",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/eds.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-    ],
-    external_deps = [
-        "absl/strings",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_lb_address_filtering",
-        "grpc_xds_client_secure",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_lb_policy_lrs",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc",
@@ -1429,19 +1365,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_xds_client",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_lb_policy_lrs_secure",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_client_secure",
     ],
 )
 
@@ -1755,19 +1678,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_xds_client",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_resolver_xds_secure",
-    srcs = [
-        "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_client_secure",
     ],
 )
 
@@ -2307,6 +2217,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/server_callback_handlers.h",
         "include/grpcpp/impl/codegen/server_callback_impl.h",
         "include/grpcpp/impl/codegen/server_context.h",
+        "include/grpcpp/impl/codegen/server_context_impl.h",
         "include/grpcpp/impl/codegen/server_interceptor.h",
         "include/grpcpp/impl/codegen/server_interface.h",
         "include/grpcpp/impl/codegen/service_type.h",

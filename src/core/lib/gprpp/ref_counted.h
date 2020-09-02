@@ -37,20 +37,6 @@
 
 namespace grpc_core {
 
-// PolymorphicRefCount enforces polymorphic destruction of RefCounted.
-class PolymorphicRefCount {
- public:
-  virtual ~PolymorphicRefCount() = default;
-};
-
-// NonPolymorphicRefCount does not enforce polymorphic destruction of
-// RefCounted. Please refer to grpc_core::RefCounted for more details, and
-// when in doubt use PolymorphicRefCount.
-class NonPolymorphicRefCount {
- public:
-  ~NonPolymorphicRefCount() = default;
-};
-
 // RefCount is a simple atomic ref-count.
 //
 // This is a C++ implementation of gpr_refcount, with inline functions. Due to
@@ -218,9 +204,45 @@ class RefCount {
   Atomic<Value> value_;
 };
 
+// PolymorphicRefCount enforces polymorphic destruction of RefCounted.
+class PolymorphicRefCount {
+ public:
+  virtual ~PolymorphicRefCount() = default;
+};
+
+// NonPolymorphicRefCount does not enforce polymorphic destruction of
+// RefCounted. Please refer to grpc_core::RefCounted for more details, and
+// when in doubt use PolymorphicRefCount.
+class NonPolymorphicRefCount {
+ public:
+  ~NonPolymorphicRefCount() = default;
+};
+
+namespace internal {
+template <typename T, bool DoDelete>
+class Delete;
+template <typename T>
+class Delete<T, true> {
+ public:
+  Delete(T* t) { delete t; }
+};
+template <typename T>
+class Delete<T, false> {
+ public:
+  Delete(T* t) {}
+};
+}  // namespace internal
+
 // A base class for reference-counted objects.
-// New objects should be created via New() and start with a refcount of 1.
-// When the refcount reaches 0, the object will be deleted via delete .
+// New objects should be created via new and start with a refcount of 1.
+// When the refcount reaches 0, the object will be deleted via delete.
+//
+// If DeleteUponUnref is false, deletion will not occur when the ref
+// count reaches 0.  This is useful in cases where all existing objects
+// must be tracked in a registry but the object's entry in the registry
+// cannot be removed from the object's dtor due to synchronization issues.
+// In this case, the registry can be cleaned up later by identifying
+// entries for which RefIfNonZero() returns false.
 //
 // This will commonly be used by CRTP (curiously-recurring template pattern)
 // e.g., class MyClass : public RefCounted<MyClass>
@@ -244,7 +266,8 @@ class RefCount {
 //    Child* ch;
 //    ch->Unref();
 //
-template <typename Child, typename Impl = PolymorphicRefCount>
+template <typename Child, typename Impl = PolymorphicRefCount,
+          bool DeleteUponUnref = true>
 class RefCounted : public Impl {
  public:
   // Note: Depending on the Impl used, this dtor can be implicitly virtual.
@@ -267,12 +290,12 @@ class RefCounted : public Impl {
   // friend of this class.
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      delete static_cast<Child*>(this);
+      internal::Delete<Child, DeleteUponUnref>(static_cast<Child*>(this));
     }
   }
   void Unref(const DebugLocation& location, const char* reason) {
     if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-      delete static_cast<Child*>(this);
+      internal::Delete<Child, DeleteUponUnref>(static_cast<Child*>(this));
     }
   }
 
