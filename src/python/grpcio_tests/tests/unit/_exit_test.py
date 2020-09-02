@@ -83,6 +83,9 @@ def wait(process):
     _process_wait_with_timeout(process)
 
 
+# TODO(lidiz) enable exit tests once the root cause found.
+@unittest.skip('https://github.com/grpc/grpc/issues/23982')
+@unittest.skip('https://github.com/grpc/grpc/issues/23028')
 class ExitTest(unittest.TestCase):
 
     def test_unstarted_server(self):
@@ -168,7 +171,6 @@ class ExitTest(unittest.TestCase):
             stderr=sys.stderr)
         interrupt_and_wait(process)
 
-    @unittest.skip('https://github.com/grpc/grpc/issues/23982')
     @unittest.skipIf(os.name == 'nt',
                      'os.kill does not have required permission on Windows')
     def test_in_flight_stream_stream_call(self):
@@ -198,7 +200,6 @@ class ExitTest(unittest.TestCase):
             stderr=sys.stderr)
         interrupt_and_wait(process)
 
-    @unittest.skip('https://github.com/grpc/grpc/issues/23982')
     @unittest.skipIf(os.name == 'nt',
                      'os.kill does not have required permission on Windows')
     def test_in_flight_partial_stream_stream_call(self):
