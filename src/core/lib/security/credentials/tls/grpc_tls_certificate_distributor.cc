@@ -56,7 +56,7 @@ bool grpc_tls_certificate_distributor::HasRootCerts(
   grpc_core::MutexLock lock(&mu_);
   const auto it = certificate_info_map_.find(root_cert_name);
   return it != certificate_info_map_.end() &&
-         !it->second.pem_root_certs.empty();
+         !it->second.pem_root_certs->empty();
 };
 
 bool grpc_tls_certificate_distributor::HasKeyCertPairs(
@@ -64,7 +64,7 @@ bool grpc_tls_certificate_distributor::HasKeyCertPairs(
   grpc_core::MutexLock lock(&mu_);
   const auto it = certificate_info_map_.find(identity_cert_name);
   return it != certificate_info_map_.end() &&
-         !it->second.pem_key_cert_pairs.empty();
+         !it->second.pem_key_cert_pairs->empty();
 };
 
 void grpc_tls_certificate_distributor::SetErrorForCert(
@@ -186,9 +186,7 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     // occurred while trying to fetch the latest cert, but the updated_*_certs
     // should always be valid. So we will send the updates regardless of
     // *_cert_error.
-    if ((updated_root_certs.has_value() && updated_root_certs != "") ||
-        (updated_identity_pairs.has_value() &&
-         (*updated_identity_pairs).size() > 0)) {
+    if (updated_root_certs.has_value() || updated_identity_pairs.has_value()) {
       watcher_ptr->OnCertificatesChanged(updated_root_certs,
                                          std::move(updated_identity_pairs));
     }

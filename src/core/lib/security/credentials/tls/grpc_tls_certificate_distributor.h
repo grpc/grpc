@@ -172,9 +172,9 @@ struct grpc_tls_certificate_distributor
   // root certs, while pem_root_certs still contains the valid old data.
   struct CertificateInfo {
     // The contents of the root certificates.
-    absl::string_view pem_root_certs;
+    absl::optional<absl::string_view> pem_root_certs;
     // The contents of the identity key-certificate pairs.
-    PemKeyCertPairList pem_key_cert_pairs;
+    absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
     // The root cert reloading error propagated by the caller.
     grpc_error* root_cert_error = GRPC_ERROR_NONE;
     // The identity cert reloading error propagated by the caller.
