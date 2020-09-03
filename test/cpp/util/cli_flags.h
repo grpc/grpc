@@ -16,25 +16,31 @@
  *
  */
 
-#ifndef GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
-#define GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
+#ifndef GRPC_TEST_CPP_UTIL_CLI_FLAGS_H
+#define GRPC_TEST_CPP_UTIL_CLI_FLAGS_H
 
-#include <grpcpp/support/config.h>
-
-#include <functional>
-
-#include "test/cpp/util/cli_credentials.h"
-#include "test/cpp/util/cli_flags.h"
+#include <gflags/gflags.h>
 
 namespace grpc {
 namespace testing {
 
-typedef std::function<bool(const std::string&)> GrpcToolOutputCallback;
-
-int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
-                    GrpcToolOutputCallback callback);
+// Declare all flags used in gRPC cli.
+DECLARE_bool(l);
+DECLARE_bool(remotedb);
+DECLARE_string(metadata);
+DECLARE_string(proto_path);
+DECLARE_string(protofiles);
+DECLARE_bool(binary_input);
+DECLARE_bool(binary_output);
+DECLARE_string(default_service_config);
+DECLARE_bool(display_peer_address);
+DECLARE_bool(json_input);
+DECLARE_bool(json_output);
+DECLARE_string(infile);
+DECLARE_bool(batch);
+DECLARE_double(timeout);
 
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
+#endif  // GRPC_TEST_CPP_UTIL_CLI_FLAGS_H
