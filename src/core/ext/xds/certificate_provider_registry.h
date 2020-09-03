@@ -34,6 +34,7 @@ class CertificateProviderRegistry {
   // NOT THREAD SAFE -- to be used only during global gRPC initialization and
   // shutdown.
   class Builder {
+   public:
     // Global initialization of the registry.
     static void InitRegistry();
 
