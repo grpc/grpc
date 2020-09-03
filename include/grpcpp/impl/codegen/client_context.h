@@ -57,7 +57,12 @@ struct census_context;
 struct grpc_call;
 
 namespace grpc_impl {
+class ServerContext;
+class ServerContextBase;
+class CallbackServerContext;
+}  // namespace grpc_impl
 
+namespace grpc {
 namespace internal {
 template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl;
@@ -71,7 +76,6 @@ class ClientCallbackUnaryImpl;
 class ClientContextAccessor;
 }  // namespace internal
 
-class ServerContext;
 template <class R>
 class ClientReader;
 template <class W>
@@ -86,12 +90,6 @@ template <class W, class R>
 class ClientAsyncReaderWriter;
 template <class R>
 class ClientAsyncResponseReader;
-
-class ServerContextBase;
-class CallbackServerContext;
-}  // namespace grpc_impl
-
-namespace grpc {
 
 namespace testing {
 class InteropClientContextInspector;
@@ -430,31 +428,31 @@ class ClientContext {
   friend class ::grpc::internal::CallOpRecvInitialMetadata;
   friend class ::grpc::Channel;
   template <class R>
-  friend class ::grpc_impl::ClientReader;
+  friend class ::grpc::ClientReader;
   template <class W>
-  friend class ::grpc_impl::ClientWriter;
+  friend class ::grpc::ClientWriter;
   template <class W, class R>
-  friend class ::grpc_impl::ClientReaderWriter;
+  friend class ::grpc::ClientReaderWriter;
   template <class R>
-  friend class ::grpc_impl::ClientAsyncReader;
+  friend class ::grpc::ClientAsyncReader;
   template <class W>
-  friend class ::grpc_impl::ClientAsyncWriter;
+  friend class ::grpc::ClientAsyncWriter;
   template <class W, class R>
-  friend class ::grpc_impl::ClientAsyncReaderWriter;
+  friend class ::grpc::ClientAsyncReaderWriter;
   template <class R>
-  friend class ::grpc_impl::ClientAsyncResponseReader;
+  friend class ::grpc::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>
-  friend class ::grpc_impl::internal::CallbackUnaryCallImpl;
+  friend class ::grpc::internal::CallbackUnaryCallImpl;
   template <class Request, class Response>
-  friend class ::grpc_impl::internal::ClientCallbackReaderWriterImpl;
+  friend class ::grpc::internal::ClientCallbackReaderWriterImpl;
   template <class Response>
-  friend class ::grpc_impl::internal::ClientCallbackReaderImpl;
+  friend class ::grpc::internal::ClientCallbackReaderImpl;
   template <class Request>
-  friend class ::grpc_impl::internal::ClientCallbackWriterImpl;
-  friend class ::grpc_impl::internal::ClientCallbackUnaryImpl;
-  friend class ::grpc_impl::internal::ClientContextAccessor;
+  friend class ::grpc::internal::ClientCallbackWriterImpl;
+  friend class ::grpc::internal::ClientCallbackUnaryImpl;
+  friend class ::grpc::internal::ClientContextAccessor;
 
   // Used by friend class CallOpClientRecvStatus
   void set_debug_error_string(const std::string& debug_error_string) {

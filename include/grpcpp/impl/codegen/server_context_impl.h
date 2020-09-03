@@ -38,7 +38,7 @@
 #include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
-#include <grpcpp/impl/codegen/server_callback_impl.h>
+#include <grpcpp/impl/codegen/server_callback.h>
 #include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/string_ref.h>
@@ -48,7 +48,7 @@ struct grpc_metadata;
 struct grpc_call;
 struct census_context;
 
-namespace grpc_impl {
+namespace grpc {
 template <class W, class R>
 class ServerAsyncReader;
 template <class W>
@@ -88,10 +88,6 @@ template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
 template <::grpc::StatusCode code>
 class ErrorMethodHandler;
-}  // namespace internal
-
-}  // namespace grpc_impl
-namespace grpc {
 class ClientContext;
 class CompletionQueue;
 class GenericServerContext;
@@ -312,7 +308,7 @@ class ServerContextBase {
   /// from the method handler.
   ///
   /// WARNING: This is experimental API and could be changed or removed.
-  ::grpc_impl::ServerUnaryReactor* DefaultReactor() {
+  ::grpc::ServerUnaryReactor* DefaultReactor() {
     // Short-circuit the case where a default reactor was already set up by
     // the TestPeer.
     if (test_unary_ != nullptr) {
@@ -340,39 +336,39 @@ class ServerContextBase {
   friend class ::grpc::ServerInterface;
   friend class ::grpc::Server;
   template <class W, class R>
-  friend class ::grpc_impl::ServerAsyncReader;
+  friend class ::grpc::ServerAsyncReader;
   template <class W>
-  friend class ::grpc_impl::ServerAsyncWriter;
+  friend class ::grpc::ServerAsyncWriter;
   template <class W>
-  friend class ::grpc_impl::ServerAsyncResponseWriter;
+  friend class ::grpc::ServerAsyncResponseWriter;
   template <class W, class R>
-  friend class ::grpc_impl::ServerAsyncReaderWriter;
+  friend class ::grpc::ServerAsyncReaderWriter;
   template <class R>
-  friend class ::grpc_impl::ServerReader;
+  friend class ::grpc::ServerReader;
   template <class W>
-  friend class ::grpc_impl::ServerWriter;
+  friend class ::grpc::ServerWriter;
   template <class W, class R>
-  friend class ::grpc_impl::internal::ServerReaderWriterBody;
+  friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::RpcMethodHandler;
+  friend class ::grpc::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::ClientStreamingHandler;
+  friend class ::grpc::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::ServerStreamingHandler;
+  friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
-  friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler;
+  friend class ::grpc::internal::TemplatedBidiStreamingHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::CallbackUnaryHandler;
+  friend class ::grpc::internal::CallbackUnaryHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::CallbackClientStreamingHandler;
+  friend class ::grpc::internal::CallbackClientStreamingHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::CallbackServerStreamingHandler;
+  friend class ::grpc::internal::CallbackServerStreamingHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::CallbackBidiHandler;
+  friend class ::grpc::internal::CallbackBidiHandler;
   template <::grpc::StatusCode code>
-  friend class ::grpc_impl::internal::ErrorMethodHandler;
+  friend class ::grpc::internal::ErrorMethodHandler;
   template <class Base>
-  friend class ::grpc_impl::internal::FinishOnlyReactor;
+  friend class ::grpc::internal::FinishOnlyReactor;
   friend class ::grpc::ClientContext;
   friend class ::grpc::GenericServerContext;
 #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
@@ -389,7 +385,7 @@ class ServerContextBase {
 
   void BeginCompletionOp(
       ::grpc::internal::Call* call, std::function<void(bool)> callback,
-      ::grpc_impl::internal::ServerCallbackCall* callback_controller);
+      ::grpc::internal::ServerCallbackCall* callback_controller);
   /// Return the tag queued by BeginCompletionOp()
   ::grpc::internal::CompletionQueueTag* GetCompletionOpTag();
 
@@ -464,7 +460,7 @@ class ServerContextBase {
   }
   ::grpc::Status test_status() const { return test_unary_->status(); }
 
-  class TestServerCallbackUnary : public ::grpc_impl::ServerCallbackUnary {
+  class TestServerCallbackUnary : public ::grpc::ServerCallbackUnary {
    public:
     TestServerCallbackUnary(ServerContextBase* ctx,
                             std::function<void(::grpc::Status)> func)
@@ -485,11 +481,11 @@ class ServerContextBase {
 
    private:
     void CallOnDone() override {}
-    ::grpc_impl::internal::ServerReactor* reactor() override {
+    ::grpc::internal::ServerReactor* reactor() override {
       return reactor_;
     }
 
-    ::grpc_impl::ServerUnaryReactor* const reactor_;
+    ::grpc::ServerUnaryReactor* const reactor_;
     std::atomic_bool status_set_{false};
     ::grpc::Status status_;
     const std::function<void(::grpc::Status s)> func_;

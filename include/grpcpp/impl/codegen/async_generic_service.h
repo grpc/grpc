@@ -21,22 +21,22 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpcpp/impl/codegen/async_stream_impl.h>
+#include <grpcpp/impl/codegen/async_stream.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/server_callback_handlers.h>
-#include <grpcpp/impl/codegen/server_callback_impl.h>
+#include <grpcpp/impl/codegen/server_callback.h>
 
 struct grpc_server;
 
 namespace grpc {
 
-typedef ::grpc_impl::ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
+typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericServerAsyncReaderWriter;
-typedef ::grpc_impl::ServerAsyncResponseWriter<ByteBuffer>
+typedef ServerAsyncResponseWriter<ByteBuffer>
     GenericServerAsyncResponseWriter;
-typedef ::grpc_impl::ServerAsyncReader<ByteBuffer, ByteBuffer>
+typedef ServerAsyncReader<ByteBuffer, ByteBuffer>
     GenericServerAsyncReader;
-typedef ::grpc_impl::ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
+typedef ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
 
 class GenericServerContext final : public ::grpc_impl::ServerContext {
  public:
@@ -96,7 +96,7 @@ namespace experimental {
 /// invoked on a CallbackGenericService. It is just a ServerBidi reactor with
 /// ByteBuffer arguments.
 using ServerGenericBidiReactor =
-    ::grpc_impl::ServerBidiReactor<ByteBuffer, ByteBuffer>;
+    ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
 class GenericCallbackServerContext final
     : public ::grpc_impl::CallbackServerContext {
@@ -142,9 +142,9 @@ class CallbackGenericService {
  private:
   friend class grpc::Server;
 
-  ::grpc_impl::internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>*
+  internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>*
   Handler() {
-    return new ::grpc_impl::internal::CallbackBidiHandler<ByteBuffer,
+    return new internal::CallbackBidiHandler<ByteBuffer,
                                                           ByteBuffer>(
         [this](::grpc_impl::CallbackServerContext* ctx) {
           return CreateReactor(static_cast<GenericCallbackServerContext*>(ctx));

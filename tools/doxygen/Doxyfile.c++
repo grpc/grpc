@@ -949,9 +949,7 @@ include/grpcpp/impl/channel_argument_option.h \
 include/grpcpp/impl/client_unary_call.h \
 include/grpcpp/impl/codegen/async_generic_service.h \
 include/grpcpp/impl/codegen/async_stream.h \
-include/grpcpp/impl/codegen/async_stream_impl.h \
 include/grpcpp/impl/codegen/async_unary_call.h \
-include/grpcpp/impl/codegen/async_unary_call_impl.h \
 include/grpcpp/impl/codegen/byte_buffer.h \
 include/grpcpp/impl/codegen/call.h \
 include/grpcpp/impl/codegen/call_hook.h \
@@ -960,7 +958,6 @@ include/grpcpp/impl/codegen/call_op_set_interface.h \
 include/grpcpp/impl/codegen/callback_common.h \
 include/grpcpp/impl/codegen/channel_interface.h \
 include/grpcpp/impl/codegen/client_callback.h \
-include/grpcpp/impl/codegen/client_callback_impl.h \
 include/grpcpp/impl/codegen/client_context.h \
 include/grpcpp/impl/codegen/client_interceptor.h \
 include/grpcpp/impl/codegen/client_unary_call.h \
@@ -979,7 +976,6 @@ include/grpcpp/impl/codegen/interceptor_common.h \
 include/grpcpp/impl/codegen/message_allocator.h \
 include/grpcpp/impl/codegen/metadata_map.h \
 include/grpcpp/impl/codegen/method_handler.h \
-include/grpcpp/impl/codegen/method_handler_impl.h \
 include/grpcpp/impl/codegen/proto_buffer_reader.h \
 include/grpcpp/impl/codegen/proto_buffer_writer.h \
 include/grpcpp/impl/codegen/proto_utils.h \
@@ -989,7 +985,6 @@ include/grpcpp/impl/codegen/security/auth_context.h \
 include/grpcpp/impl/codegen/serialization_traits.h \
 include/grpcpp/impl/codegen/server_callback.h \
 include/grpcpp/impl/codegen/server_callback_handlers.h \
-include/grpcpp/impl/codegen/server_callback_impl.h \
 include/grpcpp/impl/codegen/server_context.h \
 include/grpcpp/impl/codegen/server_context_impl.h \
 include/grpcpp/impl/codegen/server_interceptor.h \
@@ -1002,7 +997,6 @@ include/grpcpp/impl/codegen/string_ref.h \
 include/grpcpp/impl/codegen/stub_options.h \
 include/grpcpp/impl/codegen/sync.h \
 include/grpcpp/impl/codegen/sync_stream.h \
-include/grpcpp/impl/codegen/sync_stream_impl.h \
 include/grpcpp/impl/codegen/time.h \
 include/grpcpp/impl/grpc_library.h \
 include/grpcpp/impl/method_handler_impl.h \
@@ -1026,13 +1020,10 @@ include/grpcpp/server_builder.h \
 include/grpcpp/server_context.h \
 include/grpcpp/server_posix.h \
 include/grpcpp/support/async_stream.h \
-include/grpcpp/support/async_stream_impl.h \
 include/grpcpp/support/async_unary_call.h \
-include/grpcpp/support/async_unary_call_impl.h \
 include/grpcpp/support/byte_buffer.h \
 include/grpcpp/support/channel_arguments.h \
 include/grpcpp/support/client_callback.h \
-include/grpcpp/support/client_callback_impl.h \
 include/grpcpp/support/client_interceptor.h \
 include/grpcpp/support/config.h \
 include/grpcpp/support/interceptor.h \
@@ -1041,7 +1032,6 @@ include/grpcpp/support/method_handler.h \
 include/grpcpp/support/proto_buffer_reader.h \
 include/grpcpp/support/proto_buffer_writer.h \
 include/grpcpp/support/server_callback.h \
-include/grpcpp/support/server_callback_impl.h \
 include/grpcpp/support/server_interceptor.h \
 include/grpcpp/support/slice.h \
 include/grpcpp/support/status.h \
@@ -1049,7 +1039,6 @@ include/grpcpp/support/status_code_enum.h \
 include/grpcpp/support/string_ref.h \
 include/grpcpp/support/stub_options.h \
 include/grpcpp/support/sync_stream.h \
-include/grpcpp/support/sync_stream_impl.h \
 include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h
 
