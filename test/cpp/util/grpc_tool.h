@@ -24,7 +24,6 @@
 #include <grpcpp/support/config.h>
 
 #include "test/cpp/util/cli_credentials.h"
-#include "test/cpp/util/cli_flags.h"
 
 namespace grpc {
 namespace testing {

@@ -368,14 +368,6 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
           GPR_TIMESPAN));
 }
 
-gpr_timespec grpc_timeout_microseconds_to_deadline(int64_t time_micros) {
-  return gpr_time_add(
-      gpr_now(GPR_CLOCK_MONOTONIC),
-      gpr_time_from_nanos(
-          grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_micros,
-          GPR_TIMESPAN));
-}
-
 void grpc_test_init(int /*argc*/, char** /*argv*/) {
   install_crash_handler();
   gpr_log(GPR_DEBUG,

@@ -19,7 +19,6 @@
 #include "test/cpp/util/cli_call.h"
 
 #include <iostream>
-#include <math.h>
 #include <utility>
 
 #include <grpc/grpc.h>
@@ -28,8 +27,6 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/byte_buffer.h>
-
-#include "test/core/util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -64,13 +61,6 @@ CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
       ctx_.AddMetadata(iter->first, iter->second);
     }
   }
-
-  // Set deadline if timeout > 0 (default value -1 if no timeout specified)
-  if (FLAGS_timeout > 0){
-    int64_t timeout_in_us = ceil(FLAGS_timeout * 1e6);
-    ctx_.set_deadline(grpc_timeout_microseconds_to_deadline(timeout_in_us));
-  }
-
   call_ = stub_->PrepareCall(&ctx_, method, &cq_);
   call_->StartCall(tag(1));
   void* got_tag;

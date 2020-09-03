@@ -122,14 +122,12 @@ grpc_cc_library(
     srcs = [
         "cli_call.cc",
         "cli_credentials.cc",
-        "cli_flags.cc",
         "proto_file_parser.cc",
         "service_describer.cc",
     ],
     hdrs = [
         "cli_call.h",
         "cli_credentials.h",
-        "cli_flags.h",
         "config_grpc_cli.h",
         "proto_file_parser.h",
         "service_describer.h",
@@ -143,7 +141,6 @@ grpc_cc_library(
         ":grpc++_proto_reflection_desc_db",
         "//:grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
