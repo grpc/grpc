@@ -18,24 +18,41 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <gmock/gmock.h>
+
 #include "src/core/ext/xds/certificate_provider_registry.h"
+
+#include "test/core/util/test_config.h"
+
 
 namespace grpc_core {
 namespace testing {
 namespace {
 
-class FakeCertificateProviderFactory1 {
+class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
 public:
   const char* name() const override {
   	return "fake1";
   }
+
+  std::unique_ptr<Config> CreateCertificateProviderConfig(
+      const Json& config_json, grpc_error** error) override { return nullptr; }
+
+  RefCountedPtr<grpc_tls_certificate_provider>
+  CreateCertificateProvider(std::unique_ptr<Config> config) override { return nullptr; }
 };
 
-class FakeCertificateProviderFactory2 {
+class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
 public:
   const char* name() const override {
   	return "fake2";
   }
+
+std::unique_ptr<Config> CreateCertificateProviderConfig(
+      const Json& config_json, grpc_error** error) override { return nullptr; }
+
+  RefCountedPtr<grpc_tls_certificate_provider>
+  CreateCertificateProvider(std::unique_ptr<Config> config) override { return nullptr; }  
 };
 
 TEST(CertificateProviderRegistryTest, Basic) {
