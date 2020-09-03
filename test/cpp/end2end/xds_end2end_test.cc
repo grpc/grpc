@@ -3703,25 +3703,37 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   // Change Route Configurations.
   route1->mutable_route()->set_cluster(kNewCluster3Name);
   gpr_log(GPR_INFO, "DONNAAA set delayed update for kNewCluster3Name");
+  std::thread shutdown([this]() {
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_micros(500000, GPR_TIMESPAN)));
+    ShutdownBackend(2);
+  });
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetRouteConfigurationWithDelay, this, 0,
-                new_route_config, 500));
+                new_route_config, 1000));
   ResetBackendCounters();
-  gpr_timespec deadline = gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(10000, GPR_TIMESPAN));
-  // Send 10 second worth of RPCs.
-  gpr_log(GPR_INFO, "DONNAAA send RPCs");
-  do {
-    // gpr_log(GPR_INFO, "DONNAAA send");
-    // SendRpc(RpcOptions().set_rpc_service(SERVICE_ECHO1).set_client_cancel_after_us(2000000));
-    SendRpc(RpcOptions().set_rpc_service(SERVICE_ECHO1));
-    // gpr_log(GPR_INFO, "DONNAAA done");
-  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
-  gpr_log(GPR_INFO, "DONNAAA send RPCs finished");
+  std::atomic_bool stop_rpc{false};
+  std::thread sending_rpc(
+      [this](std::atomic_bool* stop_rpc) {
+        gpr_log(GPR_INFO, "DONNAAA send RPCs");
+        do {
+          // SendRpc(RpcOptions().set_rpc_service(SERVICE_ECHO1).set_client_cancel_after_us(2000000));
+          SendRpc(RpcOptions()
+                      .set_rpc_service(SERVICE_ECHO1)
+                      .set_timeout_ms(1000)
+                      .set_wait_for_ready(true));
+          //} while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
+        } while (!(*stop_rpc));
+        gpr_log(GPR_INFO, "DONNAAA done send RPCs");
+      },
+      &stop_rpc);
   WaitForAllBackends(3, 4, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  gpr_log(GPR_INFO, "DONNAAA send RPCs finished 2");
+  gpr_log(GPR_INFO, "DONNAAA backend 3 now up");
+  StartBackend(2);
   delayed_resource_setter.join();
-  gpr_log(GPR_INFO, "DONNAAA send RPCs finished 3");
+  shutdown.join();
+  gpr_log(GPR_INFO, "DONNAAA backend 2 restarted");
+  ResetBackendCounters();
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
@@ -3733,6 +3745,9 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(kNumEcho1Rpcs, backends_[3]->backend_service1()->request_count());
+  gpr_log(GPR_INFO, "DONNAAA done test");
+  stop_rpc = true;
+  sending_rpc.join();
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {

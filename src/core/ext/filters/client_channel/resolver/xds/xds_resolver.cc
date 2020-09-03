@@ -418,29 +418,28 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.on_call_committed = [resolver_ref = std::move(resolver_ref),
                                      cluster_state]() {
-      XdsResolver* resolver = resolver_ref.get();
+      /*XdsResolver* resolver = resolver_ref.get();
       resolver->work_serializer()->Run(
           [resolver, cluster_state]() {
             cluster_state->Unref();
-            // gpr_log(GPR_INFO, "DONNAAA unref time");
-            // cluster_state->PrintRef();
             resolver->MaybeRemoveUnusedClustersFromCommitted();
           },
-          DEBUG_LOCATION);
-      /*cluster_state->Unref();
+          DEBUG_LOCATION);*/
+      cluster_state->Unref();
       XdsResolver* resolver = resolver_ref.get();
       ExecCtx::Run(
           DEBUG_LOCATION,
           GRPC_CLOSURE_CREATE(
-              [](void* arg, grpc_error* /*error*) {
+              [](void* arg, grpc_error* /*error*/) {
                 auto* resolver = static_cast<XdsResolver*>(arg);
                 resolver->work_serializer()->Run(
                     [resolver]() {
-                      resolver->MaybeRemoveUnusedClustersFromCommitted(); },
+                      resolver->MaybeRemoveUnusedClustersFromCommitted();
+                    },
                     DEBUG_LOCATION);
               },
               resolver, nullptr),
-          GRPC_ERROR_NONE);*/
+          GRPC_ERROR_NONE);
     };
     return call_config;
   }
