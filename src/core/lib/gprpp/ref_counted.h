@@ -129,12 +129,6 @@ class RefCount {
 #endif
   }
 
-  void PrintRef() {
-    const Value prior = get();
-    gpr_log(GPR_INFO, "%p DONNA PRINT REF %" PRIdPTR " -> %" PRIdPTR, this,
-            prior, prior);
-  }
-
   bool RefIfNonZero() {
 #ifndef NDEBUG
     if (trace_flag_ != nullptr && trace_flag_->enabled()) {
@@ -305,7 +299,6 @@ class RefCounted : public Impl {
     }
   }
 
-  void PrintRef() { refs_.PrintRef(); }
   bool RefIfNonZero() { return refs_.RefIfNonZero(); }
   bool RefIfNonZero(const DebugLocation& location, const char* reason) {
     return refs_.RefIfNonZero(location, reason);

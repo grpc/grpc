@@ -177,6 +177,9 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/debugging/stacktrace', abseil_version
+    ss.dependency 'abseil/debugging/symbolize', abseil_version
+    ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
@@ -237,7 +240,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/xds/eds.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds.h',
-                      'src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc',
+                      'src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc',
                       'src/core/ext/filters/client_channel/lb_policy_factory.h',
                       'src/core/ext/filters/client_channel/lb_policy_registry.cc',
                       'src/core/ext/filters/client_channel/lb_policy_registry.h',
@@ -267,6 +270,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc',
+                      'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
                       'src/core/ext/filters/client_channel/resolver_factory.h',
                       'src/core/ext/filters/client_channel/resolver_registry.cc',
                       'src/core/ext/filters/client_channel/resolver_registry.h',
@@ -1148,6 +1152,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                               'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                               'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
+                              'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
                               'src/core/ext/filters/client_channel/resolver_factory.h',
                               'src/core/ext/filters/client_channel/resolver_registry.h',
                               'src/core/ext/filters/client_channel/resolver_result_parsing.h',

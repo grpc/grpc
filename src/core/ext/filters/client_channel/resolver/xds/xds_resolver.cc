@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/debugging/stacktrace.h"
-#include "absl/debugging/symbolize.h"
 #include "absl/functional/bind_front.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
@@ -80,7 +78,6 @@ class XdsResolver : public Resolver {
   void OnError(grpc_error* error);
   void PropagateUpdate(const XdsApi::RdsUpdate& rds_update);
   void MaybeRemoveUnusedClusters();
-  void MaybeRemoveUnusedClustersFromCommitted();
 
  private:
   class ListenerWatcher : public XdsClient::ListenerWatcherInterface {
@@ -211,29 +208,10 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
       }
     }
   }
-  for (const auto& route : route_table_) {
-    gpr_log(GPR_INFO,
-            "DONNAAA constructor %p added: RDS update copied to route_table %s",
-            this, route.route.ToString().c_str());
-  }
 }
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
-  gpr_log(GPR_INFO, "DONNAAA: destructor per selector %p minus", this);
-  void* stack[128];
-  int size = absl::GetStackTrace(stack, 128, 1);
-  for (int i = 0; i < size; ++i) {
-    char out[256];
-    if (absl::Symbolize(stack[i], out, 256)) {
-      gpr_log(GPR_INFO, "donna stack trace per selector %p minus:[%s]", this,
-              out);
-    }
-  }
-  for (const auto& p : clusters_) {
-    gpr_log(GPR_INFO, "DONNAAA: destructor cluster %s", p.first);
-    p.second->PrintRef();
-    // No need to call Unref, its automatic with the destructor
-  }
+  // No need to call Unref, its automatic with the destructor
   clusters_.clear();
   resolver_->MaybeRemoveUnusedClusters();
 }
@@ -418,13 +396,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.on_call_committed = [resolver_ref = std::move(resolver_ref),
                                      cluster_state]() {
-      /*XdsResolver* resolver = resolver_ref.get();
-      resolver->work_serializer()->Run(
-          [resolver, cluster_state]() {
-            cluster_state->Unref();
-            resolver->MaybeRemoveUnusedClustersFromCommitted();
-          },
-          DEBUG_LOCATION);*/
       cluster_state->Unref();
       XdsResolver* resolver = resolver_ref.get();
       ExecCtx::Run(
@@ -433,9 +404,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
               [](void* arg, grpc_error* /*error*/) {
                 auto* resolver = static_cast<XdsResolver*>(arg);
                 resolver->work_serializer()->Run(
-                    [resolver]() {
-                      resolver->MaybeRemoveUnusedClustersFromCommitted();
-                    },
+                    [resolver]() { resolver->MaybeRemoveUnusedClusters(); },
                     DEBUG_LOCATION);
               },
               resolver, nullptr),
@@ -499,7 +468,6 @@ grpc_error* XdsResolver::CreateServiceConfig(
   std::string json = absl::StrJoin(config_parts, "");
   grpc_error* error = GRPC_ERROR_NONE;
   *service_config = ServiceConfig::Create(json.c_str(), &error);
-  gpr_log(GPR_INFO, "DONNAAA NEW service config json: %s", json.c_str());
   return error;
 }
 
@@ -549,26 +517,6 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
     }
   }
   if (update_needed) {
-    gpr_log(GPR_INFO, "DONNAAA code coverage for remove update");
-    // Progapage the update by creating XdsConfigSelector, CreateServiceConfig,
-    // and ReturnResult.
-    PropagateUpdate(current_update_);
-  }
-}
-
-void XdsResolver::MaybeRemoveUnusedClustersFromCommitted() {
-  bool update_needed = false;
-  for (auto it = cluster_state_map_.begin(); it != cluster_state_map_.end();) {
-    if (it->second->RefIfNonZero()) {
-      it->second->Unref();
-      ++it;
-    } else {
-      update_needed = true;
-      it = cluster_state_map_.erase(it);
-    }
-  }
-  if (update_needed) {
-    gpr_log(GPR_INFO, "DONNAAA code coverage from committed for remove update");
     // Progapage the update by creating XdsConfigSelector, CreateServiceConfig,
     // and ReturnResult.
     PropagateUpdate(current_update_);

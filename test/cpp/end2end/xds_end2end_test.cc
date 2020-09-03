@@ -1736,15 +1736,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     balancers_[i]->ads_service()->SetEdsResource(assignment);
   }
 
-  void SetRouteConfigurationWithDelay(int idx,
-                                      const RouteConfiguration& route_config,
-                                      int delay_ms) {
-    GPR_ASSERT(delay_ms > 0);
-    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
-    SetRouteConfiguration(idx, route_config);
-  }
-
- protected:
   class ServerThread {
    public:
     ServerThread() : port_(g_port_saver->GetPort()) {}

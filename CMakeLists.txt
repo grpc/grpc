@@ -109,6 +109,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_bad_variant_access
   absl_base
   absl_base_internal
+  absl_bind_front
   absl_bits
   absl_city
   absl_civil_time
@@ -1437,7 +1438,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
@@ -1878,6 +1879,9 @@ target_link_libraries(grpc
   absl::optional
   absl::strings
   absl::status
+  absl::bind_front
+  absl::symbolize
+  absl::stacktrace
   absl::inlined_vector
   absl::flat_hash_set
 )
@@ -2126,7 +2130,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
@@ -2490,6 +2494,9 @@ target_link_libraries(grpc_unsecure
   absl::optional
   absl::strings
   absl::status
+  absl::bind_front
+  absl::symbolize
+  absl::stacktrace
   absl::inlined_vector
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)

@@ -310,7 +310,7 @@ grpc_cc_library(
         "grpc_lb_policy_eds",
         "grpc_lb_policy_grpclb",
         "grpc_lb_policy_lrs",
-        "grpc_lb_policy_xds_routing",
+        "grpc_lb_policy_xds_cluster_manager",
         "grpc_resolver_xds",
     ],
 )
@@ -331,7 +331,7 @@ grpc_cc_library(
         "grpc_lb_policy_eds_secure",
         "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_lrs_secure",
-        "grpc_lb_policy_xds_routing",
+        "grpc_lb_policy_xds_cluster_manager",
         "grpc_resolver_xds_secure",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
@@ -954,8 +954,6 @@ grpc_cc_library(
     external_deps = [
         "madler_zlib",
         "absl/container:inlined_vector",
-        "absl/debugging:stacktrace",
-        "absl/debugging:symbolize",
         "absl/status",
         "absl/strings",
         "absl/types:optional",
@@ -1080,8 +1078,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
-        "absl/debugging:stacktrace",
-        "absl/debugging:symbolize",
     ],
     language = "c++",
     deps = [
@@ -1447,9 +1443,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_xds_routing",
+    name = "grpc_lb_policy_xds_cluster_manager",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc",
     ],
     external_deps = [
         "absl/strings",
@@ -1761,8 +1757,6 @@ grpc_cc_library(
     ],
     language = "c++",
     external_deps = [
-        "absl/debugging:stacktrace",
-        "absl/debugging:symbolize",
         "absl/functional:bind_front",
     ],
     deps = [
@@ -1779,8 +1773,6 @@ grpc_cc_library(
     ],
     language = "c++",
     external_deps = [
-        "absl/debugging:stacktrace",
-        "absl/debugging:symbolize",
         "absl/functional:bind_front",
     ],
     deps = [
