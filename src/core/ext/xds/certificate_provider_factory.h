@@ -51,7 +51,7 @@ class CertificateProviderFactory {
 
   // Create a CertificateProvider instance from config and return the associated
   // distributor object.
-  virtual RefCountedPtr<grpc_tls_certificate_distributor>
+  virtual RefCountedPtr<grpc_tls_certificate_provider>
   CreateCertificateProvider(std::unique_ptr<Config> config) = 0;
 };
 
