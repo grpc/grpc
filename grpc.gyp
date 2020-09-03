@@ -628,6 +628,7 @@
         'src/core/ext/upb-generated/udpa/annotations/versioning.upb.c',
         'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c',
         'src/core/ext/upb-generated/validate/validate.upb.c',
+        'src/core/ext/xds/certificate_provider_registry.cc',
         'src/core/ext/xds/xds_api.cc',
         'src/core/ext/xds/xds_bootstrap.cc',
         'src/core/ext/xds/xds_client.cc',

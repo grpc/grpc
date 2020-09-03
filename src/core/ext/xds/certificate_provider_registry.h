@@ -21,7 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string>
+#include <memory>
+
+#include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/certificate_provider_factory.h"
 
@@ -51,7 +53,7 @@ class CertificateProviderRegistry {
 
   // Returns the factory for the plugin keyed by name.
   static CertificateProviderFactory* LookupCertificateProviderFactory(
-      const std::string& name);
+      absl::string_view name);
 };
 
 }  // namespace grpc_core

@@ -24,52 +24,63 @@
 
 #include "test/core/util/test_config.h"
 
-
 namespace grpc_core {
 namespace testing {
 namespace {
 
 class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
-public:
-  const char* name() const override {
-  	return "fake1";
-  }
+ public:
+  const char* name() const override { return "fake1"; }
 
   std::unique_ptr<Config> CreateCertificateProviderConfig(
-      const Json& config_json, grpc_error** error) override { return nullptr; }
+      const Json& config_json, grpc_error** error) override {
+    return nullptr;
+  }
 
-  RefCountedPtr<grpc_tls_certificate_provider>
-  CreateCertificateProvider(std::unique_ptr<Config> config) override { return nullptr; }
+  RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
+      std::unique_ptr<Config> config) override {
+    return nullptr;
+  }
 };
 
 class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
-public:
-  const char* name() const override {
-  	return "fake2";
+ public:
+  const char* name() const override { return "fake2"; }
+
+  std::unique_ptr<Config> CreateCertificateProviderConfig(
+      const Json& config_json, grpc_error** error) override {
+    return nullptr;
   }
 
-std::unique_ptr<Config> CreateCertificateProviderConfig(
-      const Json& config_json, grpc_error** error) override { return nullptr; }
-
-  RefCountedPtr<grpc_tls_certificate_provider>
-  CreateCertificateProvider(std::unique_ptr<Config> config) override { return nullptr; }  
+  RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
+      std::unique_ptr<Config> config) override {
+    return nullptr;
+  }
 };
 
 TEST(CertificateProviderRegistryTest, Basic) {
   CertificateProviderRegistry::Builder::InitRegistry();
-  auto *fake_factory_1 = new FakeCertificateProviderFactory1;
-  auto *fake_factory_2 = new FakeCertificateProviderFactory2;
-  CertificateProviderRegistry::Builder::RegisterCertificateProviderFactory(std::unique_ptr<CertificateProviderFactory>(fake_factory_1));
-  CertificateProviderRegistry::Builder::RegisterCertificateProviderFactory(std::unique_ptr<CertificateProviderFactory>(fake_factory_2));
-  EXPECT_EQ(CertificateProviderRegistry::LookupCertificateProviderFactory("fake1"), fake_factory_1);
-  EXPECT_EQ(CertificateProviderRegistry::LookupCertificateProviderFactory("fake2"), fake_factory_2);
-  EXPECT_EQ(CertificateProviderRegistry::LookupCertificateProviderFactory("fake3"), nullptr);  
+  auto* fake_factory_1 = new FakeCertificateProviderFactory1;
+  auto* fake_factory_2 = new FakeCertificateProviderFactory2;
+  CertificateProviderRegistry::Builder::RegisterCertificateProviderFactory(
+      std::unique_ptr<CertificateProviderFactory>(fake_factory_1));
+  CertificateProviderRegistry::Builder::RegisterCertificateProviderFactory(
+      std::unique_ptr<CertificateProviderFactory>(fake_factory_2));
+  EXPECT_EQ(
+      CertificateProviderRegistry::LookupCertificateProviderFactory("fake1"),
+      fake_factory_1);
+  EXPECT_EQ(
+      CertificateProviderRegistry::LookupCertificateProviderFactory("fake2"),
+      fake_factory_2);
+  EXPECT_EQ(
+      CertificateProviderRegistry::LookupCertificateProviderFactory("fake3"),
+      nullptr);
   CertificateProviderRegistry::Builder::ShutdownRegistry();
 }
 
-} // namespace
-} // namespace testing
-} // namespace grpc_core
+}  // namespace
+}  // namespace testing
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
