@@ -27,33 +27,32 @@
 
 namespace grpc_core {
 
-// Interface for configs for CertificateProviders.
-class CertificateProviderConfig {
- public:
-  virtual ~CertificateProviderConfig() {}
-
-  // Name of the type of the CertificateProvider. Unique to each type of config.
-  virtual const char* name() const = 0;
-};
-
 // Factories for plugins. Each plugin implementation should create its own
 // factory implementation and register an instance with the registry.
 class CertificateProviderFactory {
  public:
+  // Interface for configs for CertificateProviders.
+  class Config {
+   public:
+    virtual ~Config() {}
+
+    // Name of the type of the CertificateProvider. Unique to each type of
+    // config.
+    virtual const char* name() const = 0;
+  };
+
   virtual ~CertificateProviderFactory() {}
 
   // Name of the plugin.
   virtual const char* name() const = 0;
 
-  virtual std::unique_ptr<CertificateProviderConfig>
-  CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error** error) = 0;
+  virtual std::unique_ptr<Config> CreateCertificateProviderConfig(
+      const Json& config_json, grpc_error** error) = 0;
 
   // Create a CertificateProvider instance from config and return the associated
   // distributor object.
   virtual RefCountedPtr<grpc_tls_certificate_distributor>
-  CreateCertificateProvider(
-      std::unique_ptr<CertificateProviderConfig> config) = 0;
+  CreateCertificateProvider(std::unique_ptr<Config> config) = 0;
 };
 
 }  // namespace grpc_core
