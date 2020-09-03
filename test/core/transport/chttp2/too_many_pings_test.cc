@@ -710,6 +710,8 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   ASSERT_EQ(grpc_channel_check_connectivity_state(channel, 0),
             GRPC_CHANNEL_READY);
   PerformCallWithResponsePayload(channel, server, cq);
+  // Wait a bit to make sure that the BDP ping goes out.
+  cq_verify_empty_timeout(cqv, 1);
   // The call with a response payload should have triggered a BDP ping.
   // Send two more pings to verify. The second ping should cause a disconnect.
   // If BDP was not sent, the second ping would not cause a disconnect.
@@ -720,6 +722,7 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   grpc_channel_ping(channel, cq, tag(4), nullptr);
   CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
   cq_verify(cqv, 5);
+  cq_verify_empty_timeout(cqv, 1);
   ASSERT_NE(grpc_channel_check_connectivity_state(channel, 0),
             GRPC_CHANNEL_READY);
   cq_verifier_destroy(cqv);
