@@ -56,7 +56,6 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
-class ServerContextBase;
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
@@ -79,6 +78,7 @@ class Channel;
 class ChannelInterface;
 class Server;
 class ServerBuilder;
+class ServerContextBase;
 class ServerInterface;
 
 namespace internal {
@@ -278,7 +278,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler;
   template <::grpc::StatusCode code>
   friend class ::grpc_impl::internal::ErrorMethodHandler;
-  friend class ::grpc_impl::ServerContextBase;
+  friend class ::grpc::ServerContextBase;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
