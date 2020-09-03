@@ -1433,7 +1433,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     bool wait_for_ready = false;
     bool server_fail = false;
     std::vector<std::pair<std::string, std::string>> metadata;
-    int client_cancel_after_us = 0;
 
     RpcOptions() {}
 
@@ -1465,11 +1464,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     RpcOptions& set_metadata(
         std::vector<std::pair<std::string, std::string>> rpc_metadata) {
       metadata = rpc_metadata;
-      return *this;
-    }
-
-    RpcOptions& set_client_cancel_after_us(int time) {
-      client_cancel_after_us = time;
       return *this;
     }
   };
@@ -1677,19 +1671,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       request.mutable_param()->mutable_expected_error()->set_code(
           GRPC_STATUS_FAILED_PRECONDITION);
     }
-    std::thread cancel_thread;
-    if (rpc_options.client_cancel_after_us != 0) {
-      request.mutable_param()->set_client_cancel_after_us(
-          rpc_options.client_cancel_after_us);
-      cancel_thread = std::thread(
-          [&context](int delay_us) {
-            gpr_sleep_until(
-                gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                             gpr_time_from_micros(delay_us, GPR_TIMESPAN)));
-            context.TryCancel();
-          },
-          rpc_options.client_cancel_after_us);
-    }
     Status status;
     switch (rpc_options.service) {
       case SERVICE_ECHO:
@@ -1704,9 +1685,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         status =
             SendRpcMethod(&stub2_, rpc_options, &context, request, response);
         break;
-    }
-    if (rpc_options.client_cancel_after_us != 0) {
-      cancel_thread.join();
     }
     if (local_response) delete response;
     return status;
@@ -3684,7 +3662,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  // Change Route Configurations: new set of clusters with different weights.
+  // Change Route Configurations: new set of clusters.
   route1->mutable_route()->set_cluster(kNewCluster2Name);
   SetRouteConfiguration(0, new_route_config);
   ResetBackendCounters();
@@ -3700,7 +3678,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   EXPECT_EQ(kNumEcho1Rpcs, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  // Change Route Configurations.
+  // Change Route Configurations new set of clusters.
   route1->mutable_route()->set_cluster(kNewCluster3Name);
   SetRouteConfiguration(0, new_route_config);
   ResetBackendCounters();
@@ -3721,7 +3699,6 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewCluster2Name = "anew_cluster_2";
-  const char* kNewCluster3Name = "new_cluster_3";
   const size_t kNumEcho1Rpcs = 10;
   const size_t kNumEchoRpcs = 5;
   SetNextResolution({});
@@ -3736,17 +3713,12 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   AdsServiceImpl::EdsResourceArgs args2({
       {"locality0", GetBackendPorts(2, 3)},
   });
-  AdsServiceImpl::EdsResourceArgs args3({
-      {"locality0", GetBackendPorts(3, 4)},
-  });
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args2, kNewCluster2Name));
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args3, kNewCluster3Name));
   // Populate new CDS resources.
   Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
   new_cluster1.set_name(kNewCluster1Name);
@@ -3754,9 +3726,6 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
   new_cluster2.set_name(kNewCluster2Name);
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
-  Cluster new_cluster3 = balancers_[0]->ads_service()->default_cluster();
-  new_cluster3.set_name(kNewCluster3Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
   // Populating Route Configurations.
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
@@ -3778,35 +3747,31 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   EXPECT_EQ(kNumEcho1Rpcs, backends_[1]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  // Change Route Configurations: new set of clusters with different weights.
-  route1->mutable_route()->set_cluster(kNewCluster2Name);
-  gpr_log(GPR_INFO, "DONNAAA set delayed update for kNewCluster2Name");
   ResetBackendCounters();
+  // Start sending RPCs before changing route configuration.
   std::atomic_bool stop_rpc{false};
   std::thread sending_rpc(
       [this](std::atomic_bool* stop_rpc) {
-        gpr_log(GPR_INFO, "DONNAAA send RPCs");
         do {
           SendRpc(RpcOptions()
                       .set_rpc_service(SERVICE_ECHO1)
-                      //.set_timeout_ms(1000)
                       .set_wait_for_ready(true));
         } while (!(*stop_rpc));
-        gpr_log(GPR_INFO, "DONNAAA done send RPCs");
       },
       &stop_rpc);
-  gpr_log(GPR_INFO, "DONNAAA backend 1 down ");
+  // Bring down the current backend, this will delay route picking time,
+  // resulting in un-committed RPCs.
   ShutdownBackend(1);
+  // Change Route Configurations: new set of clusters.
+  route1->mutable_route()->set_cluster(kNewCluster2Name);
   SetRouteConfiguration(0, new_route_config);
+  // Wait for RPCs to go to the new backend.
   WaitForAllBackends(2, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  gpr_log(GPR_INFO, "DONNAAA backend 2 now up");
+  // Bring up the previous backend, this will allow the delayed RPCs to finally
+  // call on_call_committed.
   StartBackend(1);
-  gpr_log(GPR_INFO, "DONNAAA backend 1 restarted");
   stop_rpc = true;
   sending_rpc.join();
-  gpr_log(GPR_INFO, "DONNAAA resume with regular test");
   ResetBackendCounters();
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
@@ -3817,8 +3782,6 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   EXPECT_EQ(0, backends_[1]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   EXPECT_EQ(kNumEcho1Rpcs, backends_[2]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
