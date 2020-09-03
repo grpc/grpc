@@ -466,6 +466,16 @@ class StreamFlowControl final : public StreamFlowControlBase {
   }
 };
 
+class TestOnlyTransportTargetWindowEstimatesMocker {
+ public:
+  virtual ~TestOnlyTransportTargetWindowEstimatesMocker() {}
+  virtual double ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
+      double current_target) = 0;
+};
+
+extern TestOnlyTransportTargetWindowEstimatesMocker*
+    g_test_only_transport_target_window_estimates_mocker;
+
 }  // namespace chttp2
 }  // namespace grpc_core
 

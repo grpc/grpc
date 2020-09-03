@@ -268,7 +268,7 @@ class Service {
     return methods_[idx]->handler();
   }
 
-  friend class grpc_impl::Server;
+  friend class Server;
   friend class ServerInterface;
   ServerInterface* server_;
   std::vector<std::unique_ptr<internal::RpcServiceMethod>> methods_;
