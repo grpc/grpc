@@ -65,13 +65,12 @@ CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
 
   // Set deadline if timeout > 0 (default value -1 if no timeout specified)
   if (FLAGS_timeout > 0) {
-    int64_t timeout_in_us = ceil(FLAGS_timeout * 1e6);
+    int64_t timeout_in_ns = ceil(FLAGS_timeout * 1e9);
 
     // Convert timeout (in microseconds) to a deadline
-    auto deadline = gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC),
-        gpr_time_from_nanos(static_cast<int64_t>(1e3) * timeout_in_us,
-                            GPR_TIMESPAN));
+    auto deadline =
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_nanos(timeout_in_ns, GPR_TIMESPAN));
     ctx_.set_deadline(deadline);
   }
 
