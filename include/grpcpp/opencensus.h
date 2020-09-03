@@ -21,11 +21,8 @@
 
 #include "opencensus/trace/span.h"
 
-namespace grpc_impl {
-class ServerContext;
-}  // namespace grpc_impl
-
 namespace grpc {
+class ServerContext;
 // These symbols in this file will not be included in the binary unless
 // grpc_opencensus_plugin build target was added as a dependency. At the moment
 // it is only setup to be built with Bazel.
@@ -43,8 +40,7 @@ void RegisterOpenCensusPlugin();
 void RegisterOpenCensusViewsForExport();
 
 // Returns the tracing Span for the current RPC.
-::opencensus::trace::Span GetSpanFromServerContext(
-    ::grpc_impl::ServerContext* context);
+::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context);
 
 }  // namespace grpc
 
