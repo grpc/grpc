@@ -30,28 +30,26 @@ namespace grpc_core {
 // Global registry for all the certificate provider plugins.
 class CertificateProviderRegistry {
  public:
-  // Methods used to create and populate the CertificateProviderRegistry.
-  // NOT THREAD SAFE -- to be used only during global gRPC initialization and
-  // shutdown.
-  class Builder {
-   public:
-    // Global initialization of the registry.
-    static void InitRegistry();
-
-    // Global shutdown of the registry.
-    static void ShutdownRegistry();
-
-    // Register a provider with the registry. Can only be called after calling
-    // InitRegistry(). The key of the factory is extracted from factory
-    // parameter with method CertificateProviderFactory::name. If the same key
-    // is registered twice, an exception is raised.
-    static void RegisterCertificateProviderFactory(
-        std::unique_ptr<CertificateProviderFactory> factory);
-  };
-
   // Returns the factory for the plugin keyed by name.
   static CertificateProviderFactory* LookupCertificateProviderFactory(
       const std::string& name);
+
+  // The following methods are used to create and populate the
+  // CertificateProviderRegistry. NOT THREAD SAFE -- to be used only during
+  // global gRPC initialization and shutdown.
+
+  // Global initialization of the registry.
+  static void InitRegistry();
+
+  // Global shutdown of the registry.
+  static void ShutdownRegistry();
+
+  // Register a provider with the registry. Can only be called after calling
+  // InitRegistry(). The key of the factory is extracted from factory
+  // parameter with method CertificateProviderFactory::name. If the same key
+  // is registered twice, an exception is raised.
+  static void RegisterCertificateProviderFactory(
+      std::unique_ptr<CertificateProviderFactory> factory);
 };
 
 }  // namespace grpc_core

@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <unordered_map>
+#include <map>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -38,14 +38,11 @@ class CertificateProviderStore {
   // maintains a ref to the grpc_tls_certificate_provider for its entire
   // lifetime.
   RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetCertificateProvider(
-      std::string key);
+      absl::string_view key);
 
  private:
   // Underlying map for the providers.
-  std::unordered_map<std::string, RefCountedPtr<grpc_tls_certificate_provider>>
-      map_;
-  // Protects map_.
-  Mutex mu_;
+  std::map<std::string, RefCountedPtr<grpc_tls_certificate_provider>> map_;
 };
 
 }  // namespace grpc_core

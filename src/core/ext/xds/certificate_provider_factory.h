@@ -34,14 +34,14 @@ class CertificateProviderFactory {
   // Interface for configs for CertificateProviders.
   class Config {
    public:
-    virtual ~Config() {}
+    virtual ~Config() = default;
 
     // Name of the type of the CertificateProvider. Unique to each type of
     // config.
     virtual const char* name() const = 0;
   };
 
-  virtual ~CertificateProviderFactory() {}
+  virtual ~CertificateProviderFactory() = default;
 
   // Name of the plugin.
   virtual const char* name() const = 0;
@@ -49,8 +49,7 @@ class CertificateProviderFactory {
   virtual std::unique_ptr<Config> CreateCertificateProviderConfig(
       const Json& config_json, grpc_error** error) = 0;
 
-  // Create a CertificateProvider instance from config and return the associated
-  // distributor object.
+  // Create a CertificateProvider instance from config.
   virtual RefCountedPtr<grpc_tls_certificate_provider>
   CreateCertificateProvider(std::unique_ptr<Config> config) = 0;
 };
