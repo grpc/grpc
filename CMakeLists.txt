@@ -10046,8 +10046,10 @@ add_executable(cli_call_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  test/core/util/test_config.cc
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_call_test.cc
+  test/cpp/util/cli_flags.cc
   test/cpp/util/cli_credentials.cc
   test/cpp/util/grpc_tool.cc
   test/cpp/util/proto_file_parser.cc
@@ -11155,8 +11157,10 @@ add_executable(grpc_cli
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  test/core/util/test_config.cc
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_credentials.cc
+  test/cpp/util/cli_flags.cc
   test/cpp/util/grpc_cli.cc
   test/cpp/util/grpc_tool.cc
   test/cpp/util/proto_file_parser.cc
@@ -11519,8 +11523,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    test/core/util/test_config.cc
     test/cpp/util/cli_call.cc
     test/cpp/util/cli_credentials.cc
+    test/cpp/util/cli_flags.cc
     test/cpp/util/grpc_tool.cc
     test/cpp/util/grpc_tool_test.cc
     test/cpp/util/proto_file_parser.cc

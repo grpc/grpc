@@ -26,7 +26,6 @@
 #include <string>
 #include <thread>
 
-#include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
@@ -48,32 +47,6 @@
 
 namespace grpc {
 namespace testing {
-
-DEFINE_bool(l, false, "Use a long listing format");
-DEFINE_bool(remotedb, true, "Use server types to parse and format messages");
-DEFINE_string(metadata, "",
-              "Metadata to send to server, in the form of key1:val1:key2:val2");
-DEFINE_string(proto_path, ".", "Path to look for the proto file.");
-DEFINE_string(protofiles, "", "Name of the proto file.");
-DEFINE_bool(binary_input, false, "Input in binary format");
-DEFINE_bool(binary_output, false, "Output in binary format");
-DEFINE_string(
-    default_service_config, "",
-    "Default service config to use on the channel, if non-empty. Note "
-    "that this will be ignored if the name resolver returns a service "
-    "config.");
-DEFINE_bool(
-    display_peer_address, false,
-    "Log the peer socket address of the connection that each RPC is made "
-    "on to stderr.");
-DEFINE_bool(json_input, false, "Input in json format");
-DEFINE_bool(json_output, false, "Output in json format");
-DEFINE_string(infile, "", "Input file (default is stdin)");
-DEFINE_bool(batch, false,
-            "Input contains multiple requests. Please do not use this to send "
-            "more than a few RPCs. gRPC CLI has very different performance "
-            "characteristics compared with normal RPC calls which make it "
-            "unsuitable for loadtesting or significant production traffic.");
 
 namespace {
 
@@ -490,7 +463,10 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       "    --binary_input           ; Input in binary format\n"
       "    --binary_output          ; Output in binary format\n"
       "    --json_input             ; Input in json format\n"
-      "    --json_output            ; Output in json format\n" +
+      "    --json_output            ; Output in json format\n"
+      "    --timeout                ; Specify timeout (in seconds), used to "
+      "set the deadline for RPCs. The default value of -1 means no "
+      "deadline has been set.\n" +
       cred.GetCredentialUsage());
 
   std::stringstream output_ss;
