@@ -44,12 +44,13 @@ class CertificateProviderRegistry {
     // InitRegistry(). The key of the factory is extracted from factory
     // parameter with method CertificateProviderFactory::name. If the same key
     // is registered twice, an exception is raised.
-    static void RegisterProvider(
+    static void RegisterCertificateProviderFactory(
         std::unique_ptr<CertificateProviderFactory> factory);
   };
 
   // Returns the factory for the plugin keyed by name.
-  static CertificateProviderFactory* GetFactory(const std::string& name);
+  static CertificateProviderFactory* LookupCertificateProviderFactory(
+      const std::string& name);
 };
 
 }  // namespace grpc_core

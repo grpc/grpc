@@ -37,7 +37,8 @@ class CertificateProviderStore {
   // found for a key, a new provider is created. The CertificateProviderStore
   // maintains a ref to the grpc_tls_certificate_provider for its entire
   // lifetime.
-  RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetProvider(std::string key);
+  RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetCertificateProvider(
+      std::string key);
 
  private:
   // Underlying map for the providers.
