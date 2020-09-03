@@ -1371,7 +1371,6 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-/* TODO(yulin-liang) - Re-enable after fixing https://github.com/grpc/grpc/issues/24039
 - (void)testKeepaliveWithV2API {
   XCTAssertNotNil([[self class] host]);
   if ([[self class] transport] == gGRPCCoreCronetID) {
@@ -1391,7 +1390,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
   options.keepaliveInterval = 1.5;
-  options.keepaliveTimeout = 0;
+  options.keepaliveTimeout = 1;
 
   __block GRPCStreamingProtoCall *call = [_service
       fullDuplexCallWithResponseHandler:
@@ -1399,12 +1398,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
               initWithInitialMetadataCallback:nil
                               messageCallback:nil
                                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                  [expectation fulfill];
                                   XCTAssertNotNil(error);
                                   XCTAssertEqual(
                                       error.code, GRPC_STATUS_UNAVAILABLE,
                                       @"Received status %ld instead of UNAVAILABLE (14).",
                                       error.code);
-                                  [expectation fulfill];
                                 }]
                             callOptions:options];
   [call writeMessage:request];
@@ -1412,7 +1411,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
   [call finish];
-}*/
+}
 
 - (void)testDefaultInterceptor {
   XCTAssertNotNil([[self class] host]);

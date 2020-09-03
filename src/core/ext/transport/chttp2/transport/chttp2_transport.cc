@@ -2662,13 +2662,14 @@ static void next_bdp_ping_timer_expired_locked(void* tp, grpc_error* error) {
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
     return;
   }
-  if (t->flow_control->bdp_estimator()->accumulator() == 0) {
-    // Block the bdp ping till we receive more data.
-    t->bdp_ping_blocked = true;
-    GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
-  } else {
-    schedule_bdp_ping_locked(t);
-  }
+  schedule_bdp_ping_locked(t);
+  // if (t->flow_control->bdp_estimator()->accumulator() == 0) {
+  //   // Block the bdp ping till we receive more data.
+  //   t->bdp_ping_blocked = true;
+  //   GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
+  // } else {
+  //   schedule_bdp_ping_locked(t);
+  // }
 }
 
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
