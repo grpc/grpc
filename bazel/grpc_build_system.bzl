@@ -67,7 +67,9 @@ def grpc_cc_library(
         public_hdrs = [],
         hdrs = [],
         external_deps = [],
+        defines = [],
         deps = [],
+        select_deps = None,
         standalone = False,
         language = "C++",
         testonly = False,
@@ -85,10 +87,14 @@ def grpc_cc_library(
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
 
+    if select_deps:
+        deps += select(select_deps)
+
     native.cc_library(
         name = name,
         srcs = srcs,
-        defines = select({
+        defines = defines +
+                  select({
                       "//:grpc_no_ares": ["GRPC_ARES=0"],
                       "//conditions:default": [],
                   }) +

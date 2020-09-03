@@ -43,6 +43,11 @@ config_setting(
 )
 
 config_setting(
+    name = "grpc_no_xds",
+    values = {"define": "grpc_no_xds=true"},
+)
+
+config_setting(
     name = "grpc_allow_exceptions",
     values = {"define": "GRPC_ALLOW_EXCEPTIONS=1"},
 )
@@ -315,18 +320,27 @@ grpc_cc_library(
         "src/core/lib/surface/init.cc",
         "src/core/plugin_registry/grpc_plugin_registry.cc",
     ],
+    defines = select({
+        "grpc_no_xds": ["GRPC_NO_XDS"],
+        "//conditions:default": [],
+    }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
+    select_deps = {
+        "grpc_no_xds": [],
+        "//conditions:default": [
+            "grpc_lb_policy_cds",
+            "grpc_lb_policy_eds",
+            "grpc_lb_policy_lrs",
+            "grpc_lb_policy_xds_routing",
+            "grpc_resolver_xds",
+        ],
+    },
     standalone = True,
     deps = [
         "grpc_authorization_engine",
         "grpc_common",
-        "grpc_lb_policy_cds",
-        "grpc_lb_policy_eds",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_lb_policy_lrs",
-        "grpc_lb_policy_xds_routing",
-        "grpc_resolver_xds",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
