@@ -25,41 +25,35 @@
 #include <string.h>
 
 void grpc_tls_certificate_distributor::SetKeyMaterials(
-    const std::string& cert_name,
-    absl::optional<absl::string_view> pem_root_certs,
+    const std::string& cert_name, absl::optional<std::string> pem_root_certs,
     absl::optional<PemKeyCertPairList> pem_key_cert_pairs) {
+  GPR_ASSERT(pem_root_certs.has_value() || pem_key_cert_pairs.has_value());
   grpc_core::MutexLock lock(&mu_);
   auto& cert_info = certificate_info_map_[cert_name];
-  bool root_updated = pem_root_certs.has_value();
-  bool identity_updated = pem_key_cert_pairs.has_value();
-  if (root_updated) {
-    cert_info.pem_root_certs = pem_root_certs;
-  }
-  if (identity_updated) {
-    cert_info.pem_key_cert_pairs = std::move(pem_key_cert_pairs);
-  }
-  // Go through each affected watchers and invoke OnCertificatesChanged.
-  if (root_updated) {
+  if (pem_root_certs.has_value()) {
+    // Successful credential updates will clear any pre-existing error.
     cert_info.SetRootError(GRPC_ERROR_NONE);
-    for (const auto watcher_ptr : cert_info.root_cert_watchers) {
+    for (auto* watcher_ptr : cert_info.root_cert_watchers) {
       GPR_ASSERT(watcher_ptr != nullptr);
       const auto watcher_it = watchers_.find(watcher_ptr);
       GPR_ASSERT(watcher_it != watchers_.end());
       GPR_ASSERT(watcher_it->second.root_cert_name.has_value());
       absl::optional<PemKeyCertPairList> pem_key_cert_pairs_to_report;
-      if (identity_updated &&
+      if (pem_key_cert_pairs.has_value() &&
           watcher_it->second.identity_cert_name == cert_name) {
-        pem_key_cert_pairs_to_report = cert_info.pem_key_cert_pairs;
+        pem_key_cert_pairs_to_report = pem_key_cert_pairs;
       } else if (watcher_it->second.identity_cert_name.has_value()) {
         auto& identity_cert_info =
             certificate_info_map_[*watcher_it->second.identity_cert_name];
         pem_key_cert_pairs_to_report = identity_cert_info.pem_key_cert_pairs;
       }
       watcher_ptr->OnCertificatesChanged(
-          cert_info.pem_root_certs, std::move(pem_key_cert_pairs_to_report));
+          pem_root_certs, std::move(pem_key_cert_pairs_to_report));
     }
+    cert_info.pem_root_certs = std::move(*pem_root_certs);
   }
-  if (identity_updated) {
+  if (pem_key_cert_pairs.has_value()) {
+    // Successful credential updates will clear any pre-existing error.
     cert_info.SetIdentityError(GRPC_ERROR_NONE);
     for (const auto watcher_ptr : cert_info.identity_cert_watchers) {
       GPR_ASSERT(watcher_ptr != nullptr);
@@ -67,7 +61,10 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
       GPR_ASSERT(watcher_it != watchers_.end());
       GPR_ASSERT(watcher_it->second.identity_cert_name.has_value());
       absl::optional<absl::string_view> pem_root_certs_to_report;
-      if (root_updated && watcher_it->second.root_cert_name == cert_name) {
+      if (pem_root_certs.has_value() &&
+          watcher_it->second.root_cert_name == cert_name) {
+        // In this case, We've already sent the credential updates at the time
+        // when checking pem_root_certs, so we will skip here.
         continue;
       } else if (watcher_it->second.root_cert_name.has_value()) {
         auto& root_cert_info =
@@ -75,8 +72,9 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
         pem_root_certs_to_report = root_cert_info.pem_root_certs;
       }
       watcher_ptr->OnCertificatesChanged(pem_root_certs_to_report,
-                                         cert_info.pem_key_cert_pairs);
+                                         pem_key_cert_pairs);
     }
+    cert_info.pem_key_cert_pairs = std::move(*pem_key_cert_pairs);
   }
 }
 
@@ -85,7 +83,7 @@ bool grpc_tls_certificate_distributor::HasRootCerts(
   grpc_core::MutexLock lock(&mu_);
   const auto it = certificate_info_map_.find(root_cert_name);
   return it != certificate_info_map_.end() &&
-         !it->second.pem_root_certs->empty();
+         !it->second.pem_root_certs.empty();
 };
 
 bool grpc_tls_certificate_distributor::HasKeyCertPairs(
@@ -93,7 +91,7 @@ bool grpc_tls_certificate_distributor::HasKeyCertPairs(
   grpc_core::MutexLock lock(&mu_);
   const auto it = certificate_info_map_.find(identity_cert_name);
   return it != certificate_info_map_.end() &&
-         !it->second.pem_key_cert_pairs->empty();
+         !it->second.pem_key_cert_pairs.empty();
 };
 
 void grpc_tls_certificate_distributor::SetErrorForCert(
@@ -133,6 +131,8 @@ void grpc_tls_certificate_distributor::SetErrorForCert(
       grpc_error* root_cert_error_to_report = GRPC_ERROR_NONE;
       if (root_cert_error.has_value() &&
           watcher_it->second.root_cert_name == cert_name) {
+        // In this case, We've already sent the error updates at the time when
+        // checking root_cert_error, so we will skip here.
         continue;
       } else if (watcher_it->second.root_cert_name.has_value()) {
         auto& root_cert_info =
@@ -198,7 +198,10 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
           !cert_info.identity_cert_watchers.empty();
       cert_info.root_cert_watchers.insert(watcher_ptr);
       root_error = GRPC_ERROR_REF(cert_info.root_cert_error);
-      updated_root_certs = cert_info.pem_root_certs;
+      // Empty credentials will be treated as no updates.
+      if (!cert_info.pem_root_certs.empty()) {
+        updated_root_certs = cert_info.pem_root_certs;
+      }
     }
     if (identity_cert_name.has_value()) {
       CertificateInfo& cert_info = certificate_info_map_[*identity_cert_name];
@@ -207,7 +210,10 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
           !cert_info.root_cert_watchers.empty();
       cert_info.identity_cert_watchers.insert(watcher_ptr);
       identity_error = GRPC_ERROR_REF(cert_info.identity_cert_error);
-      updated_identity_pairs = cert_info.pem_key_cert_pairs;
+      // Empty credentials will be treated as no updates.
+      if (!cert_info.pem_key_cert_pairs.empty()) {
+        updated_identity_pairs = cert_info.pem_key_cert_pairs;
+      }
     }
     // Notify this watcher if the certs it is watching already had some
     // contents. Note that an *_cert_error in cert_info only indicates error
