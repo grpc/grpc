@@ -73,12 +73,12 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   // CredentialInfo to the cert_update_queue of state_, and check in each test
   // if the status updates are correct.
   struct CredentialInfo {
-    absl::string_view root_certs;
+    std::string root_certs;
     grpc_tls_certificate_distributor::PemKeyCertPairList key_cert_pairs;
     CredentialInfo(
-        absl::string_view root,
+        std::string root,
         grpc_tls_certificate_distributor::PemKeyCertPairList key_cert)
-        : root_certs(root), key_cert_pairs(std::move(key_cert)) {}
+        : root_certs(std::move(root)), key_cert_pairs(std::move(key_cert)) {}
     bool operator==(const CredentialInfo& other) const {
       return root_certs == other.root_certs &&
              key_cert_pairs == other.key_cert_pairs;
@@ -132,15 +132,15 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
         absl::optional<absl::string_view> root_certs,
         absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
             key_cert_pairs) override {
-      absl::string_view updated_root = "";
+      std::string updated_root;
       if (root_certs.has_value()) {
-        updated_root = *root_certs;
+        updated_root = std::string(*root_certs);
       }
       grpc_tls_certificate_distributor::PemKeyCertPairList updated_identity;
       if (key_cert_pairs.has_value()) {
         updated_identity = std::move(*key_cert_pairs);
       }
-      state_->cert_update_queue.emplace_back(updated_root,
+      state_->cert_update_queue.emplace_back(std::move(updated_root),
                                              std::move(updated_identity));
     }
 
