@@ -42,7 +42,7 @@ when you installed Python (if not go back and install it!) then invoke:
 Windows users may need to invoke :code:`pip.exe` from a command line ran as
 administrator.
 
-n.b. On Windows and on Mac OS X one *must* have a recent release of :code:`pip`
+n.b. On Windows and on macOS one *must* have a recent release of :code:`pip`
 to retrieve the proper wheel from PyPI. Be sure to upgrade to the latest
 version!
 
@@ -60,7 +60,7 @@ package named :code:`python-dev`).
   $ git submodule update --init
 
   # For the next two commands do `sudo pip install` if you get permission-denied errors
-  $ pip install -rrequirements.txt
+  $ pip install -r requirements.txt
   $ GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
 
 You cannot currently install Python from source on Windows. Things might work
