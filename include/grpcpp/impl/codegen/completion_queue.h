@@ -46,7 +46,6 @@ struct grpc_completion_queue;
 
 namespace grpc_impl {
 
-class Server;
 template <class R>
 class ClientReader;
 template <class W>
@@ -57,7 +56,6 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
-class ServerContextBase;
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
@@ -78,7 +76,9 @@ namespace grpc {
 
 class Channel;
 class ChannelInterface;
+class Server;
 class ServerBuilder;
+class ServerContextBase;
 class ServerInterface;
 
 namespace internal {
@@ -252,7 +252,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   // Friends for access to server registration lists that enable checking and
   // logging on shutdown
   friend class ::grpc::ServerBuilder;
-  friend class ::grpc_impl::Server;
+  friend class ::grpc::Server;
 
   // Friend synchronous wrappers so that they can access Pluck(), which is
   // a semi-private API geared towards the synchronous implementation.
@@ -278,7 +278,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler;
   template <::grpc::StatusCode code>
   friend class ::grpc_impl::internal::ErrorMethodHandler;
-  friend class ::grpc_impl::ServerContextBase;
+  friend class ::grpc::ServerContextBase;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
@@ -382,14 +382,14 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
     }
   }
 
-  void RegisterServer(const ::grpc_impl::Server* server) {
+  void RegisterServer(const ::grpc::Server* server) {
     (void)server;
 #ifndef NDEBUG
     grpc::internal::MutexLock l(&server_list_mutex_);
     server_list_.push_back(server);
 #endif
   }
-  void UnregisterServer(const ::grpc_impl::Server* server) {
+  void UnregisterServer(const ::grpc::Server* server) {
     (void)server;
 #ifndef NDEBUG
     grpc::internal::MutexLock l(&server_list_mutex_);
@@ -412,7 +412,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   // NDEBUG, instantiate it in all cases since otherwise the size will be
   // inconsistent.
   mutable grpc::internal::Mutex server_list_mutex_;
-  std::list<const ::grpc_impl::Server*>
+  std::list<const ::grpc::Server*>
       server_list_ /* GUARDED_BY(server_list_mutex_) */;
 };
 
@@ -443,7 +443,7 @@ class ServerCompletionQueue : public CompletionQueue {
 
   grpc_cq_polling_type polling_type_;
   friend class ::grpc::ServerBuilder;
-  friend class ::grpc_impl::Server;
+  friend class ::grpc::Server;
 };
 
 }  // namespace grpc

@@ -43,6 +43,11 @@ config_setting(
 )
 
 config_setting(
+    name = "grpc_no_xds",
+    values = {"define": "grpc_no_xds=true"},
+)
+
+config_setting(
     name = "grpc_allow_exceptions",
     values = {"define": "GRPC_ALLOW_EXCEPTIONS=1"},
 )
@@ -75,11 +80,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "giggle"
+g_stands_for = "geeky"
 
-core_version = "11.0.0"
+core_version = "12.0.0"
 
-version = "1.32.0-dev"
+version = "1.33.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -251,7 +256,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/tls_credentials_options.h",
     "include/grpcpp/server.h",
-    "include/grpcpp/server_impl.h",
     "include/grpcpp/server_builder.h",
     "include/grpcpp/server_context.h",
     "include/grpcpp/server_posix.h",
@@ -306,12 +310,7 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc_common",
-        "grpc_lb_policy_cds",
-        "grpc_lb_policy_eds",
         "grpc_lb_policy_grpclb",
-        "grpc_lb_policy_lrs",
-        "grpc_lb_policy_xds_cluster_manager",
-        "grpc_resolver_xds",
     ],
 )
 
@@ -321,18 +320,27 @@ grpc_cc_library(
         "src/core/lib/surface/init.cc",
         "src/core/plugin_registry/grpc_plugin_registry.cc",
     ],
+    defines = select({
+        "grpc_no_xds": ["GRPC_NO_XDS"],
+        "//conditions:default": [],
+    }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
+    select_deps = {
+        "grpc_no_xds": [],
+        "//conditions:default": [
+            "grpc_lb_policy_cds",
+            "grpc_lb_policy_eds",
+            "grpc_lb_policy_lrs",
+            "grpc_lb_policy_xds_cluster_manager",
+            "grpc_resolver_xds",
+        ],
+    },
     standalone = True,
     deps = [
         "grpc_authorization_engine",
         "grpc_common",
-        "grpc_lb_policy_cds_secure",
-        "grpc_lb_policy_eds_secure",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_lb_policy_lrs_secure",
-        "grpc_lb_policy_xds_cluster_manager",
-        "grpc_resolver_xds_secure",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
@@ -1308,35 +1316,10 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/xds/xds_api.cc",
         "src/core/ext/xds/xds_bootstrap.cc",
-        "src/core/ext/xds/xds_channel.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
     ],
     hdrs = [
-        "src/core/ext/xds/xds_channel.h",
-        "src/core/ext/xds/xds_channel_args.h",
-        "src/core/ext/xds/xds_client.h",
-    ],
-    language = "c++",
-    deps = [
-        "envoy_ads_upb",
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_api_header",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_xds_client_secure",
-    srcs = [
-        "src/core/ext/xds/xds_api.cc",
-        "src/core/ext/xds/xds_bootstrap.cc",
-        "src/core/ext/xds/xds_channel_secure.cc",
-        "src/core/ext/xds/xds_client.cc",
-        "src/core/ext/xds/xds_client_stats.cc",
-    ],
-    hdrs = [
-        "src/core/ext/xds/xds_channel.h",
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/ext/xds/xds_client.h",
     ],
@@ -1364,19 +1347,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_cds_secure",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_client_secure",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_lb_policy_eds",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/eds.cc",
@@ -1397,26 +1367,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_eds_secure",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/eds.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-    ],
-    external_deps = [
-        "absl/strings",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_lb_address_filtering",
-        "grpc_xds_client_secure",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_lb_policy_lrs",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc",
@@ -1426,19 +1376,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_xds_client",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_lb_policy_lrs_secure",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_client_secure",
     ],
 )
 
@@ -1767,22 +1704,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_xds_secure",
-    srcs = [
-        "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
-    ],
-    language = "c++",
-    external_deps = [
-        "absl/functional:bind_front",
-    ],
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_client_secure",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_secure",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
@@ -1825,6 +1746,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/xds/xds_channel_args.h",
+        "src/core/lib/security/certificate_provider.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
@@ -1868,6 +1790,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_mock_cel",
+    hdrs = [
+        "src/core/lib/security/authorization/mock_cel/activation.h",
+        "src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h",
+        "src/core/lib/security/authorization/mock_cel/cel_expression.h",
+        "src/core/lib/security/authorization/mock_cel/cel_value.h",
+        "src/core/lib/security/authorization/mock_cel/evaluator_core.h",
+        "src/core/lib/security/authorization/mock_cel/flat_expr_builder.h",
+        "src/core/lib/security/authorization/mock_cel/statusor.h",
+    ],
+    language = "c++",
+    deps = [
+        "google_api_upb",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_authorization_engine",
     srcs = [
         "src/core/lib/security/authorization/authorization_engine.cc",
@@ -1876,8 +1816,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/evaluate_args.h",
-        "src/core/lib/security/authorization/mock_cel/activation.h",
-        "src/core/lib/security/authorization/mock_cel/cel_value.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
@@ -1887,6 +1825,7 @@ grpc_cc_library(
         "envoy_ads_upb",
         "google_api_upb",
         "grpc_base",
+        "grpc_mock_cel",
         "grpc_secure",
     ],
 )
@@ -2300,7 +2239,6 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/server_callback_handlers.h",
         "include/grpcpp/impl/codegen/server_callback_impl.h",
         "include/grpcpp/impl/codegen/server_context.h",
-        "include/grpcpp/impl/codegen/server_context_impl.h",
         "include/grpcpp/impl/codegen/server_interceptor.h",
         "include/grpcpp/impl/codegen/server_interface.h",
         "include/grpcpp/impl/codegen/service_type.h",

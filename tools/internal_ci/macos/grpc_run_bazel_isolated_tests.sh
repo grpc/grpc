@@ -24,6 +24,12 @@ cd $(dirname $0)/../../..
 # The "local" execution strategy is required because the test runs sudo and that doesn't work in a sandboxed environment (the default on mac)
 tools/bazel test $RUN_TESTS_FLAGS --spawn_strategy=local --genrule_strategy=local --test_output=all --copt="-DGRPC_CFSTREAM=1" //test/cpp/end2end:cfstream_test
 
+# Missing the /var/db/ntp-kod file may breaks the ntp synchronization.
+# Create the file and change the ownership to root before NTP sync.
+# TODO(yulin-liang): investigate how to run time_jump_test without needing to mess with the system time directly.
+# See b/166245303 
+sudo touch /var/db/ntp-kod
+sudo chown root:wheel /var/db/ntp-kod
 # Make sure time is in sync before running time_jump_test because the test does
 # NTP sync before exiting. Bazel gets confused if test end time < start time.
 sudo sntp -sS pool.ntp.org

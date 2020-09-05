@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.32.0-dev'
+  version = '1.33.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -536,9 +536,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_api.h',
                       'src/core/ext/xds/xds_bootstrap.cc',
                       'src/core/ext/xds/xds_bootstrap.h',
-                      'src/core/ext/xds/xds_channel.h',
                       'src/core/ext/xds/xds_channel_args.h',
-                      'src/core/ext/xds/xds_channel_secure.cc',
                       'src/core/ext/xds/xds_client.cc',
                       'src/core/ext/xds/xds_client.h',
                       'src/core/ext/xds/xds_client_stats.cc',
@@ -852,7 +850,13 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/evaluate_args.cc',
                       'src/core/lib/security/authorization/evaluate_args.h',
                       'src/core/lib/security/authorization/mock_cel/activation.h',
+                      'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
+                      'src/core/lib/security/authorization/mock_cel/cel_expression.h',
                       'src/core/lib/security/authorization/mock_cel/cel_value.h',
+                      'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
+                      'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
+                      'src/core/lib/security/authorization/mock_cel/statusor.h',
+                      'src/core/lib/security/certificate_provider.h',
                       'src/core/lib/security/context/security_context.cc',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.cc',
@@ -1281,7 +1285,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/validate/validate.upb.h',
                               'src/core/ext/xds/xds_api.h',
                               'src/core/ext/xds/xds_bootstrap.h',
-                              'src/core/ext/xds/xds_channel.h',
                               'src/core/ext/xds/xds_channel_args.h',
                               'src/core/ext/xds/xds_client.h',
                               'src/core/ext/xds/xds_client_stats.h',
@@ -1427,7 +1430,13 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/authorization/authorization_engine.h',
                               'src/core/lib/security/authorization/evaluate_args.h',
                               'src/core/lib/security/authorization/mock_cel/activation.h',
+                              'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
+                              'src/core/lib/security/authorization/mock_cel/cel_expression.h',
                               'src/core/lib/security/authorization/mock_cel/cel_value.h',
+                              'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
+                              'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
+                              'src/core/lib/security/authorization/mock_cel/statusor.h',
+                              'src/core/lib/security/certificate_provider.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',

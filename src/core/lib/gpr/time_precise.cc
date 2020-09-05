@@ -31,6 +31,7 @@
 
 #include "src/core/lib/gpr/time_precise.h"
 
+#ifndef GPR_CYCLE_COUNTER_CUSTOM
 #if GPR_CYCLE_COUNTER_RDTSC_32 || GPR_CYCLE_COUNTER_RDTSC_64
 #if GPR_LINUX
 static bool read_freq_from_kernel(double* freq) {
@@ -163,3 +164,4 @@ gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b) {
                       gpr_cycle_counter_to_time(b));
 }
 #endif /* GPR_CYCLE_COUNTER_FALLBACK */
+#endif /* !GPR_CYCLE_COUNTER_CUSTOM */
