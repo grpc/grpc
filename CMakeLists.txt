@@ -1882,8 +1882,6 @@ target_link_libraries(grpc
   absl::strings
   absl::status
   absl::bind_front
-  absl::symbolize
-  absl::stacktrace
   absl::inlined_vector
   absl::flat_hash_set
 )
@@ -2427,9 +2425,6 @@ target_link_libraries(grpc_unsecure
   absl::optional
   absl::strings
   absl::status
-  absl::bind_front
-  absl::symbolize
-  absl::stacktrace
   absl::inlined_vector
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)

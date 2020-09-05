@@ -1188,8 +1188,6 @@ libs:
   - absl/strings:strings
   - absl/status:status
   - absl/functional:bind_front
-  - absl/debugging:symbolize
-  - absl/debugging:stacktrace
   - absl/container:inlined_vector
   - absl/container:flat_hash_set
   baselib: true
@@ -1363,7 +1361,6 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
-  - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
@@ -1861,9 +1858,6 @@ libs:
   - absl/types:optional
   - absl/strings:strings
   - absl/status:status
-  - absl/functional:bind_front
-  - absl/debugging:symbolize
-  - absl/debugging:stacktrace
   - absl/container:inlined_vector
   baselib: true
   deps_linkage: static
@@ -7481,7 +7475,6 @@ targets:
 - name: xds_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h

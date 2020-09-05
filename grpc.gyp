@@ -441,8 +441,6 @@
         'absl/strings:strings',
         'absl/status:status',
         'absl/functional:bind_front',
-        'absl/debugging:symbolize',
-        'absl/debugging:stacktrace',
         'absl/container:inlined_vector',
         'absl/container:flat_hash_set',
       ],
@@ -962,9 +960,6 @@
         'absl/types:optional',
         'absl/strings:strings',
         'absl/status:status',
-        'absl/functional:bind_front',
-        'absl/debugging:symbolize',
-        'absl/debugging:stacktrace',
         'absl/container:inlined_vector',
       ],
       'sources': [
