@@ -1531,7 +1531,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   std::tuple<int, int, int> WaitForAllBackends(
       size_t start_index = 0, size_t stop_index = 0, bool reset_counters = true,
-      const RpcOptions& rpc_options = RpcOptions()) {
+      const RpcOptions& rpc_options = RpcOptions(),
+      bool allow_failures = false) {
     int num_ok = 0;
     int num_failure = 0;
     int num_drops = 0;
@@ -1547,6 +1548,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             num_total, num_ok, num_failure, num_drops);
     // Warm up failures are expected again because we chose the cluster without
     // knowing the connection status as per new design.
+    if (!allow_failures) EXPECT_EQ(num_failure, 0);
     return std::make_tuple(num_ok, num_failure, num_drops);
   }
 
@@ -2113,7 +2115,7 @@ TEST_P(XdsResolverOnlyTest, ChangeClusters) {
   Listener listener =
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  WaitForAllBackends(2, 4);
+  WaitForAllBackends(2, 4, true, RpcOptions(), true);
 }
 
 // Tests that we go into TRANSIENT_FAILURE if the Cluster disappears.
@@ -2159,7 +2161,7 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
   balancers_[0]->Shutdown();
   balancers_[0]->Start();
   // Make sure things are still working.
-  WaitForBackend(0, false);
+  WaitForBackend(0);
   CheckRpcSendOk(100);
   // Populate new EDS resource.
   AdsServiceImpl::EdsResourceArgs args2({
@@ -2180,7 +2182,7 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
       ->set_cluster(kNewClusterName);
   balancers_[0]->ads_service()->SetRdsResource(new_route_config);
   // Wait for all new backends to be used.
-  WaitForAllBackends(2, 4);
+  WaitForAllBackends(2, 4, true, RpcOptions(), true);
 }
 
 TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
@@ -2235,7 +2237,8 @@ TEST_P(XdsResolverLoadReportingOnlyTest, ChangeClusters) {
   int num_ok = 0;
   int num_failure = 0;
   int num_drops = 0;
-  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends(0, 2);
+  std::tie(num_ok, num_failure, num_drops) =
+      WaitForAllBackends(0, 2, true, RpcOptions(), true);
   // The load report received at the balancer should be correct.
   std::vector<ClientStats> load_report =
       balancers_[0]->lrs_service()->WaitForLoadReport();
@@ -2273,7 +2276,8 @@ TEST_P(XdsResolverLoadReportingOnlyTest, ChangeClusters) {
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // Wait for all new backends to be used.
-  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends(2, 4);
+  std::tie(num_ok, num_failure, num_drops) =
+      WaitForAllBackends(2, 4, true, RpcOptions(), true);
   // The load report received at the balancer should be correct.
   load_report = balancers_[0]->lrs_service()->WaitForLoadReport();
   EXPECT_THAT(
@@ -3366,8 +3370,9 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, new_route_config);
-  WaitForAllBackends(0, 1);
-  WaitForAllBackends(1, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(0, 1, true, RpcOptions(), true);
+  WaitForAllBackends(1, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1),
+                     true);
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
@@ -3406,7 +3411,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   default_route->mutable_route()->set_cluster(kNewCluster3Name);
   SetRouteConfiguration(0, new_route_config);
   ResetBackendCounters();
-  WaitForAllBackends(3, 4);
+  WaitForAllBackends(3, 4, true, RpcOptions(), true);
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
@@ -3495,8 +3500,9 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultResourceName);
   SetRouteConfiguration(0, new_route_config);
-  WaitForAllBackends(0, 1);
-  WaitForAllBackends(1, 2, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(0, 1, true, RpcOptions(), true);
+  WaitForAllBackends(1, 2, true, RpcOptions().set_rpc_service(SERVICE_ECHO1),
+                     true);
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
@@ -3532,7 +3538,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
   SetRouteConfiguration(0, new_route_config);
   ResetBackendCounters();
-  WaitForAllBackends(2, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(2, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1),
+                     true);
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
@@ -3562,7 +3569,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
   SetRouteConfiguration(0, new_route_config);
   ResetBackendCounters();
-  WaitForAllBackends(3, 4, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(3, 4, true, RpcOptions().set_rpc_service(SERVICE_ECHO1),
+                     true);
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
@@ -3614,7 +3622,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
   SetRouteConfiguration(0, new_route_config);
-  WaitForAllBackends(0, 1);
+  WaitForAllBackends(0, 1, true, RpcOptions(), true);
   CheckRpcSendOk(kNumEchoRpcs);
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
@@ -3623,7 +3631,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   default_route->mutable_route()->set_cluster(kNewCluster1Name);
   SetRouteConfiguration(0, new_route_config);
-  WaitForAllBackends(1, 2);
+  WaitForAllBackends(1, 2, true, RpcOptions(), true);
   CheckRpcSendOk(kNumEchoRpcs);
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
@@ -3672,7 +3680,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   SetRouteConfiguration(0, new_route_config);
   // Wait for RPCs to go to the new backend: 1, this ensures that the client has
   // processed the update.
-  WaitForAllBackends(1, 2, false);
+  WaitForAllBackends(1, 2, false, RpcOptions(), true);
   // Bring up the previous backend: 0, this will allow the delayed RPC to
   // finally call on_call_committed upon completion.
   StartBackend(0);
@@ -4988,11 +4996,10 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   gpr_log(GPR_INFO, "********** KILLED BALANCER 0 *************");
   // This is serviced by the existing child policy.
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
-  WaitForBackend(0, false);
-  CheckRpcSendOk(10);
+  CheckRpcSendOk(10, RpcOptions().set_wait_for_ready(true));
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // All 10 requests should again have gone to the first backend.
-  EXPECT_EQ(21U, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(20U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // The ADS service of no balancers sent anything
   EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state().state,
