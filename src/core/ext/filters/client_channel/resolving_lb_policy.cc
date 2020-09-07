@@ -322,6 +322,14 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   // later use.
   RefCountedPtr<ConfigSelector> config_selector =
       ConfigSelector::GetFromChannelArgs(*result.args);
+  // Remove the config selector from channel args so that we're not holding
+  // unnecessary refs that cause it to be destroyed somewhere other than in the
+  // WorkSerializer.
+  const char* arg_name = GRPC_ARG_CONFIG_SELECTOR;
+  grpc_channel_args* new_args =
+      grpc_channel_args_copy_and_remove(result.args, &arg_name, 1);
+  grpc_channel_args_destroy(result.args);
+  result.args = new_args;
   // Create or update LB policy, as needed.
   if (service_config_result.lb_policy_config != nullptr) {
     CreateOrUpdateLbPolicyLocked(

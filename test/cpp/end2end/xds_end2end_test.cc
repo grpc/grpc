@@ -1545,7 +1545,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             "Performed %d warm up requests against the backends. "
             "%d succeeded, %d failed, %d dropped.",
             num_total, num_ok, num_failure, num_drops);
-    EXPECT_EQ(num_failure, 0);
+    // Warm up failures are expected again because we chose the cluster without
+    // knowing the connection status as per new design.
     return std::make_tuple(num_ok, num_failure, num_drops);
   }
 
@@ -1662,8 +1663,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     for (const auto& metadata : rpc_options.metadata) {
       context.AddMetadata(metadata.first, metadata.second);
     }
-    context.set_deadline(
-        grpc_timeout_milliseconds_to_deadline(rpc_options.timeout_ms));
+    if (rpc_options.timeout_ms != 0) {
+      context.set_deadline(
+          grpc_timeout_milliseconds_to_deadline(rpc_options.timeout_ms));
+    }
     if (rpc_options.wait_for_ready) context.set_wait_for_ready(true);
     request.set_message(kRequestMessage_);
     if (rpc_options.server_fail) {
@@ -1735,7 +1738,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     balancers_[i]->ads_service()->SetEdsResource(assignment);
   }
 
- protected:
   class ServerThread {
    public:
     ServerThread() : port_(g_port_saver->GetPort()) {}
@@ -1938,7 +1940,7 @@ TEST_P(BasicTest, Vanilla) {
               backends_[i]->backend_service()->request_count());
   }
   // Check LB policy name for the channel.
-  EXPECT_EQ((GetParam().use_xds_resolver() ? "xds_routing_experimental"
+  EXPECT_EQ((GetParam().use_xds_resolver() ? "xds_cluster_manager_experimental"
                                            : "eds_experimental"),
             channel_->GetLoadBalancingPolicyName());
 }
@@ -2111,10 +2113,7 @@ TEST_P(XdsResolverOnlyTest, ChangeClusters) {
   Listener listener =
       balancers_[0]->ads_service()->BuildListener(new_route_config);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  // Wait for all new backends to be used.
-  std::tuple<int, int, int> counts = WaitForAllBackends(2, 4);
-  // Make sure no RPCs failed in the transition.
-  EXPECT_EQ(0, std::get<1>(counts));
+  WaitForAllBackends(2, 4);
 }
 
 // Tests that we go into TRANSIENT_FAILURE if the Cluster disappears.
@@ -2160,6 +2159,7 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
   balancers_[0]->Shutdown();
   balancers_[0]->Start();
   // Make sure things are still working.
+  WaitForBackend(0, false);
   CheckRpcSendOk(100);
   // Populate new EDS resource.
   AdsServiceImpl::EdsResourceArgs args2({
@@ -2180,9 +2180,7 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
       ->set_cluster(kNewClusterName);
   balancers_[0]->ads_service()->SetRdsResource(new_route_config);
   // Wait for all new backends to be used.
-  std::tuple<int, int, int> counts = WaitForAllBackends(2, 4);
-  // Make sure no RPCs failed in the transition.
-  EXPECT_EQ(0, std::get<1>(counts));
+  WaitForAllBackends(2, 4);
 }
 
 TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
@@ -2333,7 +2331,6 @@ TEST_P(XdsResolverLoadReportingOnlyTest, ChangeClusters) {
     total_failure += client_stats.total_error_requests();
   }
   EXPECT_EQ(total_ok, num_ok);
-  EXPECT_EQ(total_failure, num_failure);
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->lrs_service()->request_count());
   EXPECT_EQ(1U, balancers_[0]->lrs_service()->response_count());
@@ -3591,6 +3588,98 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
                                              (1 - kErrorToleranceSmallLoad)),
                                ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
                                              (1 + kErrorToleranceSmallLoad))));
+}
+
+TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
+  const char* kNewCluster1Name = "new_cluster_1";
+  const size_t kNumEchoRpcs = 5;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  // Send Route Configuration.
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  SetRouteConfiguration(0, new_route_config);
+  WaitForAllBackends(0, 1);
+  CheckRpcSendOk(kNumEchoRpcs);
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  // Change Route Configurations: new default cluster.
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster(kNewCluster1Name);
+  SetRouteConfiguration(0, new_route_config);
+  WaitForAllBackends(1, 2);
+  CheckRpcSendOk(kNumEchoRpcs);
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
+}
+
+TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
+  const char* kNewCluster1Name = "new_cluster_1";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewCluster1Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  // Bring down the current backend: 0, this will delay route picking time,
+  // resulting in un-committed RPCs.
+  ShutdownBackend(0);
+  // Send a RouteConfiguration with a default route that points to
+  // backend 0.
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  SetRouteConfiguration(0, new_route_config);
+  // Send exactly one RPC with no deadline and with wait_for_ready=true.
+  // This RPC will not complete until after backend 0 is started.
+  std::thread sending_rpc([this]() {
+    SendRpc(RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
+  });
+  // Send a non-wait_for_ready RPC which should fail, this will tell us
+  // that the client has received the update and attempted to connect.
+  const Status status = SendRpc(RpcOptions().set_timeout_ms(0));
+  EXPECT_FALSE(status.ok());
+  // Send a update RouteConfiguration to use backend 1.
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster(kNewCluster1Name);
+  SetRouteConfiguration(0, new_route_config);
+  // Wait for RPCs to go to the new backend: 1, this ensures that the client has
+  // processed the update.
+  WaitForAllBackends(1, 2, false);
+  // Bring up the previous backend: 0, this will allow the delayed RPC to
+  // finally call on_call_committed upon completion.
+  StartBackend(0);
+  sending_rpc.join();
+  // Make sure RPCs go to the correct backend: 1 for each backend.
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
@@ -4899,10 +4988,11 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   gpr_log(GPR_INFO, "********** KILLED BALANCER 0 *************");
   // This is serviced by the existing child policy.
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  WaitForBackend(0, false);
   CheckRpcSendOk(10);
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // All 10 requests should again have gone to the first backend.
-  EXPECT_EQ(20U, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(21U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // The ADS service of no balancers sent anything
   EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state().state,
