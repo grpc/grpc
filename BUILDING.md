@@ -217,7 +217,8 @@ $ cmake ../.. -DgRPC_INSTALL=ON                \
               -DgRPC_CARES_PROVIDER=package    \
               -DgRPC_PROTOBUF_PROVIDER=package \
               -DgRPC_SSL_PROVIDER=package      \
-              -DgRPC_ZLIB_PROVIDER=package
+              -DgRPC_ZLIB_PROVIDER=package     \
+              -DgRPC_RE2_PROVIDER=package
 $ make
 $ make install
 ```
