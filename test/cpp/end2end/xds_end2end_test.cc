@@ -2159,6 +2159,7 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
   balancers_[0]->Shutdown();
   balancers_[0]->Start();
   // Make sure things are still working.
+  WaitForBackend(0, false);
   CheckRpcSendOk(100);
   // Populate new EDS resource.
   AdsServiceImpl::EdsResourceArgs args2({
@@ -4987,10 +4988,11 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   gpr_log(GPR_INFO, "********** KILLED BALANCER 0 *************");
   // This is serviced by the existing child policy.
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  WaitForBackend(0, false);
   CheckRpcSendOk(10);
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // All 10 requests should again have gone to the first backend.
-  EXPECT_EQ(20U, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(21U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // The ADS service of no balancers sent anything
   EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state().state,
