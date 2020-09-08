@@ -331,15 +331,9 @@ class ApplicationCallbackExecCtx {
     }
   }
 
-  uintptr_t Flags() { return flags_; }
-
-  static ApplicationCallbackExecCtx* Get() {
-    return reinterpret_cast<ApplicationCallbackExecCtx*>(
-        gpr_tls_get(&callback_exec_ctx_));
-  }
-
   static void Set(ApplicationCallbackExecCtx* exec_ctx, uintptr_t flags) {
-    if (Get() == nullptr) {
+    if (reinterpret_cast<ApplicationCallbackExecCtx*>(
+            gpr_tls_get(&callback_exec_ctx_)) == nullptr) {
       if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags)) {
         grpc_core::Fork::IncExecCtxCount();
       }
@@ -352,7 +346,8 @@ class ApplicationCallbackExecCtx {
     functor->internal_success = is_success;
     functor->internal_next = nullptr;
 
-    ApplicationCallbackExecCtx* ctx = Get();
+    auto* ctx = reinterpret_cast<ApplicationCallbackExecCtx*>(
+        gpr_tls_get(&callback_exec_ctx_));
 
     if (ctx->head_ == nullptr) {
       ctx->head_ = functor;
@@ -369,7 +364,10 @@ class ApplicationCallbackExecCtx {
   /** Global shutdown for ApplicationCallbackExecCtx. Called by init. */
   static void GlobalShutdown(void) { gpr_tls_destroy(&callback_exec_ctx_); }
 
-  static bool Available() { return Get() != nullptr; }
+  static bool Available() {
+    return reinterpret_cast<ApplicationCallbackExecCtx*>(
+               gpr_tls_get(&callback_exec_ctx_)) != nullptr;
+  }
 
  private:
   uintptr_t flags_{0u};
