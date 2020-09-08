@@ -19,13 +19,15 @@
 #ifndef GRPC_TEST_CPP_UTIL_CLI_CALL_H
 #define GRPC_TEST_CPP_UTIL_CLI_CALL_H
 
-#include <map>
-
 #include <grpcpp/channel.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+
+#include <map>
+
+#include "test/cpp/util/cli_flags.h"
 
 namespace grpc {
 
