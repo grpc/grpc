@@ -19,6 +19,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 using Grpc.Core.Logging;
 
@@ -199,12 +200,12 @@ namespace Grpc.Core.Internal
             throw new InvalidOperationException("Unsupported platform.");
         }
 
-        // Currently, only Intel platform is supported.
+        // Currently, only Intel and Loongson platforms are supported.
         private static string GetArchitectureString()
         {
             if (PlatformApis.Is64Bit)
             {
-                return "x64";
+                return RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.X64 ? "x64" : "mips64";
             }
             else
             {

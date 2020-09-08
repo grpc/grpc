@@ -42,7 +42,7 @@ namespace Grpc.Tools
         public enum OsKind { Unknown, Windows, Linux, MacOsX };
         public static readonly OsKind Os;
 
-        public enum CpuKind { Unknown, X86, X64 };
+        public enum CpuKind { Unknown, Mips64, X86, X64 };
         public static readonly CpuKind Cpu;
 
         // This is not necessarily true, but good enough. BCL lacks a per-FS
@@ -62,8 +62,8 @@ namespace Grpc.Tools
             {
                 case Architecture.X86: Cpu = CpuKind.X86; break;
                 case Architecture.X64: Cpu = CpuKind.X64; break;
-                // We do not have build tools for other architectures.
-                default: Cpu = CpuKind.Unknown; break;
+                // We do not have build tools for other architectures except MIPS64.
+                default: Cpu = CpuKind.Mips64; break;
             }
 #else
             // Running under either Mono or full MS framework.

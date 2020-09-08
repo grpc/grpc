@@ -34,7 +34,7 @@ namespace Grpc.Tools
         public string Os { get; set; }
 
         /// <summary>
-        /// Return one of 'x64' or 'x86'.
+        /// Return one of 'mips64', 'x64' or 'x86'.
         /// If the CPU is unknown, the property is not set.
         /// </summary>
         [Output]
@@ -53,6 +53,7 @@ namespace Grpc.Tools
 
             switch (Platform.Cpu)
             {
+                case Platform.CpuKind.Mips64: Cpu = "mips64"; break;
                 case Platform.CpuKind.X86: Cpu = "x86"; break;
                 case Platform.CpuKind.X64: Cpu = "x64"; break;
                 default: Cpu = ""; break;
