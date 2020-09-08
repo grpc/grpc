@@ -5199,9 +5199,9 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   int num_ok = 0;
   int num_failure = 0;
   int num_drops = 0;
-  std::tie(num_ok, num_failure, num_drops) =
-      WaitForAllBackends(/* start_index */ 0,
-                         /* stop_index */ kNumBackendsFirstPass);
+  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends(
+      /* start_index */ 0,
+      /* stop_index */ kNumBackendsFirstPass, true, RpcOptions(), true);
   std::vector<ClientStats> load_report =
       balancers_[0]->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 1UL);
@@ -5225,7 +5225,8 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   // to be a little more permissive here to avoid spurious failures.
   ResetBackendCounters();
   int num_started = std::get<0>(WaitForAllBackends(
-      /* start_index */ 0, /* stop_index */ kNumBackendsFirstPass));
+      /* start_index */ 0, /* stop_index */ kNumBackendsFirstPass, true,
+      RpcOptions(), true));
   // Now restart the balancer, this time pointing to the new backends.
   balancers_[0]->Start();
   args = AdsServiceImpl::EdsResourceArgs({
@@ -5235,8 +5236,8 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
       AdsServiceImpl::BuildEdsResource(args));
   // Wait for queries to start going to one of the new backends.
   // This tells us that we're now using the new serverlist.
-  std::tie(num_ok, num_failure, num_drops) =
-      WaitForAllBackends(/* start_index */ kNumBackendsFirstPass);
+  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends(
+      /* start_index */ kNumBackendsFirstPass, 0, true, RpcOptions(), true);
   num_started += num_ok + num_failure + num_drops;
   // Send one RPC per backend.
   CheckRpcSendOk(kNumBackendsSecondPass);

@@ -153,22 +153,10 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
   }
   // Update entries in cluster state map.
   resolver_->OnListenerChanged(routes);
-
-  // Progapage the update by creating XdsConfigSelector, CreateServiceConfig,
-  // and ReturnResult.
-  resolver_->PropagateUpdate(routes);
 }
 
 void XdsResolver::ListenerWatcher::OnError(grpc_error* error) {
-  if (resolver_->xds_client_ == nullptr) return;
-  gpr_log(GPR_ERROR, "[xds_resolver %p] received error: %s", resolver_.get(),
-          grpc_error_string(error));
-  grpc_arg xds_client_arg = resolver_->xds_client_->MakeChannelArg();
-  Result result;
-  result.args =
-      grpc_channel_args_copy_and_add(resolver_->args_, &xds_client_arg, 1);
-  result.service_config_error = error;
-  resolver_->result_handler()->ReturnResult(std::move(result));
+  resolver_->OnError(error);
 }
 
 void XdsResolver::ListenerWatcher::OnResourceDoesNotExist() {
@@ -185,9 +173,9 @@ void XdsResolver::ListenerWatcher::OnResourceDoesNotExist() {
   resolver_->result_handler()->ReturnResult(std::move(result));
 }
 
-///
-/// XdsResolver::XdsConfigSelector
-///
+//
+// XdsResolver::XdsConfigSelector
+//
 
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
     RefCountedPtr<XdsResolver> resolver,
@@ -216,7 +204,6 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
 }
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
-  // No need to call Unref, its automatic with the destructor
   clusters_.clear();
   resolver_->MaybeRemoveUnusedClusters();
 }
@@ -432,6 +419,9 @@ void XdsResolver::OnListenerChanged(std::vector<XdsApi::Route> routes) {
   // Save the update in the resolver in case of rebuild of
   // XdsConfigSelector.
   current_update_ = routes;
+  // Propagatee the update by creating XdsConfigSelector, CreateServiceConfig,
+  // and ReturnResult.
+  PropagateUpdate(routes);
 }
 
 grpc_error* XdsResolver::CreateServiceConfig(
@@ -487,10 +477,10 @@ void XdsResolver::PropagateUpdate(const std::vector<XdsApi::Route>& routes) {
     OnError(error);
     return;
   }
-  // if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-  gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
-          result.service_config->json_string().c_str());
-  //}
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
+            result.service_config->json_string().c_str());
+  }
   grpc_arg new_args[] = {
       xds_client_->MakeChannelArg(),
       config_selector->MakeChannelArg(),
@@ -512,7 +502,7 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
     }
   }
   if (update_needed) {
-    // Progapage the update by creating XdsConfigSelector, CreateServiceConfig,
+    // Propagate the update by creating XdsConfigSelector, CreateServiceConfig,
     // and ReturnResult.
     gpr_log(GPR_INFO, "DONNAAA test destructor removal");
     PropagateUpdate(current_update_);
@@ -531,7 +521,7 @@ void XdsResolver::MaybeRemoveUnusedClusters2() {
     }
   }
   if (update_needed) {
-    // Progapage the update by creating XdsConfigSelector, CreateServiceConfig,
+    // Propagate the update by creating XdsConfigSelector, CreateServiceConfig,
     // and ReturnResult.
     gpr_log(GPR_INFO, "DONNAAA test commit removal");
     PropagateUpdate(current_update_);
