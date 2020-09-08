@@ -35,7 +35,6 @@ EXPORTS
     grpc_channel_watch_connectivity_state
     grpc_channel_support_connectivity_watcher
     grpc_channel_create_call
-    grpc_channel_ping
     grpc_channel_register_call
     grpc_channel_create_registered_call
     grpc_call_arena_alloc

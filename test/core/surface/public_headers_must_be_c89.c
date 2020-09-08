@@ -104,7 +104,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_channel_watch_connectivity_state);
   printf("%lx", (unsigned long) grpc_channel_support_connectivity_watcher);
   printf("%lx", (unsigned long) grpc_channel_create_call);
-  printf("%lx", (unsigned long) grpc_channel_ping);
   printf("%lx", (unsigned long) grpc_channel_register_call);
   printf("%lx", (unsigned long) grpc_channel_create_registered_call);
   printf("%lx", (unsigned long) grpc_call_arena_alloc);
