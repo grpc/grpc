@@ -2827,6 +2827,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/server_callback_handlers.h
   include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
@@ -3510,6 +3511,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/server_callback_handlers.h
   include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
