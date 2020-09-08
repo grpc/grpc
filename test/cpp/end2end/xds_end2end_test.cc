@@ -4996,10 +4996,11 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
   gpr_log(GPR_INFO, "********** KILLED BALANCER 0 *************");
   // This is serviced by the existing child policy.
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
-  CheckRpcSendOk(10, RpcOptions().set_wait_for_ready(true));
+  ResetBackendCounters();
+  WaitForBackend(0, false);
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
-  // All 10 requests should again have gone to the first backend.
-  EXPECT_EQ(20U, backends_[0]->backend_service()->request_count());
+  // The new request should again have gone to the first backend.
+  EXPECT_EQ(1U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // The ADS service of no balancers sent anything
   EXPECT_EQ(balancers_[0]->ads_service()->eds_response_state().state,
