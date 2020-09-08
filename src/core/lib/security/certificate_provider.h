@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
@@ -38,7 +39,7 @@ struct grpc_tls_certificate_distributor;
 // contexts become valid or changed, a grpc_tls_certificate_provider should
 // notify its distributor so as to propagate the update to the watchers.
 struct grpc_tls_certificate_provider
-    : public RefCounted<grpc_tls_certificate_provider> {
+    : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
   grpc_tls_certificate_provider()
       : interested_parties_(grpc_pollset_set_create()) {}
@@ -49,8 +50,8 @@ struct grpc_tls_certificate_provider
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
-  virtual RefCountedPtr<grpc_tls_certificate_distributor> distributor()
-      const = 0;
+  virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
+  distributor() const = 0;
 
  private:
   grpc_pollset_set* interested_parties_;
