@@ -447,6 +447,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/validate/validate.upb.c )
   s.files += %w( src/core/ext/upb-generated/validate/validate.upb.h )
   s.files += %w( src/core/ext/xds/certificate_provider_factory.h )
+  s.files += %w( src/core/ext/xds/certificate_provider_registry.cc )
   s.files += %w( src/core/ext/xds/certificate_provider_registry.h )
   s.files += %w( src/core/ext/xds/certificate_provider_store.h )
   s.files += %w( src/core/ext/xds/xds_api.cc )

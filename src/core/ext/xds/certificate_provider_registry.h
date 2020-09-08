@@ -32,7 +32,7 @@ class CertificateProviderRegistry {
  public:
   // Returns the factory for the plugin keyed by name.
   static CertificateProviderFactory* LookupCertificateProviderFactory(
-      const std::string& name);
+      absl::string_view name);
 
   // The following methods are used to create and populate the
   // CertificateProviderRegistry. NOT THREAD SAFE -- to be used only during

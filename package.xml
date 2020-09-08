@@ -427,6 +427,7 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_store.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.cc" role="src" />
