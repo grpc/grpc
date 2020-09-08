@@ -18,6 +18,9 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 
+#include <set>
+
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "src/core/lib/gprpp/memory.h"
@@ -46,6 +49,59 @@ TEST(RefCounted, ExtraRef) {
   foop.release();
   foo->Unref();
   foo->Unref();
+}
+
+class Value : public RefCounted<Value, PolymorphicRefCount, false> {
+ public:
+  Value(int value, std::set<Value*>* registry) : value_(value) {
+    registry->insert(this);
+  }
+
+  int value() const { return value_; }
+
+ private:
+  int value_;
+};
+
+void GarbageCollectRegistry(std::set<Value*>* registry) {
+  for (auto it = registry->begin(); it != registry->end();) {
+    Value* v = *it;
+    // Check if the object has any refs remaining.
+    if (v->RefIfNonZero()) {
+      // It has refs remaining, so we do not delete it.
+      v->Unref();  // Remove the ref we just added.
+      ++it;
+    } else {
+      // No refs remaining, so delete it and remove from registry.
+      delete v;
+      it = registry->erase(it);
+    }
+  }
+}
+
+TEST(RefCounted, NoDeleteUponUnref) {
+  std::set<Value*> registry;
+  // Add two objects to the registry.
+  auto v1 = MakeRefCounted<Value>(1, &registry);
+  auto v2 = MakeRefCounted<Value>(2, &registry);
+  EXPECT_THAT(registry, ::testing::UnorderedElementsAre(
+                            ::testing::Property(&Value::value, 1),
+                            ::testing::Property(&Value::value, 2)));
+  // Running garbage collection should not delete anything, since both
+  // entries still have refs.
+  GarbageCollectRegistry(&registry);
+  EXPECT_THAT(registry, ::testing::UnorderedElementsAre(
+                            ::testing::Property(&Value::value, 1),
+                            ::testing::Property(&Value::value, 2)));
+  // Unref v2 and run GC to remove it.
+  v2.reset();
+  GarbageCollectRegistry(&registry);
+  EXPECT_THAT(registry, ::testing::UnorderedElementsAre(
+                            ::testing::Property(&Value::value, 1)));
+  // Now unref v1 and run GC again.
+  v1.reset();
+  GarbageCollectRegistry(&registry);
+  EXPECT_THAT(registry, ::testing::UnorderedElementsAre());
 }
 
 class FooNonPolymorphic

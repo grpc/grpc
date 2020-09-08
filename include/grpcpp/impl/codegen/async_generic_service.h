@@ -23,8 +23,8 @@
 
 #include <grpcpp/impl/codegen/async_stream.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
-#include <grpcpp/impl/codegen/server_callback_handlers.h>
 #include <grpcpp/impl/codegen/server_callback.h>
+#include <grpcpp/impl/codegen/server_callback_handlers.h>
 
 struct grpc_server;
 
@@ -32,13 +32,11 @@ namespace grpc {
 
 typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericServerAsyncReaderWriter;
-typedef ServerAsyncResponseWriter<ByteBuffer>
-    GenericServerAsyncResponseWriter;
-typedef ServerAsyncReader<ByteBuffer, ByteBuffer>
-    GenericServerAsyncReader;
+typedef ServerAsyncResponseWriter<ByteBuffer> GenericServerAsyncResponseWriter;
+typedef ServerAsyncReader<ByteBuffer, ByteBuffer> GenericServerAsyncReader;
 typedef ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
 
-class GenericServerContext final : public ::grpc_impl::ServerContext {
+class GenericServerContext final : public ::grpc::ServerContext {
  public:
   const std::string& method() const { return method_; }
   const std::string& host() const { return host_; }
@@ -50,7 +48,7 @@ class GenericServerContext final : public ::grpc_impl::ServerContext {
   void Clear() {
     method_.clear();
     host_.clear();
-    ::grpc_impl::ServerContext::Clear();
+    ::grpc::ServerContext::Clear();
   }
 
   std::string method_;
@@ -95,11 +93,10 @@ namespace experimental {
 /// \a ServerGenericBidiReactor is the reactor class for bidi streaming RPCs
 /// invoked on a CallbackGenericService. It is just a ServerBidi reactor with
 /// ByteBuffer arguments.
-using ServerGenericBidiReactor =
-    ServerBidiReactor<ByteBuffer, ByteBuffer>;
+using ServerGenericBidiReactor = ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
 class GenericCallbackServerContext final
-    : public ::grpc_impl::CallbackServerContext {
+    : public ::grpc::CallbackServerContext {
  public:
   const std::string& method() const { return method_; }
   const std::string& host() const { return host_; }
@@ -111,7 +108,7 @@ class GenericCallbackServerContext final
   void Clear() {
     method_.clear();
     host_.clear();
-    ::grpc_impl::CallbackServerContext::Clear();
+    ::grpc::CallbackServerContext::Clear();
   }
 
   std::string method_;
@@ -142,11 +139,9 @@ class CallbackGenericService {
  private:
   friend class grpc::Server;
 
-  internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>*
-  Handler() {
-    return new internal::CallbackBidiHandler<ByteBuffer,
-                                                          ByteBuffer>(
-        [this](::grpc_impl::CallbackServerContext* ctx) {
+  internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>* Handler() {
+    return new internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>(
+        [this](::grpc::CallbackServerContext* ctx) {
           return CreateReactor(static_cast<GenericCallbackServerContext*>(ctx));
         });
   }

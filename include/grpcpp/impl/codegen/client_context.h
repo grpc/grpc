@@ -56,13 +56,11 @@
 struct census_context;
 struct grpc_call;
 
-namespace grpc_impl {
+namespace grpc {
 class ServerContext;
 class ServerContextBase;
 class CallbackServerContext;
-}  // namespace grpc_impl
 
-namespace grpc {
 namespace internal {
 template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl;
@@ -206,10 +204,10 @@ class ClientContext {
   /// \return A newly constructed \a ClientContext instance based on \a
   /// server_context, with traits propagated (copied) according to \a options.
   static std::unique_ptr<ClientContext> FromServerContext(
-      const grpc_impl::ServerContext& server_context,
+      const grpc::ServerContext& server_context,
       PropagationOptions options = PropagationOptions());
   static std::unique_ptr<ClientContext> FromCallbackServerContext(
-      const grpc_impl::CallbackServerContext& server_context,
+      const grpc::CallbackServerContext& server_context,
       PropagationOptions options = PropagationOptions());
 
   /// Add the (\a meta_key, \a meta_value) pair to the metadata associated with
@@ -489,7 +487,7 @@ class ClientContext {
   void SendCancelToInterceptors();
 
   static std::unique_ptr<ClientContext> FromInternalServerContext(
-      const grpc_impl::ServerContextBase& server_context,
+      const grpc::ServerContextBase& server_context,
       PropagationOptions options);
 
   bool initial_metadata_received_;

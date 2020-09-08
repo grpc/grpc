@@ -991,7 +991,6 @@ include/grpcpp/impl/codegen/server_callback.h \
 include/grpcpp/impl/codegen/server_callback_handlers.h \
 include/grpcpp/impl/codegen/server_callback_impl.h \
 include/grpcpp/impl/codegen/server_context.h \
-include/grpcpp/impl/codegen/server_context_impl.h \
 include/grpcpp/impl/codegen/server_interceptor.h \
 include/grpcpp/impl/codegen/server_interface.h \
 include/grpcpp/impl/codegen/service_type.h \
@@ -1394,13 +1393,14 @@ src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
 src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h \
 src/core/ext/upb-generated/validate/validate.upb.c \
 src/core/ext/upb-generated/validate/validate.upb.h \
+src/core/ext/xds/certificate_provider_factory.h \
+src/core/ext/xds/certificate_provider_registry.h \
+src/core/ext/xds/certificate_provider_store.h \
 src/core/ext/xds/xds_api.cc \
 src/core/ext/xds/xds_api.h \
 src/core/ext/xds/xds_bootstrap.cc \
 src/core/ext/xds/xds_bootstrap.h \
-src/core/ext/xds/xds_channel.h \
 src/core/ext/xds/xds_channel_args.h \
-src/core/ext/xds/xds_channel_secure.cc \
 src/core/ext/xds/xds_client.cc \
 src/core/ext/xds/xds_client.h \
 src/core/ext/xds/xds_client_stats.cc \

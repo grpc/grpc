@@ -22,7 +22,7 @@
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/client_context.h>
-#include <grpcpp/impl/codegen/server_context_impl.h>
+#include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/status.h>
 
@@ -197,7 +197,7 @@ template <class W>
 class ServerAsyncResponseWriter final
     : public ::grpc::internal::ServerAsyncStreamingInterface {
  public:
-  explicit ServerAsyncResponseWriter(::grpc_impl::ServerContext* ctx)
+  explicit ServerAsyncResponseWriter(::grpc::ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
   /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
@@ -287,7 +287,7 @@ class ServerAsyncResponseWriter final
   void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
 
   ::grpc::internal::Call call_;
-  ::grpc_impl::ServerContext* ctx_;
+  ::grpc::ServerContext* ctx_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
       meta_buf_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
@@ -300,12 +300,12 @@ class ServerAsyncResponseWriter final
 
 namespace std {
 template <class R>
-class default_delete<ClientAsyncResponseReader<R>> {
+class default_delete<::grpc::ClientAsyncResponseReader<R>> {
  public:
   void operator()(void* /*p*/) {}
 };
 template <class R>
-class default_delete<ClientAsyncResponseReaderInterface<R>> {
+class default_delete<::grpc::ClientAsyncResponseReaderInterface<R>> {
  public:
   void operator()(void* /*p*/) {}
 };
