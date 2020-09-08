@@ -79,7 +79,7 @@ g_stands_for = "giggle"
 
 core_version = "12.0.0"
 
-version = "1.32.0-pre1"
+version = "1.32.0"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
