@@ -534,6 +534,9 @@ libs:
   - src/core/ext/upb-generated/udpa/annotations/versioning.upb.h
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
+  - src/core/ext/xds/certificate_provider_factory.h
+  - src/core/ext/xds/certificate_provider_registry.h
+  - src/core/ext/xds/certificate_provider_store.h
   - src/core/ext/xds/xds_api.h
   - src/core/ext/xds/xds_bootstrap.h
   - src/core/ext/xds/xds_channel_args.h
