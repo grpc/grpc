@@ -312,3 +312,54 @@ grpc_cc_binary(
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )
+
+grpc_cc_binary(
+    name = "channelz_sampler",
+    srcs = ["channelz_sampler.cc"],
+    external_deps = [
+        "gflags",
+    ],
+    language = "c++",
+    tags = [
+        "no_windows",  # unistd.h
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc++",
+        "//:grpcpp_channelz",
+        "//src/proto/grpc/channelz:channelz_proto",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "channelz_sampler_test",
+    srcs = [
+        "channelz_sampler_test.cc",
+    ],
+    data = [
+        ":channelz_sampler",
+    ],
+    external_deps = [
+        "gflags",
+        "gtest",
+    ],
+    tags = [
+        "no_mac",  # cmake does not build channelz_sampler in Basic Tests C/C++ MacOS test
+        "no_test_android",  # android_cc_test doesn't work with data dependency.
+        "no_test_ios",
+        "no_windows",  # unistd.h
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpcpp_channelz",
+        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
+        "//test/cpp/util:test_util",
+    ],
+)

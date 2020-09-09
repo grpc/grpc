@@ -4006,6 +4006,26 @@
     "benchmark": false, 
     "ci_platforms": [
       "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "channelz_sampler_test", 
+    "platforms": [
+      "linux", 
+      "posix"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
       "mac", 
       "posix", 
       "windows"
