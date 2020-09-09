@@ -4,8 +4,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>grpc &#8212; gRPC Python 1.31.0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>grpc &#8212; gRPC Python 1.32.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.31.0</p>
+<p class="blurb">1.32.0</p>
 
 
 
@@ -1956,6 +1956,23 @@
     <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_credentials_alts</span><span class="p">())</span>
 
 
+<div class="viewcode-block" id="compute_engine_channel_credentials"><a class="viewcode-back" href="../grpc.html#grpc.compute_engine_channel_credentials">[docs]</a><span class="k">def</span> <span class="nf">compute_engine_channel_credentials</span><span class="p">(</span><span class="n">call_credentials</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a compute engine channel credential.</span>
+
+<span class="sd">    This credential can only be used in a GCP environment as it relies on</span>
+<span class="sd">    a handshaker service. For more info about ALTS, see</span>
+<span class="sd">    https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security</span>
+
+<span class="sd">    This channel credential is expected to be used as part of a composite</span>
+<span class="sd">    credential in conjunction with a call credentials that authenticates the</span>
+<span class="sd">    VM&#39;s default service account. If used with any other sort of call</span>
+<span class="sd">    credential, the connection may suddenly and unexpectedly begin failing RPCs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">channel_credentials_compute_engine</span><span class="p">(</span>
+            <span class="n">call_credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">))</span></div>
+
+
 <div class="viewcode-block" id="channel_ready_future"><a class="viewcode-back" href="../grpc.html#grpc.channel_ready_future">[docs]</a><span class="k">def</span> <span class="nf">channel_ready_future</span><span class="p">(</span><span class="n">channel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Creates a Future that tracks when a Channel is ready.</span>
 
@@ -2109,6 +2126,8 @@
     <span class="n">Gzip</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">Gzip</span></div>
 
 
+<span class="kn">from</span> <span class="nn">grpc._runtime_protos</span> <span class="kn">import</span> <span class="n">protos</span><span class="p">,</span> <span class="n">services</span><span class="p">,</span> <span class="n">protos_and_services</span>  <span class="c1"># pylint: disable=wrong-import-position</span>
+
 <span class="c1">###################################  __all__  #################################</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
@@ -2169,6 +2188,9 @@
     <span class="s1">&#39;secure_channel&#39;</span><span class="p">,</span>
     <span class="s1">&#39;intercept_channel&#39;</span><span class="p">,</span>
     <span class="s1">&#39;server&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;protos&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;services&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;protos_and_services&#39;</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1">############################### Extension Shims ################################</span>

@@ -4,8 +4,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>gRPC &#8212; gRPC Python 1.31.0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gRPC &#8212; gRPC Python 1.32.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -32,7 +32,7 @@
 
 
 
-<p class="blurb">1.31.0</p>
+<p class="blurb">1.32.0</p>
 
 
 
@@ -69,6 +69,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#multi-callable-interfaces">Multi-Callable Interfaces</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#future-interfaces">Future Interfaces</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#compression">Compression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#runtime-protobuf-parsing">Runtime Protobuf Parsing</a></li>
 </ul>
 </li>
 </ul>
@@ -326,6 +327,19 @@ grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)</p>
 <dd class="field-even"><p>A ChannelCredentials for use with a local Channel</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="grpc.compute_engine_channel_credentials">
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">compute_engine_channel_credentials</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">call_credentials</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#compute_engine_channel_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.compute_engine_channel_credentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a compute engine channel credential.</p>
+<p>This credential can only be used in a GCP environment as it relies on
+a handshaker service. For more info about ALTS, see
+<a class="reference external" href="https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security">https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security</a></p>
+<p>This channel credential is expected to be used as part of a composite
+credential in conjunction with a call credentials that authenticates the
+VM’s default service account. If used with any other sort of call
+credential, the connection may suddenly and unexpectedly begin failing RPCs.</p>
 </dd></dl>
 
 </div>
@@ -2333,6 +2347,24 @@ if the computation did not raise an exception.</p>
 </dd></dl>
 
 </dd></dl>
+
+</div>
+<div class="section" id="runtime-protobuf-parsing">
+<h3>Runtime Protobuf Parsing<a class="headerlink" href="#runtime-protobuf-parsing" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt id="grpc.protos">
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">protos</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/_runtime_protos.html#protos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.protos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="grpc.services">
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">services</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/_runtime_protos.html#services"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.services" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="grpc.protos_and_services">
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">protos_and_services</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/_runtime_protos.html#protos_and_services"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.protos_and_services" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 </div>
