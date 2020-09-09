@@ -507,7 +507,7 @@ class ChannelzSampler final {
 
   // Store an entity in Json
   void StoreEntityInJson(std::string& id, std::string& type,
-                         grpc_core::Json description) {
+                         const grpc_core::Json& description) {
     std::string start, finish;
     gpr_timespec ago = gpr_time_sub(
         now_,
