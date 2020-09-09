@@ -371,10 +371,9 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     auto it = clusters_.find(cluster_name);
     GPR_ASSERT(it != clusters_.end());
-    XdsResolver* resolver = resolver_.get();
-    resolver->Ref().release();
-    ClusterState* cluster_state = it->second.get();
-    cluster_state->Ref().release();
+    XdsResolver* resolver =
+        static_cast<XdsResolver*>(resolver_->Ref().release());
+    ClusterState* cluster_state = it->second->Ref().release();
     CallConfig call_config;
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.on_call_committed = [resolver, cluster_state]() {
