@@ -3665,9 +3665,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   // Send exactly one RPC with no deadline and with wait_for_ready=true.
   // This RPC will not complete until after backend 0 is started.
   std::thread sending_rpc([this]() {
-    const Status status =
-        SendRpc(RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
-    EXPECT_TRUE(status.ok());
+    CheckRpcSendOk(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
   });
   // Send a non-wait_for_ready RPC which should fail, this will tell us
   // that the client has received the update and attempted to connect.
