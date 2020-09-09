@@ -121,10 +121,10 @@ class XdsResolver : public Resolver {
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
   };
 
-  void OnListenerChanged(const std::vector<XdsApi::Route>& routes);
+  void OnListenerChanged(std::vector<XdsApi::Route> routes);
   grpc_error* CreateServiceConfig(RefCountedPtr<ServiceConfig>* service_config);
   void OnError(grpc_error* error);
-  void PropagateUpdate(const std::vector<XdsApi::Route>& routes);
+  void PropagateUpdate();
   void MaybeRemoveUnusedClusters();
 
   std::string server_name_;
@@ -147,10 +147,13 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
             resolver_.get());
   }
   // Update entries in cluster state map.
-  resolver_->OnListenerChanged(routes);
+  resolver_->OnListenerChanged(std::move(routes));
 }
 
 void XdsResolver::ListenerWatcher::OnError(grpc_error* error) {
+  if (resolver_->xds_client_ == nullptr) return;
+  gpr_log(GPR_ERROR, "[xds_resolver %p] received error: %s", resolver_.get(),
+          grpc_error_string(error));
   resolver_->OnError(error);
 }
 
@@ -418,13 +421,13 @@ void XdsResolver::StartLocked() {
   }
 }
 
-void XdsResolver::OnListenerChanged(const std::vector<XdsApi::Route>& routes) {
+void XdsResolver::OnListenerChanged(std::vector<XdsApi::Route> routes) {
   // Save the update in the resolver in case of rebuild of
   // XdsConfigSelector.
-  current_update_ = routes;
+  current_update_ = std::move(routes);
   // Propagate the update by creating XdsConfigSelector, CreateServiceConfig,
   // and ReturnResult.
-  PropagateUpdate(routes);
+  PropagateUpdate();
 }
 
 grpc_error* XdsResolver::CreateServiceConfig(
@@ -460,9 +463,6 @@ grpc_error* XdsResolver::CreateServiceConfig(
 }
 
 void XdsResolver::OnError(grpc_error* error) {
-  if (xds_client_ == nullptr) return;
-  gpr_log(GPR_ERROR, "[xds_resolver %p] received error: %s", this,
-          grpc_error_string(error));
   grpc_arg xds_client_arg = xds_client_->MakeChannelArg();
   Result result;
   result.args = grpc_channel_args_copy_and_add(args_, &xds_client_arg, 1);
@@ -470,10 +470,11 @@ void XdsResolver::OnError(grpc_error* error) {
   result_handler()->ReturnResult(std::move(result));
 }
 
-void XdsResolver::PropagateUpdate(const std::vector<XdsApi::Route>& routes) {
+void XdsResolver::PropagateUpdate() {
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
-  auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), routes);
+  auto config_selector =
+      MakeRefCounted<XdsConfigSelector>(Ref(), current_update_);
   Result result;
   grpc_error* error = CreateServiceConfig(&result.service_config);
   if (error != GRPC_ERROR_NONE) {
@@ -507,7 +508,7 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
   if (update_needed) {
     // Propagate the update by creating XdsConfigSelector, CreateServiceConfig,
     // and ReturnResult.
-    PropagateUpdate(current_update_);
+    PropagateUpdate();
   }
 }
 
