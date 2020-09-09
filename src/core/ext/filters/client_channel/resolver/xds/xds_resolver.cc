@@ -121,7 +121,7 @@ class XdsResolver : public Resolver {
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
   };
 
-  void OnListenerChanged(std::vector<XdsApi::Route> routes);
+  void OnListenerChanged(const std::vector<XdsApi::Route>& routes);
   grpc_error* CreateServiceConfig(RefCountedPtr<ServiceConfig>* service_config);
   void OnError(grpc_error* error);
   void PropagateUpdate(const std::vector<XdsApi::Route>& routes);
@@ -367,6 +367,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     auto it = clusters_.find(cluster_name);
     GPR_ASSERT(it != clusters_.end());
     XdsResolver* resolver = resolver_.get();
+    resolver->Ref().release();
     ClusterState* cluster_state = it->second.get();
     cluster_state->Ref().release();
     CallConfig call_config;
@@ -392,6 +393,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
               },
               resolver, nullptr),
           GRPC_ERROR_NONE);
+      resolver->Unref();
     };
     return call_config;
   }
@@ -416,11 +418,11 @@ void XdsResolver::StartLocked() {
   }
 }
 
-void XdsResolver::OnListenerChanged(std::vector<XdsApi::Route> routes) {
+void XdsResolver::OnListenerChanged(const std::vector<XdsApi::Route>& routes) {
   // Save the update in the resolver in case of rebuild of
   // XdsConfigSelector.
   current_update_ = routes;
-  // Propagatee the update by creating XdsConfigSelector, CreateServiceConfig,
+  // Propagate the update by creating XdsConfigSelector, CreateServiceConfig,
   // and ReturnResult.
   PropagateUpdate(routes);
 }
