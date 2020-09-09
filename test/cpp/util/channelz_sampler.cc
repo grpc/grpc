@@ -470,7 +470,8 @@ class ChannelzSampler final {
     std::string type = "Channel";
     std::string description;
     ::google::protobuf::TextFormat::PrintToString(channel.data(), &description);
-    StoreEntityInJson(id, type, description);
+    grpc_core::Json description_json = grpc_core::Json(description);
+    StoreEntityInJson(id, type, description_json);
   }
 
   // Store a subchannel in Json
@@ -480,7 +481,8 @@ class ChannelzSampler final {
     std::string description;
     ::google::protobuf::TextFormat::PrintToString(subchannel.data(),
                                                   &description);
-    StoreEntityInJson(id, type, description);
+    grpc_core::Json description_json = grpc_core::Json(description);
+    StoreEntityInJson(id, type, description_json);
   }
 
   // Store a server in Json
@@ -489,7 +491,8 @@ class ChannelzSampler final {
     std::string type = "Server";
     std::string description;
     ::google::protobuf::TextFormat::PrintToString(server.data(), &description);
-    StoreEntityInJson(id, type, description);
+    grpc_core::Json description_json = grpc_core::Json(description);
+    StoreEntityInJson(id, type, description_json);
   }
 
   // Store a socket in Json
@@ -498,12 +501,13 @@ class ChannelzSampler final {
     std::string type = "Socket";
     std::string description;
     ::google::protobuf::TextFormat::PrintToString(socket.data(), &description);
-    StoreEntityInJson(id, type, description);
+    grpc_core::Json description_json = grpc_core::Json(description);
+    StoreEntityInJson(id, type, description_json);
   }
 
   // Store an entity in Json
   void StoreEntityInJson(std::string& id, std::string& type,
-                         std::string& description) {
+                         grpc_core::Json description) {
     std::string start, finish;
     gpr_timespec ago = gpr_time_sub(
         now_,
