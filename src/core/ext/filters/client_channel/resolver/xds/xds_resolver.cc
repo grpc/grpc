@@ -179,10 +179,12 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     RefCountedPtr<XdsResolver> resolver,
     const std::vector<XdsApi::Route>& routes)
     : resolver_(std::move(resolver)) {
-  // 1. Construct the route table,
+  // 1. Construct the route table (reserve size to avoid reallocation and allow
+  // iteration during creation)
   // 2  Update resolver's cluster state map
   // 3. Construct cluster list to hold on to entries in the cluster state
   // map.
+  route_table_.reserve(routes.size());
   for (auto& route : routes) {
     route_table_.emplace_back();
     auto& route_entry = route_table_.back();
@@ -191,11 +193,11 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
       MaybeAddCluster(route.cluster_name);
     } else {
       uint32_t end = 0;
-      for (const auto& weighted_cluster : route.weighted_clusters) {
+      for (const auto& weighted_cluster : route_entry.route.weighted_clusters) {
         MaybeAddCluster(weighted_cluster.name);
         end += weighted_cluster.weight;
-        route_entry.weighted_cluster_state.emplace_back(
-            end, clusters_[weighted_cluster.name]->cluster());
+        route_entry.weighted_cluster_state.emplace_back(end,
+                                                        weighted_cluster.name);
       }
     }
   }
