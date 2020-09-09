@@ -1822,6 +1822,14 @@ void ChannelData::UpdateStateAndPickerLocked(
 void ChannelData::UpdateServiceConfigInDataPlaneLocked(
     bool service_config_changed,
     RefCountedPtr<ConfigSelector> config_selector) {
+  // If the service config did not change and there is no new ConfigSelector,
+  // retain the old one (if any).
+  // TODO(roth): Consider whether this is really the right way to handle
+  // this.  We might instead want to decide this in ApplyServiceConfig()
+  // where we decide whether to stick with the saved service config.
+  if (!service_config_changed && config_selector == nullptr) {
+    config_selector = saved_config_selector_;
+  }
   // Check if ConfigSelector has changed.
   const bool config_selector_changed =
       saved_config_selector_ != config_selector;
