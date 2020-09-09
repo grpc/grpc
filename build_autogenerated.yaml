@@ -943,6 +943,7 @@ libs:
   - src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
+  - src/core/ext/xds/certificate_provider_registry.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
   - src/core/ext/xds/xds_client.cc
@@ -5248,6 +5249,19 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc++_test_config
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: certificate_provider_registry_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/certificate_provider_registry_test.cc
+  deps:
+  - grpc_test_util
   - grpc
   - gpr
   - address_sorting

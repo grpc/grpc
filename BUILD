@@ -1695,6 +1695,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_secure",
     srcs = [
+        "src/core/ext/xds/certificate_provider_registry.cc",
         "src/core/lib/http/httpcli_security_connector.cc",
         "src/core/lib/security/context/security_context.cc",
         "src/core/lib/security/credentials/alts/alts_credentials.cc",
