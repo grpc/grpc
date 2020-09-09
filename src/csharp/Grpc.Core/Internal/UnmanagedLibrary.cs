@@ -144,10 +144,11 @@ namespace Grpc.Core.Internal
                 {
                     return LoadLibraryPosix(Mono.dlopen, Mono.dlerror, libraryPath, out errorMsg);
                 }
-                if (PlatformApis.IsNetCore)
+                if (PlatformApis.IsNetCore && RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.X64)
                 {
                     return LoadLibraryPosix(CoreCLR.dlopen, CoreCLR.dlerror, libraryPath, out errorMsg);
                 }
+                Console.WriteLine("Fallback to Linux POSIX dlopen");
                 return LoadLibraryPosix(Linux.dlopen, Linux.dlerror, libraryPath, out errorMsg);
             }
             if (PlatformApis.IsMacOSX)
@@ -160,7 +161,7 @@ namespace Grpc.Core.Internal
         private static IntPtr LoadLibraryPosix(Func<string, int, IntPtr> dlopenFunc, Func<IntPtr> dlerrorFunc, string libraryPath, out string errorMsg)
         {
             errorMsg = null;
-            IntPtr ret = dlopenFunc(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+            IntPtr ret = dlopenFunc(libraryPath, RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.X64 ? RTLD_GLOBAL + RTLD_LAZY : RTLD_LAZY);
             if (ret == IntPtr.Zero)
             {
                 errorMsg = Marshal.PtrToStringAnsi(dlerrorFunc());
