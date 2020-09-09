@@ -38,7 +38,8 @@ def main(command_arguments):
     return _protoc_compiler.run_main(command_arguments)
 
 
-if sys.version_info[0] > 2:
+# NOTE(rbellevi): importlib.abc is not supported on 3.4.
+if sys.version_info >= (3, 5, 0):
     import contextlib
     import importlib
     import importlib.machinery
