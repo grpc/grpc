@@ -48,7 +48,6 @@
 static std::string g_root;
 
 namespace {
-using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -90,7 +89,11 @@ void RunClient(const std::string& client_id, gpr_event* done_ev) {
     grpc::testing::Empty request;
     grpc::testing::Empty response;
     ClientContext context;
-    stub->EmptyCall(&context, request, &response);
+    Status status = stub->EmptyCall(&context, request, &response);
+    if (!status.ok()) {
+      gpr_log(GPR_ERROR, "Client echo failed.");
+      GPR_ASSERT(0);
+    }
   }
 }
 
