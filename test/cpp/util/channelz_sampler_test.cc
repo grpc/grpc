@@ -48,7 +48,6 @@
 static std::string g_root;
 
 namespace {
-using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Server;
 using grpc::ServerBuilder;
