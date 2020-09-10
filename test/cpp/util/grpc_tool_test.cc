@@ -30,7 +30,6 @@
 #include <grpcpp/server_context.h>
 #include <gtest/gtest.h>
 
-#include <chrono>
 #include <sstream>
 
 #include "src/core/lib/gpr/env.h"
@@ -55,8 +54,6 @@ using grpc::testing::EchoResponse;
   "Echo\n"                        \
   "Echo1\n"                       \
   "Echo2\n"                       \
-  "CheckDeadlineUpperBound\n"     \
-  "CheckDeadlineSet\n"            \
   "CheckClientInitialMetadata\n"  \
   "RequestStream\n"               \
   "ResponseStream\n"              \
@@ -73,10 +70,6 @@ using grpc::testing::EchoResponse;
   "{}\n"                                                                       \
   "  rpc Echo2(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
   "{}\n"                                                                       \
-  "  rpc CheckDeadlineUpperBound(grpc.testing.SimpleRequest) returns "         \
-  "(grpc.testing.StringValue) {}\n"                                            \
-  "  rpc CheckDeadlineSet(grpc.testing.SimpleRequest) returns "                \
-  "(grpc.testing.StringValue) {}\n"                                            \
   "  rpc CheckClientInitialMetadata(grpc.testing.SimpleRequest) returns "      \
   "(grpc.testing.SimpleResponse) {}\n"                                         \
   "  rpc RequestStream(stream grpc.testing.EchoRequest) returns "              \
@@ -115,6 +108,17 @@ DECLARE_string(ssl_target);
 
 namespace grpc {
 namespace testing {
+
+DECLARE_bool(binary_input);
+DECLARE_bool(binary_output);
+DECLARE_bool(json_input);
+DECLARE_bool(json_output);
+DECLARE_bool(l);
+DECLARE_bool(batch);
+DECLARE_string(metadata);
+DECLARE_string(protofiles);
+DECLARE_string(proto_path);
+DECLARE_string(default_service_config);
 
 namespace {
 
@@ -170,29 +174,6 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     }
     context->AddTrailingMetadata("trailing_key", "trailing_value");
     response->set_message(request->message());
-    return Status::OK;
-  }
-
-  Status CheckDeadlineSet(ServerContext* context, const SimpleRequest* request,
-                          StringValue* response) override {
-    response->set_message(context->deadline() !=
-                                  std::chrono::system_clock::time_point::max()
-                              ? "true"
-                              : "false");
-    return Status::OK;
-  }
-
-  // Check if deadline - current time <= timeout
-  // If deadline set, timeout + current time should be an upper bound for it
-  Status CheckDeadlineUpperBound(ServerContext* context,
-                                 const SimpleRequest* request,
-                                 StringValue* response) override {
-    auto seconds = std::chrono::duration_cast<std::chrono::seconds>(
-        context->deadline() - std::chrono::system_clock::now());
-
-    // Returning string instead of bool to avoid using embedded messages in
-    // proto3
-    response->set_message(seconds.count() <= FLAGS_timeout ? "true" : "false");
     return Status::OK;
   }
 
@@ -878,93 +859,6 @@ TEST_F(GrpcToolTest, CallCommandRequestStreamWithBadRequestJsonInput) {
   EXPECT_TRUE(nullptr !=
               strstr(output_stream.str().c_str(), "message: \"Hello0Hello2\""));
   std::cin.rdbuf(orig);
-  ShutdownServer();
-}
-
-TEST_F(GrpcToolTest, CallCommandWithTimeoutDeadlineSet) {
-  // Test input "grpc_cli call CheckDeadlineSet --timeout=5000.25"
-  std::stringstream output_stream;
-
-  const std::string server_address = SetUpServer();
-  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
-                        "CheckDeadlineSet"};
-
-  // Set timeout to 5000.25 seconds
-  FLAGS_timeout = 5000.25;
-
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
-
-  // Expected output: "message: "true"", deadline set
-  EXPECT_TRUE(nullptr !=
-              strstr(output_stream.str().c_str(), "message: \"true\""));
-  ShutdownServer();
-}
-
-TEST_F(GrpcToolTest, CallCommandWithTimeoutDeadlineUpperBound) {
-  // Test input "grpc_cli call CheckDeadlineUpperBound --timeout=900"
-  std::stringstream output_stream;
-
-  const std::string server_address = SetUpServer();
-  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
-                        "CheckDeadlineUpperBound"};
-
-  // Set timeout to 900 seconds
-  FLAGS_timeout = 900;
-
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
-
-  // Expected output: "message: "true""
-  // deadline not greater than timeout + current time
-  EXPECT_TRUE(nullptr !=
-              strstr(output_stream.str().c_str(), "message: \"true\""));
-  ShutdownServer();
-}
-
-TEST_F(GrpcToolTest, CallCommandWithNegativeTimeoutValue) {
-  // Test input "grpc_cli call CheckDeadlineSet --timeout=-5"
-  std::stringstream output_stream;
-
-  const std::string server_address = SetUpServer();
-  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
-                        "CheckDeadlineSet"};
-
-  // Set timeout to -5 (deadline not set)
-  FLAGS_timeout = -5;
-
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
-
-  // Expected output: "message: "false"", deadline not set
-  EXPECT_TRUE(nullptr !=
-              strstr(output_stream.str().c_str(), "message: \"false\""));
-
-  ShutdownServer();
-}
-
-TEST_F(GrpcToolTest, CallCommandWithDefaultTimeoutValue) {
-  // Test input "grpc_cli call CheckDeadlineSet --timeout=-1"
-  std::stringstream output_stream;
-
-  const std::string server_address = SetUpServer();
-  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
-                        "CheckDeadlineSet"};
-
-  // Set timeout to -1 (default value, deadline not set)
-  FLAGS_timeout = -1;
-
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
-
-  // Expected output: "message: "false"", deadline not set
-  EXPECT_TRUE(nullptr !=
-              strstr(output_stream.str().c_str(), "message: \"false\""));
-
   ShutdownServer();
 }
 
