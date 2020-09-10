@@ -371,6 +371,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     auto it = clusters_.find(cluster_name);
     GPR_ASSERT(it != clusters_.end());
+    // XdsResolver* resolver = resolver_->Ref().release();
     XdsResolver* resolver =
         static_cast<XdsResolver*>(resolver_->Ref().release());
     ClusterState* cluster_state = it->second->Ref().release();
@@ -394,10 +395,10 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
                 resolver->work_serializer()->Run(
                     [resolver]() { resolver->MaybeRemoveUnusedClusters(); },
                     DEBUG_LOCATION);
+                resolver->Unref();
               },
               resolver, nullptr),
           GRPC_ERROR_NONE);
-      resolver->Unref();
     };
     return call_config;
   }
@@ -503,10 +504,11 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
       ++it;
     } else {
       update_needed = true;
+      delete it->second;
       it = cluster_state_map_.erase(it);
     }
   }
-  if (update_needed) {
+  if (update_needed && xds_client_ != nullptr) {
     // Propagate the update by creating XdsConfigSelector, CreateServiceConfig,
     // and ReturnResult.
     PropagateUpdate();

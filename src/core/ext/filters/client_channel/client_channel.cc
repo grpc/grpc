@@ -1803,6 +1803,10 @@ void ChannelData::UpdateStateAndPickerLocked(
       retry_throttle_data_to_unref = std::move(retry_throttle_data_);
       service_config_to_unref = std::move(service_config_);
       config_selector_to_unref = std::move(config_selector_);
+      health_check_service_name_.reset();
+      saved_service_config_.reset();
+      saved_config_selector_.reset();
+      received_first_resolver_result_ = false;
     }
     // Re-process queued picks.
     for (QueuedPick* pick = queued_picks_; pick != nullptr; pick = pick->next) {
@@ -1822,6 +1826,14 @@ void ChannelData::UpdateStateAndPickerLocked(
 void ChannelData::UpdateServiceConfigInDataPlaneLocked(
     bool service_config_changed,
     RefCountedPtr<ConfigSelector> config_selector) {
+  // If the service config did not change and there is no new ConfigSelector,
+  // retain the old one (if any).
+  // TODO(roth): Consider whether this is really the right way to handle
+  // this.  We might instead want to decide this in ApplyServiceConfig()
+  // where we decide whether to stick with the saved service config.
+  if (!service_config_changed && config_selector == nullptr) {
+    config_selector = saved_config_selector_;
+  }
   // Check if ConfigSelector has changed.
   const bool config_selector_changed =
       saved_config_selector_ != config_selector;
@@ -1990,10 +2002,8 @@ void ChannelData::StartTransportOpLocked(grpc_transport_op* op) {
       GPR_ASSERT(disconnect_error_.Load(MemoryOrder::RELAXED) ==
                  GRPC_ERROR_NONE);
       disconnect_error_.Store(op->disconnect_with_error, MemoryOrder::RELEASE);
-      UpdateStateAndPickerLocked(
-          GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
-          absl::make_unique<LoadBalancingPolicy::TransientFailurePicker>(
-              GRPC_ERROR_REF(op->disconnect_with_error)));
+      UpdateStateAndPickerLocked(GRPC_CHANNEL_SHUTDOWN, absl::Status(),
+                                 "shutdown from API", nullptr);
     }
   }
   GRPC_CHANNEL_STACK_UNREF(owning_stack_, "start_transport_op");
