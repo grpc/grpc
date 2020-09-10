@@ -1747,7 +1747,7 @@ void ChannelData::UpdateStateAndPickerLocked(
     const char* reason,
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) {
   // Clean the control plane when entering IDLE.
-  if (picker_ == nullptr) {
+  if (picker == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
     health_check_service_name_.reset();
     saved_service_config_.reset();
     saved_config_selector_.reset();
@@ -1797,16 +1797,12 @@ void ChannelData::UpdateStateAndPickerLocked(
     // Note: Original value will be destroyed after the lock is released.
     picker_.swap(picker);
     // Clean the data plane if the updated picker is nullptr.
-    if (picker_ == nullptr) {
+    if (picker_ == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
       received_service_config_data_ = false;
       // Note: We save the objects to unref until after the lock is released.
       retry_throttle_data_to_unref = std::move(retry_throttle_data_);
       service_config_to_unref = std::move(service_config_);
       config_selector_to_unref = std::move(config_selector_);
-      health_check_service_name_.reset();
-      saved_service_config_.reset();
-      saved_config_selector_.reset();
-      received_first_resolver_result_ = false;
     }
     // Re-process queued picks.
     for (QueuedPick* pick = queued_picks_; pick != nullptr; pick = pick->next) {
@@ -2002,8 +1998,10 @@ void ChannelData::StartTransportOpLocked(grpc_transport_op* op) {
       GPR_ASSERT(disconnect_error_.Load(MemoryOrder::RELAXED) ==
                  GRPC_ERROR_NONE);
       disconnect_error_.Store(op->disconnect_with_error, MemoryOrder::RELEASE);
-      UpdateStateAndPickerLocked(GRPC_CHANNEL_SHUTDOWN, absl::Status(),
-                                 "shutdown from API", nullptr);
+      UpdateStateAndPickerLocked(
+          GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
+          absl::make_unique<LoadBalancingPolicy::TransientFailurePicker>(
+              GRPC_ERROR_REF(op->disconnect_with_error)));
     }
   }
   GRPC_CHANNEL_STACK_UNREF(owning_stack_, "start_transport_op");

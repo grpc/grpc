@@ -371,7 +371,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     auto it = clusters_.find(cluster_name);
     GPR_ASSERT(it != clusters_.end());
-    // XdsResolver* resolver = resolver_->Ref().release();
     XdsResolver* resolver =
         static_cast<XdsResolver*>(resolver_->Ref().release());
     ClusterState* cluster_state = it->second->Ref().release();
@@ -393,9 +392,11 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
               [](void* arg, grpc_error* /*error*/) {
                 auto* resolver = static_cast<XdsResolver*>(arg);
                 resolver->work_serializer()->Run(
-                    [resolver]() { resolver->MaybeRemoveUnusedClusters(); },
+                    [resolver]() {
+                      resolver->MaybeRemoveUnusedClusters();
+                      resolver->Unref();
+                    },
                     DEBUG_LOCATION);
-                resolver->Unref();
               },
               resolver, nullptr),
           GRPC_ERROR_NONE);
