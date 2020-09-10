@@ -5416,7 +5416,6 @@ targets:
   headers:
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
-  - test/cpp/util/cli_flags.h
   - test/cpp/util/config_grpc_cli.h
   - test/cpp/util/grpc_tool.h
   - test/cpp/util/proto_file_parser.h
@@ -5430,7 +5429,6 @@ targets:
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_call_test.cc
   - test/cpp/util/cli_credentials.cc
-  - test/cpp/util/cli_flags.cc
   - test/cpp/util/grpc_tool.cc
   - test/cpp/util/proto_file_parser.cc
   - test/cpp/util/proto_reflection_descriptor_database.cc
@@ -5871,7 +5869,6 @@ targets:
   headers:
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
-  - test/cpp/util/cli_flags.h
   - test/cpp/util/config_grpc_cli.h
   - test/cpp/util/grpc_tool.h
   - test/cpp/util/proto_file_parser.h
@@ -5881,7 +5878,6 @@ targets:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
-  - test/cpp/util/cli_flags.cc
   - test/cpp/util/grpc_cli.cc
   - test/cpp/util/grpc_tool.cc
   - test/cpp/util/proto_file_parser.cc
@@ -5990,7 +5986,6 @@ targets:
   headers:
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
-  - test/cpp/util/cli_flags.h
   - test/cpp/util/config_grpc_cli.h
   - test/cpp/util/grpc_tool.h
   - test/cpp/util/proto_file_parser.h
@@ -6002,7 +5997,6 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
-  - test/cpp/util/cli_flags.cc
   - test/cpp/util/grpc_tool.cc
   - test/cpp/util/grpc_tool_test.cc
   - test/cpp/util/proto_file_parser.cc

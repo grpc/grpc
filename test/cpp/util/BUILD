@@ -122,14 +122,12 @@ grpc_cc_library(
     srcs = [
         "cli_call.cc",
         "cli_credentials.cc",
-        "cli_flags.cc",
         "proto_file_parser.cc",
         "service_describer.cc",
     ],
     hdrs = [
         "cli_call.h",
         "cli_credentials.h",
-        "cli_flags.h",
         "config_grpc_cli.h",
         "proto_file_parser.h",
         "service_describer.h",
