@@ -146,12 +146,14 @@ if sys.version_info >= (3, 5, 0):
             self._codegen_fn = codegen_fn
 
         def find_spec(self, fullname, path, target=None):
+            if not fullname.endswith(self._suffix):
+                return None
             filepath = _module_name_to_proto_file(self._suffix, fullname)
             for search_path in sys.path:
                 try:
                     prospective_path = os.path.join(search_path, filepath)
                     os.stat(prospective_path)
-                except (FileNotFoundError, NotADirectoryError):
+                except (FileNotFoundError, NotADirectoryError, OSError):
                     continue
                 else:
                     return importlib.machinery.ModuleSpec(
