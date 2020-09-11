@@ -3881,6 +3881,7 @@ class CallData::QueuedPickCanceller {
     }
     if (calld->pick_canceller_ == self && error != GRPC_ERROR_NONE) {
       // Remove pick from list of queued picks.
+      calld->MaybeInvokeConfigSelectorCommitCallback();
       calld->MaybeRemoveCallFromQueuedPicksLocked(self->elem_);
       // Fail pending batches on the call.
       calld->PendingBatchesFail(self->elem_, GRPC_ERROR_REF(error),
