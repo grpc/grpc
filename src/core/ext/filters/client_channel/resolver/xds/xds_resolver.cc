@@ -40,6 +40,7 @@ namespace {
 //
 // XdsResolver
 //
+
 class XdsResolver : public Resolver {
  public:
   explicit XdsResolver(ResolverArgs args)
@@ -88,11 +89,19 @@ class XdsResolver : public Resolver {
   class ClusterState
       : public RefCounted<ClusterState, PolymorphicRefCount, false> {
    public:
-    using ClusterStateMap = std::map<std::string, ClusterState*>;
+    using ClusterStateMap =
+        std::map<std::string, std::unique_ptr<ClusterState>>;
 
     ClusterState(const std::string& cluster_name,
-                 ClusterStateMap* cluster_state_map)
-        : it_(cluster_state_map->insert({cluster_name.c_str(), this}).first) {}
+                 ClusterStateMap* cluster_state_map) {
+      it_ = cluster_state_map->find(cluster_name.c_str());
+      if (it_ == cluster_state_map->end()) {
+        it_ = cluster_state_map
+                  ->emplace(cluster_name.c_str(),
+                            absl::WrapUnique<ClusterState>(this))
+                  .first;
+      }
+    }
     const std::string& cluster() const { return it_->first; }
 
    private:
@@ -146,7 +155,6 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data",
             resolver_.get());
   }
-  // Update entries in cluster state map.
   resolver_->OnListenerChanged(std::move(routes));
 }
 
@@ -179,11 +187,15 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     RefCountedPtr<XdsResolver> resolver,
     const std::vector<XdsApi::Route>& routes)
     : resolver_(std::move(resolver)) {
-  // 1. Construct the route table (reserve size to avoid reallocation and allow
-  // iteration during creation)
+  // 1. Construct the route table
   // 2  Update resolver's cluster state map
   // 3. Construct cluster list to hold on to entries in the cluster state
   // map.
+  // Reserve the necessary entries up-front to avoid reallocation as we add
+  // elements. This is necessary because the string_view in the entry's
+  // weighted_cluster_state field points to the memory in the route field, so
+  // moving the entry in a reallocation will cause the string_view to point to
+  // invalid data.
   route_table_.reserve(routes.size());
   for (auto& route : routes) {
     route_table_.emplace_back();
@@ -328,8 +340,9 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
   for (const auto& entry : route_table_) {
     // Path matching.
     if (!PathMatch(StringViewFromSlice(*args.path),
-                   entry.route.matchers.path_matcher))
+                   entry.route.matchers.path_matcher)) {
       continue;
+    }
     // Header Matching.
     if (!HeadersMatch(entry.route.matchers.header_matchers,
                       args.initial_metadata)) {
@@ -425,8 +438,7 @@ void XdsResolver::StartLocked() {
 }
 
 void XdsResolver::OnListenerChanged(std::vector<XdsApi::Route> routes) {
-  // Save the update in the resolver in case of rebuild of
-  // XdsConfigSelector.
+  // Save the update in the resolver.
   current_update_ = std::move(routes);
   // Propagate the update by creating XdsConfigSelector, CreateServiceConfig,
   // and ReturnResult.
@@ -435,9 +447,9 @@ void XdsResolver::OnListenerChanged(std::vector<XdsApi::Route> routes) {
 
 grpc_error* XdsResolver::CreateServiceConfig(
     RefCountedPtr<ServiceConfig>* service_config) {
-  std::vector<std::string> actions_vector;
+  std::vector<std::string> clusters;
   for (const auto& cluster : cluster_state_map_) {
-    actions_vector.push_back(
+    clusters.push_back(
         absl::StrFormat("      \"%s\":{\n"
                         "        \"childPolicy\":[ {\n"
                         "          \"cds_experimental\":{\n"
@@ -453,7 +465,7 @@ grpc_error* XdsResolver::CreateServiceConfig(
       "  \"loadBalancingConfig\":[\n"
       "    { \"xds_cluster_manager_experimental\":{\n"
       "      \"children\":{\n");
-  config_parts.push_back(absl::StrJoin(actions_vector, ",\n"));
+  config_parts.push_back(absl::StrJoin(clusters, ",\n"));
   config_parts.push_back(
       "    }\n"
       "    } }\n"
@@ -505,7 +517,6 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
       ++it;
     } else {
       update_needed = true;
-      delete it->second;
       it = cluster_state_map_.erase(it);
     }
   }
