@@ -1941,7 +1941,7 @@ TEST_P(BasicTest, Vanilla) {
               backends_[i]->backend_service()->request_count());
   }
   // Check LB policy name for the channel.
-  EXPECT_EQ((GetParam().use_xds_resolver() ? "xds_routing_experimental"
+  EXPECT_EQ((GetParam().use_xds_resolver() ? "xds_cluster_manager_experimental"
                                            : "eds_experimental"),
             channel_->GetLoadBalancingPolicyName());
 }
@@ -3684,11 +3684,8 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   StartBackend(0);
   sending_rpc.join();
   // Make sure RPCs go to the correct backend:
-  // Before moving routing to XdsConfigSelector, 2 to backend 1;
-  // TODO(donnadionne): After moving routing to XdsConfigSelector, 1 for each
-  // backend.
-  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {

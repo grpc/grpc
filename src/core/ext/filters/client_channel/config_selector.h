@@ -34,6 +34,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
+// Channel arg key for ConfigSelector.
+#define GRPC_ARG_CONFIG_SELECTOR "grpc.internal.config_selector"
+
 namespace grpc_core {
 
 // Internal API used to allow resolver implementations to override
