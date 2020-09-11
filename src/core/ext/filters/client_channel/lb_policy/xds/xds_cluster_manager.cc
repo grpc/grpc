@@ -291,6 +291,7 @@ void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
     }
     it->second->UpdateLocked(config, args.addresses, args.args);
   }
+  UpdateStateLocked();
 }
 
 void XdsClusterManagerLb::UpdateStateLocked() {
