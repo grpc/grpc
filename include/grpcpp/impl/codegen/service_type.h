@@ -26,10 +26,6 @@
 #include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/codegen/status.h>
 
-namespace grpc_impl {
-
-class Server;
-}  // namespace grpc_impl
 namespace grpc {
 
 class CompletionQueue;
