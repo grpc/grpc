@@ -16,22 +16,14 @@
  *
  */
 
-#include "src/core/lib/surface/init.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/surface/init.h"
 #include "test/core/util/test_config.h"
 
-static int g_plugin_state;
-
-static void plugin_init(void) { g_plugin_state = 1; }
-static void plugin_destroy(void) { g_plugin_state = 2; }
-static bool plugin_is_intialized(void) { return g_plugin_state == 1; }
-static bool plugin_is_destroyed(void) { return g_plugin_state == 2; }
+static int g_flag;
 
 static void test(int rounds) {
   int i;
@@ -41,13 +33,7 @@ static void test(int rounds) {
   for (i = 0; i < rounds; i++) {
     grpc_shutdown();
   }
-  EXPECT_FALSE(grpc_is_initialized());
-}
-
-TEST(Init, test) {
-  test(1);
-  test(2);
-  test(3);
+  grpc_maybe_wait_for_async_shutdown();
 }
 
 static void test_blocking(int rounds) {
@@ -58,87 +44,55 @@ static void test_blocking(int rounds) {
   for (i = 0; i < rounds; i++) {
     grpc_shutdown_blocking();
   }
-  EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, blocking) {
-  test_blocking(1);
-  test_blocking(2);
-  test_blocking(3);
-}
-
-TEST(Init, shutdown_with_thread) {
+static void test_mixed(void) {
   grpc_init();
-  {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
-        GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
-    grpc_shutdown();
-  }
+  grpc_init();
+  grpc_shutdown();
+  grpc_init();
+  grpc_shutdown();
+  grpc_shutdown();
   grpc_maybe_wait_for_async_shutdown();
-  EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, mixed) {
-  grpc_init();
-  grpc_init();
-  grpc_shutdown();
-  grpc_init();
-  grpc_shutdown();
-  grpc_shutdown();
-  EXPECT_FALSE(grpc_is_initialized());
-}
+static void plugin_init(void) { g_flag = 1; }
+static void plugin_destroy(void) { g_flag = 2; }
 
-TEST(Init, mixed_with_thread) {
+static void test_plugin() {
+  grpc_register_plugin(plugin_init, plugin_destroy);
   grpc_init();
-  {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
-        GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
-    grpc_init();
-    grpc_shutdown();
-    grpc_init();
-    grpc_shutdown();
-    grpc_shutdown();
-  }
-  grpc_maybe_wait_for_async_shutdown();
-  EXPECT_FALSE(grpc_is_initialized());
-}
-
-TEST(Init, plugin) {
-  grpc_init();
-  EXPECT_TRUE(plugin_is_intialized());
+  GPR_ASSERT(g_flag == 1);
   grpc_shutdown_blocking();
-  EXPECT_TRUE(plugin_is_destroyed());
-  EXPECT_FALSE(grpc_is_initialized());
+  GPR_ASSERT(g_flag == 2);
 }
 
-TEST(Init, repeatedly) {
-  for (int i = 0; i < 10; i++) {
+static void test_repeatedly() {
+  for (int i = 0; i < 1000; i++) {
     grpc_init();
-    {
-      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
-          GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
-      grpc_shutdown();
-    }
+    grpc_shutdown();
   }
   grpc_maybe_wait_for_async_shutdown();
-  EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, repeatedly_blocking) {
-  for (int i = 0; i < 10; i++) {
+static void test_repeatedly_blocking() {
+  for (int i = 0; i < 1000; i++) {
     grpc_init();
-    {
-      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
-          GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
-      grpc_shutdown_blocking();
-    }
+    grpc_shutdown_blocking();
   }
-  EXPECT_FALSE(grpc_is_initialized());
 }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  grpc_register_plugin(plugin_init, plugin_destroy);
-  return RUN_ALL_TESTS();
+  test(1);
+  test(2);
+  test(3);
+  test_blocking(1);
+  test_blocking(2);
+  test_blocking(3);
+  test_mixed();
+  test_plugin();
+  test_repeatedly();
+  test_repeatedly_blocking();
+  return 0;
 }

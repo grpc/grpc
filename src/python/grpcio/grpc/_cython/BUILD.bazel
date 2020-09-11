@@ -15,6 +15,7 @@ pyx_library(
         "**/*.pxi",
         "cygrpc.pxd",
         "cygrpc.pyx",
+        "**/__init__.py",
     ]),
     data = [":copy_roots_pem"],
     deps = [

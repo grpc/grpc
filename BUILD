@@ -1695,6 +1695,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_secure",
     srcs = [
+        "src/core/ext/xds/certificate_provider_registry.cc",
         "src/core/lib/http/httpcli_security_connector.cc",
         "src/core/lib/security/context/security_context.cc",
         "src/core/lib/security/credentials/alts/alts_credentials.cc",
@@ -1712,6 +1713,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.cc",
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
         "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
+        "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
         "src/core/lib/security/credentials/tls/tls_credentials.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
@@ -1734,6 +1736,9 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
+        "src/core/ext/xds/certificate_provider_factory.h",
+        "src/core/ext/xds/certificate_provider_registry.h",
+        "src/core/ext/xds/certificate_provider_store.h",
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/lib/security/certificate_provider.h",
         "src/core/lib/security/context/security_context.h",
@@ -1750,6 +1755,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.h",
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
+        "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
         "src/core/lib/security/credentials/tls/tls_credentials.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",

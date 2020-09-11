@@ -683,13 +683,6 @@ def prepare_services_for_urlmap_tests(gcp, original_backend_service,
     Returns:
       Returns original and alternate backend names as lists of strings.
     '''
-    # The config validation for proxyless doesn't allow setting
-    # default_route_action or route_rules. Disable validate
-    # validate_for_proxyless for this test. This can be removed when validation
-    # accepts default_route_action.
-    logger.info('disabling validate_for_proxyless in target proxy')
-    set_validate_for_proxyless(gcp, False)
-
     logger.info('waiting for original backends to become healthy')
     wait_for_healthy_backends(gcp, original_backend_service, instance_group)
 
@@ -784,7 +777,6 @@ def test_traffic_splitting(gcp, original_backend_service, instance_group,
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_instances(gcp, alternate_backend_service, [])
-        set_validate_for_proxyless(gcp, True)
 
 
 def test_path_matching(gcp, original_backend_service, instance_group,
@@ -892,7 +884,6 @@ def test_path_matching(gcp, original_backend_service, instance_group,
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_instances(gcp, alternate_backend_service, [])
-        set_validate_for_proxyless(gcp, True)
 
 
 def test_header_matching(gcp, original_backend_service, instance_group,
@@ -963,7 +954,6 @@ def test_header_matching(gcp, original_backend_service, instance_group,
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_instances(gcp, alternate_backend_service, [])
-        set_validate_for_proxyless(gcp, True)
 
 
 def get_serving_status(instance, service_port):
@@ -1194,27 +1184,12 @@ def patch_url_map_host_rule_with_port(gcp, name, backend_service, host_name):
     wait_for_global_operation(gcp, result['name'])
 
 
-def set_validate_for_proxyless(gcp, validate_for_proxyless):
-    if not gcp.alpha_compute:
-        logger.debug(
-            'Not setting validateForProxy because alpha is not enabled')
-        return
-    # This function deletes global_forwarding_rule and target_proxy, then
-    # recreate target_proxy with validateForProxyless=False. This is necessary
-    # because patching target_grpc_proxy isn't supported.
-    delete_global_forwarding_rule(gcp)
-    delete_target_proxy(gcp)
-    create_target_proxy(gcp, gcp.target_proxy.name, validate_for_proxyless)
-    create_global_forwarding_rule(gcp, gcp.global_forwarding_rule.name,
-                                  [gcp.service_port])
-
-
-def create_target_proxy(gcp, name, validate_for_proxyless=True):
+def create_target_proxy(gcp, name):
     if gcp.alpha_compute:
         config = {
             'name': name,
             'url_map': gcp.url_map.url,
-            'validate_for_proxyless': validate_for_proxyless,
+            'validate_for_proxyless': True,
         }
         logger.debug('Sending GCP request with body=%s', config)
         result = gcp.alpha_compute.targetGrpcProxies().insert(

@@ -2002,6 +2002,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/udpa/annotations/versioning.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
+    src/core/ext/xds/certificate_provider_registry.cc \
     src/core/ext/xds/xds_api.cc \
     src/core/ext/xds/xds_bootstrap.cc \
     src/core/ext/xds/xds_client.cc \
@@ -2155,6 +2156,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
@@ -4586,6 +4588,7 @@ src/core/ext/upb-generated/udpa/annotations/migrate.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/status.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/versioning.upb.c: $(OPENSSL_DEP)
+src/core/ext/xds/certificate_provider_registry.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_api.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_bootstrap.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client.cc: $(OPENSSL_DEP)
@@ -4616,6 +4619,7 @@ src/core/lib/security/credentials/local/local_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/oauth2/oauth2_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/tls_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/alts/alts_security_connector.cc: $(OPENSSL_DEP)

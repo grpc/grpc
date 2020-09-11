@@ -161,8 +161,13 @@ inline void grpc_channel_internal_unref(grpc_channel* channel) {
   grpc_channel_internal_unref(channel)
 #endif
 
-/** Return the channel's compression options. */
+// Return the channel's compression options.
 grpc_compression_options grpc_channel_compression_options(
     const grpc_channel* channel);
+
+// Ping the channels peer (load balanced channels will select one sub-channel to
+// ping); if the channel is not connected, posts a failed.
+void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
+                       void* tag, void* reserved);
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_H */

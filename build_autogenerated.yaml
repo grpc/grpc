@@ -534,6 +534,9 @@ libs:
   - src/core/ext/upb-generated/udpa/annotations/versioning.upb.h
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
+  - src/core/ext/xds/certificate_provider_factory.h
+  - src/core/ext/xds/certificate_provider_registry.h
+  - src/core/ext/xds/certificate_provider_store.h
   - src/core/ext/xds/xds_api.h
   - src/core/ext/xds/xds_bootstrap.h
   - src/core/ext/xds/xds_channel_args.h
@@ -676,6 +679,7 @@ libs:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
+  - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
@@ -939,6 +943,7 @@ libs:
   - src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
+  - src/core/ext/xds/certificate_provider_registry.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
   - src/core/ext/xds/xds_client.cc
@@ -1092,6 +1097,7 @@ libs:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
@@ -3573,6 +3579,19 @@ targets:
   - linux
   - posix
   - mac
+- name: init_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/surface/init_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  uses_polling: false
 - name: inproc_callback_test
   build: test
   language: c
@@ -5234,6 +5253,19 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: certificate_provider_registry_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/certificate_provider_registry_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: cfstream_test
   gtest: true
   build: test
@@ -5899,6 +5931,19 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
+- name: grpc_tls_certificate_distributor_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/grpc_tls_certificate_distributor_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: grpc_tls_credentials_options_test
   gtest: true
   build: test
@@ -6155,20 +6200,6 @@ targets:
   - gpr
   - address_sorting
   - upb
-- name: init_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/surface/init_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
-  uses_polling: false
 - name: initial_settings_frame_bad_client_test
   gtest: true
   build: test

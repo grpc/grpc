@@ -426,6 +426,10 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_store.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.cc" role="src" />
@@ -790,6 +794,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.cc" role="src" />
