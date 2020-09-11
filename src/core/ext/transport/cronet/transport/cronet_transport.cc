@@ -163,8 +163,6 @@ struct op_state {
   bool pending_send_message = false;
   /* User requested RECV_TRAILING_METADATA */
   bool pending_recv_trailing_metadata = false;
-  /* Cronet has not issued a callback of a bidirectional read */
-  bool pending_read_from_cronet = false;
   cronet_status_code net_error = CRONET_STATUS_SUCCESS;
   grpc_error* cancel_error = GRPC_ERROR_NONE;
   /* data structure for storing data coming from server */
@@ -305,7 +303,6 @@ static void read_grpc_header(stream_obj* s) {
   CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);
   bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
                             s->state.rs.remaining_bytes);
-  s->state.pending_read_from_cronet = true;
 }
 
 static grpc_error* make_error_with_desc(int error_code, const char* desc) {
@@ -597,13 +594,11 @@ static void on_read_completed(bidirectional_stream* stream, char* data,
   CRONET_LOG(GPR_DEBUG, "R: on_read_completed(%p, %p, %d)", stream, data,
              count);
   gpr_mu_lock(&s->mu);
-  s->state.pending_read_from_cronet = false;
   s->state.state_callback_received[OP_RECV_MESSAGE] = true;
   if (count > 0 && s->state.flush_read) {
     CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);
     bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
                               GRPC_FLUSH_READ_SIZE);
-    s->state.pending_read_from_cronet = true;
     gpr_mu_unlock(&s->mu);
   } else if (count > 0) {
     s->state.rs.received_bytes += count;
@@ -614,7 +609,6 @@ static void on_read_completed(bidirectional_stream* stream, char* data,
       bidirectional_stream_read(
           s->cbs, s->state.rs.read_buffer + s->state.rs.received_bytes,
           s->state.rs.remaining_bytes);
-      s->state.pending_read_from_cronet = true;
       gpr_mu_unlock(&s->mu);
     } else {
       gpr_mu_unlock(&s->mu);
@@ -1220,7 +1214,6 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
               true; /* Indicates that at least one read request has been made */
           bidirectional_stream_read(s->cbs, stream_state->rs.read_buffer,
                                     stream_state->rs.remaining_bytes);
-          stream_state->pending_read_from_cronet = true;
           result = ACTION_TAKEN_WITH_CALLBACK;
         } else {
           stream_state->rs.remaining_bytes = 0;
@@ -1261,7 +1254,6 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
             true; /* Indicates that at least one read request has been made */
         bidirectional_stream_read(s->cbs, stream_state->rs.read_buffer,
                                   stream_state->rs.remaining_bytes);
-        stream_state->pending_read_from_cronet = true;
         result = ACTION_TAKEN_WITH_CALLBACK;
       } else {
         result = NO_ACTION_POSSIBLE;
