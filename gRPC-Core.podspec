@@ -1591,6 +1591,8 @@ Pod::Spec.new do |s|
 
     ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',
                       'src/core/ext/transport/cronet/client/secure/cronet_channel_create.h',
+                      'src/core/ext/transport/cronet/transport/cronet_status.cc',
+                      'src/core/ext/transport/cronet/transport/cronet_status.h',
                       'src/core/ext/transport/cronet/transport/cronet_transport.cc',
                       'src/core/ext/transport/cronet/transport/cronet_transport.h',
                       'third_party/objective_c/Cronet/bidirectional_stream_c.h'

@@ -31,6 +31,7 @@
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
+#include "src/core/ext/transport/cronet/transport/cronet_status.h"
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
@@ -164,6 +165,7 @@ struct op_state {
   bool pending_recv_trailing_metadata = false;
   /* Cronet has not issued a callback of a bidirectional read */
   bool pending_read_from_cronet = false;
+  cronet_status_code net_error = CRONET_STATUS_SUCCESS;
   grpc_error* cancel_error = GRPC_ERROR_NONE;
   /* data structure for storing data coming from server */
   struct read_state rs;
@@ -435,6 +437,7 @@ static void on_failed(bidirectional_stream* stream, int net_error) {
   gpr_mu_lock(&s->mu);
   bidirectional_stream_destroy(s->cbs);
   s->state.state_callback_received[OP_FAILED] = true;
+  s->state.net_error = static_cast<cronet_status_code>(net_error);
   s->cbs = nullptr;
   if (s->header_array.headers) {
     gpr_free(s->header_array.headers);
@@ -1302,7 +1305,9 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       error = GRPC_ERROR_REF(stream_state->cancel_error);
     } else if (stream_state->state_callback_received[OP_FAILED]) {
-      error = make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable.");
+      const char* error_message =
+          cronet_status_as_string(stream_state->net_error);
+      error = make_error_with_desc(GRPC_STATUS_UNAVAILABLE, error_message);
     } else if (oas->s->state.rs.trailing_metadata_valid) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           &oas->s->state.rs.trailing_metadata,
@@ -1339,9 +1344,11 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       }
     } else if (stream_state->state_callback_received[OP_FAILED]) {
       if (stream_op->on_complete) {
+        const char* error_message =
+            cronet_status_as_string(stream_state->net_error);
         grpc_core::ExecCtx::Run(
             DEBUG_LOCATION, stream_op->on_complete,
-            make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable."));
+            make_error_with_desc(GRPC_STATUS_UNAVAILABLE, error_message));
       }
     } else {
       /* All actions in this stream_op are complete. Call the on_complete
