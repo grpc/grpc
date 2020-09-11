@@ -537,6 +537,7 @@ libs:
   - src/core/ext/xds/certificate_provider_factory.h
   - src/core/ext/xds/certificate_provider_registry.h
   - src/core/ext/xds/certificate_provider_store.h
+  - src/core/ext/xds/google_mesh_ca_certificate_provider.h
   - src/core/ext/xds/xds_api.h
   - src/core/ext/xds/xds_bootstrap.h
   - src/core/ext/xds/xds_channel_args.h
@@ -944,6 +945,7 @@ libs:
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
   - src/core/ext/xds/certificate_provider_registry.cc
+  - src/core/ext/xds/google_mesh_ca_certificate_provider.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
   - src/core/ext/xds/xds_client.cc
@@ -5840,6 +5842,19 @@ targets:
   - address_sorting
   - upb
   uses_polling: false
+- name: google_mesh_ca_certificate_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/google_mesh_ca_certificate_provider_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: grpc_cli
   build: test
   run: false

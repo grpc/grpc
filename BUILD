@@ -1328,8 +1328,24 @@ grpc_cc_library(
         "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_google_mesh_ca_certificate_provider",
         "grpc_secure",
         "grpc_xds_api_header",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_google_mesh_ca_certificate_provider",
+    srcs = [
+        "src/core/ext/xds/google_mesh_ca_certificate_provider.cc",
+    ],
+    hdrs = [
+        "src/core/ext/xds/google_mesh_ca_certificate_provider.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_secure",
     ],
 )
 
