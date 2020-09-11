@@ -25,6 +25,7 @@ class CallTest extends PHPUnit_Framework_TestCase
     {
         self::$server = new Grpc\Server([]);
         self::$port = self::$server->addHttp2Port('0.0.0.0:53000');
+        self::$server->start();
     }
 
     public function setUp()

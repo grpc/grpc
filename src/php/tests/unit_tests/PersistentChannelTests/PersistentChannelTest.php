@@ -180,6 +180,7 @@ class PersistentListTest extends PHPUnit_Framework_TestCase
       $this->channel2 = new Grpc\Channel('localhost:10001', []);
       $this->server = new Grpc\Server([]);
       $this->port = $this->server->addHttp2Port('localhost:10001');
+      $this->server->start();
 
       // channel2 can still be use
       $state = $this->channel2->getConnectivityState();
