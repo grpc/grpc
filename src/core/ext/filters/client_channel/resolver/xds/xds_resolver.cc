@@ -93,15 +93,10 @@ class XdsResolver : public Resolver {
         std::map<std::string, std::unique_ptr<ClusterState>>;
 
     ClusterState(const std::string& cluster_name,
-                 ClusterStateMap* cluster_state_map) {
-      it_ = cluster_state_map->find(cluster_name.c_str());
-      if (it_ == cluster_state_map->end()) {
-        it_ = cluster_state_map
-                  ->emplace(cluster_name.c_str(),
-                            absl::WrapUnique<ClusterState>(this))
-                  .first;
-      }
-    }
+                 ClusterStateMap* cluster_state_map)
+        : it_(cluster_state_map
+                  ->emplace(cluster_name, std::unique_ptr<ClusterState>(this))
+                  .first) {}
     const std::string& cluster() const { return it_->first; }
 
    private:
