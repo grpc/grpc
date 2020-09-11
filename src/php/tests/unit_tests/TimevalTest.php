@@ -67,6 +67,30 @@ class TimevalTest extends PHPUnit_Framework_TestCase
         $this->time = new Grpc\Timeval(123.456);
         $this->assertNotNull($this->time);
         $this->assertSame('Grpc\Timeval', get_class($this->time));
+        $timeFromInt = new Grpc\Timeval(123);
+        $this->assertSame(0, Grpc\Timeval::compare($this->time, $timeFromInt));
+    }
+
+    public function testConstructorWithBigInt()
+    {
+        $this->time = new Grpc\Timeval(7200000000); // > 2^32
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+        $halfHour = new Grpc\Timeval(1800000000); // < 2^31
+        $hour = $halfHour->add($halfHour);
+        $twoHour = $hour->add($hour);
+        $this->assertSame(0, Grpc\Timeval::compare($this->time, $twoHour));
+    }
+
+    public function testAddAndSubtractWithBigInt()
+    {
+        $time = new Grpc\Timeval(7200000000);
+        $delta = new Grpc\Timeval(7200000000);
+        $delta2 = new Grpc\Timeval(7200000000*2);
+        $time2 = $time->add($delta2);
+        $time2 = $time2->subtract($delta);
+        $time2 = $time2->subtract($delta);
+        $this->assertSame(0, Grpc\Timeval::compare($time, $time2));
     }
 
     public function testCompareSame()
@@ -128,6 +152,16 @@ class TimevalTest extends PHPUnit_Framework_TestCase
         $back_to_now = $deadline->subtract($delta);
         $this->assertSame(0, Grpc\Timeval::compare($back_to_now, $now));
     }
+
+    public function testAddAndSubtractBigInt()
+    {
+        $now = Grpc\Timeval::now();
+        $delta = new Grpc\Timeval(7200000000);
+        $deadline = $now->add($delta);
+        $back_to_now = $deadline->subtract($delta);
+        $this->assertSame(0, Grpc\Timeval::compare($back_to_now, $now));
+    }
+
 
     public function testSimilar()
     {
