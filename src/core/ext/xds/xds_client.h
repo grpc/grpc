@@ -94,9 +94,11 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // TODO(roth): Remove the server_name parameter as part of sharing the
   // XdsClient instance between channels.
   XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
-            grpc_pollset_set* interested_parties, absl::string_view server_name,
+            absl::string_view server_name,
             const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
+
+  grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
   void Orphan() override;
 

@@ -66,20 +66,7 @@ class XdsResolver : public Resolver {
 
   void StartLocked() override;
 
-  void ShutdownLocked() override {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-      gpr_log(GPR_INFO, "[xds_resolver %p] shutting down", this);
-    }
-    if (listener_watcher_ != nullptr) {
-      xds_client_->CancelListenerDataWatch(server_name_, listener_watcher_,
-                                           /*delay_unsubscription=*/false);
-    }
-    if (route_config_watcher_ != nullptr) {
-      xds_client_->CancelRouteConfigDataWatch(
-          server_name_, route_config_watcher_, /*delay_unsubscription=*/false);
-    }
-    xds_client_.reset();
-  }
+  void ShutdownLocked() override;
 
  private:
   class ListenerWatcher : public XdsClient::ListenerWatcherInterface {
@@ -479,7 +466,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 void XdsResolver::StartLocked() {
   grpc_error* error = GRPC_ERROR_NONE;
   xds_client_ = MakeOrphanable<XdsClient>(
-      work_serializer(), interested_parties_, server_name_, *args_, &error);
+      work_serializer(), server_name_, *args_, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
@@ -487,9 +474,28 @@ void XdsResolver::StartLocked() {
             grpc_error_string(error));
     result_handler()->ReturnError(error);
   }
+  grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
+                                   interested_parties_);
   auto watcher = absl::make_unique<ListenerWatcher>(Ref());
   listener_watcher_ = watcher.get();
   xds_client_->WatchListenerData(server_name_, std::move(watcher));
+}
+
+void XdsResolver::ShutdownLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] shutting down", this);
+  }
+  if (listener_watcher_ != nullptr) {
+    xds_client_->CancelListenerDataWatch(server_name_, listener_watcher_,
+                                         /*delay_unsubscription=*/false);
+  }
+  if (route_config_watcher_ != nullptr) {
+    xds_client_->CancelRouteConfigDataWatch(
+        server_name_, route_config_watcher_, /*delay_unsubscription=*/false);
+  }
+  grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
+                                   interested_parties_);
+  xds_client_.reset();
 }
 
 void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
