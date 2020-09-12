@@ -196,8 +196,8 @@ void XdsResolver::ListenerWatcher::OnListenerChanged(
 
 void XdsResolver::ListenerWatcher::OnError(grpc_error* error) {
   if (resolver_->xds_client_ == nullptr) return;
-  gpr_log(GPR_ERROR, "[xds_resolver %p] received error: %s", resolver_.get(),
-          grpc_error_string(error));
+  gpr_log(GPR_ERROR, "[xds_resolver %p] received listener error: %s",
+          resolver_.get(), grpc_error_string(error));
   resolver_->OnError(error);
 }
 
@@ -222,8 +222,8 @@ void XdsResolver::RouteConfigWatcher::OnRouteConfigChanged(
 
 void XdsResolver::RouteConfigWatcher::OnError(grpc_error* error) {
   if (resolver_->xds_client_ == nullptr) return;
-  gpr_log(GPR_ERROR, "[xds_resolver %p] received error: %s", this,
-          grpc_error_string(error));
+  gpr_log(GPR_ERROR, "[xds_resolver %p] received route config error: %s",
+          resolver_.get(), grpc_error_string(error));
   resolver_->OnError(error);
 }
 
