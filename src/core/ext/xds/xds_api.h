@@ -183,110 +183,85 @@ class XdsApi {
 
   using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;
 
-  class PriorityListUpdate {
-   public:
-    struct LocalityMap {
+  struct EdsUpdate {
+    struct Priority {
       struct Locality {
-        bool operator==(const Locality& other) const {
-          return *name == *other.name && serverlist == other.serverlist &&
-                 lb_weight == other.lb_weight && priority == other.priority;
-        }
-
-        // This comparator only compares the locality names.
-        struct Less {
-          bool operator()(const Locality& lhs, const Locality& rhs) const {
-            return XdsLocalityName::Less()(lhs.name, rhs.name);
-          }
-        };
-
         RefCountedPtr<XdsLocalityName> name;
-        ServerAddressList serverlist;
         uint32_t lb_weight;
-        uint32_t priority;
+        ServerAddressList endpoints;
+
+        bool operator==(const Locality& other) const {
+          return *name == *other.name && lb_weight == other.lb_weight &&
+                 endpoints == other.endpoints;
+        }
+        std::string ToString() const;
       };
 
-      bool Contains(const RefCountedPtr<XdsLocalityName>& name) const {
-        return localities.find(name) != localities.end();
+      std::map<XdsLocalityName*, Locality, XdsLocalityName::Less> localities;
+
+      bool operator==(const Priority& other) const {
+        return localities == other.localities;
+      }
+      std::string ToString() const;
+    };
+    using PriorityList = absl::InlinedVector<Priority, 2>;
+
+    // There are two phases of accessing this class's content:
+    // 1. to initialize in the control plane combiner;
+    // 2. to use in the data plane combiner.
+    // So no additional synchronization is needed.
+    class DropConfig : public RefCounted<DropConfig> {
+     public:
+      struct DropCategory {
+        bool operator==(const DropCategory& other) const {
+          return name == other.name &&
+                 parts_per_million == other.parts_per_million;
+        }
+
+        std::string name;
+        const uint32_t parts_per_million;
+      };
+
+      using DropCategoryList = absl::InlinedVector<DropCategory, 2>;
+
+      void AddCategory(std::string name, uint32_t parts_per_million) {
+        drop_category_list_.emplace_back(
+            DropCategory{std::move(name), parts_per_million});
+        if (parts_per_million == 1000000) drop_all_ = true;
       }
 
-      size_t size() const { return localities.size(); }
+      // The only method invoked from outside the WorkSerializer (used in
+      // the data plane).
+      bool ShouldDrop(const std::string** category_name) const;
 
-      std::map<RefCountedPtr<XdsLocalityName>, Locality, XdsLocalityName::Less>
-          localities;
-    };
-
-    bool operator==(const PriorityListUpdate& other) const;
-    bool operator!=(const PriorityListUpdate& other) const {
-      return !(*this == other);
-    }
-
-    void Add(LocalityMap::Locality locality);
-
-    const LocalityMap* Find(uint32_t priority) const;
-
-    bool Contains(uint32_t priority) const {
-      return priority < priorities_.size();
-    }
-    bool Contains(const RefCountedPtr<XdsLocalityName>& name);
-
-    bool empty() const { return priorities_.empty(); }
-    size_t size() const { return priorities_.size(); }
-
-    // Callers should make sure the priority list is non-empty.
-    uint32_t LowestPriority() const {
-      return static_cast<uint32_t>(priorities_.size()) - 1;
-    }
-
-   private:
-    absl::InlinedVector<LocalityMap, 2> priorities_;
-  };
-
-  // There are two phases of accessing this class's content:
-  // 1. to initialize in the control plane combiner;
-  // 2. to use in the data plane combiner.
-  // So no additional synchronization is needed.
-  class DropConfig : public RefCounted<DropConfig> {
-   public:
-    struct DropCategory {
-      bool operator==(const DropCategory& other) const {
-        return name == other.name &&
-               parts_per_million == other.parts_per_million;
+      const DropCategoryList& drop_category_list() const {
+        return drop_category_list_;
       }
 
-      std::string name;
-      const uint32_t parts_per_million;
+      bool drop_all() const { return drop_all_; }
+
+      bool operator==(const DropConfig& other) const {
+        return drop_category_list_ == other.drop_category_list_;
+      }
+      bool operator!=(const DropConfig& other) const {
+        return !(*this == other);
+      }
+
+      std::string ToString() const;
+
+     private:
+      DropCategoryList drop_category_list_;
+      bool drop_all_ = false;
     };
 
-    using DropCategoryList = absl::InlinedVector<DropCategory, 2>;
-
-    void AddCategory(std::string name, uint32_t parts_per_million) {
-      drop_category_list_.emplace_back(
-          DropCategory{std::move(name), parts_per_million});
-      if (parts_per_million == 1000000) drop_all_ = true;
-    }
-
-    // The only method invoked from the data plane combiner.
-    bool ShouldDrop(const std::string** category_name) const;
-
-    const DropCategoryList& drop_category_list() const {
-      return drop_category_list_;
-    }
-
-    bool drop_all() const { return drop_all_; }
-
-    bool operator==(const DropConfig& other) const {
-      return drop_category_list_ == other.drop_category_list_;
-    }
-    bool operator!=(const DropConfig& other) const { return !(*this == other); }
-
-   private:
-    DropCategoryList drop_category_list_;
-    bool drop_all_ = false;
-  };
-
-  struct EdsUpdate {
-    PriorityListUpdate priority_list_update;
+    PriorityList priorities;
     RefCountedPtr<DropConfig> drop_config;
+
+    bool operator==(const EdsUpdate& other) const {
+      return priorities == other.priorities &&
+             *drop_config == *other.drop_config;
+    }
+    std::string ToString() const;
   };
 
   using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
