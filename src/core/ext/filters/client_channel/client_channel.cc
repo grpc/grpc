@@ -1747,7 +1747,7 @@ void ChannelData::UpdateStateAndPickerLocked(
     const char* reason,
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) {
   // Clean the control plane when entering IDLE.
-  if (picker_ == nullptr) {
+  if (picker == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
     health_check_service_name_.reset();
     saved_service_config_.reset();
     saved_config_selector_.reset();
@@ -1797,7 +1797,7 @@ void ChannelData::UpdateStateAndPickerLocked(
     // Note: Original value will be destroyed after the lock is released.
     picker_.swap(picker);
     // Clean the data plane if the updated picker is nullptr.
-    if (picker_ == nullptr) {
+    if (picker_ == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
       received_service_config_data_ = false;
       // Note: We save the objects to unref until after the lock is released.
       retry_throttle_data_to_unref = std::move(retry_throttle_data_);
@@ -1822,6 +1822,14 @@ void ChannelData::UpdateStateAndPickerLocked(
 void ChannelData::UpdateServiceConfigInDataPlaneLocked(
     bool service_config_changed,
     RefCountedPtr<ConfigSelector> config_selector) {
+  // If the service config did not change and there is no new ConfigSelector,
+  // retain the old one (if any).
+  // TODO(roth): Consider whether this is really the right way to handle
+  // this.  We might instead want to decide this in ApplyServiceConfig()
+  // where we decide whether to stick with the saved service config.
+  if (!service_config_changed && config_selector == nullptr) {
+    config_selector = saved_config_selector_;
+  }
   // Check if ConfigSelector has changed.
   const bool config_selector_changed =
       saved_config_selector_ != config_selector;
@@ -3873,6 +3881,7 @@ class CallData::QueuedPickCanceller {
     }
     if (calld->pick_canceller_ == self && error != GRPC_ERROR_NONE) {
       // Remove pick from list of queued picks.
+      calld->MaybeInvokeConfigSelectorCommitCallback();
       calld->MaybeRemoveCallFromQueuedPicksLocked(self->elem_);
       // Fail pending batches on the call.
       calld->PendingBatchesFail(self->elem_, GRPC_ERROR_REF(error),
@@ -4162,7 +4171,9 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
         connected_subchannel_ =
             chand->GetConnectedSubchannelInDataPlane(result.subchannel.get());
         GPR_ASSERT(connected_subchannel_ != nullptr);
-        if (retry_committed_) MaybeInvokeConfigSelectorCommitCallback();
+        if (!enable_retries_ || retry_committed_) {
+          MaybeInvokeConfigSelectorCommitCallback();
+        }
       }
       lb_recv_trailing_metadata_ready_ = result.recv_trailing_metadata_ready;
       *error = result.error;

@@ -17,11 +17,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
-
 #include "src/core/lib/channel/channel_args.h"
-
-// Channel arg key for ConfigSelector.
-#define GRPC_ARG_CONFIG_SELECTOR "grpc.internal.config_selector"
 
 namespace grpc_core {
 
