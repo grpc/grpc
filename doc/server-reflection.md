@@ -23,29 +23,8 @@ We want to be able to answer the following queries:
 Specifically, what are the names of the methods, are those methods unary or
 streaming, and what are the types of the argument and result?
 
-```
-#TODO(dklempner): link to an actual .proto later.
-package grpc.reflection.v1alpha;
-
-message ListApisRequest {
-}
-
-message ListApisResponse {
-  repeated google.protobuf.Api apis = 1;
-}
-
-message GetMethodRequest {
-  string method = 1;
-}
-message GetMethodResponse {
-  google.protobuf.Method method = 1;
-}
-
-service ServerReflection {
-  rpc ListApis (ListApisRequest) returns (ListApisResponse);
-  rpc GetMethod (GetMethodRequest) returns (GetMethodResponse);
-}
-```
+The first proposed version of the protocol is here:
+https://github.com/grpc/grpc/blob/master/src/proto/grpc/reflection/v1alpha/reflection.proto
 
 Note that a server is under no obligation to return a complete list of all
 methods it supports. For example, a reverse proxy may support server reflection

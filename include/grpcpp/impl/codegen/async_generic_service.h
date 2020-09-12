@@ -38,19 +38,19 @@ typedef ::grpc_impl::ServerAsyncReader<ByteBuffer, ByteBuffer>
     GenericServerAsyncReader;
 typedef ::grpc_impl::ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
 
-class GenericServerContext final : public ::grpc_impl::ServerContext {
+class GenericServerContext final : public ::grpc::ServerContext {
  public:
   const std::string& method() const { return method_; }
   const std::string& host() const { return host_; }
 
  private:
-  friend class grpc_impl::Server;
+  friend class grpc::Server;
   friend class grpc::ServerInterface;
 
   void Clear() {
     method_.clear();
     host_.clear();
-    ::grpc_impl::ServerContext::Clear();
+    ::grpc::ServerContext::Clear();
   }
 
   std::string method_;
@@ -84,8 +84,8 @@ class AsyncGenericService final {
                    ::grpc::ServerCompletionQueue* notification_cq, void* tag);
 
  private:
-  friend class grpc_impl::Server;
-  grpc_impl::Server* server_;
+  friend class grpc::Server;
+  grpc::Server* server_;
 };
 
 #ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
@@ -99,19 +99,19 @@ using ServerGenericBidiReactor =
     ::grpc_impl::ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
 class GenericCallbackServerContext final
-    : public ::grpc_impl::CallbackServerContext {
+    : public ::grpc::CallbackServerContext {
  public:
   const std::string& method() const { return method_; }
   const std::string& host() const { return host_; }
 
  private:
-  friend class ::grpc_impl::Server;
+  friend class ::grpc::Server;
   friend class ::grpc::ServerInterface;
 
   void Clear() {
     method_.clear();
     host_.clear();
-    ::grpc_impl::CallbackServerContext::Clear();
+    ::grpc::CallbackServerContext::Clear();
   }
 
   std::string method_;
@@ -140,18 +140,18 @@ class CallbackGenericService {
   }
 
  private:
-  friend class ::grpc_impl::Server;
+  friend class grpc::Server;
 
   ::grpc_impl::internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>*
   Handler() {
     return new ::grpc_impl::internal::CallbackBidiHandler<ByteBuffer,
                                                           ByteBuffer>(
-        [this](::grpc_impl::CallbackServerContext* ctx) {
+        [this](::grpc::CallbackServerContext* ctx) {
           return CreateReactor(static_cast<GenericCallbackServerContext*>(ctx));
         });
   }
 
-  grpc_impl::Server* server_{nullptr};
+  grpc::Server* server_{nullptr};
 };
 
 #ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL

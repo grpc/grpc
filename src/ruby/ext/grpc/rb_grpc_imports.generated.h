@@ -149,9 +149,6 @@ extern grpc_channel_support_connectivity_watcher_type grpc_channel_support_conne
 typedef grpc_call*(*grpc_channel_create_call_type)(grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask, grpc_completion_queue* completion_queue, grpc_slice method, const grpc_slice* host, gpr_timespec deadline, void* reserved);
 extern grpc_channel_create_call_type grpc_channel_create_call_import;
 #define grpc_channel_create_call grpc_channel_create_call_import
-typedef void(*grpc_channel_ping_type)(grpc_channel* channel, grpc_completion_queue* cq, void* tag, void* reserved);
-extern grpc_channel_ping_type grpc_channel_ping_import;
-#define grpc_channel_ping grpc_channel_ping_import
 typedef void*(*grpc_channel_register_call_type)(grpc_channel* channel, const char* method, const char* host, void* reserved);
 extern grpc_channel_register_call_type grpc_channel_register_call_import;
 #define grpc_channel_register_call grpc_channel_register_call_import

@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.12'
+  s.add_dependency 'google-protobuf', '~> 3.13'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -155,7 +155,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/eds.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds.h )
-  s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy_factory.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy_registry.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy_registry.h )
@@ -185,6 +185,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver_factory.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver_registry.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver_registry.h )
@@ -446,13 +447,15 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h )
   s.files += %w( src/core/ext/upb-generated/validate/validate.upb.c )
   s.files += %w( src/core/ext/upb-generated/validate/validate.upb.h )
+  s.files += %w( src/core/ext/xds/certificate_provider_factory.h )
+  s.files += %w( src/core/ext/xds/certificate_provider_registry.cc )
+  s.files += %w( src/core/ext/xds/certificate_provider_registry.h )
+  s.files += %w( src/core/ext/xds/certificate_provider_store.h )
   s.files += %w( src/core/ext/xds/xds_api.cc )
   s.files += %w( src/core/ext/xds/xds_api.h )
   s.files += %w( src/core/ext/xds/xds_bootstrap.cc )
   s.files += %w( src/core/ext/xds/xds_bootstrap.h )
-  s.files += %w( src/core/ext/xds/xds_channel.h )
   s.files += %w( src/core/ext/xds/xds_channel_args.h )
-  s.files += %w( src/core/ext/xds/xds_channel_secure.cc )
   s.files += %w( src/core/ext/xds/xds_client.cc )
   s.files += %w( src/core/ext/xds/xds_client.h )
   s.files += %w( src/core/ext/xds/xds_client_stats.cc )
@@ -766,7 +769,13 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/authorization/evaluate_args.cc )
   s.files += %w( src/core/lib/security/authorization/evaluate_args.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/activation.h )
+  s.files += %w( src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h )
+  s.files += %w( src/core/lib/security/authorization/mock_cel/cel_expression.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/cel_value.h )
+  s.files += %w( src/core/lib/security/authorization/mock_cel/evaluator_core.h )
+  s.files += %w( src/core/lib/security/authorization/mock_cel/flat_expr_builder.h )
+  s.files += %w( src/core/lib/security/authorization/mock_cel/statusor.h )
+  s.files += %w( src/core/lib/security/certificate_provider.h )
   s.files += %w( src/core/lib/security/context/security_context.cc )
   s.files += %w( src/core/lib/security/context/security_context.h )
   s.files += %w( src/core/lib/security/credentials/alts/alts_credentials.cc )
@@ -806,6 +815,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/plugin/plugin_credentials.h )
   s.files += %w( src/core/lib/security/credentials/ssl/ssl_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/ssl/ssl_credentials.h )
+  s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc )
+  s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h )
   s.files += %w( src/core/lib/security/credentials/tls/tls_credentials.cc )

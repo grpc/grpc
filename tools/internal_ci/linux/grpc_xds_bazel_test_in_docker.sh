@@ -65,7 +65,7 @@ bazel build test/cpp/interop:xds_interop_client
 #
 # TODO: remove "path_matching" and "header_matching" from --test_case after
 # they are added into "all".
-GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_routing_lb,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
+GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
     --test_case="all,path_matching,header_matching" \
     --project_id=grpc-testing \

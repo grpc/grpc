@@ -468,6 +468,12 @@ def _filter_cc_tests(tests):
             lambda test: not test.startswith(
                 'test/core/tsi:ssl_session_cache_test'), tests))
 
+    # the binary of this test does not get built with cmake
+    tests = list(
+        filter(
+            lambda test: not test.startswith(
+                'test/cpp/util:channelz_sampler_test'), tests))
+
     return tests
 
 

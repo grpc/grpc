@@ -49,7 +49,7 @@ def _create_build_map():
 
     if set(target_build_map.keys()).intersection(label_build_map.keys()):
         raise Exception('Target names need to be distinct from label names')
-    return dict(target_build_map.items() + label_build_map.items())
+    return dict(list(target_build_map.items()) + list(label_build_map.items()))
 
 
 _BUILD_MAP = _create_build_map()
@@ -83,7 +83,7 @@ for label in args.build:
 
 # Among targets selected by -b, filter out those that don't match the filter
 targets = [t for t in targets if all(f in t.labels for f in args.filter)]
-targets = sorted(set(targets))
+targets = sorted(set(targets), key=lambda target: target.name)
 
 # Execute pre-build phase
 prebuild_jobs = []
