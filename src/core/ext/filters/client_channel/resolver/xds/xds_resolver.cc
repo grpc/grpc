@@ -502,7 +502,7 @@ void XdsResolver::ShutdownLocked() {
 
 void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   // Find the relevant VirtualHost from the RouteConfiguration.
-  const XdsApi::RdsUpdate::VirtualHost* vhost =
+  XdsApi::RdsUpdate::VirtualHost* vhost =
       rds_update.FindVirtualHostForDomain(server_name_);
   if (vhost == nullptr) {
     OnError(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -512,7 +512,7 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
     return;
   }
   // Save the list of routes in the resolver.
-  current_update_ = vhost->routes;
+  current_update_ = std::move(vhost->routes);
   // Send a new result to the channel.
   GenerateResult();
 }

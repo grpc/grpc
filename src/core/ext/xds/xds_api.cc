@@ -333,8 +333,8 @@ MatchType DomainPatternMatchType(const std::string& domain_pattern) {
 
 }  // namespace
 
-const XdsApi::RdsUpdate::VirtualHost*
-XdsApi::RdsUpdate::FindVirtualHostForDomain(const std::string& domain) const {
+XdsApi::RdsUpdate::VirtualHost*
+XdsApi::RdsUpdate::FindVirtualHostForDomain(const std::string& domain) {
   // Find the best matched virtual host.
   // The search order for 4 groups of domain patterns:
   //   1. Exact match.
@@ -344,12 +344,12 @@ XdsApi::RdsUpdate::FindVirtualHostForDomain(const std::string& domain) const {
   // Within each group, longest match wins.
   // If the same best matched domain pattern appears in multiple virtual hosts,
   // the first matched virtual host wins.
-  const VirtualHost* target_vhost = nullptr;
+  VirtualHost* target_vhost = nullptr;
   MatchType best_match_type = INVALID_MATCH;
   size_t longest_match = 0;
   // Check each domain pattern in each virtual host to determine the best
   // matched virtual host.
-  for (const VirtualHost& vhost : virtual_hosts) {
+  for (VirtualHost& vhost : virtual_hosts) {
     for (const std::string& domain_pattern : vhost.domains) {
       // Check the match type first. Skip the pattern if it's not better than
       // current match.
