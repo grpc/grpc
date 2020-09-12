@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.31.1</span>
+   &#160;<span id="projectnumber">1.32.0</span>
    </div>
   </td>
  </tr>
@@ -104,7 +104,7 @@ $(function() {
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keyword">explicit</span> <a class="code" href="classgrpc_1_1_health_check_service_server_builder_option.html#a11d309e8f1809097e5defcaa386e6ce7">HealthCheckServiceServerBuilderOption</a>(</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;      std::unique_ptr&lt;HealthCheckServiceInterface&gt; hc);</div>
 <div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="classgrpc_1_1_health_check_service_server_builder_option.html#a2992017c359ca2512ffcf43a31c704fe">   36</a></span>&#160;  <a class="code" href="classgrpc_1_1_health_check_service_server_builder_option.html#a2992017c359ca2512ffcf43a31c704fe">~HealthCheckServiceServerBuilderOption</a>()<span class="keyword"> override </span>{}</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_health_check_service_server_builder_option.html#a194b4e3f33c4f7463098c919dab93fb6">UpdateArguments</a>(<a class="code" href="classgrpc__impl_1_1_channel_arguments.html">ChannelArguments</a>* args) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_health_check_service_server_builder_option.html#a194b4e3f33c4f7463098c919dab93fb6">UpdateArguments</a>(<a class="code" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a>* args) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_health_check_service_server_builder_option.html#a24614ed26168e443d768884359480e02">UpdatePlugins</a>(</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;      std::vector&lt;std::unique_ptr&lt;ServerBuilderPlugin&gt;&gt;* plugins) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
@@ -120,16 +120,16 @@ $(function() {
 <div class="ttc" id="agrpcpp_2health__check__service__interface_8h_html"><div class="ttname"><a href="grpcpp_2health__check__service__interface_8h.html">health_check_service_interface.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_health_check_service_server_builder_option_html"><div class="ttname"><a href="classgrpc_1_1_health_check_service_server_builder_option.html">grpc::HealthCheckServiceServerBuilderOption</a></div><div class="ttdef"><b>Definition:</b> health_check_service_server_builder_option.h:30</div></div>
 <div class="ttc" id="aclassgrpc_1_1_health_check_service_server_builder_option_html_a24614ed26168e443d768884359480e02"><div class="ttname"><a href="classgrpc_1_1_health_check_service_server_builder_option.html#a24614ed26168e443d768884359480e02">grpc::HealthCheckServiceServerBuilderOption::UpdatePlugins</a></div><div class="ttdeci">void UpdatePlugins(std::vector&lt; std::unique_ptr&lt; ServerBuilderPlugin &gt;&gt; *plugins) override</div><div class="ttdoc">Alter the ServerBuilderPlugin map that will be added into ServerBuilder.</div></div>
+<div class="ttc" id="aclassgrpc_1_1_channel_arguments_html"><div class="ttname"><a href="classgrpc_1_1_channel_arguments.html">grpc::ChannelArguments</a></div><div class="ttdoc">Options for channel creation.</div><div class="ttdef"><b>Definition:</b> channel_arguments.h:39</div></div>
 <div class="ttc" id="aclassgrpc__impl_1_1_server_builder_option_html"><div class="ttname"><a href="classgrpc__impl_1_1_server_builder_option.html">grpc_impl::ServerBuilderOption</a></div><div class="ttdoc">Interface to pass an option to a ServerBuilder.</div><div class="ttdef"><b>Definition:</b> server_builder_option_impl.h:31</div></div>
 <div class="ttc" id="agrpcpp_2impl_2server__builder__option_8h_html"><div class="ttname"><a href="grpcpp_2impl_2server__builder__option_8h.html">server_builder_option.h</a></div></div>
-<div class="ttc" id="aclassgrpc__impl_1_1_channel_arguments_html"><div class="ttname"><a href="classgrpc__impl_1_1_channel_arguments.html">grpc_impl::ChannelArguments</a></div><div class="ttdoc">Options for channel creation.</div><div class="ttdef"><b>Definition:</b> channel_arguments_impl.h:43</div></div>
 <div class="ttc" id="agrpcpp_2support_2config_8h_html"><div class="ttname"><a href="grpcpp_2support_2config_8h.html">config.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_health_check_service_server_builder_option_html_a11d309e8f1809097e5defcaa386e6ce7"><div class="ttname"><a href="classgrpc_1_1_health_check_service_server_builder_option.html#a11d309e8f1809097e5defcaa386e6ce7">grpc::HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption</a></div><div class="ttdeci">HealthCheckServiceServerBuilderOption(std::unique_ptr&lt; HealthCheckServiceInterface &gt; hc)</div><div class="ttdoc">The ownership of hc will be taken and transferred to the grpc server.</div></div>
 <div class="ttc" id="aclassgrpc_1_1_health_check_service_server_builder_option_html_a2992017c359ca2512ffcf43a31c704fe"><div class="ttname"><a href="classgrpc_1_1_health_check_service_server_builder_option.html#a2992017c359ca2512ffcf43a31c704fe">grpc::HealthCheckServiceServerBuilderOption::~HealthCheckServiceServerBuilderOption</a></div><div class="ttdeci">~HealthCheckServiceServerBuilderOption() override</div><div class="ttdef"><b>Definition:</b> health_check_service_server_builder_option.h:36</div></div>
 <div class="ttc" id="aclassgrpc_1_1_health_check_service_server_builder_option_html_a194b4e3f33c4f7463098c919dab93fb6"><div class="ttname"><a href="classgrpc_1_1_health_check_service_server_builder_option.html#a194b4e3f33c4f7463098c919dab93fb6">grpc::HealthCheckServiceServerBuilderOption::UpdateArguments</a></div><div class="ttdeci">void UpdateArguments(ChannelArguments *args) override</div><div class="ttdoc">Alter the ChannelArguments used to create the gRPC server.</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Aug 18 2020 16:24:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Sep 12 2020 00:53:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

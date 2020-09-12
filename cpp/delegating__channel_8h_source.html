@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.31.1</span>
+   &#160;<span id="projectnumber">1.32.0</span>
    </div>
   </td>
  </tr>
@@ -111,8 +111,8 @@ $(function() {
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; <span class="keyword">private</span>:</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_call.html">internal::Call</a> CreateCall(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1internal_1_1_rpc_method.html">internal::RpcMethod</a>&amp; method,</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                            <a class="code" href="classgrpc__impl_1_1_client_context.html">ClientContext</a>* context,</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                            ::<a class="code" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a>* cq) <span class="keyword">final</span> {</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                            <a class="code" href="classgrpc_1_1_client_context.html">ClientContext</a>* context,</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                            ::<a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq) <span class="keyword">final</span> {</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classgrpc_1_1experimental_1_1_delegating_channel.html#ab0c2ff5604ca9d69ecf253b2aa060928">delegate_channel</a>()-&gt;CreateCall(method, context, cq);</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  }</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
@@ -127,7 +127,7 @@ $(function() {
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keywordtype">void</span> NotifyOnStateChangeImpl(<a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed,</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                               <a class="code" href="structgpr__timespec.html">gpr_timespec</a> deadline,</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                               ::<a class="code" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a>* cq,</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                               ::<a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq,</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                               <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <a class="code" href="classgrpc_1_1experimental_1_1_delegating_channel.html#ab0c2ff5604ca9d69ecf253b2aa060928">delegate_channel</a>()-&gt;NotifyOnStateChangeImpl(last_observed, deadline, cq,</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                                                tag);</div>
@@ -139,14 +139,14 @@ $(function() {
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  }</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  internal::Call CreateCallInternal(<span class="keyword">const</span> internal::RpcMethod&amp; method,</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                                    <a class="code" href="namespacegrpc.html#a35a61e2e00942ae1f40dda77413425ac">ClientContext</a>* context,</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                                    ::<a class="code" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a>* cq,</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                                    ClientContext* context,</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                                    ::<a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq,</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                                    <span class="keywordtype">size_t</span> interceptor_pos) <span class="keyword">final</span> {</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classgrpc_1_1experimental_1_1_delegating_channel.html#ab0c2ff5604ca9d69ecf253b2aa060928">delegate_channel</a>()-&gt;CreateCallInternal(method, context, cq,</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                                                  interceptor_pos);</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  }</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  <a class="code" href="classgrpc__impl_1_1_completion_queue.html">::grpc_impl::CompletionQueue</a>* CallbackCQ() final {</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  <a class="code" href="classgrpc_1_1_completion_queue.html">::grpc::CompletionQueue</a>* CallbackCQ() final {</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classgrpc_1_1experimental_1_1_delegating_channel.html#ab0c2ff5604ca9d69ecf253b2aa060928">delegate_channel</a>()-&gt;CallbackCQ();</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  }</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
@@ -160,22 +160,21 @@ $(function() {
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_delegating_channel_html_ade542e52407601f790dba8ebf4aaa6e3"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_delegating_channel.html#ade542e52407601f790dba8ebf4aaa6e3">grpc::experimental::DelegatingChannel::GetState</a></div><div class="ttdeci">grpc_connectivity_state GetState(bool try_to_connect) override</div><div class="ttdoc">Get the current channel state.</div><div class="ttdef"><b>Definition:</b> delegating_channel.h:32</div></div>
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">This header provides an object that reads bytes directly from a grpc::ByteBuffer, via the ZeroCopyInp...</div><div class="ttdef"><b>Definition:</b> alarm.h:24</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object.</div><div class="ttdef"><b>Definition:</b> call.h:38</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object.</div><div class="ttdef"><b>Definition:</b> call.h:35</div></div>
+<div class="ttc" id="aclassgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdoc">A ClientContext allows the person implementing a service client to:</div><div class="ttdef"><b>Definition:</b> client_context.h:195</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_delegating_channel_html_ab0c2ff5604ca9d69ecf253b2aa060928"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_delegating_channel.html#ab0c2ff5604ca9d69ecf253b2aa060928">grpc::experimental::DelegatingChannel::delegate_channel</a></div><div class="ttdeci">std::shared_ptr&lt;::grpc::ChannelInterface &gt; delegate_channel()</div><div class="ttdef"><b>Definition:</b> delegating_channel.h:36</div></div>
 <div class="ttc" id="aconnectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a></div><div class="ttdeci">grpc_connectivity_state</div><div class="ttdoc">Connectivity state of a channel.</div><div class="ttdef"><b>Definition:</b> connectivity_state.h:27</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_interface_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set_interface.html">grpc::internal::CallOpSetInterface</a></div><div class="ttdoc">An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the l...</div><div class="ttdef"><b>Definition:</b> call_op_set_interface.h:34</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_delegating_channel_html"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_delegating_channel.html">grpc::experimental::DelegatingChannel</a></div><div class="ttdef"><b>Definition:</b> delegating_channel.h:25</div></div>
 <div class="ttc" id="aclassgrpc_1_1_channel_interface_html"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a></div><div class="ttdoc">Codegen interface for grpc::Channel.</div><div class="ttdef"><b>Definition:</b> channel_interface.h:74</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_delegating_channel_html_aeaf488bd5445fccd0c1f1ed3ca6fe296"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_delegating_channel.html#aeaf488bd5445fccd0c1f1ed3ca6fe296">grpc::experimental::DelegatingChannel::DelegatingChannel</a></div><div class="ttdeci">DelegatingChannel(std::shared_ptr&lt;::grpc::ChannelInterface &gt; delegate_channel)</div><div class="ttdef"><b>Definition:</b> delegating_channel.h:29</div></div>
-<div class="ttc" id="aclassgrpc__impl_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue....</div><div class="ttdef"><b>Definition:</b> completion_queue_impl.h:103</div></div>
-<div class="ttc" id="aclassgrpc__impl_1_1_client_context_html"><div class="ttname"><a href="classgrpc__impl_1_1_client_context.html">grpc_impl::ClientContext</a></div><div class="ttdoc">A ClientContext allows the person implementing a service client to:</div><div class="ttdef"><b>Definition:</b> client_context_impl.h:184</div></div>
-<div class="ttc" id="anamespacegrpc_html_a35a61e2e00942ae1f40dda77413425ac"><div class="ttname"><a href="namespacegrpc.html#a35a61e2e00942ae1f40dda77413425ac">grpc::ClientContext</a></div><div class="ttdeci">::grpc_impl::ClientContext ClientContext</div><div class="ttdef"><b>Definition:</b> client_context.h:26</div></div>
+<div class="ttc" id="aclassgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue....</div><div class="ttdef"><b>Definition:</b> completion_queue.h:99</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_method_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a></div><div class="ttdoc">Descriptor of an RPC method.</div><div class="ttdef"><b>Definition:</b> rpc_method.h:29</div></div>
 <div class="ttc" id="astructgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec.</div><div class="ttdef"><b>Definition:</b> gpr_types.h:47</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_delegating_channel_html_aa47364e7dcc6665c8e9e8cb78352b375"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_delegating_channel.html#aa47364e7dcc6665c8e9e8cb78352b375">grpc::experimental::DelegatingChannel::~DelegatingChannel</a></div><div class="ttdeci">virtual ~DelegatingChannel()</div><div class="ttdef"><b>Definition:</b> delegating_channel.h:27</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Aug 18 2020 16:24:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Sep 12 2020 00:53:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

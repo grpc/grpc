@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.31.1</span>
+   &#160;<span id="projectnumber">1.32.0</span>
    </div>
   </td>
  </tr>
@@ -68,15 +68,16 @@ $(function() {
 <div class="contents">
 <div class="textblock"><p>Rules for implementors:</p><ol type="1">
 <li>Reads and Writes Must not succeed after Status has been delivered.</li>
-<li>OK Status is only delivered after all buffered messages are read.</li>
+<li>Status is only delivered after all buffered messages are read.</li>
 <li>Reads May continue to succeed after a failing write. However, once a write fails, all subsequent writes Must fail, and similarly, once a read fails, all subsequent reads Must fail.</li>
+<li>A non-OK status received from the server is not considered an error status.</li>
 <li>When an error status is known to the library, if the user asks for status, the library Should discard messages received in the library but not delivered to the user and then deliver the status. If the user does not ask for status but continues reading, the library Should deliver buffered messages before delivering status. The library MAY choose to implement the stricter version where errors cause all buffered messages to be dropped, but this is not a requirement. </li>
 </ol>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Aug 18 2020 16:24:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Sep 12 2020 00:53:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

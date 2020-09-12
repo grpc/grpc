@@ -1,6 +1,6 @@
 {
   "homepages": [],
-  "source_base_path": "/work/docfx",
+  "source_base_path": "/work/src/csharp/docfx",
   "xrefmap": "xrefmap.yml",
   "files": [
     {
@@ -858,7 +858,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Server.ServerPortCollection.html",
-          "hash": "FjpTmASYL4MIjQ3/emvaCA=="
+          "hash": "joe3fHTZC4Ei3ZZjpUGYxQ=="
         }
       },
       "is_incremental": false,
@@ -882,7 +882,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Server.html",
-          "hash": "hOahe9Ox58FxcTHtfttWFA=="
+          "hash": "+5+KwAq4BeoXIdXp+t8cSg=="
         }
       },
       "is_incremental": false,
@@ -1038,7 +1038,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Testing.TestCalls.html",
-          "hash": "lkD3d05YEs5/2JkouPjVXQ=="
+          "hash": "ODbOLICEKD3eEdwV4lguKQ=="
         }
       },
       "is_incremental": false,
@@ -1050,7 +1050,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Testing.TestServerCallContext.html",
-          "hash": "GhcpbHiNu/wgSpvn4dtPrQ=="
+          "hash": "xEpKjBYD4I4Cg3IYjdsH6w=="
         }
       },
       "is_incremental": false,
@@ -1170,7 +1170,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.VersionInfo.html",
-          "hash": "rLekseb+fdNwx2tRVGFejQ=="
+          "hash": "fLhShfvTp6neqCLIlMjJMQ=="
         }
       },
       "is_incremental": false,
@@ -1254,7 +1254,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Health.V1.HealthCheckRequest.html",
-          "hash": "5QpjSRpEiVYdb7FXkqTaSQ=="
+          "hash": "JBEFaAVGIIc3ytOgjyfZcg=="
         }
       },
       "is_incremental": false,
@@ -1290,7 +1290,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Health.V1.HealthCheckResponse.html",
-          "hash": "sWEUYtxefTGzVFbpJc+tew=="
+          "hash": "iYhS2XivXYiVEAeN28l/EQ=="
         }
       },
       "is_incremental": false,

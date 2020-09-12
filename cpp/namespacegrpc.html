@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.31.1</span>
+   &#160;<span id="projectnumber">1.32.0</span>
    </div>
   </td>
  </tr>
@@ -105,8 +105,26 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A sequence of bytes.  <a href="classgrpc_1_1_byte_buffer.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A call credentials object encapsulates the state needed by a client to authenticate with a server for a given call on a channel.  <a href="classgrpc_1_1_call_credentials.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel.html">Channel</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channels represent a connection to an endpoint. Created by <em>CreateChannel</em>.  <a href="classgrpc_1_1_channel.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options for channel creation.  <a href="classgrpc_1_1_channel_arguments.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A channel credentials object encapsulates all the state needed by a client to authenticate with a server for a given channel.  <a href="classgrpc_1_1_channel_credentials.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Codegen interface for <em><a class="el" href="namespacegrpc.html#a3c981ec4941ef822eb01ac99da53ca88">grpc::Channel</a></em>.  <a href="classgrpc_1_1_channel_interface.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Codegen interface for <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">grpc::Channel</a></em>.  <a href="classgrpc_1_1_channel_interface.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a> allows the person implementing a service client to:  <a href="classgrpc_1_1_client_context.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A thin wrapper around <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> (see src/core/lib/surface/completion_queue.h).  <a href="classgrpc_1_1_completion_queue.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen.html">CoreCodegen</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation of the core codegen interface.  <a href="classgrpc_1_1_core_codegen.html#details">More...</a><br /></td></tr>
@@ -125,6 +143,12 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The gRPC server uses this interface to expose the health checking service without depending on protobuf.  <a href="classgrpc_1_1_health_check_service_interface.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_health_check_service_server_builder_option.html">HealthCheckServiceServerBuilderOption</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_metadata_credentials_plugin.html">MetadataCredentialsPlugin</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">User defined metadata credentials.  <a href="classgrpc_1_1_metadata_credentials_plugin.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options for <em><a class="el" href="classgrpc_1_1_client_context.html#ab021a4148ce7847f20572da5758fd363" title="Create a new ClientContext as a child of an incoming server call, according to options (.">ClientContext::FromServerContext</a></em> specifying which traits from the <em>ServerContext</em> to propagate (copy) from it into a new <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em>.  <a href="classgrpc_1_1_propagation_options.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_proto_buffer_reader.html">ProtoBufferReader</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is a specialization of the protobuf class ZeroCopyInputStream The principle is to get one chunk of data at a time from the proto layer, with options to backup (re-see some bytes) or skip (forward past some bytes)  <a href="classgrpc_1_1_proto_buffer_reader.html#details">More...</a><br /></td></tr>
@@ -146,6 +170,12 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html">ServerBuilderPlugin</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This interface is meant for internal usage only.  <a href="classgrpc_1_1_server_builder_plugin.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A specific type of completion queue used by the processing of notifications by servers.  <a href="classgrpc_1_1_server_completion_queue.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper around <em>grpc_server_credentials</em>, a way to authenticate a server.  <a href="classgrpc_1_1_server_credentials.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html">ServerInterface</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html">Service</a></td></tr>
@@ -154,8 +184,11 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html">Slice</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A wrapper around <em><a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1].">grpc_slice</a></em>.  <a href="classgrpc_1_1_slice.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1_ssl_credentials_options.html">SslCredentialsOptions</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options used to build SslCredentials.  <a href="structgrpc_1_1_ssl_credentials_options.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html">SslServerCredentialsOptions</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options to create ServerCredentials with SSL.  <a href="structgrpc_1_1_ssl_server_credentials_options.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options to create <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server.">ServerCredentials</a> with SSL.  <a href="structgrpc_1_1_ssl_server_credentials_options.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_status.html">Status</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Did it work? If it didn't, why?  <a href="classgrpc_1_1_status.html#details">More...</a><br /></td></tr>
@@ -170,7 +203,7 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generic stubs provide a type-unaware interface to call gRPC methods by name.  <a href="classgrpc_1_1_templated_generic_stub.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_time_point.html">TimePoint</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">If you are trying to use <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a24cf4713366562fd4a1ff90434e23829" title="Read from the queue, blocking up to deadline (or the queue&#39;s shutdown).">CompletionQueue::AsyncNext</a> with a time class that isn't either <a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec.">gpr_timespec</a> or std::chrono::system_clock::time_point, you will most likely be looking at this comment as your compiler will have fired an error below.  <a href="classgrpc_1_1_time_point.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">If you are trying to use <a class="el" href="classgrpc_1_1_completion_queue.html#a290ddf3d96e6d1d5886580e60b0602b4" title="Read from the queue, blocking up to deadline (or the queue&#39;s shutdown).">CompletionQueue::AsyncNext</a> with a time class that isn't either <a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec.">gpr_timespec</a> or std::chrono::system_clock::time_point, you will most likely be looking at this comment as your compiler will have fired an error below.  <a href="classgrpc_1_1_time_point.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_time_point_3_01gpr__timespec_01_4.html">TimePoint&lt; gpr_timespec &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -184,8 +217,6 @@ Data Structures</h2></td></tr>
 Typedefs</h2></td></tr>
 <tr class="memitem:aee3d8adb603c57247f3bda0412d7b8a2"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_alarm.html">grpc_impl::Alarm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#aee3d8adb603c57247f3bda0412d7b8a2">Alarm</a></td></tr>
 <tr class="separator:aee3d8adb603c57247f3bda0412d7b8a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3c981ec4941ef822eb01ac99da53ca88"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_channel.html">grpc_impl::Channel</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a3c981ec4941ef822eb01ac99da53ca88">Channel</a></td></tr>
-<tr class="separator:a3c981ec4941ef822eb01ac99da53ca88"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a32fd0a2ccd1ad46eebf2fb7ad580684d"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_client_async_reader_writer.html">grpc_impl::ClientAsyncReaderWriter</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a32fd0a2ccd1ad46eebf2fb7ad580684d">GenericClientAsyncReaderWriter</a></td></tr>
 <tr class="separator:a32fd0a2ccd1ad46eebf2fb7ad580684d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0f6449923a71f91fcb5689834e17d650"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_client_async_response_reader.html">grpc_impl::ClientAsyncResponseReader</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a0f6449923a71f91fcb5689834e17d650">GenericClientAsyncResponseReader</a></td></tr>
@@ -245,14 +276,6 @@ Typedefs</h2></td></tr>
 <tr class="memitem:a99b28564fbe6f61a7ab5978e2966e79e"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
 <tr class="memitem:a99b28564fbe6f61a7ab5978e2966e79e"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a99b28564fbe6f61a7ab5978e2966e79e">ServerAsyncResponseWriter</a> = ::<a class="el" href="classgrpc__impl_1_1_server_async_response_writer.html">grpc_impl::ServerAsyncResponseWriter</a>&lt; W &gt;</td></tr>
 <tr class="separator:a99b28564fbe6f61a7ab5978e2966e79e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a35a61e2e00942ae1f40dda77413425ac"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_client_context.html">grpc_impl::ClientContext</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a35a61e2e00942ae1f40dda77413425ac">ClientContext</a></td></tr>
-<tr class="separator:a35a61e2e00942ae1f40dda77413425ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a435df62dda9f717a1021f088ca3b8e5a"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_propagation_options.html">grpc_impl::PropagationOptions</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a435df62dda9f717a1021f088ca3b8e5a">PropagationOptions</a></td></tr>
-<tr class="separator:a435df62dda9f717a1021f088ca3b8e5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9b59ae504113bf341ba9d1ae404b0cda"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a9b59ae504113bf341ba9d1ae404b0cda">CompletionQueue</a></td></tr>
-<tr class="separator:a9b59ae504113bf341ba9d1ae404b0cda"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0c1c7b6ed69c75973a22d19b268b8e96"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a0c1c7b6ed69c75973a22d19b268b8e96">ServerCompletionQueue</a></td></tr>
-<tr class="separator:a0c1c7b6ed69c75973a22d19b268b8e96"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab23a7f74e4fef64035c11941ba6c57c6"><td class="memItemLeft" align="right" valign="top">typedef std::pair&lt; <a class="el" href="classgrpc_1_1string__ref.html">string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">string_ref</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ab23a7f74e4fef64035c11941ba6c57c6">AuthProperty</a></td></tr>
 <tr class="separator:ab23a7f74e4fef64035c11941ba6c57c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a313a79de3d52893dd208c4efbf6662d2"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a313a79de3d52893dd208c4efbf6662d2">ServerContext</a></td></tr>
@@ -303,24 +326,8 @@ Typedefs</h2></td></tr>
 <tr class="separator:a7e2f3f7805afa04cec33030abd070bd8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a57ca69e6fb5d5dbcc7ad2f13f4b1c660"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_server_initializer.html">grpc_impl::ServerInitializer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a57ca69e6fb5d5dbcc7ad2f13f4b1c660">ServerInitializer</a></td></tr>
 <tr class="separator:a57ca69e6fb5d5dbcc7ad2f13f4b1c660"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaf2939b1b4a48aa00606f8e986bf21de"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_channel_credentials.html">grpc_impl::ChannelCredentials</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#aaf2939b1b4a48aa00606f8e986bf21de">ChannelCredentials</a></td></tr>
-<tr class="separator:aaf2939b1b4a48aa00606f8e986bf21de"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a342736b8414b0f55bf7154e0ddfaddd2"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_call_credentials.html">grpc_impl::CallCredentials</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a342736b8414b0f55bf7154e0ddfaddd2">CallCredentials</a></td></tr>
-<tr class="separator:a342736b8414b0f55bf7154e0ddfaddd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab5168b14aecc6de83c874a72b16d073e"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="structgrpc__impl_1_1_ssl_credentials_options.html">grpc_impl::SslCredentialsOptions</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ab5168b14aecc6de83c874a72b16d073e">SslCredentialsOptions</a></td></tr>
-<tr class="separator:ab5168b14aecc6de83c874a72b16d073e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac98f7fcdb6e918b043433c20197c20b6"><td class="memItemLeft" align="right" valign="top">typedef ::grpc_impl::SecureCallCredentials&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ac98f7fcdb6e918b043433c20197c20b6">SecureCallCredentials</a></td></tr>
-<tr class="separator:ac98f7fcdb6e918b043433c20197c20b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1870277cca7ed6ebac824ea43d6da689"><td class="memItemLeft" align="right" valign="top">typedef ::grpc_impl::SecureChannelCredentials&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a1870277cca7ed6ebac824ea43d6da689">SecureChannelCredentials</a></td></tr>
-<tr class="separator:a1870277cca7ed6ebac824ea43d6da689"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9db94ddbe0252efe09ab45f0de8abba8"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_metadata_credentials_plugin.html">grpc_impl::MetadataCredentialsPlugin</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a9db94ddbe0252efe09ab45f0de8abba8">MetadataCredentialsPlugin</a></td></tr>
-<tr class="separator:a9db94ddbe0252efe09ab45f0de8abba8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a22ea4b437affc5587998470b98f946d2"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_server_credentials.html">grpc_impl::ServerCredentials</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a22ea4b437affc5587998470b98f946d2">ServerCredentials</a></td></tr>
-<tr class="separator:a22ea4b437affc5587998470b98f946d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a28c99eb4f62e460502c80cf1e10a8fb4"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_server.html">grpc_impl::Server</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a28c99eb4f62e460502c80cf1e10a8fb4">Server</a></td></tr>
 <tr class="separator:a28c99eb4f62e460502c80cf1e10a8fb4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0fb985b4797b9d239bc8164ed1bad223"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_channel_arguments.html">grpc_impl::ChannelArguments</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a0fb985b4797b9d239bc8164ed1bad223">ChannelArguments</a></td></tr>
-<tr class="separator:a0fb985b4797b9d239bc8164ed1bad223"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -353,8 +360,14 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a56c6b2f4b47c206364829b6f49c46019"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt;::<a class="el" href="classgrpc__impl_1_1_channel.html">grpc_impl::Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a56c6b2f4b47c206364829b6f49c46019">CreateChannelInternal</a> (const std::string &amp;host, <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *c_channel, std::vector&lt; std::unique_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">experimental::ClientInterceptorFactoryInterface</a> &gt;&gt; interceptor_creators)</td></tr>
-<tr class="separator:a56c6b2f4b47c206364829b6f49c46019"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac987f6d57104a5491cd4500aa804b509"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ac987f6d57104a5491cd4500aa804b509">CreateChannelInternal</a> (const std::string &amp;host, <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *c_channel, std::vector&lt; std::unique_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">experimental::ClientInterceptorFactoryInterface</a> &gt;&gt; interceptor_creators)</td></tr>
+<tr class="separator:ac987f6d57104a5491cd4500aa804b509"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad62b23e19fdcd13898119cd94818616d"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ad62b23e19fdcd13898119cd94818616d">CreateChannel</a> (const grpc::string &amp;target, const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;creds)</td></tr>
+<tr class="memdesc:ad62b23e19fdcd13898119cd94818616d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> pointing to <em>target</em>.  <a href="namespacegrpc.html#ad62b23e19fdcd13898119cd94818616d">More...</a><br /></td></tr>
+<tr class="separator:ad62b23e19fdcd13898119cd94818616d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4a5c8a2c77389604feaa5d38cdd7b8d3"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a4a5c8a2c77389604feaa5d38cdd7b8d3">CreateCustomChannel</a> (const grpc::string &amp;target, const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;creds, const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;args)</td></tr>
+<tr class="memdesc:a4a5c8a2c77389604feaa5d38cdd7b8d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em>custom</em> <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> pointing to <em>target</em>.  <a href="namespacegrpc.html#a4a5c8a2c77389604feaa5d38cdd7b8d3">More...</a><br /></td></tr>
+<tr class="separator:a4a5c8a2c77389604feaa5d38cdd7b8d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a01f59be004e1eea1735cfb8de1d8b2e1"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a01f59be004e1eea1735cfb8de1d8b2e1">Version</a> ()</td></tr>
 <tr class="memdesc:a01f59be004e1eea1735cfb8de1d8b2e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return gRPC library version.  <a href="namespacegrpc.html#a01f59be004e1eea1735cfb8de1d8b2e1">More...</a><br /></td></tr>
 <tr class="separator:a01f59be004e1eea1735cfb8de1d8b2e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -405,6 +418,45 @@ Functions</h2></td></tr>
 <tr class="separator:a8b3b542af97e1ae35f327c7095d98369"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a12896f279762d0100669da708d466ec1"><td class="memItemLeft" align="right" valign="top">std::chrono::system_clock::time_point&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a12896f279762d0100669da708d466ec1">Timespec2Timepoint</a> (<a class="el" href="structgpr__timespec.html">gpr_timespec</a> t)</td></tr>
 <tr class="separator:a12896f279762d0100669da708d466ec1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac35304b324f751024bbffaf38c15647c"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ac35304b324f751024bbffaf38c15647c">CreateCustomChannel</a> (const grpc::string &amp;target, const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">grpc::ChannelCredentials</a> &gt; &amp;creds, const <a class="el" href="classgrpc_1_1_channel_arguments.html">grpc::ChannelArguments</a> &amp;args)</td></tr>
+<tr class="separator:ac35304b324f751024bbffaf38c15647c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6beb3ac70ff94bd2ebbd89b8f21d1f61"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61">GoogleDefaultCredentials</a> ()</td></tr>
+<tr class="memdesc:a6beb3ac70ff94bd2ebbd89b8f21d1f61"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds credentials with reasonable defaults.  <a href="namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61">More...</a><br /></td></tr>
+<tr class="separator:a6beb3ac70ff94bd2ebbd89b8f21d1f61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a845b0382cdd2c71ba8ca715643c38b94"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a845b0382cdd2c71ba8ca715643c38b94">SslCredentials</a> (const <a class="el" href="structgrpc_1_1_ssl_credentials_options.html">SslCredentialsOptions</a> &amp;options)</td></tr>
+<tr class="memdesc:a845b0382cdd2c71ba8ca715643c38b94"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds SSL Credentials given SSL specific options.  <a href="namespacegrpc.html#a845b0382cdd2c71ba8ca715643c38b94">More...</a><br /></td></tr>
+<tr class="separator:a845b0382cdd2c71ba8ca715643c38b94"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad9eda8fa85bd833730a40697278e9fe6"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ad9eda8fa85bd833730a40697278e9fe6">GoogleComputeEngineCredentials</a> ()</td></tr>
+<tr class="memdesc:ad9eda8fa85bd833730a40697278e9fe6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds credentials for use when running in GCE.  <a href="namespacegrpc.html#ad9eda8fa85bd833730a40697278e9fe6">More...</a><br /></td></tr>
+<tr class="separator:ad9eda8fa85bd833730a40697278e9fe6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a92a9f959d6102461f66ee973d8e9d3aa"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a92a9f959d6102461f66ee973d8e9d3aa">ServiceAccountJWTAccessCredentials</a> (const grpc::string &amp;json_key, long token_lifetime_seconds=<a class="el" href="namespacegrpc.html#a9b65a618d145857974b7defb40bed7a0">kMaxAuthTokenLifetimeSecs</a>)</td></tr>
+<tr class="memdesc:a92a9f959d6102461f66ee973d8e9d3aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds <a class="el" href="classgrpc_1_1_service.html" title="Desriptor of an RPC service and its various RPC methods.">Service</a> Account JWT Access credentials.  <a href="namespacegrpc.html#a92a9f959d6102461f66ee973d8e9d3aa">More...</a><br /></td></tr>
+<tr class="separator:a92a9f959d6102461f66ee973d8e9d3aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a96901c997b91bc6513b08491e0dca37c"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a96901c997b91bc6513b08491e0dca37c">GoogleRefreshTokenCredentials</a> (const grpc::string &amp;json_refresh_token)</td></tr>
+<tr class="memdesc:a96901c997b91bc6513b08491e0dca37c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds refresh token credentials.  <a href="namespacegrpc.html#a96901c997b91bc6513b08491e0dca37c">More...</a><br /></td></tr>
+<tr class="separator:a96901c997b91bc6513b08491e0dca37c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad3a80da696ffdaea943f0f858d7a360d"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ad3a80da696ffdaea943f0f858d7a360d">AccessTokenCredentials</a> (const grpc::string &amp;access_token)</td></tr>
+<tr class="memdesc:ad3a80da696ffdaea943f0f858d7a360d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds access token credentials.  <a href="namespacegrpc.html#ad3a80da696ffdaea943f0f858d7a360d">More...</a><br /></td></tr>
+<tr class="separator:ad3a80da696ffdaea943f0f858d7a360d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9fc1fc101b41e680d47028166e76f9d0"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a9fc1fc101b41e680d47028166e76f9d0">GoogleIAMCredentials</a> (const grpc::string &amp;authorization_token, const grpc::string &amp;authority_selector)</td></tr>
+<tr class="memdesc:a9fc1fc101b41e680d47028166e76f9d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds IAM credentials.  <a href="namespacegrpc.html#a9fc1fc101b41e680d47028166e76f9d0">More...</a><br /></td></tr>
+<tr class="separator:a9fc1fc101b41e680d47028166e76f9d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a15b2ab0930231bc9142a6e63a9cc8219"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a15b2ab0930231bc9142a6e63a9cc8219">CompositeChannelCredentials</a> (const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;channel_creds, const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt; &amp;call_creds)</td></tr>
+<tr class="memdesc:a15b2ab0930231bc9142a6e63a9cc8219"><td class="mdescLeft">&#160;</td><td class="mdescRight">Combines a channel credentials and a call credentials into a composite channel credentials.  <a href="namespacegrpc.html#a15b2ab0930231bc9142a6e63a9cc8219">More...</a><br /></td></tr>
+<tr class="separator:a15b2ab0930231bc9142a6e63a9cc8219"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc351fe5f823440fd2928a7dc65236f4"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#adc351fe5f823440fd2928a7dc65236f4">CompositeCallCredentials</a> (const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt; &amp;creds1, const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt; &amp;creds2)</td></tr>
+<tr class="memdesc:adc351fe5f823440fd2928a7dc65236f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Combines two call credentials objects into a composite call credentials.  <a href="namespacegrpc.html#adc351fe5f823440fd2928a7dc65236f4">More...</a><br /></td></tr>
+<tr class="separator:adc351fe5f823440fd2928a7dc65236f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a72a5e2e0be4aa041cb587bea339589d7"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a72a5e2e0be4aa041cb587bea339589d7">InsecureChannelCredentials</a> ()</td></tr>
+<tr class="memdesc:a72a5e2e0be4aa041cb587bea339589d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Credentials for an unencrypted, unauthenticated channel.  <a href="namespacegrpc.html#a72a5e2e0be4aa041cb587bea339589d7">More...</a><br /></td></tr>
+<tr class="separator:a72a5e2e0be4aa041cb587bea339589d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a823c6a4b19ffc71fb33e90154ee2ad07"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a823c6a4b19ffc71fb33e90154ee2ad07">MetadataCredentialsFromPlugin</a> (std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_metadata_credentials_plugin.html">MetadataCredentialsPlugin</a> &gt; plugin)</td></tr>
+<tr class="separator:a823c6a4b19ffc71fb33e90154ee2ad07"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a58c19329766a61e325450888aacef0ad"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a58c19329766a61e325450888aacef0ad">SslServerCredentials</a> (const <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html">grpc::SslServerCredentialsOptions</a> &amp;options)</td></tr>
+<tr class="memdesc:a58c19329766a61e325450888aacef0ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds SSL <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server.">ServerCredentials</a> given SSL specific options.  <a href="namespacegrpc.html#a58c19329766a61e325450888aacef0ad">More...</a><br /></td></tr>
+<tr class="separator:a58c19329766a61e325450888aacef0ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8c26768567516f22852d7ccc09c7940"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#aa8c26768567516f22852d7ccc09c7940">InsecureServerCredentials</a> ()</td></tr>
+<tr class="separator:aa8c26768567516f22852d7ccc09c7940"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -417,8 +469,7 @@ Variables</h2></td></tr>
 <tr class="separator:ae98af9599a8d1a02e75bae1a9250e1dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9e62f19b6ee525513cb6259988c319a6"><td class="memItemLeft" align="right" valign="top">const int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a9e62f19b6ee525513cb6259988c319a6">kProtoBufferWriterMaxBufferLength</a> = 1024 * 1024</td></tr>
 <tr class="separator:a9e62f19b6ee525513cb6259988c319a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9b65a618d145857974b7defb40bed7a0"><td class="memItemLeft" align="right" valign="top">constexpr long&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a9b65a618d145857974b7defb40bed7a0">kMaxAuthTokenLifetimeSecs</a></td></tr>
-<tr class="memdesc:a9b65a618d145857974b7defb40bed7a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constant for maximum auth token lifetime.  <a href="namespacegrpc.html#a9b65a618d145857974b7defb40bed7a0">More...</a><br /></td></tr>
+<tr class="memitem:a9b65a618d145857974b7defb40bed7a0"><td class="memItemLeft" align="right" valign="top">constexpr long&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a9b65a618d145857974b7defb40bed7a0">kMaxAuthTokenLifetimeSecs</a> = 3600</td></tr>
 <tr class="separator:a9b65a618d145857974b7defb40bed7a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -448,62 +499,6 @@ Variables</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">typedef std::pair&lt;<a class="el" href="classgrpc_1_1string__ref.html">string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">string_ref</a>&gt; <a class="el" href="namespacegrpc.html#ab23a7f74e4fef64035c11941ba6c57c6">grpc::AuthProperty</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a342736b8414b0f55bf7154e0ddfaddd2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a342736b8414b0f55bf7154e0ddfaddd2">&#9670;&nbsp;</a></span>CallCredentials</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef ::<a class="el" href="classgrpc__impl_1_1_call_credentials.html">grpc_impl::CallCredentials</a> <a class="el" href="namespacegrpc.html#a342736b8414b0f55bf7154e0ddfaddd2">grpc::CallCredentials</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a3c981ec4941ef822eb01ac99da53ca88"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3c981ec4941ef822eb01ac99da53ca88">&#9670;&nbsp;</a></span>Channel</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef ::<a class="el" href="classgrpc__impl_1_1_channel.html">grpc_impl::Channel</a> <a class="el" href="namespacegrpc.html#a3c981ec4941ef822eb01ac99da53ca88">grpc::Channel</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a0fb985b4797b9d239bc8164ed1bad223"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0fb985b4797b9d239bc8164ed1bad223">&#9670;&nbsp;</a></span>ChannelArguments</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef ::<a class="el" href="classgrpc__impl_1_1_channel_arguments.html">grpc_impl::ChannelArguments</a> <a class="el" href="namespacegrpc.html#a0fb985b4797b9d239bc8164ed1bad223">grpc::ChannelArguments</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aaf2939b1b4a48aa00606f8e986bf21de"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaf2939b1b4a48aa00606f8e986bf21de">&#9670;&nbsp;</a></span>ChannelCredentials</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef ::<a class="el" href="classgrpc__impl_1_1_channel_credentials.html">grpc_impl::ChannelCredentials</a> <a class="el" href="namespacegrpc.html#aaf2939b1b4a48aa00606f8e986bf21de">grpc::ChannelCredentials</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -638,20 +633,6 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
-<a id="a35a61e2e00942ae1f40dda77413425ac"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a35a61e2e00942ae1f40dda77413425ac">&#9670;&nbsp;</a></span>ClientContext</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef ::<a class="el" href="classgrpc__impl_1_1_client_context.html">grpc_impl::ClientContext</a> <a class="el" href="namespacegrpc.html#a35a61e2e00942ae1f40dda77413425ac">grpc::ClientContext</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a4144d6e8c51b6be7603bd95d09153a68"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4144d6e8c51b6be7603bd95d09153a68">&#9670;&nbsp;</a></span>ClientReader</h2>
 
@@ -742,20 +723,6 @@ template&lt;class W &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">using <a class="el" href="namespacegrpc.html#aa2d9bbe1da6566b30d25954d2a7e44fb">grpc::ClientWriterInterface</a> = typedef ::<a class="el" href="classgrpc__impl_1_1_client_writer_interface.html">grpc_impl::ClientWriterInterface</a>&lt;W&gt;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a9b59ae504113bf341ba9d1ae404b0cda"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9b59ae504113bf341ba9d1ae404b0cda">&#9670;&nbsp;</a></span>CompletionQueue</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef ::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> <a class="el" href="namespacegrpc.html#a9b59ae504113bf341ba9d1ae404b0cda">grpc::CompletionQueue</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -854,62 +821,6 @@ template&lt;class W &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">typedef <a class="el" href="classgrpc_1_1_templated_generic_stub.html">TemplatedGenericStub</a>&lt;<a class="el" href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a>&gt; <a class="el" href="namespacegrpc.html#ac44a8983b461983cc7a1d67119a606ac">grpc::GenericStub</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a9db94ddbe0252efe09ab45f0de8abba8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9db94ddbe0252efe09ab45f0de8abba8">&#9670;&nbsp;</a></span>MetadataCredentialsPlugin</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef::grpc_impl::MetadataCredentialsPlugin <a class="el" href="namespacegrpc.html#a9db94ddbe0252efe09ab45f0de8abba8">grpc::MetadataCredentialsPlugin</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a435df62dda9f717a1021f088ca3b8e5a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a435df62dda9f717a1021f088ca3b8e5a">&#9670;&nbsp;</a></span>PropagationOptions</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef ::<a class="el" href="classgrpc__impl_1_1_propagation_options.html">grpc_impl::PropagationOptions</a> <a class="el" href="namespacegrpc.html#a435df62dda9f717a1021f088ca3b8e5a">grpc::PropagationOptions</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ac98f7fcdb6e918b043433c20197c20b6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac98f7fcdb6e918b043433c20197c20b6">&#9670;&nbsp;</a></span>SecureCallCredentials</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef ::grpc_impl::SecureCallCredentials <a class="el" href="namespacegrpc.html#ac98f7fcdb6e918b043433c20197c20b6">grpc::SecureCallCredentials</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a1870277cca7ed6ebac824ea43d6da689"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1870277cca7ed6ebac824ea43d6da689">&#9670;&nbsp;</a></span>SecureChannelCredentials</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef ::grpc_impl::SecureChannelCredentials <a class="el" href="namespacegrpc.html#a1870277cca7ed6ebac824ea43d6da689">grpc::SecureChannelCredentials</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1056,20 +967,6 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
-<a id="a0c1c7b6ed69c75973a22d19b268b8e96"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0c1c7b6ed69c75973a22d19b268b8e96">&#9670;&nbsp;</a></span>ServerCompletionQueue</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef ::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a> <a class="el" href="namespacegrpc.html#a0c1c7b6ed69c75973a22d19b268b8e96">grpc::ServerCompletionQueue</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a313a79de3d52893dd208c4efbf6662d2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a313a79de3d52893dd208c4efbf6662d2">&#9670;&nbsp;</a></span>ServerContext</h2>
 
@@ -1078,20 +975,6 @@ template&lt;class W &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">typedef ::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> <a class="el" href="namespacegrpc.html#a313a79de3d52893dd208c4efbf6662d2">grpc::ServerContext</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a22ea4b437affc5587998470b98f946d2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a22ea4b437affc5587998470b98f946d2">&#9670;&nbsp;</a></span>ServerCredentials</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef ::<a class="el" href="classgrpc__impl_1_1_server_credentials.html">grpc_impl::ServerCredentials</a> <a class="el" href="namespacegrpc.html#a22ea4b437affc5587998470b98f946d2">grpc::ServerCredentials</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1240,20 +1123,6 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
-<a id="ab5168b14aecc6de83c874a72b16d073e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab5168b14aecc6de83c874a72b16d073e">&#9670;&nbsp;</a></span>SslCredentialsOptions</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef ::<a class="el" href="structgrpc__impl_1_1_ssl_credentials_options.html">grpc_impl::SslCredentialsOptions</a> <a class="el" href="namespacegrpc.html#ab5168b14aecc6de83c874a72b16d073e">grpc::SslCredentialsOptions</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
 <a id="aff1730578c90160528f6a8d67ef5c43b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aff1730578c90160528f6a8d67ef5c43b">&#9670;&nbsp;</a></span>StatusCode</h2>
@@ -1322,6 +1191,88 @@ template&lt;class W &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="ad3a80da696ffdaea943f0f858d7a360d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad3a80da696ffdaea943f0f858d7a360d">&#9670;&nbsp;</a></span>AccessTokenCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a>&gt; grpc::AccessTokenCredentials </td>
+          <td>(</td>
+          <td class="paramtype">const grpc::string &amp;&#160;</td>
+          <td class="paramname"><em>access_token</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds access token credentials. </p>
+<p>access_token is an oauth2 access token that was fetched using an out of band mechanism.</p>
+<dl class="section warning"><dt>Warning</dt><dd>Only use these credentials when connecting to a Google endpoint. Using these credentials to connect to any other service may result in this service being able to impersonate your client for requests to Google services. </dd></dl>
+
+</div>
+</div>
+<a id="adc351fe5f823440fd2928a7dc65236f4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adc351fe5f823440fd2928a7dc65236f4">&#9670;&nbsp;</a></span>CompositeCallCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a>&gt; grpc::CompositeCallCredentials </td>
+          <td>(</td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>creds1</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>creds2</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Combines two call credentials objects into a composite call credentials. </p>
+
+</div>
+</div>
+<a id="a15b2ab0930231bc9142a6e63a9cc8219"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a15b2ab0930231bc9142a6e63a9cc8219">&#9670;&nbsp;</a></span>CompositeChannelCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a>&gt; grpc::CompositeChannelCredentials </td>
+          <td>(</td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>channel_creds</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>call_creds</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Combines a channel credentials and a call credentials into a composite channel credentials. </p>
+
+</div>
+</div>
 <a id="a15df427a035a58013d9db2f432ebda33"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a15df427a035a58013d9db2f432ebda33">&#9670;&nbsp;</a></span>CreateAuthContext()</h2>
 
@@ -1340,14 +1291,51 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
-<a id="a56c6b2f4b47c206364829b6f49c46019"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a56c6b2f4b47c206364829b6f49c46019">&#9670;&nbsp;</a></span>CreateChannelInternal()</h2>
+<a id="ad62b23e19fdcd13898119cd94818616d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad62b23e19fdcd13898119cd94818616d">&#9670;&nbsp;</a></span>CreateChannel()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::shared_ptr&lt;::<a class="el" href="classgrpc__impl_1_1_channel.html">grpc_impl::Channel</a>&gt; grpc::CreateChannelInternal </td>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel.html">Channel</a>&gt; grpc::CreateChannel </td>
+          <td>(</td>
+          <td class="paramtype">const grpc::string &amp;&#160;</td>
+          <td class="paramname"><em>target</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>creds</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a new <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> pointing to <em>target</em>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">target</td><td>The URI of the endpoint to connect to. </td></tr>
+    <tr><td class="paramname">creds</td><td>Credentials to use for the created channel. If it does not hold an object or is invalid, a lame channel (one on which all operations fail) is returned. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ac987f6d57104a5491cd4500aa804b509"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac987f6d57104a5491cd4500aa804b509">&#9670;&nbsp;</a></span>CreateChannelInternal()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel.html">Channel</a>&gt; grpc::CreateChannelInternal </td>
           <td>(</td>
           <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>host</em>, </td>
@@ -1363,6 +1351,85 @@ template&lt;class W &gt; </div>
           <td></td>
           <td class="paramtype">std::vector&lt; std::unique_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">experimental::ClientInterceptorFactoryInterface</a> &gt;&gt;&#160;</td>
           <td class="paramname"><em>interceptor_creators</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a4a5c8a2c77389604feaa5d38cdd7b8d3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4a5c8a2c77389604feaa5d38cdd7b8d3">&#9670;&nbsp;</a></span>CreateCustomChannel() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel.html">Channel</a>&gt; grpc::CreateCustomChannel </td>
+          <td>(</td>
+          <td class="paramtype">const grpc::string &amp;&#160;</td>
+          <td class="paramname"><em>target</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>creds</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;&#160;</td>
+          <td class="paramname"><em>args</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a new <em>custom</em> <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> pointing to <em>target</em>. </p>
+<dl class="section warning"><dt>Warning</dt><dd>For advanced use and testing ONLY. Override default channel arguments only if necessary.</dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">target</td><td>The URI of the endpoint to connect to. </td></tr>
+    <tr><td class="paramname">creds</td><td>Credentials to use for the created channel. If it does not hold an object or is invalid, a lame channel (one on which all operations fail) is returned. </td></tr>
+    <tr><td class="paramname">args</td><td>Options for channel creation. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ac35304b324f751024bbffaf38c15647c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac35304b324f751024bbffaf38c15647c">&#9670;&nbsp;</a></span>CreateCustomChannel() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel.html">Channel</a>&gt; grpc::CreateCustomChannel </td>
+          <td>(</td>
+          <td class="paramtype">const grpc::string &amp;&#160;</td>
+          <td class="paramname"><em>target</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">grpc::ChannelCredentials</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>creds</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_channel_arguments.html">grpc::ChannelArguments</a> &amp;&#160;</td>
+          <td class="paramname"><em>args</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -1481,6 +1548,135 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 
 </div>
 </div>
+<a id="ad9eda8fa85bd833730a40697278e9fe6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad9eda8fa85bd833730a40697278e9fe6">&#9670;&nbsp;</a></span>GoogleComputeEngineCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a>&gt; grpc::GoogleComputeEngineCredentials </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds credentials for use when running in GCE. </p>
+<dl class="section warning"><dt>Warning</dt><dd>Only use these credentials when connecting to a Google endpoint. Using these credentials to connect to any other service may result in this service being able to impersonate your client for requests to Google services. </dd></dl>
+
+</div>
+</div>
+<a id="a6beb3ac70ff94bd2ebbd89b8f21d1f61"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6beb3ac70ff94bd2ebbd89b8f21d1f61">&#9670;&nbsp;</a></span>GoogleDefaultCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a>&gt; grpc::GoogleDefaultCredentials </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds credentials with reasonable defaults. </p>
+<dl class="section warning"><dt>Warning</dt><dd>Only use these credentials when connecting to a Google endpoint. Using these credentials to connect to any other service may result in this service being able to impersonate your client for requests to Google services. </dd></dl>
+
+</div>
+</div>
+<a id="a9fc1fc101b41e680d47028166e76f9d0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9fc1fc101b41e680d47028166e76f9d0">&#9670;&nbsp;</a></span>GoogleIAMCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a>&gt; grpc::GoogleIAMCredentials </td>
+          <td>(</td>
+          <td class="paramtype">const grpc::string &amp;&#160;</td>
+          <td class="paramname"><em>authorization_token</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const grpc::string &amp;&#160;</td>
+          <td class="paramname"><em>authority_selector</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds IAM credentials. </p>
+<dl class="section warning"><dt>Warning</dt><dd>Only use these credentials when connecting to a Google endpoint. Using these credentials to connect to any other service may result in this service being able to impersonate your client for requests to Google services. </dd></dl>
+
+</div>
+</div>
+<a id="a96901c997b91bc6513b08491e0dca37c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a96901c997b91bc6513b08491e0dca37c">&#9670;&nbsp;</a></span>GoogleRefreshTokenCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a>&gt; grpc::GoogleRefreshTokenCredentials </td>
+          <td>(</td>
+          <td class="paramtype">const grpc::string &amp;&#160;</td>
+          <td class="paramname"><em>json_refresh_token</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds refresh token credentials. </p>
+<p>json_refresh_token is the JSON string containing the refresh token along with a client_id and client_secret.</p>
+<dl class="section warning"><dt>Warning</dt><dd>Only use these credentials when connecting to a Google endpoint. Using these credentials to connect to any other service may result in this service being able to impersonate your client for requests to Google services. </dd></dl>
+
+</div>
+</div>
+<a id="a72a5e2e0be4aa041cb587bea339589d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a72a5e2e0be4aa041cb587bea339589d7">&#9670;&nbsp;</a></span>InsecureChannelCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a>&gt; grpc::InsecureChannelCredentials </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Credentials for an unencrypted, unauthenticated channel. </p>
+
+</div>
+</div>
+<a id="aa8c26768567516f22852d7ccc09c7940"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa8c26768567516f22852d7ccc09c7940">&#9670;&nbsp;</a></span>InsecureServerCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a>&gt; grpc::InsecureServerCredentials </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a4dc9eb1be102cfc985d2d9f7fe8152fc"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4dc9eb1be102cfc985d2d9f7fe8152fc">&#9670;&nbsp;</a></span>MakeChannelArgumentOption() <span class="overload">[1/2]</span></h2>
 
@@ -1531,6 +1727,24 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
           <td></td>
           <td>)</td>
           <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a823c6a4b19ffc71fb33e90154ee2ad07"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a823c6a4b19ffc71fb33e90154ee2ad07">&#9670;&nbsp;</a></span>MetadataCredentialsFromPlugin()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a>&gt; grpc::MetadataCredentialsFromPlugin </td>
+          <td>(</td>
+          <td class="paramtype">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_metadata_credentials_plugin.html">MetadataCredentialsPlugin</a> &gt;&#160;</td>
+          <td class="paramname"><em>plugin</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1791,6 +2005,37 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 
 </div>
 </div>
+<a id="a92a9f959d6102461f66ee973d8e9d3aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a92a9f959d6102461f66ee973d8e9d3aa">&#9670;&nbsp;</a></span>ServiceAccountJWTAccessCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a>&gt; grpc::ServiceAccountJWTAccessCredentials </td>
+          <td>(</td>
+          <td class="paramtype">const grpc::string &amp;&#160;</td>
+          <td class="paramname"><em>json_key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">long&#160;</td>
+          <td class="paramname"><em>token_lifetime_seconds</em> = <code><a class="el" href="namespacegrpc.html#a9b65a618d145857974b7defb40bed7a0">kMaxAuthTokenLifetimeSecs</a></code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds <a class="el" href="classgrpc_1_1_service.html" title="Desriptor of an RPC service and its various RPC methods.">Service</a> Account JWT Access credentials. </p>
+<p>json_key is the JSON key string containing the client's private key. token_lifetime_seconds is the lifetime in seconds of each Json Web Token (JWT) created with this credentials. It should not exceed <em>kMaxAuthTokenLifetimeSecs</em> or will be cropped to this value. </p>
+
+</div>
+</div>
 <a id="a0307c92f3128c6cb1574393cb17d2526"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0307c92f3128c6cb1574393cb17d2526">&#9670;&nbsp;</a></span>SliceFromCopiedString()</h2>
 
@@ -1840,6 +2085,46 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="a845b0382cdd2c71ba8ca715643c38b94"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a845b0382cdd2c71ba8ca715643c38b94">&#9670;&nbsp;</a></span>SslCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a>&gt; grpc::SslCredentials </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structgrpc_1_1_ssl_credentials_options.html">SslCredentialsOptions</a> &amp;&#160;</td>
+          <td class="paramname"><em>options</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds SSL Credentials given SSL specific options. </p>
+
+</div>
+</div>
+<a id="a58c19329766a61e325450888aacef0ad"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a58c19329766a61e325450888aacef0ad">&#9670;&nbsp;</a></span>SslServerCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a>&gt; grpc::SslServerCredentials </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html">grpc::SslServerCredentialsOptions</a> &amp;&#160;</td>
+          <td class="paramname"><em>options</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds SSL <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server.">ServerCredentials</a> given SSL specific options. </p>
 
 </div>
 </div>
@@ -2045,7 +2330,7 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">constexpr long grpc::kMaxAuthTokenLifetimeSecs</td>
+          <td class="memname">constexpr long grpc::kMaxAuthTokenLifetimeSecs = 3600</td>
         </tr>
       </table>
   </td>
@@ -2054,10 +2339,6 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line">=</div>
-<div class="line">    <a class="code" href="namespacegrpc.html#a9b65a618d145857974b7defb40bed7a0">::grpc_impl::kMaxAuthTokenLifetimeSecs</a></div>
-</div><!-- fragment -->
-<p>Constant for maximum auth token lifetime. </p>
 
 </div>
 </div>
@@ -2076,10 +2357,9 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 </div>
 </div>
 </div><!-- contents -->
-<div class="ttc" id="anamespacegrpc_html_a9b65a618d145857974b7defb40bed7a0"><div class="ttname"><a href="namespacegrpc.html#a9b65a618d145857974b7defb40bed7a0">grpc::kMaxAuthTokenLifetimeSecs</a></div><div class="ttdeci">constexpr long kMaxAuthTokenLifetimeSecs</div><div class="ttdoc">Constant for maximum auth token lifetime.</div><div class="ttdef"><b>Definition:</b> credentials.h:49</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Aug 18 2020 16:24:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Sep 12 2020 00:53:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

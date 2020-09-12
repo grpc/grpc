@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['writerinterface_3771',['WriterInterface',['../namespacegrpc_1_1internal.html#a3f5e43bab9f23976dbe6cb2e072a0e00',1,'grpc::internal']]]
+  ['zerocopyinputstream_3741',['ZeroCopyInputStream',['../namespacegrpc_1_1protobuf_1_1io.html#ae16bb38d6b730de308f0be4eb43931b4',1,'grpc::protobuf::io']]],
+  ['zerocopyoutputstream_3742',['ZeroCopyOutputStream',['../namespacegrpc_1_1protobuf_1_1io.html#aafcf83341d287d00418952374bc82ce1',1,'grpc::protobuf::io']]]
 ];

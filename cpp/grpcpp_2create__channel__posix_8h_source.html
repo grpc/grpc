@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.31.1</span>
+   &#160;<span id="projectnumber">1.32.0</span>
    </div>
   </td>
  </tr>
@@ -105,13 +105,13 @@ $(function() {
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    <span class="keyword">const</span> std::string&amp; target, <span class="keywordtype">int</span> fd);</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;std::shared_ptr&lt;grpc::Channel&gt; CreateCustomInsecureChannelFromFd(</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keyword">const</span> std::string&amp; target, <span class="keywordtype">int</span> fd, <span class="keyword">const</span> <a class="code" href="classgrpc__impl_1_1_channel_arguments.html">grpc::ChannelArguments</a>&amp; args);</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keyword">const</span> std::string&amp; target, <span class="keywordtype">int</span> fd, <span class="keyword">const</span> <a class="code" href="classgrpc_1_1_channel_arguments.html">grpc::ChannelArguments</a>&amp; args);</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">namespace </span>experimental {</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;std::shared_ptr&lt;grpc::Channel&gt;</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;CreateCustomInsecureChannelWithInterceptorsFromFd(</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">const</span> std::string&amp; target, <span class="keywordtype">int</span> fd, <span class="keyword">const</span> <a class="code" href="classgrpc__impl_1_1_channel_arguments.html">grpc::ChannelArguments</a>&amp; args,</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">const</span> std::string&amp; target, <span class="keywordtype">int</span> fd, <span class="keyword">const</span> <a class="code" href="classgrpc_1_1_channel_arguments.html">grpc::ChannelArguments</a>&amp; args,</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    std::unique_ptr&lt;std::vector&lt;</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        std::unique_ptr&lt;grpc::experimental::ClientInterceptorFactoryInterface&gt;&gt;&gt;</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        interceptor_creators);</div>
@@ -125,13 +125,13 @@ $(function() {
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="preprocessor">#endif  // GRPCPP_CREATE_CHANNEL_POSIX_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">This header provides an object that reads bytes directly from a grpc::ByteBuffer, via the ZeroCopyInp...</div><div class="ttdef"><b>Definition:</b> alarm.h:24</div></div>
+<div class="ttc" id="aclassgrpc_1_1_channel_arguments_html"><div class="ttname"><a href="classgrpc_1_1_channel_arguments.html">grpc::ChannelArguments</a></div><div class="ttdoc">Options for channel creation.</div><div class="ttdef"><b>Definition:</b> channel_arguments.h:39</div></div>
 <div class="ttc" id="agrpcpp_2support_2channel__arguments_8h_html"><div class="ttname"><a href="grpcpp_2support_2channel__arguments_8h.html">channel_arguments.h</a></div></div>
-<div class="ttc" id="aclassgrpc__impl_1_1_channel_arguments_html"><div class="ttname"><a href="classgrpc__impl_1_1_channel_arguments.html">grpc_impl::ChannelArguments</a></div><div class="ttdoc">Options for channel creation.</div><div class="ttdef"><b>Definition:</b> channel_arguments_impl.h:43</div></div>
 <div class="ttc" id="agrpcpp_2channel_8h_html"><div class="ttname"><a href="grpcpp_2channel_8h.html">channel.h</a></div></div>
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Aug 18 2020 16:24:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Sep 12 2020 00:53:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
