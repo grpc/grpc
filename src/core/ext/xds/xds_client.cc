@@ -917,8 +917,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     auto& state = lds_state.subscribed_resources[listener_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] LDS resource %s: route_config_name=%s",
+      gpr_log(GPR_INFO, "[xds_client %p] LDS resource %s: route_config_name=%s",
               xds_client(), listener_name.c_str(),
               (!lds_update.route_config_name.empty()
                    ? lds_update.route_config_name.c_str()
@@ -1126,11 +1125,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     auto& state = eds_state.subscribed_resources[eds_service_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-// FIXME: implement EdsUpdate::ToString()
       gpr_log(GPR_INFO,
               "[xds_client %p] EDS resource \"%s\": %" PRIuPTR
-              " priorities and %" PRIuPTR
-              " drop categories (drop_all=%d)",
+              " priorities and %" PRIuPTR " drop categories (drop_all=%d)",
               xds_client(), eds_service_name,
               eds_update.priority_list_update.size(),
               eds_update.drop_config->drop_category_list().size(),
@@ -1950,8 +1947,8 @@ void XdsClient::WatchRouteConfigData(
   if (route_config_state.update.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
-              "[xds_client %p] returning cached route config data for %s",
-              this, route_config_name_str.c_str());
+              "[xds_client %p] returning cached route config data for %s", this,
+              route_config_name_str.c_str());
     }
     w->OnRouteConfigChanged(*route_config_state.update);
   }

@@ -465,8 +465,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 
 void XdsResolver::StartLocked() {
   grpc_error* error = GRPC_ERROR_NONE;
-  xds_client_ = MakeOrphanable<XdsClient>(
-      work_serializer(), server_name_, *args_, &error);
+  xds_client_ = MakeOrphanable<XdsClient>(work_serializer(), server_name_,
+                                          *args_, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
@@ -490,8 +490,8 @@ void XdsResolver::ShutdownLocked() {
                                          /*delay_unsubscription=*/false);
   }
   if (route_config_watcher_ != nullptr) {
-    xds_client_->CancelRouteConfigDataWatch(
-        server_name_, route_config_watcher_, /*delay_unsubscription=*/false);
+    xds_client_->CancelRouteConfigDataWatch(server_name_, route_config_watcher_,
+                                            /*delay_unsubscription=*/false);
   }
   grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
                                    interested_parties_);
@@ -505,7 +505,8 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   if (vhost == nullptr) {
     OnError(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("could not find VirtualHost for ", server_name_,
-                     " in RouteConfiguration").c_str()));
+                     " in RouteConfiguration")
+            .c_str()));
     return;
   }
   // Save the list of routes in the resolver.

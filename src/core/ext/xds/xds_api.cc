@@ -1641,8 +1641,9 @@ grpc_error* LdsResponseParse(
     }
     // Fail if listener name is duplicated.
     if (lds_update_map->find(listener_name) != lds_update_map->end()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
-          "duplicate listener name \"", listener_name, "\"").c_str());
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate listener name \"", listener_name, "\"")
+              .c_str());
     }
     XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name];
     // Get api_listener and decode it to http_connection_manager.
@@ -1738,8 +1739,10 @@ grpc_error* RdsResponseParse(
     }
     // Fail if route config name is duplicated.
     if (rds_update_map->find(route_config_name) != rds_update_map->end()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
-          "duplicate route config name \"", route_config_name, "\"").c_str());
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate route config name \"", route_config_name,
+                       "\"")
+              .c_str());
     }
     // Parse the route_config.
     XdsApi::RdsUpdate& rds_update =
