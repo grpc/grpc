@@ -101,7 +101,9 @@ class XdsResolver : public Resolver {
 
     ClusterState(const std::string& cluster_name,
                  ClusterStateMap* cluster_state_map)
-        : it_(cluster_state_map->emplace(cluster_name, this).first) {}
+        : it_(cluster_state_map
+                  ->emplace(cluster_name, std::unique_ptr<ClusterState>(this))
+                  .first) {}
     const std::string& cluster() const { return it_->first; }
 
    private:
