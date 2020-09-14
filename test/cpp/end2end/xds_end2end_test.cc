@@ -766,19 +766,22 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                       request.DebugString().c_str());
               const std::string v3_resource_type =
                   TypeUrlToV3(request.type_url());
-              // Identify ACK and NACK by looking for version information and
-              // comparing it to nonce (this server ensures they are always set
-              // to the same in a response.)
-              if (!request.response_nonce().empty()) {
-                parent_->resource_type_response_state_[v3_resource_type].state =
-                    (!request.version_info().empty() &&
-                     request.version_info() == request.response_nonce())
-                        ? ResponseState::ACKED
-                        : ResponseState::NACKED;
-              }
-              if (request.has_error_detail()) {
-                parent_->resource_type_response_state_[v3_resource_type]
-                    .error_message = request.error_detail().message();
+              // As long as we are not in shutdown, identify ACK and NACK by
+              // looking for version information and comparing it to nonce (this
+              // server ensures they are always set to the same in a response.)
+              auto it =
+                  parent_->resource_type_response_state_.find(v3_resource_type);
+              if (it != parent_->resource_type_response_state_.end()) {
+                if (!request.response_nonce().empty()) {
+                  it->second.state =
+                      (!request.version_info().empty() &&
+                       request.version_info() == request.response_nonce())
+                          ? ResponseState::ACKED
+                          : ResponseState::NACKED;
+                }
+                if (request.has_error_detail()) {
+                  it->second.error_message = request.error_detail().message();
+                }
               }
               // As long as the test did not tell us to ignore this type of
               // request, we will loop through all resources to:
