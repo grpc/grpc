@@ -333,8 +333,8 @@ MatchType DomainPatternMatchType(const std::string& domain_pattern) {
 
 }  // namespace
 
-XdsApi::RdsUpdate::VirtualHost*
-XdsApi::RdsUpdate::FindVirtualHostForDomain(const std::string& domain) {
+XdsApi::RdsUpdate::VirtualHost* XdsApi::RdsUpdate::FindVirtualHostForDomain(
+    const std::string& domain) {
   // Find the best matched virtual host.
   // The search order for 4 groups of domain patterns:
   //   1. Exact match.
