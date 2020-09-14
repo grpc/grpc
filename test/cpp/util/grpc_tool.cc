@@ -18,14 +18,6 @@
 
 #include "test/cpp/util/grpc_tool.h"
 
-#include <cstdio>
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include <sstream>
-#include <string>
-#include <thread>
-
 #include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
@@ -34,6 +26,14 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/string_ref.h>
+
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <thread>
 
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/proto_file_parser.h"
@@ -74,6 +74,9 @@ DEFINE_bool(batch, false,
             "more than a few RPCs. gRPC CLI has very different performance "
             "characteristics compared with normal RPC calls which make it "
             "unsuitable for loadtesting or significant production traffic.");
+DEFINE_double(timeout, -1,
+              "Specify timeout in seconds, used to set the deadline for all "
+              "RPCs. The default value of -1 means no deadline has been set.");
 
 namespace {
 
@@ -490,7 +493,10 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       "    --binary_input           ; Input in binary format\n"
       "    --binary_output          ; Output in binary format\n"
       "    --json_input             ; Input in json format\n"
-      "    --json_output            ; Output in json format\n" +
+      "    --json_output            ; Output in json format\n"
+      "    --timeout                ; Specify timeout (in seconds), used to "
+      "set the deadline for RPCs. The default value of -1 means no "
+      "deadline has been set.\n" +
       cred.GetCredentialUsage());
 
   std::stringstream output_ss;
@@ -500,6 +506,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   std::string formatted_method_name;
   std::unique_ptr<ProtoFileParser> parser;
   std::string serialized_request_proto;
+  CliArgs cli_args;
+  cli_args.timeout = FLAGS_timeout;
   bool print_mode = false;
 
   std::shared_ptr<grpc::Channel> channel =
@@ -544,7 +552,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     ParseMetadataFlag(&client_metadata);
     PrintMetadata(client_metadata, "Sending client initial metadata:");
 
-    CliCall call(channel, formatted_method_name, client_metadata);
+    CliCall call(channel, formatted_method_name, client_metadata, cli_args);
     if (FLAGS_display_peer_address) {
       fprintf(stderr, "New call for method_name:%s has peer address:|%s|\n",
               formatted_method_name.c_str(), call.peer().c_str());
@@ -677,7 +685,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
           std::string serialized_response_proto;
           std::multimap<grpc::string_ref, grpc::string_ref>
               server_initial_metadata, server_trailing_metadata;
-          CliCall call(channel, formatted_method_name, client_metadata);
+          CliCall call(channel, formatted_method_name, client_metadata,
+                       cli_args);
           if (FLAGS_display_peer_address) {
             fprintf(stderr,
                     "New call for method_name:%s has peer address:|%s|\n",
@@ -780,7 +789,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     ParseMetadataFlag(&client_metadata);
     PrintMetadata(client_metadata, "Sending client initial metadata:");
 
-    CliCall call(channel, formatted_method_name, client_metadata);
+    CliCall call(channel, formatted_method_name, client_metadata, cli_args);
     if (FLAGS_display_peer_address) {
       fprintf(stderr, "New call for method_name:%s has peer address:|%s|\n",
               formatted_method_name.c_str(), call.peer().c_str());
