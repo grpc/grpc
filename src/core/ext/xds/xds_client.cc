@@ -425,31 +425,6 @@ class XdsClient::ChannelState::StateWatcher
 
 namespace {
 
-grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args) {
-  absl::InlinedVector<const char*, 1> args_to_remove;
-  absl::InlinedVector<grpc_arg, 1> args_to_add;
-  // Substitute the channel credentials with a version without call
-  // credentials: the load balancer is not necessarily trusted to handle
-  // bearer token credentials.
-  grpc_channel_credentials* channel_credentials =
-      grpc_channel_credentials_find_in_args(args);
-  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds;
-  if (channel_credentials != nullptr) {
-    creds_sans_call_creds =
-        channel_credentials->duplicate_without_call_credentials();
-    GPR_ASSERT(creds_sans_call_creds != nullptr);
-    args_to_remove.emplace_back(GRPC_ARG_CHANNEL_CREDENTIALS);
-    args_to_add.emplace_back(
-        grpc_channel_credentials_to_arg(creds_sans_call_creds.get()));
-  }
-  grpc_channel_args* result = grpc_channel_args_copy_and_add_and_remove(
-      args, args_to_remove.data(), args_to_remove.size(), args_to_add.data(),
-      args_to_add.size());
-  // Clean up.
-  grpc_channel_args_destroy(args);
-  return result;
-}
-
 // Returns the channel args for the xds channel.
 grpc_channel_args* BuildXdsChannelArgs(const grpc_channel_args& args) {
   static const char* args_to_remove[] = {
@@ -499,11 +474,9 @@ grpc_channel_args* BuildXdsChannelArgs(const grpc_channel_args& args) {
         channelz::MakeParentUuidArg(channelz_node->uuid()));
   }
   // Construct channel args.
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+  return grpc_channel_args_copy_and_add_and_remove(
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
       args_to_add.size());
-  // Make any necessary modifications for security.
-  return ModifyXdsChannelArgs(new_args);
 }
 
 }  // namespace
@@ -1044,8 +1017,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
-              "[xds_client %p] CDS resource \"%s\": "
-              "eds_service_name=%s, lrs_load_reporting_server_name=%s",
+              "[xds_client %p] cluster=%s: eds_service_name=%s, "
+              "lrs_load_reporting_server_name=%s",
               xds_client(), cluster_name, cds_update.eds_service_name.c_str(),
               cds_update.lrs_load_reporting_server_name.has_value()
                   ? cds_update.lrs_load_reporting_server_name.value().c_str()
@@ -1125,52 +1098,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     auto& state = eds_state.subscribed_resources[eds_service_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] EDS resource \"%s\": %" PRIuPTR
-              " priorities and %" PRIuPTR " drop categories (drop_all=%d)",
-              xds_client(), eds_service_name,
-              eds_update.priority_list_update.size(),
-              eds_update.drop_config->drop_category_list().size(),
-              eds_update.drop_config->drop_all());
-      for (size_t priority = 0;
-           priority < eds_update.priority_list_update.size(); ++priority) {
-        const auto* locality_map_update = eds_update.priority_list_update.Find(
-            static_cast<uint32_t>(priority));
-        gpr_log(GPR_INFO,
-                "[xds_client %p] Priority %" PRIuPTR " contains %" PRIuPTR
-                " localities",
-                xds_client(), priority, locality_map_update->size());
-        size_t locality_count = 0;
-        for (const auto& p : locality_map_update->localities) {
-          const auto& locality = p.second;
-          gpr_log(GPR_INFO,
-                  "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
-                  " %s has weight %d, contains %" PRIuPTR " server addresses",
-                  xds_client(), priority, locality_count,
-                  locality.name->AsHumanReadableString().c_str(),
-                  locality.lb_weight, locality.serverlist.size());
-          for (size_t i = 0; i < locality.serverlist.size(); ++i) {
-            std::string ipport = grpc_sockaddr_to_string(
-                &locality.serverlist[i].address(), false);
-            gpr_log(GPR_INFO,
-                    "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
-                    " %s, server address %" PRIuPTR ": %s",
-                    xds_client(), priority, locality_count,
-                    locality.name->AsHumanReadableString().c_str(), i,
-                    ipport.c_str());
-          }
-          ++locality_count;
-        }
-      }
-      for (size_t i = 0;
-           i < eds_update.drop_config->drop_category_list().size(); ++i) {
-        const XdsApi::DropConfig::DropCategory& drop_category =
-            eds_update.drop_config->drop_category_list()[i];
-        gpr_log(GPR_INFO,
-                "[xds_client %p] Drop category %s has drop rate %d per million",
-                xds_client(), drop_category.name.c_str(),
-                drop_category.parts_per_million);
-      }
+      gpr_log(GPR_INFO, "[xds_client %p] EDS resource %s: %s", xds_client(),
+              eds_service_name, eds_update.ToString().c_str());
     }
     EndpointState& endpoint_state =
         xds_client()->endpoint_map_[eds_service_name];
