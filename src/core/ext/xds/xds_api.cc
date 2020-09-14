@@ -390,6 +390,19 @@ std::string XdsApi::EdsUpdate::Priority::Locality::ToString() const {
                       absl::StrJoin(endpoint_strings, ", "), "]}");
 }
 
+bool XdsApi::EdsUpdate::Priority::operator==(const Priority& other) const {
+  if (localities.size() != other.localities.size()) return false;
+  auto it1 = localities.begin();
+  auto it2 = other.localities.begin();
+  while (it1 != localities.end()) {
+    if (*it1->first != *it2->first) return false;
+    if (it1->second != it2->second) return false;
+    ++it1;
+    ++it2;
+  }
+  return true;
+}
+
 std::string XdsApi::EdsUpdate::Priority::ToString() const {
   std::vector<std::string> locality_strings;
   for (const auto& p : localities) {

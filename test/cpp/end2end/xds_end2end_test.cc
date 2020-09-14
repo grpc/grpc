@@ -2080,6 +2080,34 @@ TEST_P(BasicTest, BackendsRestart) {
   CheckRpcSendOk(1, RpcOptions().set_timeout_ms(2000).set_wait_for_ready(true));
 }
 
+TEST_P(BasicTest, IgnoresDuplicateUpdates) {
+  const size_t kNumRpcsPerAddress = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  // Wait for all backends to come online.
+  WaitForAllBackends();
+  // Send kNumRpcsPerAddress RPCs per server, but send an EDS update in
+  // between.  If the update is not ignored, this will cause the
+  // round_robin policy to see an update, which will randomly reset its
+  // position in the address list.
+  for (size_t i = 0; i < kNumRpcsPerAddress; ++i) {
+    CheckRpcSendOk(2);
+    balancers_[0]->ads_service()->SetEdsResource(
+        AdsServiceImpl::BuildEdsResource(args));
+    CheckRpcSendOk(2);
+  }
+  // Each backend should have gotten the right number of requests.
+  for (size_t i = 1; i < backends_.size(); ++i) {
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backends_[i]->backend_service()->request_count());
+  }
+}
+
 using XdsResolverOnlyTest = BasicTest;
 
 // Tests switching over from one cluster to another.
