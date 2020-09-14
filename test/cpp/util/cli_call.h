@@ -19,17 +19,21 @@
 #ifndef GRPC_TEST_CPP_UTIL_CLI_CALL_H
 #define GRPC_TEST_CPP_UTIL_CLI_CALL_H
 
-#include <map>
-
 #include <grpcpp/channel.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
+#include <map>
+
 namespace grpc {
 
 class ClientContext;
+
+struct CliArgs {
+  double timeout = -1;
+};
 
 namespace testing {
 
@@ -43,7 +47,12 @@ class CliCall final {
       IncomingMetadataContainer;
 
   CliCall(const std::shared_ptr<grpc::Channel>& channel,
-          const std::string& method, const OutgoingMetadataContainer& metadata);
+          const std::string& method, const OutgoingMetadataContainer& metadata,
+          CliArgs args);
+  CliCall(const std::shared_ptr<grpc::Channel>& channel,
+          const std::string& method, const OutgoingMetadataContainer& metadata)
+      : CliCall(channel, method, metadata, CliArgs{}) {}
+
   ~CliCall();
 
   // Perform an unary generic RPC.
