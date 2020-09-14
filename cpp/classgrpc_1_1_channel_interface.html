@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.31.1</span>
+   &#160;<span id="projectnumber">1.32.0</span>
    </div>
   </td>
  </tr>
@@ -74,7 +74,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p>Codegen interface for <em><a class="el" href="namespacegrpc.html#a3c981ec4941ef822eb01ac99da53ca88">grpc::Channel</a></em>.  
+<p>Codegen interface for <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">grpc::Channel</a></em>.  
  <a href="classgrpc_1_1_channel_interface.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2channel__interface_8h_source.html">channel_interface.h</a>&gt;</code></p>
@@ -86,10 +86,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a68e987e7b87ca5a2668419736f9ee9b1"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a68e987e7b87ca5a2668419736f9ee9b1">GetState</a> (bool try_to_connect)=0</td></tr>
 <tr class="memdesc:a68e987e7b87ca5a2668419736f9ee9b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the current channel state.  <a href="classgrpc_1_1_channel_interface.html#a68e987e7b87ca5a2668419736f9ee9b1">More...</a><br /></td></tr>
 <tr class="separator:a68e987e7b87ca5a2668419736f9ee9b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2acd32839ec4e5e92fe4b796a913623f"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:a2acd32839ec4e5e92fe4b796a913623f"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a2acd32839ec4e5e92fe4b796a913623f">NotifyOnStateChange</a> (<a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed, T deadline, ::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> *cq, void *tag)</td></tr>
-<tr class="memdesc:a2acd32839ec4e5e92fe4b796a913623f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the <em>tag</em> on <em>cq</em> when the channel state is changed or <em>deadline</em> expires.  <a href="classgrpc_1_1_channel_interface.html#a2acd32839ec4e5e92fe4b796a913623f">More...</a><br /></td></tr>
-<tr class="separator:a2acd32839ec4e5e92fe4b796a913623f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2ffa0dffc84f1fe38084c0993c4ca50"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:ad2ffa0dffc84f1fe38084c0993c4ca50"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#ad2ffa0dffc84f1fe38084c0993c4ca50">NotifyOnStateChange</a> (<a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed, T deadline, ::<a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *cq, void *tag)</td></tr>
+<tr class="memdesc:ad2ffa0dffc84f1fe38084c0993c4ca50"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the <em>tag</em> on <em>cq</em> when the channel state is changed or <em>deadline</em> expires.  <a href="classgrpc_1_1_channel_interface.html#ad2ffa0dffc84f1fe38084c0993c4ca50">More...</a><br /></td></tr>
+<tr class="separator:ad2ffa0dffc84f1fe38084c0993c4ca50"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a70567e7ea3d1a967ecf5ecdc220ac27e"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a70567e7ea3d1a967ecf5ecdc220ac27e"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a70567e7ea3d1a967ecf5ecdc220ac27e">WaitForStateChange</a> (<a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed, T deadline)</td></tr>
 <tr class="memdesc:a70567e7ea3d1a967ecf5ecdc220ac27e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocking wait for channel state change or <em>deadline</em> expiration.  <a href="classgrpc_1_1_channel_interface.html#a70567e7ea3d1a967ecf5ecdc220ac27e">More...</a><br /></td></tr>
@@ -147,7 +147,7 @@ Friends</h2></td></tr>
 <tr class="separator:a9a23a8cfcee9fd9658ecd8bb1a3193ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Codegen interface for <em><a class="el" href="namespacegrpc.html#a3c981ec4941ef822eb01ac99da53ca88">grpc::Channel</a></em>. </p>
+<div class="textblock"><p>Codegen interface for <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">grpc::Channel</a></em>. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a3f5145d4778aa952540dc9983cefe13f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3f5145d4778aa952540dc9983cefe13f">&#9670;&nbsp;</a></span>~ChannelInterface()</h2>
@@ -202,12 +202,12 @@ Friends</h2></td></tr>
 <p>Get the current channel state. </p>
 <p>If the channel is in IDLE and <em>try_to_connect</em> is set to true, try to connect. </p>
 
-<p>Implemented in <a class="el" href="classgrpc__impl_1_1_channel.html#a26d3eb40a00bc1ab58eb0752579c12d0">grpc_impl::Channel</a>, <a class="el" href="classgrpc_1_1internal_1_1_intercepted_channel.html#ab7073fa3f0de1369f7201c1ce1630970">grpc::internal::InterceptedChannel</a>, and <a class="el" href="classgrpc_1_1experimental_1_1_delegating_channel.html#ade542e52407601f790dba8ebf4aaa6e3">grpc::experimental::DelegatingChannel</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc_1_1_channel.html#a646d7a9d01f22037a72092d3a0bf159c">grpc::Channel</a>, <a class="el" href="classgrpc_1_1internal_1_1_intercepted_channel.html#ab7073fa3f0de1369f7201c1ce1630970">grpc::internal::InterceptedChannel</a>, and <a class="el" href="classgrpc_1_1experimental_1_1_delegating_channel.html#ade542e52407601f790dba8ebf4aaa6e3">grpc::experimental::DelegatingChannel</a>.</p>
 
 </div>
 </div>
-<a id="a2acd32839ec4e5e92fe4b796a913623f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2acd32839ec4e5e92fe4b796a913623f">&#9670;&nbsp;</a></span>NotifyOnStateChange()</h2>
+<a id="ad2ffa0dffc84f1fe38084c0993c4ca50"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad2ffa0dffc84f1fe38084c0993c4ca50">&#9670;&nbsp;</a></span>NotifyOnStateChange()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -232,7 +232,7 @@ template&lt;typename T &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *&#160;</td>
           <td class="paramname"><em>cq</em>, </td>
         </tr>
         <tr>
@@ -713,7 +713,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Aug 18 2020 16:24:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Sep 12 2020 00:53:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

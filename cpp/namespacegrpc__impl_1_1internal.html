@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.31.1</span>
+   &#160;<span id="projectnumber">1.32.0</span>
    </div>
   </td>
  </tr>
@@ -196,10 +196,10 @@ Typedefs</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:aacd227537d6b7ba31c26237522104c8a"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
-<tr class="memitem:aacd227537d6b7ba31c26237522104c8a"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc__impl_1_1internal.html#aacd227537d6b7ba31c26237522104c8a">CallbackUnaryCall</a> (::<a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a> *channel, const ::<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a> &amp;method, ::<a class="el" href="classgrpc__impl_1_1_client_context.html">grpc_impl::ClientContext</a> *context, const InputMessage *request, OutputMessage *result, std::function&lt; void(::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>)&gt; on_completion)</td></tr>
-<tr class="memdesc:aacd227537d6b7ba31c26237522104c8a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Perform a callback-based unary call TODO(vjpai): Combine as much as possible with the blocking unary call code.  <a href="namespacegrpc__impl_1_1internal.html#aacd227537d6b7ba31c26237522104c8a">More...</a><br /></td></tr>
-<tr class="separator:aacd227537d6b7ba31c26237522104c8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f0d231354a90759ca50988818c4fa83"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
+<tr class="memitem:a6f0d231354a90759ca50988818c4fa83"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc__impl_1_1internal.html#a6f0d231354a90759ca50988818c4fa83">CallbackUnaryCall</a> (::<a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a> *channel, const ::<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a> &amp;method, ::<a class="el" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a> *context, const InputMessage *request, OutputMessage *result, std::function&lt; void(::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>)&gt; on_completion)</td></tr>
+<tr class="memdesc:a6f0d231354a90759ca50988818c4fa83"><td class="mdescLeft">&#160;</td><td class="mdescRight">Perform a callback-based unary call TODO(vjpai): Combine as much as possible with the blocking unary call code.  <a href="namespacegrpc__impl_1_1internal.html#a6f0d231354a90759ca50988818c4fa83">More...</a><br /></td></tr>
+<tr class="separator:a6f0d231354a90759ca50988818c4fa83"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acfbc2e6eb565a194f1cf9a537e938940"><td class="memTemplParams" colspan="2">template&lt;class Callable &gt; </td></tr>
 <tr class="memitem:acfbc2e6eb565a194f1cf9a537e938940"><td class="memTemplItemLeft" align="right" valign="top">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc__impl_1_1internal.html#acfbc2e6eb565a194f1cf9a537e938940">CatchingFunctionHandler</a> (Callable &amp;&amp;handler)</td></tr>
 <tr class="separator:acfbc2e6eb565a194f1cf9a537e938940"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -298,8 +298,8 @@ template&lt;class Response &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="aacd227537d6b7ba31c26237522104c8a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aacd227537d6b7ba31c26237522104c8a">&#9670;&nbsp;</a></span>CallbackUnaryCall()</h2>
+<a id="a6f0d231354a90759ca50988818c4fa83"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6f0d231354a90759ca50988818c4fa83">&#9670;&nbsp;</a></span>CallbackUnaryCall()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -321,7 +321,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_client_context.html">grpc_impl::ClientContext</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a> *&#160;</td>
           <td class="paramname"><em>context</em>, </td>
         </tr>
         <tr>
@@ -377,7 +377,7 @@ template&lt;class Callable &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Aug 18 2020 16:24:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Sep 12 2020 00:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

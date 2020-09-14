@@ -1,4 +1,4 @@
-/* The standard CSS for doxygen 1.8.16 */
+/* The standard CSS for doxygen 1.8.17 */
 
 body, table, div, p, dl {
 	font: 400 14px/22px Roboto,sans-serif;
@@ -64,6 +64,11 @@ ul.multicol {
 
 p.startli, p.startdd {
 	margin-top: 2px;
+}
+
+th p.starttd, p.intertd, p.endtd {
+        font-size: 100%;
+        font-weight: 700;
 }
 
 p.starttd {
@@ -535,7 +540,7 @@ table.memberdecls {
         white-space: nowrap;
 }
 
-.memItemRight {
+.memItemRight, .memTemplItemRight {
 	width: 100%;
 }
 

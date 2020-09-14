@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['ggrpccorecronetid_526',['gGRPCCoreCronetID',['../_g_r_p_c_call_09_cronet_8h.html#a7b64f95f2f49a79572cc7351413178cf',1,'GRPCCall+Cronet.h']]],
-  ['grpcdefaulttransportimpllist_527',['GRPCDefaultTransportImplList',['../_g_r_p_c_transport_8h.html#ae9e2dcee61ee00b6c7a4c74957a13346',1,'GRPCTransport.h']]]
+  ['core_5finsecure_534',['core_insecure',['../struct_g_r_p_c_default_transport_impl_list.html#a18c8456c85ddb2bba6ade62461af424f',1,'GRPCDefaultTransportImplList']]],
+  ['core_5fsecure_535',['core_secure',['../struct_g_r_p_c_default_transport_impl_list.html#a5c0d9361a2025eb78a7a8bbd33903945',1,'GRPCDefaultTransportImplList']]]
 ];

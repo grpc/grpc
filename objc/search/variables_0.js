@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['core_5finsecure_524',['core_insecure',['../struct_g_r_p_c_default_transport_impl_list.html#a18c8456c85ddb2bba6ade62461af424f',1,'GRPCDefaultTransportImplList']]],
-  ['core_5fsecure_525',['core_secure',['../struct_g_r_p_c_default_transport_impl_list.html#a5c0d9361a2025eb78a7a8bbd33903945',1,'GRPCDefaultTransportImplList']]]
+  ['_5f_5fpad0_5f_5f_533',['__pad0__',['../interface_g_r_p_c_unary_response_handler.html#a5ffc4145359a92348e3eb52defaff019',1,'GRPCUnaryResponseHandler']]]
 ];

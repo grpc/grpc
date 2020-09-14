@@ -2353,18 +2353,21 @@ if the computation did not raise an exception.</p>
 <h3>Runtime Protobuf Parsing<a class="headerlink" href="#runtime-protobuf-parsing" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="grpc.protos">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">protos</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/_runtime_protos.html#protos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.protos" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">protos</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">protobuf_path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#grpc.protos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a gRPC module generated from the indicated proto file.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt id="grpc.services">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">services</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/_runtime_protos.html#services"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.services" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">services</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">protobuf_path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#grpc.services" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a module generated from the indicated proto file.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt id="grpc.protos_and_services">
-<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">protos_and_services</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/_runtime_protos.html#protos_and_services"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.protos_and_services" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<code class="sig-prename descclassname">grpc.</code><code class="sig-name descname">protos_and_services</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">protobuf_path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#grpc.protos_and_services" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns two modules, corresponding to _pb2.py and _pb2_grpc.py files.</p>
+</dd></dl>
 
 </div>
 </div>

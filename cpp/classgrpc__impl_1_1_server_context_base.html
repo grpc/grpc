@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.31.1</span>
+   &#160;<span id="projectnumber">1.32.0</span>
    </div>
   </td>
  </tr>
@@ -217,8 +217,8 @@ Friends</h2></td></tr>
 <tr class="memitem:a0859bdc11d40e768d25326cae33599f2"><td class="memTemplParams" colspan="2">template&lt;class Base &gt; </td></tr>
 <tr class="memitem:a0859bdc11d40e768d25326cae33599f2"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_context_base.html#a0859bdc11d40e768d25326cae33599f2">::grpc_impl::internal::FinishOnlyReactor</a></td></tr>
 <tr class="separator:a0859bdc11d40e768d25326cae33599f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa6fdf74316c6adb02694d4d3a5553c5f"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_context_base.html#aa6fdf74316c6adb02694d4d3a5553c5f">::grpc_impl::ClientContext</a></td></tr>
-<tr class="separator:aa6fdf74316c6adb02694d4d3a5553c5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5c51aa9b375ed1597b0a57f339f59d5"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_context_base.html#ad5c51aa9b375ed1597b0a57f339f59d5">::grpc::ClientContext</a></td></tr>
+<tr class="separator:ad5c51aa9b375ed1597b0a57f339f59d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a650cca6cc6da2784b74d9401713f5160"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_context_base.html#a650cca6cc6da2784b74d9401713f5160">::grpc::GenericServerContext</a></td></tr>
 <tr class="separator:a650cca6cc6da2784b74d9401713f5160"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8dc153c13074d5df081b2ce787c9e77"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_context_base.html#ab8dc153c13074d5df081b2ce787c9e77">::grpc::experimental::GenericCallbackServerContext</a></td></tr>
@@ -343,7 +343,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Add the (<em>key</em>, <em>value</em>) pair to the initial metadata associated with a server call. </p>
-<p>These are made available at the client side by the <em><a class="el" href="classgrpc__impl_1_1_client_context.html#aefd0313d8c6e174bb68c6680b20ac182" title="Return a collection of initial metadata key-value pairs.">grpc::ClientContext::GetServerInitialMetadata()</a></em> method.</p>
+<p>These are made available at the client side by the <em><a class="el" href="classgrpc_1_1_client_context.html#a068592f22fe0866293c8d1e5ac22ed20" title="Return a collection of initial metadata key-value pairs.">grpc::ClientContext::GetServerInitialMetadata()</a></em> method.</p>
 <dl class="section warning"><dt>Warning</dt><dd>This method should only be called before sending initial metadata to the client (which can happen explicitly, or implicitly when sending a a response message or status to the client).</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -383,7 +383,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Add the (<em>key</em>, <em>value</em>) pair to the initial metadata associated with a server call. </p>
-<p>These are made available at the client side by the <em><a class="el" href="classgrpc__impl_1_1_client_context.html#a81d5df78eb77fb0d1e97220f656afd95" title="Return a collection of trailing metadata key-value pairs.">grpc::ClientContext::GetServerTrailingMetadata()</a></em> method.</p>
+<p>These are made available at the client side by the <em><a class="el" href="classgrpc_1_1_client_context.html#a572f9fb786e1dfc3129a04183d9f1882" title="Return a collection of trailing metadata key-value pairs.">grpc::ClientContext::GetServerTrailingMetadata()</a></em> method.</p>
 <dl class="section warning"><dt>Warning</dt><dd>This method should only be called before sending trailing metadata to the client (which happens when the call is finished and a status is sent to the client).</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -869,6 +869,28 @@ Friends</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a id="ad5c51aa9b375ed1597b0a57f339f59d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad5c51aa9b375ed1597b0a57f339f59d5">&#9670;&nbsp;</a></span>::grpc::ClientContext</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ab8dc153c13074d5df081b2ce787c9e77"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab8dc153c13074d5df081b2ce787c9e77">&#9670;&nbsp;</a></span>::grpc::experimental::GenericCallbackServerContext</h2>
 
@@ -990,28 +1012,6 @@ Friends</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">friend class ::grpc::testing::ServerContextTestSpouse</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aa6fdf74316c6adb02694d4d3a5553c5f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa6fdf74316c6adb02694d4d3a5553c5f">&#9670;&nbsp;</a></span>::grpc_impl::ClientContext</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc__impl_1_1_client_context.html">grpc_impl::ClientContext</a></td>
         </tr>
       </table>
   </td>
@@ -1459,7 +1459,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Aug 18 2020 16:24:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Sep 12 2020 00:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

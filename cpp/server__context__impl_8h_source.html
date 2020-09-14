@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.31.1</span>
+   &#160;<span id="projectnumber">1.32.0</span>
    </div>
   </td>
  </tr>
@@ -121,52 +121,52 @@ $(function() {
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keyword">struct </span><a class="code" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a>;</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc__impl.html">grpc_impl</a> {</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#a35a61e2e00942ae1f40dda77413425ac">ClientContext</a>;</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#a9b59ae504113bf341ba9d1ae404b0cda">CompletionQueue</a>;</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#a28c99eb4f62e460502c80cf1e10a8fb4">Server</a>;</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> W, <span class="keyword">class</span> R&gt;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#a5050801152fef6dde37a3f38d7c6ce89">ServerAsyncReader</a>;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#a28c99eb4f62e460502c80cf1e10a8fb4">Server</a>;</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> W, <span class="keyword">class</span> R&gt;</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#a5050801152fef6dde37a3f38d7c6ce89">ServerAsyncReader</a>;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> W&gt;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#a5787cfb3d6d76a24755a3e919ae12417">ServerAsyncWriter</a>;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> W&gt;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#a5787cfb3d6d76a24755a3e919ae12417">ServerAsyncWriter</a>;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> W&gt;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#a99b28564fbe6f61a7ab5978e2966e79e">ServerAsyncResponseWriter</a>;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> W, <span class="keyword">class</span> R&gt;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#afb744ac7fb125ae29fc0ec19268d35c0">ServerAsyncReaderWriter</a>;</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> R&gt;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#a5b46c030c68f0fb66e6c5b03ebf780f4">ServerReader</a>;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> W&gt;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#af3e68587294e726038b483cdad062269">ServerWriter</a>;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keyword">namespace </span>internal {</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> ServiceType, <span class="keyword">class</span> RequestType, <span class="keyword">class</span> ResponseType&gt;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1internal.html#a8e799399626f278e5c9f048457242015">BidiStreamingHandler</a>;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#a99b28564fbe6f61a7ab5978e2966e79e">ServerAsyncResponseWriter</a>;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> W, <span class="keyword">class</span> R&gt;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#afb744ac7fb125ae29fc0ec19268d35c0">ServerAsyncReaderWriter</a>;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> R&gt;</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#a5b46c030c68f0fb66e6c5b03ebf780f4">ServerReader</a>;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> W&gt;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc.html#af3e68587294e726038b483cdad062269">ServerWriter</a>;</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">namespace </span>internal {</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> ServiceType, <span class="keyword">class</span> RequestType, <span class="keyword">class</span> ResponseType&gt;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1internal.html#a8e799399626f278e5c9f048457242015">BidiStreamingHandler</a>;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> RequestType, <span class="keyword">class</span> ResponseType&gt;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keyword">class </span>CallbackUnaryHandler;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> RequestType, <span class="keyword">class</span> ResponseType&gt;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="keyword">class </span>CallbackUnaryHandler;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="keyword">class </span>CallbackClientStreamingHandler;</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> RequestType, <span class="keyword">class</span> ResponseType&gt;</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="keyword">class </span>CallbackClientStreamingHandler;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="keyword">class </span>CallbackServerStreamingHandler;</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> RequestType, <span class="keyword">class</span> ResponseType&gt;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="keyword">class </span>CallbackServerStreamingHandler;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> RequestType, <span class="keyword">class</span> ResponseType&gt;</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="keyword">class </span>CallbackBidiHandler;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="keyword">class </span>CallbackBidiHandler;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> ServiceType, <span class="keyword">class</span> RequestType, <span class="keyword">class</span> ResponseType&gt;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1internal.html#af4f3323d2f74bb693372491e474ad178">ClientStreamingHandler</a>;</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> ServiceType, <span class="keyword">class</span> RequestType, <span class="keyword">class</span> ResponseType&gt;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1internal.html#af4f3323d2f74bb693372491e474ad178">ClientStreamingHandler</a>;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> ServiceType, <span class="keyword">class</span> RequestType, <span class="keyword">class</span> ResponseType&gt;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1internal.html#a553dc761a0df3464ec0b6d4b28ad8e36">RpcMethodHandler</a>;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> Base&gt;</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="keyword">class </span>FinishOnlyReactor;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> W, <span class="keyword">class</span> R&gt;</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="keyword">class </span>ServerReaderWriterBody;</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> ServiceType, <span class="keyword">class</span> RequestType, <span class="keyword">class</span> ResponseType&gt;</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1internal.html#a1639f1a5a4c31f14b3ed5768f4ba251a">ServerStreamingHandler</a>;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="keyword">class </span>ServerReactor;</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> Streamer, <span class="keywordtype">bool</span> WriteNeeded&gt;</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1internal.html#aec74fe488c5e4c24fe63d00255576cdb">TemplatedBidiStreamingHandler</a>;</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="keyword">template</span> &lt;::grpc::StatusCode code&gt;</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1internal.html#aa2a7307aac909e43ce78eb6d666e514f">ErrorMethodHandler</a>;</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;}  <span class="comment">// namespace internal</span></div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;}  <span class="comment">// namespace grpc_impl</span></div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc.html">grpc</a> {</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1internal.html#a553dc761a0df3464ec0b6d4b28ad8e36">RpcMethodHandler</a>;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> Base&gt;</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="keyword">class </span>FinishOnlyReactor;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> W, <span class="keyword">class</span> R&gt;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="keyword">class </span>ServerReaderWriterBody;</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> ServiceType, <span class="keyword">class</span> RequestType, <span class="keyword">class</span> ResponseType&gt;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1internal.html#a1639f1a5a4c31f14b3ed5768f4ba251a">ServerStreamingHandler</a>;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="keyword">class </span>ServerReactor;</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> Streamer, <span class="keywordtype">bool</span> WriteNeeded&gt;</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1internal.html#aec74fe488c5e4c24fe63d00255576cdb">TemplatedBidiStreamingHandler</a>;</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="keyword">template</span> &lt;::grpc::StatusCode code&gt;</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1internal.html#aa2a7307aac909e43ce78eb6d666e514f">ErrorMethodHandler</a>;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;}  <span class="comment">// namespace internal</span></div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;}  <span class="comment">// namespace grpc_impl</span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc.html">grpc</a> {</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="keyword">class </span>ClientContext;</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="keyword">class </span>CompletionQueue;</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="keyword">class </span>GenericServerContext;</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="keyword">class </span>ServerInterface;</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
@@ -315,7 +315,7 @@ $(function() {
 <div class="line"><a name="l00373"></a><span class="lineno"><a class="line" href="classgrpc__impl_1_1_server_context_base.html#ac9c3405f27b5188020e61c8fc04ebf48">  373</a></span>&#160;  <span class="keyword">friend</span> <a class="code" href="namespacegrpc_1_1internal.html#aa2a7307aac909e43ce78eb6d666e514f">class ::grpc_impl::internal::ErrorMethodHandler</a>;</div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;  <span class="keyword">template</span> &lt;<span class="keyword">class</span> Base&gt;</div>
 <div class="line"><a name="l00375"></a><span class="lineno"><a class="line" href="classgrpc__impl_1_1_server_context_base.html#a0859bdc11d40e768d25326cae33599f2">  375</a></span>&#160;  <span class="keyword">friend</span> class ::grpc_impl::internal::FinishOnlyReactor;</div>
-<div class="line"><a name="l00376"></a><span class="lineno"><a class="line" href="classgrpc__impl_1_1_server_context_base.html#aa6fdf74316c6adb02694d4d3a5553c5f">  376</a></span>&#160;  <span class="keyword">friend</span> <a class="code" href="namespacegrpc.html#a35a61e2e00942ae1f40dda77413425ac">class ::grpc_impl::ClientContext</a>;</div>
+<div class="line"><a name="l00376"></a><span class="lineno"><a class="line" href="classgrpc__impl_1_1_server_context_base.html#ad5c51aa9b375ed1597b0a57f339f59d5">  376</a></span>&#160;  <span class="keyword">friend</span> class ::grpc::ClientContext;</div>
 <div class="line"><a name="l00377"></a><span class="lineno"><a class="line" href="classgrpc__impl_1_1_server_context_base.html#a650cca6cc6da2784b74d9401713f5160">  377</a></span>&#160;  <span class="keyword">friend</span> class ::grpc::GenericServerContext;</div>
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;<span class="preprocessor">#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL</span></div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;  <span class="keyword">friend</span> class ::grpc::GenericCallbackServerContext;</div>
@@ -366,7 +366,7 @@ $(function() {
 <div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160; </div>
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;  <a class="code" href="structgpr__timespec.html">gpr_timespec</a> deadline_;</div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;  <a class="code" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a>* call_;</div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;  <a class="code" href="classgrpc__impl_1_1_completion_queue.html">::grpc_impl::CompletionQueue</a>* cq_;</div>
+<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;  <a class="code" href="classgrpc_1_1_completion_queue.html">::grpc::CompletionQueue</a>* cq_;</div>
 <div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;  <span class="keywordtype">bool</span> sent_initial_metadata_;</div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;  <span class="keyword">mutable</span> std::shared_ptr&lt;const ::grpc::AuthContext&gt; auth_context_;</div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;  mutable ::grpc::internal::MetadataMap client_metadata_;</div>
@@ -548,14 +548,13 @@ $(function() {
 <div class="ttc" id="astructgrpc__metadata__array_html"><div class="ttname"><a href="structgrpc__metadata__array.html">grpc_metadata_array</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:546</div></div>
 <div class="ttc" id="aclassgrpc__impl_1_1_server_callback_unary_html_ad97665bf31cac08227a35e1f9b08b72f"><div class="ttname"><a href="classgrpc__impl_1_1_server_callback_unary.html#ad97665bf31cac08227a35e1f9b08b72f">grpc_impl::ServerCallbackUnary::BindReactor</a></div><div class="ttdeci">void BindReactor(Reactor *reactor)</div><div class="ttdef"><b>Definition:</b> server_callback_impl.h:201</div></div>
 <div class="ttc" id="anamespacegrpc_html_a99b28564fbe6f61a7ab5978e2966e79e"><div class="ttname"><a href="namespacegrpc.html#a99b28564fbe6f61a7ab5978e2966e79e">grpc::ServerAsyncResponseWriter</a></div><div class="ttdeci">::grpc_impl::ServerAsyncResponseWriter&lt; W &gt; ServerAsyncResponseWriter</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:34</div></div>
-<div class="ttc" id="anamespacegrpc_html_a9b59ae504113bf341ba9d1ae404b0cda"><div class="ttname"><a href="namespacegrpc.html#a9b59ae504113bf341ba9d1ae404b0cda">grpc::CompletionQueue</a></div><div class="ttdeci">::grpc_impl::CompletionQueue CompletionQueue</div><div class="ttdef"><b>Definition:</b> completion_queue.h:26</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2config_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2config_8h.html">config.h</a></div></div>
 <div class="ttc" id="acompression__types_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9"><div class="ttname"><a href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a></div><div class="ttdeci">grpc_compression_algorithm</div><div class="ttdoc">The various compression algorithms supported by gRPC (not sorted by compression level)</div><div class="ttdef"><b>Definition:</b> compression_types.h:57</div></div>
 <div class="ttc" id="anamespacegrpc_html_a5050801152fef6dde37a3f38d7c6ce89"><div class="ttname"><a href="namespacegrpc.html#a5050801152fef6dde37a3f38d7c6ce89">grpc::ServerAsyncReader</a></div><div class="ttdeci">::grpc_impl::ServerAsyncReader&lt; W, R &gt; ServerAsyncReader</div><div class="ttdef"><b>Definition:</b> async_stream.h:63</div></div>
 <div class="ttc" id="aclassgrpc__impl_1_1_server_context_base_html_a2423f4f0f795e3bf92ea3e14372bbcb6"><div class="ttname"><a href="classgrpc__impl_1_1_server_context_base.html#a2423f4f0f795e3bf92ea3e14372bbcb6">grpc_impl::ServerContextBase::SetLoadReportingCosts</a></div><div class="ttdeci">void SetLoadReportingCosts(const std::vector&lt; std::string &gt; &amp;cost_data)</div><div class="ttdoc">Set the serialized load reporting costs in cost_data for the call.</div></div>
 <div class="ttc" id="aclassgrpc__impl_1_1_server_unary_reactor_html"><div class="ttname"><a href="classgrpc__impl_1_1_server_unary_reactor.html">grpc_impl::ServerUnaryReactor</a></div><div class="ttdef"><b>Definition:</b> server_callback_impl.h:693</div></div>
 <div class="ttc" id="aimpl_2codegen_2server__callback__impl_8h_html"><div class="ttname"><a href="impl_2codegen_2server__callback__impl_8h.html">server_callback_impl.h</a></div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object.</div><div class="ttdef"><b>Definition:</b> call.h:38</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object.</div><div class="ttdef"><b>Definition:</b> call.h:35</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2security_2auth__context_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2security_2auth__context_8h.html">auth_context.h</a></div></div>
 <div class="ttc" id="aimpl_2codegen_2server__interceptor_8h_html"><div class="ttname"><a href="impl_2codegen_2server__interceptor_8h.html">server_interceptor.h</a></div></div>
 <div class="ttc" id="aclassgrpc__impl_1_1_server_context_base_html_ab5d856fd54c832abb4b0e80858be55eb"><div class="ttname"><a href="classgrpc__impl_1_1_server_context_base.html#ab5d856fd54c832abb4b0e80858be55eb">grpc_impl::ServerContextBase::auth_context</a></div><div class="ttdeci">std::shared_ptr&lt; const ::grpc::AuthContext &gt; auth_context() const</div><div class="ttdoc">Return the authentication context for this server call.</div><div class="ttdef"><b>Definition:</b> server_context_impl.h:260</div></div>
@@ -598,7 +597,6 @@ $(function() {
 <div class="ttc" id="acallback__common_8h_html"><div class="ttname"><a href="callback__common_8h.html">callback_common.h</a></div></div>
 <div class="ttc" id="aclassgrpc__impl_1_1_server_context_base_html_af1269faf8ade6276e856082c382413bb"><div class="ttname"><a href="classgrpc__impl_1_1_server_context_base.html#af1269faf8ade6276e856082c382413bb">grpc_impl::ServerContextBase::compression_level</a></div><div class="ttdeci">grpc_compression_level compression_level() const</div><div class="ttdoc">Return the compression algorithm to be used by the server call.</div><div class="ttdef"><b>Definition:</b> server_context_impl.h:225</div></div>
 <div class="ttc" id="aclassgrpc__impl_1_1_server_callback_unary_html"><div class="ttname"><a href="classgrpc__impl_1_1_server_callback_unary.html">grpc_impl::ServerCallbackUnary</a></div><div class="ttdef"><b>Definition:</b> server_callback_impl.h:191</div></div>
-<div class="ttc" id="aclassgrpc__impl_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue....</div><div class="ttdef"><b>Definition:</b> completion_queue_impl.h:103</div></div>
 <div class="ttc" id="aimpl_2codegen_2port__platform_8h_html"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html">port_platform.h</a></div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2call_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2call_8h.html">call.h</a></div></div>
 <div class="ttc" id="acompression__types_8h_html_a14a79ed6b5ebd7e1dda7c2684f499cc7"><div class="ttname"><a href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a></div><div class="ttdeci">grpc_compression_level</div><div class="ttdoc">Compression levels allow a party with knowledge of its peer's accepted encodings to request compressi...</div><div class="ttdef"><b>Definition:</b> compression_types.h:71</div></div>
@@ -607,10 +605,10 @@ $(function() {
 <div class="ttc" id="aclassgrpc__impl_1_1_server_context_base_html_a13b08964c84f404198361cf0f2df6a44"><div class="ttname"><a href="classgrpc__impl_1_1_server_context_base.html#a13b08964c84f404198361cf0f2df6a44">grpc_impl::ServerContextBase::census_context</a></div><div class="ttdeci">const struct census_context * census_context() const</div><div class="ttdoc">Get the census context associated with this server call.</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2create__auth__context_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2create__auth__context_8h.html">create_auth_context.h</a></div></div>
 <div class="ttc" id="aclassgrpc__impl_1_1_server_context_base_html_a744be5eb26c86367a7b1b992a80c1c8c"><div class="ttname"><a href="classgrpc__impl_1_1_server_context_base.html#a744be5eb26c86367a7b1b992a80c1c8c">grpc_impl::ServerContextBase::deadline</a></div><div class="ttdeci">std::chrono::system_clock::time_point deadline() const</div><div class="ttdoc">Return the deadline for the server call.</div><div class="ttdef"><b>Definition:</b> server_context_impl.h:128</div></div>
+<div class="ttc" id="aclassgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue....</div><div class="ttdef"><b>Definition:</b> completion_queue.h:99</div></div>
 <div class="ttc" id="anamespacegrpc__impl_html"><div class="ttname"><a href="namespacegrpc__impl.html">grpc_impl</a></div><div class="ttdoc">An Alarm posts the user-provided tag to its associated completion queue or invokes the user-provided ...</div><div class="ttdef"><b>Definition:</b> alarm_impl.h:33</div></div>
 <div class="ttc" id="aclassgrpc__impl_1_1_server_context_html_a6c2fd97db3225c4d2a6871bad3d3ea4b"><div class="ttname"><a href="classgrpc__impl_1_1_server_context.html#a6c2fd97db3225c4d2a6871bad3d3ea4b">grpc_impl::ServerContext::ServerContext</a></div><div class="ttdeci">ServerContext()</div><div class="ttdef"><b>Definition:</b> server_context_impl.h:522</div></div>
 <div class="ttc" id="aclassgrpc__impl_1_1_server_context_base_html_a4c0a9b6de6e9fa91577f8c30720100be"><div class="ttname"><a href="classgrpc__impl_1_1_server_context_base.html#a4c0a9b6de6e9fa91577f8c30720100be">grpc_impl::ServerContextBase::c_call</a></div><div class="ttdeci">grpc_call * c_call()</div><div class="ttdoc">Should be used for framework-level extensions only.</div><div class="ttdef"><b>Definition:</b> server_context_impl.h:278</div></div>
-<div class="ttc" id="anamespacegrpc_html_a35a61e2e00942ae1f40dda77413425ac"><div class="ttname"><a href="namespacegrpc.html#a35a61e2e00942ae1f40dda77413425ac">grpc::ClientContext</a></div><div class="ttdeci">::grpc_impl::ClientContext ClientContext</div><div class="ttdef"><b>Definition:</b> client_context.h:26</div></div>
 <div class="ttc" id="anamespacegrpc_html_a5787cfb3d6d76a24755a3e919ae12417"><div class="ttname"><a href="namespacegrpc.html#a5787cfb3d6d76a24755a3e919ae12417">grpc::ServerAsyncWriter</a></div><div class="ttdeci">::grpc_impl::ServerAsyncWriter&lt; W &gt; ServerAsyncWriter</div><div class="ttdef"><b>Definition:</b> async_stream.h:69</div></div>
 <div class="ttc" id="astructgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec.</div><div class="ttdef"><b>Definition:</b> gpr_types.h:47</div></div>
 <div class="ttc" id="anamespacegrpc_1_1internal_html_aa2a7307aac909e43ce78eb6d666e514f"><div class="ttname"><a href="namespacegrpc_1_1internal.html#aa2a7307aac909e43ce78eb6d666e514f">grpc::internal::ErrorMethodHandler</a></div><div class="ttdeci">::grpc_impl::internal::ErrorMethodHandler&lt; code &gt; ErrorMethodHandler</div><div class="ttdef"><b>Definition:</b> method_handler.h:62</div></div>
@@ -622,7 +620,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc__impl_1_1_server_context_base_html_ab5d5441203d8817484cd3d68bcb53167"><div class="ttname"><a href="classgrpc__impl_1_1_server_context_base.html#ab5d5441203d8817484cd3d68bcb53167">grpc_impl::ServerContextBase::compression_level_set</a></div><div class="ttdeci">bool compression_level_set() const</div><div class="ttdoc">Return a bool indicating whether the compression level for this call has been set (either implicitly ...</div><div class="ttdef"><b>Definition:</b> server_context_impl.h:240</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Aug 18 2020 16:24:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Sep 12 2020 00:53:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
