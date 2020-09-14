@@ -375,49 +375,31 @@ XdsApi::RdsUpdate::FindVirtualHostForDomain(const std::string& domain) const {
 }
 
 //
-// XdsApi::PriorityListUpdate
+// XdsApi::EdsUpdate
 //
 
-bool XdsApi::PriorityListUpdate::operator==(
-    const XdsApi::PriorityListUpdate& other) const {
-  if (priorities_.size() != other.priorities_.size()) return false;
-  for (size_t i = 0; i < priorities_.size(); ++i) {
-    if (priorities_[i].localities != other.priorities_[i].localities) {
-      return false;
-    }
+std::string XdsApi::EdsUpdate::Priority::Locality::ToString() const {
+  std::vector<std::string> endpoint_strings;
+  for (const ServerAddress& endpoint : endpoints) {
+    endpoint_strings.emplace_back(
+        absl::StrCat(grpc_sockaddr_to_string(&endpoint.address(), false), "{",
+                     grpc_channel_args_string(endpoint.args()), "}"));
   }
-  return true;
+  return absl::StrCat("{name=", name->AsHumanReadableString(),
+                      ", lb_weight=", lb_weight, ", endpoints=[",
+                      absl::StrJoin(endpoint_strings, ", "), "]}");
 }
 
-void XdsApi::PriorityListUpdate::Add(
-    XdsApi::PriorityListUpdate::LocalityMap::Locality locality) {
-  // Pad the missing priorities in case the localities are not ordered by
-  // priority.
-  if (!Contains(locality.priority)) priorities_.resize(locality.priority + 1);
-  LocalityMap& locality_map = priorities_[locality.priority];
-  locality_map.localities.emplace(locality.name, std::move(locality));
-}
-
-const XdsApi::PriorityListUpdate::LocalityMap* XdsApi::PriorityListUpdate::Find(
-    uint32_t priority) const {
-  if (!Contains(priority)) return nullptr;
-  return &priorities_[priority];
-}
-
-bool XdsApi::PriorityListUpdate::Contains(
-    const RefCountedPtr<XdsLocalityName>& name) {
-  for (size_t i = 0; i < priorities_.size(); ++i) {
-    const LocalityMap& locality_map = priorities_[i];
-    if (locality_map.Contains(name)) return true;
+std::string XdsApi::EdsUpdate::Priority::ToString() const {
+  std::vector<std::string> locality_strings;
+  for (const auto& p : localities) {
+    locality_strings.emplace_back(p.second.ToString());
   }
-  return false;
+  return absl::StrCat("[", absl::StrJoin(locality_strings, ", "), "]");
 }
 
-//
-// XdsApi::DropConfig
-//
-
-bool XdsApi::DropConfig::ShouldDrop(const std::string** category_name) const {
+bool XdsApi::EdsUpdate::DropConfig::ShouldDrop(
+    const std::string** category_name) const {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
     // Generate a random number in [0, 1000000).
@@ -428,6 +410,27 @@ bool XdsApi::DropConfig::ShouldDrop(const std::string** category_name) const {
     }
   }
   return false;
+}
+
+std::string XdsApi::EdsUpdate::DropConfig::ToString() const {
+  std::vector<std::string> category_strings;
+  for (const DropCategory& category : drop_category_list_) {
+    category_strings.emplace_back(
+        absl::StrCat(category.name, "=", category.parts_per_million));
+  }
+  return absl::StrCat("{[", absl::StrJoin(category_strings, ", "),
+                      "], drop_all=", drop_all_, "}");
+}
+
+std::string XdsApi::EdsUpdate::ToString() const {
+  std::vector<std::string> priority_strings;
+  for (size_t i = 0; i < priorities.size(); ++i) {
+    const Priority& priority = priorities[i];
+    priority_strings.emplace_back(
+        absl::StrCat("priority ", i, ": ", priority.ToString()));
+  }
+  return absl::StrCat("priorities=[", absl::StrJoin(priority_strings, ", "),
+                      "], drop_config=", drop_config->ToString());
 }
 
 //
@@ -1858,7 +1861,7 @@ grpc_error* ServerAddressParseAndAppend(
 
 grpc_error* LocalityParse(
     const envoy_config_endpoint_v3_LocalityLbEndpoints* locality_lb_endpoints,
-    XdsApi::PriorityListUpdate::LocalityMap::Locality* output_locality) {
+    XdsApi::EdsUpdate::Priority::Locality* output_locality, size_t* priority) {
   // Parse LB weight.
   const google_protobuf_UInt32Value* lb_weight =
       envoy_config_endpoint_v3_LocalityLbEndpoints_load_balancing_weight(
@@ -1888,20 +1891,19 @@ grpc_error* LocalityParse(
           locality_lb_endpoints, &size);
   for (size_t i = 0; i < size; ++i) {
     grpc_error* error = ServerAddressParseAndAppend(
-        lb_endpoints[i], &output_locality->serverlist);
+        lb_endpoints[i], &output_locality->endpoints);
     if (error != GRPC_ERROR_NONE) return error;
   }
   // Parse the priority.
-  output_locality->priority =
-      envoy_config_endpoint_v3_LocalityLbEndpoints_priority(
-          locality_lb_endpoints);
+  *priority = envoy_config_endpoint_v3_LocalityLbEndpoints_priority(
+      locality_lb_endpoints);
   return GRPC_ERROR_NONE;
 }
 
 grpc_error* DropParseAndAppend(
     const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload*
         drop_overload,
-    XdsApi::DropConfig* drop_config) {
+    XdsApi::EdsUpdate::DropConfig* drop_config) {
   // Get the category.
   std::string category = UpbStringToStdString(
       envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_category(
@@ -1986,23 +1988,28 @@ grpc_error* EdsResponseParse(
         envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
             cluster_load_assignment, &locality_size);
     for (size_t j = 0; j < locality_size; ++j) {
-      XdsApi::PriorityListUpdate::LocalityMap::Locality locality;
-      grpc_error* error = LocalityParse(endpoints[j], &locality);
+      size_t priority;
+      XdsApi::EdsUpdate::Priority::Locality locality;
+      grpc_error* error = LocalityParse(endpoints[j], &locality, &priority);
       if (error != GRPC_ERROR_NONE) return error;
       // Filter out locality with weight 0.
       if (locality.lb_weight == 0) continue;
-      eds_update.priority_list_update.Add(locality);
+      // Make sure prorities is big enough. Note that they might not
+      // arrive in priority order.
+      while (eds_update.priorities.size() < priority + 1) {
+        eds_update.priorities.emplace_back();
+      }
+      eds_update.priorities[priority].localities.emplace(locality.name.get(),
+                                                         std::move(locality));
     }
-    for (uint32_t priority = 0;
-         priority < eds_update.priority_list_update.size(); ++priority) {
-      auto* locality_map = eds_update.priority_list_update.Find(priority);
-      if (locality_map == nullptr || locality_map->size() == 0) {
+    for (const auto& priority : eds_update.priorities) {
+      if (priority.localities.empty()) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "EDS update includes sparse priority list");
       }
     }
     // Get the drop config.
-    eds_update.drop_config = MakeRefCounted<XdsApi::DropConfig>();
+    eds_update.drop_config = MakeRefCounted<XdsApi::EdsUpdate::DropConfig>();
     const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* policy =
         envoy_config_endpoint_v3_ClusterLoadAssignment_policy(
             cluster_load_assignment);

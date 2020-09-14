@@ -979,6 +979,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
 
 void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     XdsApi::CdsUpdateMap cds_update_map) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] CDS update received containing %" PRIuPTR
+            " resources",
+            xds_client(), cds_update_map.size());
+  }
   auto& cds_state = state_map_[XdsApi::kCdsTypeUrl];
   std::set<std::string> eds_resource_names_seen;
   for (auto& p : cds_update_map) {
@@ -988,8 +994,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
-              "[xds_client %p] CDS update (cluster=%s) received: "
-              "eds_service_name=%s, lrs_load_reporting_server_name=%s",
+              "[xds_client %p] cluster=%s: eds_service_name=%s, "
+              "lrs_load_reporting_server_name=%s",
               xds_client(), cluster_name, cds_update.eds_service_name.c_str(),
               cds_update.lrs_load_reporting_server_name.has_value()
                   ? cds_update.lrs_load_reporting_server_name.value().c_str()
@@ -1058,6 +1064,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
 
 void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     XdsApi::EdsUpdateMap eds_update_map) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] EDS update received containing %" PRIuPTR
+            " resources",
+            xds_client(), eds_update_map.size());
+  }
   auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
   for (auto& p : eds_update_map) {
     const char* eds_service_name = p.first.c_str();
@@ -1065,52 +1077,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     auto& state = eds_state.subscribed_resources[eds_service_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] EDS response with %" PRIuPTR
-              " priorities and %" PRIuPTR
-              " drop categories received (drop_all=%d)",
-              xds_client(), eds_update.priority_list_update.size(),
-              eds_update.drop_config->drop_category_list().size(),
-              eds_update.drop_config->drop_all());
-      for (size_t priority = 0;
-           priority < eds_update.priority_list_update.size(); ++priority) {
-        const auto* locality_map_update = eds_update.priority_list_update.Find(
-            static_cast<uint32_t>(priority));
-        gpr_log(GPR_INFO,
-                "[xds_client %p] Priority %" PRIuPTR " contains %" PRIuPTR
-                " localities",
-                xds_client(), priority, locality_map_update->size());
-        size_t locality_count = 0;
-        for (const auto& p : locality_map_update->localities) {
-          const auto& locality = p.second;
-          gpr_log(GPR_INFO,
-                  "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
-                  " %s has weight %d, contains %" PRIuPTR " server addresses",
-                  xds_client(), priority, locality_count,
-                  locality.name->AsHumanReadableString().c_str(),
-                  locality.lb_weight, locality.serverlist.size());
-          for (size_t i = 0; i < locality.serverlist.size(); ++i) {
-            std::string ipport = grpc_sockaddr_to_string(
-                &locality.serverlist[i].address(), false);
-            gpr_log(GPR_INFO,
-                    "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
-                    " %s, server address %" PRIuPTR ": %s",
-                    xds_client(), priority, locality_count,
-                    locality.name->AsHumanReadableString().c_str(), i,
-                    ipport.c_str());
-          }
-          ++locality_count;
-        }
-      }
-      for (size_t i = 0;
-           i < eds_update.drop_config->drop_category_list().size(); ++i) {
-        const XdsApi::DropConfig::DropCategory& drop_category =
-            eds_update.drop_config->drop_category_list()[i];
-        gpr_log(GPR_INFO,
-                "[xds_client %p] Drop category %s has drop rate %d per million",
-                xds_client(), drop_category.name.c_str(),
-                drop_category.parts_per_million);
-      }
+      gpr_log(GPR_INFO, "[xds_client %p] EDS resource %s: %s", xds_client(),
+              eds_service_name, eds_update.ToString().c_str());
     }
     EndpointState& endpoint_state =
         xds_client()->endpoint_map_[eds_service_name];
@@ -1118,7 +1086,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     if (endpoint_state.update.has_value()) {
       const XdsApi::EdsUpdate& prev_update = endpoint_state.update.value();
       const bool priority_list_changed =
-          prev_update.priority_list_update != eds_update.priority_list_update;
+          prev_update.priorities != eds_update.priorities;
       const bool drop_config_changed =
           prev_update.drop_config == nullptr ||
           *prev_update.drop_config != *eds_update.drop_config;
