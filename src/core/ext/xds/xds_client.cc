@@ -418,31 +418,6 @@ class XdsClient::ChannelState::StateWatcher
 
 namespace {
 
-grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args) {
-  absl::InlinedVector<const char*, 1> args_to_remove;
-  absl::InlinedVector<grpc_arg, 1> args_to_add;
-  // Substitute the channel credentials with a version without call
-  // credentials: the load balancer is not necessarily trusted to handle
-  // bearer token credentials.
-  grpc_channel_credentials* channel_credentials =
-      grpc_channel_credentials_find_in_args(args);
-  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds;
-  if (channel_credentials != nullptr) {
-    creds_sans_call_creds =
-        channel_credentials->duplicate_without_call_credentials();
-    GPR_ASSERT(creds_sans_call_creds != nullptr);
-    args_to_remove.emplace_back(GRPC_ARG_CHANNEL_CREDENTIALS);
-    args_to_add.emplace_back(
-        grpc_channel_credentials_to_arg(creds_sans_call_creds.get()));
-  }
-  grpc_channel_args* result = grpc_channel_args_copy_and_add_and_remove(
-      args, args_to_remove.data(), args_to_remove.size(), args_to_add.data(),
-      args_to_add.size());
-  // Clean up.
-  grpc_channel_args_destroy(args);
-  return result;
-}
-
 // Returns the channel args for the xds channel.
 grpc_channel_args* BuildXdsChannelArgs(const grpc_channel_args& args) {
   static const char* args_to_remove[] = {
@@ -492,11 +467,9 @@ grpc_channel_args* BuildXdsChannelArgs(const grpc_channel_args& args) {
         channelz::MakeParentUuidArg(channelz_node->uuid()));
   }
   // Construct channel args.
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+  return grpc_channel_args_copy_and_add_and_remove(
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
       args_to_add.size());
-  // Make any necessary modifications for security.
-  return ModifyXdsChannelArgs(new_args);
 }
 
 }  // namespace
