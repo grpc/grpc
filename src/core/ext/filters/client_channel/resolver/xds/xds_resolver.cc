@@ -487,17 +487,19 @@ void XdsResolver::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] shutting down", this);
   }
-  if (listener_watcher_ != nullptr) {
-    xds_client_->CancelListenerDataWatch(server_name_, listener_watcher_,
-                                         /*delay_unsubscription=*/false);
+  if (xds_client_ != nullptr) {
+    if (listener_watcher_ != nullptr) {
+      xds_client_->CancelListenerDataWatch(server_name_, listener_watcher_,
+                                           /*delay_unsubscription=*/false);
+    }
+    if (route_config_watcher_ != nullptr) {
+      xds_client_->CancelRouteConfigDataWatch(
+          server_name_, route_config_watcher_, /*delay_unsubscription=*/false);
+    }
+    grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
+                                     interested_parties_);
+    xds_client_.reset();
   }
-  if (route_config_watcher_ != nullptr) {
-    xds_client_->CancelRouteConfigDataWatch(server_name_, route_config_watcher_,
-                                            /*delay_unsubscription=*/false);
-  }
-  grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
-                                   interested_parties_);
-  xds_client_.reset();
 }
 
 void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
