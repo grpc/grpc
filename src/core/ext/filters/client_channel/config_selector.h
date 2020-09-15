@@ -76,14 +76,17 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 class DefaultConfigSelector : public ConfigSelector {
  public:
   explicit DefaultConfigSelector(RefCountedPtr<ServiceConfig> service_config)
-      : service_config_(std::move(service_config)) {}
+      : service_config_(std::move(service_config)) {
+    // The client channel code ensures that this will never be null.
+    // If neither the resolver nor the client application provide a
+    // config, a default empty config will be used.
+    GPR_DEBUG_ASSERT(service_config_ != nullptr);
+  }
 
   CallConfig GetCallConfig(GetCallConfigArgs args) override {
     CallConfig call_config;
-    if (service_config_ != nullptr) {
-      call_config.method_configs =
-          service_config_->GetMethodParsedConfigVector(*args.path);
-    }
+    call_config.method_configs =
+        service_config_->GetMethodParsedConfigVector(*args.path);
     return call_config;
   }
 
