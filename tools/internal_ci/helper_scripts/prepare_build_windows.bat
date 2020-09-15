@@ -48,4 +48,5 @@ set DOTNET_CLI_TELEMETRY_OPTOUT=true
 git submodule update --init || goto :error
 
 :error
+popd
 exit /b 1
