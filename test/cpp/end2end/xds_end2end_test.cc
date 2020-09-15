@@ -4365,7 +4365,7 @@ class FailoverTest : public BasicTest {
  public:
   void SetUp() override {
     BasicTest::SetUp();
-    ResetStub(100, "");
+    ResetStub(500, "");
   }
 };
 
@@ -4477,8 +4477,6 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
-      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 1},
-      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 2},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args));
@@ -4489,8 +4487,6 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
       {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 3},
   });
   ShutdownBackend(0);
-  ShutdownBackend(1);
-  ShutdownBackend(2);
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, 0,
                 AdsServiceImpl::BuildEdsResource(args), 1000));
@@ -4500,9 +4496,11 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   do {
     CheckRpcSendFailure();
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
-  WaitForBackend(3, false);
+  WaitForBackend(1, false);
   for (size_t i = 0; i < 4; ++i) {
-    if (i == 3) continue;
+    gpr_log(GPR_INFO, "backend %d request count %d", i,
+            backends_[i]->backend_service()->request_count());
+    if (i == 1) continue;
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
   delayed_resource_setter.join();
