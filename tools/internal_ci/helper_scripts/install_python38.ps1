@@ -4,6 +4,12 @@
 Set-StrictMode -Version 2
 $ErrorActionPreference = 'Stop'
 
+trap {
+    $ErrorActionPreference = "Continue"
+    Write-Error $_
+    exit 1
+}
+
 # Avoid "Could not create SSL/TLS secure channel"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
@@ -19,7 +25,7 @@ function Install-Python {
 
     # Downloads installer
     Write-Host "Downloading the Python installer: $PythonInstallerUrl => $PythonInstallerPath"
-    Invoke-WebRequest -Uri $PythonInstallerUrl -OutFile $PythonInstallerPath
+    Invoke-WebRequest -Uri $PythonInstallerUrl -OutFile $PythonInstallerPath -MaximumRetryCount 3
 
     # Validates checksum
     $HashFromDownload = Get-FileHash -Path $PythonInstallerPath -Algorithm MD5
