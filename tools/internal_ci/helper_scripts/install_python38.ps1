@@ -25,7 +25,7 @@ function Install-Python {
 
     # Downloads installer
     Write-Host "Downloading the Python installer: $PythonInstallerUrl => $PythonInstallerPath"
-    Invoke-WebRequest -Uri $PythonInstallerUrl -OutFile $PythonInstallerPath -MaximumRetryCount 3
+    Invoke-WebRequest -Uri $PythonInstallerUrl -OutFile $PythonInstallerPath
 
     # Validates checksum
     $HashFromDownload = Get-FileHash -Path $PythonInstallerPath -Algorithm MD5
