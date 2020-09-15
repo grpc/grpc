@@ -194,14 +194,15 @@ class XdsApi {
           return *name == *other.name && lb_weight == other.lb_weight &&
                  endpoints == other.endpoints;
         }
+        bool operator!=(const Locality& other) const {
+          return !(*this == other);
+        }
         std::string ToString() const;
       };
 
       std::map<XdsLocalityName*, Locality, XdsLocalityName::Less> localities;
 
-      bool operator==(const Priority& other) const {
-        return localities == other.localities;
-      }
+      bool operator==(const Priority& other) const;
       std::string ToString() const;
     };
     using PriorityList = absl::InlinedVector<Priority, 2>;

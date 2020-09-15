@@ -1083,21 +1083,14 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     EndpointState& endpoint_state =
         xds_client()->endpoint_map_[eds_service_name];
     // Ignore identical update.
-    if (endpoint_state.update.has_value()) {
-      const XdsApi::EdsUpdate& prev_update = endpoint_state.update.value();
-      const bool priority_list_changed =
-          prev_update.priorities != eds_update.priorities;
-      const bool drop_config_changed =
-          prev_update.drop_config == nullptr ||
-          *prev_update.drop_config != *eds_update.drop_config;
-      if (!priority_list_changed && !drop_config_changed) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-          gpr_log(GPR_INFO,
-                  "[xds_client %p] EDS update identical to current, ignoring.",
-                  xds_client());
-        }
-        continue;
+    if (endpoint_state.update.has_value() &&
+        *endpoint_state.update == eds_update) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] EDS update identical to current, ignoring.",
+                xds_client());
       }
+      continue;
     }
     // Update the cluster state.
     endpoint_state.update = std::move(eds_update);
