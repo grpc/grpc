@@ -19,22 +19,16 @@
 #include <regex>
 
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/xds/google_mesh_ca_certificate_provider.h"
+#include "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
-
-void VerifyRegexMatch(grpc_error* error, const std::regex& e) {
-  std::smatch match;
-  std::string s(grpc_error_string(error));
-  EXPECT_TRUE(std::regex_search(s, match, e));
-  GRPC_ERROR_UNREF(error);
-}
 
 TEST(GoogleMeshCaConfigTest, Basic) {
   const char* json_str =
@@ -185,15 +179,13 @@ TEST(GoogleMeshCaConfigTest, WrongExpectedValues) {
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(json, &error);
-  ASSERT_NE(error, GRPC_ERROR_NONE) << grpc_error_string(error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  std::regex e(
-      std::string("field:api_type error:Only GRPC is supported(.*)"
-                  "field:key_type error:Only RSA is supported"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(
+      grpc_error_string(error),
+      ::testing::ContainsRegex("field:api_type error:Only GRPC is supported(.*)"
+                               "field:key_type error:Only RSA is supported"));
 }
 
-TEST(GoogleMeshCaConfigTest, WrongTypes1) {
+TEST(GoogleMeshCaConfigTest, WrongTypes) {
   const char* json_str =
       "{"
       "  \"server\": {"
@@ -229,33 +221,34 @@ TEST(GoogleMeshCaConfigTest, WrongTypes1) {
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(json, &error);
-  ASSERT_NE(error, GRPC_ERROR_NONE) << grpc_error_string(error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  std::regex e(std::string(
-      "field:api_type error:type should be STRING(.*)"
-      "field:target_uri error:type should be STRING(.*)"
-      "field:token_exchange_service_uri error:type should be STRING(.*)"
-      "field:resource error:type should be STRING(.*)"
-      "field:audience error:type should be STRING(.*)"
-      "field:scope error:type should be STRING(.*)"
-      "field:requested_token_type error:type should be STRING(.*)"
-      "field:subject_token_path error:type should be STRING(.*)"
-      "field:subject_token_type error:type should be STRING(.*)"
-      "field:actor_token_path error:type should be STRING(.*)"
-      "field:actor_token_type error:type should be STRING(.*)"
-      "field:timeout error:type should be STRING of the form given by "
-      "google.proto.Duration(.*)"
-      "field:certificate_lifetime error:type should be STRING of the form "
-      "given by google.proto.Duration(.*)"
-      "field:renewal_grace_period error:type should be STRING of the form "
-      "given by google.proto.Duration.(.*)"
-      "field:key_type error:type should be STRING(.*)"
-      "field:key_size error:type should be NUMBER(.*)"
-      "field:location error:type should be STRING"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(
+      grpc_error_string(error),
+      ::testing::ContainsRegex(
+          "field:server(.*)field:api_type error:type should be STRING(.*)"
+          "field:grpc_services(.*)field:google_grpc(.*)field:target_uri "
+          "error:type should be STRING(.*)"
+          "field:call_credentials(.*)field:sts_service(.*)field:token_exchange_"
+          "service_uri error:type should be STRING(.*)"
+          "field:resource error:type should be STRING(.*)"
+          "field:audience error:type should be STRING(.*)"
+          "field:scope error:type should be STRING(.*)"
+          "field:requested_token_type error:type should be STRING(.*)"
+          "field:subject_token_path error:type should be STRING(.*)"
+          "field:subject_token_type error:type should be STRING(.*)"
+          "field:actor_token_path error:type should be STRING(.*)"
+          "field:actor_token_type error:type should be STRING(.*)"
+          "field:timeout error:type should be STRING of the form given by "
+          "google.proto.Duration(.*)"
+          "field:certificate_lifetime error:type should be STRING of the form "
+          "given by google.proto.Duration(.*)"
+          "field:renewal_grace_period error:type should be STRING of the form "
+          "given by google.proto.Duration.(.*)"
+          "field:key_type error:type should be STRING(.*)"
+          "field:key_size error:type should be NUMBER(.*)"
+          "field:location error:type should be STRING"));
 }
 
-TEST(GoogleMeshCaConfigTest, WrongTypes2) {
+TEST(GoogleMeshCaConfigTest, GrpcServicesNotAnArray) {
   const char* json_str =
       "{"
       "  \"server\": {"
@@ -271,13 +264,13 @@ TEST(GoogleMeshCaConfigTest, WrongTypes2) {
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(json, &error);
-  ASSERT_NE(error, GRPC_ERROR_NONE) << grpc_error_string(error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  std::regex e(std::string("field grpc_services error:type should be ARRAY"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(
+      grpc_error_string(error),
+      ::testing::ContainsRegex(
+          "field:server(.*)field:grpc_services error:type should be ARRAY"));
 }
 
-TEST(GoogleMeshCaConfigTest, WrongTypes3) {
+TEST(GoogleMeshCaConfigTest, GoogleGrpcNotAnObject) {
   const char* json_str =
       "{"
       "  \"server\": {"
@@ -295,13 +288,13 @@ TEST(GoogleMeshCaConfigTest, WrongTypes3) {
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(json, &error);
-  ASSERT_NE(error, GRPC_ERROR_NONE) << grpc_error_string(error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  std::regex e(std::string("field:google_grpc error:type should be OBJECT"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(
+      grpc_error_string(error),
+      ::testing::ContainsRegex("field:server(.*)field:grpc_services(.*)field:"
+                               "google_grpc error:type should be OBJECT"));
 }
 
-TEST(GoogleMeshCaConfigTest, WrongTypes4) {
+TEST(GoogleMeshCaConfigTest, CallCredentialsNotAnArray) {
   const char* json_str =
       "{"
       "  \"server\": {"
@@ -321,14 +314,13 @@ TEST(GoogleMeshCaConfigTest, WrongTypes4) {
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(json, &error);
-  ASSERT_NE(error, GRPC_ERROR_NONE) << grpc_error_string(error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  std::regex e(
-      std::string("field call_credentials error:type should be ARRAY"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(grpc_error_string(error),
+              ::testing::ContainsRegex(
+                  "field:server(.*)field:grpc_services(.*)field:google_grpc(.*)"
+                  "field:call_credentials error:type should be ARRAY"));
 }
 
-TEST(GoogleMeshCaConfigTest, WrongTypes5) {
+TEST(GoogleMeshCaConfigTest, StsServiceNotAnObject) {
   const char* json_str =
       "{"
       "  \"server\": {"
@@ -350,10 +342,11 @@ TEST(GoogleMeshCaConfigTest, WrongTypes5) {
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(json, &error);
-  ASSERT_NE(error, GRPC_ERROR_NONE) << grpc_error_string(error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  std::regex e(std::string("field:sts_service error:type should be OBJECT"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(
+      grpc_error_string(error),
+      ::testing::ContainsRegex(
+          "field:server(.*)field:grpc_services(.*)field:google_grpc(.*)field:"
+          "call_credentials(.*)field:sts_service error:type should be OBJECT"));
 }
 
 }  // namespace

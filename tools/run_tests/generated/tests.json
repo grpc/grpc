@@ -4518,7 +4518,7 @@
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
-    "name": "google_mesh_ca_certificate_provider_test", 
+    "name": "google_mesh_ca_certificate_provider_factory_test", 
     "platforms": [
       "linux", 
       "mac", 

@@ -822,7 +822,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx global_config_env_test)
   endif()
   add_dependencies(buildtests_cxx global_config_test)
-  add_dependencies(buildtests_cxx google_mesh_ca_certificate_provider_test)
+  add_dependencies(buildtests_cxx google_mesh_ca_certificate_provider_factory_test)
   add_dependencies(buildtests_cxx grpc_cli)
   add_dependencies(buildtests_cxx grpc_tls_certificate_distributor_test)
   add_dependencies(buildtests_cxx grpc_tls_credentials_options_test)
@@ -1599,7 +1599,7 @@ add_library(grpc
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/xds/certificate_provider_registry.cc
-  src/core/ext/xds/google_mesh_ca_certificate_provider.cc
+  src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
   src/core/ext/xds/xds_api.cc
   src/core/ext/xds/xds_bootstrap.cc
   src/core/ext/xds/xds_client.cc
@@ -1727,6 +1727,7 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
+  src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/security/authorization/authorization_engine.cc
   src/core/lib/security/authorization/evaluate_args.cc
@@ -2342,6 +2343,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
+  src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -11123,13 +11125,13 @@ target_link_libraries(global_config_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(google_mesh_ca_certificate_provider_test
-  test/core/client_channel/google_mesh_ca_certificate_provider_test.cc
+add_executable(google_mesh_ca_certificate_provider_factory_test
+  test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(google_mesh_ca_certificate_provider_test
+target_include_directories(google_mesh_ca_certificate_provider_factory_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11147,7 +11149,7 @@ target_include_directories(google_mesh_ca_certificate_provider_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(google_mesh_ca_certificate_provider_test
+target_link_libraries(google_mesh_ca_certificate_provider_factory_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util

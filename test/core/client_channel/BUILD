@@ -31,18 +31,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "google_mesh_ca_certificate_provider_test",
-    srcs = ["google_mesh_ca_certificate_provider_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "retry_throttle_test",
     srcs = ["retry_throttle_test.cc"],
     external_deps = [

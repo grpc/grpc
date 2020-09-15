@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_XDS_GOOGLE_MESH_CA_CERTIFICATE_PROVIDER_H
-#define GRPC_CORE_EXT_XDS_GOOGLE_MESH_CA_CERTIFICATE_PROVIDER_H
+#ifndef GRPC_CORE_EXT_XDS_GOOGLE_MESH_CA_CERTIFICATE_PROVIDER_FACTORY_H
+#define GRPC_CORE_EXT_XDS_GOOGLE_MESH_CA_CERTIFICATE_PROVIDER_FACTORY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -27,7 +27,8 @@
 
 namespace grpc_core {
 
-class GoogleMeshCaCertificateProviderFactory : CertificateProviderFactory {
+class GoogleMeshCaCertificateProviderFactory
+    : public CertificateProviderFactory {
  public:
   class Config : public CertificateProviderFactory::Config {
    public:
@@ -43,7 +44,7 @@ class GoogleMeshCaCertificateProviderFactory : CertificateProviderFactory {
       std::string actor_token_type;
     };
 
-    const char* name() const override { return "meshCA"; }
+    const char* name() const override;
 
     const std::string& endpoint() const { return endpoint_; }
 
@@ -72,7 +73,7 @@ class GoogleMeshCaCertificateProviderFactory : CertificateProviderFactory {
     std::string location_;
   };
 
-  const char* name() const override { return "meshCA"; }
+  const char* name() const override;
 
   std::unique_ptr<CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const Json& config_json,
@@ -87,4 +88,4 @@ class GoogleMeshCaCertificateProviderFactory : CertificateProviderFactory {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_GOOGLE_MESH_CA_CERTIFICATE_PROVIDER_H
+#endif  // GRPC_CORE_EXT_XDS_GOOGLE_MESH_CA_CERTIFICATE_PROVIDER_FACTORY_H
