@@ -228,8 +228,8 @@ std::string XdsApi::Route::Matchers::HeaderMatcher::ToString() const {
 std::string XdsApi::Route::Matchers::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(path_matcher.ToString());
-  for (const auto& header_it : header_matchers) {
-    contents.push_back(header_it.ToString());
+  for (const HeaderMatcher& header_matcher : header_matchers) {
+    contents.push_back(header_matcher.ToString());
   }
   if (fraction_per_million.has_value()) {
     contents.push_back(absl::StrFormat("Fraction Per Million %d",
@@ -248,8 +248,8 @@ std::string XdsApi::Route::ToString() const {
   if (!cluster_name.empty()) {
     contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
   }
-  for (const auto& weighted_it : weighted_clusters) {
-    contents.push_back(weighted_it.ToString());
+  for (const ClusterWeight& cluster_weight : weighted_clusters) {
+    contents.push_back(cluster_weight.ToString());
   }
   return absl::StrJoin(contents, "\n");
 }
@@ -333,8 +333,8 @@ MatchType DomainPatternMatchType(const std::string& domain_pattern) {
 
 }  // namespace
 
-const XdsApi::RdsUpdate::VirtualHost*
-XdsApi::RdsUpdate::FindVirtualHostForDomain(const std::string& domain) const {
+XdsApi::RdsUpdate::VirtualHost* XdsApi::RdsUpdate::FindVirtualHostForDomain(
+    const std::string& domain) {
   // Find the best matched virtual host.
   // The search order for 4 groups of domain patterns:
   //   1. Exact match.
@@ -344,12 +344,12 @@ XdsApi::RdsUpdate::FindVirtualHostForDomain(const std::string& domain) const {
   // Within each group, longest match wins.
   // If the same best matched domain pattern appears in multiple virtual hosts,
   // the first matched virtual host wins.
-  const VirtualHost* target_vhost = nullptr;
+  VirtualHost* target_vhost = nullptr;
   MatchType best_match_type = INVALID_MATCH;
   size_t longest_match = 0;
   // Check each domain pattern in each virtual host to determine the best
   // matched virtual host.
-  for (const VirtualHost& vhost : virtual_hosts) {
+  for (VirtualHost& vhost : virtual_hosts) {
     for (const std::string& domain_pattern : vhost.domains) {
       // Check the match type first. Skip the pattern if it's not better than
       // current match.
@@ -1568,7 +1568,9 @@ grpc_error* RouteConfigParse(
       std::string domain_pattern = UpbStringToStdString(domains[j]);
       const MatchType match_type = DomainPatternMatchType(domain_pattern);
       if (match_type == INVALID_MATCH) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid domain pattern.");
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("Invalid domain pattern \"", domain_pattern, "\".")
+                .c_str());
       }
       vhost.domains.emplace_back(std::move(domain_pattern));
     }
@@ -1624,8 +1626,8 @@ grpc_error* RouteConfigParse(
 grpc_error* LdsResponseParse(
     XdsClient* client, TraceFlag* tracer,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
-    const std::string& expected_server_name,
-    absl::optional<XdsApi::LdsUpdate>* lds_update, upb_arena* arena) {
+    const std::set<absl::string_view>& expected_listener_names,
+    XdsApi::LdsUpdateMap* lds_update_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1647,9 +1649,19 @@ grpc_error* LdsResponseParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode listener.");
     }
     // Check listener name. Ignore unexpected listeners.
-    absl::string_view name =
-        UpbStringToAbsl(envoy_config_listener_v3_Listener_name(listener));
-    if (name != expected_server_name) continue;
+    std::string listener_name =
+        UpbStringToStdString(envoy_config_listener_v3_Listener_name(listener));
+    if (expected_listener_names.find(listener_name) ==
+        expected_listener_names.end()) {
+      continue;
+    }
+    // Fail if listener name is duplicated.
+    if (lds_update_map->find(listener_name) != lds_update_map->end()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate listener name \"", listener_name, "\"")
+              .c_str());
+    }
+    XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name];
     // Get api_listener and decode it to http_connection_manager.
     const envoy_config_listener_v3_ApiListener* api_listener =
         envoy_config_listener_v3_Listener_api_listener(listener);
@@ -1677,9 +1689,8 @@ grpc_error* LdsResponseParse(
       grpc_error* error =
           RouteConfigParse(client, tracer, route_config, &rds_update);
       if (error != GRPC_ERROR_NONE) return error;
-      lds_update->emplace();
-      (*lds_update)->rds_update = std::move(rds_update);
-      return GRPC_ERROR_NONE;
+      lds_update.rds_update = std::move(rds_update);
+      continue;
     }
     // Validate that RDS must be used to get the route_config dynamically.
     if (!envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_rds(
@@ -1703,11 +1714,9 @@ grpc_error* LdsResponseParse(
           "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
     }
     // Get the route_config_name.
-    lds_update->emplace();
-    (*lds_update)->route_config_name = UpbStringToStdString(
+    lds_update.route_config_name = UpbStringToStdString(
         envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
             rds));
-    return GRPC_ERROR_NONE;
   }
   return GRPC_ERROR_NONE;
 }
@@ -1716,7 +1725,7 @@ grpc_error* RdsResponseParse(
     XdsClient* client, TraceFlag* tracer,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_route_configuration_names,
-    absl::optional<XdsApi::RdsUpdate>* rds_update, upb_arena* arena) {
+    XdsApi::RdsUpdateMap* rds_update_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1738,19 +1747,25 @@ grpc_error* RdsResponseParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode route_config.");
     }
     // Check route_config_name. Ignore unexpected route_config.
-    absl::string_view route_config_name = UpbStringToAbsl(
+    std::string route_config_name = UpbStringToStdString(
         envoy_config_route_v3_RouteConfiguration_name(route_config));
     if (expected_route_configuration_names.find(route_config_name) ==
         expected_route_configuration_names.end()) {
       continue;
     }
+    // Fail if route config name is duplicated.
+    if (rds_update_map->find(route_config_name) != rds_update_map->end()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate route config name \"", route_config_name,
+                       "\"")
+              .c_str());
+    }
     // Parse the route_config.
-    XdsApi::RdsUpdate local_rds_update;
+    XdsApi::RdsUpdate& rds_update =
+        (*rds_update_map)[std::move(route_config_name)];
     grpc_error* error =
-        RouteConfigParse(client, tracer, route_config, &local_rds_update);
+        RouteConfigParse(client, tracer, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) return error;
-    rds_update->emplace(std::move(local_rds_update));
-    return GRPC_ERROR_NONE;
   }
   return GRPC_ERROR_NONE;
 }
@@ -1766,7 +1781,6 @@ grpc_error* CdsResponseParse(
       envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
   // Parse all the resources in the CDS response.
   for (size_t i = 0; i < size; ++i) {
-    XdsApi::CdsUpdate cds_update;
     // Check the type_url of the resource.
     absl::string_view type_url =
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
@@ -1795,6 +1809,7 @@ grpc_error* CdsResponseParse(
           absl::StrCat("duplicate resource name \"", cluster_name, "\"")
               .c_str());
     }
+    XdsApi::CdsUpdate& cds_update = (*cds_update_map)[std::move(cluster_name)];
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType not found.");
@@ -1836,7 +1851,6 @@ grpc_error* CdsResponseParse(
       }
       cds_update.lrs_load_reporting_server_name.emplace("");
     }
-    cds_update_map->emplace(std::move(cluster_name), std::move(cds_update));
   }
   return GRPC_ERROR_NONE;
 }
@@ -1962,7 +1976,6 @@ grpc_error* EdsResponseParse(
   const google_protobuf_Any* const* resources =
       envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
   for (size_t i = 0; i < size; ++i) {
-    XdsApi::EdsUpdate eds_update;
     // Check the type_url of the resource.
     absl::string_view type_url =
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
@@ -1995,6 +2008,8 @@ grpc_error* EdsResponseParse(
           absl::StrCat("duplicate resource name \"", eds_service_name, "\"")
               .c_str());
     }
+    XdsApi::EdsUpdate& eds_update =
+        (*eds_update_map)[std::move(eds_service_name)];
     // Get the endpoints.
     size_t locality_size;
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
@@ -2038,7 +2053,6 @@ grpc_error* EdsResponseParse(
         if (error != GRPC_ERROR_NONE) return error;
       }
     }
-    eds_update_map->emplace(std::move(eds_service_name), std::move(eds_update));
   }
   return GRPC_ERROR_NONE;
 }
@@ -2059,7 +2073,8 @@ std::string TypeUrlInternalToExternal(absl::string_view type_url) {
 }  // namespace
 
 XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
-    const grpc_slice& encoded_response, const std::string& expected_server_name,
+    const grpc_slice& encoded_response,
+    const std::set<absl::string_view>& expected_listener_names,
     const std::set<absl::string_view>& expected_route_configuration_names,
     const std::set<absl::string_view>& expected_cluster_names,
     const std::set<absl::string_view>& expected_eds_service_names) {
@@ -2087,12 +2102,12 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   // Parse the response according to the resource type.
   if (IsLds(result.type_url)) {
     result.parse_error =
-        LdsResponseParse(client_, tracer_, response, expected_server_name,
-                         &result.lds_update, arena.ptr());
+        LdsResponseParse(client_, tracer_, response, expected_listener_names,
+                         &result.lds_update_map, arena.ptr());
   } else if (IsRds(result.type_url)) {
     result.parse_error = RdsResponseParse(client_, tracer_, response,
                                           expected_route_configuration_names,
-                                          &result.rds_update, arena.ptr());
+                                          &result.rds_update_map, arena.ptr());
   } else if (IsCds(result.type_url)) {
     result.parse_error =
         CdsResponseParse(client_, tracer_, response, expected_cluster_names,

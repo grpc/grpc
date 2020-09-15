@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <set>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -45,7 +46,19 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
    public:
     virtual ~ListenerWatcherInterface() = default;
 
-    virtual void OnListenerChanged(std::vector<XdsApi::Route> routes) = 0;
+    virtual void OnListenerChanged(XdsApi::LdsUpdate listener) = 0;
+
+    virtual void OnError(grpc_error* error) = 0;
+
+    virtual void OnResourceDoesNotExist() = 0;
+  };
+
+  // RouteConfiguration data watcher interface.  Implemented by callers.
+  class RouteConfigWatcherInterface {
+   public:
+    virtual ~RouteConfigWatcherInterface() = default;
+
+    virtual void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) = 0;
 
     virtual void OnError(grpc_error* error) = 0;
 
@@ -78,13 +91,43 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
+  // TODO(roth): Remove the server_name parameter as part of sharing the
+  // XdsClient instance between channels.
   XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
-            grpc_pollset_set* interested_parties, absl::string_view server_name,
-            std::unique_ptr<ListenerWatcherInterface> watcher,
+            absl::string_view server_name,
             const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
 
+  grpc_pollset_set* interested_parties() const { return interested_parties_; }
+
   void Orphan() override;
+
+  // Start and cancel listener data watch for a listener.
+  // The XdsClient takes ownership of the watcher, but the caller may
+  // keep a raw pointer to the watcher, which may be used only for
+  // cancellation.  (Because the caller does not own the watcher, the
+  // pointer must not be used for any other purpose.)
+  // If the caller is going to start a new watch after cancelling the
+  // old one, it should set delay_unsubscription to true.
+  void WatchListenerData(absl::string_view listener_name,
+                         std::unique_ptr<ListenerWatcherInterface> watcher);
+  void CancelListenerDataWatch(absl::string_view listener_name,
+                               ListenerWatcherInterface* watcher,
+                               bool delay_unsubscription = false);
+
+  // Start and cancel route config data watch for a listener.
+  // The XdsClient takes ownership of the watcher, but the caller may
+  // keep a raw pointer to the watcher, which may be used only for
+  // cancellation.  (Because the caller does not own the watcher, the
+  // pointer must not be used for any other purpose.)
+  // If the caller is going to start a new watch after cancelling the
+  // old one, it should set delay_unsubscription to true.
+  void WatchRouteConfigData(
+      absl::string_view route_config_name,
+      std::unique_ptr<RouteConfigWatcherInterface> watcher);
+  void CancelRouteConfigDataWatch(absl::string_view route_config_name,
+                                  RouteConfigWatcherInterface* watcher,
+                                  bool delay_unsubscription = false);
 
   // Start and cancel cluster data watch for a cluster.
   // The XdsClient takes ownership of the watcher, but the caller may
@@ -200,6 +243,22 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
   };
 
+  struct ListenerState {
+    std::map<ListenerWatcherInterface*,
+             std::unique_ptr<ListenerWatcherInterface>>
+        watchers;
+    // The latest data seen from LDS.
+    absl::optional<XdsApi::LdsUpdate> update;
+  };
+
+  struct RouteConfigState {
+    std::map<RouteConfigWatcherInterface*,
+             std::unique_ptr<RouteConfigWatcherInterface>>
+        watchers;
+    // The latest data seen from RDS.
+    absl::optional<XdsApi::RdsUpdate> update;
+  };
+
   struct ClusterState {
     std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
         watchers;
@@ -250,19 +309,26 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   std::unique_ptr<XdsBootstrap> bootstrap_;
   XdsApi api_;
 
+  // TODO(roth): In order to share the XdsClient instance between
+  // channels and servers, we will need to remove this field.  In order
+  // to do that, we'll need to figure out if we can stop sending the
+  // server name as part of the node metadata in the LRS request.
   const std::string server_name_;
-  std::unique_ptr<ListenerWatcherInterface> listener_watcher_;
 
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
 
-  absl::optional<XdsApi::LdsUpdate> lds_result_;
-  absl::optional<XdsApi::RdsUpdate> rds_result_;
-
+  // One entry for each watched LDS resource.
+  std::map<std::string /*listener_name*/, ListenerState> listener_map_;
+  // One entry for each watched RDS resource.
+  std::map<std::string /*route_config_name*/, RouteConfigState>
+      route_config_map_;
   // One entry for each watched CDS resource.
   std::map<std::string /*cluster_name*/, ClusterState> cluster_map_;
   // One entry for each watched EDS resource.
   std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_;
+
+  // Load report data.
   std::map<
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       LoadReportState>

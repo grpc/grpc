@@ -288,7 +288,6 @@ CdsLb::~CdsLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] destroying cds LB policy", this);
   }
-  grpc_channel_args_destroy(args_);
 }
 
 void CdsLb::ShutdownLocked() {
@@ -305,8 +304,10 @@ void CdsLb::ShutdownLocked() {
       }
       xds_client_->CancelClusterDataWatch(config_->cluster(), cluster_watcher_);
     }
-    xds_client_.reset();
+    xds_client_.reset(DEBUG_LOCATION, "CdsLb");
   }
+  grpc_channel_args_destroy(args_);
+  args_ = nullptr;
 }
 
 void CdsLb::MaybeDestroyChildPolicyLocked() {

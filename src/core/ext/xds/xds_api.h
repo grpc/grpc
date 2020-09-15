@@ -147,8 +147,7 @@ class XdsApi {
       return virtual_hosts == other.virtual_hosts;
     }
     std::string ToString() const;
-    const VirtualHost* FindVirtualHostForDomain(
-        const std::string& domain) const;
+    VirtualHost* FindVirtualHostForDomain(const std::string& domain);
   };
 
   // TODO(roth): When we can use absl::variant<>, consider using that
@@ -179,6 +178,12 @@ class XdsApi {
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
+
+    bool operator==(const CdsUpdate& other) const {
+      return eds_service_name == other.eds_service_name &&
+             lrs_load_reporting_server_name ==
+                 other.lrs_load_reporting_server_name;
+    }
   };
 
   using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;
@@ -296,14 +301,14 @@ class XdsApi {
     std::string version;
     std::string nonce;
     std::string type_url;
-    absl::optional<LdsUpdate> lds_update;
-    absl::optional<RdsUpdate> rds_update;
+    LdsUpdateMap lds_update_map;
+    RdsUpdateMap rds_update_map;
     CdsUpdateMap cds_update_map;
     EdsUpdateMap eds_update_map;
   };
   AdsParseResult ParseAdsResponse(
       const grpc_slice& encoded_response,
-      const std::string& expected_server_name,
+      const std::set<absl::string_view>& expected_listener_names,
       const std::set<absl::string_view>& expected_route_configuration_names,
       const std::set<absl::string_view>& expected_cluster_names,
       const std::set<absl::string_view>& expected_eds_service_names);
