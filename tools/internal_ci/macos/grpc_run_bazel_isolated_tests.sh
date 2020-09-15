@@ -22,7 +22,7 @@ cd $(dirname $0)/../../..
 
 # run cfstream_test separately because it messes with the network
 # The "local" execution strategy is required because the test runs sudo and that doesn't work in a sandboxed environment (the default on mac)
-tools/bazel test $RUN_TESTS_FLAGS --spawn_strategy=local --genrule_strategy=local --test_output=all --copt="-DGRPC_CFSTREAM=1" //test/cpp/end2end:cfstream_test
+tools/bazel test $RUN_TESTS_FLAGS --genrule_strategy=local --test_output=all --copt="-DGRPC_CFSTREAM=1" //test/cpp/end2end:cfstream_test
 
 # Missing the /var/db/ntp-kod file may breaks the ntp synchronization.
 # Create the file and change the ownership to root before NTP sync.
@@ -36,7 +36,7 @@ sudo sntp -sS pool.ntp.org
 
 # run time_jump_test separately because it changes system time
 # The "local" execution strategy is required because the test runs sudo and that doesn't work in a sandboxed environment (the default on mac)
-tools/bazel test $RUN_TESTS_FLAGS --spawn_strategy=local --genrule_strategy=local --test_output=all //test/cpp/common:time_jump_test
+tools/bazel test $RUN_TESTS_FLAGS --genrule_strategy=local --test_output=all //test/cpp/common:time_jump_test
 
 # kill port_server.py to prevent the build from hanging
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
