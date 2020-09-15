@@ -400,7 +400,6 @@ EdsLb::~EdsLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
     gpr_log(GPR_INFO, "[edslb %p] destroying xds LB policy", this);
   }
-  grpc_channel_args_destroy(args_);
 }
 
 void EdsLb::ShutdownLocked() {
@@ -426,9 +425,15 @@ void EdsLb::ShutdownLocked() {
       xds_client()->CancelEndpointDataWatch(GetEdsResourceName(),
                                             endpoint_watcher_);
     }
-    xds_client_from_channel_.reset();
+    xds_client_from_channel_.reset(DEBUG_LOCATION, "EdsLb");
   }
-  xds_client_.reset();
+  if (xds_client_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
+                                     interested_parties());
+    xds_client_.reset();
+  }
+  grpc_channel_args_destroy(args_);
+  args_ = nullptr;
 }
 
 void EdsLb::MaybeDestroyChildPolicyLocked() {
@@ -456,11 +461,12 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
     if (xds_client_from_channel_ == nullptr) {
       grpc_error* error = GRPC_ERROR_NONE;
       xds_client_ = MakeOrphanable<XdsClient>(
-          work_serializer(), interested_parties(), GetEdsResourceName(),
-          nullptr /* service config watcher */, *args_, &error);
+          work_serializer(), GetEdsResourceName(), *args_, &error);
       // TODO(roth): If we decide that we care about EDS-only mode, add
       // proper error handling here.
       GPR_ASSERT(error == GRPC_ERROR_NONE);
+      grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
+                                       interested_parties());
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
         gpr_log(GPR_INFO, "[edslb %p] Created xds client %p", this,
                 xds_client_.get());

@@ -1443,6 +1443,10 @@ ChannelData::ChannelConfigHelper::ApplyServiceConfig(
   // If resolver did not return a service config or returned an invalid service
   // config, we need a fallback service config.
   if (result.service_config_error != GRPC_ERROR_NONE) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+      gpr_log(GPR_INFO, "chand=%p: resolver returned service config error: %s",
+              chand_, grpc_error_string(result.service_config_error));
+    }
     // If the service config was invalid, then fallback to the saved service
     // config. If there is no saved config either, use the default service
     // config.
