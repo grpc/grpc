@@ -4396,7 +4396,7 @@ class FailoverTest : public BasicTest {
  public:
   void SetUp() override {
     BasicTest::SetUp();
-    ResetStub(100, "");
+    ResetStub(500, "");
   }
 };
 
