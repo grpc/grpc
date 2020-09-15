@@ -1196,11 +1196,6 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
       LoadStatsRequest request;
       if (stream->Read(&request)) {
         CountedService<typename RpcApi::Service>::IncreaseRequestCount();
-        // Verify server name set in metadata.
-        auto it = request.node().metadata().fields().find(
-            "PROXYLESS_CLIENT_HOSTNAME");
-        GPR_ASSERT(it != request.node().metadata().fields().end());
-        EXPECT_EQ(it->second.string_value(), kDefaultResourceName);
         // Verify client features.
         EXPECT_THAT(
             request.node().client_features(),

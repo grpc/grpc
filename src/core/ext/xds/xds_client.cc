@@ -1431,7 +1431,6 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
-  GPR_ASSERT(!xds_client()->server_name_.empty());
   const auto& method =
       xds_client()->bootstrap_->server().ShouldUseV3()
           ? GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V3_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS
@@ -1443,7 +1442,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   GPR_ASSERT(call_ != nullptr);
   // Init the request payload.
   grpc_slice request_payload_slice =
-      xds_client()->api_.CreateLrsInitialRequest(xds_client()->server_name_);
+      xds_client()->api_.CreateLrsInitialRequest();
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -1767,7 +1766,6 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
 }  // namespace
 
 XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
-                     absl::string_view server_name,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
       request_timeout_(GetRequestTimeout(channel_args)),
@@ -1775,8 +1773,7 @@ XdsClient::XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
       interested_parties_(grpc_pollset_set_create()),
       bootstrap_(
           XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
-      api_(this, &grpc_xds_client_trace, bootstrap_.get()),
-      server_name_(server_name) {
+      api_(this, &grpc_xds_client_trace, bootstrap_.get()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
