@@ -4,6 +4,12 @@
 Set-StrictMode -Version 2
 $ErrorActionPreference = 'Stop'
 
+trap {
+    $ErrorActionPreference = "Continue"
+    Write-Error $_
+    exit 1
+}
+
 # avoid "Unknown error on a send" in Invoke-WebRequest
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
