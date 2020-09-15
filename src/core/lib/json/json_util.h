@@ -21,9 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 
@@ -32,6 +29,7 @@ namespace grpc_core {
 // Parses a JSON field of the form generated for a google.proto.Duration
 // proto message, as per:
 //   https://developers.google.com/protocol-buffers/docs/proto3#json
+// Returns true on success, false otherwise.
 bool ParseDurationFromJson(const Json& field, grpc_millis* duration);
 
 }  // namespace grpc_core

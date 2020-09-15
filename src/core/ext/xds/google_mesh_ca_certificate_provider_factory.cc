@@ -164,6 +164,147 @@ const char* GoogleMeshCaCertificateProviderFactory::Config::name() const {
   return kMeshCaPlugin;
 }
 
+void GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectStsService(
+    const Json::Object& parent_object,
+    std::vector<grpc_error*>* parent_error_list) {
+  const Json::Object* sts_service = nullptr;
+  if (ParseJsonObjectField(parent_object, "sts_service", &sts_service,
+                           parent_error_list)) {
+    std::vector<grpc_error*> error_list_sts_service;
+    if (!ParseJsonObjectField(*sts_service, "token_exchange_service_uri",
+                              &sts_config_.token_exchange_service_uri,
+                              &error_list_sts_service, true)) {
+      sts_config_.token_exchange_service_uri =
+          "securetoken.googleapis.com";  // default
+    }
+    ParseJsonObjectField(*sts_service, "resource", &sts_config_.resource,
+                         &error_list_sts_service, true);
+    ParseJsonObjectField(*sts_service, "audience", &sts_config_.audience,
+                         &error_list_sts_service, true);
+    if (!ParseJsonObjectField(*sts_service, "scope", &sts_config_.scope,
+                              &error_list_sts_service, true)) {
+      sts_config_.scope =
+          "https://www.googleapis.com/auth/cloud-platform";  // default
+    }
+    ParseJsonObjectField(*sts_service, "requested_token_type",
+                         &sts_config_.requested_token_type,
+                         &error_list_sts_service, true);
+    ParseJsonObjectField(*sts_service, "subject_token_path",
+                         &sts_config_.subject_token_path,
+                         &error_list_sts_service);
+    ParseJsonObjectField(*sts_service, "subject_token_type",
+                         &sts_config_.subject_token_type,
+                         &error_list_sts_service);
+    ParseJsonObjectField(*sts_service, "actor_token_path",
+                         &sts_config_.actor_token_path, &error_list_sts_service,
+                         true);
+    ParseJsonObjectField(*sts_service, "actor_token_type",
+                         &sts_config_.actor_token_type, &error_list_sts_service,
+                         true);
+    if (!error_list_sts_service.empty()) {
+      parent_error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
+          "field:sts_service", &error_list_sts_service));
+    }
+  }
+}
+
+void GoogleMeshCaCertificateProviderFactory::Config::
+    ParseJsonObjectCallCredentials(
+        const Json::Object& parent_object,
+        std::vector<grpc_error*>* parent_error_list) {
+  const Json::Array* call_credentials_array = nullptr;
+  if (ParseJsonObjectField(parent_object, "call_credentials",
+                           &call_credentials_array, parent_error_list)) {
+    std::vector<grpc_error*> error_list_call_credentials;
+    if (call_credentials_array->size() != 1) {
+      error_list_call_credentials.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:call_credentials error:Need exactly one entry."));
+    } else {
+      const Json::Object* call_credentials = nullptr;
+      if (ExtractJsonType((*call_credentials_array)[0], "call_credentials[0]",
+                          &call_credentials, &error_list_call_credentials)) {
+        ParseJsonObjectStsService(*call_credentials,
+                                  &error_list_call_credentials);
+      }
+    }
+    if (!error_list_call_credentials.empty()) {
+      parent_error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
+          "field:call_credentials", &error_list_call_credentials));
+    }
+  }
+}
+
+void GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectGoogleGrpc(
+    const Json::Object& parent_object,
+    std::vector<grpc_error*>* parent_error_list) {
+  const Json::Object* google_grpc = nullptr;
+  if (ParseJsonObjectField(parent_object, "google_grpc", &google_grpc,
+                           parent_error_list)) {
+    std::vector<grpc_error*> error_list_google_grpc;
+    if (!ParseJsonObjectField(*google_grpc, "target_uri", &endpoint_,
+                              &error_list_google_grpc, true)) {
+      endpoint_ = "meshca.googleapis.com";  // Default target
+    }
+    ParseJsonObjectCallCredentials(*google_grpc, &error_list_google_grpc);
+    if (!error_list_google_grpc.empty()) {
+      parent_error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
+          "field:google_grpc", &error_list_google_grpc));
+    }
+  }
+}
+
+void GoogleMeshCaCertificateProviderFactory::Config::
+    ParseJsonObjectGrpcServices(const Json::Object& parent_object,
+                                std::vector<grpc_error*>* parent_error_list) {
+  const Json::Array* grpc_services = nullptr;
+  if (ParseJsonObjectField(parent_object, "grpc_services", &grpc_services,
+                           parent_error_list)) {
+    std::vector<grpc_error*> error_list_grpc_services;
+    if (grpc_services->size() != 1) {
+      parent_error_list->push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:grpc_services error:Need exactly one entry"));
+    } else {
+      const Json::Object* grpc_service = nullptr;
+      if (ExtractJsonType((*grpc_services)[0], "grpc_services[0]",
+                          &grpc_service, &error_list_grpc_services)) {
+        ParseJsonObjectGoogleGrpc(*grpc_service, &error_list_grpc_services);
+        if (!ParseJsonObjectField(*grpc_service, "timeout", &timeout_,
+                                  &error_list_grpc_services, true)) {
+          timeout_ = 10 * 1000;  // 10sec default
+        }
+      }
+    }
+    if (!error_list_grpc_services.empty()) {
+      parent_error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
+          "field:grpc_services", &error_list_grpc_services));
+    }
+  }
+}
+
+void GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectServer(
+    const Json::Object& parent_object,
+    std::vector<grpc_error*>* parent_error_list) {
+  const Json::Object* server = nullptr;
+  if (ParseJsonObjectField(parent_object, "server", &server,
+                           parent_error_list)) {
+    std::vector<grpc_error*> error_list_server;
+    std::string api_type;
+    if (ParseJsonObjectField(*server, "api_type", &api_type, &error_list_server,
+                             true)) {
+      if (api_type != "GRPC") {
+        error_list_server.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:api_type error:Only GRPC is supported"));
+      }
+    }
+    ParseJsonObjectGrpcServices(*server, &error_list_server);
+    if (!error_list_server.empty()) {
+      parent_error_list->push_back(
+          GRPC_ERROR_CREATE_FROM_VECTOR("field:server", &error_list_server));
+    }
+  }
+}
+
 std::unique_ptr<GoogleMeshCaCertificateProviderFactory::Config>
 GoogleMeshCaCertificateProviderFactory::Config::Parse(const Json& config_json,
                                                       grpc_error** error) {
@@ -175,127 +316,7 @@ GoogleMeshCaCertificateProviderFactory::Config::Parse(const Json& config_json,
         "error:config type should be OBJECT.");
     return nullptr;
   }
-  const Json::Object* server = nullptr;
-  if (ParseJsonObjectField(config_json.object_value(), "server", &server,
-                           &error_list)) {
-    std::vector<grpc_error*> error_list_server;
-    std::string api_type;
-    if (ParseJsonObjectField(*server, "api_type", &api_type, &error_list_server,
-                             true)) {
-      if (api_type != "GRPC") {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:api_type error:Only GRPC is supported"));
-      }
-    }
-    const Json::Array* grpc_services = nullptr;
-    if (ParseJsonObjectField(*server, "grpc_services", &grpc_services,
-                             &error_list_server)) {
-      std::vector<grpc_error*> error_list_grpc_services;
-      if (grpc_services->size() != 1) {
-        error_list_server.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:grpc_services error:Need exactly one entry"));
-      } else {
-        const Json::Object* grpc_service = nullptr;
-        if (ExtractJsonType((*grpc_services)[0], "grpc_services[0]",
-                            &grpc_service, &error_list_grpc_services)) {
-          const Json::Object* google_grpc = nullptr;
-          if (ParseJsonObjectField(*grpc_service, "google_grpc", &google_grpc,
-                                   &error_list_grpc_services)) {
-            std::vector<grpc_error*> error_list_google_grpc;
-            if (!ParseJsonObjectField(*google_grpc, "target_uri",
-                                      &config->endpoint_,
-                                      &error_list_google_grpc, true)) {
-              config->endpoint_ = "meshca.googleapis.com";  // Default target
-            }
-            const Json::Array* call_credentials_array = nullptr;
-            if (ParseJsonObjectField(*google_grpc, "call_credentials",
-                                     &call_credentials_array,
-                                     &error_list_google_grpc)) {
-              std::vector<grpc_error*> error_list_call_credentials;
-              if (call_credentials_array->size() != 1) {
-                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                    "field:call_credentials error:Need exactly one entry."));
-              } else {
-                const Json::Object* call_credentials = nullptr;
-                if (ExtractJsonType((*call_credentials_array)[0],
-                                    "call_credentials[0]", &call_credentials,
-                                    &error_list_call_credentials)) {
-                  const Json::Object* sts_service = nullptr;
-                  if (ParseJsonObjectField(*call_credentials, "sts_service",
-                                           &sts_service,
-                                           &error_list_call_credentials)) {
-                    std::vector<grpc_error*> error_list_sts_service;
-                    if (!ParseJsonObjectField(
-                            *sts_service, "token_exchange_service_uri",
-                            &config->sts_config_.token_exchange_service_uri,
-                            &error_list_sts_service, true)) {
-                      config->sts_config_.token_exchange_service_uri =
-                          "securetoken.googleapis.com";  // default
-                    }
-                    ParseJsonObjectField(*sts_service, "resource",
-                                         &config->sts_config_.resource,
-                                         &error_list_sts_service, true);
-                    ParseJsonObjectField(*sts_service, "audience",
-                                         &config->sts_config_.audience,
-                                         &error_list_sts_service, true);
-                    if (!ParseJsonObjectField(*sts_service, "scope",
-                                              &config->sts_config_.scope,
-                                              &error_list_sts_service, true)) {
-                      config->sts_config_.scope =
-                          "https://www.googleapis.com/auth/cloud-platform";  // default
-                    }
-                    ParseJsonObjectField(
-                        *sts_service, "requested_token_type",
-                        &config->sts_config_.requested_token_type,
-                        &error_list_sts_service, true);
-                    ParseJsonObjectField(
-                        *sts_service, "subject_token_path",
-                        &config->sts_config_.subject_token_path,
-                        &error_list_sts_service);
-                    ParseJsonObjectField(
-                        *sts_service, "subject_token_type",
-                        &config->sts_config_.subject_token_type,
-                        &error_list_sts_service);
-                    ParseJsonObjectField(*sts_service, "actor_token_path",
-                                         &config->sts_config_.actor_token_path,
-                                         &error_list_sts_service, true);
-                    ParseJsonObjectField(*sts_service, "actor_token_type",
-                                         &config->sts_config_.actor_token_type,
-                                         &error_list_sts_service, true);
-                    if (!error_list_sts_service.empty()) {
-                      error_list_call_credentials.push_back(
-                          GRPC_ERROR_CREATE_FROM_VECTOR(
-                              "field:sts_service", &error_list_sts_service));
-                    }
-                  }
-                }
-              }
-              if (!error_list_call_credentials.empty()) {
-                error_list_google_grpc.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-                    "field:call_credentials", &error_list_call_credentials));
-              }
-            }
-            if (!error_list_google_grpc.empty()) {
-              error_list_grpc_services.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-                  "field:google_grpc", &error_list_google_grpc));
-            }
-          }
-          if (!ParseJsonObjectField(*grpc_service, "timeout", &config->timeout_,
-                                    &error_list_grpc_services, true)) {
-            config->timeout_ = 10 * 1000;  // 10sec default
-          }
-        }
-      }
-      if (!error_list_grpc_services.empty()) {
-        error_list_server.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-            "field:grpc_services", &error_list_grpc_services));
-      }
-    }
-    if (!error_list_server.empty()) {
-      error_list.push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("field:server", &error_list_server));
-    }
-  }
+  config->ParseJsonObjectServer(config_json.object_value(), &error_list);
   if (!ParseJsonObjectField(config_json.object_value(), "certificate_lifetime",
                             &config->certificate_lifetime_, &error_list,
                             true)) {
