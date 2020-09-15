@@ -3580,19 +3580,6 @@ targets:
   - linux
   - posix
   - mac
-- name: init_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/init_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
-  uses_polling: false
 - name: inproc_callback_test
   build: test
   language: c
@@ -6201,6 +6188,20 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: init_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/init_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  uses_polling: false
 - name: initial_settings_frame_bad_client_test
   gtest: true
   build: test
