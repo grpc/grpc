@@ -18,11 +18,22 @@
 # Need to increase open files limit for c tests
 ulimit -n 32768
 
+df -h
+
+# To make docker to use DOCKER_OPTS for Ubuntu 16.04
+# https://github.com/moby/moby/issues/25357
+if [ -f "/lib/systemd/system/docker.service" ]; then
+sudo sed -i -E "s/ExecStart=(.*)\/\//EnvironmentFile=\/etc\/default\/docker\nExecStart=\nExecStart=\1\/\/ \$DOCKER_OPTS/" /lib/systemd/system/docker.service
+sudo systemctl daemon-reload
+cat /lib/systemd/system/docker.service
+fi
+
 # Move docker's storage location to scratch disk so we don't run out of space.
 echo 'DOCKER_OPTS="${DOCKER_OPTS} --graph=/tmpfs/docker"' | sudo tee --append /etc/default/docker
 # Use container registry mirror for pulling docker images (should make downloads faster)
 # See https://cloud.google.com/container-registry/docs/using-dockerhub-mirroring
 echo 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=https://mirror.gcr.io"' | sudo tee --append /etc/default/docker
+cat /etc/default/docker
 sudo service docker restart
 
 # Download Docker images from DockerHub
