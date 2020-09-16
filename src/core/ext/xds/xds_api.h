@@ -313,8 +313,8 @@ class XdsApi {
       const std::set<absl::string_view>& expected_cluster_names,
       const std::set<absl::string_view>& expected_eds_service_names);
 
-  // Creates an LRS request querying \a server_name.
-  grpc_slice CreateLrsInitialRequest(const std::string& server_name);
+  // Creates an initial LRS request.
+  grpc_slice CreateLrsInitialRequest();
 
   // Creates an LRS request sending a client-side load report.
   grpc_slice CreateLrsRequest(ClusterLoadReportMap cluster_load_report_map);

@@ -595,7 +595,6 @@ void PopulateBuildVersion(upb_arena* arena, envoy_config_core_v3_Node* node_msg,
 void PopulateNode(upb_arena* arena, const XdsBootstrap* bootstrap,
                   const std::string& build_version,
                   const std::string& user_agent_name,
-                  const std::string& server_name,
                   envoy_config_core_v3_Node* node_msg) {
   const XdsBootstrap::Node* node = bootstrap->node();
   if (node != nullptr) {
@@ -611,16 +610,6 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap* bootstrap,
       google_protobuf_Struct* metadata =
           envoy_config_core_v3_Node_mutable_metadata(node_msg, arena);
       PopulateMetadata(arena, metadata, node->metadata.object_value());
-    }
-    if (!server_name.empty()) {
-      google_protobuf_Struct* metadata =
-          envoy_config_core_v3_Node_mutable_metadata(node_msg, arena);
-      google_protobuf_Value* value = google_protobuf_Value_new(arena);
-      google_protobuf_Value_set_string_value(value,
-                                             StdStringToUpbString(server_name));
-      google_protobuf_Struct_fields_set(
-          metadata, upb_strview_makez("PROXYLESS_CLIENT_HOSTNAME"), value,
-          arena);
     }
     if (!node->locality_region.empty() || !node->locality_zone.empty() ||
         !node->locality_subzone.empty()) {
@@ -902,7 +891,7 @@ grpc_slice XdsApi::CreateAdsRequest(
     envoy_config_core_v3_Node* node_msg =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
                                                                  arena.ptr());
-    PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_, "",
+    PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_,
                  node_msg);
   }
   // Add resource_names.
@@ -2251,7 +2240,7 @@ grpc_slice SerializeLrsRequest(
 
 }  // namespace
 
-grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
+grpc_slice XdsApi::CreateLrsInitialRequest() {
   upb::Arena arena;
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
@@ -2261,7 +2250,7 @@ grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
       envoy_service_load_stats_v3_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
   PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_,
-               server_name, node_msg);
+               node_msg);
   envoy_config_core_v3_Node_add_client_features(
       node_msg, upb_strview_makez("envoy.lrs.supports_send_all_clusters"),
       arena.ptr());
