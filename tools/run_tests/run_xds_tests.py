@@ -21,7 +21,6 @@ import json
 import logging
 import os
 import random
-import shlex
 import socket
 import subprocess
 import sys
@@ -1800,9 +1799,8 @@ try:
                 rpcs_to_send=rpcs_to_send,
                 metadata_to_send=metadata_to_send)
             logger.debug('running client: %s', client_cmd_formatted)
-            client_cmd = shlex.split(client_cmd_formatted)
             try:
-                client_process = subprocess.Popen(client_cmd,
+                client_process = subprocess.Popen(['/bin/bash', '-i', '-c', client_cmd_formatted],
                                                   env=client_env,
                                                   stderr=subprocess.STDOUT,
                                                   stdout=test_log_file)
