@@ -365,13 +365,17 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
   CFSTREAM_HANDLE_REF(ep_impl->stream_sync, "endpoint create");
 
   ep_impl->peer_string = peer_string;
-  const int* native_handle =
-      reinterpret_cast<const int*>(CFReadStreamCopyProperty(
-          ep_impl->read_stream, kCFStreamPropertySocketNativeHandle));
   grpc_resolved_address resolved_local_addr;
   resolved_local_addr.len = sizeof(resolved_local_addr.addr);
-  if (getsockname(*native_handle,
-                  reinterpret_cast<sockaddr*>(resolved_local_addr.addr),
+  CFDataRef native_handle = static_cast<CFDataRef>(CFReadStreamCopyProperty(
+      ep_impl->read_stream, kCFStreamPropertySocketNativeHandle));
+  CFSocketNativeHandle sockfd;
+  CFDataGetBytes(native_handle, CFRangeMake(0, sizeof(CFSocketNativeHandle)),
+                 (UInt8*)&sockfd);
+  if (native_handle) {
+    CFRelease(native_handle);
+  }
+  if (getsockname(sockfd, reinterpret_cast<sockaddr*>(resolved_local_addr.addr),
                   &resolved_local_addr.len) < 0) {
     ep_impl->local_address = "";
   } else {
