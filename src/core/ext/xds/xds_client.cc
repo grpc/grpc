@@ -969,7 +969,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
             " resources",
             xds_client(), rds_update_map.size());
   }
-  auto& rds_state = state_map_[XdsApi::kLdsTypeUrl];
+  auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   for (auto& p : rds_update_map) {
     const std::string& route_config_name = p.first;
     XdsApi::RdsUpdate& rds_update = p.second;
