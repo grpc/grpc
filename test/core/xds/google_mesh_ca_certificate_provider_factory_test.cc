@@ -179,8 +179,9 @@ TEST(GoogleMeshCaConfigTest, WrongExpectedValues) {
       GoogleMeshCaCertificateProviderFactory::Config::Parse(json, &error);
   EXPECT_THAT(
       grpc_error_string(error),
-      ::testing::ContainsRegex("field:api_type error:Only GRPC is supported(.*)"
+      ::testing::ContainsRegex("field:api_type error:Only GRPC is supported.*"
                                "field:key_type error:Only RSA is supported"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST(GoogleMeshCaConfigTest, WrongTypes) {
@@ -222,28 +223,29 @@ TEST(GoogleMeshCaConfigTest, WrongTypes) {
   EXPECT_THAT(
       grpc_error_string(error),
       ::testing::ContainsRegex(
-          "field:server(.*)field:api_type error:type should be STRING(.*)"
-          "field:grpc_services(.*)field:google_grpc(.*)field:target_uri "
-          "error:type should be STRING(.*)"
-          "field:call_credentials(.*)field:sts_service(.*)field:token_exchange_"
-          "service_uri error:type should be STRING(.*)"
-          "field:resource error:type should be STRING(.*)"
-          "field:audience error:type should be STRING(.*)"
-          "field:scope error:type should be STRING(.*)"
-          "field:requested_token_type error:type should be STRING(.*)"
-          "field:subject_token_path error:type should be STRING(.*)"
-          "field:subject_token_type error:type should be STRING(.*)"
-          "field:actor_token_path error:type should be STRING(.*)"
-          "field:actor_token_type error:type should be STRING(.*)"
+          "field:server.*field:api_type error:type should be STRING.*"
+          "field:grpc_services.*field:google_grpc.*field:target_uri "
+          "error:type should be STRING.*"
+          "field:call_credentials.*field:sts_service.*field:token_exchange_"
+          "service_uri error:type should be STRING.*"
+          "field:resource error:type should be STRING.*"
+          "field:audience error:type should be STRING.*"
+          "field:scope error:type should be STRING.*"
+          "field:requested_token_type error:type should be STRING.*"
+          "field:subject_token_path error:type should be STRING.*"
+          "field:subject_token_type error:type should be STRING.*"
+          "field:actor_token_path error:type should be STRING.*"
+          "field:actor_token_type error:type should be STRING.*"
           "field:timeout error:type should be STRING of the form given by "
-          "google.proto.Duration(.*)"
+          "google.proto.Duration.*"
           "field:certificate_lifetime error:type should be STRING of the form "
-          "given by google.proto.Duration(.*)"
+          "given by google.proto.Duration.*"
           "field:renewal_grace_period error:type should be STRING of the form "
-          "given by google.proto.Duration.(.*)"
-          "field:key_type error:type should be STRING(.*)"
-          "field:key_size error:type should be NUMBER(.*)"
+          "given by google.proto.Duration..*"
+          "field:key_type error:type should be STRING.*"
+          "field:key_size error:type should be NUMBER.*"
           "field:location error:type should be STRING"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST(GoogleMeshCaConfigTest, GrpcServicesNotAnArray) {
@@ -265,7 +267,8 @@ TEST(GoogleMeshCaConfigTest, GrpcServicesNotAnArray) {
   EXPECT_THAT(
       grpc_error_string(error),
       ::testing::ContainsRegex(
-          "field:server(.*)field:grpc_services error:type should be ARRAY"));
+          "field:server.*field:grpc_services error:type should be ARRAY"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST(GoogleMeshCaConfigTest, GoogleGrpcNotAnObject) {
@@ -288,8 +291,9 @@ TEST(GoogleMeshCaConfigTest, GoogleGrpcNotAnObject) {
       GoogleMeshCaCertificateProviderFactory::Config::Parse(json, &error);
   EXPECT_THAT(
       grpc_error_string(error),
-      ::testing::ContainsRegex("field:server(.*)field:grpc_services(.*)field:"
+      ::testing::ContainsRegex("field:server.*field:grpc_services.*field:"
                                "google_grpc error:type should be OBJECT"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST(GoogleMeshCaConfigTest, CallCredentialsNotAnArray) {
@@ -314,8 +318,9 @@ TEST(GoogleMeshCaConfigTest, CallCredentialsNotAnArray) {
       GoogleMeshCaCertificateProviderFactory::Config::Parse(json, &error);
   EXPECT_THAT(grpc_error_string(error),
               ::testing::ContainsRegex(
-                  "field:server(.*)field:grpc_services(.*)field:google_grpc(.*)"
+                  "field:server.*field:grpc_services.*field:google_grpc.*"
                   "field:call_credentials error:type should be ARRAY"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST(GoogleMeshCaConfigTest, StsServiceNotAnObject) {
@@ -343,8 +348,9 @@ TEST(GoogleMeshCaConfigTest, StsServiceNotAnObject) {
   EXPECT_THAT(
       grpc_error_string(error),
       ::testing::ContainsRegex(
-          "field:server(.*)field:grpc_services(.*)field:google_grpc(.*)field:"
-          "call_credentials(.*)field:sts_service error:type should be OBJECT"));
+          "field:server.*field:grpc_services.*field:google_grpc.*field:"
+          "call_credentials.*field:sts_service error:type should be OBJECT"));
+  GRPC_ERROR_UNREF(error);
 }
 
 }  // namespace
