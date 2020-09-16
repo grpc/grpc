@@ -65,18 +65,15 @@ class GoogleMeshCaCertificateProviderFactory
 
    private:
     // Helpers for parsing the config
-    void ParseJsonObjectStsService(const Json::Object& parent_object,
-                                   std::vector<grpc_error*>* parent_error_list);
-    void ParseJsonObjectCallCredentials(
-        const Json::Object& parent_object,
-        std::vector<grpc_error*>* parent_error_list);
-    void ParseJsonObjectGoogleGrpc(const Json::Object& parent_object,
-                                   std::vector<grpc_error*>* parent_error_list);
-    void ParseJsonObjectGrpcServices(
-        const Json::Object& parent_object,
-        std::vector<grpc_error*>* parent_error_list);
-    void ParseJsonObjectServer(const Json::Object& parent_object,
-                               std::vector<grpc_error*>* parent_error_list);
+    std::vector<grpc_error*> ParseJsonObjectStsService(
+        const Json::Object& sts_service);
+    std::vector<grpc_error*> ParseJsonObjectCallCredentials(
+        const Json::Object& call_credentials);
+    std::vector<grpc_error*> ParseJsonObjectGoogleGrpc(
+        const Json::Object& google_grpc);
+    std::vector<grpc_error*> ParseJsonObjectGrpcServices(
+        const Json::Object& grpc_service);
+    std::vector<grpc_error*> ParseJsonObjectServer(const Json::Object& server);
 
     std::string endpoint_;
     StsConfig sts_config_;
