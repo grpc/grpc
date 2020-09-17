@@ -20,11 +20,11 @@
 
 #include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
-#include <grpcpp/impl/codegen/server_callback_impl.h>
+#include <grpcpp/impl/codegen/server_callback.h>
 #include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/codegen/status.h>
 
-namespace grpc_impl {
+namespace grpc {
 namespace internal {
 
 template <class RequestType, class ResponseType>
@@ -862,6 +862,6 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
 };
 
 }  // namespace internal
-}  // namespace grpc_impl
+}  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_HANDLERS_H

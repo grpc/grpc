@@ -29,9 +29,13 @@
 
 #include <vector>
 
-namespace grpc_impl {
-namespace internal {
+namespace grpc {
 
+class ServerInterface;
+class ByteBuffer;
+class ServerInterface;
+
+namespace internal {
 template <class RequestType, class ResponseType>
 class CallbackUnaryHandler;
 template <class RequestType, class ResponseType>
@@ -42,17 +46,6 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <::grpc::StatusCode code>
 class ErrorMethodHandler;
-
-}  // namespace internal
-}  // namespace grpc_impl
-
-namespace grpc {
-
-class ServerInterface;
-class ByteBuffer;
-class ServerInterface;
-
-namespace internal {
 class CallOpSendMessage;
 template <class R>
 class CallOpRecvMessage;
@@ -170,15 +163,15 @@ class ByteBuffer final {
   friend class internal::CallOpRecvMessage;
   friend class internal::CallOpGenericRecvMessage;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::RpcMethodHandler;
+  friend class internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::ServerStreamingHandler;
+  friend class internal::ServerStreamingHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::CallbackUnaryHandler;
+  friend class internal::CallbackUnaryHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::CallbackServerStreamingHandler;
+  friend class internal::CallbackServerStreamingHandler;
   template <StatusCode code>
-  friend class ::grpc_impl::internal::ErrorMethodHandler;
+  friend class internal::ErrorMethodHandler;
   template <class R>
   friend class internal::DeserializeFuncType;
   friend class ProtoBufferReader;
