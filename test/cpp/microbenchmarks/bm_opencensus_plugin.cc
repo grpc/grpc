@@ -83,8 +83,7 @@ class EchoServerThread final {
 };
 
 static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
-  grpc::testing::TestEnvironment env(0, {});
-
+  grpc::testing::TestGrpcScope grpc_scope;
   EchoServerThread server;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
       grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
@@ -100,14 +99,13 @@ static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
 BENCHMARK(BM_E2eLatencyCensusDisabled);
 
 static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
-  grpc::testing::TestEnvironment env(0, {});
-
   // Now start the test by registering the plugin (once in the execution)
   RegisterOnce();
   // This we can safely repeat, and doing so clears accumulated data to avoid
   // initialization costs varying between runs.
   grpc::RegisterOpenCensusViewsForExport();
 
+  grpc::testing::TestGrpcScope grpc_scope;
   EchoServerThread server;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
       grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
@@ -122,4 +120,9 @@ static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
 }
 BENCHMARK(BM_E2eLatencyCensusEnabled);
 
-BENCHMARK_MAIN();
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
+  ::benchmark::Initialize(&argc, argv);
+  if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
+  ::benchmark::RunSpecifiedBenchmarks();
+}
