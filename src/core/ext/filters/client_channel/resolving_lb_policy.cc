@@ -109,9 +109,10 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       : parent_(std::move(parent)) {}
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      const grpc_channel_args& args) override {
+      ServerAddress address, const grpc_channel_args& args) override {
     if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
-    return parent_->channel_control_helper()->CreateSubchannel(args);
+    return parent_->channel_control_helper()->CreateSubchannel(
+        std::move(address), args);
   }
 
   void UpdateState(grpc_connectivity_state state, const absl::Status& status,
