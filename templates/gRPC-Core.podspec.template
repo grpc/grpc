@@ -67,7 +67,7 @@
   grpc_public_headers = list(sorted((set(list_lib_files("grpc", ("public_headers",))) - set(address_sorting_unwanted_files)) | set(list_lib_files("re2", ("public_headers",)))))
   grpc_private_headers = list(sorted((set(list_lib_files("grpc", ("headers",))) - set(address_sorting_unwanted_files)) | set(list_lib_files("re2", ("headers",)))))
   grpc_abseil_specs = list_abseil_specs("grpc")
-
+  grpc_tests_abseil_specs = list(sorted(set(list_abseil_specs("end2end_tests")) - set(grpc_abseil_specs)))
 
   # TODO(jtattermusch): build.yaml is now generated from bazel build
   # which doesn't have an explicit "grpc_cronet" target. Until it exists
@@ -123,6 +123,7 @@
     s.requires_arc = false
 
     name = 'grpc'
+    abseil_version = '1.20200225.0'
 
     # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
     # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -196,7 +197,6 @@
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'BoringSSL-GRPC', '0.0.12'
-      abseil_version = '1.20200225.0'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor
@@ -231,6 +231,9 @@
 
       ss.dependency "#{s.name}/Interface", version
       ss.dependency "#{s.name}/Implementation", version
+      % for abseil_spec in grpc_tests_abseil_specs:
+      ss.dependency '${abseil_spec}', abseil_version
+      % endfor
 
       ss.source_files = ${ruby_multiline_list(grpc_test_util_files, 22)}
     end
