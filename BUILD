@@ -779,6 +779,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/iomgr/work_serializer.cc",
         "src/core/lib/json/json_reader.cc",
+        "src/core/lib/json/json_util.cc",
         "src/core/lib/json/json_writer.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
@@ -924,6 +925,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_posix.h",
         "src/core/lib/iomgr/work_serializer.h",
         "src/core/lib/json/json.h",
+        "src/core/lib/json/json_util.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/slice/slice_internal.h",
@@ -1328,8 +1330,24 @@ grpc_cc_library(
         "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_google_mesh_ca_certificate_provider_factory",
         "grpc_secure",
         "grpc_xds_api_header",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_google_mesh_ca_certificate_provider_factory",
+    srcs = [
+        "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc",
+    ],
+    hdrs = [
+        "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_secure",
     ],
 )
 

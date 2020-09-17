@@ -1222,6 +1222,8 @@ src/core/ext/xds/certificate_provider_factory.h \
 src/core/ext/xds/certificate_provider_registry.cc \
 src/core/ext/xds/certificate_provider_registry.h \
 src/core/ext/xds/certificate_provider_store.h \
+src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc \
+src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h \
 src/core/ext/xds/xds_api.cc \
 src/core/ext/xds/xds_api.h \
 src/core/ext/xds/xds_bootstrap.cc \
@@ -1536,6 +1538,8 @@ src/core/lib/iomgr/work_serializer.cc \
 src/core/lib/iomgr/work_serializer.h \
 src/core/lib/json/json.h \
 src/core/lib/json/json_reader.cc \
+src/core/lib/json/json_util.cc \
+src/core/lib/json/json_util.h \
 src/core/lib/json/json_writer.cc \
 src/core/lib/profiling/basic_timers.cc \
 src/core/lib/profiling/stap_timers.cc \
