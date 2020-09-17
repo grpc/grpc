@@ -70,6 +70,7 @@ DEFINE_string(
     "server_streaming : single request with response streaming;\n"
     "slow_consumer : single request with response streaming with "
     "slow client consumer;\n"
+    "special_status_message: verify Unicode and whitespace in status message;\n"
     "status_code_and_message: verify status code & message;\n"
     "timeout_on_sleeping_server: deadline exceeds on stream;\n"
     "unimplemented_method: client calls an unimplemented method;\n"
@@ -258,6 +259,8 @@ int main(int argc, char** argv) {
   }
   actions["status_code_and_message"] =
       std::bind(&grpc::testing::InteropClient::DoStatusWithMessage, &client);
+  actions["special_status_message"] =
+      std::bind(&grpc::testing::InteropClient::DoSpecialStatusMessage, &client);
   actions["custom_metadata"] =
       std::bind(&grpc::testing::InteropClient::DoCustomMetadata, &client);
   actions["unimplemented_method"] =
