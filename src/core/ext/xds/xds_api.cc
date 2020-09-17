@@ -1836,6 +1836,17 @@ grpc_error* CdsResponseParse(
       }
       cds_update.lrs_load_reporting_server_name.emplace("");
     }
+    // Record max concurrent requests (if any).
+    if (envoy_config_cluster_v3_Cluster_has_max_requests_per_connection(
+            cluster)) {
+      const google_protobuf_UInt32Value* max =
+          envoy_config_cluster_v3_Cluster_max_requests_per_connection(cluster);
+      GPR_ASSERT(max != nullptr);
+      cds_update.max_concurrent_requests =
+          google_protobuf_UInt32Value_value(max);
+    } else {
+      cds_update.max_concurrent_requests = std::numeric_limits<uint32_t>::max();
+    }
     cds_update_map->emplace(std::move(cluster_name), std::move(cds_update));
   }
   return GRPC_ERROR_NONE;

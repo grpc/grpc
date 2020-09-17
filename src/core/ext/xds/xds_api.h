@@ -179,6 +179,9 @@ class XdsApi {
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
+    // Maximum number of outstanding requests can be made to the upstream
+    // cluster. If unset, assume std::numeric_limits<uint32_t>::max().
+    uint32_t max_concurrent_requests;
   };
 
   using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;

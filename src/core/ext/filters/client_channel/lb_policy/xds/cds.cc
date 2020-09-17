@@ -122,16 +122,19 @@ void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO,
             "[cdslb %p] received CDS update from xds client %p: "
-            "eds_service_name=%s lrs_load_reporting_server_name=%s",
+            "eds_service_name=%s lrs_load_reporting_server_name=%s"
+            "max_concurrent_requests=%d",
             parent_.get(), parent_->xds_client_.get(),
             cluster_data.eds_service_name.c_str(),
             cluster_data.lrs_load_reporting_server_name.has_value()
                 ? cluster_data.lrs_load_reporting_server_name.value().c_str()
-                : "(unset)");
+                : "(unset)",
+            cluster_data.max_concurrent_requests);
   }
   // Construct config for child policy.
   Json::Object child_config = {
       {"clusterName", parent_->config_->cluster()},
+      {"max_concurrent_requests", cluster_data.max_concurrent_requests},
       {"localityPickingPolicy",
        Json::Array{
            Json::Object{
