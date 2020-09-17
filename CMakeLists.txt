@@ -1976,6 +1976,7 @@ add_library(grpc_test_util
   test/core/util/cmdline.cc
   test/core/util/debugger_macros.cc
   test/core/util/eval_args_mock_endpoint.cc
+  test/core/util/examine_stack.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2030,6 +2031,9 @@ target_link_libraries(grpc_test_util
   gpr
   address_sorting
   upb
+  absl::symbolize
+  absl::stacktrace
+  absl::failure_signal_handler
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util "-framework CoreFoundation")
@@ -2043,6 +2047,7 @@ add_library(grpc_test_util_unsecure
   test/core/util/cmdline.cc
   test/core/util/debugger_macros.cc
   test/core/util/eval_args_mock_endpoint.cc
+  test/core/util/examine_stack.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2097,6 +2102,9 @@ target_link_libraries(grpc_test_util_unsecure
   gpr
   address_sorting
   upb
+  absl::symbolize
+  absl::stacktrace
+  absl::failure_signal_handler
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
@@ -14826,6 +14834,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/cmdline.cc
     test/core/util/debugger_macros.cc
     test/core/util/eval_args_mock_endpoint.cc
+    test/core/util/examine_stack.cc
     test/core/util/fuzzer_util.cc
     test/core/util/grpc_profiler.cc
     test/core/util/histogram.cc
@@ -14875,6 +14884,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    absl::symbolize
+    absl::stacktrace
+    absl::failure_signal_handler
     ${_gRPC_GFLAGS_LIBRARIES}
   )
 
