@@ -591,10 +591,9 @@ ServerAddressList EdsLb::CreateChildPolicyAddressesLocked() {
       std::vector<std::string> hierarchical_path = {
           priority_child_name, locality_name->AsHumanReadableString()};
       for (const auto& endpoint : locality.endpoints) {
-        grpc_arg new_arg = MakeHierarchicalPathArg(hierarchical_path);
-        grpc_channel_args* args =
-            grpc_channel_args_copy_and_add(endpoint.args(), &new_arg, 1);
-        addresses.emplace_back(endpoint.address(), args);
+        addresses.emplace_back(endpoint.WithAttribute(
+            kHierarchicalPathAttributeKey,
+            MakeHierarchicalPathAttribute(hierarchical_path)));
       }
     }
   }

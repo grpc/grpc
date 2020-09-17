@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <map>
+#include <memory>
 
 #include "absl/container/inlined_vector.h"
 
@@ -42,15 +43,22 @@ class ServerAddress {
   // Base class for resolver-supplied attributes.
   // Unlike channel args, these attributes don't affect subchannel
   // uniqueness or behavior.  They are for use by LB policies only.
+  //
+  // Attributes are keyed by a C string that is unique by address, not
+  // by value.  All attributes added with the same key must be of the
+  // same type.
   class AttributeInterface {
    public:
-    virtual ~AttributeInterface();
+    virtual ~AttributeInterface() = default;
 
     // Creates a copy of the attribute.
     virtual std::unique_ptr<AttributeInterface> Copy() const = 0;
 
     // Compares this attribute with another.
     virtual int Cmp(const AttributeInterface* other) const = 0;
+
+    // Returns a human-readable representation of the attribute.
+    virtual std::string ToString() const = 0;
   };
 
   // Takes ownership of args.
@@ -65,38 +73,12 @@ class ServerAddress {
   ~ServerAddress() { grpc_channel_args_destroy(args_); }
 
   // Copyable.
-  ServerAddress(const ServerAddress& other)
-      : address_(other.address_), args_(grpc_channel_args_copy(other.args_)) {
-    for (const auto& p : other.attributes_) {
-      attributes_[p.first] = p.second->Copy();
-    }
-  }
-  ServerAddress& operator=(const ServerAddress& other) {
-    address_ = other.address_;
-    grpc_channel_args_destroy(args_);
-    args_ = grpc_channel_args_copy(other.args_);
-    attributes_.clear();
-    for (const auto& p : other.attributes_) {
-      attributes_[p.first] = p.second->Copy();
-    }
-    return *this;
-  }
+  ServerAddress(const ServerAddress& other);
+  ServerAddress& operator=(const ServerAddress& other);
 
   // Movable.
-  ServerAddress(ServerAddress&& other)
-      : address_(other.address_),
-        args_(other.args_),
-        attributes_(std::move(other.attributes_)) {
-    other.args_ = nullptr;
-  }
-  ServerAddress& operator=(ServerAddress&& other) {
-    address_ = other.address_;
-    grpc_channel_args_destroy(args_);
-    args_ = other.args_;
-    other.args_ = nullptr;
-    attributes_ = std::move(other.attributes_);
-    return *this;
-  }
+  ServerAddress(ServerAddress&& other) noexcept;
+  ServerAddress& operator=(ServerAddress&& other) noexcept;
 
   bool operator==(const ServerAddress& other) const { return Cmp(other) == 0; }
 
@@ -105,11 +87,14 @@ class ServerAddress {
   const grpc_resolved_address& address() const { return address_; }
   const grpc_channel_args* args() const { return args_; }
 
-  const AttributeInterface* GetAttribute(const char* key) const {
-    auto it = attributes_.find(key);
-    if (it == attributes_.end()) return nullptr;
-    return it->second.get();
-  }
+  const AttributeInterface* GetAttribute(const char* key) const;
+
+  // Returns a copy of the address with a modified attribute.
+  // If the new value is null, the attribute is removed.
+  ServerAddress WithAttribute(const char* key,
+                              std::unique_ptr<AttributeInterface> value) const;
+
+  std::string ToString() const;
 
  private:
   grpc_resolved_address address_;
