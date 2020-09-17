@@ -381,9 +381,7 @@ XdsApi::RdsUpdate::VirtualHost* XdsApi::RdsUpdate::FindVirtualHostForDomain(
 std::string XdsApi::EdsUpdate::Priority::Locality::ToString() const {
   std::vector<std::string> endpoint_strings;
   for (const ServerAddress& endpoint : endpoints) {
-    endpoint_strings.emplace_back(
-        absl::StrCat(grpc_sockaddr_to_string(&endpoint.address(), false), "{",
-                     grpc_channel_args_string(endpoint.args()), "}"));
+    endpoint_strings.emplace_back(endpoint.ToString());
   }
   return absl::StrCat("{name=", name->AsHumanReadableString(),
                       ", lb_weight=", lb_weight, ", endpoints=[",

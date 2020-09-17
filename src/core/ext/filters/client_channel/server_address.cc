@@ -20,6 +20,15 @@
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+
+#include "src/core/lib/iomgr/sockaddr_utils.h"
+
 namespace grpc_core {
 
 //
@@ -37,6 +46,38 @@ ServerAddress::ServerAddress(
     : args_(args), attributes_(std::move(attributes)) {
   memcpy(address_.addr, address, address_len);
   address_.len = static_cast<socklen_t>(address_len);
+}
+
+ServerAddress::ServerAddress(const ServerAddress& other)
+    : address_(other.address_), args_(grpc_channel_args_copy(other.args_)) {
+  for (const auto& p : other.attributes_) {
+    attributes_[p.first] = p.second->Copy();
+  }
+}
+ServerAddress& ServerAddress::operator=(const ServerAddress& other) {
+  address_ = other.address_;
+  grpc_channel_args_destroy(args_);
+  args_ = grpc_channel_args_copy(other.args_);
+  attributes_.clear();
+  for (const auto& p : other.attributes_) {
+    attributes_[p.first] = p.second->Copy();
+  }
+  return *this;
+}
+
+ServerAddress::ServerAddress(ServerAddress&& other) noexcept
+    : address_(other.address_),
+      args_(other.args_),
+      attributes_(std::move(other.attributes_)) {
+  other.args_ = nullptr;
+}
+ServerAddress& ServerAddress::operator=(ServerAddress&& other) noexcept {
+  address_ = other.address_;
+  grpc_channel_args_destroy(args_);
+  args_ = other.args_;
+  other.args_ = nullptr;
+  attributes_ = std::move(other.attributes_);
+  return *this;
 }
 
 namespace {
@@ -76,6 +117,45 @@ int ServerAddress::Cmp(const ServerAddress& other) const {
   retval = grpc_channel_args_compare(args_, other.args_);
   if (retval != 0) return retval;
   return CompareAttributes(attributes_, other.attributes_);
+}
+
+const ServerAddress::AttributeInterface* ServerAddress::GetAttribute(
+    const char* key) const {
+  auto it = attributes_.find(key);
+  if (it == attributes_.end()) return nullptr;
+  return it->second.get();
+}
+
+// Returns a copy of the address with a modified attribute.
+// If the new value is null, the attribute is removed.
+ServerAddress ServerAddress::WithAttribute(
+    const char* key, std::unique_ptr<AttributeInterface> value) const {
+  ServerAddress address = *this;
+  if (value == nullptr) {
+    address.attributes_.erase(key);
+  } else {
+    address.attributes_[key] = std::move(value);
+  }
+  return address;
+}
+
+std::string ServerAddress::ToString() const {
+  std::vector<std::string> parts = {
+      grpc_sockaddr_to_string(&address_, false),
+  };
+  if (args_ != nullptr) {
+    parts.emplace_back(
+        absl::StrCat("args={", grpc_channel_args_string(args_), "}"));
+  }
+  if (!attributes_.empty()) {
+    std::vector<std::string> attrs;
+    for (const auto& p : attributes_) {
+      attrs.emplace_back(absl::StrCat(p.first, "=", p.second->ToString()));
+    }
+    parts.emplace_back(
+        absl::StrCat("attributes={", absl::StrJoin(attrs, ", "), "}"));
+  }
+  return absl::StrJoin(parts, " ");
 }
 
 }  // namespace grpc_core
