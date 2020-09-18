@@ -95,6 +95,7 @@ proto_files=( \
   "envoy/type/v3/semantic_version.proto" \
   "gogoproto/gogo.proto" \
   "google/api/annotations.proto" \
+  "google/api/expr/v1alpha1/checked.proto" \
   "google/api/expr/v1alpha1/syntax.proto" \
   "google/api/http.proto" \
   "google/protobuf/any.proto" \
