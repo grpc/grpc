@@ -16,7 +16,7 @@
 set VERSION=2.33.0-dev
 
 @rem Adjust the location of nuget.exe
-set NUGET=C:\nuget\nuget.exe
+set NUGET=nuget
 set DOTNET=dotnet
 
 mkdir ..\..\artifacts
