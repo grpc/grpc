@@ -262,6 +262,7 @@ _TESTS_TO_FAIL_ON_RPC_FAILURE = ['ping_pong', 'round_robin']
 _TESTS_TO_RUN_MULTIPLE_RPCS = ['path_matching', 'header_matching']
 # Tests that make UnaryCall with test metadata.
 _TESTS_TO_SEND_METADATA = ['header_matching']
+_TESTS_TO_PRINT_ON_FAILURE = _TESTS_TO_RUN_MULTIPLE_RPCS + _TESTS_TO_SEND_METADATA
 _TEST_METADATA_KEY = 'xds_md'
 _TEST_METADATA_VALUE = 'exact_match'
 _PATH_MATCHER_NAME = 'path-matcher'
@@ -1777,6 +1778,11 @@ try:
                 # metadata arg is not specified.
                 metadata_to_send = ''
 
+            if test_case in _TESTS_TO_PRINT_ON_FAILURE:
+                print_failure = '--print_failure=true'
+            else:
+                print_failure = ''
+
             # TODO(ericgribkoff) Temporarily disable fail_on_failed_rpc checks
             # in the client. This means we will ignore intermittent RPC
             # failures (but this framework still checks that the final result
@@ -1798,7 +1804,8 @@ try:
                 qps=args.qps,
                 fail_on_failed_rpc=fail_on_failed_rpc,
                 rpcs_to_send=rpcs_to_send,
-                metadata_to_send=metadata_to_send)
+                metadata_to_send=metadata_to_send,
+                print_failure=print_failure)
             logger.debug('running client: %s', client_cmd_formatted)
             client_cmd = shlex.split(client_cmd_formatted)
             try:

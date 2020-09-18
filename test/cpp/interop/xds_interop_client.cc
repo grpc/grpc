@@ -46,6 +46,7 @@ DEFINE_bool(fail_on_failed_rpc, false,
             "Fail client if any RPCs fail after first successful RPC.");
 DEFINE_int32(num_channels, 1, "Number of channels.");
 DEFINE_bool(print_response, false, "Write RPC response to stdout.");
+DEFINE_bool(print_failure, false, "Write RPC failures to stdout.");
 DEFINE_int32(qps, 1, "Qps per channel.");
 DEFINE_int32(rpc_timeout_sec, 30, "Per RPC timeout seconds.");
 DEFINE_string(server, "localhost:50051", "Address of server.");
@@ -223,7 +224,7 @@ class TestClient {
       }
 
       if (!call->status.ok()) {
-        if (FLAGS_print_response || FLAGS_fail_on_failed_rpc) {
+        if (FLAGS_print_response || FLAGS_print_failure || FLAGS_fail_on_failed_rpc) {
           std::cout << "RPC failed: " << call->status.error_code() << ": "
                     << call->status.error_message() << std::endl;
         }
