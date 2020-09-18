@@ -115,6 +115,16 @@ class XdsResolver : public Resolver {
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
                       const std::vector<XdsApi::Route>& routes);
     ~XdsConfigSelector();
+
+    const char* name() const override { return "XdsConfigSelector"; }
+
+    bool Equals(const ConfigSelector* other) const override {
+      const auto* other_xds = static_cast<const XdsConfigSelector*>(other);
+      // Don't need to compare resolver_, since that will always be the same.
+      return route_table_ == other_xds->route_table_ &&
+             clusters_ == other_xds->clusters_;
+    }
+
     CallConfig GetCallConfig(GetCallConfigArgs args) override;
 
    private:
@@ -122,6 +132,10 @@ class XdsResolver : public Resolver {
       XdsApi::Route route;
       absl::InlinedVector<std::pair<uint32_t, absl::string_view>, 2>
           weighted_cluster_state;
+      bool operator==(const Route& other) const {
+        return route == other.route &&
+               weighted_cluster_state == other.weighted_cluster_state;
+      }
     };
     using RouteTable = std::vector<Route>;
 
@@ -229,6 +243,10 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     RefCountedPtr<XdsResolver> resolver,
     const std::vector<XdsApi::Route>& routes)
     : resolver_(std::move(resolver)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
+            resolver_.get(), this);
+  }
   // 1. Construct the route table
   // 2  Update resolver's cluster state map
   // 3. Construct cluster list to hold on to entries in the cluster state
@@ -240,6 +258,10 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
   // invalid data.
   route_table_.reserve(routes.size());
   for (auto& route : routes) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+      gpr_log(GPR_INFO, "[xds_resolver %p] XdsConfigSelector %p: route: %s",
+              resolver_.get(), this, route.ToString().c_str());
+    }
     route_table_.emplace_back();
     auto& route_entry = route_table_.back();
     route_entry.route = route;
@@ -258,6 +280,10 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
 }
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] destroying XdsConfigSelector %p",
+            resolver_.get(), this);
+  }
   clusters_.clear();
   resolver_->MaybeRemoveUnusedClusters();
 }
