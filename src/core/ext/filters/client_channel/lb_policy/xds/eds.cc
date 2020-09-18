@@ -123,16 +123,15 @@ class EdsLb : public LoadBalancingPolicy {
   // A picker that handles drops.
   class DropPicker : public SubchannelPicker {
    public:
-    explicit DropPicker(EdsLb* eds_policy);
+    explicit DropPicker(RefCountedPtr<EdsLb> eds_policy);
 
     PickResult Pick(PickArgs args) override;
 
    private:
+    RefCountedPtr<EdsLb> eds_policy_;
     RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<ChildPickerWrapper> child_picker_;
-    Atomic<uint32_t>* concurrent_requests_;
-    uint32_t max_concurrent_requests_;
   };
 
   class Helper : public ChannelControlHelper {
@@ -237,15 +236,14 @@ class EdsLb : public LoadBalancingPolicy {
 // EdsLb::DropPicker
 //
 
-EdsLb::DropPicker::DropPicker(EdsLb* eds_policy)
-    : drop_config_(eds_policy->drop_config_),
-      drop_stats_(eds_policy->drop_stats_),
-      child_picker_(eds_policy->child_picker_),
-      concurrent_requests_(&(eds_policy->concurrent_requests_)),
-      max_concurrent_requests_(eds_policy->max_concurrent_requests_) {
+EdsLb::DropPicker::DropPicker(RefCountedPtr<EdsLb> eds_policy)
+    : eds_policy_(std::move(eds_policy)) {
+  drop_config_ = eds_policy_->drop_config_;
+  drop_stats_ = eds_policy_->drop_stats_;
+  child_picker_ = eds_policy_->child_picker_;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-    gpr_log(GPR_INFO, "[edslb %p] constructed new drop picker %p", eds_policy,
-            this);
+    gpr_log(GPR_INFO, "[edslb %p] constructed new drop picker %p",
+            eds_policy_.get(), this);
   }
 }
 
@@ -270,21 +268,24 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
     return result;
   }
   // Check and see if we exceeded the max concurrent requests count.
-  uint32_t current = concurrent_requests_->FetchAdd(1);
-  if (current > max_concurrent_requests_) {
-    concurrent_requests_->FetchSub(1);
+  uint32_t current = eds_policy_->concurrent_requests_.FetchAdd(1);
+  if (current > eds_policy_->max_concurrent_requests_) {
+    eds_policy_->concurrent_requests_.FetchSub(1);
     PickResult result;
     result.type = PickResult::PICK_COMPLETE;
     return result;
   }
   // Not dropping, so delegate to child's picker.
+  EdsLb* eds_policy = static_cast<EdsLb*>(
+      eds_policy_->Ref(DEBUG_LOCATION, "DropPickPicker+call").release());
   PickResult result = child_picker_->Pick(args);
-  result.recv_trailing_metadata_ready = [this](grpc_error* error,
-                                               MetadataInterface* metadata,
-                                               CallState* call_state) {
-    concurrent_requests_->FetchSub(1);
-    gpr_log(GPR_INFO, "DONNA end of Pick(), place to unref");
-  };
+  result.recv_trailing_metadata_ready =
+      [eds_policy](grpc_error* error, MetadataInterface* metadata,
+                   CallState* call_state) {
+        gpr_log(GPR_INFO, "DONNA end of Pick(), place to unref");
+        eds_policy->concurrent_requests_.FetchSub(1);
+        eds_policy->Unref(DEBUG_LOCATION, "DropPickPicker+call");
+      };
   return result;
 }
 
@@ -800,14 +801,16 @@ void EdsLb::MaybeUpdateDropPickerLocked() {
   // If we're dropping all calls, report READY, regardless of what (or
   // whether) the child has reported.
   if (drop_config_ != nullptr && drop_config_->drop_all()) {
-    channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
-                                          absl::make_unique<DropPicker>(this));
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_READY, absl::Status(),
+        absl::make_unique<DropPicker>(Ref(DEBUG_LOCATION, "DropPicker")));
     return;
   }
   // Update only if we have a child picker.
   if (child_picker_ != nullptr) {
-    channel_control_helper()->UpdateState(child_state_, child_status_,
-                                          absl::make_unique<DropPicker>(this));
+    channel_control_helper()->UpdateState(
+        child_state_, child_status_,
+        absl::make_unique<DropPicker>(Ref(DEBUG_LOCATION, "DropPicker")));
   }
 }
 

@@ -1845,7 +1845,7 @@ grpc_error* CdsResponseParse(
       cds_update.max_concurrent_requests =
           google_protobuf_UInt32Value_value(max);
     } else {
-      cds_update.max_concurrent_requests = std::numeric_limits<uint32_t>::max();
+      cds_update.max_concurrent_requests = 1024;
     }
     cds_update_map->emplace(std::move(cluster_name), std::move(cds_update));
   }
