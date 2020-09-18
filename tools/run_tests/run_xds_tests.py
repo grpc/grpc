@@ -1801,6 +1801,11 @@ try:
             logger.debug('running client: %s', client_cmd_formatted)
             try:
                 # We invoke the client using bash to avoid https://github.com/nvm-sh/nvm/issues/1866
+                client_process = subprocess.Popen(
+                    ['/bin/bash', '-i', '-c', client_cmd_formatted],
+                    env=client_env,
+                    stderr=subprocess.STDOUT,
+                    stdout=test_log_file)
                 client_process = subprocess.Popen(['/bin/bash', '-i', '-c', client_cmd_formatted],
                                                   env=client_env,
                                                   stderr=subprocess.STDOUT,
