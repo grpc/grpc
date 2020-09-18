@@ -19,6 +19,6 @@
 #ifndef GRPCPP_IMPL_METHOD_HANDLER_IMPL_H
 #define GRPCPP_IMPL_METHOD_HANDLER_IMPL_H
 
-#include <grpcpp/impl/codegen/method_handler_impl.h>
+#include <grpcpp/impl/codegen/method_handler.h>
 
 #endif  // GRPCPP_IMPL_METHOD_HANDLER_IMPL_H
