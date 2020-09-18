@@ -65,6 +65,8 @@ class InteropClient {
   bool DoTimeoutOnSleepingServer();
   bool DoEmptyStream();
   bool DoStatusWithMessage();
+  // Verifies Unicode and Whitespace is correctly processed in status message.
+  bool DoSpecialStatusMessage();
   bool DoCustomMetadata();
   bool DoUnimplementedMethod();
   bool DoUnimplementedService();

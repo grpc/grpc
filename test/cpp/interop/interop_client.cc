@@ -885,6 +885,30 @@ bool InteropClient::DoStatusWithMessage() {
   return true;
 }
 
+bool InteropClient::DoSpecialStatusMessage() {
+  gpr_log(
+      GPR_DEBUG,
+      "Sending RPC with a request for status code 2 and message - \\t\\ntest "
+      "with whitespace\\r\\nand Unicode BMP ☺ and non-BMP 😈\\t\\n");
+  const grpc::StatusCode test_code = grpc::StatusCode::UNKNOWN;
+  const std::string test_msg =
+      "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n";
+  ClientContext context;
+  SimpleRequest request;
+  SimpleResponse response;
+  EchoStatus* requested_status = request.mutable_response_status();
+  requested_status->set_code(test_code);
+  requested_status->set_message(test_msg);
+  Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
+  if (!AssertStatusCode(s, grpc::StatusCode::UNKNOWN,
+                        context.debug_error_string())) {
+    return false;
+  }
+  GPR_ASSERT(s.error_message() == test_msg);
+  gpr_log(GPR_DEBUG, "Done testing Special Status Message");
+  return true;
+}
+
 bool InteropClient::DoCacheableUnary() {
   gpr_log(GPR_DEBUG, "Sending RPC with cacheable response");
 
