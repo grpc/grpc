@@ -1806,10 +1806,6 @@ try:
                     env=client_env,
                     stderr=subprocess.STDOUT,
                     stdout=test_log_file)
-                client_process = subprocess.Popen(['/bin/bash', '-i', '-c', client_cmd_formatted],
-                                                  env=client_env,
-                                                  stderr=subprocess.STDOUT,
-                                                  stdout=test_log_file)
                 if test_case == 'backends_restart':
                     test_backends_restart(gcp, backend_service, instance_group)
                 elif test_case == 'change_backend_service':
