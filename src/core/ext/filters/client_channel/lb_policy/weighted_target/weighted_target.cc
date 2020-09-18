@@ -145,7 +145,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
       ~Helper() { weighted_child_.reset(DEBUG_LOCATION, "Helper"); }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          const grpc_channel_args& args) override;
+          ServerAddress address, const grpc_channel_args& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
@@ -590,10 +590,10 @@ void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimerLocked(
 
 RefCountedPtr<SubchannelInterface>
 WeightedTargetLb::WeightedChild::Helper::CreateSubchannel(
-    const grpc_channel_args& args) {
+    ServerAddress address, const grpc_channel_args& args) {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return nullptr;
   return weighted_child_->weighted_target_policy_->channel_control_helper()
-      ->CreateSubchannel(args);
+      ->CreateSubchannel(std::move(address), args);
 }
 
 void WeightedTargetLb::WeightedChild::Helper::UpdateState(

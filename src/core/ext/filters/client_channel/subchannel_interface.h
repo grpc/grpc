@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
@@ -87,6 +88,11 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
 
   // TODO(roth): Need a better non-grpc-specific abstraction here.
   virtual const grpc_channel_args* channel_args() = 0;
+
+  // Allows accessing the attributes associated with the address for
+  // this subchannel.
+  virtual const ServerAddress::AttributeInterface* GetAttribute(
+      const char* key) const = 0;
 };
 
 }  // namespace grpc_core

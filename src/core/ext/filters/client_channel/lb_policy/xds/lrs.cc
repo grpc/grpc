@@ -119,7 +119,7 @@ class LrsLb : public LoadBalancingPolicy {
     ~Helper() { lrs_policy_.reset(DEBUG_LOCATION, "Helper"); }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_channel_args& args) override;
+        ServerAddress address, const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -324,9 +324,10 @@ void LrsLb::UpdateChildPolicyLocked(ServerAddressList addresses,
 //
 
 RefCountedPtr<SubchannelInterface> LrsLb::Helper::CreateSubchannel(
-    const grpc_channel_args& args) {
+    ServerAddress address, const grpc_channel_args& args) {
   if (lrs_policy_->shutting_down_) return nullptr;
-  return lrs_policy_->channel_control_helper()->CreateSubchannel(args);
+  return lrs_policy_->channel_control_helper()->CreateSubchannel(
+      std::move(address), args);
 }
 
 void LrsLb::Helper::UpdateState(grpc_connectivity_state state,

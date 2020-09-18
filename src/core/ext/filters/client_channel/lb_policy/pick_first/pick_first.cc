@@ -84,9 +84,9 @@ class PickFirst : public LoadBalancingPolicy {
                               PickFirstSubchannelData> {
    public:
     PickFirstSubchannelList(PickFirst* policy, TraceFlag* tracer,
-                            const ServerAddressList& addresses,
+                            ServerAddressList addresses,
                             const grpc_channel_args& args)
-        : SubchannelList(policy, tracer, addresses,
+        : SubchannelList(policy, tracer, std::move(addresses),
                          policy->channel_control_helper(), args) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'

@@ -200,7 +200,7 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
 
  protected:
   SubchannelList(LoadBalancingPolicy* policy, TraceFlag* tracer,
-                 const ServerAddressList& addresses,
+                 ServerAddressList addresses,
                  LoadBalancingPolicy::ChannelControlHelper* helper,
                  const grpc_channel_args& args);
 
@@ -350,8 +350,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
 
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
-    LoadBalancingPolicy* policy, TraceFlag* tracer,
-    const ServerAddressList& addresses,
+    LoadBalancingPolicy* policy, TraceFlag* tracer, ServerAddressList addresses,
     LoadBalancingPolicy::ChannelControlHelper* helper,
     const grpc_channel_args& args)
     : InternallyRefCounted<SubchannelListType>(tracer),
@@ -363,50 +362,28 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
             tracer_->name(), policy, this, addresses.size());
   }
   subchannels_.reserve(addresses.size());
-  // We need to remove the LB addresses in order to be able to compare the
-  // subchannel keys of subchannels from a different batch of addresses.
-  // We remove the service config, since it will be passed into the
-  // subchannel via call context.
-  static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
-                                         GRPC_ARG_SERVICE_CONFIG};
   // Create a subchannel for each address.
-  for (size_t i = 0; i < addresses.size(); i++) {
-    absl::InlinedVector<grpc_arg, 3> args_to_add;
-    const size_t subchannel_address_arg_index = args_to_add.size();
-    args_to_add.emplace_back(
-        Subchannel::CreateSubchannelAddressArg(&addresses[i].address()));
-    if (addresses[i].args() != nullptr) {
-      for (size_t j = 0; j < addresses[i].args()->num_args; ++j) {
-        args_to_add.emplace_back(addresses[i].args()->args[j]);
-      }
-    }
-    grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
-        &args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove),
-        args_to_add.data(), args_to_add.size());
-    gpr_free(args_to_add[subchannel_address_arg_index].value.string);
+  for (const ServerAddress& address : addresses) {
     RefCountedPtr<SubchannelInterface> subchannel =
-        helper->CreateSubchannel(*new_args);
-    grpc_channel_args_destroy(new_args);
+        helper->CreateSubchannel(std::move(address), args);
     if (subchannel == nullptr) {
       // Subchannel could not be created.
       if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
         gpr_log(GPR_INFO,
-                "[%s %p] could not create subchannel for address uri %s, "
+                "[%s %p] could not create subchannel for address %s, "
                 "ignoring",
-                tracer_->name(), policy_,
-                grpc_sockaddr_to_uri(&addresses[i].address()).c_str());
+                tracer_->name(), policy_, address.ToString().c_str());
       }
       continue;
     }
     if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
       gpr_log(GPR_INFO,
               "[%s %p] subchannel list %p index %" PRIuPTR
-              ": Created subchannel %p for address uri %s",
+              ": Created subchannel %p for address %s",
               tracer_->name(), policy_, this, subchannels_.size(),
-              subchannel.get(),
-              grpc_sockaddr_to_uri(&addresses[i].address()).c_str());
+              subchannel.get(), address.ToString().c_str());
     }
-    subchannels_.emplace_back(this, addresses[i], std::move(subchannel));
+    subchannels_.emplace_back(this, address, std::move(subchannel));
   }
 }
 

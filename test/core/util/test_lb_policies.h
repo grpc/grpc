@@ -45,10 +45,15 @@ using InterceptRecvTrailingMetadataCallback =
     std::function<void(const TrailingMetadataArgsSeen&)>;
 
 // Registers an LB policy called "intercept_trailing_metadata_lb" that
-// invokes cb with argument user_data when trailing metadata is received
-// for each call.
+// invokes cb when trailing metadata is received for each call.
 void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
     InterceptRecvTrailingMetadataCallback cb);
+
+using AddressTestCallback = std::function<void(const ServerAddress&)>;
+
+// Registers an LB policy called "address_test_lb" that invokes cb for each
+// address used to create a subchannel.
+void RegisterAddressTestLoadBalancingPolicy(AddressTestCallback cb);
 
 }  // namespace grpc_core
 

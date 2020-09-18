@@ -133,7 +133,7 @@ class EdsLb : public LoadBalancingPolicy {
     ~Helper() { eds_policy_.reset(DEBUG_LOCATION, "Helper"); }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_channel_args& args) override;
+        ServerAddress address, const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     // This is a no-op, because we get the addresses from the xds
@@ -261,9 +261,10 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
 //
 
 RefCountedPtr<SubchannelInterface> EdsLb::Helper::CreateSubchannel(
-    const grpc_channel_args& args) {
+    ServerAddress address, const grpc_channel_args& args) {
   if (eds_policy_->shutting_down_) return nullptr;
-  return eds_policy_->channel_control_helper()->CreateSubchannel(args);
+  return eds_policy_->channel_control_helper()->CreateSubchannel(
+      std::move(address), args);
 }
 
 void EdsLb::Helper::UpdateState(grpc_connectivity_state state,
