@@ -372,7 +372,10 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
 }
 
 void grpc_test_init(int argc, char** argv) {
-#if false
+#if GPR_WINDOWS
+  // Windows cannot use absl::InitializeSymbolizer until it fixes mysterious
+  // SymInitialize failure using Bazel RBE on Windows
+  // https://github.com/grpc/grpc/issues/24178
   install_crash_handler();
 #else
   absl::InitializeSymbolizer(argv[0]);
