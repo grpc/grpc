@@ -34,6 +34,9 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/surface/init.h"
 
+#include "absl/debugging/failure_signal_handler.h"
+#include "absl/debugging/symbolize.h"
+
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
 
@@ -368,8 +371,17 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
           GPR_TIMESPAN));
 }
 
-void grpc_test_init(int /*argc*/, char** /*argv*/) {
+void grpc_test_init(int argc, char** argv) {
+#if GPR_WINDOWS
+  // Windows cannot use absl::InitializeSymbolizer until it fixes mysterious
+  // SymInitialize failure using Bazel RBE on Windows
+  // https://github.com/grpc/grpc/issues/24178
   install_crash_handler();
+#else
+  absl::InitializeSymbolizer(argv[0]);
+  absl::FailureSignalHandlerOptions options;
+  absl::InstallFailureSignalHandler(options);
+#endif
   gpr_log(GPR_DEBUG,
           "test slowdown factor: sanitizer=%" PRId64 ", fixture=%" PRId64
           ", poller=%" PRId64 ", total=%" PRId64,

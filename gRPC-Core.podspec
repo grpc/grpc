@@ -1612,6 +1612,9 @@ Pod::Spec.new do |s|
 
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Implementation", version
+    ss.dependency 'abseil/debugging/failure_signal_handler', abseil_version
+    ss.dependency 'abseil/debugging/stacktrace', abseil_version
+    ss.dependency 'abseil/debugging/symbolize', abseil_version
 
     ss.source_files = 'test/core/end2end/cq_verifier.cc',
                       'test/core/end2end/cq_verifier.h',
@@ -1716,6 +1719,8 @@ Pod::Spec.new do |s|
                       'test/core/util/debugger_macros.h',
                       'test/core/util/eval_args_mock_endpoint.cc',
                       'test/core/util/eval_args_mock_endpoint.h',
+                      'test/core/util/examine_stack.cc',
+                      'test/core/util/examine_stack.h',
                       'test/core/util/fuzzer_util.cc',
                       'test/core/util/fuzzer_util.h',
                       'test/core/util/grpc_profiler.cc',

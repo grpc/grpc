@@ -1226,6 +1226,7 @@ libs:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/eval_args_mock_endpoint.h
+  - test/core/util/examine_stack.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -1246,6 +1247,7 @@ libs:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/eval_args_mock_endpoint.cc
+  - test/core/util/examine_stack.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1269,6 +1271,9 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - absl/debugging:symbolize
+  - absl/debugging:stacktrace
+  - absl/debugging:failure_signal_handler
 - name: grpc_test_util_unsecure
   build: private
   language: c
@@ -1277,6 +1282,7 @@ libs:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/eval_args_mock_endpoint.h
+  - test/core/util/examine_stack.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -1297,6 +1303,7 @@ libs:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/eval_args_mock_endpoint.cc
+  - test/core/util/examine_stack.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1320,6 +1327,9 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - absl/debugging:symbolize
+  - absl/debugging:stacktrace
+  - absl/debugging:failure_signal_handler
   secure: false
 - name: grpc_unsecure
   build: all
@@ -7435,6 +7445,7 @@ targets:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/eval_args_mock_endpoint.h
+  - test/core/util/examine_stack.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -7458,6 +7469,7 @@ targets:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/eval_args_mock_endpoint.cc
+  - test/core/util/examine_stack.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -7483,6 +7495,9 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/debugging:symbolize
+  - absl/debugging:stacktrace
+  - absl/debugging:failure_signal_handler
   platforms:
   - linux
   - posix
