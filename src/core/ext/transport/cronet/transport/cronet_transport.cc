@@ -23,7 +23,6 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -164,7 +163,7 @@ struct op_state {
   bool pending_send_message = false;
   /* User requested RECV_TRAILING_METADATA */
   bool pending_recv_trailing_metadata = false;
-  cronet_net_error_code net_error = OK;
+  cronet_status_code net_error = CRONET_STATUS_SUCCESS;
   grpc_error* cancel_error = GRPC_ERROR_NONE;
   /* data structure for storing data coming from server */
   struct read_state rs;
@@ -306,14 +305,8 @@ static void read_grpc_header(stream_obj* s) {
                             s->state.rs.remaining_bytes);
 }
 
-static grpc_error* make_error_with_desc(int error_code,
-                                        int cronet_internal_error_code,
-                                        const char* desc) {
-  std::string error_message =
-      absl::StrFormat("Cronet error code:%d, Cronet error detail:%s",
-                      cronet_internal_error_code, desc);
-  grpc_error* error =
-      GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message.c_str());
+static grpc_error* make_error_with_desc(int error_code, const char* desc) {
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc);
   error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, error_code);
   return error;
 }
@@ -441,7 +434,7 @@ static void on_failed(bidirectional_stream* stream, int net_error) {
   gpr_mu_lock(&s->mu);
   bidirectional_stream_destroy(s->cbs);
   s->state.state_callback_received[OP_FAILED] = true;
-  s->state.net_error = static_cast<cronet_net_error_code>(net_error);
+  s->state.net_error = static_cast<cronet_status_code>(net_error);
   s->cbs = nullptr;
   if (s->header_array.headers) {
     gpr_free(s->header_array.headers);
@@ -1304,9 +1297,9 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       error = GRPC_ERROR_REF(stream_state->cancel_error);
     } else if (stream_state->state_callback_received[OP_FAILED]) {
-      const char* desc = cronet_net_error_as_string(stream_state->net_error);
-      error = make_error_with_desc(GRPC_STATUS_UNAVAILABLE,
-                                   stream_state->net_error, desc);
+      const char* error_message =
+          cronet_status_as_string(stream_state->net_error);
+      error = make_error_with_desc(GRPC_STATUS_UNAVAILABLE, error_message);
     } else if (oas->s->state.rs.trailing_metadata_valid) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           &oas->s->state.rs.trailing_metadata,
@@ -1343,11 +1336,11 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       }
     } else if (stream_state->state_callback_received[OP_FAILED]) {
       if (stream_op->on_complete) {
-        const char* desc = cronet_net_error_as_string(stream_state->net_error);
+        const char* error_message =
+            cronet_status_as_string(stream_state->net_error);
         grpc_core::ExecCtx::Run(
             DEBUG_LOCATION, stream_op->on_complete,
-            make_error_with_desc(GRPC_STATUS_UNAVAILABLE,
-                                 stream_state->net_error, desc));
+            make_error_with_desc(GRPC_STATUS_UNAVAILABLE, error_message));
       }
     } else {
       /* All actions in this stream_op are complete. Call the on_complete

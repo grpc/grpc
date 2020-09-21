@@ -1603,8 +1603,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/cronet/transport/cronet_status.h',
                       'src/core/ext/transport/cronet/transport/cronet_transport.cc',
                       'src/core/ext/transport/cronet/transport/cronet_transport.h',
-                      'third_party/objective_c/Cronet/bidirectional_stream_c.h',
-                      'third_party/objective_c/Cronet/net_error_list.h'
+                      'third_party/objective_c/Cronet/bidirectional_stream_c.h'
   end
 
   s.subspec 'Tests' do |ss|
