@@ -233,7 +233,10 @@ void XdsResolver::Notifier::RunInExecCtx(void* arg, grpc_error* error) {
 }
 
 void XdsResolver::Notifier::RunInWorkSerializer(grpc_error* error) {
-  if (resolver_->xds_client_ == nullptr) return;
+  if (resolver_->xds_client_ == nullptr) {
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
   switch (type_) {
     case kLdsUpdate:
       resolver_->OnListenerUpdate(std::move(update_));
