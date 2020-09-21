@@ -21,6 +21,7 @@ import json
 import logging
 import os
 import random
+import shlex
 import socket
 import subprocess
 import sys
@@ -1799,13 +1800,12 @@ try:
                 rpcs_to_send=rpcs_to_send,
                 metadata_to_send=metadata_to_send)
             logger.debug('running client: %s', client_cmd_formatted)
+            client_cmd = shlex.split(client_cmd_formatted)
             try:
-                # We invoke the client using bash to avoid https://github.com/nvm-sh/nvm/issues/1866
-                client_process = subprocess.Popen(
-                    ['/bin/bash', '-i', '-c', client_cmd_formatted],
-                    env=client_env,
-                    stderr=subprocess.STDOUT,
-                    stdout=test_log_file)
+                client_process = subprocess.Popen(client_cmd,
+                                                  env=client_env,
+                                                  stderr=subprocess.STDOUT,
+                                                  stdout=test_log_file)
                 if test_case == 'backends_restart':
                     test_backends_restart(gcp, backend_service, instance_group)
                 elif test_case == 'change_backend_service':
