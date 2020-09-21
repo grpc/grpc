@@ -16,8 +16,6 @@
 
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
-#include <iostream>
-
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/time/clock.h"
@@ -39,9 +37,6 @@ namespace experimental {
 ExternalAccountCredentials::ExternalAccountCredentials(
     ExternalAccountCredentialsOptions options, std::vector<std::string> scopes)
     : options_(options) {
-  std::cout << "--- "
-               "ExternalAccountCredentials::ExternalAccountCredentials()"
-            << std::endl;
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
   }
@@ -58,24 +53,18 @@ std::string ExternalAccountCredentials::debug_string() {
 }
 
 static void FinishTokenFetch(TokenFetchContext* ctx, grpc_error* error) {
-  std::cout << "--- FinishTokenFetch" << std::endl;
   GRPC_LOG_IF_ERROR("Fetch external account credentials access token",
                     GRPC_ERROR_REF(error));
-  std::string response_body =
-      std::string(ctx->metadata_req->response.body,
-                  ctx->metadata_req->response.body_length);
-  std::cout << response_body << std::endl;
   ctx->response_cb(ctx->metadata_req, error);
 }
 
 static void OnServiceAccountImpersenate(void* arg, grpc_error* error) {
-  std::cout << "--- OnServiceAccountImpersenate" << std::endl;
   TokenFetchContext* ctx = static_cast<TokenFetchContext*>(arg);
-     if (error != GRPC_ERROR_NONE) {
-      FinishTokenFetch(ctx, error);
-      return;
-    }
-     std::string response_body =
+  if (error != GRPC_ERROR_NONE) {
+    FinishTokenFetch(ctx, error);
+    return;
+  }
+  std::string response_body =
       std::string(ctx->service_account_impersonate_response.body,
                   ctx->service_account_impersonate_response.body_length);
   Json::Object::const_iterator it;
@@ -85,12 +74,13 @@ static void OnServiceAccountImpersenate(void* arg, grpc_error* error) {
   std::string expire_time =
       std::string(grpc_json_get_string_property(json, "expireTime", &error));
   absl::Time t;
-       if (!absl::ParseTime(absl::RFC3339_full, expire_time, &t, nullptr)) {
-      FinishTokenFetch(ctx, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            absl::StrFormat("Invalid expire time of service account impersonation response.")
-                .c_str()));
-      return;
-    }
+  if (!absl::ParseTime(absl::RFC3339_full, expire_time, &t, nullptr)) {
+    FinishTokenFetch(ctx, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                              absl::StrFormat("Invalid expire time of service "
+                                              "account impersonation response.")
+                                  .c_str()));
+    return;
+  }
   int expire_in = (t - absl::Now()) / absl::Seconds(1);
   std::string body = absl::StrFormat(
       "{\"access_token\":\"%s\", \"expires_in\":%d, \"token_type\":\"%s\"}",
@@ -102,7 +92,6 @@ static void OnServiceAccountImpersenate(void* arg, grpc_error* error) {
 }
 
 static void ServiceAccountImpersenate(TokenFetchContext* ctx) {
-  std::cout << "--- ServiceAccountImpersenate" << std::endl;
   Json::Object::const_iterator it;
   grpc_error* error = GRPC_ERROR_NONE;
   std::string response_body =
@@ -110,11 +99,11 @@ static void ServiceAccountImpersenate(TokenFetchContext* ctx) {
                   ctx->token_exchange_response.body_length);
   Json json = Json::Parse(response_body.c_str(), &error);
   if (error != GRPC_ERROR_NONE || json.type() != Json::Type::OBJECT) {
-    FinishTokenFetch(
-        ctx,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            absl::StrFormat("Invalid token exchange response %s.", response_body)
-                .c_str()));
+    FinishTokenFetch(ctx,
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                         absl::StrFormat("Invalid token exchange response %s.",
+                                         response_body)
+                             .c_str()));
     return;
   }
   it = json.object_value().find("access_token");
@@ -132,10 +121,11 @@ static void ServiceAccountImpersenate(TokenFetchContext* ctx) {
       grpc_uri_parse(ctx->options.service_account_impersonation_url, false);
   if (uri == nullptr) {
     FinishTokenFetch(
-        ctx, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                 absl::StrFormat("Invalid service account impersonation url %s.",
-                                 ctx->options.service_account_impersonation_url)
-                     .c_str()));
+        ctx,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            absl::StrFormat("Invalid service account impersonation url %s.",
+                            ctx->options.service_account_impersonation_url)
+                .c_str()));
     return;
   }
   grpc_httpcli_request request;
@@ -168,15 +158,7 @@ static void ServiceAccountImpersenate(TokenFetchContext* ctx) {
 }
 
 static void OnTokenExchange(void* arg, grpc_error* error) {
-  std::cout << "--- OnTokenExchange" << std::endl;
   TokenFetchContext* ctx = static_cast<TokenFetchContext*>(arg);
-    if (error != GRPC_ERROR_NONE) {
-      FinishTokenFetch(ctx, error);
-      return;
-    }
-  std::string response_body =
-      std::string(ctx->token_exchange_response.body,
-                  ctx->token_exchange_response.body_length);
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(ctx, error);
   } else {
@@ -190,7 +172,6 @@ static void OnTokenExchange(void* arg, grpc_error* error) {
 }
 
 static void TokenExchange(TokenFetchContext* ctx) {
-  std::cout << "--- TokenExchange()" << std::endl;
   grpc_uri* uri = grpc_uri_parse(ctx->options.token_url, false);
   if (uri == nullptr) {
     FinishTokenFetch(
@@ -260,7 +241,6 @@ static void TokenExchange(TokenFetchContext* ctx) {
 }
 
 static void OnRetrieveSubjectToken(void* arg, grpc_error* error) {
-  std::cout << "--- OnRetrieveSubjectToken" << std::endl;
   TokenFetchContext* ctx = static_cast<TokenFetchContext*>(arg);
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(ctx, error);
@@ -273,7 +253,6 @@ void ExternalAccountCredentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
     grpc_iomgr_cb_func response_cb, grpc_millis deadline) {
-  std::cout << "--- ExternalAccountCredentials::fetch_oauth2() " << std::endl;
   ctx_->metadata_req = metadata_req;
   ctx_->httpcli_context = httpcli_context;
   ctx_->pollent = pollent;
