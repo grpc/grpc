@@ -58,14 +58,16 @@ TEST(RefCountedPtr, ExplicitConstructor) { RefCountedPtr<Foo> foo(new Foo()); }
 TEST(RefCountedPtr, MoveConstructor) {
   RefCountedPtr<Foo> foo(new Foo());
   RefCountedPtr<Foo> foo2(std::move(foo));
-  EXPECT_EQ(nullptr, foo.get());  // NOLINT
+  // NOLINTNEXTLINE(bugprone-use-after-move)
+  EXPECT_EQ(nullptr, foo.get());
   EXPECT_NE(nullptr, foo2.get());
 }
 
 TEST(RefCountedPtr, MoveAssignment) {
   RefCountedPtr<Foo> foo(new Foo());
   RefCountedPtr<Foo> foo2 = std::move(foo);
-  EXPECT_EQ(nullptr, foo.get());  // NOLINT
+  // NOLINTNEXTLINE(bugprone-use-after-move)
+  EXPECT_EQ(nullptr, foo.get());
   EXPECT_NE(nullptr, foo2.get());
 }
 
@@ -100,6 +102,7 @@ TEST(RefCountedPtr, EnclosedScope) {
   RefCountedPtr<Foo> foo(new Foo());
   {
     RefCountedPtr<Foo> foo2(std::move(foo));
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     EXPECT_EQ(nullptr, foo.get());
     EXPECT_NE(nullptr, foo2.get());
   }
@@ -337,6 +340,7 @@ TEST(WeakRefCountedPtr, EnclosedScope) {
   WeakRefCountedPtr<Bar> bar = bar_strong->WeakRef();
   {
     WeakRefCountedPtr<Bar> bar2(std::move(bar));
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     EXPECT_EQ(nullptr, bar.get());
     EXPECT_NE(nullptr, bar2.get());
   }

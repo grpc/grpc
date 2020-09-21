@@ -21,6 +21,8 @@
 
 #include <grpc/grpc_security.h>
 
+#include <utility>
+
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -127,7 +129,7 @@ struct grpc_tls_certificate_distributor
   void SetWatchStatusCallback(
       std::function<void(std::string, bool, bool)> callback) {
     grpc_core::MutexLock lock(&mu_);
-    watch_status_callback_ = callback;
+    watch_status_callback_ = std::move(callback);
   };
 
   // Registers a watcher. The caller may keep a raw pointer to the watcher,

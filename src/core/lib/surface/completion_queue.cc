@@ -422,9 +422,9 @@ static const cq_vtable g_cq_vtable[] = {
      cq_end_op_for_callback, nullptr, nullptr},
 };
 
-#define DATA_FROM_CQ(cq) ((void*)(cq + 1))
+#define DATA_FROM_CQ(cq) ((void*)((cq) + 1))
 #define POLLSET_FROM_CQ(cq) \
-  ((grpc_pollset*)(cq->vtable->data_size + (char*)DATA_FROM_CQ(cq)))
+  ((grpc_pollset*)((cq)->vtable->data_size + (char*)DATA_FROM_CQ(cq)))
 
 grpc_core::TraceFlag grpc_cq_pluck_trace(false, "queue_pluck");
 

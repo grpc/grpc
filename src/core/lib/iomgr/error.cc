@@ -292,7 +292,7 @@ static void internal_add_error(grpc_error** err, grpc_error* new_err) {
   memcpy((*err)->arena + slot, &new_last, sizeof(grpc_linked_error));
 }
 
-#define SLOTS_PER_INT (sizeof(intptr_t) / sizeof(intptr_t))
+#define SLOTS_PER_INT (1)  // == (sizeof(intptr_t) / sizeof(intptr_t))
 #define SLOTS_PER_STR (sizeof(grpc_slice) / sizeof(intptr_t))
 #define SLOTS_PER_TIME (sizeof(gpr_timespec) / sizeof(intptr_t))
 #define SLOTS_PER_LINKED_ERROR (sizeof(grpc_linked_error) / sizeof(intptr_t))
@@ -424,6 +424,7 @@ static grpc_error* copy_error_and_unref(grpc_error* in) {
     }
 #endif
     // bulk memcpy of the rest of the struct.
+    // NOLINTNEXTLINE(bugprone-sizeof-expression)
     size_t skip = sizeof(&out->atomics);
     memcpy((void*)((uintptr_t)out + skip), (void*)((uintptr_t)in + skip),
            sizeof(*in) + (in->arena_size * sizeof(intptr_t)) - skip);

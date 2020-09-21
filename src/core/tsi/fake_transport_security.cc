@@ -577,6 +577,7 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
   }
   if (!impl->outgoing_frame.needs_draining) {
     tsi_fake_handshake_message next_message_to_send =
+        // NOLINTNEXTLINE(bugprone-misplaced-widening-cast)
         static_cast<tsi_fake_handshake_message>(impl->next_message_to_send + 2);
     const char* msg_string =
         tsi_fake_handshake_message_to_string(impl->next_message_to_send);

@@ -1689,7 +1689,7 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_get_fd,
                                             tcp_can_track_err};
 
-#define MAX_CHUNK_SIZE 32 * 1024 * 1024
+#define MAX_CHUNK_SIZE (32 * 1024 * 1024)
 
 grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
                                const grpc_channel_args* channel_args,

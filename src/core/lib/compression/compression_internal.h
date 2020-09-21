@@ -21,7 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/compression.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/gpr/useful.h"
 
