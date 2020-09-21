@@ -269,6 +269,17 @@ def grpc_deps():
             sha256 = "97e70364e9249702246c0e9444bccdc4b847bed1eb03c5a3ece4f83dfe6abc44",
         )
 
+    if "bazel_compdb" not in native.existing_rules():
+        http_archive(
+            name = "bazel_compdb",
+            sha256 = "bcecfd622c4ef272fd4ba42726a52e140b961c4eac23025f18b346c968a8cfb4",
+            strip_prefix = "bazel-compilation-database-0.4.5",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grailbio/bazel-compilation-database/archive/0.4.5.tar.gz",
+                "https://github.com/grailbio/bazel-compilation-database/archive/0.4.5.tar.gz",
+            ],
+        )
+
     if "io_opencensus_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opencensus_cpp",
