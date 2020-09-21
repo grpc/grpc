@@ -1,6 +1,19 @@
 ---
-Checks: 'modernize-use-nullptr,google-build-namespaces,google-build-explicit-make-pair,readability-function-size,performance-*,bugprone-*'
-WarningsAsErrors: 'modernize-use-nullptr,google-build-namespaces,google-build-explicit-make-pair,readability-function-size,performance-*,bugprone-*'
+Checks: '-*,
+  bugprone-*,
+  -bugprone-forward-declaration-namespace,
+  -bugprone-integer-division,
+  -bugprone-misplaced-widening-cast,
+  -bugprone-narrowing-conversions,
+  -bugprone-too-small-loop-variable,
+  performance-*,
+  -performance-unnecessary-copy-initialization,
+  -performance-unnecessary-value-param,
+  google-build-namespaces,
+  google-build-explicit-make-pair,
+  modernize-use-nullptr,
+  readability-function-size'
+WarningsAsErrors: '*'
 CheckOptions:
   - key:    readability-function-size.StatementThreshold
     value:  '450'
