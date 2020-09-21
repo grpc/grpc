@@ -81,7 +81,8 @@
       'src/core/ext/transport/cronet/transport/cronet_status.h',
       'src/core/ext/transport/cronet/transport/cronet_transport.cc',
       'src/core/ext/transport/cronet/transport/cronet_transport.h',
-      'third_party/objective_c/Cronet/bidirectional_stream_c.h'
+      'third_party/objective_c/Cronet/bidirectional_stream_c.h',
+      'third_party/objective_c/Cronet/net_error_list.h'
   ]
 
   grpc_cronet_files = list(sorted(grpc_cronet_extra_impl_files))
