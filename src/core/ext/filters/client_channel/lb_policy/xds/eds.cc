@@ -36,6 +36,7 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -58,13 +59,15 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
  public:
   EdsLbConfig(std::string cluster_name, std::string eds_service_name,
               absl::optional<std::string> lrs_load_reporting_server_name,
-              Json locality_picking_policy, Json endpoint_picking_policy)
+              Json locality_picking_policy, Json endpoint_picking_policy,
+              uint32_t max_concurrent_requests)
       : cluster_name_(std::move(cluster_name)),
         eds_service_name_(std::move(eds_service_name)),
         lrs_load_reporting_server_name_(
             std::move(lrs_load_reporting_server_name)),
         locality_picking_policy_(std::move(locality_picking_policy)),
-        endpoint_picking_policy_(std::move(endpoint_picking_policy)) {}
+        endpoint_picking_policy_(std::move(endpoint_picking_policy)),
+        max_concurrent_requests_(max_concurrent_requests) {}
 
   const char* name() const override { return kEds; }
 
@@ -79,6 +82,9 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
   const Json& endpoint_picking_policy() const {
     return endpoint_picking_policy_;
   }
+  const uint32_t max_concurrent_requests() const {
+    return max_concurrent_requests_;
+  }
 
  private:
   std::string cluster_name_;
@@ -86,6 +92,7 @@ class EdsLbConfig : public LoadBalancingPolicy::Config {
   absl::optional<std::string> lrs_load_reporting_server_name_;
   Json locality_picking_policy_;
   Json endpoint_picking_policy_;
+  uint32_t max_concurrent_requests_;
 };
 
 // EDS LB policy.
@@ -115,11 +122,12 @@ class EdsLb : public LoadBalancingPolicy {
   // A picker that handles drops.
   class DropPicker : public SubchannelPicker {
    public:
-    explicit DropPicker(EdsLb* eds_policy);
+    explicit DropPicker(RefCountedPtr<EdsLb> eds_policy);
 
     PickResult Pick(PickArgs args) override;
 
    private:
+    RefCountedPtr<EdsLb> eds_policy_;
     RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<ChildPickerWrapper> child_picker_;
@@ -217,19 +225,24 @@ class EdsLb : public LoadBalancingPolicy {
   grpc_connectivity_state child_state_;
   absl::Status child_status_;
   RefCountedPtr<ChildPickerWrapper> child_picker_;
+
+  // Current concurrent number of requests;
+  Atomic<uint32_t> concurrent_requests_{0};
+  uint32_t max_concurrent_requests_;
 };
 
 //
 // EdsLb::DropPicker
 //
 
-EdsLb::DropPicker::DropPicker(EdsLb* eds_policy)
-    : drop_config_(eds_policy->drop_config_),
-      drop_stats_(eds_policy->drop_stats_),
-      child_picker_(eds_policy->child_picker_) {
+EdsLb::DropPicker::DropPicker(RefCountedPtr<EdsLb> eds_policy)
+    : eds_policy_(std::move(eds_policy)) {
+  drop_config_ = eds_policy_->drop_config_;
+  drop_stats_ = eds_policy_->drop_stats_;
+  child_picker_ = eds_policy_->child_picker_;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-    gpr_log(GPR_INFO, "[edslb %p] constructed new drop picker %p", eds_policy,
-            this);
+    gpr_log(GPR_INFO, "[edslb %p] constructed new drop picker %p",
+            eds_policy_.get(), this);
   }
 }
 
@@ -252,8 +265,40 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
     return result;
   }
+  // Check and see if we exceeded the max concurrent requests count.
+  uint32_t current = eds_policy_->concurrent_requests_.FetchAdd(1);
+  // gpr_log(GPR_INFO, "DONNA cur %d and max %d", current,
+  // eds_policy_->max_concurrent_requests_);
+  if (current > eds_policy_->max_concurrent_requests_) {
+    // gpr_log(GPR_INFO, "DONNA IN NEW CODE");
+    eds_policy_->concurrent_requests_.FetchSub(1);
+    PickResult result;
+    result.type = PickResult::PICK_COMPLETE;
+    return result;
+  }
   // Not dropping, so delegate to child's picker.
-  return child_picker_->Pick(args);
+  PickResult result = child_picker_->Pick(args);
+  if (result.type == PickResult::PICK_COMPLETE) {
+    EdsLb* eds_policy = static_cast<EdsLb*>(
+        eds_policy_->Ref(DEBUG_LOCATION, "DropPickPicker+call").release());
+    auto original_recv_trailing_metadata_ready =
+        result.recv_trailing_metadata_ready;
+    result.recv_trailing_metadata_ready =
+        [original_recv_trailing_metadata_ready, eds_policy](
+            grpc_error* error, MetadataInterface* metadata,
+            CallState* call_state) {
+          // gpr_log(GPR_INFO, "DONNA UNREF CALLBACK IN NEW CODE");
+          if (original_recv_trailing_metadata_ready != nullptr) {
+            original_recv_trailing_metadata_ready(error, metadata, call_state);
+          }
+          eds_policy->concurrent_requests_.FetchSub(1);
+          eds_policy->Unref(DEBUG_LOCATION, "DropPickPicker+call");
+        };
+  } else {
+    // gpr_log(GPR_INFO, "DONNA UNREF DIRECT IN NEW CODE");
+    eds_policy_->concurrent_requests_.FetchSub(1);
+  }
+  return result;
 }
 
 //
@@ -453,6 +498,7 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   auto old_config = std::move(config_);
   config_ = std::move(args.config);
+  max_concurrent_requests_ = config_->max_concurrent_requests();
   // Update args.
   grpc_channel_args_destroy(args_);
   args_ = args.args;
@@ -773,14 +819,16 @@ void EdsLb::MaybeUpdateDropPickerLocked() {
   // If we're dropping all calls, report READY, regardless of what (or
   // whether) the child has reported.
   if (drop_config_ != nullptr && drop_config_->drop_all()) {
-    channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
-                                          absl::make_unique<DropPicker>(this));
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_READY, absl::Status(),
+        absl::make_unique<DropPicker>(Ref(DEBUG_LOCATION, "DropPicker")));
     return;
   }
   // Update only if we have a child picker.
   if (child_picker_ != nullptr) {
-    channel_control_helper()->UpdateState(child_state_, child_status_,
-                                          absl::make_unique<DropPicker>(this));
+    channel_control_helper()->UpdateState(
+        child_state_, child_status_,
+        absl::make_unique<DropPicker>(Ref(DEBUG_LOCATION, "DropPicker")));
   }
 }
 
@@ -886,13 +934,24 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
           "endpointPickingPolicy", &parse_error, 1));
       GRPC_ERROR_UNREF(parse_error);
     }
+    // Max concurrent requests.
+    uint32_t max = 1024;
+    it = json.object_value().find("max_concurrent_requests");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::NUMBER) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:max_concurrent_reqeust error:must be of type number"));
+      } else {
+        max = gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      }
+    }
     // Construct config.
     if (error_list.empty()) {
       return MakeRefCounted<EdsLbConfig>(
           std::move(cluster_name), std::move(eds_service_name),
           std::move(lrs_load_reporting_server_name),
           std::move(locality_picking_policy),
-          std::move(endpoint_picking_policy));
+          std::move(endpoint_picking_policy), max);
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "eds_experimental LB policy config", &error_list);
