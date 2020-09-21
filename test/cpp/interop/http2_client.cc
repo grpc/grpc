@@ -43,7 +43,7 @@ const int kLargeResponseSize = 314159;
 }  // namespace
 
 Http2Client::ServiceStub::ServiceStub(const std::shared_ptr<Channel>& channel)
-    : channel_(std::move(channel)) {
+    : channel_(channel) {
   stub_ = TestService::NewStub(channel);
 }
 
@@ -51,7 +51,7 @@ TestService::Stub* Http2Client::ServiceStub::Get() { return stub_.get(); }
 
 Http2Client::Http2Client(const std::shared_ptr<Channel>& channel)
     : serviceStub_(channel),
-      channel_(std::move(channel)),
+      channel_(channel),
       defaultRequest_(BuildDefaultRequest()) {}
 
 bool Http2Client::AssertStatusCode(const Status& s, StatusCode expected_code) {
@@ -159,7 +159,7 @@ bool Http2Client::DoMaxStreams() {
              std::string(kLargeResponseSize, '\0'));
 
   std::vector<std::thread> test_threads;
-
+  test_threads.reserve(10);
   for (int i = 0; i < 10; i++) {
     test_threads.emplace_back(
         std::thread(&Http2Client::MaxStreamsWorker, this, channel_));
