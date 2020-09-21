@@ -267,8 +267,9 @@ class ChannelData {
 
   void UpdateServiceConfigInControlPlaneLocked(
       RefCountedPtr<ServiceConfig> service_config,
+      RefCountedPtr<ConfigSelector> config_selector,
       const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
-      const char* lb_policy_name, const grpc_channel_args* args);
+      const char* lb_policy_name);
 
   void UpdateServiceConfigInDataPlaneLocked();
 
@@ -1480,6 +1481,7 @@ ChannelData::ChannelConfigHelper::ChooseServiceConfig(
     const Resolver::Result& result) {
   ChooseServiceConfigResult service_config_result;
   RefCountedPtr<ServiceConfig> service_config;
+  RefCountedPtr<ConfigSelector> config_selector;
   if (result.service_config_error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO, "chand=%p: resolver returned service config error: %s",
@@ -1495,6 +1497,7 @@ ChannelData::ChannelConfigHelper::ChooseServiceConfig(
                 chand_);
       }
       service_config = chand_->saved_service_config_;
+      config_selector = chand_->saved_config_selector_;
     } else {
       // No previously returned config, so put the channel into
       // TRANSIENT_FAILURE.
@@ -1511,8 +1514,9 @@ ChannelData::ChannelConfigHelper::ChooseServiceConfig(
     }
     service_config = chand_->default_service_config_;
   } else {
-    // Use service config returned by resolver.
+    // Use ServiceConfig and ConfigSelector returned by resolver.
     service_config = result.service_config;
+    config_selector = ConfigSelector::GetFromChannelArgs(*result.args);
   }
   GPR_ASSERT(service_config != nullptr);
   // Extract global config for client channel.
@@ -1523,16 +1527,23 @@ ChannelData::ChannelConfigHelper::ChooseServiceConfig(
   // Find LB policy config.
   ChooseLbPolicy(result, parsed_service_config,
                  &service_config_result.lb_policy_config);
-  // Check if the config has changed.
-  service_config_result.service_config_changed =
+  // Check if the ServiceConfig has changed.
+  const bool service_config_changed =
       chand_->saved_service_config_ == nullptr ||
       service_config->json_string() !=
           chand_->saved_service_config_->json_string();
+  // Check if the ConfigSelector has changed.
+  const bool config_selector_changed = !ConfigSelector::Equals(
+      chand_->saved_config_selector_.get(), config_selector.get());
+  // Indicate a change if either the ServiceConfig or ConfigSelector have
+  // changed.
+  service_config_result.service_config_changed =
+      service_config_changed || config_selector_changed;
   // If it has, apply the global parameters now.
   if (service_config_result.service_config_changed) {
     chand_->UpdateServiceConfigInControlPlaneLocked(
-        std::move(service_config), parsed_service_config,
-        service_config_result.lb_policy_config->name(), result.args);
+        std::move(service_config), std::move(config_selector),
+        parsed_service_config, service_config_result.lb_policy_config->name());
   }
   // Return results.
   return service_config_result;
@@ -1814,8 +1825,9 @@ void ChannelData::UpdateStateAndPickerLocked(
 
 void ChannelData::UpdateServiceConfigInControlPlaneLocked(
     RefCountedPtr<ServiceConfig> service_config,
+    RefCountedPtr<ConfigSelector> config_selector,
     const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
-    const char* lb_policy_name, const grpc_channel_args* args) {
+    const char* lb_policy_name) {
   grpc_core::UniquePtr<char> service_config_json(
       gpr_strdup(service_config->json_string().c_str()));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
@@ -1825,13 +1837,20 @@ void ChannelData::UpdateServiceConfigInControlPlaneLocked(
   }
   // Save service config.
   saved_service_config_ = std::move(service_config);
-  // Save health check service name.
-  health_check_service_name_.reset(
-      gpr_strdup(parsed_service_config->health_check_service_name()));
-  // Update health check service name used by existing subchannel wrappers.
-  for (auto* subchannel_wrapper : subchannel_wrappers_) {
-    subchannel_wrapper->UpdateHealthCheckServiceName(grpc_core::UniquePtr<char>(
-        gpr_strdup(health_check_service_name_.get())));
+  // Update health check service name if needed.
+  if (((health_check_service_name_ == nullptr) !=
+       (parsed_service_config->health_check_service_name() == nullptr)) ||
+      (health_check_service_name_ != nullptr &&
+       strcmp(health_check_service_name_.get(),
+              parsed_service_config->health_check_service_name()) != 0)) {
+    health_check_service_name_.reset(
+        gpr_strdup(parsed_service_config->health_check_service_name()));
+    // Update health check service name used by existing subchannel wrappers.
+    for (auto* subchannel_wrapper : subchannel_wrappers_) {
+      subchannel_wrapper->UpdateHealthCheckServiceName(
+          grpc_core::UniquePtr<char>(
+              gpr_strdup(health_check_service_name_.get())));
+    }
   }
   // Swap out the data used by GetChannelInfo().
   grpc_core::UniquePtr<char> lb_policy_name_owned(gpr_strdup(lb_policy_name));
@@ -1841,7 +1860,11 @@ void ChannelData::UpdateServiceConfigInControlPlaneLocked(
     info_service_config_json_ = std::move(service_config_json);
   }
   // Save config selector.
-  saved_config_selector_ = ConfigSelector::GetFromChannelArgs(*args);
+  saved_config_selector_ = std::move(config_selector);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+    gpr_log(GPR_INFO, "chand=%p: using ConfigSelector %p", this,
+            saved_config_selector_.get());
+  }
 }
 
 void ChannelData::UpdateServiceConfigInDataPlaneLocked() {
@@ -1862,6 +1885,10 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked() {
   RefCountedPtr<ServiceConfig> service_config = saved_service_config_;
   // Grab ref to config selector.  Use default if resolver didn't supply one.
   RefCountedPtr<ConfigSelector> config_selector = saved_config_selector_;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+    gpr_log(GPR_INFO, "chand=%p: switching to ConfigSelector %p", this,
+            saved_config_selector_.get());
+  }
   if (config_selector == nullptr) {
     config_selector =
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);

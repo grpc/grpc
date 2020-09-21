@@ -26,7 +26,11 @@
 #include <thread>
 #include <vector>
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -37,9 +41,6 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-
-#include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
@@ -75,9 +76,6 @@
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 namespace grpc {
 namespace testing {
@@ -808,10 +806,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                 }
               }
               // As long as the test did not tell us to ignore this type of
-              // request, we will loop through all resources to:
-              // 1. subscribe if necessary
-              // 2. update if necessary
-              // 3. unsubscribe if necessary
+              // request, look at all the resource names.
               if (parent_->resource_types_to_ignore_.find(v3_resource_type) ==
                   parent_->resource_types_to_ignore_.end()) {
                 auto& subscription_name_map =
@@ -826,9 +821,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                   auto& subscription_state =
                       subscription_name_map[resource_name];
                   auto& resource_state = resource_name_map[resource_name];
+                  // Subscribe if needed.
                   parent_->MaybeSubscribe(v3_resource_type, resource_name,
                                           &subscription_state, &resource_state,
                                           &update_queue);
+                  // Send update if needed.
                   if (ClientNeedsResourceUpdate(resource_state,
                                                 &subscription_state)) {
                     gpr_log(GPR_INFO,
@@ -4135,6 +4132,71 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+}
+
+TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
+  const char* kNewClusterName = "new_cluster";
+  const char* kNewEdsServiceName = "new_eds_service_name";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewEdsServiceName));
+  // Populate new CDS resources.
+  Cluster new_cluster = balancers_[0]->ads_service()->default_cluster();
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster);
+  // Populating Route Configurations for LDS.
+  RouteConfiguration route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  route1->mutable_route()->set_cluster(kNewClusterName);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultClusterName);
+  SetRouteConfiguration(0, route_config);
+  // Make sure all backends are up and that requests for each RPC
+  // service go to the right backends.
+  WaitForAllBackends(0, 1, false);
+  WaitForAllBackends(1, 2, false, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(0, 1, false, RpcOptions().set_rpc_service(SERVICE_ECHO2));
+  // Requests for services Echo and Echo2 should have gone to backend 0.
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
+  EXPECT_EQ(1, backends_[0]->backend_service2()->request_count());
+  // Requests for service Echo1 should have gone to backend 1.
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(1, backends_[1]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
+  // Now send an update that changes the first route to match a
+  // different RPC service, and wait for the client to make the change.
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service/");
+  SetRouteConfiguration(0, route_config);
+  WaitForAllBackends(1, 2, true, RpcOptions().set_rpc_service(SERVICE_ECHO2));
+  // Now repeat the earlier test, making sure all traffic goes to the
+  // right place.
+  WaitForAllBackends(0, 1, false);
+  WaitForAllBackends(0, 1, false, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(1, 2, false, RpcOptions().set_rpc_service(SERVICE_ECHO2));
+  // Requests for services Echo and Echo1 should have gone to backend 0.
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(1, backends_[0]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
+  // Requests for service Echo2 should have gone to backend 1.
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service1()->request_count());
+  EXPECT_EQ(1, backends_[1]->backend_service2()->request_count());
 }
 
 using CdsTest = BasicTest;
