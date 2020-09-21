@@ -99,7 +99,37 @@ class EdsLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  class EndpointWatcher;
+  class EndpointWatcher : public XdsClient::EndpointWatcherInterface {
+   public:
+    explicit EndpointWatcher(RefCountedPtr<EdsLb> parent)
+        : parent_(std::move(parent)) {}
+    void OnEndpointChanged(XdsApi::EdsUpdate update) override {
+      new Notifier(parent_, std::move(update));
+    }
+    void OnError(grpc_error* error) override { new Notifier(parent_, error); }
+    void OnResourceDoesNotExist() override { new Notifier(parent_); }
+
+   private:
+    class Notifier {
+     public:
+      Notifier(RefCountedPtr<EdsLb> parent, XdsApi::EdsUpdate update);
+      Notifier(RefCountedPtr<EdsLb> parent, grpc_error* error);
+      explicit Notifier(RefCountedPtr<EdsLb> parent);
+
+     private:
+      enum Type { kUpdate, kError, kDoesNotExist };
+
+      static void RunInExecCtx(void* arg, grpc_error* error);
+      void RunInWorkSerializer(grpc_error* error);
+
+      RefCountedPtr<EdsLb> parent_;
+      grpc_closure closure_;
+      XdsApi::EdsUpdate update_;
+      Type type_;
+    };
+
+    RefCountedPtr<EdsLb> parent_;
+  };
 
   // A simple wrapper for ref-counting a picker from the child policy.
   class ChildPickerWrapper : public RefCounted<ChildPickerWrapper> {
@@ -149,6 +179,10 @@ class EdsLb : public LoadBalancingPolicy {
   ~EdsLb();
 
   void ShutdownLocked() override;
+
+  void OnEndpointChanged(XdsApi::EdsUpdate update);
+  void OnError(grpc_error* error);
+  void OnResourceDoesNotExist();
 
   void MaybeDestroyChildPolicyLocked();
 
@@ -296,81 +330,51 @@ void EdsLb::Helper::AddTraceEvent(TraceSeverity severity,
 }
 
 //
-// EdsLb::EndpointWatcher
+// EdsLb::EndpointWatcher::Notifier
 //
 
-class EdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
- public:
-  explicit EndpointWatcher(RefCountedPtr<EdsLb> eds_policy)
-      : eds_policy_(std::move(eds_policy)) {}
+EdsLb::EndpointWatcher::Notifier::Notifier(RefCountedPtr<EdsLb> parent,
+                                           XdsApi::EdsUpdate update)
+    : parent_(std::move(parent)), update_(std::move(update)), type_(kUpdate) {
+  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
+  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+}
 
-  ~EndpointWatcher() { eds_policy_.reset(DEBUG_LOCATION, "EndpointWatcher"); }
+EdsLb::EndpointWatcher::Notifier::Notifier(RefCountedPtr<EdsLb> parent,
+                                           grpc_error* error)
+    : parent_(std::move(parent)), type_(kError) {
+  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
+  ExecCtx::Run(DEBUG_LOCATION, &closure_, error);
+}
 
-  void OnEndpointChanged(XdsApi::EdsUpdate update) override {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-      gpr_log(GPR_INFO, "[edslb %p] Received EDS update from xds client",
-              eds_policy_.get());
-    }
-    // Update the drop config.
-    const bool drop_config_changed =
-        eds_policy_->drop_config_ == nullptr ||
-        *eds_policy_->drop_config_ != *update.drop_config;
-    if (drop_config_changed) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-        gpr_log(GPR_INFO, "[edslb %p] Updating drop config", eds_policy_.get());
-      }
-      eds_policy_->drop_config_ = std::move(update.drop_config);
-      eds_policy_->MaybeUpdateDropPickerLocked();
-    } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-      gpr_log(GPR_INFO, "[edslb %p] Drop config unchanged, ignoring",
-              eds_policy_.get());
-    }
-    // Update priority and locality info.
-    if (eds_policy_->child_policy_ == nullptr ||
-        eds_policy_->priority_list_ != update.priorities) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-        gpr_log(GPR_INFO, "[edslb %p] Updating priority list",
-                eds_policy_.get());
-      }
-      eds_policy_->UpdatePriorityList(std::move(update.priorities));
-    } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-      gpr_log(GPR_INFO, "[edslb %p] Priority list unchanged, ignoring",
-              eds_policy_.get());
-    }
-  }
+EdsLb::EndpointWatcher::Notifier::Notifier(RefCountedPtr<EdsLb> parent)
+    : parent_(std::move(parent)), type_(kDoesNotExist) {
+  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
+  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+}
 
-  void OnError(grpc_error* error) override {
-    gpr_log(GPR_ERROR, "[edslb %p] xds watcher reported error: %s",
-            eds_policy_.get(), grpc_error_string(error));
-    // Go into TRANSIENT_FAILURE if we have not yet created the child
-    // policy (i.e., we have not yet received data from xds).  Otherwise,
-    // we keep running with the data we had previously.
-    if (eds_policy_->child_policy_ == nullptr) {
-      eds_policy_->channel_control_helper()->UpdateState(
-          GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-          absl::make_unique<TransientFailurePicker>(error));
-    } else {
-      GRPC_ERROR_UNREF(error);
-    }
-  }
+void EdsLb::EndpointWatcher::Notifier::RunInExecCtx(void* arg,
+                                                    grpc_error* error) {
+  Notifier* self = static_cast<Notifier*>(arg);
+  GRPC_ERROR_REF(error);
+  self->parent_->work_serializer()->Run(
+      [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
+}
 
-  void OnResourceDoesNotExist() override {
-    gpr_log(
-        GPR_ERROR,
-        "[edslb %p] EDS resource does not exist -- reporting TRANSIENT_FAILURE",
-        eds_policy_.get());
-    grpc_error* error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("EDS resource does not exist"),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-    eds_policy_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-        absl::make_unique<TransientFailurePicker>(error));
-    eds_policy_->MaybeDestroyChildPolicyLocked();
-  }
-
- private:
-  RefCountedPtr<EdsLb> eds_policy_;
-};
+void EdsLb::EndpointWatcher::Notifier::RunInWorkSerializer(grpc_error* error) {
+  switch (type_) {
+    case kUpdate:
+      parent_->OnEndpointChanged(std::move(update_));
+      break;
+    case kError:
+      parent_->OnError(error);
+      break;
+    case kDoesNotExist:
+      parent_->OnResourceDoesNotExist();
+      break;
+  };
+  delete this;
+}
 
 //
 // EdsLb public methods
@@ -461,8 +465,7 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
     // Initialize XdsClient.
     if (xds_client_from_channel_ == nullptr) {
       grpc_error* error = GRPC_ERROR_NONE;
-      xds_client_ =
-          MakeOrphanable<XdsClient>(work_serializer(), *args_, &error);
+      xds_client_ = MakeOrphanable<XdsClient>(*args_, &error);
       // TODO(roth): If we decide that we care about EDS-only mode, add
       // proper error handling here.
       GPR_ASSERT(error == GRPC_ERROR_NONE);
@@ -511,6 +514,62 @@ void EdsLb::ResetBackoffLocked() {
   if (child_policy_ != nullptr) {
     child_policy_->ResetBackoffLocked();
   }
+}
+
+void EdsLb::OnEndpointChanged(XdsApi::EdsUpdate update) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+    gpr_log(GPR_INFO, "[edslb %p] Received EDS update from xds client", this);
+  }
+  // Update the drop config.
+  const bool drop_config_changed =
+      drop_config_ == nullptr || *drop_config_ != *update.drop_config;
+  if (drop_config_changed) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+      gpr_log(GPR_INFO, "[edslb %p] Updating drop config", this);
+    }
+    drop_config_ = std::move(update.drop_config);
+    MaybeUpdateDropPickerLocked();
+  } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+    gpr_log(GPR_INFO, "[edslb %p] Drop config unchanged, ignoring", this);
+  }
+  // Update priority and locality info.
+  if (child_policy_ == nullptr || priority_list_ != update.priorities) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+      gpr_log(GPR_INFO, "[edslb %p] Updating priority list", this);
+    }
+    UpdatePriorityList(std::move(update.priorities));
+  } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+    gpr_log(GPR_INFO, "[edslb %p] Priority list unchanged, ignoring", this);
+  }
+}
+
+void EdsLb::OnError(grpc_error* error) {
+  gpr_log(GPR_ERROR, "[edslb %p] xds watcher reported error: %s", this,
+          grpc_error_string(error));
+  // Go into TRANSIENT_FAILURE if we have not yet created the child
+  // policy (i.e., we have not yet received data from xds).  Otherwise,
+  // we keep running with the data we had previously.
+  if (child_policy_ == nullptr) {
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
+        absl::make_unique<TransientFailurePicker>(error));
+  } else {
+    GRPC_ERROR_UNREF(error);
+  }
+}
+
+void EdsLb::OnResourceDoesNotExist() {
+  gpr_log(
+      GPR_ERROR,
+      "[edslb %p] EDS resource does not exist -- reporting TRANSIENT_FAILURE",
+      this);
+  grpc_error* error = grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("EDS resource does not exist"),
+      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+  channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
+      absl::make_unique<TransientFailurePicker>(error));
+  MaybeDestroyChildPolicyLocked();
 }
 
 //
