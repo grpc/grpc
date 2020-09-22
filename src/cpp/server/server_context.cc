@@ -222,27 +222,13 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
 
 // ServerContextBase body
 
-ServerContextBase::ServerContextBase() {
-  Setup(gpr_inf_future(GPR_CLOCK_REALTIME));
-}
+ServerContextBase::ServerContextBase()
+    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {}
 
 ServerContextBase::ServerContextBase(gpr_timespec deadline,
-                                     grpc_metadata_array* arr) {
-  Setup(deadline);
+                                     grpc_metadata_array* arr)
+    : deadline_(deadline) {
   std::swap(*client_metadata_.arr(), *arr);
-}
-
-void ServerContextBase::Setup(gpr_timespec deadline) {
-  completion_op_ = nullptr;
-  has_notify_when_done_tag_ = false;
-  async_notify_when_done_tag_ = nullptr;
-  deadline_ = deadline;
-  call_ = nullptr;
-  cq_ = nullptr;
-  sent_initial_metadata_ = false;
-  compression_level_set_ = false;
-  has_pending_ops_ = false;
-  rpc_info_ = nullptr;
 }
 
 void ServerContextBase::BindDeadlineAndMetadata(gpr_timespec deadline,
@@ -251,32 +237,24 @@ void ServerContextBase::BindDeadlineAndMetadata(gpr_timespec deadline,
   std::swap(*client_metadata_.arr(), *arr);
 }
 
-ServerContextBase::~ServerContextBase() { Clear(); }
-
-void ServerContextBase::Clear() {
-  auth_context_.reset();
-  initial_metadata_.clear();
-  trailing_metadata_.clear();
-  client_metadata_.Reset();
+ServerContextBase::~ServerContextBase() {
   if (completion_op_) {
     completion_op_->Unref();
-    completion_op_ = nullptr;
-    completion_tag_.Clear();
   }
   if (rpc_info_) {
     rpc_info_->Unref();
-    rpc_info_ = nullptr;
-  }
-  if (call_) {
-    auto* call = call_;
-    call_ = nullptr;
-    grpc_call_unref(call);
   }
   if (default_reactor_used_.load(std::memory_order_relaxed)) {
     reinterpret_cast<Reactor*>(&default_reactor_)->~Reactor();
-    default_reactor_used_.store(false, std::memory_order_relaxed);
   }
-  test_unary_.reset();
+}
+
+ServerContextBase::CallWrapper::~CallWrapper() {
+  if (call) {
+    // If the ServerContext is part of the call's arena, this could free the
+    // object itself.
+    grpc_call_unref(call);
+  }
 }
 
 void ServerContextBase::BeginCompletionOp(
@@ -322,8 +300,9 @@ void ServerContextBase::TryCancel() const {
       rpc_info_->RunInterceptor(&cancel_methods, i);
     }
   }
-  grpc_call_error err = grpc_call_cancel_with_status(
-      call_, GRPC_STATUS_CANCELLED, "Cancelled on the server side", nullptr);
+  grpc_call_error err =
+      grpc_call_cancel_with_status(call_.call, GRPC_STATUS_CANCELLED,
+                                   "Cancelled on the server side", nullptr);
   if (err != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "TryCancel failed with: %d", err);
   }
@@ -358,8 +337,8 @@ void ServerContextBase::set_compression_algorithm(
 
 std::string ServerContextBase::peer() const {
   std::string peer;
-  if (call_) {
-    char* c_peer = grpc_call_get_peer(call_);
+  if (call_.call) {
+    char* c_peer = grpc_call_get_peer(call_.call);
     peer = c_peer;
     gpr_free(c_peer);
   }
@@ -367,12 +346,13 @@ std::string ServerContextBase::peer() const {
 }
 
 const struct census_context* ServerContextBase::census_context() const {
-  return call_ == nullptr ? nullptr : grpc_census_call_get_context(call_);
+  return call_.call == nullptr ? nullptr
+                               : grpc_census_call_get_context(call_.call);
 }
 
 void ServerContextBase::SetLoadReportingCosts(
     const std::vector<std::string>& cost_data) {
-  if (call_ == nullptr) return;
+  if (call_.call == nullptr) return;
   for (const auto& cost_datum : cost_data) {
     AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);
   }

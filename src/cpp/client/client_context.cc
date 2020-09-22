@@ -91,7 +91,7 @@ void ClientContext::set_credentials(
 std::unique_ptr<ClientContext> ClientContext::FromInternalServerContext(
     const grpc::ServerContextBase& context, PropagationOptions options) {
   std::unique_ptr<ClientContext> ctx(new ClientContext);
-  ctx->propagate_from_call_ = context.call_;
+  ctx->propagate_from_call_ = context.call_.call;
   ctx->propagation_options_ = options;
   return ctx;
 }
