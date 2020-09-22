@@ -218,6 +218,9 @@ class EdsLb : public LoadBalancingPolicy {
 
   RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
   RefCountedPtr<XdsClusterDropStats> drop_stats_;
+  // Current concurrent number of requests;
+  Atomic<uint32_t> concurrent_requests_{0};
+  uint32_t max_concurrent_requests_;
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
@@ -225,10 +228,6 @@ class EdsLb : public LoadBalancingPolicy {
   grpc_connectivity_state child_state_;
   absl::Status child_status_;
   RefCountedPtr<ChildPickerWrapper> child_picker_;
-
-  // Current concurrent number of requests;
-  Atomic<uint32_t> concurrent_requests_{0};
-  uint32_t max_concurrent_requests_;
 };
 
 //
@@ -236,10 +235,10 @@ class EdsLb : public LoadBalancingPolicy {
 //
 
 EdsLb::DropPicker::DropPicker(RefCountedPtr<EdsLb> eds_policy)
-    : eds_policy_(std::move(eds_policy)) {
-  drop_config_ = eds_policy_->drop_config_;
-  drop_stats_ = eds_policy_->drop_stats_;
-  child_picker_ = eds_policy_->child_picker_;
+    : eds_policy_(std::move(eds_policy)),
+      drop_config_(eds_policy_->drop_config_),
+      drop_stats_(eds_policy_->drop_stats_),
+      child_picker_(eds_policy_->child_picker_) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
     gpr_log(GPR_INFO, "[edslb %p] constructed new drop picker %p",
             eds_policy_.get(), this);
@@ -272,6 +271,8 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
   if (current > eds_policy_->max_concurrent_requests_) {
     // gpr_log(GPR_INFO, "DONNA IN NEW CODE");
     eds_policy_->concurrent_requests_.FetchSub(1);
+    if (drop_stats_ != nullptr)
+      drop_stats_->AddCallDropped("max_concurrent_requests_exceeded");
     PickResult result;
     result.type = PickResult::PICK_COMPLETE;
     return result;
@@ -935,14 +936,15 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
       GRPC_ERROR_UNREF(parse_error);
     }
     // Max concurrent requests.
-    uint32_t max = 1024;
+    uint32_t max_concurrent_requests = 1024;
     it = json.object_value().find("max_concurrent_requests");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::NUMBER) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:max_concurrent_reqeust error:must be of type number"));
+            "field:max_concurrent_request error:must be of type number"));
       } else {
-        max = gpr_parse_nonnegative_int(it->second.string_value().c_str());
+        max_concurrent_requests =
+            gpr_parse_nonnegative_int(it->second.string_value().c_str());
       }
     }
     // Construct config.
@@ -951,7 +953,7 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
           std::move(cluster_name), std::move(eds_service_name),
           std::move(lrs_load_reporting_server_name),
           std::move(locality_picking_policy),
-          std::move(endpoint_picking_policy), max);
+          std::move(endpoint_picking_policy), max_concurrent_requests);
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "eds_experimental LB policy config", &error_list);
