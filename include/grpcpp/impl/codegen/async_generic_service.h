@@ -36,20 +36,13 @@ typedef ServerAsyncResponseWriter<ByteBuffer> GenericServerAsyncResponseWriter;
 typedef ServerAsyncReader<ByteBuffer, ByteBuffer> GenericServerAsyncReader;
 typedef ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
 
-class GenericServerContext final : public ::grpc::ServerContext {
+class GenericServerContext final : public ServerContext {
  public:
   const std::string& method() const { return method_; }
   const std::string& host() const { return host_; }
 
  private:
-  friend class grpc::Server;
-  friend class grpc::ServerInterface;
-
-  void Clear() {
-    method_.clear();
-    host_.clear();
-    ::grpc::ServerContext::Clear();
-  }
+  friend class ServerInterface;
 
   std::string method_;
   std::string host_;
@@ -95,21 +88,13 @@ namespace experimental {
 /// ByteBuffer arguments.
 using ServerGenericBidiReactor = ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
-class GenericCallbackServerContext final
-    : public ::grpc::CallbackServerContext {
+class GenericCallbackServerContext final : public grpc::CallbackServerContext {
  public:
   const std::string& method() const { return method_; }
   const std::string& host() const { return host_; }
 
  private:
   friend class ::grpc::Server;
-  friend class ::grpc::ServerInterface;
-
-  void Clear() {
-    method_.clear();
-    host_.clear();
-    ::grpc::CallbackServerContext::Clear();
-  }
 
   std::string method_;
   std::string host_;
