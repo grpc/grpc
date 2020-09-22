@@ -178,7 +178,6 @@ static void TokenExchange(TokenFetchContext* ctx) {
         ctx, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                  absl::StrFormat("Invalid token url %s", ctx->options.token_url)
                      .c_str()));
-    grpc_uri_destroy(uri);
     return;
   }
   grpc_httpcli_request request;

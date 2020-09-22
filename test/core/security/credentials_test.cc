@@ -1988,7 +1988,7 @@ class TestExternalAccountCredentials final
   }
 };
 
-static void test_external_account_creds_success(void) {
+static void test_external_account_creds(void) {
   expected_md emd[] = {
       {"authorization", "Bearer service_account_impersonation_access_token"}};
 
@@ -2076,7 +2076,7 @@ int main(int argc, char** argv) {
   test_get_well_known_google_credentials_file_path();
   test_channel_creds_duplicate_without_call_creds();
   test_auth_metadata_context();
-  test_external_account_creds_success();
+  test_external_account_creds();
   grpc_shutdown();
   return 0;
 }
