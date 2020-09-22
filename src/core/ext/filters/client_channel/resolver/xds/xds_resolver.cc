@@ -235,6 +235,7 @@ void XdsResolver::Notifier::RunInExecCtx(void* arg, grpc_error* error) {
 void XdsResolver::Notifier::RunInWorkSerializer(grpc_error* error) {
   if (resolver_->xds_client_ == nullptr) {
     GRPC_ERROR_UNREF(error);
+    delete this;
     return;
   }
   switch (type_) {
