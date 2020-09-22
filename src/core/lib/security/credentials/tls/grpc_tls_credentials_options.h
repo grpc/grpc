@@ -26,6 +26,7 @@
 #include "absl/container/inlined_vector.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
 struct grpc_tls_error_details
@@ -41,124 +42,15 @@ struct grpc_tls_error_details
   std::string error_details_;
 };
 
-/** TLS key materials config. **/
-struct grpc_tls_key_materials_config
-    : public grpc_core::RefCounted<grpc_tls_key_materials_config> {
+struct grpc_tls_certificate_provider
+ : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
-  typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
+  grpc_tls_certificate_provider() = default;
 
-  /** Getters for member fields. **/
-  const char* pem_root_certs() const { return pem_root_certs_.get(); }
-  const PemKeyCertPairList& pem_key_cert_pair_list() const {
-    return pem_key_cert_pair_list_;
-  }
-  int version() const { return version_; }
+  virtual ~grpc_tls_certificate_provider() = default;
 
-  /** Setters for member fields. **/
-  // TODO(ZhenLian): Remove this function
-  void set_pem_root_certs(grpc_core::UniquePtr<char> pem_root_certs) {
-    pem_root_certs_ = std::move(pem_root_certs);
-  }
-  // The ownerships of |pem_root_certs| remain with the caller.
-  void set_pem_root_certs(const char* pem_root_certs) {
-    // make a copy of pem_root_certs.
-    grpc_core::UniquePtr<char> pem_root_ptr(gpr_strdup(pem_root_certs));
-    pem_root_certs_ = std::move(pem_root_ptr);
-  }
-  void add_pem_key_cert_pair(grpc_core::PemKeyCertPair pem_key_cert_pair) {
-    pem_key_cert_pair_list_.push_back(pem_key_cert_pair);
-  }
-  // The ownerships of |pem_root_certs| and |pem_key_cert_pairs| remain with the
-  // caller.
-  void set_key_materials(const char* pem_root_certs,
-                         const grpc_ssl_pem_key_cert_pair** pem_key_cert_pairs,
-                         size_t num_key_cert_pairs);
-  // The ownerships of |pem_root_certs| and |pem_key_cert_pair_list| remain with
-  // the caller.
-  void set_key_materials(const char* pem_root_certs,
-                         const PemKeyCertPairList& pem_key_cert_pair_list);
-  void set_version(int version) { version_ = version; }
-
- private:
-  int version_ = 0;
-  PemKeyCertPairList pem_key_cert_pair_list_;
-  grpc_core::UniquePtr<char> pem_root_certs_;
-};
-
-/** TLS credential reload config. **/
-struct grpc_tls_credential_reload_config
-    : public grpc_core::RefCounted<grpc_tls_credential_reload_config> {
- public:
-  grpc_tls_credential_reload_config(
-      const void* config_user_data,
-      int (*schedule)(void* config_user_data,
-                      grpc_tls_credential_reload_arg* arg),
-      void (*cancel)(void* config_user_data,
-                     grpc_tls_credential_reload_arg* arg),
-      void (*destruct)(void* config_user_data));
-  ~grpc_tls_credential_reload_config();
-
-  void* context() const { return context_; }
-  void set_context(void* context) { context_ = context; }
-
-  int Schedule(grpc_tls_credential_reload_arg* arg) const {
-    if (schedule_ == nullptr) {
-      gpr_log(GPR_ERROR, "schedule API is nullptr");
-      if (arg != nullptr) {
-        arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL;
-        arg->error_details->set_error_details(
-            "schedule API in credential reload config is nullptr");
-      }
-      return 1;
-    }
-    if (arg != nullptr) {
-      arg->config = const_cast<grpc_tls_credential_reload_config*>(this);
-    }
-    return schedule_(config_user_data_, arg);
-  }
-  void Cancel(grpc_tls_credential_reload_arg* arg) const {
-    if (cancel_ == nullptr) {
-      gpr_log(GPR_ERROR, "cancel API is nullptr.");
-      if (arg != nullptr) {
-        arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL;
-        arg->error_details->set_error_details(
-            "cancel API in credential reload config is nullptr");
-      }
-      return;
-    }
-    if (arg != nullptr) {
-      arg->config = const_cast<grpc_tls_credential_reload_config*>(this);
-    }
-    cancel_(config_user_data_, arg);
-  }
-
- private:
-  /** This is a pointer to the wrapped language implementation of
-   * grpc_tls_credential_reload_config. It is necessary to implement the C
-   * schedule and cancel functions, given the schedule or cancel function in a
-   * wrapped language. **/
-  void* context_ = nullptr;
-  /** config-specific, read-only user data that works for all channels created
-     with a credential using the config. */
-  void* config_user_data_;
-  /** callback function for invoking credential reload API. The implementation
-     of this method has to be non-blocking, but can be performed synchronously
-     or asynchronously.
-     If processing occurs synchronously, it populates \a arg->key_materials, \a
-     arg->status, and \a arg->error_details and returns zero.
-     If processing occurs asynchronously, it returns a non-zero value.
-     Application then invokes \a arg->cb when processing is completed. Note that
-     \a arg->cb cannot be invoked before \a schedule returns.
-  */
-  int (*schedule_)(void* config_user_data, grpc_tls_credential_reload_arg* arg);
-  /** callback function for cancelling a credential reload request scheduled via
-     an asynchronous \a schedule. \a arg is used to pinpoint an exact reloading
-     request to be cancelled, and the operation may not have any effect if the
-     request has already been processed. */
-  void (*cancel_)(void* config_user_data, grpc_tls_credential_reload_arg* arg);
-  /** callback function for cleaning up any data associated with credential
-     reload config. */
-  void (*destruct_)(void* config_user_data);
+  virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
+      const = 0;
 };
 
 /** TLS server authorization check config. **/
@@ -246,12 +138,6 @@ struct grpc_tls_credentials_options
     : public grpc_core::RefCounted<grpc_tls_credentials_options> {
  public:
   ~grpc_tls_credentials_options() {
-    if (key_materials_config_.get() != nullptr) {
-      key_materials_config_.get()->Unref();
-    }
-    if (credential_reload_config_.get() != nullptr) {
-      credential_reload_config_.get()->Unref();
-    }
     if (server_authorization_check_config_.get() != nullptr) {
       server_authorization_check_config_.get()->Unref();
     }
@@ -266,15 +152,18 @@ struct grpc_tls_credentials_options
   }
   grpc_tls_version min_tls_version() const { return min_tls_version_; }
   grpc_tls_version max_tls_version() const { return max_tls_version_; }
-  grpc_tls_key_materials_config* key_materials_config() const {
-    return key_materials_config_.get();
-  }
-  grpc_tls_credential_reload_config* credential_reload_config() const {
-    return credential_reload_config_.get();
-  }
   grpc_tls_server_authorization_check_config*
   server_authorization_check_config() const {
     return server_authorization_check_config_.get();
+  }
+  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> certificate_provider() {
+    return grpc_tls_certificate_provider_;
+  }
+  const absl::optional<std::string>& root_cert_name() {
+    return root_cert_name_;
+  }
+  const absl::optional<std::string>& identity_cert_name() {
+    return identity_cert_name_;
   }
 
   /* Setters for member fields. */
@@ -292,18 +181,22 @@ struct grpc_tls_credentials_options
   void set_max_tls_version(grpc_tls_version max_tls_version) {
     max_tls_version_ = max_tls_version;
   }
-  void set_key_materials_config(
-      grpc_core::RefCountedPtr<grpc_tls_key_materials_config> config) {
-    key_materials_config_ = std::move(config);
-  }
-  void set_credential_reload_config(
-      grpc_core::RefCountedPtr<grpc_tls_credential_reload_config> config) {
-    credential_reload_config_ = std::move(config);
-  }
   void set_server_authorization_check_config(
       grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config>
           config) {
     server_authorization_check_config_ = std::move(config);
+  }
+
+  void set_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider) {
+    grpc_tls_certificate_provider_ = std::move(provider);
+  }
+
+   void set_root_cert_name(std::string root_cert_name) {
+    root_cert_name_ = std::move(root_cert_name);
+  }
+
+   void set_identity_cert_name(std::string identity_cert_name) {
+    identity_cert_name_ = std::move(identity_cert_name);
   }
 
  private:
@@ -312,11 +205,11 @@ struct grpc_tls_credentials_options
       GRPC_TLS_SERVER_VERIFICATION;
   grpc_tls_version min_tls_version_ = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version_ = grpc_tls_version::TLS1_3;
-  grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
-  grpc_core::RefCountedPtr<grpc_tls_credential_reload_config>
-      credential_reload_config_;
   grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config>
       server_authorization_check_config_;
+  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> grpc_tls_certificate_provider_;
+  absl::optional<std::string> root_cert_name_;
+  absl::optional<std::string> identity_cert_name_;
 };
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H \
