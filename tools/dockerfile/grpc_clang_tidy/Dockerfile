@@ -61,9 +61,12 @@ RUN mkdir /var/local/jenkins
 
 
 
+# Add buster-backports for more recent clang packages
+RUN echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/buster-backports.list
+
 # Install clang-tidy 7
-RUN apt-get update && apt-get install -y clang-tidy-7 jq
-ENV CLANG_TIDY=clang-tidy-7
+RUN apt-get update && apt-get install -y clang-tidy-8 jq
+ENV CLANG_TIDY=clang-tidy-8
 
 ADD clang_tidy_all_the_things.sh /
 
