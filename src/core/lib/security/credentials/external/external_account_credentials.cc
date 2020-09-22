@@ -249,6 +249,16 @@ static void OnRetrieveSubjectToken(void* arg, grpc_error* error) {
   }
 }
 
+// The token fetching flow:
+// 1. Retrieve subject token - Call RetrieveSubjectToken() and get the subject
+// token in OnRetrieveSubjectToken().
+// 2. Token exchange - Make a token exchange call in TokenExchange() with the
+// subject token in #1. Get the response in OnTokenExchange().
+// 3. (Optional) Service account impersonation - Make a http call in
+// ServiceAccountImpersenate() with the access token in #2. Get an impersonated
+// access token in OnServiceAccountImpersenate().
+// 4. Return back the response that contains an access token in
+// FinishTokenFetch().
 void ExternalAccountCredentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
@@ -260,7 +270,10 @@ void ExternalAccountCredentials::fetch_oauth2(
   ctx_->deadline = deadline;
   ctx_->options = options_;
   ctx_->scopes = scopes_;
+  ctx_->subject_token = "";
   ctx_->retrieve_subject_token_cb = OnRetrieveSubjectToken;
+  ctx_->token_exchange_response = {};
+  ctx_->service_account_impersonate_response = {};
   RetrieveSubjectToken(ctx_);
 }
 

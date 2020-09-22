@@ -1970,6 +1970,9 @@ static int external_account_creds_httpcli_post_success(
   return 1;
 }
 
+// The subclass of ExternalAccountCredentials for testing.
+// ExternalAccountCredentials is an abstract class so we can't directly test
+// against it.
 class TestExternalAccountCredentials final
     : public grpc_core::experimental::ExternalAccountCredentials {
  public:
