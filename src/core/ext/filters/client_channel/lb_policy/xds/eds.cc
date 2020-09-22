@@ -403,7 +403,7 @@ EdsLb::EdsLb(Args args)
 
 EdsLb::~EdsLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-    gpr_log(GPR_INFO, "[edslb %p] destroying xds LB policy", this);
+    gpr_log(GPR_INFO, "[edslb %p] destroying eds LB policy", this);
   }
 }
 
