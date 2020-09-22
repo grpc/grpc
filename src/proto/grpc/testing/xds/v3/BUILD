@@ -81,6 +81,7 @@ grpc_proto_library(
     srcs = [
         "cluster.proto",
     ],
+    well_known_protos = True,
     deps = [
         "config_source_proto",
     ],

@@ -20,6 +20,21 @@ package envoy.config.cluster.v3;
 
 import "src/proto/grpc/testing/xds/v3/config_source.proto";
 
+import "google/protobuf/wrappers.proto";
+
+enum RoutingPriority {
+  DEFAULT = 0;
+  HIGH = 1;
+}
+
+message CircuitBreakers {
+  message Thresholds {
+    RoutingPriority priority = 1;
+    google.protobuf.UInt32Value max_requests = 4;
+  }
+  repeated Thresholds thresholds = 1;
+}
+
 // [#protodoc-title: Cluster configuration]
 
 // Configuration for a single upstream cluster.
@@ -126,6 +141,8 @@ message Cluster {
   // The :ref:`load balancer type <arch_overview_load_balancing_types>` to use
   // when picking a host in the cluster.
   LbPolicy lb_policy = 6;
+
+  CircuitBreakers circuit_breakers = 10;
 
   // [#not-implemented-hide:]
   // If present, tells the client where to send load reports via LRS. If not present, the

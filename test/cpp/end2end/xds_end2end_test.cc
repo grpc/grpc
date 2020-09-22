@@ -85,7 +85,9 @@ namespace {
 
 using std::chrono::system_clock;
 
+using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::cluster::v3::Cluster;
+using ::envoy::config::cluster::v3::RoutingPriority;
 using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
 using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::Listener;
@@ -4953,6 +4955,90 @@ TEST_P(DropTest, DropAll) {
     EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
     EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
   }
+}
+
+TEST_P(DropTest, CircuitBreaking) {
+  const char* kNewClusterName = "new_cluster";
+  const char* kNewEdsServiceName = "new_eds_service_name";
+  constexpr size_t kNumThreads = 20;
+  constexpr size_t kMaxConcurrentRequests = 10;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewEdsServiceName));
+  // Update CDS resource to set max concurrent request.
+  CircuitBreakers circuit_breaks;
+  Cluster cluster = balancers_[0]->ads_service()->default_cluster();
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Add new CDS resources.
+  Cluster new_cluster = balancers_[0]->ads_service()->default_cluster();
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster);
+  // Bring down the current backend: 0, this will delay route picking time,
+  // resulting in un-committed RPCs.
+  ShutdownBackend(0);
+  // Send a RouteConfiguration with a default route that points to
+  // backend 0.
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  SetRouteConfiguration(0, new_route_config);
+  // Send exactly one RPC with no deadline and with wait_for_ready=true.
+  // This RPC will not complete until after backend 0 is started.
+  std::thread sender_threads[kNumThreads];
+  size_t num_success = 0;
+  size_t num_drop = 0;
+  for (size_t i = 0; i < kNumThreads; ++i) {
+    sender_threads[i] = std::thread([this, &num_success, &num_drop]() {
+      const Status status =
+          SendRpc(RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
+      if (!status.ok() &&
+          status.error_message() == "Call dropped by load balancing policy") {
+        ++num_drop;
+      } else {
+        EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                                 << " message=" << status.error_message();
+        ++num_success;
+      }
+    });
+  }
+  // Send a non-wait_for_ready RPC which should fail, this will tell us
+  // that the client has received the update and attempted to connect.
+  const Status status = SendRpc(RpcOptions().set_timeout_ms(0));
+  EXPECT_FALSE(status.ok());
+  // Send a update RouteConfiguration to use backend 1.
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster(kNewClusterName);
+  SetRouteConfiguration(0, new_route_config);
+  // Wait for RPCs to go to the new backend: 1, this ensures that the client has
+  // processed the update.
+  WaitForAllBackends(1, 2, false, RpcOptions(), true);
+  // Bring up the previous backend: 0, this will allow the delayed RPC to
+  // finally call on_call_committed upon completion.
+  StartBackend(0);
+  for (size_t i = 0; i < kNumThreads; ++i) {
+    sender_threads[i].join();
+  }
+  // Make sure RPCs go to the correct backend:
+  EXPECT_EQ(kMaxConcurrentRequests,
+            backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(kMaxConcurrentRequests, num_success);
+  EXPECT_EQ(kNumThreads - kMaxConcurrentRequests, num_drop);
 }
 
 class BalancerUpdateTest : public XdsEnd2endTest {

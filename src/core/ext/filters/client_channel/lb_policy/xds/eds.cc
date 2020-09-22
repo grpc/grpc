@@ -266,10 +266,7 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
   }
   // Check and see if we exceeded the max concurrent requests count.
   uint32_t current = eds_policy_->concurrent_requests_.FetchAdd(1);
-  // gpr_log(GPR_INFO, "DONNA cur %d and max %d", current,
-  // eds_policy_->max_concurrent_requests_);
-  if (current > eds_policy_->max_concurrent_requests_) {
-    // gpr_log(GPR_INFO, "DONNA IN NEW CODE");
+  if (current >= eds_policy_->max_concurrent_requests_) {
     eds_policy_->concurrent_requests_.FetchSub(1);
     if (drop_stats_ != nullptr)
       drop_stats_->AddCallDropped("max_concurrent_requests_exceeded");
@@ -288,7 +285,6 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
         [original_recv_trailing_metadata_ready, eds_policy](
             grpc_error* error, MetadataInterface* metadata,
             CallState* call_state) {
-          // gpr_log(GPR_INFO, "DONNA UNREF CALLBACK IN NEW CODE");
           if (original_recv_trailing_metadata_ready != nullptr) {
             original_recv_trailing_metadata_ready(error, metadata, call_state);
           }
@@ -296,7 +292,6 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
           eds_policy->Unref(DEBUG_LOCATION, "DropPickPicker+call");
         };
   } else {
-    // gpr_log(GPR_INFO, "DONNA UNREF DIRECT IN NEW CODE");
     eds_policy_->concurrent_requests_.FetchSub(1);
   }
   return result;
