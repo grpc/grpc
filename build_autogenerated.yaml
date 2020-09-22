@@ -748,7 +748,6 @@ libs:
   - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/mock_cel/activation.h
   - src/core/lib/security/authorization/mock_cel/cel_value.h
-  - src/core/lib/security/certificate_provider.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -768,6 +767,7 @@ libs:
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h
+  - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
   - src/core/lib/security/credentials/xds/xds_credentials.h
@@ -1280,6 +1280,7 @@ libs:
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
   - src/core/lib/security/credentials/xds/xds_credentials.cc
@@ -2245,6 +2246,7 @@ libs:
   - include/grpcpp/security/auth_metadata_processor.h
   - include/grpcpp/security/credentials.h
   - include/grpcpp/security/server_credentials.h
+  - include/grpcpp/security/tls_certificate_provider.h
   - include/grpcpp/security/tls_credentials_options.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
@@ -2308,6 +2310,7 @@ libs:
   - src/cpp/common/secure_auth_context.cc
   - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
+  - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_credentials_options.cc
   - src/cpp/common/tls_credentials_options_util.cc
   - src/cpp/common/validate_service_config.cc
@@ -2607,6 +2610,7 @@ libs:
   - include/grpcpp/security/auth_metadata_processor.h
   - include/grpcpp/security/credentials.h
   - include/grpcpp/security/server_credentials.h
+  - include/grpcpp/security/tls_certificate_provider.h
   - include/grpcpp/security/tls_credentials_options.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
@@ -7438,6 +7442,20 @@ targets:
   headers: []
   src:
   - test/cpp/client/credentials_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: test_cpp_server_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/server/credentials_test.cc
   deps:
   - grpc_test_util
   - grpc++

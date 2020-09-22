@@ -23,13 +23,14 @@
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
 #define GRPC_TLS_TRANSPORT_SECURITY_TYPE "tls"
 
 namespace grpc_core {
 
-// TLS channel security connector.
+// Channel security connector using TLS as transport security protocol.
 class TlsChannelSecurityConnector final
     : public grpc_channel_security_connector {
  public:
@@ -37,14 +38,18 @@ class TlsChannelSecurityConnector final
   static grpc_core::RefCountedPtr<grpc_channel_security_connector>
   CreateTlsChannelSecurityConnector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_core::RefCountedPtr<grpc_tls_credentials_options> options,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name, const char* overridden_target_name,
       tsi_ssl_session_cache* ssl_session_cache);
 
   TlsChannelSecurityConnector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_core::RefCountedPtr<grpc_tls_credentials_options> options,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-      const char* target_name, const char* overridden_target_name);
+      const char* target_name, const char* overridden_target_name,
+      tsi_ssl_session_cache* ssl_session_cache);
+
   ~TlsChannelSecurityConnector() override;
 
   void add_handshakers(const grpc_channel_args* args,
@@ -64,15 +69,45 @@ class TlsChannelSecurityConnector final
   void cancel_check_call_host(grpc_closure* on_call_host_checked,
                               grpc_error* error) override;
 
- private:
-  // Initialize SSL TSI client handshaker factory.
-  grpc_security_status InitializeHandshakerFactory(
-      tsi_ssl_session_cache* ssl_session_cache);
+  tsi_ssl_client_handshaker_factory* ClientHandshakerFactoryForTesting() {
+    grpc_core::MutexLock lock(&mu_);
+    return client_handshaker_factory_;
+  };
 
-  // A util function to create a new client handshaker factory to replace
-  // the existing one if exists.
-  grpc_security_status ReplaceHandshakerFactory(
-      tsi_ssl_session_cache* ssl_session_cache);
+  const absl::optional<absl::string_view>& RootCertsForTesting() {
+    grpc_core::MutexLock lock(&mu_);
+    return pem_root_certs_;
+  }
+
+  const absl::optional<grpc_core::PemKeyCertPairList>&
+  KeyCertPairListForTesting() {
+    grpc_core::MutexLock lock(&mu_);
+    return pem_key_cert_pair_list_;
+  }
+
+ private:
+  // A watcher that watches certificate updates from
+  // grpc_tls_certificate_distributor. It will never outlive
+  // |security_connector_|.
+  class TlsChannelCertificateWatcher : public grpc_tls_certificate_distributor::
+                                           TlsCertificatesWatcherInterface {
+   public:
+    explicit TlsChannelCertificateWatcher(
+        TlsChannelSecurityConnector* security_connector)
+        : security_connector_(security_connector) {}
+    void OnCertificatesChanged(
+        absl::optional<absl::string_view> root_certs,
+        absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) override;
+    void OnError(grpc_error* root_cert_error,
+                 grpc_error* identity_cert_error) override;
+
+   private:
+    TlsChannelSecurityConnector* security_connector_ = nullptr;
+  };
+
+  // Updates |client_handshaker_factory_| when the certificates that
+  // |certificate_watcher_| is watching get updated.
+  grpc_security_status UpdateHandshakerFactoryLocked();
 
   // gRPC-provided callback executed by application, which servers to bring the
   // control back to gRPC core.
@@ -91,29 +126,32 @@ class TlsChannelSecurityConnector final
   static void ServerAuthorizationCheckArgDestroy(
       grpc_tls_server_authorization_check_arg* arg);
 
-  // A util function to refresh SSL TSI client handshaker factory with a valid
-  // credential.
-  grpc_security_status RefreshHandshakerFactory();
-
   grpc_core::Mutex mu_;
-  grpc_closure* on_peer_checked_;
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
+  grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
+      certificate_watcher_ = nullptr;
+  grpc_closure* on_peer_checked_ = nullptr;
   std::string target_name_;
   std::string overridden_target_name_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
-  grpc_tls_server_authorization_check_arg* check_arg_;
-  grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
+  grpc_tls_server_authorization_check_arg* check_arg_ = nullptr;
+  tsi_ssl_session_cache* ssl_session_cache_ = nullptr;
+  absl::optional<absl::string_view> pem_root_certs_;
+  absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pair_list_;
 };
 
-// TLS server security connector.
+// Server security connector using TLS as transport security protocol.
 class TlsServerSecurityConnector final : public grpc_server_security_connector {
  public:
   // static factory method to create a TLS server security connector.
   static grpc_core::RefCountedPtr<grpc_server_security_connector>
   CreateTlsServerSecurityConnector(
-      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
+      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds,
+      grpc_core::RefCountedPtr<grpc_tls_credentials_options> options);
 
-  explicit TlsServerSecurityConnector(
-      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
+  TlsServerSecurityConnector(
+      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds,
+      grpc_core::RefCountedPtr<grpc_tls_credentials_options> options);
   ~TlsServerSecurityConnector() override;
 
   void add_handshakers(const grpc_channel_args* args,
@@ -126,58 +164,65 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 
   int cmp(const grpc_security_connector* other) const override;
 
+  tsi_ssl_server_handshaker_factory* ServerHandshakerFactoryForTesting() {
+    grpc_core::MutexLock lock(&mu_);
+    return server_handshaker_factory_;
+  };
+
+  const absl::optional<absl::string_view>& RootCertsForTesting() {
+    grpc_core::MutexLock lock(&mu_);
+    return pem_root_certs_;
+  }
+
+  const absl::optional<grpc_core::PemKeyCertPairList>&
+  KeyCertPairListForTesting() {
+    grpc_core::MutexLock lock(&mu_);
+    return pem_key_cert_pair_list_;
+  }
+
  private:
-  // Initialize SSL TSI server handshaker factory.
-  grpc_security_status InitializeHandshakerFactory();
+  // A watcher that watches certificate updates from
+  // grpc_tls_certificate_distributor. It will never outlive
+  // |security_connector_|.
+  class TlsServerCertificateWatcher : public grpc_tls_certificate_distributor::
+                                          TlsCertificatesWatcherInterface {
+   public:
+    explicit TlsServerCertificateWatcher(
+        TlsServerSecurityConnector* security_connector)
+        : security_connector_(security_connector) {}
+    void OnCertificatesChanged(
+        absl::optional<absl::string_view> root_certs,
+        absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) override;
+    void OnError(grpc_error* root_cert_error,
+                 grpc_error* identity_cert_error) override;
 
-  // A util function to create a new server handshaker factory to replace the
-  // existing once if exists.
-  grpc_security_status ReplaceHandshakerFactory();
+   private:
+    TlsServerSecurityConnector* security_connector_ = nullptr;
+  };
 
-  // A util function to refresh SSL TSI server handshaker factory with a valid
-  // credential.
-  grpc_security_status RefreshHandshakerFactory();
+  // Updates |server_handshaker_factory_| when the certificates that
+  // |certificate_watcher_| is watching get updated.
+  grpc_security_status UpdateHandshakerFactoryLocked();
 
   grpc_core::Mutex mu_;
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
+  grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
+      certificate_watcher_ = nullptr;
+
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
-  grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
+  absl::optional<absl::string_view> pem_root_certs_;
+  absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pair_list_;
 };
 
 // ---- Functions below are exposed for testing only -----------------------
-
-/** The |TlsFetchKeyMaterials| API ensures that |key_materials_config| has a
- *  non-empty pem-key-cert pair list. This is done as follows:
- *  - if |options| is equipped with a credential reload config, then this
- *    methods uses credential reloading to populate |key_materials_config|, and
- *    afterwards it populates |reload_status| with the status of this operation.
- *    In particular, any data stored in |key_materials_config| is overwritten.
- *  - if |options| has no credential reload config, then:
- *    - if |key_materials_config| already has a non-empty pem-key-cert pair
- *      list or is called by a client, then the method returns |GRPC_STATUS_OK|.
- *    - if |key_materials_config| has an empty pem-key-cert pair list and is
- *      called by a server, then the method return an error code.
- *
- *  The arguments are detailed below:
- *  - key_materials_config: a key materials config that will be populated by the
- *    method on success; the caller should not pass in nullptr. Any data held by
- *    the config will be overwritten.
- *  - options: the TLS credentials options whose credential reloading config
- *    will be used to populate |key_materials_config|.
- *  - is_server: true denotes that this method is called by a server, and
- *    false denotes that this method is called by a client.
- *  - status: the status of the credential reloading after the method
- *    returns; the caller should not pass in nullptr. **/
-grpc_status_code TlsFetchKeyMaterials(
-    const grpc_core::RefCountedPtr<grpc_tls_key_materials_config>&
-        key_materials_config,
-    const grpc_tls_credentials_options& options, bool is_server,
-    grpc_ssl_certificate_config_reload_status* status);
+namespace internal {
 
 // TlsCheckHostName checks if |peer_name| matches the identity information
 // contained in |peer|. This is AKA hostname check.
 grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer);
 
+}  // namespace internal
+
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_TLS_SECURITY_CONNECTOR_H \
-        */
+#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_TLS_SECURITY_CONNECTOR_H

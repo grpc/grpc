@@ -27,253 +27,282 @@
 #include <string.h>
 
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
-#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
-#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
-
-namespace {
-
-enum CredReloadResult { FAIL, SUCCESS, UNCHANGED, ASYNC };
-
-void SetKeyMaterials(grpc_tls_key_materials_config* config) {
-  grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  const char* server_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  const char* server_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
-  const auto* pem_key_cert_pair_ptr = &pem_key_cert_pair;
-  grpc_tls_key_materials_config_set_key_materials(config, ca_cert,
-                                                  &pem_key_cert_pair_ptr, 1);
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
-  grpc_slice_unref(ca_slice);
-}
-
-int CredReloadSuccess(void* /*config_user_data*/,
-                      grpc_tls_credential_reload_arg* arg) {
-  SetKeyMaterials(arg->key_materials_config);
-  arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
-  return 0;
-}
-
-int CredReloadFail(void* /*config_user_data*/,
-                   grpc_tls_credential_reload_arg* arg) {
-  arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL;
-  return 0;
-}
-
-int CredReloadUnchanged(void* /*config_user_data*/,
-                        grpc_tls_credential_reload_arg* arg) {
-  arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-  return 0;
-}
-
-int CredReloadAsync(void* /*config_user_data*/,
-                    grpc_tls_credential_reload_arg* /*arg*/) {
-  return 1;
-}
-
-}  // namespace
+#define CLIENT_CERT_PATH "src/core/tsi/test_creds/multi-domain.pem"
+#define SERVER_CERT_PATH_0 "src/core/tsi/test_creds/server0.pem"
+#define SERVER_KEY_PATH_0 "src/core/tsi/test_creds/server0.key"
+#define SERVER_CERT_PATH_1 "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH_1 "src/core/tsi/test_creds/server1.key"
 
 namespace grpc {
 namespace testing {
+
+constexpr const char* kRootCertName = "root_cert_name";
+constexpr const char* kIdentityCertName = "identity_cert_name";
+constexpr const char* kErrorMessage = "error_message";
+constexpr const char* kTargetName = "some_target";
 
 class TlsSecurityConnectorTest : public ::testing::Test {
  protected:
   TlsSecurityConnectorTest() {}
   void SetUp() override {
-    options_ = grpc_tls_credentials_options_create()->Ref();
-    config_ = grpc_tls_key_materials_config_create()->Ref();
+    grpc_slice ca_slice_1, ca_slice_0, cert_slice_1, key_slice_1, cert_slice_0,
+        key_slice_0;
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                                 grpc_load_file(CA_CERT_PATH, 1, &ca_slice_1)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(CLIENT_CERT_PATH, 1, &ca_slice_0)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(SERVER_CERT_PATH_1, 1, &cert_slice_1)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(SERVER_KEY_PATH_1, 1, &key_slice_1)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(SERVER_CERT_PATH_0, 1, &cert_slice_0)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(SERVER_KEY_PATH_0, 1, &key_slice_0)));
+    root_cert_1_ = std::string(grpc_core::StringViewFromSlice(ca_slice_1));
+    root_cert_0_ = std::string(grpc_core::StringViewFromSlice(ca_slice_0));
+    std::string identity_key_1 =
+        std::string(grpc_core::StringViewFromSlice(key_slice_1));
+    std::string identity_key_0 =
+        std::string(grpc_core::StringViewFromSlice(key_slice_0));
+    std::string identity_cert_1 =
+        std::string(grpc_core::StringViewFromSlice(cert_slice_1));
+    std::string identity_cert_0 =
+        std::string(grpc_core::StringViewFromSlice(cert_slice_0));
+    grpc_ssl_pem_key_cert_pair* ssl_pair_1 =
+        static_cast<grpc_ssl_pem_key_cert_pair*>(
+            gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
+    ssl_pair_1->private_key = gpr_strdup(identity_key_1.c_str());
+    ssl_pair_1->cert_chain = gpr_strdup(identity_cert_1.c_str());
+    identity_pairs_1_.emplace_back(ssl_pair_1);
+    grpc_ssl_pem_key_cert_pair* ssl_pair_0 =
+        static_cast<grpc_ssl_pem_key_cert_pair*>(
+            gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
+    ssl_pair_0->private_key = gpr_strdup(identity_key_0.c_str());
+    ssl_pair_0->cert_chain = gpr_strdup(identity_cert_0.c_str());
+    identity_pairs_0_.emplace_back(ssl_pair_0);
+    grpc_slice_unref(ca_slice_1);
+    grpc_slice_unref(ca_slice_0);
+    grpc_slice_unref(cert_slice_1);
+    grpc_slice_unref(key_slice_1);
+    grpc_slice_unref(cert_slice_0);
+    grpc_slice_unref(key_slice_0);
   }
-  void TearDown() override { config_->Unref(); }
-  // Set credential reload config in options.
-  void SetOptions(CredReloadResult type) {
-    grpc_tls_credential_reload_config* reload_config = nullptr;
-    switch (type) {
-      case SUCCESS:
-        reload_config = grpc_tls_credential_reload_config_create(
-            nullptr, CredReloadSuccess, nullptr, nullptr);
-        break;
-      case FAIL:
-        reload_config = grpc_tls_credential_reload_config_create(
-            nullptr, CredReloadFail, nullptr, nullptr);
-        break;
-      case UNCHANGED:
-        reload_config = grpc_tls_credential_reload_config_create(
-            nullptr, CredReloadUnchanged, nullptr, nullptr);
-        break;
-      case ASYNC:
-        reload_config = grpc_tls_credential_reload_config_create(
-            nullptr, CredReloadAsync, nullptr, nullptr);
-        break;
-      default:
-        break;
-    }
-    grpc_tls_credentials_options_set_credential_reload_config(options_.get(),
-                                                              reload_config);
-  }
-  // Set key materials config.
-  void SetKeyMaterialsConfig() { SetKeyMaterials(config_.get()); }
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
-  grpc_core::RefCountedPtr<grpc_tls_key_materials_config> config_;
+
+  void TearDown() override {}
+
+  std::string root_cert_1_;
+  std::string root_cert_0_;
+  grpc_core::PemKeyCertPairList identity_pairs_1_;
+  grpc_core::PemKeyCertPairList identity_pairs_0_;
 };
 
-TEST_F(TlsSecurityConnectorTest, NoKeysAndConfig) {
-  grpc_ssl_certificate_config_reload_status reload_status;
-  grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
-  EXPECT_EQ(status, GRPC_STATUS_FAILED_PRECONDITION);
-  options_->Unref();
-}
+class TlsTestCertificateProvider : public ::grpc_tls_certificate_provider {
+ public:
+  explicit TlsTestCertificateProvider(
+      grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor)
+      : distributor_(std::move(distributor)) {}
+  ~TlsTestCertificateProvider() override {}
+  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
+      const override {
+    return distributor_;
+  }
 
-TEST_F(TlsSecurityConnectorTest, NoKeysAndConfigAsAClient) {
-  grpc_ssl_certificate_config_reload_status reload_status;
-  grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, false, &reload_status);
-  EXPECT_EQ(status, GRPC_STATUS_OK);
-  options_->Unref();
-}
+ private:
+  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+};
 
-TEST_F(TlsSecurityConnectorTest, NoKeySuccessReload) {
-  grpc_ssl_certificate_config_reload_status reload_status;
-  SetOptions(SUCCESS);
-  grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
-  EXPECT_EQ(status, GRPC_STATUS_OK);
-  EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
-  options_->Unref();
-}
-
-TEST_F(TlsSecurityConnectorTest, NoKeyFailReload) {
-  grpc_ssl_certificate_config_reload_status reload_status;
-  SetOptions(FAIL);
-  grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
-  EXPECT_EQ(status, GRPC_STATUS_INTERNAL);
-  EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
-  options_->Unref();
-}
-
-TEST_F(TlsSecurityConnectorTest, NoKeyAsyncReload) {
-  grpc_ssl_certificate_config_reload_status reload_status =
-      GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-  SetOptions(ASYNC);
-  grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
-  EXPECT_EQ(status, GRPC_STATUS_UNIMPLEMENTED);
-  EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
-  options_->Unref();
-}
-
-TEST_F(TlsSecurityConnectorTest, NoKeyUnchangedReload) {
-  grpc_ssl_certificate_config_reload_status reload_status =
-      GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-  SetOptions(UNCHANGED);
-  grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
-  EXPECT_EQ(status, GRPC_STATUS_OK);
-  EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
-  options_->Unref();
-}
-
-TEST_F(TlsSecurityConnectorTest, WithKeyNoReload) {
-  grpc_ssl_certificate_config_reload_status reload_status =
-      GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-  SetKeyMaterialsConfig();
-  grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
-  EXPECT_EQ(status, GRPC_STATUS_OK);
-  options_->Unref();
-}
-
-TEST_F(TlsSecurityConnectorTest, WithKeySuccessReload) {
-  grpc_ssl_certificate_config_reload_status reload_status;
-  SetOptions(SUCCESS);
-  SetKeyMaterialsConfig();
-  grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
-  EXPECT_EQ(status, GRPC_STATUS_OK);
-  EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
-  options_->Unref();
-}
-
-TEST_F(TlsSecurityConnectorTest, WithKeyFailReload) {
-  grpc_ssl_certificate_config_reload_status reload_status;
-  SetOptions(FAIL);
-  SetKeyMaterialsConfig();
-  grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
-  EXPECT_EQ(status, GRPC_STATUS_OK);
-  EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
-  options_->Unref();
-}
-
-TEST_F(TlsSecurityConnectorTest, WithKeyAsyncReload) {
-  grpc_ssl_certificate_config_reload_status reload_status =
-      GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-  SetOptions(ASYNC);
-  SetKeyMaterialsConfig();
-  grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
-  EXPECT_EQ(status, GRPC_STATUS_OK);
-  EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
-  options_->Unref();
-}
-
-TEST_F(TlsSecurityConnectorTest, WithKeyUnchangedReload) {
-  grpc_ssl_certificate_config_reload_status reload_status =
-      GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-  SetOptions(UNCHANGED);
-  SetKeyMaterialsConfig();
-  grpc_status_code status =
-      TlsFetchKeyMaterials(config_, *options_, true, &reload_status);
-  EXPECT_EQ(status, GRPC_STATUS_OK);
-  EXPECT_EQ(reload_status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
-  options_->Unref();
-}
-
-TEST_F(TlsSecurityConnectorTest, CreateChannelSecurityConnectorSuccess) {
-  SetOptions(SUCCESS);
-  auto cred = std::unique_ptr<grpc_channel_credentials>(
-      grpc_tls_credentials_create(options_.get()));
-  const char* target_name = "some_target";
+// Tests for ChannelSecurityConnector.
+TEST_F(TlsSecurityConnectorTest,
+       RootAndIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
+  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, absl::nullopt);
+  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
+                               identity_pairs_0_);
+  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
+      grpc_core::MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_certificate_provider(provider);
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
+  options->set_root_cert_name(kRootCertName);
+  options->set_identity_cert_name(kIdentityCertName);
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
   grpc_channel_args* new_args = nullptr;
-  auto connector =
-      cred->create_security_connector(nullptr, target_name, nullptr, &new_args);
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, nullptr,
+                                            &new_args);
   EXPECT_NE(connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, absl::nullopt);
+  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
+                               identity_pairs_1_);
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_1_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
+  grpc_channel_args_destroy(new_args);
+}
+
+// Note that on client side, we don't have tests watching identity certs only,
+// because in TLS, the trust certs should always be presented. If we don't
+// provide, it will try to load certs from some default system locations, and
+// will hence fail on some systems.
+TEST_F(TlsSecurityConnectorTest,
+       RootCertsObtainedWhenCreateChannelSecurityConnector) {
+  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, absl::nullopt);
+  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
+                               identity_pairs_0_);
+  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
+      grpc_core::MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  // Create options only watching for root certificates.
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> root_options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  root_options->set_certificate_provider(provider);
+  root_options->set_watch_root_cert(true);
+  root_options->set_root_cert_name(kRootCertName);
+  grpc_core::RefCountedPtr<TlsCredentials> root_credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(root_options);
+  grpc_channel_args* root_new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> root_connector =
+      root_credential->create_security_connector(nullptr, "some_target",
+                                                 nullptr, &root_new_args);
+  EXPECT_NE(root_connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_root_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(
+          root_connector.get());
+  EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_root_connector->RootCertsForTesting(), root_cert_0_);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, absl::nullopt);
+  EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_root_connector->RootCertsForTesting(), root_cert_1_);
+  grpc_channel_args_destroy(root_new_args);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       CertPartiallyObtainedWhenCreateChannelSecurityConnector) {
+  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, absl::nullopt);
+  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
+      grpc_core::MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  // Registered the options watching both certs, but only root certs are
+  // available at distributor right now.
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_certificate_provider(provider);
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
+  options->set_root_cert_name(kRootCertName);
+  options->set_identity_cert_name(kIdentityCertName);
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
+  grpc_channel_args* new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, nullptr,
+                                            &new_args);
+  EXPECT_NE(connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  // The client_handshaker_factory_ shouldn't be updated.
+  EXPECT_EQ(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
+  // After updating the root certs, the client_handshaker_factory_ should be
+  // updated.
+  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
+                               identity_pairs_0_);
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+  grpc_channel_args_destroy(new_args);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       DistributorHasErrorForChannelSecurityConnector) {
+  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, absl::nullopt);
+  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
+                               identity_pairs_0_);
+  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
+      grpc_core::MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_certificate_provider(provider);
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
+  options->set_root_cert_name(kRootCertName);
+  options->set_identity_cert_name(kIdentityCertName);
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
+  grpc_channel_args* new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, nullptr,
+                                            &new_args);
+  EXPECT_NE(connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+  // Calling SetErrorForCert on distributor shouldn't invalidate the previous
+  // valid credentials.
+  distributor->SetErrorForCert(
+      kRootCertName, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage),
+      absl::nullopt);
+  distributor->SetErrorForCert(
+      kIdentityCertName, absl::nullopt,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage));
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   grpc_channel_args_destroy(new_args);
 }
 
 TEST_F(TlsSecurityConnectorTest,
        CreateChannelSecurityConnectorFailNoTargetName) {
-  SetOptions(SUCCESS);
-  auto cred = std::unique_ptr<grpc_channel_credentials>(
-      grpc_tls_credentials_create(options_.get()));
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
   grpc_channel_args* new_args = nullptr;
-  auto connector =
-      cred->create_security_connector(nullptr, nullptr, nullptr, &new_args);
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, nullptr, nullptr,
+                                            &new_args);
   EXPECT_EQ(connector, nullptr);
 }
 
-TEST_F(TlsSecurityConnectorTest, CreateChannelSecurityConnectorFailInit) {
-  SetOptions(FAIL);
-  auto cred = std::unique_ptr<grpc_channel_credentials>(
-      grpc_tls_credentials_create(options_.get()));
-  grpc_channel_args* new_args = nullptr;
+TEST_F(TlsSecurityConnectorTest,
+       CreateChannelSecurityConnectorFailNoCredentials) {
   auto connector =
-      cred->create_security_connector(nullptr, nullptr, nullptr, &new_args);
+      grpc_core::TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
+          nullptr, grpc_core::MakeRefCounted<grpc_tls_credentials_options>(),
+          nullptr, kTargetName, nullptr, nullptr);
+  EXPECT_EQ(connector, nullptr);
+}
+
+TEST_F(TlsSecurityConnectorTest, CreateChannelSecurityConnectorFailNoOptions) {
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
+  auto connector =
+      grpc_core::TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
+          credential, nullptr, nullptr, kTargetName, nullptr, nullptr);
   EXPECT_EQ(connector, nullptr);
 }
 
@@ -284,11 +313,10 @@ TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameSuccess) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, target_name,
                  &peer.properties[0]) == TSI_OK);
-  grpc_error* error = grpc_core::TlsCheckHostName(target_name, &peer);
+  grpc_error* error = grpc_core::internal::TlsCheckHostName(target_name, &peer);
   tsi_peer_destruct(&peer);
   EXPECT_EQ(error, GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
-  options_->Unref();
 }
 
 TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameFail) {
@@ -299,26 +327,176 @@ TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameFail) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, another_name,
                  &peer.properties[0]) == TSI_OK);
-  grpc_error* error = grpc_core::TlsCheckHostName(target_name, &peer);
+  grpc_error* error = grpc_core::internal::TlsCheckHostName(target_name, &peer);
   tsi_peer_destruct(&peer);
   EXPECT_NE(error, GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
-  options_->Unref();
 }
 
-TEST_F(TlsSecurityConnectorTest, CreateServerSecurityConnectorSuccess) {
-  SetOptions(SUCCESS);
-  auto cred = std::unique_ptr<grpc_server_credentials>(
-      grpc_tls_server_credentials_create(options_.get()));
-  auto connector = cred->create_security_connector();
+// Tests for ServerSecurityConnector.
+TEST_F(TlsSecurityConnectorTest,
+       RootAndIdentityCertsObtainedWhenCreateServerSecurityConnector) {
+  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, absl::nullopt);
+  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
+                               identity_pairs_0_);
+  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
+      grpc_core::MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_certificate_provider(provider);
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
+  options->set_root_cert_name(kRootCertName);
+  options->set_identity_cert_name(kIdentityCertName);
+  grpc_core::RefCountedPtr<TlsServerCredentials> credential =
+      grpc_core::MakeRefCounted<TlsServerCredentials>(options);
+  grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
+      credential->create_security_connector();
   EXPECT_NE(connector, nullptr);
+  grpc_core::TlsServerSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, absl::nullopt);
+  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
+                               identity_pairs_1_);
+  EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_1_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
 }
 
-TEST_F(TlsSecurityConnectorTest, CreateServerSecurityConnectorFailInit) {
-  SetOptions(FAIL);
-  auto cred = std::unique_ptr<grpc_server_credentials>(
-      grpc_tls_server_credentials_create(options_.get()));
-  auto connector = cred->create_security_connector();
+// Note that on server side, we don't have tests watching root certs only,
+// because in TLS, the identity certs should always be presented. If we don't
+// provide, it will try to load certs from some default system locations, and
+// will hence fail on some systems.
+TEST_F(TlsSecurityConnectorTest,
+       IdentityCertsObtainedWhenCreateServerSecurityConnector) {
+  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, absl::nullopt);
+  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
+                               identity_pairs_0_);
+  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
+      grpc_core::MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  // Create options only watching for identity certificates.
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> identity_options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  identity_options->set_certificate_provider(provider);
+  identity_options->set_watch_identity_pair(true);
+  identity_options->set_identity_cert_name(kIdentityCertName);
+  grpc_core::RefCountedPtr<TlsServerCredentials> identity_credential =
+      grpc_core::MakeRefCounted<TlsServerCredentials>(identity_options);
+  grpc_core::RefCountedPtr<grpc_server_security_connector> identity_connector =
+      identity_credential->create_security_connector();
+  EXPECT_NE(identity_connector, nullptr);
+  grpc_core::TlsServerSecurityConnector* tls_identity_connector =
+      static_cast<grpc_core::TlsServerSecurityConnector*>(
+          identity_connector.get());
+  EXPECT_NE(tls_identity_connector->ServerHandshakerFactoryForTesting(),
+            nullptr);
+  EXPECT_EQ(tls_identity_connector->KeyCertPairListForTesting(),
+            identity_pairs_0_);
+  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
+                               identity_pairs_1_);
+  EXPECT_NE(tls_identity_connector->ServerHandshakerFactoryForTesting(),
+            nullptr);
+  EXPECT_EQ(tls_identity_connector->KeyCertPairListForTesting(),
+            identity_pairs_1_);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       CertPartiallyObtainedWhenCreateServerSecurityConnector) {
+  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
+                               identity_pairs_0_);
+  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
+      grpc_core::MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  // Registered the options watching both certs, but only root certs are
+  // available at distributor right now.
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_certificate_provider(provider);
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
+  options->set_root_cert_name(kRootCertName);
+  options->set_identity_cert_name(kIdentityCertName);
+  grpc_core::RefCountedPtr<TlsServerCredentials> credential =
+      grpc_core::MakeRefCounted<TlsServerCredentials>(options);
+  grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
+      credential->create_security_connector();
+  EXPECT_NE(connector, nullptr);
+  grpc_core::TlsServerSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());
+  // The server_handshaker_factory_ shouldn't be updated.
+  EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+  // After updating the root certs, the server_handshaker_factory_ should be
+  // updated.
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, absl::nullopt);
+  EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       DistributorHasErrorForServerSecurityConnector) {
+  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, absl::nullopt);
+  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
+                               identity_pairs_0_);
+  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
+      grpc_core::MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_certificate_provider(provider);
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
+  options->set_root_cert_name(kRootCertName);
+  options->set_identity_cert_name(kIdentityCertName);
+  grpc_core::RefCountedPtr<TlsServerCredentials> credential =
+      grpc_core::MakeRefCounted<TlsServerCredentials>(options);
+  grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
+      credential->create_security_connector();
+  EXPECT_NE(connector, nullptr);
+  grpc_core::TlsServerSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+  // Calling SetErrorForCert on distributor shouldn't invalidate the previous
+  // valid credentials.
+  distributor->SetErrorForCert(
+      kRootCertName, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage),
+      absl::nullopt);
+  distributor->SetErrorForCert(
+      kIdentityCertName, absl::nullopt,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage));
+  EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       CreateServerSecurityConnectorFailNoCredentials) {
+  auto connector =
+      grpc_core::TlsServerSecurityConnector::CreateTlsServerSecurityConnector(
+          nullptr, grpc_core::MakeRefCounted<grpc_tls_credentials_options>());
+  EXPECT_EQ(connector, nullptr);
+}
+
+TEST_F(TlsSecurityConnectorTest, CreateServerSecurityConnectorFailNoOptions) {
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  grpc_core::RefCountedPtr<TlsServerCredentials> credential =
+      grpc_core::MakeRefCounted<TlsServerCredentials>(options);
+  auto connector =
+      grpc_core::TlsServerSecurityConnector::CreateTlsServerSecurityConnector(
+          credential, nullptr);
   EXPECT_EQ(connector, nullptr);
 }
 

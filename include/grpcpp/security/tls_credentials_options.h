@@ -22,150 +22,23 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/support/config.h>
 
 #include <memory>
 #include <vector>
 
-typedef struct grpc_tls_credential_reload_arg grpc_tls_credential_reload_arg;
-typedef struct grpc_tls_credential_reload_config
-    grpc_tls_credential_reload_config;
+// TODO(yihuazhang): remove the forward declaration here and include
+// <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
 typedef struct grpc_tls_server_authorization_check_arg
     grpc_tls_server_authorization_check_arg;
 typedef struct grpc_tls_server_authorization_check_config
     grpc_tls_server_authorization_check_config;
 typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
+typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
 namespace grpc {
 namespace experimental {
-
-/** TLS key materials config, wrapper for grpc_tls_key_materials_config. It is
- * used for experimental purposes for now and subject to change. **/
-class TlsKeyMaterialsConfig {
- public:
-  struct PemKeyCertPair {
-    std::string private_key;
-    std::string cert_chain;
-  };
-
-  /** Getters for member fields. **/
-  const std::string pem_root_certs() const { return pem_root_certs_; }
-  const std::vector<PemKeyCertPair>& pem_key_cert_pair_list() const {
-    return pem_key_cert_pair_list_;
-  }
-  int version() const { return version_; }
-
-  /** Setter for key materials that will be called by the user. Ownership of the
-   * arguments will not be transferred. **/
-  void set_pem_root_certs(const std::string& pem_root_certs);
-  void add_pem_key_cert_pair(const PemKeyCertPair& pem_key_cert_pair);
-  void set_key_materials(
-      const std::string& pem_root_certs,
-      const std::vector<PemKeyCertPair>& pem_key_cert_pair_list);
-  void set_version(int version) { version_ = version; };
-
- private:
-  int version_ = 0;
-  std::vector<PemKeyCertPair> pem_key_cert_pair_list_;
-  std::string pem_root_certs_;
-};
-
-/** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. It is
- *  used for experimental purposes for now and it is subject to change.
- *
- *  The credential reload arg contains all the info necessary to schedule/cancel
- *  a credential reload request. The callback function must be called after
- *  finishing the schedule operation. See the description of the
- *  grpc_tls_credential_reload_arg struct in grpc_security.h for more details.
- * **/
-class TlsCredentialReloadArg {
- public:
-  /** TlsCredentialReloadArg does not take ownership of the C arg that is passed
-   *  to the constructor. One must remember to free any memory allocated to the
-   * C arg after using the setter functions below. **/
-  TlsCredentialReloadArg(grpc_tls_credential_reload_arg* arg);
-  ~TlsCredentialReloadArg();
-
-  /** Getters for member fields. **/
-  void* cb_user_data() const;
-  bool is_pem_key_cert_pair_list_empty() const;
-  grpc_ssl_certificate_config_reload_status status() const;
-  std::string error_details() const;
-
-  /** Setters for member fields. Ownership of the arguments will not be
-   *  transferred. **/
-  void set_cb_user_data(void* cb_user_data);
-  void set_pem_root_certs(const std::string& pem_root_certs);
-  void add_pem_key_cert_pair(
-      const TlsKeyMaterialsConfig::PemKeyCertPair& pem_key_cert_pair);
-  void set_key_materials(const std::string& pem_root_certs,
-                         std::vector<TlsKeyMaterialsConfig::PemKeyCertPair>
-                             pem_key_cert_pair_list);
-  void set_key_materials_config(
-      const std::shared_ptr<TlsKeyMaterialsConfig>& key_materials_config);
-  void set_status(grpc_ssl_certificate_config_reload_status status);
-  void set_error_details(const std::string& error_details);
-
-  /** Calls the C arg's callback function. **/
-  void OnCredentialReloadDoneCallback();
-
- private:
-  grpc_tls_credential_reload_arg* c_arg_;
-};
-
-/** An interface that the application derives and uses to instantiate a
- * TlsCredentialReloadConfig instance. Refer to the definition of the
- * grpc_tls_credential_reload_config in grpc_tls_credentials_options.h for more
- * details on the expectations of the member functions of the interface. **/
-struct TlsCredentialReloadInterface {
-  virtual ~TlsCredentialReloadInterface() = default;
-  /** A callback that invokes the credential reload. **/
-  virtual int Schedule(TlsCredentialReloadArg* arg) = 0;
-  /** A callback that cancels a credential reload request. **/
-  virtual void Cancel(TlsCredentialReloadArg* /* arg */) {}
-};
-
-/** TLS credential reloag config, wraps grpc_tls_credential_reload_config. It is
- * used for experimental purposes for now and it is subject to change. **/
-class TlsCredentialReloadConfig {
- public:
-  TlsCredentialReloadConfig(std::shared_ptr<TlsCredentialReloadInterface>
-                                credential_reload_interface);
-  ~TlsCredentialReloadConfig();
-
-  int Schedule(TlsCredentialReloadArg* arg) const {
-    if (credential_reload_interface_ == nullptr) {
-      gpr_log(GPR_ERROR, "credential reload interface is nullptr");
-      if (arg != nullptr) {
-        arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
-        arg->set_error_details(
-            "the interface of the credential reload config is nullptr");
-      }
-      return 1;
-    }
-    return credential_reload_interface_->Schedule(arg);
-  }
-
-  void Cancel(TlsCredentialReloadArg* arg) const {
-    if (credential_reload_interface_ == nullptr) {
-      gpr_log(GPR_ERROR, "credential reload interface is nullptr");
-      if (arg != nullptr) {
-        arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
-        arg->set_error_details(
-            "the interface of the credential reload config is nullptr");
-      }
-      return;
-    }
-    credential_reload_interface_->Cancel(arg);
-  }
-
-  /** Returns a C struct for the credential reload config. **/
-  grpc_tls_credential_reload_config* c_config() const { return c_config_; }
-
- private:
-  grpc_tls_credential_reload_config* c_config_;
-  std::shared_ptr<TlsCredentialReloadInterface> credential_reload_interface_;
-};
 
 /** TLS server authorization check arguments, wraps
  *  grpc_tls_server_authorization_check_arg. It is used for experimental
@@ -272,71 +145,85 @@ class TlsServerAuthorizationCheckConfig {
       server_authorization_check_interface_;
 };
 
-/** TLS credentials options, wrapper for grpc_tls_credentials_options. It is
- * used for experimental purposes for now and it is subject to change. See the
- * description of the grpc_tls_credentials_options struct in grpc_security.h for
- * more details. **/
+// Base class of configurable options specified by users to configure their
+// certain security features supported in TLS. It is used for experimental
+// purposes for now and it is subject to change.
 class TlsCredentialsOptions {
  public:
-  // Constructor for client.
+  // Constructor for base class TlsCredentialsOptions.
+  //
+  // @param certificate_provider the provider which fetches TLS credentials that
+  // will be used in the TLS handshake
   explicit TlsCredentialsOptions(
-      grpc_tls_server_verification_option server_verification_option,
-      std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
-      std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
-      std::shared_ptr<TlsServerAuthorizationCheckConfig>
-          server_authorization_check_config);
+      std::shared_ptr<CertificateProviderInterface> certificate_provider);
+  // ---- Setters for member fields ----
+  // Watches the updates of root certificates with name |root_cert_name|.
+  // If used in TLS credentials, it should always be set unless the root
+  // certificates are not needed(e.g. in the one-side TLS scenario, the server
+  // is not required to verify the client).
+  void watch_root_certs();
+  // Sets the name of root certificates being watched, if |watch_root_certs| is
+  // called. If not set, an empty string will be used as the name.
+  //
+  // @param root_cert_name the name of root certs being set.
+  void set_root_cert_name(const std::string& root_cert_name);
+  // Watches the updates of identity key-cert pairs with name
+  // |identity_cert_name|. If used in TLS credentials, it should always be set
+  // unless the identity certificates are not needed(e.g. in the one-side TLS
+  // scenario, the client is not required to provide certs).
+  void watch_identity_key_cert_pairs();
+  // Sets the name of identity key-cert pairs being watched, if
+  // |watch_identity_key_cert_pairs| is called. If not set, an empty string will
+  // be used as the name.
+  //
+  // @param identity_cert_name the name of identity key-cert pairs being set.
+  void set_identity_cert_name(const std::string& identity_cert_name);
 
-  // Constructor for server.
-  explicit TlsCredentialsOptions(
-      grpc_ssl_client_certificate_request_type cert_request_type,
-      std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
-      std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config);
-
-  // This constructor will be deprecated.
-  TlsCredentialsOptions(
-      grpc_ssl_client_certificate_request_type cert_request_type,
-      grpc_tls_server_verification_option server_verification_option,
-      std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
-      std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
-      std::shared_ptr<TlsServerAuthorizationCheckConfig>
-          server_authorization_check_config);
-  ~TlsCredentialsOptions();
-
-  /** Getters for member fields. **/
-  grpc_ssl_client_certificate_request_type cert_request_type() const {
-    return cert_request_type_;
-  }
-  grpc_tls_server_verification_option server_verification_option() const {
-    return server_verification_option_;
-  }
-  std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const {
-    return key_materials_config_;
-  }
-  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config() const {
-    return credential_reload_config_;
-  }
-  std::shared_ptr<TlsServerAuthorizationCheckConfig>
-  server_authorization_check_config() const {
-    return server_authorization_check_config_;
-  }
+  // ----- Getters for member fields ----
+  // Get the internal c options. This function shall be used only internally.
   grpc_tls_credentials_options* c_credentials_options() const {
     return c_credentials_options_;
   }
 
  private:
-  /** The cert_request_type_ flag is only relevant when the
-   * TlsCredentialsOptions are used to instantiate server credentials; the flag
-   * goes unused when creating channel credentials, and the user can set it to
-   * GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE. **/
-  grpc_ssl_client_certificate_request_type cert_request_type_;
-  /** The server_verification_option_ flag is only relevant when the
-   * TlsCredentialsOptions are used to instantiate client credentials; **/
-  grpc_tls_server_verification_option server_verification_option_;
-  std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config_;
-  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config_;
-  std::shared_ptr<TlsServerAuthorizationCheckConfig>
-      server_authorization_check_config_;
-  grpc_tls_credentials_options* c_credentials_options_;
+  std::shared_ptr<CertificateProviderInterface> certificate_provider_;
+  grpc_tls_credentials_options* c_credentials_options_ = nullptr;
+};
+
+// Contains configurable options on the client side.
+// It is used for experimental purposes for now and it is subject to change.
+class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
+ public:
+  explicit TlsChannelCredentialsOptions(
+      std::shared_ptr<CertificateProviderInterface> certificate_provider)
+      : TlsCredentialsOptions(std::move(certificate_provider)) {}
+
+  // Sets the option to verify the server.
+  // The default is GRPC_TLS_SERVER_VERIFICATION.
+  void set_server_verification_option(
+      grpc_tls_server_verification_option server_verification_option);
+  // Sets the custom authorization config.
+  void set_server_authorization_check_config(
+      std::shared_ptr<TlsServerAuthorizationCheckConfig>
+          authorization_check_config);
+
+ private:
+};
+
+// Contains configurable options on the server side.
+// It is used for experimental purposes for now and it is subject to change.
+class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
+ public:
+  explicit TlsServerCredentialsOptions(
+      std::shared_ptr<CertificateProviderInterface> certificate_provider)
+      : TlsCredentialsOptions(std::move(certificate_provider)) {}
+
+  // Sets option to request the certificates from the client.
+  // The default is GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE.
+  void set_cert_request_type(
+      grpc_ssl_client_certificate_request_type cert_request_type);
+
+ private:
 };
 
 }  // namespace experimental
