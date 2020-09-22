@@ -34,9 +34,6 @@
 
 namespace {
 
-typedef class ::grpc::experimental::TlsKeyMaterialsConfig TlsKeyMaterialsConfig;
-typedef class ::grpc::experimental::TlsCredentialReloadArg
-    TlsCredentialReloadArg;
 typedef struct ::grpc::experimental::TlsCredentialReloadInterface
     TlsCredentialReloadInterface;
 typedef class ::grpc::experimental::TlsServerAuthorizationCheckArg

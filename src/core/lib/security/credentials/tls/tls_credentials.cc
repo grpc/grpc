@@ -40,13 +40,6 @@ bool CredentialOptionSanityCheck(const grpc_tls_credentials_options* options,
     gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
     return false;
   }
-  if (options->key_materials_config() == nullptr &&
-      options->credential_reload_config() == nullptr) {
-    gpr_log(GPR_ERROR,
-            "TLS credentials options must specify either key materials or "
-            "credential reload config.");
-    return false;
-  }
   if (!is_client && options->server_authorization_check_config() != nullptr) {
     gpr_log(GPR_INFO,
             "Server's credentials options should not contain server "
@@ -90,9 +83,11 @@ TlsCredentials::create_security_connector(
   if (sc == nullptr) {
     return nullptr;
   }
-  grpc_arg new_arg = grpc_channel_arg_string_create(
+  if (args != nullptr) {
+    grpc_arg new_arg = grpc_channel_arg_string_create(
       (char*)GRPC_ARG_HTTP2_SCHEME, (char*)"https");
-  *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
+    *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
+  }
   return sc;
 }
 
@@ -108,6 +103,8 @@ TlsServerCredentials::create_security_connector() {
   return grpc_core::TlsServerSecurityConnector::
       CreateTlsServerSecurityConnector(this->Ref());
 }
+
+/** -- Wrapper APIs declared in grpc_security.h -- **/
 
 grpc_channel_credentials* grpc_tls_credentials_create(
     grpc_tls_credentials_options* options) {
