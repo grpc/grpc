@@ -26,34 +26,6 @@
 namespace grpc {
 namespace experimental {
 
-/** TLS key materials config API implementation **/
-void TlsKeyMaterialsConfig::set_pem_root_certs(
-    const std::string& pem_root_certs) {
-  pem_root_certs_ = pem_root_certs;
-}
-
-void TlsKeyMaterialsConfig::add_pem_key_cert_pair(
-    const PemKeyCertPair& pem_key_cert_pair) {
-  pem_key_cert_pair_list_.push_back(pem_key_cert_pair);
-}
-
-void TlsKeyMaterialsConfig::set_key_materials(
-    const std::string& pem_root_certs,
-    const std::vector<PemKeyCertPair>& pem_key_cert_pair_list) {
-  pem_key_cert_pair_list_ = pem_key_cert_pair_list;
-  pem_root_certs_ = pem_root_certs;
-}
-
-/** TLS credential reload arg API implementation **/
-TlsCredentialReloadArg::TlsCredentialReloadArg(
-    grpc_tls_credential_reload_arg* arg)
-    : c_arg_(arg) {
-  if (c_arg_ != nullptr && c_arg_->context != nullptr) {
-    gpr_log(GPR_ERROR, "c_arg context has already been set");
-  }
-  c_arg_->context = static_cast<void*>(this);
-  c_arg_->destroy_context = &TlsCredentialReloadArgDestroyContext;
-}
 
 TlsCredentialReloadArg::~TlsCredentialReloadArg() {}
 
