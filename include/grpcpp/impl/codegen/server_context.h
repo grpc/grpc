@@ -261,7 +261,7 @@ class ServerContextBase {
   /// \see grpc::AuthContext.
   std::shared_ptr<const ::grpc::AuthContext> auth_context() const {
     if (auth_context_.get() == nullptr) {
-      auth_context_ = ::grpc::CreateAuthContext(call_);
+      auth_context_ = ::grpc::CreateAuthContext(call_.call);
     }
     return auth_context_;
   }
@@ -277,7 +277,7 @@ class ServerContextBase {
 
   /// Should be used for framework-level extensions only.
   /// Applications never need to call this method.
-  grpc_call* c_call() { return call_; }
+  grpc_call* c_call() { return call_.call; }
 
  protected:
   /// Async only. Has to be called before the rpc starts.
@@ -395,13 +395,9 @@ class ServerContextBase {
   /// Return the tag queued by BeginCompletionOp()
   ::grpc::internal::CompletionQueueTag* GetCompletionOpTag();
 
-  void set_call(grpc_call* call) { call_ = call; }
+  void set_call(grpc_call* call) { call_.call = call; }
 
   void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr);
-
-  void Clear();
-
-  void Setup(gpr_timespec deadline);
 
   uint32_t initial_metadata_flags() const { return 0; }
 
@@ -421,30 +417,41 @@ class ServerContextBase {
     message_allocator_state_ = allocator_state;
   }
 
-  CompletionOp* completion_op_;
-  bool has_notify_when_done_tag_;
-  void* async_notify_when_done_tag_;
+  struct CallWrapper {
+    ~CallWrapper();
+
+    grpc_call* call = nullptr;
+  };
+
+  // NOTE: call_ must be the first data member of this object so that its
+  //       destructor is the last to be called, since its destructor may unref
+  //       the underlying core call which holds the arena that may be used to
+  //       hold this object.
+  CallWrapper call_;
+
+  CompletionOp* completion_op_ = nullptr;
+  bool has_notify_when_done_tag_ = false;
+  void* async_notify_when_done_tag_ = nullptr;
   ::grpc::internal::CallbackWithSuccessTag completion_tag_;
 
   gpr_timespec deadline_;
-  grpc_call* call_;
-  ::grpc::CompletionQueue* cq_;
-  bool sent_initial_metadata_;
+  ::grpc::CompletionQueue* cq_ = nullptr;
+  bool sent_initial_metadata_ = false;
   mutable std::shared_ptr<const ::grpc::AuthContext> auth_context_;
   mutable ::grpc::internal::MetadataMap client_metadata_;
   std::multimap<std::string, std::string> initial_metadata_;
   std::multimap<std::string, std::string> trailing_metadata_;
 
-  bool compression_level_set_;
+  bool compression_level_set_ = false;
   grpc_compression_level compression_level_;
   grpc_compression_algorithm compression_algorithm_;
 
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                               ::grpc::internal::CallOpSendMessage>
       pending_ops_;
-  bool has_pending_ops_;
+  bool has_pending_ops_ = false;
 
-  ::grpc::experimental::ServerRpcInfo* rpc_info_;
+  ::grpc::experimental::ServerRpcInfo* rpc_info_ = nullptr;
   ::grpc::experimental::RpcAllocatorState* message_allocator_state_ = nullptr;
 
   class Reactor : public ::grpc::ServerUnaryReactor {
