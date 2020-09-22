@@ -640,7 +640,8 @@ class ModuleMainTest(unittest.TestCase):
         test_proto_path = os.path.join(proto_dir_path, "grpc", "testing",
                                        "empty.proto")
         streams = tuple(tempfile.TemporaryFile() for _ in range(2))
-        with tempfile.TemporaryDirectory() as work_dir:
+        work_dir = tempfile.mkdtemp()
+        try:
             invocation = (sys.executable, "-m", "grpc_tools.protoc",
                           "--proto_path", proto_dir_path, "--python_out",
                           work_dir, "--grpc_python_out", work_dir,
@@ -654,6 +655,8 @@ class ModuleMainTest(unittest.TestCase):
                 stream.seek(0)
                 self.assertEqual(0, len(stream.read()))
             self.assertEqual(0, proc.returncode)
+        except Exception:  # pylint: disable=broad-except
+            shutil.rmtree(work_dir)
 
 
 if __name__ == '__main__':
