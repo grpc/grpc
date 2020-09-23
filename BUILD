@@ -1738,6 +1738,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
         "src/core/lib/security/credentials/tls/tls_credentials.cc",
+        "src/core/lib/security/google_mesh_ca_certificate_provider.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
         "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
         "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
@@ -1780,6 +1781,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
         "src/core/lib/security/credentials/tls/tls_credentials.h",
+        "src/core/lib/security/google_mesh_ca_certificate_provider.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",
         "src/core/lib/security/security_connector/fake/fake_security_connector.h",
         "src/core/lib/security/security_connector/load_system_roots.h",
@@ -1802,8 +1804,10 @@ grpc_cc_library(
         "alts_util",
         "grpc_base",
         "grpc_transport_chttp2_alpn",
+        "meshca_upb",
         "tsi",
     ],
+    external_deps = ["absl/functional:bind_front",],
 )
 
 grpc_cc_library(

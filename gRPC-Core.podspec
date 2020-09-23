@@ -177,6 +177,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
@@ -517,6 +518,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                       'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c',
                       'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h',
+                      'src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c',
+                      'src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.h',
                       'src/core/ext/upb-generated/udpa/annotations/migrate.upb.c',
                       'src/core/ext/upb-generated/udpa/annotations/migrate.upb.h',
                       'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c',
@@ -907,6 +910,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                       'src/core/lib/security/credentials/tls/tls_credentials.cc',
                       'src/core/lib/security/credentials/tls/tls_credentials.h',
+                      'src/core/lib/security/google_mesh_ca_certificate_provider.cc',
+                      'src/core/lib/security/google_mesh_ca_certificate_provider.h',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.cc',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                       'src/core/lib/security/security_connector/fake/fake_security_connector.cc',
@@ -1284,6 +1289,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h',
                               'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                               'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h',
+                              'src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/migrate.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/status.upb.h',
@@ -1468,6 +1474,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h',
                               'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                               'src/core/lib/security/credentials/tls/tls_credentials.h',
+                              'src/core/lib/security/google_mesh_ca_certificate_provider.h',
                               'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                               'src/core/lib/security/security_connector/fake/fake_security_connector.h',
                               'src/core/lib/security/security_connector/load_system_roots.h',

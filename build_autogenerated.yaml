@@ -529,6 +529,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
+  - src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
   - src/core/ext/upb-generated/udpa/annotations/status.upb.h
@@ -685,6 +686,7 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
+  - src/core/lib/security/google_mesh_ca_certificate_provider.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
@@ -940,6 +942,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  - src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
   - src/core/ext/upb-generated/udpa/annotations/status.upb.c
@@ -1105,6 +1108,7 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
+  - src/core/lib/security/google_mesh_ca_certificate_provider.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1197,6 +1201,7 @@ libs:
   - absl/types:optional
   - absl/strings:strings
   - absl/status:status
+  - absl/functional:bind_front
   - absl/container:inlined_vector
   - absl/container:flat_hash_set
   baselib: true
@@ -5821,6 +5826,21 @@ targets:
   - test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
   deps:
   - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: google_mesh_ca_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - third_party/istio/security/proto/providers/google/meshca.proto
+  - test/core/security/google_mesh_ca_certificate_provider_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
   - grpc
   - gpr
   - address_sorting

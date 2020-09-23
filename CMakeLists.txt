@@ -109,6 +109,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_bad_variant_access
   absl_base
   absl_base_internal
+  absl_bind_front
   absl_bits
   absl_city
   absl_civil_time
@@ -503,6 +504,9 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   test/core/tsi/alts/fake_handshaker/transport_security_common.proto
 )
+protobuf_generate_grpc_cpp(
+  third_party/istio/security/proto/providers/google/meshca.proto
+)
 
 if(gRPC_BUILD_TESTS)
   add_custom_target(buildtests_c)
@@ -822,6 +826,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx global_config_test)
   add_dependencies(buildtests_cxx google_mesh_ca_certificate_provider_factory_test)
+  add_dependencies(buildtests_cxx google_mesh_ca_provider_test)
   add_dependencies(buildtests_cxx grpc_cli)
   add_dependencies(buildtests_cxx grpc_tls_certificate_distributor_test)
   add_dependencies(buildtests_cxx grpc_tls_credentials_options_test)
@@ -1592,6 +1597,7 @@ add_library(grpc
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c
   src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
   src/core/ext/upb-generated/udpa/annotations/status.upb.c
@@ -1757,6 +1763,7 @@ add_library(grpc
   src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   src/core/lib/security/credentials/tls/tls_credentials.cc
+  src/core/lib/security/google_mesh_ca_certificate_provider.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1887,6 +1894,7 @@ target_link_libraries(grpc
   absl::optional
   absl::strings
   absl::status
+  absl::bind_front
   absl::inlined_vector
   absl::flat_hash_set
 )
@@ -11101,6 +11109,50 @@ target_link_libraries(google_mesh_ca_certificate_provider_factory_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(google_mesh_ca_provider_test
+  ${_gRPC_PROTO_GENS_DIR}/third_party/istio/security/proto/providers/google/meshca.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/third_party/istio/security/proto/providers/google/meshca.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/third_party/istio/security/proto/providers/google/meshca.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/third_party/istio/security/proto/providers/google/meshca.grpc.pb.h
+  test/core/security/google_mesh_ca_certificate_provider_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(google_mesh_ca_provider_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(google_mesh_ca_provider_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
   grpc
   gpr
   address_sorting

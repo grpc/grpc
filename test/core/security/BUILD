@@ -326,3 +326,19 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "google_mesh_ca_provider_test",
+    srcs = ["google_mesh_ca_certificate_provider_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_secure",
+        "//test/core/util:grpc_test_util",
+        "//third_party/istio/security/proto/providers/google:meshca_proto",
+    ],
+)
+
