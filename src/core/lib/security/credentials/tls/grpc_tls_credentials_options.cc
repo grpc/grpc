@@ -19,14 +19,14 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
-#include "src/core/lib/surface/api_trace.h"
-
-#include <stdlib.h>
-#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "src/core/lib/surface/api_trace.h"
 
 /** -- gRPC TLS server authorization check API implementation. -- **/
 grpc_tls_server_authorization_check_config::
@@ -51,8 +51,10 @@ grpc_tls_server_authorization_check_config::
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
-void grpc_tls_certificate_provider_release(grpc_tls_certificate_provider* provider) {
-  GRPC_API_TRACE("grpc_tls_certificate_provider_release(provider=%p)", 1, (provider));
+void grpc_tls_certificate_provider_release(
+    grpc_tls_certificate_provider* provider) {
+  GRPC_API_TRACE("grpc_tls_certificate_provider_release(provider=%p)", 1,
+                 (provider));
   grpc_core::ExecCtx exec_ctx;
   if (provider) provider->Unref();
 }
@@ -109,13 +111,12 @@ int grpc_tls_credentials_options_set_certificate_provider(
             "grpc_tls_credentials_options_set_certificate_provider()");
     return 0;
   }
-  options->set_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider>(provider));
+  options->set_certificate_provider(provider);
   return 1;
 }
 
 int grpc_tls_credentials_options_set_root_cert_name(
-    grpc_tls_credentials_options* options,
-    const char* root_cert_name) {
+    grpc_tls_credentials_options* options, const char* root_cert_name) {
   if (options == nullptr) {
     gpr_log(GPR_ERROR,
             "Invalid nullptr arguments to "
@@ -127,8 +128,7 @@ int grpc_tls_credentials_options_set_root_cert_name(
 }
 
 int grpc_tls_credentials_options_set_identity_cert_name(
-    grpc_tls_credentials_options* options,
-    const char* identity_cert_name) {
+    grpc_tls_credentials_options* options, const char* identity_cert_name) {
   if (options == nullptr) {
     gpr_log(GPR_ERROR,
             "Invalid nullptr arguments to "

@@ -39,6 +39,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(const char* priva
       while(true) {
           {
             grpc_core::MutexLock lock(&mu_);
+            // TODO: what if FileWatcherCertificateProvider is destroyed and is_shutdown_ is not available?
             if(is_shutdown_) return;
           }
           std::this_thread::sleep_for(std::chrono::milliseconds(root_interval));
