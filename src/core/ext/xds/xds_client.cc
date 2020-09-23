@@ -69,6 +69,18 @@ namespace grpc_core {
 
 TraceFlag grpc_xds_client_trace(false, "xds_client");
 
+namespace {
+const grpc_channel_args* g_channel_args = nullptr;
+}  // namespace
+
+namespace internal {
+
+void SetXdsChannelArgsForTest(grpc_channel_args* args) {
+  g_channel_args = args;
+}
+
+}  // namespace internal
+
 //
 // Internal class declarations
 //
@@ -422,59 +434,6 @@ class XdsClient::ChannelState::StateWatcher
 //
 // XdsClient::ChannelState
 //
-
-namespace {
-
-// Returns the channel args for the xds channel.
-grpc_channel_args* BuildXdsChannelArgs(const grpc_channel_args& args) {
-  static const char* args_to_remove[] = {
-      // LB policy name, since we want to use the default (pick_first) in
-      // the LB channel.
-      GRPC_ARG_LB_POLICY_NAME,
-      // The service config that contains the LB config. We don't want to
-      // recursively use xds in the LB channel.
-      GRPC_ARG_SERVICE_CONFIG,
-      // The channel arg for the server URI, since that will be different for
-      // the xds channel than for the parent channel.  The client channel
-      // factory will re-add this arg with the right value.
-      GRPC_ARG_SERVER_URI,
-      // The xds channel should use the authority indicated by the target
-      // authority table (see \a ModifyXdsChannelArgs),
-      // as opposed to the authority from the parent channel.
-      GRPC_ARG_DEFAULT_AUTHORITY,
-      // Just as for \a GRPC_ARG_DEFAULT_AUTHORITY, the xds channel should be
-      // treated as a stand-alone channel and not inherit this argument from the
-      // args of the parent channel.
-      GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
-      // Don't want to pass down channelz node from parent; the balancer
-      // channel will get its own.
-      GRPC_ARG_CHANNELZ_CHANNEL_NODE,
-      // Keepalive interval.  We are explicitly setting our own value below.
-      GRPC_ARG_KEEPALIVE_TIME_MS,
-  };
-  // Channel args to add.
-  absl::InlinedVector<grpc_arg, 3> args_to_add = {
-      // Keepalive interval.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
-          5 * 60 * GPR_MS_PER_SEC),
-      // Tell channelz this is an internal channel.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
-      // A channel arg indicating that the target is an xds server.
-      // TODO(roth): Once we figure out our fallback and credentials story,
-      // decide whether this is actually needed.  Note that it's currently
-      // used by the fake security connector as well.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ADDRESS_IS_XDS_SERVER), 1),
-  };
-  // Construct channel args.
-  return grpc_channel_args_copy_and_add_and_remove(
-      &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
-      args_to_add.size());
-}
-
-}  // namespace
 
 XdsClient::ChannelState::ChannelState(RefCountedPtr<XdsClient> xds_client,
                                       grpc_channel* channel)
@@ -1730,15 +1689,25 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 
 namespace {
 
-grpc_millis GetRequestTimeout(const grpc_channel_args& args) {
+grpc_millis GetRequestTimeout() {
   return grpc_channel_args_find_integer(
-      &args, GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS,
+      g_channel_args, GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS,
       {15000, 0, INT_MAX});
 }
 
 grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
-                               const grpc_channel_args& args,
                                grpc_error** error) {
+  // Build channel args.
+  absl::InlinedVector<grpc_arg, 2> args_to_add = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
+          5 * 60 * GPR_MS_PER_SEC),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
+  };
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
+      g_channel_args, args_to_add.data(), args_to_add.size());
+  // Find credentials and create channel.
   RefCountedPtr<grpc_channel_credentials> creds;
   for (const auto& channel_creds : bootstrap.server().channel_creds) {
     if (channel_creds.type == "google_default") {
@@ -1746,8 +1715,10 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
       break;
     }
     if (channel_creds.type == "insecure") {
-      return grpc_insecure_channel_create(bootstrap.server().server_uri.c_str(),
-                                          &args, nullptr);
+      grpc_channel* channel = grpc_insecure_channel_create(
+          bootstrap.server().server_uri.c_str(), new_args, nullptr);
+      grpc_channel_args_destroy(new_args);
+      return channel;
     }
     if (channel_creds.type == "fake") {
       creds.reset(grpc_fake_transport_security_credentials_create());
@@ -1759,9 +1730,6 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
         "no supported credential types found");
     return nullptr;
   }
-  const char* arg_to_remove = GRPC_ARG_CHANNEL_CREDENTIALS;
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_remove(&args, &arg_to_remove, 1);
   grpc_channel* channel = grpc_secure_channel_create(
       creds.get(), bootstrap.server().server_uri.c_str(), new_args, nullptr);
   grpc_channel_args_destroy(new_args);
@@ -1770,9 +1738,9 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
 
 }  // namespace
 
-XdsClient::XdsClient(const grpc_channel_args& channel_args, grpc_error** error)
+XdsClient::XdsClient(grpc_error** error)
     : InternallyRefCounted<XdsClient>(&grpc_xds_client_trace),
-      request_timeout_(GetRequestTimeout(channel_args)),
+      request_timeout_(GetRequestTimeout()),
       interested_parties_(grpc_pollset_set_create()),
       bootstrap_(
           XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
@@ -1789,23 +1757,11 @@ XdsClient::XdsClient(const grpc_channel_args& channel_args, grpc_error** error)
     gpr_log(GPR_INFO, "[xds_client %p] creating channel to %s", this,
             bootstrap_->server().server_uri.c_str());
   }
-  grpc_channel_args* new_args = BuildXdsChannelArgs(channel_args);
-  grpc_channel* channel = CreateXdsChannel(*bootstrap_, *new_args, error);
-  grpc_channel_args_destroy(new_args);
+  grpc_channel* channel = CreateXdsChannel(*bootstrap_, error);
   if (*error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "[xds_client %p] failed to create xds channel: %s", this,
             grpc_error_string(*error));
     return;
-  }
-  // Add channelz linkage.
-  channelz::ChannelNode* xds_channelz_node =
-      grpc_channel_get_channelz_node(channel);
-  channelz::ChannelNode* parent_channelz_node =
-      grpc_channel_args_find_pointer<channelz::ChannelNode>(
-          &channel_args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
-  if (xds_channelz_node != nullptr && parent_channelz_node != nullptr) {
-    parent_channelz_node->AddChildChannel(xds_channelz_node->uuid());
-    parent_channelz_node_ = parent_channelz_node->Ref();
   }
   // Create ChannelState object.
   chand_ = MakeOrphanable<ChannelState>(
@@ -1819,6 +1775,24 @@ XdsClient::~XdsClient() {
   grpc_pollset_set_destroy(interested_parties_);
 }
 
+void XdsClient::AddChannelzLinkage(
+    channelz::ChannelNode* parent_channelz_node) {
+  channelz::ChannelNode* xds_channelz_node =
+      grpc_channel_get_channelz_node(chand_->channel());
+  if (xds_channelz_node != nullptr) {
+    parent_channelz_node->AddChildChannel(xds_channelz_node->uuid());
+  }
+}
+
+void XdsClient::RemoveChannelzLinkage(
+    channelz::ChannelNode* parent_channelz_node) {
+  channelz::ChannelNode* xds_channelz_node =
+      grpc_channel_get_channelz_node(chand_->channel());
+  if (xds_channelz_node != nullptr) {
+    parent_channelz_node->RemoveChildChannel(xds_channelz_node->uuid());
+  }
+}
+
 void XdsClient::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] shutting down xds client", this);
@@ -1826,13 +1800,6 @@ void XdsClient::Orphan() {
   {
     MutexLock lock(&mu_);
     shutting_down_ = true;
-    // Remove channelz linkage.
-    if (parent_channelz_node_ != nullptr) {
-      channelz::ChannelNode* xds_channelz_node =
-          grpc_channel_get_channelz_node(chand_->channel());
-      GPR_ASSERT(xds_channelz_node != nullptr);
-      parent_channelz_node_->RemoveChildChannel(xds_channelz_node->uuid());
-    }
     // Orphan ChannelState object.
     chand_.reset();
     // We do not clear cluster_map_ and endpoint_map_ if the xds client was

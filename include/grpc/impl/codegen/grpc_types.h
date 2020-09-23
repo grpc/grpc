@@ -355,11 +355,6 @@ typedef struct {
    over to the next priority. Default value is 10 seconds. */
 #define GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS \
   "grpc.priority_failover_timeout_ms"
-/* Timeout in milliseconds to wait for a resource to be returned from
- * the xds server before assuming that it does not exist.
- * The default is 15 seconds. */
-#define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
-  "grpc.xds_resource_does_not_exist_timeout_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"
