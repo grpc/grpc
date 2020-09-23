@@ -164,84 +164,6 @@ static int server_authz_check_async(
   return 1;
 }
 
-//// Synchronous implementation of schedule field in
-//// grpc_tls_credential_reload_config instance that is a part of client-side
-//// grpc_tls_credentials_options instance.
-// static int client_cred_reload_sync(void* /*config_user_data*/,
-//                                   grpc_tls_credential_reload_arg* arg) {
-//  if (!arg->key_materials_config->pem_key_cert_pair_list().empty()) {
-//    arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-//    return 0;
-//  }
-//  grpc_slice ca_slice, cert_slice, key_slice;
-//  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-//                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-//  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-//      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-//  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-//                               grpc_load_file(SERVER_KEY_PATH, 1,
-//                               &key_slice)));
-//  const char* ca_cert =
-//      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-//  const char* server_cert =
-//      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-//  const char* server_key =
-//      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-//  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
-//  if (arg->key_materials_config->pem_key_cert_pair_list().empty()) {
-//    const auto* pem_key_cert_pair_ptr = &pem_key_cert_pair;
-//    grpc_tls_key_materials_config_set_key_materials(
-//        arg->key_materials_config, ca_cert, &pem_key_cert_pair_ptr, 1);
-//  }
-//  // new credential has been reloaded.
-//  arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
-//  grpc_slice_unref(cert_slice);
-//  grpc_slice_unref(key_slice);
-//  grpc_slice_unref(ca_slice);
-//  return 0;
-//}
-
-//// Synchronous implementation of schedule field in
-//// grpc_tls_credential_reload_config instance that is a part of server-side
-//// grpc_tls_credentials_options instance.
-// static int server_cred_reload_sync(void* /*config_user_data*/,
-//                                   grpc_tls_credential_reload_arg* arg) {
-//  if (!arg->key_materials_config->pem_key_cert_pair_list().empty()) {
-//    arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-//    return 0;
-//  }
-//  grpc_slice ca_slice, cert_slice, key_slice;
-//  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-//                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-//  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-//      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-//  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-//                               grpc_load_file(SERVER_KEY_PATH, 1,
-//                               &key_slice)));
-//  const char* ca_cert =
-//      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-//  const char* server_cert =
-//      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-//  const char* server_key =
-//      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-//  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
-//  GPR_ASSERT(arg != nullptr);
-//  GPR_ASSERT(arg->key_materials_config != nullptr);
-//  GPR_ASSERT(arg->key_materials_config->pem_key_cert_pair_list().data() !=
-//             nullptr);
-//  if (arg->key_materials_config->pem_key_cert_pair_list().empty()) {
-//    const auto* pem_key_cert_pair_ptr = &pem_key_cert_pair;
-//    grpc_tls_key_materials_config_set_key_materials(
-//        arg->key_materials_config, ca_cert, &pem_key_cert_pair_ptr, 1);
-//  }
-//  // new credential has been reloaded.
-//  arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
-//  grpc_slice_unref(cert_slice);
-//  grpc_slice_unref(key_slice);
-//  grpc_slice_unref(ca_slice);
-//  return 0;
-//}
-
 // Create a TLS channel credential.
 static grpc_channel_credentials* create_tls_channel_credentials(
     fullstack_secure_fixture_data* ffd) {
@@ -249,12 +171,7 @@ static grpc_channel_credentials* create_tls_channel_credentials(
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   options->set_min_tls_version(ffd->tls_version);
   options->set_max_tls_version(ffd->tls_version);
-  /* Set credential provider. */
-
-  //  grpc_tls_credential_reload_config* reload_config =
-  //      grpc_tls_credential_reload_config_create(nullptr,
-  //      client_cred_reload_sync,
-  //                                               nullptr, nullptr);
+  // Set credential provider.
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         ffd->client_provider);
   grpc_tls_credentials_options_set_root_cert_name(options, "");
@@ -277,14 +194,7 @@ static grpc_server_credentials* create_tls_server_credentials(
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   options->set_min_tls_version(ffd->tls_version);
   options->set_max_tls_version(ffd->tls_version);
-  /* Set credential reload config. */
-  //  grpc_tls_credential_reload_config* reload_config =
-  //      grpc_tls_credential_reload_config_create(nullptr,
-  //      server_cred_reload_sync,
-  //                                               nullptr, nullptr);
-  //  grpc_tls_credentials_options_set_credential_reload_config(options,
-  //                                                            reload_config);
-
+    // Set credential provider.
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         ffd->server_provider);
   grpc_tls_credentials_options_set_root_cert_name(options, "");
