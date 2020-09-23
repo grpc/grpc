@@ -651,9 +651,13 @@ ServerAddressList EdsLb::CreateChildPolicyAddressesLocked() {
       std::vector<std::string> hierarchical_path = {
           priority_child_name, locality_name->AsHumanReadableString()};
       for (const auto& endpoint : locality.endpoints) {
-        addresses.emplace_back(endpoint.WithAttribute(
-            kHierarchicalPathAttributeKey,
-            MakeHierarchicalPathAttribute(hierarchical_path)));
+        addresses.emplace_back(
+            endpoint
+                .WithAttribute(kHierarchicalPathAttributeKey,
+                               MakeHierarchicalPathAttribute(hierarchical_path))
+                .WithAttribute(
+                    kXdsLocalityNameAttributeKey,
+                    MakeLocalityNameAttribute(locality_name->Ref())));
       }
     }
   }
@@ -681,31 +685,10 @@ EdsLb::CreateChildPolicyConfigLocked() {
       if (!locality_name->sub_zone().empty()) {
         locality_name_json["subzone"] = locality_name->sub_zone();
       }
-      // Construct endpoint-picking policy.
-      // Wrap it in the LRS policy if load reporting is enabled.
-      Json endpoint_picking_policy;
-      if (config_->lrs_load_reporting_server_name().has_value()) {
-        const auto key = GetLrsClusterKey();
-        Json::Object lrs_config = {
-            {"clusterName", std::string(key.first)},
-            {"locality", std::move(locality_name_json)},
-            {"lrsLoadReportingServerName",
-             config_->lrs_load_reporting_server_name().value()},
-            {"childPolicy", config_->endpoint_picking_policy()},
-        };
-        if (!key.second.empty()) {
-          lrs_config["edsServiceName"] = std::string(key.second);
-        }
-        endpoint_picking_policy = Json::Array{Json::Object{
-            {"lrs_experimental", std::move(lrs_config)},
-        }};
-      } else {
-        endpoint_picking_policy = config_->endpoint_picking_policy();
-      }
       // Add weighted target entry.
       weighted_targets[locality_name->AsHumanReadableString()] = Json::Object{
           {"weight", locality.lb_weight},
-          {"childPolicy", std::move(endpoint_picking_policy)},
+          {"childPolicy", config_->endpoint_picking_policy()},
       };
     }
     // Add priority entry.

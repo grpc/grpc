@@ -270,6 +270,11 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     absl::optional<XdsApi::EdsUpdate> update;
   };
 
+  // TODO(roth): Consider changing this to only support a single
+  // XdsClusterDropStats object and a single XdsClusterLocalityStats object
+  // per locality.  We should be able to use some sort of RefIfNonZero()
+  // trick to return a new ref to the existing object instead of
+  // creating a new object for each caller.
   struct LoadReportState {
     struct LocalityState {
       std::set<XdsClusterLocalityStats*> locality_stats;

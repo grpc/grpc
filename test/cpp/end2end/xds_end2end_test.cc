@@ -5618,15 +5618,15 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, BalancerUpdateTest,
                          &TestTypeName);
 
 // Load reporting tests are not run with load reporting disabled.
+// Also not run with fake resolver, since they operate at the CDS level.
 INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingTest,
-                         ::testing::Values(TestType(false, true),
-                                           TestType(true, true)),
+                         ::testing::Values(TestType(true, true)),
                          &TestTypeName);
 
 // Load reporting tests are not run with load reporting disabled.
+// Also not run with fake resolver, since they operate at the CDS level.
 INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingWithDropTest,
-                         ::testing::Values(TestType(false, true),
-                                           TestType(true, true)),
+                         ::testing::Values(TestType(true, true)),
                          &TestTypeName);
 
 }  // namespace

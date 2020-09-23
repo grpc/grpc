@@ -21,6 +21,7 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
@@ -63,6 +64,34 @@ class CdsLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
+  class StatsSubchannelWrapper : public DelegatingSubchannel {
+   public:
+    StatsSubchannelWrapper(
+        RefCountedPtr<SubchannelInterface> wrapped_subchannel,
+        RefCountedPtr<XdsClusterLocalityStats> locality_stats)
+        : DelegatingSubchannel(std::move(wrapped_subchannel)),
+          locality_stats_(std::move(locality_stats)) {}
+
+    XdsClusterLocalityStats* locality_stats() const {
+      return locality_stats_.get();
+    }
+
+   private:
+    RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
+  };
+
+  // Picker wrapper to handle load reporting.
+  class LoadReportingPicker : public SubchannelPicker {
+   public:
+    explicit LoadReportingPicker(
+        std::unique_ptr<SubchannelPicker> child_picker);
+
+    PickResult Pick(PickArgs args) override;
+
+   private:
+    std::unique_ptr<SubchannelPicker> child_picker_;
+  };
+
   // Watcher for getting cluster data from XdsClient.
   class ClusterWatcher : public XdsClient::ClusterWatcherInterface {
    public:
@@ -134,12 +163,59 @@ class CdsLb : public LoadBalancingPolicy {
   // Note that this is not owned, so this pointer must never be derefernced.
   ClusterWatcher* cluster_watcher_ = nullptr;
 
+  absl::optional<XdsApi::CdsUpdate> cds_update_;
+
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
   // Internal state.
   bool shutting_down_ = false;
 };
+
+//
+// CdsLb::LoadReportingPicker
+//
+
+CdsLb::LoadReportingPicker::LoadReportingPicker(
+    std::unique_ptr<SubchannelPicker> child_picker)
+    : child_picker_(std::move(child_picker)) {}
+
+CdsLb::PickResult CdsLb::LoadReportingPicker::Pick(PickArgs args) {
+  PickResult result = child_picker_->Pick(args);
+  // TODO(roth): We should ideally also record failures here in the case where
+  // a pick fails.  This is challenging, because we don't know which
+  // picks are for wait_for_ready RPCs or how many times we'll return a
+  // failure for the same wait_for_ready RPC.
+  if (result.type == result.PICK_COMPLETE && result.subchannel != nullptr) {
+    auto* subchannel_wrapper =
+        static_cast<StatsSubchannelWrapper*>(result.subchannel.get());
+    // Handle load reporting.
+    XdsClusterLocalityStats* locality_stats =
+        subchannel_wrapper->locality_stats();
+    // Record a call started.
+    locality_stats->AddCallStarted();
+    // Intercept the recv_trailing_metadata op to record call completion.
+    locality_stats->Ref(DEBUG_LOCATION, "LocalityStats+call").release();
+    auto original_recv_trailing_metadata_ready =
+        result.recv_trailing_metadata_ready;
+    result.recv_trailing_metadata_ready =
+        // Note: This callback does not run in either the control plane
+        // work serializer or in the data plane mutex.
+        [locality_stats, original_recv_trailing_metadata_ready](
+            grpc_error* error, MetadataInterface* metadata,
+            CallState* call_state) {
+          const bool call_failed = error != GRPC_ERROR_NONE;
+          locality_stats->AddCallFinished(call_failed);
+          locality_stats->Unref(DEBUG_LOCATION, "LocalityStats+call");
+          if (original_recv_trailing_metadata_ready != nullptr) {
+            original_recv_trailing_metadata_ready(error, metadata, call_state);
+          }
+        };
+    // Unwrap subchannel to pass back up the stack.
+    result.subchannel = subchannel_wrapper->wrapped_subchannel();
+  }
+  return result;
+}
 
 //
 // CdsLb::ClusterWatcher::Notifier
@@ -195,6 +271,25 @@ void CdsLb::ClusterWatcher::Notifier::RunInWorkSerializer(grpc_error* error) {
 RefCountedPtr<SubchannelInterface> CdsLb::Helper::CreateSubchannel(
     ServerAddress address, const grpc_channel_args& args) {
   if (parent_->shutting_down_) return nullptr;
+  // If load reporting is enabled, wrap the subchannel such that it
+  // includes the locality stats object, which will be used by the
+  // LoadReportingPicker.
+  if (parent_->cds_update_->lrs_load_reporting_server_name.has_value()) {
+    RefCountedPtr<XdsLocalityName> locality_name = GetLocalityAttribute(
+        address.GetAttribute(kXdsLocalityNameAttributeKey));
+    RefCountedPtr<XdsClusterLocalityStats> locality_stats =
+        parent_->xds_client_->AddClusterLocalityStats(
+            parent_->cds_update_->lrs_load_reporting_server_name.has_value()
+                ? *parent_->cds_update_->lrs_load_reporting_server_name
+                : "",
+            parent_->config_->cluster(), parent_->cds_update_->eds_service_name,
+            std::move(locality_name));
+    return MakeRefCounted<StatsSubchannelWrapper>(
+        parent_->channel_control_helper()->CreateSubchannel(std::move(address),
+                                                            args),
+        std::move(locality_stats));
+  }
+  // Load reporting not enabled, so don't wrap the subchannel.
   return parent_->channel_control_helper()->CreateSubchannel(std::move(address),
                                                              args);
 }
@@ -207,6 +302,10 @@ void CdsLb::Helper::UpdateState(grpc_connectivity_state state,
     gpr_log(GPR_INFO,
             "[cdslb %p] state updated by child: %s message_state: (%s)", this,
             ConnectivityStateName(state), status.ToString().c_str());
+  }
+  // If load reporting enabled, wrap the picker.
+  if (parent_->cds_update_->lrs_load_reporting_server_name.has_value()) {
+    picker = absl::make_unique<LoadReportingPicker>(std::move(picker));
   }
   parent_->channel_control_helper()->UpdateState(state, status,
                                                  std::move(picker));
@@ -363,6 +462,8 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
     OnError(error);
     return;
   }
+  // Save update in parent policy.
+  cds_update_ = std::move(cluster_data);
   // Create child policy if not already present.
   if (child_policy_ == nullptr) {
     LoadBalancingPolicy::Args args;

@@ -326,7 +326,6 @@ grpc_cc_library(
         "//conditions:default": [
             "grpc_lb_policy_cds",
             "grpc_lb_policy_eds",
-            "grpc_lb_policy_lrs",
             "grpc_lb_policy_xds_cluster_manager",
             "grpc_resolver_xds",
         ],
@@ -1347,6 +1346,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_xds_common",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_cds",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
@@ -1355,6 +1370,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_xds_common",
         "grpc_xds_client",
     ],
 )
@@ -1364,9 +1380,6 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/eds.cc",
     ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-    ],
     external_deps = [
         "absl/strings",
     ],
@@ -1375,19 +1388,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
-        "grpc_xds_client",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_lb_policy_lrs",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
+        "grpc_lb_xds_common",
         "grpc_xds_client",
     ],
 )

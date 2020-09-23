@@ -21,6 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
+#include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+
 /** Channel arg indicating if a target corresponding to the address is a backend
  * received from a balancer. The type of this arg is an integer and the value is
  * treated as a bool. */
@@ -28,5 +34,17 @@
 // this may no longer be needed.
 #define GRPC_ARG_ADDRESS_IS_BACKEND_FROM_XDS_LOAD_BALANCER \
   "grpc.address_is_backend_from_xds_load_balancer"
+
+namespace grpc_core {
+
+extern const char* kXdsLocalityNameAttributeKey;
+
+std::unique_ptr<ServerAddress::AttributeInterface> MakeLocalityNameAttribute(
+    RefCountedPtr<XdsLocalityName> locality_name);
+
+RefCountedPtr<XdsLocalityName> GetLocalityAttribute(
+    const ServerAddress::AttributeInterface* attribute);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_H */
