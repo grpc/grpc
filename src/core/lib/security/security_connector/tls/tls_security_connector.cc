@@ -181,15 +181,6 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   GPR_ASSERT(provider != nullptr);
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       provider->distributor();
-  //  gpr_log(GPR_ERROR, "%s", "-----------------Debugging-------------------");
-  //  gpr_log(GPR_ERROR, "HasRootCerts: %d", distributor->HasRootCerts(""));
-  //  gpr_log(GPR_ERROR, "HasKeyCertPairs: %d",
-  //  distributor->HasKeyCertPairs("")); gpr_log(GPR_ERROR,
-  //  "creds->options()->root_cert_name(): %s",
-  //  (*creds->options()->root_cert_name()).c_str()); gpr_log(GPR_ERROR,
-  //  "creds->options()->identity_cert_name(): %s",
-  //  (*creds->options()->identity_cert_name()).c_str()); gpr_log(GPR_ERROR,
-  //  "%s", "------------------------------------");
   distributor->WatchTlsCertificates(std::move(watcher_ptr),
                                     creds->options()->root_cert_name(),
                                     creds->options()->identity_cert_name());
