@@ -91,11 +91,10 @@ static void OnServiceAccountImpersenate(void* arg, grpc_error* error) {
   std::string body = absl::StrFormat(
       "{\"access_token\":\"%s\", \"expires_in\":%d, \"token_type\":\"%s\"}",
       access_token, expire_in, "Bearer");
-  ctx->service_account_impersonate_response.body = gpr_strdup(body.c_str());
-  ctx->service_account_impersonate_response.body_length = body.length();
+
   ctx->metadata_req->response = ctx->service_account_impersonate_response;
-  ctx->metadata_req->response.body =
-      gpr_strdup(ctx->metadata_req->response.body);
+  ctx->metadata_req->response.body = gpr_strdup(body.c_str());
+  ctx->metadata_req->response.body_length = body.length();
   FinishTokenFetch(ctx, GRPC_ERROR_NONE);
 }
 
@@ -138,7 +137,7 @@ static void ServiceAccountImpersenate(TokenFetchContext* ctx) {
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = gpr_strdup(uri->authority);
+  request.host = const_cast<char*>(uri->authority);
   request.http.path = gpr_strdup(uri->path);
   request.http.hdr_count = 2;
   grpc_http_header* headers = static_cast<grpc_http_header*>(
@@ -174,7 +173,7 @@ static void OnTokenExchange(void* arg, grpc_error* error) {
     if (ctx->options.service_account_impersonation_url.empty()) {
       ctx->metadata_req->response = ctx->token_exchange_response;
       ctx->metadata_req->response.body =
-          gpr_strdup(ctx->metadata_req->response.body);
+          gpr_strdup(ctx->token_exchange_response.body);
       FinishTokenFetch(ctx, GRPC_ERROR_NONE);
     } else {
       ServiceAccountImpersenate(ctx);
@@ -193,7 +192,7 @@ static void TokenExchange(TokenFetchContext* ctx) {
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = gpr_strdup(uri->authority);
+  request.host = const_cast<char*>(uri->authority);
   request.http.path = gpr_strdup(uri->path);
   grpc_http_header* headers = nullptr;
   if (!ctx->options.client_id.empty() && !ctx->options.client_secret.empty()) {
