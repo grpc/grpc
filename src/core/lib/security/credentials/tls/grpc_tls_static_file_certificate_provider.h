@@ -16,55 +16,39 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_FILE_WATCHER_CERTIFICATE_PROVIDER_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_FILE_WATCHER_CERTIFICATE_PROVIDER_H
+#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_STATIC_FILE_CERTIFICATE_PROVIDER_H
+#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_STATIC_FILE_CERTIFICATE_PROVIDER_H
 
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc_security.h>
+#include <string.h>
 
 #include "absl/container/inlined_vector.h"
-
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
-#include <string.h>
-
-#include <chrono>
-#include <thread>
-#include <functional>
-
 namespace grpc_core {
 
-class FileWatcherCertificateProvider : public grpc_tls_certificate_provider {
+class StaticFileCertificateProvider : public grpc_tls_certificate_provider {
  public:
-  FileWatcherCertificateProvider(const char* private_key_file_name, const char* identity_certificate_file_name, const char* root_certificate_file_name, unsigned int root_interval,
-                                 unsigned int identity_interval);
+  StaticFileCertificateProvider(const char* private_key_file_name,
+                                const char* identity_certificate_file_name,
+                                const char* root_certificate_file_name);
+  ~StaticFileCertificateProvider() {
+    gpr_log(GPR_ERROR, "StaticFileCertificateProvider is destroyed");
+  };
 
-  ~FileWatcherCertificateProvider() {
-    grpc_core::MutexLock lock(&mu_);
-    is_shutdown_ = true;
-  }
-
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor()
-      const override {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
-  }
-
-  void Shutdown() {
-    grpc_core::MutexLock lock(&mu_);
-    is_shutdown_ = true;
   }
 
  private:
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  grpc_core::Mutex mu_;
-  bool is_shutdown_ = false;
 };
 
 }  // namespace grpc_core
 
-
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_FILE_WATCHER_CERTIFICATE_PROVIDER_H \
+#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_STATIC_FILE_CERTIFICATE_PROVIDER_H \
         */

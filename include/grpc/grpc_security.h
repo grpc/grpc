@@ -758,21 +758,32 @@ typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
 /** TLS certificate distributor. It is used for
  *  experimental purpose for now and subject to change. */
-typedef struct grpc_tls_certificate_distributor grpc_tls_certificate_distributor;
+typedef struct grpc_tls_certificate_distributor
+    grpc_tls_certificate_distributor;
 
 /* Factory function for file-watcher provider (implemented inside core).
  * It is used for experimental purpose for now and subject to change.*/
-GRPCAPI grpc_tls_certificate_provider* grpc_tls_certificate_provider_file_watcher_create(const char* private_key_file_name, const char* identity_certificate_file_name, const char* root_certificate_file_name);
+GRPCAPI grpc_tls_certificate_provider*
+grpc_tls_certificate_provider_file_watcher_create(
+    const char* private_key_file_name,
+    const char* identity_certificate_file_name,
+    const char* root_certificate_file_name);
 
 /* Factory function for static file provider (implemented inside core).
  * It is used for experimental purpose for now and subject to change.*/
-GRPCAPI grpc_tls_certificate_provider* grpc_tls_certificate_provider_file_static_create(const char* private_key_file_name, const char* identity_certificate_file_name, const char* root_certificate_file_name);
+GRPCAPI grpc_tls_certificate_provider*
+grpc_tls_certificate_provider_file_static_create(
+    const char* private_key_file_name,
+    const char* identity_certificate_file_name,
+    const char* root_certificate_file_name);
 
 /** Releases a grpc_tls_certificate_provider object.
-   The creator of the grpc_tls_certificate_provider object is responsible for its release.
-   It is used for experimental purpose for now and subject to change.
+   The creator of the grpc_tls_certificate_provider object is responsible for
+   its release. It is used for experimental purpose for now and subject to
+   change.
    */
-GRPCAPI void grpc_tls_certificate_provider_release(grpc_tls_certificate_provider* provider);
+GRPCAPI void grpc_tls_certificate_provider_release(
+    grpc_tls_certificate_provider* provider);
 
 /** Create an empty TLS credentials options. It is used for
  *  experimental purpose for now and subject to change. */
@@ -812,8 +823,7 @@ GRPCAPI int grpc_tls_credentials_options_set_certificate_provider(
  * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI int grpc_tls_credentials_options_set_root_cert_name(
-    grpc_tls_credentials_options* options,
-    const char* root_cert_name);
+    grpc_tls_credentials_options* options, const char* root_cert_name);
 
 /**
  * Sets the name of the identity certificates being used in the distributor.
@@ -822,8 +832,7 @@ GRPCAPI int grpc_tls_credentials_options_set_root_cert_name(
  * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI int grpc_tls_credentials_options_set_identity_cert_name(
-    grpc_tls_credentials_options* options,
-    const char* identity_cert_name);
+    grpc_tls_credentials_options* options, const char* identity_cert_name);
 
 /** Set grpc_tls_server_authorization_check_config field in credentials options
     with the provided config struct whose ownership is transferred.

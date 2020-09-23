@@ -63,7 +63,8 @@ class TlsChannelSecurityConnector final
   TlsChannelSecurityConnector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-      const char* target_name, const char* overridden_target_name, tsi_ssl_session_cache* ssl_session_cache);
+      const char* target_name, const char* overridden_target_name,
+      tsi_ssl_session_cache* ssl_session_cache);
   ~TlsChannelSecurityConnector() override;
 
   void add_handshakers(const grpc_channel_args* args,
@@ -97,7 +98,8 @@ class TlsChannelSecurityConnector final
     return pem_root_certs_;
   }
 
-  const absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>& KeyCertPairListForTesting() {
+  const absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>&
+  KeyCertPairListForTesting() {
     grpc_core::MutexLock lock(&mu_);
     return pem_key_cert_pair_list_;
   }
@@ -128,8 +130,9 @@ class TlsChannelSecurityConnector final
   std::string overridden_target_name_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   grpc_tls_server_authorization_check_arg* check_arg_ = nullptr;
-  // Contains resumption information only useful when the credential is avaible at the time security connector is created.
-  // It will become invalid after reloading.
+  // Contains resumption information only useful when the credential is avaible
+  // at the time security connector is created. It will become invalid after
+  // reloading.
   tsi_ssl_session_cache* ssl_session_cache_ = nullptr;
   absl::optional<absl::string_view> pem_root_certs_;
   absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
@@ -147,8 +150,7 @@ class TlsServerSecurityConnector;
 class TlsServerCertificateWatcher
     : public grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
  public:
-  TlsServerCertificateWatcher(
-      TlsServerSecurityConnector* security_connector)
+  TlsServerCertificateWatcher(TlsServerSecurityConnector* security_connector)
       : security_connector_(security_connector) {}
   void OnCertificatesChanged(
       absl::optional<absl::string_view> root_certs,
@@ -196,7 +198,8 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
     return pem_root_certs_;
   }
 
-  const absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>& KeyCertPairListForTesting() {
+  const absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>&
+  KeyCertPairListForTesting() {
     grpc_core::MutexLock lock(&mu_);
     return pem_key_cert_pair_list_;
   }
