@@ -1979,7 +1979,7 @@ class TestExternalAccountCredentials final
   TestExternalAccountCredentials(
       grpc_core::experimental::ExternalAccountCredentialsOptions options,
       std::vector<std::string> scopes)
-      : ExternalAccountCredentials(options, scopes) {}
+      : ExternalAccountCredentials(std::move(options), std::move(scopes)) {}
 
  protected:
   void RetrieveSubjectToken(grpc_core::experimental::TokenFetchContext* ctx) {

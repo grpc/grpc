@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
@@ -36,7 +37,7 @@ namespace experimental {
 
 ExternalAccountCredentials::ExternalAccountCredentials(
     ExternalAccountCredentialsOptions options, std::vector<std::string> scopes)
-    : options_(options) {
+    : options_(std::move(options)) {
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
   }
