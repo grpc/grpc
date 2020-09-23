@@ -28,6 +28,7 @@
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -307,6 +308,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
+  RefCountedPtr<channelz::ChannelNode> parent_channelz_node_;
 
   // One entry for each watched LDS resource.
   std::map<std::string /*listener_name*/, ListenerState> listener_map_;
