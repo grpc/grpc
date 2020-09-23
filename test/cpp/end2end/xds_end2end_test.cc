@@ -1766,6 +1766,33 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
  protected:
+  class TestRpc {
+   public:
+    TestRpc() {}
+
+    void SendRpc(std::unique_ptr<grpc::testing::EchoTestService::Stub>* stub,
+                 const RpcOptions& rpc_options) {
+      sender_thread_ = std::thread([this, stub]() {
+        EchoResponse* response = new EchoResponse;
+        EchoRequest request;
+        request.mutable_param()->set_client_cancel_after_us(10 * 1000 * 1000 *
+                                                            60);
+        request.set_message(kRequestMessage);
+        status_ = (*stub)->Echo(&context_, request, response);
+      });
+    }
+
+    void CancelRpc() {
+      context_.TryCancel();
+      sender_thread_.join();
+    }
+
+   private:
+    std::thread sender_thread_;
+    ClientContext context_;
+    Status status_;
+  };
+
   class ServerThread {
    public:
     ServerThread() : port_(g_port_saver->GetPort()) {}
