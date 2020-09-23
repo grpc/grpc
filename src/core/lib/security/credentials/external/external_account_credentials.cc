@@ -22,6 +22,7 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
+#include "src/core/lib/http/parser.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
@@ -45,7 +46,11 @@ ExternalAccountCredentials::ExternalAccountCredentials(
   ctx_ = new TokenFetchContext;
 }
 
-ExternalAccountCredentials::~ExternalAccountCredentials() { delete ctx_; }
+ExternalAccountCredentials::~ExternalAccountCredentials() {
+  grpc_http_response_destroy(&ctx_->token_exchange_response);
+  grpc_http_response_destroy(&ctx_->service_account_impersonate_response);
+  delete ctx_;
+}
 
 std::string ExternalAccountCredentials::debug_string() {
   return absl::StrFormat("ExternalAccountCredentials{Audience:%s,%s}",
@@ -89,6 +94,8 @@ static void OnServiceAccountImpersenate(void* arg, grpc_error* error) {
   ctx->service_account_impersonate_response.body = gpr_strdup(body.c_str());
   ctx->service_account_impersonate_response.body_length = body.length();
   ctx->metadata_req->response = ctx->service_account_impersonate_response;
+  ctx->metadata_req->response.body =
+      gpr_strdup(ctx->metadata_req->response.body);
   FinishTokenFetch(ctx, GRPC_ERROR_NONE);
 }
 
@@ -131,8 +138,8 @@ static void ServiceAccountImpersenate(TokenFetchContext* ctx) {
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = (char*)uri->authority;
-  request.http.path = (char*)uri->path;
+  request.host = gpr_strdup(uri->authority);
+  request.http.path = gpr_strdup(uri->path);
   request.http.hdr_count = 2;
   grpc_http_header* headers = static_cast<grpc_http_header*>(
       gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
@@ -155,6 +162,7 @@ static void ServiceAccountImpersenate(TokenFetchContext* ctx) {
                                         grpc_schedule_on_exec_ctx),
                     &ctx->service_account_impersonate_response);
   grpc_resource_quota_unref_internal(resource_quota);
+  grpc_http_request_destroy(&request.http);
   grpc_uri_destroy(uri);
 }
 
@@ -165,6 +173,8 @@ static void OnTokenExchange(void* arg, grpc_error* error) {
   } else {
     if (ctx->options.service_account_impersonation_url.empty()) {
       ctx->metadata_req->response = ctx->token_exchange_response;
+      ctx->metadata_req->response.body =
+          gpr_strdup(ctx->metadata_req->response.body);
       FinishTokenFetch(ctx, GRPC_ERROR_NONE);
     } else {
       ServiceAccountImpersenate(ctx);
@@ -183,8 +193,8 @@ static void TokenExchange(TokenFetchContext* ctx) {
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = (char*)uri->authority;
-  request.http.path = (char*)uri->path;
+  request.host = gpr_strdup(uri->authority);
+  request.http.path = gpr_strdup(uri->path);
   grpc_http_header* headers = nullptr;
   if (!ctx->options.client_id.empty() && !ctx->options.client_secret.empty()) {
     request.http.hdr_count = 2;
@@ -237,6 +247,7 @@ static void TokenExchange(TokenFetchContext* ctx) {
       GRPC_CLOSURE_CREATE(OnTokenExchange, ctx, grpc_schedule_on_exec_ctx),
       &ctx->token_exchange_response);
   grpc_resource_quota_unref_internal(resource_quota);
+  grpc_http_request_destroy(&request.http);
   grpc_uri_destroy(uri);
 }
 
