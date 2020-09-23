@@ -107,8 +107,8 @@ std::string GetHeaderPrologue(grpc_generator::File* file,
       printer->Print(vars, "// Original file comments:\n");
       printer->PrintRaw(leading_comments.c_str());
     }
-    printer->Print(vars, "#ifndef GRPC_$filename_identifier$__INCLUDED\n");
-    printer->Print(vars, "#define GRPC_$filename_identifier$__INCLUDED\n");
+    printer->Print(vars, "#ifndef GRPC_$filename_identifier$_INCLUDED\n");
+    printer->Print(vars, "#define GRPC_$filename_identifier$_INCLUDED\n");
     printer->Print(vars, "\n");
     printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
     printer->Print(vars, file->additional_headers().c_str());
@@ -1822,7 +1822,7 @@ std::string GetHeaderEpilogue(grpc_generator::File* file,
     }
 
     printer->Print(vars, "\n");
-    printer->Print(vars, "#endif  // GRPC_$filename_identifier$__INCLUDED\n");
+    printer->Print(vars, "#endif  // GRPC_$filename_identifier$_INCLUDED\n");
 
     printer->Print(file->GetTrailingComments("//").c_str());
   }
