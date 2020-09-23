@@ -24,7 +24,6 @@
 #include <grpc/grpc_security.h>
 
 #include "absl/container/inlined_vector.h"
-
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -43,14 +42,14 @@ struct grpc_tls_error_details
 };
 
 struct grpc_tls_certificate_provider
- : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
+    : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
   grpc_tls_certificate_provider() = default;
 
   virtual ~grpc_tls_certificate_provider() = default;
 
-  virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
-      const = 0;
+  virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
+  distributor() const = 0;
 };
 
 /** TLS server authorization check config. **/
@@ -156,7 +155,7 @@ struct grpc_tls_credentials_options
   server_authorization_check_config() const {
     return server_authorization_check_config_.get();
   }
-  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> certificate_provider() {
+  grpc_tls_certificate_provider* certificate_provider() {
     return grpc_tls_certificate_provider_;
   }
   const absl::optional<std::string>& root_cert_name() {
@@ -187,15 +186,15 @@ struct grpc_tls_credentials_options
     server_authorization_check_config_ = std::move(config);
   }
 
-  void set_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider) {
-    grpc_tls_certificate_provider_ = std::move(provider);
+  void set_certificate_provider(grpc_tls_certificate_provider* provider) {
+    grpc_tls_certificate_provider_ = provider;
   }
 
-   void set_root_cert_name(std::string root_cert_name) {
+  void set_root_cert_name(std::string root_cert_name) {
     root_cert_name_ = std::move(root_cert_name);
   }
 
-   void set_identity_cert_name(std::string identity_cert_name) {
+  void set_identity_cert_name(std::string identity_cert_name) {
     identity_cert_name_ = std::move(identity_cert_name);
   }
 
@@ -207,7 +206,7 @@ struct grpc_tls_credentials_options
   grpc_tls_version max_tls_version_ = grpc_tls_version::TLS1_3;
   grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config>
       server_authorization_check_config_;
-  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> grpc_tls_certificate_provider_;
+  grpc_tls_certificate_provider* grpc_tls_certificate_provider_;
   absl::optional<std::string> root_cert_name_;
   absl::optional<std::string> identity_cert_name_;
 };
