@@ -453,26 +453,21 @@ grpc_channel_args* BuildXdsChannelArgs(const grpc_channel_args& args) {
       GRPC_ARG_KEEPALIVE_TIME_MS,
   };
   // Channel args to add.
-  absl::InlinedVector<grpc_arg, 3> args_to_add;
-  // Keepalive interval.
-  args_to_add.emplace_back(grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 5 * 60 * GPR_MS_PER_SEC));
-  // A channel arg indicating that the target is an xds server.
-  // TODO(roth): Once we figure out our fallback and credentials story, decide
-  // whether this is actually needed.  Note that it's currently used by the
-  // fake security connector as well.
-  args_to_add.emplace_back(grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_ADDRESS_IS_XDS_SERVER), 1));
-  // The parent channel's channelz uuid.
-  channelz::ChannelNode* channelz_node = nullptr;
-  const grpc_arg* arg =
-      grpc_channel_args_find(&args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
-  if (arg != nullptr && arg->type == GRPC_ARG_POINTER &&
-      arg->value.pointer.p != nullptr) {
-    channelz_node = static_cast<channelz::ChannelNode*>(arg->value.pointer.p);
-    args_to_add.emplace_back(
-        channelz::MakeParentUuidArg(channelz_node->uuid()));
-  }
+  absl::InlinedVector<grpc_arg, 3> args_to_add = {
+      // Keepalive interval.
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
+          5 * 60 * GPR_MS_PER_SEC),
+      // Tell channelz this is an internal channel.
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
+      // A channel arg indicating that the target is an xds server.
+      // TODO(roth): Once we figure out our fallback and credentials story,
+      // decide whether this is actually needed.  Note that it's currently
+      // used by the fake security connector as well.
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ADDRESS_IS_XDS_SERVER), 1),
+  };
   // Construct channel args.
   return grpc_channel_args_copy_and_add_and_remove(
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
@@ -1802,6 +1797,17 @@ XdsClient::XdsClient(const grpc_channel_args& channel_args, grpc_error** error)
             grpc_error_string(*error));
     return;
   }
+  // Add channelz linkage.
+  channelz::ChannelNode* xds_channelz_node =
+      grpc_channel_get_channelz_node(channel);
+  channelz::ChannelNode* parent_channelz_node =
+      grpc_channel_args_find_pointer<channelz::ChannelNode>(
+          &channel_args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+  if (xds_channelz_node != nullptr && parent_channelz_node != nullptr) {
+    parent_channelz_node->AddChildChannel(xds_channelz_node->uuid());
+    parent_channelz_node_ = parent_channelz_node->Ref();
+  }
+  // Create ChannelState object.
   chand_ = MakeOrphanable<ChannelState>(
       Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), channel);
 }
@@ -1820,6 +1826,14 @@ void XdsClient::Orphan() {
   {
     MutexLock lock(&mu_);
     shutting_down_ = true;
+    // Remove channelz linkage.
+    if (parent_channelz_node_ != nullptr) {
+      channelz::ChannelNode* xds_channelz_node =
+          grpc_channel_get_channelz_node(chand_->channel());
+      GPR_ASSERT(xds_channelz_node != nullptr);
+      parent_channelz_node_->RemoveChildChannel(xds_channelz_node->uuid());
+    }
+    // Orphan ChannelState object.
     chand_.reset();
     // We do not clear cluster_map_ and endpoint_map_ if the xds client was
     // created by the XdsResolver because the maps contain refs for watchers

@@ -427,6 +427,8 @@ class GrpcLb : public LoadBalancingPolicy {
   StateWatcher* watcher_ = nullptr;
   // Response generator to inject address updates into lb_channel_.
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
+  // Parent channelz node.
+  RefCountedPtr<channelz::ChannelNode> parent_channelz_node_;
 
   // The data associated with the current LB call. It holds a ref to this LB
   // policy. It's initialized every time we query for backends. It's reset to
@@ -1280,25 +1282,18 @@ grpc_channel_args* BuildBalancerChannelArgs(
       GRPC_ARG_CHANNELZ_CHANNEL_NODE,
   };
   // Channel args to add.
-  absl::InlinedVector<grpc_arg, 3> args_to_add;
-  // The fake resolver response generator, which we use to inject
-  // address updates into the LB channel.
-  args_to_add.emplace_back(
+  absl::InlinedVector<grpc_arg, 3> args_to_add = {
+      // The fake resolver response generator, which we use to inject
+      // address updates into the LB channel.
       grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
-          response_generator));
-  // A channel arg indicating the target is a grpclb load balancer.
-  args_to_add.emplace_back(grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER), 1));
-  // The parent channel's channelz uuid.
-  channelz::ChannelNode* channelz_node = nullptr;
-  const grpc_arg* arg =
-      grpc_channel_args_find(args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
-  if (arg != nullptr && arg->type == GRPC_ARG_POINTER &&
-      arg->value.pointer.p != nullptr) {
-    channelz_node = static_cast<channelz::ChannelNode*>(arg->value.pointer.p);
-    args_to_add.emplace_back(
-        channelz::MakeParentUuidArg(channelz_node->uuid()));
-  }
+          response_generator),
+      // A channel arg indicating the target is a grpclb load balancer.
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER), 1),
+      // Tells channelz that this is an internal channel.
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
+  };
   // Construct channel args.
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
@@ -1375,6 +1370,12 @@ void GrpcLb::ShutdownLocked() {
   // OnBalancerChannelConnectivityChangedLocked(), and we need to be
   // alive when that callback is invoked.
   if (lb_channel_ != nullptr) {
+    if (parent_channelz_node_ != nullptr) {
+      channelz::ChannelNode* child_channelz_node =
+          grpc_channel_get_channelz_node(lb_channel_);
+      GPR_ASSERT(child_channelz_node != nullptr);
+      parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
+    }
     grpc_channel_destroy(lb_channel_);
     lb_channel_ = nullptr;
   }
@@ -1461,6 +1462,16 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
     lb_channel_ =
         CreateGrpclbBalancerChannel(uri_str.c_str(), *lb_channel_args);
     GPR_ASSERT(lb_channel_ != nullptr);
+    // Set up channelz linkage.
+    channelz::ChannelNode* child_channelz_node =
+        grpc_channel_get_channelz_node(lb_channel_);
+    channelz::ChannelNode* parent_channelz_node =
+        grpc_channel_args_find_pointer<channelz::ChannelNode>(
+            &args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+    if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
+      parent_channelz_node->AddChildChannel(child_channelz_node->uuid());
+      parent_channelz_node_ = parent_channelz_node->Ref();
+    }
   }
   // Propagate updates to the LB channel (pick_first) through the fake
   // resolver.
