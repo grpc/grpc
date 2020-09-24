@@ -1904,13 +1904,13 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
       }
       messages.push_back(big_msg);
     }
-#ifndef MEMORY_SANITIZER
-    // 4MB message processing with SSL is very slow under msan
-    // (causes timeouts) and doesn't really increase the signal from tests.
-    // Reserve 100 bytes for other fields of the message proto.
-    messages.push_back(
-        std::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
-#endif
+    if (!BuiltUnderMsan()) {
+      // 4MB message processing with SSL is very slow under msan
+      // (causes timeouts) and doesn't really increase the signal from tests.
+      // Reserve 100 bytes for other fields of the message proto.
+      messages.push_back(
+          std::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
+    }
   }
 
   // TODO (sreek) Renable tests with health check service after the issue
