@@ -53,8 +53,8 @@ TEST(RefCounted, ExtraRef) {
 
 class Value : public RefCounted<Value, PolymorphicRefCount, false> {
  public:
-  Value(int value, std::set<Value*>* registry) : value_(value) {
-    registry->insert(this);
+  Value(int value, std::set<std::unique_ptr<Value>>* registry) : value_(value) {
+    registry->emplace(this);
   }
 
   int value() const { return value_; }
@@ -63,41 +63,41 @@ class Value : public RefCounted<Value, PolymorphicRefCount, false> {
   int value_;
 };
 
-void GarbageCollectRegistry(std::set<Value*>* registry) {
+void GarbageCollectRegistry(std::set<std::unique_ptr<Value>>* registry) {
   for (auto it = registry->begin(); it != registry->end();) {
-    Value* v = *it;
+    RefCountedPtr<Value> v = (*it)->RefIfNonZero();
     // Check if the object has any refs remaining.
-    if (v->RefIfNonZero()) {
+    if (v != nullptr) {
       // It has refs remaining, so we do not delete it.
-      v->Unref();  // Remove the ref we just added.
       ++it;
     } else {
-      // No refs remaining, so delete it and remove from registry.
-      delete v;
+      // No refs remaining, so remove it from the registry.
       it = registry->erase(it);
     }
   }
 }
 
 TEST(RefCounted, NoDeleteUponUnref) {
-  std::set<Value*> registry;
+  std::set<std::unique_ptr<Value>> registry;
   // Add two objects to the registry.
   auto v1 = MakeRefCounted<Value>(1, &registry);
   auto v2 = MakeRefCounted<Value>(2, &registry);
-  EXPECT_THAT(registry, ::testing::UnorderedElementsAre(
-                            ::testing::Property(&Value::value, 1),
-                            ::testing::Property(&Value::value, 2)));
+  EXPECT_THAT(registry,
+              ::testing::UnorderedElementsAre(
+                  ::testing::Pointee(::testing::Property(&Value::value, 1)),
+                  ::testing::Pointee(::testing::Property(&Value::value, 2))));
   // Running garbage collection should not delete anything, since both
   // entries still have refs.
   GarbageCollectRegistry(&registry);
-  EXPECT_THAT(registry, ::testing::UnorderedElementsAre(
-                            ::testing::Property(&Value::value, 1),
-                            ::testing::Property(&Value::value, 2)));
+  EXPECT_THAT(registry,
+              ::testing::UnorderedElementsAre(
+                  ::testing::Pointee(::testing::Property(&Value::value, 1)),
+                  ::testing::Pointee(::testing::Property(&Value::value, 2))));
   // Unref v2 and run GC to remove it.
   v2.reset();
   GarbageCollectRegistry(&registry);
-  EXPECT_THAT(registry, ::testing::UnorderedElementsAre(
-                            ::testing::Property(&Value::value, 1)));
+  EXPECT_THAT(registry, ::testing::UnorderedElementsAre(::testing::Pointee(
+                            ::testing::Property(&Value::value, 1))));
   // Now unref v1 and run GC again.
   v1.reset();
   GarbageCollectRegistry(&registry);
