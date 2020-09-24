@@ -550,7 +550,7 @@ enum cronet_net_error_code {
   // signature algorithm.
   CRONET_NET_ERROR_CERT_WEAK_SIGNATURE_ALGORITHM = -208,
 
-  // -209 is availible: was CERT_NOT_IN_DNS.
+  // -209 is available: was CERT_NOT_IN_DNS.
 
   // The host name specified in the certificate is not unique.
   CRONET_NET_ERROR_CERT_NON_UNIQUE_NAME = -210,
@@ -751,7 +751,7 @@ enum cronet_net_error_code {
   // The HTTP headers were truncated by an EOF.
   CRONET_NET_ERROR_RESPONSE_HEADERS_TRUNCATED = -357,
 
-  // The QUIC crytpo handshake failed.  This means that the server was unable
+  // The QUIC crypto handshake failed.  This means that the server was unable
   // to read any requests sent = so they may be resent.
   CRONET_NET_ERROR_QUIC_HANDSHAKE_FAILED = -358,
 
