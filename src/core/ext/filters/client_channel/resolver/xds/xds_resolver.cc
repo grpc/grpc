@@ -73,10 +73,10 @@ class XdsResolver : public Resolver {
  private:
   class Notifier {
    public:
-    Notifier(RefCountedPtr<XdsResolver> parent, XdsApi::LdsUpdate update);
-    Notifier(RefCountedPtr<XdsResolver> parent, XdsApi::RdsUpdate update);
-    Notifier(RefCountedPtr<XdsResolver> parent, grpc_error* error);
-    explicit Notifier(RefCountedPtr<XdsResolver> parent);
+    Notifier(RefCountedPtr<XdsResolver> resolver, XdsApi::LdsUpdate update);
+    Notifier(RefCountedPtr<XdsResolver> resolver, XdsApi::RdsUpdate update);
+    Notifier(RefCountedPtr<XdsResolver> resolver, grpc_error* error);
+    explicit Notifier(RefCountedPtr<XdsResolver> resolver);
 
    private:
     enum Type { kLdsUpdate, kRdsUpdate, kError, kDoesNotExist };
@@ -171,7 +171,7 @@ class XdsResolver : public Resolver {
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
   };
 
-  void OnListenerUpdate(XdsApi::LdsUpdate lds_update);
+  void OnListenerUpdate(XdsApi::LdsUpdate listener);
   void OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update);
   void OnError(grpc_error* error);
   void OnResourceDoesNotExist();
