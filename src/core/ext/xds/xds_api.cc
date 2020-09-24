@@ -1847,22 +1847,18 @@ grpc_error* CdsResponseParse(
     if (envoy_config_cluster_v3_Cluster_has_circuit_breakers(cluster)) {
       const envoy_config_cluster_v3_CircuitBreakers* circuit_breakers =
           envoy_config_cluster_v3_Cluster_circuit_breakers(cluster);
-      if (envoy_config_cluster_v3_CircuitBreakers_has_thresholds(
-              circuit_breakers)) {
-        size_t num_thresholds;
-        const envoy_config_cluster_v3_CircuitBreakers_Thresholds* const*
-            thresholds = envoy_config_cluster_v3_CircuitBreakers_thresholds(
-                circuit_breakers, &num_thresholds);
-        for (size_t i = 0; i < num_thresholds; ++i) {
-          const auto* threshold = thresholds[i];
-          if (envoy_config_cluster_v3_CircuitBreakers_Thresholds_priority(
-                  threshold) == envoy_config_core_v3_DEFAULT &&
-              envoy_config_cluster_v3_CircuitBreakers_Thresholds_has_max_requests(
-                  threshold)) {
-            const google_protobuf_UInt32Value* max_requests =
-                envoy_config_cluster_v3_CircuitBreakers_Thresholds_max_requests(
-                    threshold);
-            GPR_ASSERT(max_requests != nullptr);
+      size_t num_thresholds;
+      const envoy_config_cluster_v3_CircuitBreakers_Thresholds* const*
+          thresholds = envoy_config_cluster_v3_CircuitBreakers_thresholds(
+              circuit_breakers, &num_thresholds);
+      for (size_t i = 0; i < num_thresholds; ++i) {
+        const auto* threshold = thresholds[i];
+        if (envoy_config_cluster_v3_CircuitBreakers_Thresholds_priority(
+                threshold) == envoy_config_core_v3_DEFAULT) {
+          const google_protobuf_UInt32Value* max_requests =
+              envoy_config_cluster_v3_CircuitBreakers_Thresholds_max_requests(
+                  threshold);
+          if (max_requests != nullptr) {
             cds_update.max_concurrent_requests =
                 google_protobuf_UInt32Value_value(max_requests);
             break;

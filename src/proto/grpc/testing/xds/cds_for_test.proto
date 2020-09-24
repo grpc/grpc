@@ -67,7 +67,6 @@ enum RoutingPriority {
 message CircuitBreakers {
   message Thresholds {
     RoutingPriority priority = 1;
-    //uint32 max_requests = 4;
     google.protobuf.UInt32Value max_requests = 4;
   }
   repeated Thresholds thresholds = 1;

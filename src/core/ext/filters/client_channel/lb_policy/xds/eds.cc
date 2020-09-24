@@ -254,6 +254,17 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
     result.type = PickResult::PICK_COMPLETE;
     return result;
   }
+  // Check and see if we exceeded the max concurrent requests count.
+  uint32_t current = eds_policy_->concurrent_requests_.FetchAdd(1);
+  if (current >= eds_policy_->max_concurrent_requests_) {
+    eds_policy_->concurrent_requests_.FetchSub(1);
+    if (drop_stats_ != nullptr) {
+      drop_stats_->AddCallDropped("max_concurrent_requests_exceeded");
+    }
+    PickResult result;
+    result.type = PickResult::PICK_COMPLETE;
+    return result;
+  }
   // If we're not dropping all calls, we should always have a child picker.
   if (child_picker_ == nullptr) {  // Should never happen.
     PickResult result;
@@ -262,16 +273,6 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                "eds drop picker not given any child picker"),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
-    return result;
-  }
-  // Check and see if we exceeded the max concurrent requests count.
-  uint32_t current = eds_policy_->concurrent_requests_.FetchAdd(1);
-  if (current >= eds_policy_->max_concurrent_requests_) {
-    eds_policy_->concurrent_requests_.FetchSub(1);
-    if (drop_stats_ != nullptr)
-      drop_stats_->AddCallDropped("max_concurrent_requests_exceeded");
-    PickResult result;
-    result.type = PickResult::PICK_COMPLETE;
     return result;
   }
   // Not dropping, so delegate to child's picker.
@@ -936,7 +937,7 @@ class EdsLbFactory : public LoadBalancingPolicyFactory {
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::NUMBER) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:max_concurrent_request error:must be of type number"));
+            "field:max_concurrent_requests error:must be of type number"));
       } else {
         max_concurrent_requests =
             gpr_parse_nonnegative_int(it->second.string_value().c_str());
