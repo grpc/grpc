@@ -25,6 +25,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -67,28 +68,20 @@ static void end_test(grpc_end2end_test_fixture* f) {
 static void test_bad_ping(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
-  grpc_arg client_a[3];
-  client_a[0].type = GRPC_ARG_INTEGER;
-  client_a[0].key =
-      const_cast<char*>(GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS);
-  client_a[0].value.integer = 10;
-  client_a[1].type = GRPC_ARG_INTEGER;
-  client_a[1].key = const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA);
-  client_a[1].value.integer = 0;
-  client_a[2].type = GRPC_ARG_INTEGER;
-  client_a[2].key = const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
-  client_a[2].value.integer = 0;
-  grpc_arg server_a[3];
-  server_a[0].type = GRPC_ARG_INTEGER;
-  server_a[0].key =
-      const_cast<char*>(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS);
-  server_a[0].value.integer = 300000 /* 5 minutes */;
-  server_a[1].type = GRPC_ARG_INTEGER;
-  server_a[1].key = const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES);
-  server_a[1].value.integer = MAX_PING_STRIKES;
-  server_a[2].type = GRPC_ARG_INTEGER;
-  server_a[2].key = const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
-  server_a[2].value.integer = 0;
+  grpc_arg client_a[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
+  grpc_arg server_a[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(
+              GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
+          300000 /* 5 minutes */),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), MAX_PING_STRIKES),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
 
@@ -224,30 +217,23 @@ static void test_bad_ping(grpc_end2end_test_config config) {
 static void test_pings_without_data(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
-  grpc_arg client_a[3];
-  client_a[0].type = GRPC_ARG_INTEGER;
-  client_a[0].key =
-      const_cast<char*>(GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS);
-  client_a[0].value.integer = 10;
   // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
   // so that the transport will throttle the excess pings.
-  client_a[1].type = GRPC_ARG_INTEGER;
-  client_a[1].key = const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA);
-  client_a[1].value.integer = MAX_PING_STRIKES;
-  client_a[2].type = GRPC_ARG_INTEGER;
-  client_a[2].key = const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
-  client_a[2].value.integer = 0;
-  grpc_arg server_a[3];
-  server_a[0].type = GRPC_ARG_INTEGER;
-  server_a[0].key =
-      const_cast<char*>(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS);
-  server_a[0].value.integer = 300000 /* 5 minutes */;
-  server_a[1].type = GRPC_ARG_INTEGER;
-  server_a[1].key = const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES);
-  server_a[1].value.integer = MAX_PING_STRIKES;
-  server_a[2].type = GRPC_ARG_INTEGER;
-  server_a[2].key = const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
-  server_a[2].value.integer = 0;
+  grpc_arg client_a[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA),
+          MAX_PING_STRIKES),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
+  grpc_arg server_a[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(
+              GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
+          300000 /* 5 minutes */),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), MAX_PING_STRIKES),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
 
