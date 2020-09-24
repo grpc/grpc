@@ -172,6 +172,7 @@ class XdsClient::ChannelState::AdsCallState
         MutexLock lock(&self->ads_calld_->xds_client()->mu_);
         self->OnTimerLocked(GRPC_ERROR_REF(error));
       }
+      self->ads_calld_.reset();
       self->Unref(DEBUG_LOCATION, "timer");
     }
 
@@ -213,7 +214,6 @@ class XdsClient::ChannelState::AdsCallState
         }
         GRPC_ERROR_UNREF(watcher_error);
       }
-      ads_calld_.reset();
       GRPC_ERROR_UNREF(error);
     }
 
