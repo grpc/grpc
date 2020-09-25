@@ -5628,6 +5628,20 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: dual_ref_counted_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/dual_ref_counted.h
+  src:
+  - test/core/gprpp/dual_ref_counted_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test
@@ -6750,7 +6764,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/gprpp/dual_ref_counted.h
   src:
   - test/core/gprpp/ref_counted_ptr_test.cc
   deps:

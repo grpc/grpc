@@ -643,6 +643,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "dual_ref_counted",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/dual_ref_counted.h"],
+    deps = [
+        "atomic",
+        "debug_location",
+        "gpr_base",
+        "grpc_trace",
+        "orphanable",
+        "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "ref_counted_ptr",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted_ptr.h"],
