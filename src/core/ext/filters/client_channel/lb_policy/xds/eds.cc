@@ -433,6 +433,12 @@ void EdsLb::ShutdownLocked() {
     xds_client_from_channel_.reset(DEBUG_LOCATION, "EdsLb");
   }
   if (xds_client_ != nullptr) {
+    channelz::ChannelNode* parent_channelz_node =
+        grpc_channel_args_find_pointer<channelz::ChannelNode>(
+            args_, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+    if (parent_channelz_node != nullptr) {
+      xds_client_->RemoveChannelzLinkage(parent_channelz_node);
+    }
     grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
                                      interested_parties());
     xds_client_.reset();
@@ -465,10 +471,16 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
     // Initialize XdsClient.
     if (xds_client_from_channel_ == nullptr) {
       grpc_error* error = GRPC_ERROR_NONE;
-      xds_client_ = MakeOrphanable<XdsClient>(*args_, &error);
+      xds_client_ = MakeOrphanable<XdsClient>(&error);
       // TODO(roth): If we decide that we care about EDS-only mode, add
       // proper error handling here.
       GPR_ASSERT(error == GRPC_ERROR_NONE);
+      channelz::ChannelNode* parent_channelz_node =
+          grpc_channel_args_find_pointer<channelz::ChannelNode>(
+              args_, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+      if (parent_channelz_node != nullptr) {
+        xds_client_->AddChannelzLinkage(parent_channelz_node);
+      }
       grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
                                        interested_parties());
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {

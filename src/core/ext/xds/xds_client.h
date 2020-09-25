@@ -92,10 +92,22 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
-  XdsClient(const grpc_channel_args& channel_args, grpc_error** error);
+  explicit XdsClient(grpc_error** error);
   ~XdsClient();
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
+
+  // TODO(roth): When we add federation, there will be multiple channels
+  // inside the XdsClient, and the set of channels may change over time,
+  // but not every channel may use every one of the child channels, so
+  // this API will need to change.  At minumum, we will need to hold a
+  // ref to the parent channelz node so that we can update its list of
+  // children as the set of xDS channels changes.  However, we may also
+  // want to make this a bit more selective such that only those
+  // channels on which a given parent channel is actually requesting
+  // resources will actually be marked as its children.
+  void AddChannelzLinkage(channelz::ChannelNode* parent_channelz_node);
+  void RemoveChannelzLinkage(channelz::ChannelNode* parent_channelz_node);
 
   void Orphan() override;
 
@@ -299,12 +311,11 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   static const grpc_arg_pointer_vtable kXdsClientVtable;
 
   const grpc_millis request_timeout_;
-
-  Mutex mu_;
   grpc_pollset_set* interested_parties_;
-
   std::unique_ptr<XdsBootstrap> bootstrap_;
   XdsApi api_;
+
+  Mutex mu_;
 
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
@@ -328,6 +339,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   bool shutting_down_ = false;
 };
+
+namespace internal {
+
+void SetXdsChannelArgsForTest(grpc_channel_args* args);
+
+}  // namespace internal
 
 }  // namespace grpc_core
 
