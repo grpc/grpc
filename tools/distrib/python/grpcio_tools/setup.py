@@ -144,10 +144,10 @@ elif "linux" in sys.platform or "darwin" in sys.platform:
 if 'darwin' in sys.platform and PY3:
     mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
     if mac_target and (pkg_resources.parse_version(mac_target) <
-                       pkg_resources.parse_version('10.9.0')):
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.9'
+                       pkg_resources.parse_version('10.10.0')):
+        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
         os.environ['_PYTHON_HOST_PLATFORM'] = re.sub(
-            r'macosx-[0-9]+\.[0-9]+-(.+)', r'macosx-10.9-\1',
+            r'macosx-[0-9]+\.[0-9]+-(.+)', r'macosx-10.10-\1',
             util.get_platform())
 
 
