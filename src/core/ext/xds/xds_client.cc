@@ -1341,7 +1341,10 @@ namespace {
 bool LoadReportCountersAreZero(const XdsApi::ClusterLoadReportMap& snapshot) {
   for (const auto& p : snapshot) {
     const XdsApi::ClusterLoadReport& cluster_snapshot = p.second;
-    for (const auto& q : cluster_snapshot.dropped_requests) {
+    if (cluster_snapshot.dropped_requests.uncategorized_drops > 0) {
+      return false;
+    }
+    for (const auto& q : cluster_snapshot.dropped_requests.dropped_requests) {
       if (q.second > 0) return false;
     }
     for (const auto& q : cluster_snapshot.locality_stats) {
@@ -2041,8 +2044,12 @@ void XdsClient::RemoveClusterDropStats(
   if (it != load_report_state.drop_stats.end()) {
     // Record final drop stats in deleted_drop_stats, which will be
     // added to the next load report.
-    for (const auto& p : cluster_drop_stats->GetSnapshotAndReset()) {
-      load_report_state.deleted_drop_stats[p.first] += p.second;
+    auto dropped_requests = cluster_drop_stats->GetSnapshotAndReset();
+    load_report_state.deleted_drop_stats.uncategorized_drops +=
+        dropped_requests.uncategorized_drops;
+    for (const auto& p : dropped_requests.dropped_requests) {
+      load_report_state.deleted_drop_stats.dropped_requests[p.first] +=
+          p.second;
     }
     load_report_state.drop_stats.erase(it);
   }
@@ -2154,8 +2161,11 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     // Aggregate drop stats.
     snapshot.dropped_requests = std::move(load_report.deleted_drop_stats);
     for (auto& drop_stats : load_report.drop_stats) {
-      for (const auto& p : drop_stats->GetSnapshotAndReset()) {
-        snapshot.dropped_requests[p.first] += p.second;
+      auto dropped_requests = drop_stats->GetSnapshotAndReset();
+      snapshot.dropped_requests.uncategorized_drops +=
+          dropped_requests.uncategorized_drops;
+      for (const auto& p : dropped_requests.dropped_requests) {
+        snapshot.dropped_requests.dropped_requests[p.first] += p.second;
       }
     }
     // Aggregate locality stats.

@@ -48,15 +48,19 @@ XdsClusterDropStats::~XdsClusterDropStats() {
   xds_client_.reset(DEBUG_LOCATION, "DropStats");
 }
 
-XdsClusterDropStats::DroppedRequestsMap
+XdsClusterDropStats::DroppedRequests
 XdsClusterDropStats::GetSnapshotAndReset() {
   MutexLock lock(&mu_);
   return std::move(dropped_requests_);
 }
 
+void XdsClusterDropStats::AddUncategorizedDrops() {
+  ++dropped_requests_.uncategorized_drops;
+}
+
 void XdsClusterDropStats::AddCallDropped(const std::string& category) {
   MutexLock lock(&mu_);
-  ++dropped_requests_[category];
+  ++dropped_requests_.dropped_requests[category];
 }
 
 //
