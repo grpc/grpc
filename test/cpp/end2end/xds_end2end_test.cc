@@ -673,6 +673,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     }
   }
 
+  std::set<std::string> clients() {
+    grpc_core::MutexLock lock(&clients_mu_);
+    return clients_;
+  }
+
  private:
   // A queue of resource type/name pairs that have changed since the client
   // subscribed to them.
@@ -719,6 +724,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     Status StreamAggregatedResources(ServerContext* context,
                                      Stream* stream) override {
       gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
+      parent_->AddClient(context->peer());
       if (is_v2_) {
         parent_->seen_v2_client_ = true;
       } else {
@@ -936,6 +942,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         }
       }
       gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources done", this);
+      parent_->RemoveClient(context->peer());
       return Status::OK;
     }
 
@@ -1088,6 +1095,16 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     }
   }
 
+  void AddClient(const std::string& client) {
+    grpc_core::MutexLock lock(&clients_mu_);
+    clients_.insert(client);
+  }
+
+  void RemoveClient(const std::string& client) {
+    grpc_core::MutexLock lock(&clients_mu_);
+    clients_.erase(client);
+  }
+
   RpcService<::envoy::service::discovery::v2::AggregatedDiscoveryService,
              ::envoy::api::v2::DiscoveryRequest,
              ::envoy::api::v2::DiscoveryResponse>
@@ -1116,6 +1133,9 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   //   yet been destroyed by UnsetResource()).
   // - There is at least one subscription for the resource.
   ResourceMap resource_map_;
+
+  grpc_core::Mutex clients_mu_;
+  std::set<std::string> clients_;
 };
 
 class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
@@ -1196,7 +1216,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     Status StreamLoadStats(ServerContext* /*context*/,
                            Stream* stream) override {
       gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
-      GPR_ASSERT(parent_->client_load_reporting_interval_seconds_ > 0);
+      EXPECT_GT(parent_->client_load_reporting_interval_seconds_, 0);
       // Take a reference of the LrsServiceImpl object, reference will go
       // out of scope after this method exits.
       std::shared_ptr<LrsServiceImpl> lrs_service_impl =
@@ -1377,6 +1397,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   void TearDown() override {
     ShutdownAllBackends();
     for (auto& balancer : balancers_) balancer->Shutdown();
+    // Make sure each test creates a new XdsClient instance rather than
+    // reusing the one from the previous test.  This avoids spurious failures
+    // caused when a load reporting test runs after a non-load reporting test
+    // and the XdsClient is still talking to the old LRS server, which fails
+    // because it's not expecting the client to connect.  It also
+    // ensures that each test can independently set the global channel
+    // args for the xDS channel.
+    grpc_core::internal::UnsetGlobalXdsClientForTest();
   }
 
   void StartAllBackends() {
@@ -1392,6 +1420,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int failover_timeout = 0) {
+    channel_ = CreateChannel(failover_timeout);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+    stub1_ = grpc::testing::EchoTest1Service::NewStub(channel_);
+    stub2_ = grpc::testing::EchoTest2Service::NewStub(channel_);
+  }
+
+  std::shared_ptr<Channel> CreateChannel(
+      int failover_timeout = 0, const char* server_name = kServerName) {
     ChannelArguments args;
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
@@ -1403,7 +1439,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                       response_generator_.get());
     }
     std::string uri = absl::StrCat(
-        GetParam().use_xds_resolver() ? "xds" : "fake", ":///", kServerName);
+        GetParam().use_xds_resolver() ? "xds" : "fake", ":///", server_name);
     // TODO(dgq): templatize tests to run everything using both secure and
     // insecure channel credentials.
     grpc_channel_credentials* channel_creds =
@@ -1415,10 +1451,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             channel_creds, call_creds, nullptr)));
     call_creds->Unref();
     channel_creds->Unref();
-    channel_ = ::grpc::CreateCustomChannel(uri, creds, args);
-    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
-    stub1_ = grpc::testing::EchoTest1Service::NewStub(channel_);
-    stub2_ = grpc::testing::EchoTest2Service::NewStub(channel_);
+    return ::grpc::CreateCustomChannel(uri, creds, args);
   }
 
   enum RpcService {
@@ -2224,6 +2257,28 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
       AdsServiceImpl::BuildEdsResource(args));
   // We need to wait for all backends to come online.
   WaitForAllBackends();
+}
+
+TEST_P(XdsResolverOnlyTest, MultipleChannelsShareXdsClient) {
+  const char* kNewServerName = "new-server.example.com";
+  Listener listener = balancers_[0]->ads_service()->default_listener();
+  listener.set_name(kNewServerName);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  WaitForAllBackends();
+  // Create second channel and tell it to connect to kNewServerName.
+  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  channel2->GetState(/*try_to_connect=*/true);
+  ASSERT_TRUE(
+      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  // Make sure there's only one client connected.
+  EXPECT_EQ(1UL, balancers_[0]->ads_service()->clients().size());
 }
 
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {

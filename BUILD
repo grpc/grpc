@@ -980,6 +980,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
+        "dual_ref_counted",
         "eventmanager_libuv",
         "gpr_base",
         "grpc_codegen",

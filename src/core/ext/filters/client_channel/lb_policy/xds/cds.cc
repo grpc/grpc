@@ -234,8 +234,8 @@ void CdsLb::Helper::AddTraceEvent(TraceSeverity severity,
 CdsLb::CdsLb(RefCountedPtr<XdsClient> xds_client, Args args)
     : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] created -- using xds client %p from channel",
-            this, xds_client_.get());
+    gpr_log(GPR_INFO, "[cdslb %p] created -- using xds client %p", this,
+            xds_client_.get());
   }
 }
 
@@ -430,12 +430,13 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    RefCountedPtr<XdsClient> xds_client =
-        XdsClient::GetFromChannelArgs(*args.args);
-    if (xds_client == nullptr) {
+    grpc_error* error = GRPC_ERROR_NONE;
+    RefCountedPtr<XdsClient> xds_client = XdsClient::GetOrCreate(&error);
+    if (error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR,
-              "XdsClient not present in channel args -- cannot instantiate "
-              "cds LB policy");
+              "cannot get XdsClient to instantiate cds LB policy: %s",
+              grpc_error_string(error));
+      GRPC_ERROR_UNREF(error);
       return nullptr;
     }
     return MakeOrphanable<CdsLb>(std::move(xds_client), std::move(args));

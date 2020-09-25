@@ -558,6 +558,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/arena.h )
   s.files += %w( src/core/lib/gprpp/atomic.h )
   s.files += %w( src/core/lib/gprpp/debug_location.h )
+  s.files += %w( src/core/lib/gprpp/dual_ref_counted.h )
   s.files += %w( src/core/lib/gprpp/fork.cc )
   s.files += %w( src/core/lib/gprpp/fork.h )
   s.files += %w( src/core/lib/gprpp/global_config.h )

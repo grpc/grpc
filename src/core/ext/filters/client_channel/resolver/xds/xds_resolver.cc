@@ -183,7 +183,7 @@ class XdsResolver : public Resolver {
   std::string server_name_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
-  OrphanablePtr<XdsClient> xds_client_;
+  RefCountedPtr<XdsClient> xds_client_;
   XdsClient::ListenerWatcherInterface* listener_watcher_ = nullptr;
   std::string route_config_name_;
   XdsClient::RouteConfigWatcherInterface* route_config_watcher_ = nullptr;
@@ -513,7 +513,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 
 void XdsResolver::StartLocked() {
   grpc_error* error = GRPC_ERROR_NONE;
-  xds_client_ = MakeOrphanable<XdsClient>(&error);
+  xds_client_ = XdsClient::GetOrCreate(&error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
@@ -607,9 +607,8 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
 void XdsResolver::OnError(grpc_error* error) {
   gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s",
           this, grpc_error_string(error));
-  grpc_arg xds_client_arg = xds_client_->MakeChannelArg();
   Result result;
-  result.args = grpc_channel_args_copy_and_add(args_, &xds_client_arg, 1);
+  result.args = grpc_channel_args_copy(args_);
   result.service_config_error = error;
   result_handler()->ReturnResult(std::move(result));
 }
@@ -674,12 +673,8 @@ void XdsResolver::GenerateResult() {
     gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
             result.service_config->json_string().c_str());
   }
-  grpc_arg new_args[] = {
-      xds_client_->MakeChannelArg(),
-      config_selector->MakeChannelArg(),
-  };
-  result.args =
-      grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
+  grpc_arg new_arg = config_selector->MakeChannelArg();
+  result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
   result_handler()->ReturnResult(std::move(result));
 }
 
