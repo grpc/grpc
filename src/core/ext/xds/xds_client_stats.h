@@ -127,11 +127,11 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
   absl::string_view lrs_server_name_;
   absl::string_view cluster_name_;
   absl::string_view eds_service_name_;
-  // Protects dropped_requests map. A mutex is necessary because the length of
+  Atomic<uint64_t> uncategorized_drops_{0};
+  // Protects categorized_drops_. A mutex is necessary because the length of
   // dropped_requests can be accessed by both the picker (from data plane
   // mutex) and the load reporting thread (from the control plane combiner).
-  Atomic<uint64_t> uncategorized_drops_{0};
-  Mutex mu_;  // Protects categorized_drops_.
+  Mutex mu_;
   DroppedRequestsCategoryMap categorized_drops_;
 };
 

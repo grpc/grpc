@@ -2044,10 +2044,10 @@ void XdsClient::RemoveClusterDropStats(
   if (it != load_report_state.drop_stats.end()) {
     // Record final drop stats in deleted_drop_stats, which will be
     // added to the next load report.
-    auto snapshot = cluster_drop_stats->GetSnapshotAndReset();
+    auto dropped_requests = cluster_drop_stats->GetSnapshotAndReset();
     load_report_state.deleted_drop_stats.uncategorized_drops +=
-        snapshot.uncategorized_drops;
-    for (const auto& p : snapshot.categorized_drops) {
+        dropped_requests.uncategorized_drops;
+    for (const auto& p : dropped_requests.categorized_drops) {
       load_report_state.deleted_drop_stats.categorized_drops[p.first] +=
           p.second;
     }
