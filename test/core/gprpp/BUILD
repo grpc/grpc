@@ -122,6 +122,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "dual_ref_counted_test",
+    srcs = ["dual_ref_counted_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:dual_ref_counted",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "ref_counted_ptr_test",
     srcs = ["ref_counted_ptr_test.cc"],
     external_deps = [
@@ -129,6 +142,7 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
+        "//:dual_ref_counted",
         "//:ref_counted",
         "//:ref_counted_ptr",
         "//test/core/util:grpc_test_util",
