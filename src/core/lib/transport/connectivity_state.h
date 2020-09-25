@@ -73,8 +73,8 @@ class AsyncConnectivityStateWatcherInterface
  protected:
   class Notifier;
 
-  // If \a combiner is nullptr, then the notification will be scheduled on the
-  // ExecCtx.
+  // If \a work_serializer is nullptr, then the notification will be scheduled
+  // on the ExecCtx.
   explicit AsyncConnectivityStateWatcherInterface(
       std::shared_ptr<WorkSerializer> work_serializer = nullptr)
       : work_serializer_(std::move(work_serializer)) {}

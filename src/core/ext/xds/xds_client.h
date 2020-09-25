@@ -28,12 +28,13 @@
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
@@ -91,8 +92,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
-  XdsClient(std::shared_ptr<WorkSerializer> work_serializer,
-            const grpc_channel_args& channel_args, grpc_error** error);
+  XdsClient(const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
@@ -286,9 +286,9 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   };
 
   // Sends an error notification to all watchers.
-  void NotifyOnError(grpc_error* error);
+  void NotifyOnErrorLocked(grpc_error* error);
 
-  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshot(
+  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
       bool send_all_clusters, const std::set<std::string>& clusters);
 
   // Channel arg vtable functions.
@@ -300,7 +300,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   const grpc_millis request_timeout_;
 
-  std::shared_ptr<WorkSerializer> work_serializer_;
+  Mutex mu_;
   grpc_pollset_set* interested_parties_;
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
@@ -308,6 +308,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
+  RefCountedPtr<channelz::ChannelNode> parent_channelz_node_;
 
   // One entry for each watched LDS resource.
   std::map<std::string /*listener_name*/, ListenerState> listener_map_;

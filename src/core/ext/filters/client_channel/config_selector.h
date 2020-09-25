@@ -65,6 +65,19 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 
   virtual ~ConfigSelector() = default;
 
+  virtual const char* name() const = 0;
+
+  // Will be called only if the two objects have the same name, so
+  // subclasses can be free to safely down-cast the argument.
+  virtual bool Equals(const ConfigSelector* other) const = 0;
+
+  static bool Equals(const ConfigSelector* cs1, const ConfigSelector* cs2) {
+    if (cs1 == nullptr) return cs2 == nullptr;
+    if (cs2 == nullptr) return false;
+    if (strcmp(cs1->name(), cs2->name()) != 0) return false;
+    return cs1->Equals(cs2);
+  }
+
   virtual CallConfig GetCallConfig(GetCallConfigArgs args) = 0;
 
   grpc_arg MakeChannelArg() const;
@@ -82,6 +95,12 @@ class DefaultConfigSelector : public ConfigSelector {
     // config, a default empty config will be used.
     GPR_DEBUG_ASSERT(service_config_ != nullptr);
   }
+
+  const char* name() const override { return "default"; }
+
+  // Only comparing the ConfigSelector itself, not the underlying
+  // service config, so we always return true.
+  bool Equals(const ConfigSelector* other) const override { return true; }
 
   CallConfig GetCallConfig(GetCallConfigArgs args) override {
     CallConfig call_config;
