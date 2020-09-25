@@ -293,7 +293,7 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
   if (current >= eds_policy_->max_concurrent_requests_) {
     eds_policy_->concurrent_requests_.FetchSub(1);
     if (drop_stats_ != nullptr) {
-      drop_stats_->AddCallDropped("max_concurrent_requests_exceeded");
+      // drop_stats_->AddUncategorizedDrops();
     }
     PickResult result;
     result.type = PickResult::PICK_COMPLETE;
@@ -307,6 +307,7 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                "eds drop picker not given any child picker"),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
+    eds_policy_->concurrent_requests_.FetchSub(1);
     return result;
   }
   // Not dropping, so delegate to child's picker.

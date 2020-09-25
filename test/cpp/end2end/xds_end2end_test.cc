@@ -1763,33 +1763,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
  protected:
-  class TestRpc {
-   public:
-    TestRpc() {}
-
-    void SendRpc(std::unique_ptr<grpc::testing::EchoTestService::Stub>* stub) {
-      sender_thread_ = std::thread([this, stub]() {
-        EchoResponse* response = new EchoResponse;
-        EchoRequest request;
-        request.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
-        request.set_message(kRequestMessage);
-        context_.set_wait_for_ready(true);
-        status_ = (*stub)->Echo(&context_, request, response);
-        delete response;
-      });
-    }
-
-    void CancelRpc() {
-      context_.TryCancel();
-      sender_thread_.join();
-    }
-
-   private:
-    std::thread sender_thread_;
-    ClientContext context_;
-    Status status_;
-  };
-
   class ServerThread {
    public:
     ServerThread() : port_(g_port_saver->GetPort()) {}
@@ -2139,7 +2112,33 @@ TEST_P(BasicTest, IgnoresDuplicateUpdates) {
   }
 }
 
-using XdsResolverOnlyTest = BasicTest;
+class XdsResolverOnlyTest : public BasicTest {
+ protected:
+  class TestRpc {
+   public:
+    TestRpc() {}
+
+    void SendRpc(grpc::testing::EchoTestService::Stub* stub) {
+      sender_thread_ = std::thread([this, stub]() {
+        EchoResponse response;
+        EchoRequest request;
+        request.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
+        request.set_message(kRequestMessage);
+        status_ = stub->Echo(&context_, request, &response);
+      });
+    }
+
+    void CancelRpc() {
+      context_.TryCancel();
+      sender_thread_.join();
+    }
+
+   private:
+    std::thread sender_thread_;
+    ClientContext context_;
+    Status status_;
+  };
+};
 
 // Tests switching over from one cluster to another.
 TEST_P(XdsResolverOnlyTest, ChangeClusters) {
@@ -2293,9 +2292,9 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   // Send exactly max_concurrent_requests long RPCs.
   TestRpc rpcs[kMaxConcurrentRequests];
   for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
-    rpcs[i].SendRpc(&stub_);
+    rpcs[i].SendRpc(stub_.get());
   }
-  // Wait for all RPCs are in flight.
+  // Wait for all RPCs to be in flight.
   gpr_log(GPR_INFO, "DONNA new num is %d",
           backends_[0]->backend_service()->RpcsWaitingForClientCancel());
   while (backends_[0]->backend_service()->RpcsWaitingForClientCancel() <
@@ -2303,14 +2302,14 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                  gpr_time_from_micros(1 * 1000, GPR_TIMESPAN)));
   }
-  // Send a non-wait_for_ready RPC which should fail, the error message tell us
-  // we hit the max concurrent requests limit.
-  Status status = SendRpc(RpcOptions().set_timeout_ms(0));
+  // Sending a RPC now should fail, the error message should tell us
+  // we hit the max concurrent requests limit and got dropped.
+  Status status = SendRpc();
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
   // Cancel one RPC to allow another one through
   rpcs[0].CancelRpc();
-  status = SendRpc(RpcOptions().set_timeout_ms(0));
+  status = SendRpc();
   EXPECT_TRUE(status.ok());
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].CancelRpc();
