@@ -101,11 +101,13 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
  public:
   // The total number of requests dropped for any reason is the sum of
   // uncategorized_drops, and dropped_requests map.
-  struct DroppedRequests {
+  using DroppedRequestsCategoryMap =
+      std::map<std::string /* category */, uint64_t>;
+  struct Snapshot {
     uint64_t uncategorized_drops = 0;
     // The number of requests dropped for the specific drop categories
     // outlined in the drop_overloads field in the EDS response.
-    std::map<std::string /* category */, uint64_t> dropped_requests;
+    DroppedRequestsCategoryMap categorized_drops;
   };
 
   XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
@@ -115,7 +117,7 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
   ~XdsClusterDropStats();
 
   // Returns a snapshot of this instance and resets all the counters.
-  DroppedRequests GetSnapshotAndReset();
+  Snapshot GetSnapshotAndReset();
 
   void AddUncategorizedDrops();
   void AddCallDropped(const std::string& category);
@@ -128,8 +130,9 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
   // Protects dropped_requests map. A mutex is necessary because the length of
   // dropped_requests can be accessed by both the picker (from data plane
   // mutex) and the load reporting thread (from the control plane combiner).
-  Mutex mu_;
-  DroppedRequests dropped_requests_;
+  Atomic<uint64_t> uncategorized_drops_{0};
+  Mutex mu_;  // Protects categorized_drops_.
+  DroppedRequestsCategoryMap categorized_drops_;
 };
 
 // Locality stats for an xds cluster.

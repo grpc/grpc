@@ -1344,7 +1344,7 @@ bool LoadReportCountersAreZero(const XdsApi::ClusterLoadReportMap& snapshot) {
     if (cluster_snapshot.dropped_requests.uncategorized_drops > 0) {
       return false;
     }
-    for (const auto& q : cluster_snapshot.dropped_requests.dropped_requests) {
+    for (const auto& q : cluster_snapshot.dropped_requests.categorized_drops) {
       if (q.second > 0) return false;
     }
     for (const auto& q : cluster_snapshot.locality_stats) {
@@ -2044,11 +2044,11 @@ void XdsClient::RemoveClusterDropStats(
   if (it != load_report_state.drop_stats.end()) {
     // Record final drop stats in deleted_drop_stats, which will be
     // added to the next load report.
-    auto dropped_requests = cluster_drop_stats->GetSnapshotAndReset();
+    auto snapshot = cluster_drop_stats->GetSnapshotAndReset();
     load_report_state.deleted_drop_stats.uncategorized_drops +=
-        dropped_requests.uncategorized_drops;
-    for (const auto& p : dropped_requests.dropped_requests) {
-      load_report_state.deleted_drop_stats.dropped_requests[p.first] +=
+        snapshot.uncategorized_drops;
+    for (const auto& p : snapshot.categorized_drops) {
+      load_report_state.deleted_drop_stats.categorized_drops[p.first] +=
           p.second;
     }
     load_report_state.drop_stats.erase(it);
@@ -2164,8 +2164,8 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
       auto dropped_requests = drop_stats->GetSnapshotAndReset();
       snapshot.dropped_requests.uncategorized_drops +=
           dropped_requests.uncategorized_drops;
-      for (const auto& p : dropped_requests.dropped_requests) {
-        snapshot.dropped_requests.dropped_requests[p.first] += p.second;
+      for (const auto& p : dropped_requests.categorized_drops) {
+        snapshot.dropped_requests.categorized_drops[p.first] += p.second;
       }
     }
     // Aggregate locality stats.

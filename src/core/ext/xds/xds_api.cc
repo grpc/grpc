@@ -2339,7 +2339,7 @@ grpc_slice XdsApi::CreateLrsRequest(
     }
     // Add dropped requests.
     uint64_t total_dropped_requests = 0;
-    for (const auto& p : load_report.dropped_requests.dropped_requests) {
+    for (const auto& p : load_report.dropped_requests.categorized_drops) {
       const std::string& category = p.first;
       const uint64_t count = p.second;
       envoy_config_endpoint_v3_ClusterStats_DroppedRequests* dropped_requests =
