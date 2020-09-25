@@ -1667,6 +1667,8 @@ src/core/lib/gprpp/arena.h \
 src/core/lib/gprpp/atomic.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/dual_ref_counted.h \
+src/core/lib/gprpp/examine_stack.cc \
+src/core/lib/gprpp/examine_stack.h \
 src/core/lib/gprpp/fork.cc \
 src/core/lib/gprpp/fork.h \
 src/core/lib/gprpp/global_config.h \

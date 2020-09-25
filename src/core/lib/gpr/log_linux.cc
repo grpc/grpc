@@ -38,8 +38,11 @@
 #include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
+
 #include <string>
+
 #include "absl/strings/str_format.h"
+#include "src/core/lib/gprpp/examine_stack.h"
 
 static long sys_gettid(void) { return syscall(__NR_gettid); }
 
@@ -89,7 +92,17 @@ void gpr_default_log(gpr_log_func_args* args) {
   std::string prefix = absl::StrFormat(
       "%s%s.%09" PRId32 " %7ld %s:%d]", gpr_log_severity_string(args->severity),
       time_buffer, now.tv_nsec, tid, display_file, args->line);
-  fprintf(stderr, "%-60s %s\n", prefix.c_str(), args->message);
+
+  absl::optional<std::string> stack_trace =
+      args->severity >= GPR_LOG_SEVERITY_ERROR
+          ? grpc_core::GetCurrentStackTrace()
+          : absl::nullopt;
+  if (stack_trace) {
+    fprintf(stderr, "%-60s %s\n%s\n", prefix.c_str(), args->message,
+            stack_trace->c_str());
+  } else {
+    fprintf(stderr, "%-60s %s\n", prefix.c_str(), args->message);
+  }
 }
 
 #endif /* GPR_LINUX_LOG */

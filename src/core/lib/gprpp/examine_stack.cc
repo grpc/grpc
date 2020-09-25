@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2020 the gRPC authors.
+ * Copyright 2020 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,28 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_UTIL_EXAMINE_STACK_H
-#define GRPC_TEST_CORE_UTIL_EXAMINE_STACK_H
-
 #include <grpc/support/port_platform.h>
 
-#include <string>
+#include "src/core/lib/gprpp/examine_stack.h"
 
 namespace grpc_core {
 
-// Return the current stack trace as a string (on multiple lines, beginning with
-// "Stack trace:\n")
-std::string CurrentStackTrace();
+gpr_current_stack_trace_func g_current_stack_trace_provider = nullptr;
+
+gpr_current_stack_trace_func GetCurrentStackTraceProvider() {
+  return g_current_stack_trace_provider;
+}
+
+void SetCurrentStackTraceProvider(
+    gpr_current_stack_trace_func current_stack_trace_provider) {
+  g_current_stack_trace_provider = current_stack_trace_provider;
+}
+
+absl::optional<std::string> GetCurrentStackTrace() {
+  if (g_current_stack_trace_provider != nullptr) {
+    return g_current_stack_trace_provider();
+  }
+  return absl::nullopt;
+}
 
 }  // namespace grpc_core
-
-#endif /* GRPC_TEST_CORE_UTIL_EXAMINE_STACK_H */

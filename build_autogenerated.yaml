@@ -295,6 +295,7 @@ libs:
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/examine_stack.h
   - src/core/lib/gprpp/fork.h
   - src/core/lib/gprpp/global_config.h
   - src/core/lib/gprpp/global_config_custom.h
@@ -343,6 +344,7 @@ libs:
   - src/core/lib/gpr/tmpfile_windows.cc
   - src/core/lib/gpr/wrap_memcpy.cc
   - src/core/lib/gprpp/arena.cc
+  - src/core/lib/gprpp/examine_stack.cc
   - src/core/lib/gprpp/fork.cc
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
@@ -354,6 +356,7 @@ libs:
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   deps:
+  - absl/types:optional
   - absl/time:time
   - absl/synchronization:synchronization
   - absl/strings:strings
@@ -1410,7 +1413,6 @@ libs:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/eval_args_mock_endpoint.h
-  - test/core/util/examine_stack.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -1423,6 +1425,7 @@ libs:
   - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
+  - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
   - test/core/util/test_config.h
   - test/core/util/test_tcp_server.h
@@ -1432,7 +1435,6 @@ libs:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/eval_args_mock_endpoint.cc
-  - test/core/util/examine_stack.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1446,6 +1448,7 @@ libs:
   - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
+  - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc
   - test/core/util/subprocess_windows.cc
   - test/core/util/test_config.cc
@@ -1468,7 +1471,6 @@ libs:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/eval_args_mock_endpoint.h
-  - test/core/util/examine_stack.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -1481,6 +1483,7 @@ libs:
   - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
+  - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
   - test/core/util/test_config.h
   - test/core/util/test_tcp_server.h
@@ -1490,7 +1493,6 @@ libs:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/eval_args_mock_endpoint.cc
-  - test/core/util/examine_stack.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1504,6 +1506,7 @@ libs:
   - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
+  - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc
   - test/core/util/subprocess_windows.cc
   - test/core/util/test_config.cc
@@ -5923,6 +5926,26 @@ targets:
   - address_sorting
   - upb
   uses_polling: false
+- name: examine_stack_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/examine_stack_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  - absl/debugging:symbolize
+  - absl/debugging:stacktrace
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: exception_test
   gtest: true
   build: test
@@ -7330,6 +7353,25 @@ targets:
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
   maxlen: 2048
+- name: stack_tracer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/stack_tracer_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  - absl/debugging:symbolize
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: stat_test
   gtest: true
   build: test
@@ -7696,7 +7738,6 @@ targets:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/eval_args_mock_endpoint.h
-  - test/core/util/examine_stack.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -7709,6 +7750,7 @@ targets:
   - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
+  - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
   - test/core/util/test_config.h
   - test/core/util/test_tcp_server.h
@@ -7721,7 +7763,6 @@ targets:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/eval_args_mock_endpoint.cc
-  - test/core/util/examine_stack.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -7735,6 +7776,7 @@ targets:
   - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
+  - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc
   - test/core/util/subprocess_windows.cc
   - test/core/util/test_config.cc

@@ -20,6 +20,24 @@ licenses(["notice"])  # Apache v2
 grpc_package(name = "test/core/gprpp")
 
 grpc_cc_test(
+    name = "examine_stack_test",
+    srcs = ["examine_stack_test.cc"],
+    external_deps = [
+        "absl/debugging:stacktrace",
+        "absl/debugging:symbolize",
+        "gtest",
+    ],
+    language = "C++",
+    # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "fork_test",
     srcs = ["fork_test.cc"],
     language = "C++",
