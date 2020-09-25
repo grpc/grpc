@@ -1779,16 +1779,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       });
     }
 
-    void WaitForServerSignal(
-        TestMultipleServiceImpl<::grpc::testing::EchoTestService::Service>*
-            service) {
-      while (!service->signal_client()) {
-        gpr_sleep_until(
-            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(1 * 1000, GPR_TIMESPAN)));
-      }
-    }
-
     void CancelRpc() {
       context_.TryCancel();
       sender_thread_.join();
@@ -2282,6 +2272,55 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
   WaitForAllBackends();
 }
 
+TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
+  const char* kNewClusterName = "new_cluster";
+  constexpr size_t kMaxConcurrentRequests = 10;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  // Update CDS resource to set max concurrent request.
+  CircuitBreakers circuit_breaks;
+  Cluster cluster = balancers_[0]->ads_service()->default_cluster();
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Send exactly max_concurrent_requests long RPCs.
+  TestRpc rpcs[kMaxConcurrentRequests];
+  for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
+    rpcs[i].SendRpc(&stub_);
+  }
+  // Wait for all RPCs are in flight.
+  gpr_log(GPR_INFO, "DONNA new num is %d",
+          backends_[0]->backend_service()->RpcsWaitingForClientCancel());
+  while (backends_[0]->backend_service()->RpcsWaitingForClientCancel() <
+         kMaxConcurrentRequests) {
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_micros(1 * 1000, GPR_TIMESPAN)));
+  }
+  // Send a non-wait_for_ready RPC which should fail, the error message tell us
+  // we hit the max concurrent requests limit.
+  Status status = SendRpc(RpcOptions().set_timeout_ms(0));
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  // Cancel one RPC to allow another one through
+  rpcs[0].CancelRpc();
+  status = SendRpc(RpcOptions().set_timeout_ms(0));
+  EXPECT_TRUE(status.ok());
+  for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
+    rpcs[i].CancelRpc();
+  }
+  // Make sure RPCs go to the correct backend:
+  EXPECT_EQ(kMaxConcurrentRequests + 1,
+            backends_[0]->backend_service()->request_count());
+}
+
+// Tests that the old LB call is still used after the balancer address update as
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
  public:
   XdsResolverLoadReportingOnlyTest() : XdsEnd2endTest(4, 1, 3) {}
@@ -5054,50 +5093,6 @@ TEST_P(DropTest, DropAll) {
     EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
     EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
   }
-}
-
-TEST_P(DropTest, CircuitBreaking) {
-  const char* kNewClusterName = "new_cluster";
-  constexpr size_t kMaxConcurrentRequests = 10;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Populate new EDS resources.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      AdsServiceImpl::BuildEdsResource(args));
-  // Update CDS resource to set max concurrent request.
-  CircuitBreakers circuit_breaks;
-  Cluster cluster = balancers_[0]->ads_service()->default_cluster();
-  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
-  threshold->set_priority(RoutingPriority::DEFAULT);
-  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  // Send exactly max_concurrent_requests long RPCs.
-  TestRpc rpcs[kMaxConcurrentRequests];
-  for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
-    rpcs[i].SendRpc(&stub_);
-  }
-  // Wait for all RPCs are in flight.
-  for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
-    rpcs[i].WaitForServerSignal(backends_[0]->backend_service());
-  }
-  // Send a non-wait_for_ready RPC which should fail, the error message tell us
-  // we hit the max concurrent requests limit.
-  Status status = SendRpc(RpcOptions().set_timeout_ms(0));
-  EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
-  // Cancel one RPC to allow another one through
-  rpcs[0].CancelRpc();
-  status = SendRpc(RpcOptions().set_timeout_ms(0));
-  EXPECT_TRUE(status.ok());
-  for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
-    rpcs[i].CancelRpc();
-  }
-  // Make sure RPCs go to the correct backend:
-  EXPECT_EQ(kMaxConcurrentRequests + 1,
-            backends_[0]->backend_service()->request_count());
 }
 
 class BalancerUpdateTest : public XdsEnd2endTest {

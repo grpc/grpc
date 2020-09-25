@@ -118,9 +118,12 @@ class TestServiceSignaller {
 template <typename RpcService>
 class TestMultipleServiceImpl : public RpcService {
  public:
-  TestMultipleServiceImpl() : signal_client_(false), host_() {}
+  TestMultipleServiceImpl()
+      : signal_client_(false), host_(), rpcs_waiting_for_client_cancel_(0) {}
   explicit TestMultipleServiceImpl(const std::string& host)
-      : signal_client_(false), host_(new std::string(host)) {}
+      : signal_client_(false),
+        host_(new std::string(host)),
+        rpcs_waiting_for_client_cancel_(0) {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) {
@@ -167,12 +170,18 @@ class TestMultipleServiceImpl : public RpcService {
       {
         std::unique_lock<std::mutex> lock(mu_);
         signal_client_ = true;
+        gpr_log(GPR_INFO, "DONNA did we increment");
+        ++rpcs_waiting_for_client_cancel_;
       }
       while (!context->IsCancelled()) {
         gpr_sleep_until(gpr_time_add(
             gpr_now(GPR_CLOCK_REALTIME),
             gpr_time_from_micros(request->param().client_cancel_after_us(),
                                  GPR_TIMESPAN)));
+      }
+      {
+        std::unique_lock<std::mutex> lock(mu_);
+        --rpcs_waiting_for_client_cancel_;
       }
       return Status::CANCELLED;
     } else if (request->has_param() &&
@@ -425,12 +434,17 @@ class TestMultipleServiceImpl : public RpcService {
   }
   void ClientWaitUntilRpcStarted() { signaller_.ClientWaitUntilRpcStarted(); }
   void SignalServerToContinue() { signaller_.SignalServerToContinue(); }
+  uint64_t RpcsWaitingForClientCancel() {
+    std::unique_lock<std::mutex> lock(mu_);
+    return rpcs_waiting_for_client_cancel_;
+  }
 
  private:
   bool signal_client_;
   std::mutex mu_;
   TestServiceSignaller signaller_;
   std::unique_ptr<std::string> host_;
+  uint64_t rpcs_waiting_for_client_cancel_;
 };
 
 class CallbackTestServiceImpl
