@@ -16,6 +16,11 @@
 
 #endregion
 
+// Content of this file is copied with permission from:
+// https://github.com/dotnet/runtime/tree/e2e43f44f1032780fa7c2bb965153c9da615c3d0/src/libraries/System.Private.CoreLib/src/System/Diagnostics/CodeAnalysis
+// These types are intented to be added as internalized source to libraries and apps that want to
+// use them without requiring a dependency on .NET 5.
+
 namespace System.Diagnostics.CodeAnalysis
 {
     /// <summary>
