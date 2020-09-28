@@ -317,6 +317,10 @@ TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
       grpc_channel_arg_integer_create(
+          const_cast<char*>(
+              GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS),
+          0),
+      grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 1 * 1000),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
@@ -396,6 +400,10 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
       grpc_channel_arg_integer_create(
+          const_cast<char*>(
+              GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS),
+          0),
+      grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 0),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 1 * 1000),
@@ -464,6 +472,10 @@ TEST_F(KeepaliveThrottlingTest,
   grpc_arg client_args[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(
+              GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS),
+          0),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 0),
       grpc_channel_arg_integer_create(
@@ -674,6 +686,10 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   grpc_arg client_args[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(
+              GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS),
+          0),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),

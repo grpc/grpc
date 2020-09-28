@@ -118,6 +118,7 @@ struct grpc_chttp2_ping_queue {
 struct grpc_chttp2_repeated_ping_policy {
   int max_pings_without_data;
   int max_ping_strikes;
+  grpc_millis min_sent_ping_interval_without_data;
   grpc_millis min_recv_ping_interval_without_data;
 };
 struct grpc_chttp2_repeated_ping_state {
