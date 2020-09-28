@@ -62,6 +62,10 @@ void grpc_workaround_cronet_compression_filter_init(void);
 void grpc_workaround_cronet_compression_filter_shutdown(void);
 
 #ifndef GRPC_NO_XDS
+namespace grpc_core {
+void XdsClientGlobalInit();
+void XdsClientGlobalShutdown();
+}  // namespace grpc_core
 void grpc_certificate_provider_registry_init(void);
 void grpc_certificate_provider_registry_shutdown(void);
 void grpc_lb_policy_cds_init(void);
@@ -118,6 +122,8 @@ void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_workaround_cronet_compression_filter_init,
                        grpc_workaround_cronet_compression_filter_shutdown);
 #ifndef GRPC_NO_XDS
+  grpc_register_plugin(grpc_core::XdsClientGlobalInit,
+                       grpc_core::XdsClientGlobalShutdown);
   grpc_register_plugin(grpc_certificate_provider_registry_init,
                        grpc_certificate_provider_registry_shutdown);
   grpc_register_plugin(grpc_lb_policy_cds_init,
