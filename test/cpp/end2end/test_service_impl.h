@@ -118,12 +118,9 @@ class TestServiceSignaller {
 template <typename RpcService>
 class TestMultipleServiceImpl : public RpcService {
  public:
-  TestMultipleServiceImpl()
-      : signal_client_(false), host_(), rpcs_waiting_for_client_cancel_(0) {}
+  TestMultipleServiceImpl() : signal_client_(false), host_() {}
   explicit TestMultipleServiceImpl(const std::string& host)
-      : signal_client_(false),
-        host_(new std::string(host)),
-        rpcs_waiting_for_client_cancel_(0) {}
+      : signal_client_(false), host_(new std::string(host)) {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) {
@@ -170,7 +167,6 @@ class TestMultipleServiceImpl : public RpcService {
       {
         std::unique_lock<std::mutex> lock(mu_);
         signal_client_ = true;
-        gpr_log(GPR_INFO, "DONNA did we increment");
         ++rpcs_waiting_for_client_cancel_;
       }
       while (!context->IsCancelled()) {
@@ -444,7 +440,7 @@ class TestMultipleServiceImpl : public RpcService {
   std::mutex mu_;
   TestServiceSignaller signaller_;
   std::unique_ptr<std::string> host_;
-  uint64_t rpcs_waiting_for_client_cancel_;
+  uint64_t rpcs_waiting_for_client_cancel_ = 0;
 };
 
 class CallbackTestServiceImpl

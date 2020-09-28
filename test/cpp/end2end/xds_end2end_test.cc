@@ -2128,33 +2128,7 @@ TEST_P(BasicTest, IgnoresDuplicateUpdates) {
   }
 }
 
-class XdsResolverOnlyTest : public BasicTest {
- protected:
-  class TestRpc {
-   public:
-    TestRpc() {}
-
-    void SendRpc(grpc::testing::EchoTestService::Stub* stub) {
-      sender_thread_ = std::thread([this, stub]() {
-        EchoResponse response;
-        EchoRequest request;
-        request.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
-        request.set_message(kRequestMessage);
-        status_ = stub->Echo(&context_, request, &response);
-      });
-    }
-
-    void CancelRpc() {
-      context_.TryCancel();
-      sender_thread_.join();
-    }
-
-   private:
-    std::thread sender_thread_;
-    ClientContext context_;
-    Status status_;
-  };
-};
+using XdsResolverOnlyTest = BasicTest;
 
 // Tests switching over from one cluster to another.
 TEST_P(XdsResolverOnlyTest, ChangeClusters) {
@@ -2288,6 +2262,32 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
 }
 
 TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
+  class TestRpc {
+   public:
+    TestRpc() {}
+
+    void StartRpc(grpc::testing::EchoTestService::Stub* stub) {
+      sender_thread_ = std::thread([this, stub]() {
+        EchoResponse response;
+        EchoRequest request;
+        request.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
+        request.set_message(kRequestMessage);
+        status_ = stub->Echo(&context_, request, &response);
+      });
+    }
+
+    void CancelRpc() {
+      context_.TryCancel();
+      sender_thread_.join();
+    }
+
+   private:
+    std::thread sender_thread_;
+    ClientContext context_;
+    Status status_;
+  };
+
+  // Tests switching over from one cluster to another.
   const char* kNewClusterName = "new_cluster";
   constexpr size_t kMaxConcurrentRequests = 10;
   SetNextResolution({});
@@ -2308,11 +2308,9 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   // Send exactly max_concurrent_requests long RPCs.
   TestRpc rpcs[kMaxConcurrentRequests];
   for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
-    rpcs[i].SendRpc(stub_.get());
+    rpcs[i].StartRpc(stub_.get());
   }
   // Wait for all RPCs to be in flight.
-  gpr_log(GPR_INFO, "DONNA new num is %d",
-          backends_[0]->backend_service()->RpcsWaitingForClientCancel());
   while (backends_[0]->backend_service()->RpcsWaitingForClientCancel() <
          kMaxConcurrentRequests) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -2335,7 +2333,6 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
             backends_[0]->backend_service()->request_count());
 }
 
-// Tests that the old LB call is still used after the balancer address update as
 TEST_P(XdsResolverOnlyTest, MultipleChannelsShareXdsClient) {
   const char* kNewServerName = "new-server.example.com";
   Listener listener = balancers_[0]->ads_service()->default_listener();

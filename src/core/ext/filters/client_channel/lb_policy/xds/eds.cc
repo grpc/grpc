@@ -285,7 +285,7 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
   if (current >= eds_policy_->max_concurrent_requests_) {
     eds_policy_->concurrent_requests_.FetchSub(1);
     if (drop_stats_ != nullptr) {
-      // drop_stats_->AddUncategorizedDrops();
+      drop_stats_->AddUncategorizedDrops();
     }
     PickResult result;
     result.type = PickResult::PICK_COMPLETE;
