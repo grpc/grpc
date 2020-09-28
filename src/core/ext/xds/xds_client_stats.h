@@ -101,13 +101,28 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
  public:
   // The total number of requests dropped for any reason is the sum of
   // uncategorized_drops, and dropped_requests map.
-  using DroppedRequestsCategoryMap =
-      std::map<std::string /* category */, uint64_t>;
+  using CategorizedDropsMap = std::map<std::string /* category */, uint64_t>;
   struct Snapshot {
     uint64_t uncategorized_drops = 0;
     // The number of requests dropped for the specific drop categories
     // outlined in the drop_overloads field in the EDS response.
-    DroppedRequestsCategoryMap categorized_drops;
+    CategorizedDropsMap categorized_drops;
+
+    Snapshot& operator+=(const Snapshot& other) {
+      uncategorized_drops += other.uncategorized_drops;
+      for (const auto& p : other.categorized_drops) {
+        categorized_drops[p.first] += p.second;
+      }
+      return *this;
+    }
+
+    bool IsZero() const {
+      if (uncategorized_drops != 0) return false;
+      for (const auto& p : categorized_drops) {
+        if (p.second != 0) return false;
+      }
+      return true;
+    }
   };
 
   XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
@@ -132,7 +147,7 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
   // dropped_requests can be accessed by both the picker (from data plane
   // mutex) and the load reporting thread (from the control plane combiner).
   Mutex mu_;
-  DroppedRequestsCategoryMap categorized_drops_;
+  CategorizedDropsMap categorized_drops_;
 };
 
 // Locality stats for an xds cluster.
