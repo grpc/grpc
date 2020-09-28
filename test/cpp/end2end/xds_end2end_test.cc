@@ -2287,7 +2287,6 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
     Status status_;
   };
 
-  // Tests switching over from one cluster to another.
   const char* kNewClusterName = "new_cluster";
   constexpr size_t kMaxConcurrentRequests = 10;
   SetNextResolution({});

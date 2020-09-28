@@ -179,8 +179,8 @@ class XdsApi {
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
     // Maximum number of outstanding requests can be made to the upstream
-    // cluster. If unset, assume std::numeric_limits<uint32_t>::max().
-    uint32_t max_concurrent_requests;
+    // cluster. If unset, assume 1024.
+    uint32_t max_concurrent_requests = 1024;
 
     bool operator==(const CdsUpdate& other) const {
       return eds_service_name == other.eds_service_name &&

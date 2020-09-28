@@ -1839,7 +1839,6 @@ grpc_error* CdsResponseParse(
       }
       cds_update.lrs_load_reporting_server_name.emplace("");
     }
-    cds_update.max_concurrent_requests = 1024;
     // The Cluster resource encodes the circuit breaking parameters in a list of
     // Thresholds messages, where each message specifies the parameters for a
     // particular RoutingPriority. we will look only at the first entry in the
@@ -1861,8 +1860,8 @@ grpc_error* CdsResponseParse(
           if (max_requests != nullptr) {
             cds_update.max_concurrent_requests =
                 google_protobuf_UInt32Value_value(max_requests);
-            break;
           }
+          break;
         }
       }
     }

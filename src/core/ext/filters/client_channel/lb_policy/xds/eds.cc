@@ -246,7 +246,6 @@ class EdsLb : public LoadBalancingPolicy {
   RefCountedPtr<XdsClusterDropStats> drop_stats_;
   // Current concurrent number of requests;
   Atomic<uint32_t> concurrent_requests_{0};
-  uint32_t max_concurrent_requests_;
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
@@ -282,7 +281,7 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
   }
   // Check and see if we exceeded the max concurrent requests count.
   uint32_t current = eds_policy_->concurrent_requests_.FetchAdd(1);
-  if (current >= eds_policy_->max_concurrent_requests_) {
+  if (current >= eds_policy_->config_->max_concurrent_requests()) {
     eds_policy_->concurrent_requests_.FetchSub(1);
     if (drop_stats_ != nullptr) {
       drop_stats_->AddUncategorizedDrops();
@@ -508,7 +507,6 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   auto old_config = std::move(config_);
   config_ = std::move(args.config);
-  max_concurrent_requests_ = config_->max_concurrent_requests();
   // Update args.
   grpc_channel_args_destroy(args_);
   args_ = args.args;
