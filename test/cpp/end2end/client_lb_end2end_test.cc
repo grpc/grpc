@@ -210,7 +210,7 @@ class FakeResolverResponseGeneratorWrapper {
     }
     if (service_config_json != nullptr) {
       result.service_config = grpc_core::ServiceConfig::Create(
-          service_config_json, &result.service_config_error);
+          nullptr, service_config_json, &result.service_config_error);
       GPR_ASSERT(result.service_config != nullptr);
     }
     return result;

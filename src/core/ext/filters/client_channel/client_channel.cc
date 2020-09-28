@@ -1698,7 +1698,8 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG));
   if (service_config_json == nullptr) service_config_json = "{}";
   *error = GRPC_ERROR_NONE;
-  default_service_config_ = ServiceConfig::Create(service_config_json, error);
+  default_service_config_ =
+      ServiceConfig::Create(args->channel_args, service_config_json, error);
   if (*error != GRPC_ERROR_NONE) {
     default_service_config_.reset();
     return;

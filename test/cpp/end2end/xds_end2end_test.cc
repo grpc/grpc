@@ -1632,7 +1632,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             ? kDefaultServiceConfig
             : kDefaultServiceConfigWithoutLoadReporting;
     result.service_config =
-        grpc_core::ServiceConfig::Create(service_config_json, &error);
+        grpc_core::ServiceConfig::Create(nullptr, service_config_json, &error);
     ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
     ASSERT_NE(result.service_config.get(), nullptr);
     response_generator_->SetResponse(std::move(result));
@@ -1656,8 +1656,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     result.addresses = CreateAddressListFromPortList(ports);
     if (service_config_json != nullptr) {
       grpc_error* error = GRPC_ERROR_NONE;
-      result.service_config =
-          grpc_core::ServiceConfig::Create(service_config_json, &error);
+      result.service_config = grpc_core::ServiceConfig::Create(
+          nullptr, service_config_json, &error);
       ASSERT_NE(result.service_config.get(), nullptr);
       ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
     }
