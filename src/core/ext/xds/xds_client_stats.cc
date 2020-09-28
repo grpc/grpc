@@ -29,6 +29,14 @@
 
 namespace grpc_core {
 
+namespace {
+
+uint64_t GetAndResetCounter(Atomic<uint64_t>* from) {
+  return from->Exchange(0, MemoryOrder::RELAXED);
+}
+
+}  // namespace
+
 //
 // XdsClusterDropStats
 //
@@ -48,15 +56,21 @@ XdsClusterDropStats::~XdsClusterDropStats() {
   xds_client_.reset(DEBUG_LOCATION, "DropStats");
 }
 
-XdsClusterDropStats::DroppedRequestsMap
-XdsClusterDropStats::GetSnapshotAndReset() {
+XdsClusterDropStats::Snapshot XdsClusterDropStats::GetSnapshotAndReset() {
+  Snapshot snapshot;
+  snapshot.uncategorized_drops = GetAndResetCounter(&uncategorized_drops_);
   MutexLock lock(&mu_);
-  return std::move(dropped_requests_);
+  snapshot.categorized_drops = std::move(categorized_drops_);
+  return snapshot;
+}
+
+void XdsClusterDropStats::AddUncategorizedDrops() {
+  uncategorized_drops_.FetchAdd(1);
 }
 
 void XdsClusterDropStats::AddCallDropped(const std::string& category) {
   MutexLock lock(&mu_);
-  ++dropped_requests_[category];
+  ++categorized_drops_[category];
 }
 
 //
@@ -78,14 +92,6 @@ XdsClusterLocalityStats::~XdsClusterLocalityStats() {
                                           eds_service_name_, name_, this);
   xds_client_.reset(DEBUG_LOCATION, "LocalityStats");
 }
-
-namespace {
-
-uint64_t GetAndResetCounter(Atomic<uint64_t>* from) {
-  return from->Exchange(0, MemoryOrder::RELAXED);
-}
-
-}  // namespace
 
 XdsClusterLocalityStats::Snapshot
 XdsClusterLocalityStats::GetSnapshotAndReset() {

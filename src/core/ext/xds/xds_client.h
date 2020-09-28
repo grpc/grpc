@@ -278,7 +278,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     };
 
     std::set<XdsClusterDropStats*> drop_stats;
-    XdsClusterDropStats::DroppedRequestsMap deleted_drop_stats;
+    XdsClusterDropStats::Snapshot deleted_drop_stats;
     std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
         locality_stats;

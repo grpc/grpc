@@ -273,7 +273,7 @@ class XdsApi {
   using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
 
   struct ClusterLoadReport {
-    XdsClusterDropStats::DroppedRequestsMap dropped_requests;
+    XdsClusterDropStats::Snapshot dropped_requests;
     std::map<RefCountedPtr<XdsLocalityName>, XdsClusterLocalityStats::Snapshot,
              XdsLocalityName::Less>
         locality_stats;
