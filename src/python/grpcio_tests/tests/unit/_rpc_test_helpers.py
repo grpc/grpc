@@ -415,10 +415,3 @@ class BaseRPCTest(object):
         multi_callable(request_iterator,
                        metadata=(('test',
                                   'IgnoredStreamRequestStreamResponse'),))
-
-
-__all__ = ("TIMEOUT_SHORT", "Callback", "unary_unary_multi_callable",
-           "unary_stream_multi_callable",
-           "unary_stream_non_blocking_multi_callable",
-           "stream_unary_multi_callable", "stream_stream_multi_callable",
-           "stream_stream_non_blocking_multi_callable", "BaseRPCTest")
