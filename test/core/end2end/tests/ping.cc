@@ -22,7 +22,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -38,18 +37,25 @@ static void test_ping(grpc_end2end_test_config config,
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 
-  grpc_arg client_a[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
-  grpc_arg server_a[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(
-              GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
-          0),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
+  grpc_arg client_a[3];
+  client_a[0].type = GRPC_ARG_INTEGER;
+  client_a[0].key =
+      const_cast<char*>(GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS);
+  client_a[0].value.integer = 10;
+  client_a[1].type = GRPC_ARG_INTEGER;
+  client_a[1].key = const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA);
+  client_a[1].value.integer = 0;
+  client_a[2].type = GRPC_ARG_INTEGER;
+  client_a[2].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS);
+  client_a[2].value.integer = 1;
+  grpc_arg server_a[2];
+  server_a[0].type = GRPC_ARG_INTEGER;
+  server_a[0].key =
+      const_cast<char*>(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS);
+  server_a[0].value.integer = 0;
+  server_a[1].type = GRPC_ARG_INTEGER;
+  server_a[1].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS);
+  server_a[1].value.integer = 1;
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
 
