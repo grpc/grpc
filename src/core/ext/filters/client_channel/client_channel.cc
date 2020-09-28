@@ -2211,8 +2211,7 @@ void CallData::Destroy(grpc_call_element* elem,
   if (GPR_LIKELY(subchannel_call != nullptr)) {
     subchannel_call->SetAfterCallStackDestroy(then_schedule_closure);
   } else {
-    // TODO(yashkt) : This can potentially be a Closure::Run
-    ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
+    Closure::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
   }
 }
 

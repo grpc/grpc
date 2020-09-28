@@ -29,6 +29,7 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -40,17 +41,14 @@ namespace grpc_core {
 
 extern TraceFlag xds_client_trace;
 
-class XdsClient : public InternallyRefCounted<XdsClient> {
+class XdsClient : public DualRefCounted<XdsClient> {
  public:
   // Listener data watcher interface.  Implemented by callers.
   class ListenerWatcherInterface {
    public:
     virtual ~ListenerWatcherInterface() = default;
-
     virtual void OnListenerChanged(XdsApi::LdsUpdate listener) = 0;
-
     virtual void OnError(grpc_error* error) = 0;
-
     virtual void OnResourceDoesNotExist() = 0;
   };
 
@@ -58,11 +56,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   class RouteConfigWatcherInterface {
    public:
     virtual ~RouteConfigWatcherInterface() = default;
-
     virtual void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) = 0;
-
     virtual void OnError(grpc_error* error) = 0;
-
     virtual void OnResourceDoesNotExist() = 0;
   };
 
@@ -70,11 +65,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   class ClusterWatcherInterface {
    public:
     virtual ~ClusterWatcherInterface() = default;
-
     virtual void OnClusterChanged(XdsApi::CdsUpdate cluster_data) = 0;
-
     virtual void OnError(grpc_error* error) = 0;
-
     virtual void OnResourceDoesNotExist() = 0;
   };
 
@@ -82,20 +74,33 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   class EndpointWatcherInterface {
    public:
     virtual ~EndpointWatcherInterface() = default;
-
     virtual void OnEndpointChanged(XdsApi::EdsUpdate update) = 0;
-
     virtual void OnError(grpc_error* error) = 0;
-
     virtual void OnResourceDoesNotExist() = 0;
   };
 
-  // If *error is not GRPC_ERROR_NONE after construction, then there was
+  // Factory function to get or create the global XdsClient instance.
+  // If *error is not GRPC_ERROR_NONE upon return, then there was
   // an error initializing the client.
-  XdsClient(const grpc_channel_args& channel_args, grpc_error** error);
+  static RefCountedPtr<XdsClient> GetOrCreate(grpc_error** error);
+
+  // Callers should not instantiate directly.  Use GetOrCreate() instead.
+  explicit XdsClient(grpc_error** error);
   ~XdsClient();
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
+
+  // TODO(roth): When we add federation, there will be multiple channels
+  // inside the XdsClient, and the set of channels may change over time,
+  // but not every channel may use every one of the child channels, so
+  // this API will need to change.  At minumum, we will need to hold a
+  // ref to the parent channelz node so that we can update its list of
+  // children as the set of xDS channels changes.  However, we may also
+  // want to make this a bit more selective such that only those
+  // channels on which a given parent channel is actually requesting
+  // resources will actually be marked as its children.
+  void AddChannelzLinkage(channelz::ChannelNode* parent_channelz_node);
+  void RemoveChannelzLinkage(channelz::ChannelNode* parent_channelz_node);
 
   void Orphan() override;
 
@@ -176,24 +181,14 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Resets connection backoff state.
   void ResetBackoff();
 
-  // Helpers for encoding the XdsClient object in channel args.
-  grpc_arg MakeChannelArg() const;
-  static RefCountedPtr<XdsClient> GetFromChannelArgs(
-      const grpc_channel_args& args);
-  static grpc_channel_args* RemoveFromChannelArgs(
-      const grpc_channel_args& args);
-
  private:
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
-  // TODO(roth): This is separate from the XdsClient object because it was
-  // originally designed to be able to swap itself out in case the
-  // balancer name changed.  Now that the balancer name is going to be
-  // coming from the bootstrap file, we don't really need this level of
-  // indirection unless we decide to support watching the bootstrap file
-  // for changes.  At some point, if we decide that we're never going to
-  // need to do that, then we can eliminate this class and move its
-  // contents directly into the XdsClient class.
+  //
+  // Currently, there is only one ChannelState object per XdsClient
+  // object, and it has essentially the same lifetime.  But in the
+  // future, when we add federation support, a single XdsClient may have
+  // multiple underlying channels to talk to different xDS servers.
   class ChannelState : public InternallyRefCounted<ChannelState> {
    public:
     template <typename T>
@@ -202,7 +197,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     class AdsCallState;
     class LrsCallState;
 
-    ChannelState(RefCountedPtr<XdsClient> xds_client, grpc_channel* channel);
+    ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
+                 grpc_channel* channel);
     ~ChannelState();
 
     void Orphan() override;
@@ -228,7 +224,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     class StateWatcher;
 
     // The owning xds client.
-    RefCountedPtr<XdsClient> xds_client_;
+    WeakRefCountedPtr<XdsClient> xds_client_;
 
     // The channel and its status.
     grpc_channel* channel_;
@@ -271,6 +267,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     absl::optional<XdsApi::EdsUpdate> update;
   };
 
+  // TODO(roth): Change this to store exactly one instance of
+  // XdsClusterDropStats and exactly one instance of
+  // XdsClusterLocalityStats per locality.  We can return multiple refs
+  // to the same object instead of registering multiple objects.
   struct LoadReportState {
     struct LocalityState {
       std::set<XdsClusterLocalityStats*> locality_stats;
@@ -278,7 +278,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     };
 
     std::set<XdsClusterDropStats*> drop_stats;
-    XdsClusterDropStats::DroppedRequestsMap deleted_drop_stats;
+    XdsClusterDropStats::Snapshot deleted_drop_stats;
     std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
         locality_stats;
@@ -291,24 +291,15 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
       bool send_all_clusters, const std::set<std::string>& clusters);
 
-  // Channel arg vtable functions.
-  static void* ChannelArgCopy(void* p);
-  static void ChannelArgDestroy(void* p);
-  static int ChannelArgCmp(void* p, void* q);
-
-  static const grpc_arg_pointer_vtable kXdsClientVtable;
-
   const grpc_millis request_timeout_;
-
-  Mutex mu_;
   grpc_pollset_set* interested_parties_;
-
   std::unique_ptr<XdsBootstrap> bootstrap_;
   XdsApi api_;
 
+  Mutex mu_;
+
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
-  RefCountedPtr<channelz::ChannelNode> parent_channelz_node_;
 
   // One entry for each watched LDS resource.
   std::map<std::string /*listener_name*/, ListenerState> listener_map_;
@@ -328,6 +319,11 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   bool shutting_down_ = false;
 };
+
+namespace internal {
+void SetXdsChannelArgsForTest(grpc_channel_args* args);
+void UnsetGlobalXdsClientForTest();
+}  // namespace internal
 
 }  // namespace grpc_core
 

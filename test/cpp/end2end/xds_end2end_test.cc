@@ -46,6 +46,9 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_api.h"
+#include "src/core/ext/xds/xds_channel_args.h"
+#include "src/core/ext/xds/xds_client.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/map.h"
@@ -146,7 +149,7 @@ constexpr char kBootstrapFileV3[] =
     "{\n"
     "  \"xds_servers\": [\n"
     "    {\n"
-    "      \"server_uri\": \"fake:///lb\",\n"
+    "      \"server_uri\": \"fake:///xds_server\",\n"
     "      \"channel_creds\": [\n"
     "        {\n"
     "          \"type\": \"fake\"\n"
@@ -173,7 +176,7 @@ constexpr char kBootstrapFileV2[] =
     "{\n"
     "  \"xds_servers\": [\n"
     "    {\n"
-    "      \"server_uri\": \"fake:///lb\",\n"
+    "      \"server_uri\": \"fake:///xds_server\",\n"
     "      \"channel_creds\": [\n"
     "        {\n"
     "          \"type\": \"fake\"\n"
@@ -195,25 +198,8 @@ constexpr char kBootstrapFileV2[] =
     "  }\n"
     "}\n";
 
-constexpr char kBootstrapFileBad[] =
-    "{\n"
-    "  \"xds_servers\": [\n"
-    "    {\n"
-    "      \"server_uri\": \"fake:///wrong_lb\",\n"
-    "      \"channel_creds\": [\n"
-    "        {\n"
-    "          \"type\": \"fake\"\n"
-    "        }\n"
-    "      ]\n"
-    "    }\n"
-    "  ],\n"
-    "  \"node\": {\n"
-    "  }\n"
-    "}\n";
-
 char* g_bootstrap_file_v3;
 char* g_bootstrap_file_v2;
-char* g_bootstrap_file_bad;
 
 void WriteBootstrapFiles() {
   char* bootstrap_file;
@@ -225,10 +211,6 @@ void WriteBootstrapFiles() {
   fputs(kBootstrapFileV2, out);
   fclose(out);
   g_bootstrap_file_v2 = bootstrap_file;
-  out = gpr_tmpfile("xds_bootstrap_bad", &bootstrap_file);
-  fputs(kBootstrapFileBad, out);
-  fclose(out);
-  g_bootstrap_file_bad = bootstrap_file;
 }
 
 // Helper class to minimize the number of unique ports we use for this test.
@@ -693,6 +675,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     }
   }
 
+  std::set<std::string> clients() {
+    grpc_core::MutexLock lock(&clients_mu_);
+    return clients_;
+  }
+
  private:
   // A queue of resource type/name pairs that have changed since the client
   // subscribed to them.
@@ -739,6 +726,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     Status StreamAggregatedResources(ServerContext* context,
                                      Stream* stream) override {
       gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
+      parent_->AddClient(context->peer());
       if (is_v2_) {
         parent_->seen_v2_client_ = true;
       } else {
@@ -844,6 +832,12 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                         resource->set_type_url(request.type_url());
                       }
                     }
+                  } else {
+                    gpr_log(GPR_INFO,
+                            "ADS[%p]: client does not need update for "
+                            "type=%s name=%s version=%d",
+                            this, request.type_url().c_str(),
+                            resource_name.c_str(), resource_state.version);
                   }
                 }
                 // Process unsubscriptions for any resource no longer
@@ -950,6 +944,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         }
       }
       gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources done", this);
+      parent_->RemoveClient(context->peer());
       return Status::OK;
     }
 
@@ -1102,6 +1097,16 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     }
   }
 
+  void AddClient(const std::string& client) {
+    grpc_core::MutexLock lock(&clients_mu_);
+    clients_.insert(client);
+  }
+
+  void RemoveClient(const std::string& client) {
+    grpc_core::MutexLock lock(&clients_mu_);
+    clients_.erase(client);
+  }
+
   RpcService<::envoy::service::discovery::v2::AggregatedDiscoveryService,
              ::envoy::api::v2::DiscoveryRequest,
              ::envoy::api::v2::DiscoveryResponse>
@@ -1130,6 +1135,9 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   //   yet been destroyed by UnsetResource()).
   // - There is at least one subscription for the resource.
   ResourceMap resource_map_;
+
+  grpc_core::Mutex clients_mu_;
+  std::set<std::string> clients_;
 };
 
 class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
@@ -1210,7 +1218,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     Status StreamLoadStats(ServerContext* /*context*/,
                            Stream* stream) override {
       gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
-      GPR_ASSERT(parent_->client_load_reporting_interval_seconds_ > 0);
+      EXPECT_GT(parent_->client_load_reporting_interval_seconds_, 0);
       // Take a reference of the LrsServiceImpl object, reference will go
       // out of scope after this method exits.
       std::shared_ptr<LrsServiceImpl> lrs_service_impl =
@@ -1351,8 +1359,20 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     g_port_saver->Reset();
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+    // Inject xDS channel response generator.
     lb_channel_response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+    xds_channel_args_to_add_.emplace_back(
+        grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
+            lb_channel_response_generator_.get()));
+    if (xds_resource_does_not_exist_timeout_ms_ > 0) {
+      xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
+          xds_resource_does_not_exist_timeout_ms_));
+    }
+    xds_channel_args_.num_args = xds_channel_args_to_add_.size();
+    xds_channel_args_.args = xds_channel_args_to_add_.data();
+    grpc_core::internal::SetXdsChannelArgsForTest(&xds_channel_args_);
     // Start the backends.
     for (size_t i = 0; i < num_backends_; ++i) {
       backends_.emplace_back(new BackendServerThread);
@@ -1379,6 +1399,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   void TearDown() override {
     ShutdownAllBackends();
     for (auto& balancer : balancers_) balancer->Shutdown();
+    // Make sure each test creates a new XdsClient instance rather than
+    // reusing the one from the previous test.  This avoids spurious failures
+    // caused when a load reporting test runs after a non-load reporting test
+    // and the XdsClient is still talking to the old LRS server, which fails
+    // because it's not expecting the client to connect.  It also
+    // ensures that each test can independently set the global channel
+    // args for the xDS channel.
+    grpc_core::internal::UnsetGlobalXdsClientForTest();
   }
 
   void StartAllBackends() {
@@ -1393,34 +1421,27 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
-  void ResetStub(int failover_timeout = 0,
-                 const std::string& expected_targets = "",
-                 int xds_resource_does_not_exist_timeout = 0) {
+  void ResetStub(int failover_timeout = 0) {
+    channel_ = CreateChannel(failover_timeout);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+    stub1_ = grpc::testing::EchoTest1Service::NewStub(channel_);
+    stub2_ = grpc::testing::EchoTest2Service::NewStub(channel_);
+  }
+
+  std::shared_ptr<Channel> CreateChannel(
+      int failover_timeout = 0, const char* server_name = kServerName) {
     ChannelArguments args;
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
     }
-    if (xds_resource_does_not_exist_timeout > 0) {
-      args.SetInt(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS,
-                  xds_resource_does_not_exist_timeout);
-    }
     // If the parent channel is using the fake resolver, we inject the
-    // response generator for the parent here, and then SetNextResolution()
-    // will inject the xds channel's response generator via the parent's
-    // response generator.
-    //
-    // In contrast, if we are using the xds resolver, then the parent
-    // channel never uses a response generator, and we inject the xds
-    // channel's response generator here.
-    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    GetParam().use_xds_resolver()
-                        ? lb_channel_response_generator_.get()
-                        : response_generator_.get());
-    if (!expected_targets.empty()) {
-      args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
+    // response generator here.
+    if (!GetParam().use_xds_resolver()) {
+      args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
+                      response_generator_.get());
     }
     std::string uri = absl::StrCat(
-        GetParam().use_xds_resolver() ? "xds" : "fake", ":///", kServerName);
+        GetParam().use_xds_resolver() ? "xds" : "fake", ":///", server_name);
     // TODO(dgq): templatize tests to run everything using both secure and
     // insecure channel credentials.
     grpc_channel_credentials* channel_creds =
@@ -1432,10 +1453,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             channel_creds, call_creds, nullptr)));
     call_creds->Unref();
     channel_creds->Unref();
-    channel_ = ::grpc::CreateCustomChannel(uri, creds, args);
-    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
-    stub1_ = grpc::testing::EchoTest1Service::NewStub(channel_);
-    stub2_ = grpc::testing::EchoTest2Service::NewStub(channel_);
+    return ::grpc::CreateCustomChannel(uri, creds, args);
   }
 
   enum RpcService {
@@ -1605,9 +1623,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return addresses;
   }
 
-  void SetNextResolution(const std::vector<int>& ports,
-                         grpc_core::FakeResolverResponseGenerator*
-                             lb_channel_response_generator = nullptr) {
+  void SetNextResolution(const std::vector<int>& ports) {
     if (GetParam().use_xds_resolver()) return;  // Not used with xds resolver.
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
@@ -1621,30 +1637,22 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         grpc_core::ServiceConfig::Create(service_config_json, &error);
     ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
     ASSERT_NE(result.service_config.get(), nullptr);
-    grpc_arg arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
-        lb_channel_response_generator == nullptr
-            ? lb_channel_response_generator_.get()
-            : lb_channel_response_generator);
-    result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
     response_generator_->SetResponse(std::move(result));
   }
 
   void SetNextResolutionForLbChannelAllBalancers(
       const char* service_config_json = nullptr,
-      grpc_core::FakeResolverResponseGenerator* lb_channel_response_generator =
-          nullptr) {
+      const char* expected_targets = nullptr) {
     std::vector<int> ports;
     for (size_t i = 0; i < balancers_.size(); ++i) {
       ports.emplace_back(balancers_[i]->port());
     }
-    SetNextResolutionForLbChannel(ports, service_config_json,
-                                  lb_channel_response_generator);
+    SetNextResolutionForLbChannel(ports, service_config_json, expected_targets);
   }
 
-  void SetNextResolutionForLbChannel(
-      const std::vector<int>& ports, const char* service_config_json = nullptr,
-      grpc_core::FakeResolverResponseGenerator* lb_channel_response_generator =
-          nullptr) {
+  void SetNextResolutionForLbChannel(const std::vector<int>& ports,
+                                     const char* service_config_json = nullptr,
+                                     const char* expected_targets = nullptr) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(ports);
@@ -1655,10 +1663,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       ASSERT_NE(result.service_config.get(), nullptr);
       ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
     }
-    if (lb_channel_response_generator == nullptr) {
-      lb_channel_response_generator = lb_channel_response_generator_.get();
+    if (expected_targets != nullptr) {
+      grpc_arg expected_targets_arg = grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
+          const_cast<char*>(expected_targets));
+      result.args =
+          grpc_channel_args_copy_and_add(nullptr, &expected_targets_arg, 1);
     }
-    lb_channel_response_generator->SetResponse(std::move(result));
+    lb_channel_response_generator_->SetResponse(std::move(result));
   }
 
   void SetNextReresolutionResponse(const std::vector<int>& ports) {
@@ -1727,9 +1739,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   }
 
-  void CheckRpcSendFailure(const size_t times = 1, bool server_fail = false) {
+  void CheckRpcSendFailure(const size_t times = 1,
+                           const RpcOptions& rpc_options = RpcOptions()) {
     for (size_t i = 0; i < times; ++i) {
-      const Status status = SendRpc(RpcOptions().set_server_fail(server_fail));
+      const Status status = SendRpc(rpc_options);
       EXPECT_FALSE(status.ok());
     }
   }
@@ -1914,6 +1927,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       response_generator_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       lb_channel_response_generator_;
+  int xds_resource_does_not_exist_timeout_ms_ = 0;
+  absl::InlinedVector<grpc_arg, 2> xds_channel_args_to_add_;
+  grpc_channel_args xds_channel_args_;
 };
 
 class BasicTest : public XdsEnd2endTest {
@@ -2320,6 +2336,28 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
 }
 
 // Tests that the old LB call is still used after the balancer address update as
+TEST_P(XdsResolverOnlyTest, MultipleChannelsShareXdsClient) {
+  const char* kNewServerName = "new-server.example.com";
+  Listener listener = balancers_[0]->ads_service()->default_listener();
+  listener.set_name(kNewServerName);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  WaitForAllBackends();
+  // Create second channel and tell it to connect to kNewServerName.
+  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  channel2->GetState(/*try_to_connect=*/true);
+  ASSERT_TRUE(
+      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  // Make sure there's only one client connected.
+  EXPECT_EQ(1UL, balancers_[0]->ads_service()->clients().size());
+}
+
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
  public:
   XdsResolverLoadReportingOnlyTest() : XdsEnd2endTest(4, 1, 3) {}
@@ -2461,43 +2499,30 @@ using SecureNamingTest = BasicTest;
 
 // Tests that secure naming check passes if target name is expected.
 TEST_P(SecureNamingTest, TargetNameIsExpected) {
-  // TODO(juanlishen): Use separate fake creds for the balancer channel.
-  ResetStub(0, absl::StrCat(kServerName, ";lb"));
   SetNextResolution({});
-  SetNextResolutionForLbChannel({balancers_[0]->port()});
-  const size_t kNumRpcsPerAddress = 100;
+  SetNextResolutionForLbChannel({balancers_[0]->port()}, nullptr, "xds_server");
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args, DefaultEdsServiceName()));
-  // Make sure that trying to connect works without a call.
-  channel_->GetState(true /* try_to_connect */);
-  // We need to wait for all backends to come online.
-  WaitForAllBackends();
-  // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
-  // Each backend should have gotten 100 requests.
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(kNumRpcsPerAddress,
-              backends_[i]->backend_service()->request_count());
-  }
+  CheckRpcSendOk();
 }
 
 // Tests that secure naming check fails if target name is unexpected.
 TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
-  gpr_setenv("GRPC_XDS_BOOTSTRAP", g_bootstrap_file_bad);
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  SetNextResolution({});
+  SetNextResolutionForLbChannel({balancers_[0]->port()}, nullptr,
+                                "incorrect_server_name");
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args, DefaultEdsServiceName()));
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
-  ASSERT_DEATH_IF_SUPPORTED(
-      {
-        ResetStub(0, absl::StrCat(kServerName, ";lb"));
-        SetNextResolution({});
-        SetNextResolutionForLbChannel({balancers_[0]->port()});
-        channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
-      },
-      "");
+  ASSERT_DEATH_IF_SUPPORTED({ CheckRpcSendOk(); }, "");
 }
 
 using LdsTest = BasicTest;
@@ -3039,19 +3064,6 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
   EXPECT_EQ(response_state.error_message,
             "Invalid range header matcher specifier specified: end "
             "cannot be smaller than start.");
-}
-
-// Tests that LDS client times out when no response received.
-TEST_P(LdsRdsTest, Timeout) {
-  ResetStub(0, "", 500);
-  if (GetParam().enable_rds_testing()) {
-    balancers_[0]->ads_service()->SetResourceIgnore(kRdsTypeUrl);
-  } else {
-    balancers_[0]->ads_service()->SetResourceIgnore(kLdsTypeUrl);
-  }
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
 }
 
 // Tests that LDS client should choose the default route (with no matching
@@ -4347,24 +4359,7 @@ TEST_P(CdsTest, WrongLrsServer) {
   EXPECT_EQ(response_state.error_message, "LRS ConfigSource is not self.");
 }
 
-// Tests that CDS client times out when no response received.
-TEST_P(CdsTest, Timeout) {
-  ResetStub(0, "", 500);
-  balancers_[0]->ads_service()->SetResourceIgnore(kCdsTypeUrl);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-}
-
 using EdsTest = BasicTest;
-
-TEST_P(EdsTest, Timeout) {
-  ResetStub(0, "", 500);
-  balancers_[0]->ads_service()->SetResourceIgnore(kEdsTypeUrl);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-}
 
 // Tests that EDS client should send a NACK if the EDS update contains
 // sparse priorities.
@@ -4401,6 +4396,44 @@ TEST_P(EdsTest, EdsServiceNameDefaultsToClusterName) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendOk();
+}
+
+class TimeoutTest : public BasicTest {
+ protected:
+  void SetUp() override {
+    xds_resource_does_not_exist_timeout_ms_ = 500;
+    BasicTest::SetUp();
+  }
+};
+
+// Tests that LDS client times out when no response received.
+TEST_P(TimeoutTest, Lds) {
+  balancers_[0]->ads_service()->SetResourceIgnore(kLdsTypeUrl);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+TEST_P(TimeoutTest, Rds) {
+  balancers_[0]->ads_service()->SetResourceIgnore(kRdsTypeUrl);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+// Tests that CDS client times out when no response received.
+TEST_P(TimeoutTest, Cds) {
+  balancers_[0]->ads_service()->SetResourceIgnore(kCdsTypeUrl);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+TEST_P(TimeoutTest, Eds) {
+  balancers_[0]->ads_service()->SetResourceIgnore(kEdsTypeUrl);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
 }
 
 using LocalityMapTest = BasicTest;
@@ -4641,7 +4674,7 @@ class FailoverTest : public BasicTest {
  public:
   void SetUp() override {
     BasicTest::SetUp();
-    ResetStub(500, "");
+    ResetStub(500);
   }
 };
 
@@ -5353,7 +5386,7 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
   CheckRpcSendFailure(kNumFailuresPerAddress * num_backends_,
-                      /*server_fail=*/true);
+                      RpcOptions().set_server_fail(true));
   // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
@@ -5400,7 +5433,7 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
   CheckRpcSendFailure(kNumFailuresPerAddress * num_backends_,
-                      /*server_fail=*/true);
+                      RpcOptions().set_server_fail(true));
   // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
@@ -5613,6 +5646,12 @@ std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
 
+// TestType params:
+// - use_xds_resolver
+// - enable_load_reporting
+// - enable_rds_testing = false
+// - use_v2 = false
+
 INSTANTIATE_TEST_SUITE_P(XdsTest, BasicTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false),
@@ -5620,11 +5659,12 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, BasicTest,
                                            TestType(true, true)),
                          &TestTypeName);
 
+// Run with both fake resolver and xds resolver.
+// Don't run with load reporting or v2 or RDS, since they are irrelevant to
+// the tests.
 INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
-                         ::testing::Values(TestType(false, true),
-                                           TestType(false, false),
-                                           TestType(true, false),
-                                           TestType(true, true)),
+                         ::testing::Values(TestType(false, false),
+                                           TestType(true, false)),
                          &TestTypeName);
 
 // LDS depends on XdsResolver.
@@ -5654,6 +5694,14 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, CdsTest,
 INSTANTIATE_TEST_SUITE_P(XdsTest, EdsTest,
                          ::testing::Values(TestType(true, false),
                                            TestType(true, true)),
+                         &TestTypeName);
+
+// Test initial resource timeouts for each resource type.
+// Do this only for XdsResolver with RDS enabled, so that we can test
+// all resource types.
+// Run with V3 only, since the functionality is no different in V2.
+INSTANTIATE_TEST_SUITE_P(XdsTest, TimeoutTest,
+                         ::testing::Values(TestType(true, false, true)),
                          &TestTypeName);
 
 // XdsResolverOnlyTest depends on XdsResolver.

@@ -56,11 +56,9 @@ class grpc_fake_channel_security_connector final
         target_(gpr_strdup(target)),
         expected_targets_(
             gpr_strdup(grpc_fake_transport_get_expected_targets(args))),
-        is_lb_channel_(
-            grpc_channel_args_find(args, GRPC_ARG_ADDRESS_IS_XDS_SERVER) !=
-                nullptr ||
-            grpc_channel_args_find(
-                args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER) != nullptr) {
+        is_lb_channel_(grpc_channel_args_find(
+                           args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER) !=
+                       nullptr) {
     const grpc_arg* target_name_override_arg =
         grpc_channel_args_find(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
     if (target_name_override_arg != nullptr) {
@@ -147,9 +145,7 @@ class grpc_fake_channel_security_connector final
   char* target_name_override() const { return target_name_override_; }
 
  private:
-  bool fake_check_target(const char* target_type, const char* target,
-                         const char* set_str) const {
-    GPR_ASSERT(target_type != nullptr);
+  bool fake_check_target(const char* target, const char* set_str) const {
     GPR_ASSERT(target != nullptr);
     char** set = nullptr;
     size_t set_size = 0;
@@ -185,14 +181,14 @@ class grpc_fake_channel_security_connector final
                 expected_targets_);
         goto done;
       }
-      if (!fake_check_target("LB", target_, lbs_and_backends[1])) {
+      if (!fake_check_target(target_, lbs_and_backends[1])) {
         gpr_log(GPR_ERROR, "LB target '%s' not found in expected set '%s'",
                 target_, lbs_and_backends[1]);
         goto done;
       }
       success = true;
     } else {
-      if (!fake_check_target("Backend", target_, lbs_and_backends[0])) {
+      if (!fake_check_target(target_, lbs_and_backends[0])) {
         gpr_log(GPR_ERROR, "Backend target '%s' not found in expected set '%s'",
                 target_, lbs_and_backends[0]);
         goto done;
