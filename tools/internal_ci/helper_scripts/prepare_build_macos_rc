@@ -94,7 +94,6 @@ then
   # make sure md5sum is available (requires coreutils 8.31+)
   brew update
   brew upgrade coreutils
-  brew install md5sha1sum
 
   # Install Python 3.7 and Python 3.8
   time curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
