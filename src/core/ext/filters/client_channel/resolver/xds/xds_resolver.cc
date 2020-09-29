@@ -681,8 +681,8 @@ void XdsResolver::GenerateResult() {
 void XdsResolver::MaybeRemoveUnusedClusters() {
   bool update_needed = false;
   for (auto it = cluster_state_map_.begin(); it != cluster_state_map_.end();) {
-    if (it->second->RefIfNonZero()) {
-      it->second->Unref();
+    RefCountedPtr<ClusterState> cluster_state = it->second->RefIfNonZero();
+    if (cluster_state != nullptr) {
       ++it;
     } else {
       update_needed = true;
