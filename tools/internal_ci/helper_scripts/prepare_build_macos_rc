@@ -92,6 +92,7 @@ then
   export PYTHONPATH=/Library/Python/3.4/site-packages
 
   # make sure md5sum is available (requires coreutils 8.31+)
+  brew update
   brew upgrade coreutils
 
   # Install Python 3.7 and Python 3.8
