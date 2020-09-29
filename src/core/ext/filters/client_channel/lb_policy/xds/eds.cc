@@ -161,6 +161,7 @@ class EdsLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<ChildPickerWrapper> child_picker_;
+    uint32_t max_concurrent_requests_;
   };
 
   class Helper : public ChannelControlHelper {
@@ -263,7 +264,9 @@ EdsLb::DropPicker::DropPicker(RefCountedPtr<EdsLb> eds_policy)
     : eds_policy_(std::move(eds_policy)),
       drop_config_(eds_policy_->drop_config_),
       drop_stats_(eds_policy_->drop_stats_),
-      child_picker_(eds_policy_->child_picker_) {
+      child_picker_(eds_policy_->child_picker_),
+      max_concurrent_requests_(
+          eds_policy_->config_->max_concurrent_requests()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
     gpr_log(GPR_INFO, "[edslb %p] constructed new drop picker %p",
             eds_policy_.get(), this);
@@ -281,7 +284,7 @@ EdsLb::PickResult EdsLb::DropPicker::Pick(PickArgs args) {
   }
   // Check and see if we exceeded the max concurrent requests count.
   uint32_t current = eds_policy_->concurrent_requests_.FetchAdd(1);
-  if (current >= eds_policy_->config_->max_concurrent_requests()) {
+  if (current >= max_concurrent_requests_) {
     eds_policy_->concurrent_requests_.FetchSub(1);
     if (drop_stats_ != nullptr) {
       drop_stats_->AddUncategorizedDrops();
@@ -512,8 +515,11 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
   args_ = args.args;
   args.args = nullptr;
   // Update drop stats for load reporting if needed.
-  if (is_initial_update || config_->lrs_load_reporting_server_name() !=
-                               old_config->lrs_load_reporting_server_name()) {
+  if (is_initial_update ||
+      config_->lrs_load_reporting_server_name() !=
+          old_config->lrs_load_reporting_server_name() ||
+      config_->max_concurrent_requests() !=
+          old_config->max_concurrent_requests()) {
     drop_stats_.reset();
     if (config_->lrs_load_reporting_server_name().has_value()) {
       const auto key = GetLrsClusterKey();
