@@ -1,42 +1,58 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0"
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- 
-    'Grpc_SkipNativeLibsCopy' should not be enabled in normal use.
+    'Grpc_CopyNativeLibs' may be set to 'Always' (default), 'PreserveNewest' or 'Never'.
+    'Grpc_SkipNativeLibsCopy' may be set to 'False' (default) or 'True' (backward compatibility)
+    'Grpc_SkipNativeLibsCopy' is legacy, it will be removed. 
+    Do not use both 'Grpc_CopyNativeLibs' and 'Grpc_SkipNativeLibsCopy'. 
 
-    It only exists to support special scenarios where user wants to copy the native libraries
-    to output directory themselves, in a separate build step or script.
+    'Grpc_SkipNativeLibsCopy' and 'Grpc_CopyNativeLibs' should not be used in normal use.
+
+    It exists to support special scenarios where user wants to control copying native libraries, 
+    e.g. user wants to prevent native libraries copying every build or to copy it in a separate step or script.
 
     Only use this flag if you really know what you're doing. It's your responsibility to ensure that matching versions of 
     the Grpc.Core.dll assembly and the native libraries are used at all times.
   -->
+  <Choose>
+    <When Condition="'$(Grpc_CopyNativeLibs)'==''">
+      <Choose>
+        <When Condition="'$(Grpc_SkipNativeLibsCopy)' == 'true'">
+          <PropertyGroup>
+            <Grpc_CopyNativeLibs>Never</Grpc_CopyNativeLibs>
+          </PropertyGroup>
+        </When>
+        <Otherwise>
+          <PropertyGroup>
+            <Grpc_CopyNativeLibs>Always</Grpc_CopyNativeLibs>
+          </PropertyGroup>
+        </Otherwise>
+      </Choose>
+    </When>
+  </Choose>
   <ItemGroup Condition="'$(Grpc_SkipNativeLibsCopy)' != 'true'">
-    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win\native\grpc_csharp_ext.x86.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win\native\grpc_csharp_ext.x86.dll" CopyToOutputDirectory="$(Grpc_CopyNativeLibs)">
       <Link>grpc_csharp_ext.x86.dll</Link>
       <Visible>false</Visible>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win\native\grpc_csharp_ext.x64.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win\native\grpc_csharp_ext.x64.dll" CopyToOutputDirectory="$(Grpc_CopyNativeLibs)">
       <Link>grpc_csharp_ext.x64.dll</Link>
       <Visible>false</Visible>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\linux\native\libgrpc_csharp_ext.x86.so">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\linux\native\libgrpc_csharp_ext.x86.so" CopyToOutputDirectory="$(Grpc_CopyNativeLibs)">
       <Link>libgrpc_csharp_ext.x86.so</Link>
       <Visible>false</Visible>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\linux\native\libgrpc_csharp_ext.x64.so">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\linux\native\libgrpc_csharp_ext.x64.so" CopyToOutputDirectory="$(Grpc_CopyNativeLibs)">
       <Link>libgrpc_csharp_ext.x64.so</Link>
       <Visible>false</Visible>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\osx\native\libgrpc_csharp_ext.x86.dylib">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\osx\native\libgrpc_csharp_ext.x86.dylib" CopyToOutputDirectory="$(Grpc_CopyNativeLibs)">
       <Link>libgrpc_csharp_ext.x86.dylib</Link>
       <Visible>false</Visible>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\osx\native\libgrpc_csharp_ext.x64.dylib">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\osx\native\libgrpc_csharp_ext.x64.dylib" CopyToOutputDirectory="$(Grpc_CopyNativeLibs)">
       <Link>libgrpc_csharp_ext.x64.dylib</Link>
       <Visible>false</Visible>
     </Content>
