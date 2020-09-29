@@ -820,12 +820,10 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pci.c \
     third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcia.c \
     third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pku.c \
     third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pmaps.c \
     third_party/boringssl-with-bazel/src/crypto/x509v3/v3_prn.c \
     third_party/boringssl-with-bazel/src/crypto/x509v3/v3_purp.c \
     third_party/boringssl-with-bazel/src/crypto/x509v3/v3_skey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_sxnet.c \
     third_party/boringssl-with-bazel/src/crypto/x509v3/v3_utl.c \
     third_party/boringssl-with-bazel/src/ssl/bio_ssl.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_both.cc \
