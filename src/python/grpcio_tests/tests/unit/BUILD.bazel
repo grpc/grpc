@@ -102,8 +102,8 @@ py_library(
         main = test_file_name,
         deps = [
             ":_exit_scenarios",
-            ":_rpc_test_helpers",
             ":_from_grpc_import_star",
+            ":_rpc_test_helpers",
             ":_server_shutdown_scenarios",
             ":_signal_client",
             ":_tcp_proxy",
