@@ -26,14 +26,10 @@
 #include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/codegen/status.h>
 
-namespace grpc_impl {
-
-class Server;
-class ServerContext;
-}  // namespace grpc_impl
 namespace grpc {
 
 class CompletionQueue;
+class ServerContext;
 class ServerInterface;
 
 namespace internal {
@@ -127,7 +123,7 @@ class Service {
   experimental_type experimental() { return experimental_type(this); }
 
   template <class Message>
-  void RequestAsyncUnary(int index, ::grpc_impl::ServerContext* context,
+  void RequestAsyncUnary(int index, ::grpc::ServerContext* context,
                          Message* request,
                          internal::ServerAsyncStreamingInterface* stream,
                          ::grpc::CompletionQueue* call_cq,
@@ -141,7 +137,7 @@ class Service {
                               notification_cq, tag, request);
   }
   void RequestAsyncClientStreaming(
-      int index, ::grpc_impl::ServerContext* context,
+      int index, ::grpc::ServerContext* context,
       internal::ServerAsyncStreamingInterface* stream,
       ::grpc::CompletionQueue* call_cq,
       ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
@@ -151,7 +147,7 @@ class Service {
   }
   template <class Message>
   void RequestAsyncServerStreaming(
-      int index, ::grpc_impl::ServerContext* context, Message* request,
+      int index, ::grpc::ServerContext* context, Message* request,
       internal::ServerAsyncStreamingInterface* stream,
       ::grpc::CompletionQueue* call_cq,
       ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
@@ -160,7 +156,7 @@ class Service {
                               notification_cq, tag, request);
   }
   void RequestAsyncBidiStreaming(
-      int index, ::grpc_impl::ServerContext* context,
+      int index, ::grpc::ServerContext* context,
       internal::ServerAsyncStreamingInterface* stream,
       ::grpc::CompletionQueue* call_cq,
       ::grpc::ServerCompletionQueue* notification_cq, void* tag) {

@@ -18,64 +18,77 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+
 #include "src/core/lib/channel/channel_args.h"
 
 #define GRPC_ARG_HIERARCHICAL_PATH "grpc.internal.address.hierarchical_path"
 
 namespace grpc_core {
 
+const char* kHierarchicalPathAttributeKey = "hierarchical_path";
+
 namespace {
 
-void* HierarchicalPathCopy(void* p) {
-  std::vector<std::string>* path = static_cast<std::vector<std::string>*>(p);
-  return static_cast<void*>(new std::vector<std::string>(*path));
-}
+class HierarchicalPathAttribute : public ServerAddress::AttributeInterface {
+ public:
+  explicit HierarchicalPathAttribute(std::vector<std::string> path)
+      : path_(std::move(path)) {}
 
-void HierarchicalPathDestroy(void* p) {
-  std::vector<std::string>* path = static_cast<std::vector<std::string>*>(p);
-  delete path;
-}
-
-int HierarchicalPathCompare(void* p1, void* p2) {
-  std::vector<std::string>* path1 = static_cast<std::vector<std::string>*>(p1);
-  std::vector<std::string>* path2 = static_cast<std::vector<std::string>*>(p2);
-  for (size_t i = 0; i < path1->size(); ++i) {
-    if (path2->size() == i) return 1;
-    int r = (*path1)[i].compare((*path2)[i]);
-    if (r != 0) return r;
+  std::unique_ptr<AttributeInterface> Copy() const override {
+    return absl::make_unique<HierarchicalPathAttribute>(path_);
   }
-  if (path2->size() > path1->size()) return -1;
-  return 0;
-}
 
-const grpc_arg_pointer_vtable hierarchical_path_arg_vtable = {
-    HierarchicalPathCopy, HierarchicalPathDestroy, HierarchicalPathCompare};
+  int Cmp(const AttributeInterface* other) const override {
+    const std::vector<std::string>& other_path =
+        static_cast<const HierarchicalPathAttribute*>(other)->path_;
+    for (size_t i = 0; i < path_.size(); ++i) {
+      if (other_path.size() == i) return 1;
+      int r = path_[i].compare(other_path[i]);
+      if (r != 0) return r;
+    }
+    if (other_path.size() > path_.size()) return -1;
+    return 0;
+  }
+
+  std::string ToString() const override {
+    return absl::StrCat("[", absl::StrJoin(path_, ", "), "]");
+  }
+
+  const std::vector<std::string>& path() const { return path_; }
+
+ private:
+  std::vector<std::string> path_;
+};
 
 }  // namespace
 
-grpc_arg MakeHierarchicalPathArg(const std::vector<std::string>& path) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_HIERARCHICAL_PATH),
-      const_cast<std::vector<std::string>*>(&path),
-      &hierarchical_path_arg_vtable);
+std::unique_ptr<ServerAddress::AttributeInterface>
+MakeHierarchicalPathAttribute(std::vector<std::string> path) {
+  return absl::make_unique<HierarchicalPathAttribute>(std::move(path));
 }
 
 HierarchicalAddressMap MakeHierarchicalAddressMap(
     const ServerAddressList& addresses) {
   HierarchicalAddressMap result;
   for (const ServerAddress& address : addresses) {
-    auto* path = grpc_channel_args_find_pointer<std::vector<std::string>>(
-        address.args(), GRPC_ARG_HIERARCHICAL_PATH);
-    if (path == nullptr || path->empty()) continue;
-    auto it = path->begin();
+    const HierarchicalPathAttribute* path_attribute =
+        static_cast<const HierarchicalPathAttribute*>(
+            address.GetAttribute(kHierarchicalPathAttributeKey));
+    if (path_attribute == nullptr) continue;
+    const std::vector<std::string>& path = path_attribute->path();
+    auto it = path.begin();
     ServerAddressList& target_list = result[*it];
+    std::unique_ptr<HierarchicalPathAttribute> new_attribute;
     ++it;
-    std::vector<std::string> remaining_path(it, path->end());
-    const char* name_to_remove = GRPC_ARG_HIERARCHICAL_PATH;
-    grpc_arg new_arg = MakeHierarchicalPathArg(remaining_path);
-    grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
-        address.args(), &name_to_remove, 1, &new_arg, 1);
-    target_list.emplace_back(address.address(), new_args);
+    if (it != path.end()) {
+      std::vector<std::string> remaining_path(it, path.end());
+      new_attribute = absl::make_unique<HierarchicalPathAttribute>(
+          std::move(remaining_path));
+    }
+    target_list.emplace_back(address.WithAttribute(
+        kHierarchicalPathAttributeKey, std::move(new_attribute)));
   }
   return result;
 }

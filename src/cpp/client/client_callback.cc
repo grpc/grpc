@@ -15,13 +15,13 @@
  *
  */
 
-#include <grpcpp/impl/codegen/client_callback_impl.h>
+#include <grpcpp/impl/codegen/client_callback.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 
-namespace grpc_impl {
+namespace grpc {
 namespace internal {
 
 void ClientReactor::InternalScheduleOnDone(grpc::Status s) {
@@ -49,4 +49,4 @@ void ClientReactor::InternalScheduleOnDone(grpc::Status s) {
 }
 
 }  // namespace internal
-}  // namespace grpc_impl
+}  // namespace grpc

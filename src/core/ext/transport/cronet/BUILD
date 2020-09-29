@@ -34,6 +34,8 @@ grpc_cc_library(
     srcs = [
         "client/secure/cronet_channel_create.cc",
         "transport/cronet_api_dummy.cc",
+        "transport/cronet_status.cc",
+        "transport/cronet_status.h",
         "transport/cronet_transport.cc",
         "transport/cronet_transport.h",
     ],

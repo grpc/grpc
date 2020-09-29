@@ -949,9 +949,7 @@ include/grpcpp/impl/channel_argument_option.h \
 include/grpcpp/impl/client_unary_call.h \
 include/grpcpp/impl/codegen/async_generic_service.h \
 include/grpcpp/impl/codegen/async_stream.h \
-include/grpcpp/impl/codegen/async_stream_impl.h \
 include/grpcpp/impl/codegen/async_unary_call.h \
-include/grpcpp/impl/codegen/async_unary_call_impl.h \
 include/grpcpp/impl/codegen/byte_buffer.h \
 include/grpcpp/impl/codegen/call.h \
 include/grpcpp/impl/codegen/call_hook.h \
@@ -960,7 +958,6 @@ include/grpcpp/impl/codegen/call_op_set_interface.h \
 include/grpcpp/impl/codegen/callback_common.h \
 include/grpcpp/impl/codegen/channel_interface.h \
 include/grpcpp/impl/codegen/client_callback.h \
-include/grpcpp/impl/codegen/client_callback_impl.h \
 include/grpcpp/impl/codegen/client_context.h \
 include/grpcpp/impl/codegen/client_interceptor.h \
 include/grpcpp/impl/codegen/client_unary_call.h \
@@ -979,7 +976,6 @@ include/grpcpp/impl/codegen/interceptor_common.h \
 include/grpcpp/impl/codegen/message_allocator.h \
 include/grpcpp/impl/codegen/metadata_map.h \
 include/grpcpp/impl/codegen/method_handler.h \
-include/grpcpp/impl/codegen/method_handler_impl.h \
 include/grpcpp/impl/codegen/proto_buffer_reader.h \
 include/grpcpp/impl/codegen/proto_buffer_writer.h \
 include/grpcpp/impl/codegen/proto_utils.h \
@@ -989,9 +985,7 @@ include/grpcpp/impl/codegen/security/auth_context.h \
 include/grpcpp/impl/codegen/serialization_traits.h \
 include/grpcpp/impl/codegen/server_callback.h \
 include/grpcpp/impl/codegen/server_callback_handlers.h \
-include/grpcpp/impl/codegen/server_callback_impl.h \
 include/grpcpp/impl/codegen/server_context.h \
-include/grpcpp/impl/codegen/server_context_impl.h \
 include/grpcpp/impl/codegen/server_interceptor.h \
 include/grpcpp/impl/codegen/server_interface.h \
 include/grpcpp/impl/codegen/service_type.h \
@@ -1002,7 +996,6 @@ include/grpcpp/impl/codegen/string_ref.h \
 include/grpcpp/impl/codegen/stub_options.h \
 include/grpcpp/impl/codegen/sync.h \
 include/grpcpp/impl/codegen/sync_stream.h \
-include/grpcpp/impl/codegen/sync_stream_impl.h \
 include/grpcpp/impl/codegen/time.h \
 include/grpcpp/impl/grpc_library.h \
 include/grpcpp/impl/method_handler_impl.h \
@@ -1026,13 +1019,10 @@ include/grpcpp/server_builder.h \
 include/grpcpp/server_context.h \
 include/grpcpp/server_posix.h \
 include/grpcpp/support/async_stream.h \
-include/grpcpp/support/async_stream_impl.h \
 include/grpcpp/support/async_unary_call.h \
-include/grpcpp/support/async_unary_call_impl.h \
 include/grpcpp/support/byte_buffer.h \
 include/grpcpp/support/channel_arguments.h \
 include/grpcpp/support/client_callback.h \
-include/grpcpp/support/client_callback_impl.h \
 include/grpcpp/support/client_interceptor.h \
 include/grpcpp/support/config.h \
 include/grpcpp/support/interceptor.h \
@@ -1041,7 +1031,6 @@ include/grpcpp/support/method_handler.h \
 include/grpcpp/support/proto_buffer_reader.h \
 include/grpcpp/support/proto_buffer_writer.h \
 include/grpcpp/support/server_callback.h \
-include/grpcpp/support/server_callback_impl.h \
 include/grpcpp/support/server_interceptor.h \
 include/grpcpp/support/slice.h \
 include/grpcpp/support/status.h \
@@ -1049,7 +1038,6 @@ include/grpcpp/support/status_code_enum.h \
 include/grpcpp/support/string_ref.h \
 include/grpcpp/support/stub_options.h \
 include/grpcpp/support/sync_stream.h \
-include/grpcpp/support/sync_stream_impl.h \
 include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
 src/core/ext/filters/census/grpc_context.cc \
@@ -1103,7 +1091,7 @@ src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/eds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds.h \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy_factory.h \
 src/core/ext/filters/client_channel/lb_policy_registry.cc \
 src/core/ext/filters/client_channel/lb_policy_registry.h \
@@ -1133,6 +1121,7 @@ src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
+src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h \
 src/core/ext/filters/client_channel/resolver_factory.h \
 src/core/ext/filters/client_channel/resolver_registry.cc \
 src/core/ext/filters/client_channel/resolver_registry.h \
@@ -1524,6 +1513,12 @@ src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c \
 src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h \
 src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
 src/core/ext/upbdefs-generated/validate/validate.upbdefs.h \
+src/core/ext/xds/certificate_provider_factory.h \
+src/core/ext/xds/certificate_provider_registry.cc \
+src/core/ext/xds/certificate_provider_registry.h \
+src/core/ext/xds/certificate_provider_store.h \
+src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc \
+src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h \
 src/core/ext/xds/xds_api.cc \
 src/core/ext/xds/xds_api.h \
 src/core/ext/xds/xds_bootstrap.cc \
@@ -1629,6 +1624,7 @@ src/core/lib/gprpp/arena.cc \
 src/core/lib/gprpp/arena.h \
 src/core/lib/gprpp/atomic.h \
 src/core/lib/gprpp/debug_location.h \
+src/core/lib/gprpp/dual_ref_counted.h \
 src/core/lib/gprpp/fork.cc \
 src/core/lib/gprpp/fork.h \
 src/core/lib/gprpp/global_config.h \
@@ -1833,6 +1829,8 @@ src/core/lib/iomgr/work_serializer.cc \
 src/core/lib/iomgr/work_serializer.h \
 src/core/lib/json/json.h \
 src/core/lib/json/json_reader.cc \
+src/core/lib/json/json_util.cc \
+src/core/lib/json/json_util.h \
 src/core/lib/json/json_writer.cc \
 src/core/lib/profiling/basic_timers.cc \
 src/core/lib/profiling/stap_timers.cc \
@@ -1888,6 +1886,8 @@ src/core/lib/security/credentials/plugin/plugin_credentials.cc \
 src/core/lib/security/credentials/plugin/plugin_credentials.h \
 src/core/lib/security/credentials/ssl/ssl_credentials.cc \
 src/core/lib/security/credentials/ssl/ssl_credentials.h \
+src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
+src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
 src/core/lib/security/credentials/tls/tls_credentials.cc \

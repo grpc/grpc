@@ -834,7 +834,6 @@ class PythonLanguage(object):
                     # tested.
                     return (
                         python27_config,
-                        python37_config,
                         python38_config,
                     )
                 else:

@@ -55,29 +55,25 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
   class ChannelConfigHelper {
    public:
-    struct ApplyServiceConfigResult {
+    struct ChooseServiceConfigResult {
       // Set to true if the service config has changed since the last result.
       bool service_config_changed = false;
       // Set to true if we don't have a valid service config to use.
       // This tells the ResolvingLoadBalancingPolicy to put the channel
       // into TRANSIENT_FAILURE.
       bool no_valid_service_config = false;
-      // A service config parsing error occurred.
-      grpc_error* service_config_error = GRPC_ERROR_NONE;
       // The LB policy config to use.
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config;
     };
 
     virtual ~ChannelConfigHelper() = default;
 
-    // Applies the service config to the channel.
-    virtual ApplyServiceConfigResult ApplyServiceConfig(
+    // Chooses the service config for the channel.
+    virtual ChooseServiceConfigResult ChooseServiceConfig(
         const Resolver::Result& result) = 0;
 
-    // Applies the ConfigSelector to the channel.
-    virtual void ApplyConfigSelector(
-        bool service_config_changed,
-        RefCountedPtr<ConfigSelector> config_selector) = 0;
+    // Starts using the service config for calls.
+    virtual void StartUsingServiceConfigForCalls() = 0;
 
     // Indicates a resolver transient failure.
     virtual void ResolverTransientFailure(grpc_error* error) = 0;

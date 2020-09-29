@@ -54,17 +54,18 @@ InteropServerContextInspector::InteropServerContextInspector(
 
 grpc_compression_algorithm
 InteropServerContextInspector::GetCallCompressionAlgorithm() const {
-  return grpc_call_test_only_get_compression_algorithm(context_.call_);
+  return grpc_call_test_only_get_compression_algorithm(context_.call_.call);
 }
 
 uint32_t InteropServerContextInspector::GetEncodingsAcceptedByClient() const {
-  return grpc_call_test_only_get_encodings_accepted_by_peer(context_.call_);
+  return grpc_call_test_only_get_encodings_accepted_by_peer(
+      context_.call_.call);
 }
 
 bool InteropServerContextInspector::WasCompressed() const {
-  return (grpc_call_test_only_get_message_flags(context_.call_) &
+  return (grpc_call_test_only_get_message_flags(context_.call_.call) &
           GRPC_WRITE_INTERNAL_COMPRESS) ||
-         (grpc_call_test_only_get_message_flags(context_.call_) &
+         (grpc_call_test_only_get_message_flags(context_.call_.call) &
           GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED);
 }
 

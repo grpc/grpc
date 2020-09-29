@@ -408,6 +408,7 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
+  - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
@@ -599,6 +600,10 @@ libs:
   - src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.h
   - src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h
   - src/core/ext/upbdefs-generated/validate/validate.upbdefs.h
+  - src/core/ext/xds/certificate_provider_factory.h
+  - src/core/ext/xds/certificate_provider_registry.h
+  - src/core/ext/xds/certificate_provider_store.h
+  - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h
   - src/core/ext/xds/xds_api.h
   - src/core/ext/xds/xds_bootstrap.h
   - src/core/ext/xds/xds_channel_args.h
@@ -630,6 +635,7 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -715,6 +721,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_util.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/mock_cel/activation.h
@@ -741,6 +748,7 @@ libs:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
+  - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
@@ -849,7 +857,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
@@ -1069,6 +1077,8 @@ libs:
   - src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c
   - src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c
   - src/core/ext/upbdefs-generated/validate/validate.upbdefs.c
+  - src/core/ext/xds/certificate_provider_registry.cc
+  - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
   - src/core/ext/xds/xds_client.cc
@@ -1196,6 +1206,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
+  - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/security/authorization/authorization_engine.cc
   - src/core/lib/security/authorization/evaluate_args.cc
@@ -1222,6 +1233,7 @@ libs:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
@@ -1345,6 +1357,7 @@ libs:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/eval_args_mock_endpoint.h
+  - test/core/util/examine_stack.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -1365,6 +1378,7 @@ libs:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/eval_args_mock_endpoint.cc
+  - test/core/util/examine_stack.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1388,6 +1402,9 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - absl/debugging:symbolize
+  - absl/debugging:stacktrace
+  - absl/debugging:failure_signal_handler
 - name: grpc_test_util_unsecure
   build: private
   language: c
@@ -1396,6 +1413,7 @@ libs:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/eval_args_mock_endpoint.h
+  - test/core/util/examine_stack.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -1416,6 +1434,7 @@ libs:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/eval_args_mock_endpoint.cc
+  - test/core/util/examine_stack.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1439,6 +1458,9 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - absl/debugging:symbolize
+  - absl/debugging:stacktrace
+  - absl/debugging:failure_signal_handler
   secure: false
 - name: grpc_unsecure
   build: all
@@ -1578,6 +1600,7 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -1663,6 +1686,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_util.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice_internal.h
@@ -1934,6 +1958,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
+  - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -2111,9 +2136,7 @@ libs:
   - include/grpcpp/impl/client_unary_call.h
   - include/grpcpp/impl/codegen/async_generic_service.h
   - include/grpcpp/impl/codegen/async_stream.h
-  - include/grpcpp/impl/codegen/async_stream_impl.h
   - include/grpcpp/impl/codegen/async_unary_call.h
-  - include/grpcpp/impl/codegen/async_unary_call_impl.h
   - include/grpcpp/impl/codegen/byte_buffer.h
   - include/grpcpp/impl/codegen/call.h
   - include/grpcpp/impl/codegen/call_hook.h
@@ -2122,7 +2145,6 @@ libs:
   - include/grpcpp/impl/codegen/callback_common.h
   - include/grpcpp/impl/codegen/channel_interface.h
   - include/grpcpp/impl/codegen/client_callback.h
-  - include/grpcpp/impl/codegen/client_callback_impl.h
   - include/grpcpp/impl/codegen/client_context.h
   - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
@@ -2141,7 +2163,6 @@ libs:
   - include/grpcpp/impl/codegen/message_allocator.h
   - include/grpcpp/impl/codegen/metadata_map.h
   - include/grpcpp/impl/codegen/method_handler.h
-  - include/grpcpp/impl/codegen/method_handler_impl.h
   - include/grpcpp/impl/codegen/proto_buffer_reader.h
   - include/grpcpp/impl/codegen/proto_buffer_writer.h
   - include/grpcpp/impl/codegen/proto_utils.h
@@ -2151,9 +2172,7 @@ libs:
   - include/grpcpp/impl/codegen/serialization_traits.h
   - include/grpcpp/impl/codegen/server_callback.h
   - include/grpcpp/impl/codegen/server_callback_handlers.h
-  - include/grpcpp/impl/codegen/server_callback_impl.h
   - include/grpcpp/impl/codegen/server_context.h
-  - include/grpcpp/impl/codegen/server_context_impl.h
   - include/grpcpp/impl/codegen/server_interceptor.h
   - include/grpcpp/impl/codegen/server_interface.h
   - include/grpcpp/impl/codegen/service_type.h
@@ -2164,7 +2183,6 @@ libs:
   - include/grpcpp/impl/codegen/stub_options.h
   - include/grpcpp/impl/codegen/sync.h
   - include/grpcpp/impl/codegen/sync_stream.h
-  - include/grpcpp/impl/codegen/sync_stream_impl.h
   - include/grpcpp/impl/codegen/time.h
   - include/grpcpp/impl/grpc_library.h
   - include/grpcpp/impl/method_handler_impl.h
@@ -2188,13 +2206,10 @@ libs:
   - include/grpcpp/server_context.h
   - include/grpcpp/server_posix.h
   - include/grpcpp/support/async_stream.h
-  - include/grpcpp/support/async_stream_impl.h
   - include/grpcpp/support/async_unary_call.h
-  - include/grpcpp/support/async_unary_call_impl.h
   - include/grpcpp/support/byte_buffer.h
   - include/grpcpp/support/channel_arguments.h
   - include/grpcpp/support/client_callback.h
-  - include/grpcpp/support/client_callback_impl.h
   - include/grpcpp/support/client_interceptor.h
   - include/grpcpp/support/config.h
   - include/grpcpp/support/interceptor.h
@@ -2203,7 +2218,6 @@ libs:
   - include/grpcpp/support/proto_buffer_reader.h
   - include/grpcpp/support/proto_buffer_writer.h
   - include/grpcpp/support/server_callback.h
-  - include/grpcpp/support/server_callback_impl.h
   - include/grpcpp/support/server_interceptor.h
   - include/grpcpp/support/slice.h
   - include/grpcpp/support/status.h
@@ -2211,7 +2225,6 @@ libs:
   - include/grpcpp/support/string_ref.h
   - include/grpcpp/support/stub_options.h
   - include/grpcpp/support/sync_stream.h
-  - include/grpcpp/support/sync_stream_impl.h
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   headers:
@@ -2487,9 +2500,7 @@ libs:
   - include/grpcpp/impl/client_unary_call.h
   - include/grpcpp/impl/codegen/async_generic_service.h
   - include/grpcpp/impl/codegen/async_stream.h
-  - include/grpcpp/impl/codegen/async_stream_impl.h
   - include/grpcpp/impl/codegen/async_unary_call.h
-  - include/grpcpp/impl/codegen/async_unary_call_impl.h
   - include/grpcpp/impl/codegen/byte_buffer.h
   - include/grpcpp/impl/codegen/call.h
   - include/grpcpp/impl/codegen/call_hook.h
@@ -2498,7 +2509,6 @@ libs:
   - include/grpcpp/impl/codegen/callback_common.h
   - include/grpcpp/impl/codegen/channel_interface.h
   - include/grpcpp/impl/codegen/client_callback.h
-  - include/grpcpp/impl/codegen/client_callback_impl.h
   - include/grpcpp/impl/codegen/client_context.h
   - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
@@ -2517,7 +2527,6 @@ libs:
   - include/grpcpp/impl/codegen/message_allocator.h
   - include/grpcpp/impl/codegen/metadata_map.h
   - include/grpcpp/impl/codegen/method_handler.h
-  - include/grpcpp/impl/codegen/method_handler_impl.h
   - include/grpcpp/impl/codegen/proto_buffer_reader.h
   - include/grpcpp/impl/codegen/proto_buffer_writer.h
   - include/grpcpp/impl/codegen/proto_utils.h
@@ -2527,9 +2536,7 @@ libs:
   - include/grpcpp/impl/codegen/serialization_traits.h
   - include/grpcpp/impl/codegen/server_callback.h
   - include/grpcpp/impl/codegen/server_callback_handlers.h
-  - include/grpcpp/impl/codegen/server_callback_impl.h
   - include/grpcpp/impl/codegen/server_context.h
-  - include/grpcpp/impl/codegen/server_context_impl.h
   - include/grpcpp/impl/codegen/server_interceptor.h
   - include/grpcpp/impl/codegen/server_interface.h
   - include/grpcpp/impl/codegen/service_type.h
@@ -2540,7 +2547,6 @@ libs:
   - include/grpcpp/impl/codegen/stub_options.h
   - include/grpcpp/impl/codegen/sync.h
   - include/grpcpp/impl/codegen/sync_stream.h
-  - include/grpcpp/impl/codegen/sync_stream_impl.h
   - include/grpcpp/impl/codegen/time.h
   - include/grpcpp/impl/grpc_library.h
   - include/grpcpp/impl/method_handler_impl.h
@@ -2564,13 +2570,10 @@ libs:
   - include/grpcpp/server_context.h
   - include/grpcpp/server_posix.h
   - include/grpcpp/support/async_stream.h
-  - include/grpcpp/support/async_stream_impl.h
   - include/grpcpp/support/async_unary_call.h
-  - include/grpcpp/support/async_unary_call_impl.h
   - include/grpcpp/support/byte_buffer.h
   - include/grpcpp/support/channel_arguments.h
   - include/grpcpp/support/client_callback.h
-  - include/grpcpp/support/client_callback_impl.h
   - include/grpcpp/support/client_interceptor.h
   - include/grpcpp/support/config.h
   - include/grpcpp/support/interceptor.h
@@ -2579,7 +2582,6 @@ libs:
   - include/grpcpp/support/proto_buffer_reader.h
   - include/grpcpp/support/proto_buffer_writer.h
   - include/grpcpp/support/server_callback.h
-  - include/grpcpp/support/server_callback_impl.h
   - include/grpcpp/support/server_interceptor.h
   - include/grpcpp/support/slice.h
   - include/grpcpp/support/status.h
@@ -2587,7 +2589,6 @@ libs:
   - include/grpcpp/support/string_ref.h
   - include/grpcpp/support/stub_options.h
   - include/grpcpp/support/sync_stream.h
-  - include/grpcpp/support/sync_stream_impl.h
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   headers:
@@ -3703,19 +3704,6 @@ targets:
   - linux
   - posix
   - mac
-- name: init_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/init_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
-  uses_polling: false
 - name: inproc_callback_test
   build: test
   language: c
@@ -5377,6 +5365,19 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: certificate_provider_registry_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/certificate_provider_registry_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: cfstream_test
   gtest: true
   build: test
@@ -5757,6 +5758,19 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: dual_ref_counted_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/dual_ref_counted_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test
@@ -5951,6 +5965,19 @@ targets:
   - address_sorting
   - upb
   uses_polling: false
+- name: google_mesh_ca_certificate_provider_factory_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: grpc_cli
   build: test
   run: false
@@ -6042,6 +6069,19 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
+- name: grpc_tls_certificate_distributor_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/grpc_tls_certificate_distributor_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: grpc_tls_credentials_options_test
   gtest: true
   build: test
@@ -6298,6 +6338,20 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: init_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/init_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  uses_polling: false
 - name: initial_settings_frame_bad_client_test
   gtest: true
   build: test
@@ -7534,6 +7588,7 @@ targets:
   - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/eval_args_mock_endpoint.h
+  - test/core/util/examine_stack.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -7557,6 +7612,7 @@ targets:
   - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/eval_args_mock_endpoint.cc
+  - test/core/util/examine_stack.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -7582,6 +7638,9 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/debugging:symbolize
+  - absl/debugging:stacktrace
+  - absl/debugging:failure_signal_handler
   platforms:
   - linux
   - posix

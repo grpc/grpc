@@ -68,7 +68,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/eds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
@@ -296,6 +296,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c \
     src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
+    src/core/ext/xds/certificate_provider_registry.cc \
+    src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc \
     src/core/ext/xds/xds_api.cc \
     src/core/ext/xds/xds_bootstrap.cc \
     src/core/ext/xds/xds_client.cc \
@@ -462,6 +464,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/profiling/basic_timers.cc \
     src/core/lib/profiling/stap_timers.cc \
@@ -490,6 +493,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \

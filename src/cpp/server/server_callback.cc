@@ -15,13 +15,13 @@
  *
  */
 
-#include <grpcpp/impl/codegen/server_callback_impl.h>
+#include <grpcpp/impl/codegen/server_callback.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 
-namespace grpc_impl {
+namespace grpc {
 namespace internal {
 
 void ServerCallbackCall::ScheduleOnDone(bool inline_ondone) {
@@ -81,4 +81,4 @@ void ServerCallbackCall::CallOnCancel(ServerReactor* reactor) {
 }
 
 }  // namespace internal
-}  // namespace grpc_impl
+}  // namespace grpc

@@ -857,6 +857,9 @@ static void inc_initiate_write_reason(
     case GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING:
       GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_APPLICATION_PING();
       break;
+    case GRPC_CHTTP2_INITIATE_WRITE_BDP_PING:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_BDP_ESTIMATOR_PING();
+      break;
     case GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING:
       GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_KEEPALIVE_PING();
       break;
@@ -2579,6 +2582,9 @@ void schedule_bdp_ping_locked(grpc_chttp2_transport* t) {
                         grpc_schedule_on_exec_ctx),
       GRPC_CLOSURE_INIT(&t->finish_bdp_ping_locked, finish_bdp_ping, t,
                         grpc_schedule_on_exec_ctx));
+  // TODO(yashykt): Enabling this causes internal b/168345569. Re-enable once
+  // fixed.
+  // grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_BDP_PING);
 }
 
 static void start_bdp_ping(void* tp, grpc_error* error) {
@@ -3260,6 +3266,8 @@ const char* grpc_chttp2_initiate_write_reason_string(
       return "FLOW_CONTROL_UNSTALLED_BY_UPDATE";
     case GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING:
       return "APPLICATION_PING";
+    case GRPC_CHTTP2_INITIATE_WRITE_BDP_PING:
+      return "BDP_PING";
     case GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING:
       return "KEEPALIVE_PING";
     case GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED:

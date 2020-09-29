@@ -21,6 +21,7 @@
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "test/core/util/eval_args_mock_endpoint.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
@@ -218,6 +219,7 @@ TEST(EvaluateArgsAuthContextTest, GetCertServerNameFailDuplicateProperty) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

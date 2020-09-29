@@ -18,15 +18,16 @@
 
 #include "test/cpp/util/cli_call.h"
 
-#include <iostream>
-#include <utility>
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/byte_buffer.h>
+
+#include <cmath>
+#include <iostream>
+#include <utility>
 
 namespace grpc {
 namespace testing {
@@ -51,7 +52,7 @@ Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel,
 
 CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
                  const std::string& method,
-                 const OutgoingMetadataContainer& metadata)
+                 const OutgoingMetadataContainer& metadata, CliArgs args)
     : stub_(new grpc::GenericStub(channel)) {
   gpr_mu_init(&write_mu_);
   gpr_cv_init(&write_cv_);
@@ -61,6 +62,22 @@ CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
       ctx_.AddMetadata(iter->first, iter->second);
     }
   }
+
+  // Set deadline if timeout > 0 (default value -1 if no timeout specified)
+  if (args.timeout > 0) {
+    int64_t timeout_in_ns = ceil(args.timeout * 1e9);
+
+    // Convert timeout (in nanoseconds) to a deadline
+    auto deadline =
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_nanos(timeout_in_ns, GPR_TIMESPAN));
+    ctx_.set_deadline(deadline);
+  } else if (args.timeout != -1) {
+    fprintf(
+        stderr,
+        "WARNING: Non-positive timeout value, skipping setting deadline.\n");
+  }
+
   call_ = stub_->PrepareCall(&ctx_, method, &cq_);
   call_->StartCall(tag(1));
   void* got_tag;

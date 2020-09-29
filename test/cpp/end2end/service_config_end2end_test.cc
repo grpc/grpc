@@ -437,7 +437,7 @@ TEST_F(ServiceConfigEnd2endTest, NoServiceConfigTest) {
   auto stub = BuildStub(channel);
   SetNextResolutionNoServiceConfig(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
-  EXPECT_STREQ("", channel->GetServiceConfigJSON().c_str());
+  EXPECT_STREQ("{}", channel->GetServiceConfigJSON().c_str());
 }
 
 TEST_F(ServiceConfigEnd2endTest, NoServiceConfigWithDefaultConfigTest) {
@@ -456,16 +456,6 @@ TEST_F(ServiceConfigEnd2endTest, InvalidServiceConfigTest) {
   auto stub = BuildStub(channel);
   SetNextResolutionInvalidServiceConfig(GetServersPorts());
   CheckRpcSendFailure(stub);
-}
-
-TEST_F(ServiceConfigEnd2endTest, InvalidServiceConfigWithDefaultConfigTest) {
-  StartServers(1);
-  auto channel = BuildChannelWithDefaultServiceConfig();
-  auto stub = BuildStub(channel);
-  SetNextResolutionInvalidServiceConfig(GetServersPorts());
-  CheckRpcSendOk(stub, DEBUG_LOCATION);
-  EXPECT_STREQ(ValidDefaultServiceConfig(),
-               channel->GetServiceConfigJSON().c_str());
 }
 
 TEST_F(ServiceConfigEnd2endTest, ValidServiceConfigUpdatesTest) {
@@ -490,7 +480,7 @@ TEST_F(ServiceConfigEnd2endTest,
   EXPECT_STREQ(ValidServiceConfigV1(), channel->GetServiceConfigJSON().c_str());
   SetNextResolutionNoServiceConfig(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
-  EXPECT_STREQ("", channel->GetServiceConfigJSON().c_str());
+  EXPECT_STREQ("{}", channel->GetServiceConfigJSON().c_str());
 }
 
 TEST_F(ServiceConfigEnd2endTest,
@@ -552,7 +542,7 @@ TEST_F(ServiceConfigEnd2endTest, NoServiceConfigAfterInvalidServiceConfigTest) {
   CheckRpcSendFailure(stub);
   SetNextResolutionNoServiceConfig(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
-  EXPECT_STREQ("", channel->GetServiceConfigJSON().c_str());
+  EXPECT_STREQ("{}", channel->GetServiceConfigJSON().c_str());
 }
 
 TEST_F(ServiceConfigEnd2endTest,

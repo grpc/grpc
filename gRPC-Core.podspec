@@ -46,6 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
+  abseil_version = '1.20200225.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -173,7 +174,6 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.12'
-    abseil_version = '1.20200225.0'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -237,7 +237,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/xds/eds.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds.h',
-                      'src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc',
+                      'src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc',
                       'src/core/ext/filters/client_channel/lb_policy_factory.h',
                       'src/core/ext/filters/client_channel/lb_policy_registry.cc',
                       'src/core/ext/filters/client_channel/lb_policy_registry.h',
@@ -267,6 +267,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc',
+                      'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
                       'src/core/ext/filters/client_channel/resolver_factory.h',
                       'src/core/ext/filters/client_channel/resolver_registry.cc',
                       'src/core/ext/filters/client_channel/resolver_registry.h',
@@ -674,6 +675,12 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h',
                       'src/core/ext/upbdefs-generated/validate/validate.upbdefs.c',
                       'src/core/ext/upbdefs-generated/validate/validate.upbdefs.h',
+                      'src/core/ext/xds/certificate_provider_factory.h',
+                      'src/core/ext/xds/certificate_provider_registry.cc',
+                      'src/core/ext/xds/certificate_provider_registry.h',
+                      'src/core/ext/xds/certificate_provider_store.h',
+                      'src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc',
+                      'src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h',
                       'src/core/ext/xds/xds_api.cc',
                       'src/core/ext/xds/xds_api.h',
                       'src/core/ext/xds/xds_bootstrap.cc',
@@ -779,6 +786,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/arena.h',
                       'src/core/lib/gprpp/atomic.h',
                       'src/core/lib/gprpp/debug_location.h',
+                      'src/core/lib/gprpp/dual_ref_counted.h',
                       'src/core/lib/gprpp/fork.cc',
                       'src/core/lib/gprpp/fork.h',
                       'src/core/lib/gprpp/global_config.h',
@@ -983,6 +991,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/work_serializer.h',
                       'src/core/lib/json/json.h',
                       'src/core/lib/json/json_reader.cc',
+                      'src/core/lib/json/json_util.cc',
+                      'src/core/lib/json/json_util.h',
                       'src/core/lib/json/json_writer.cc',
                       'src/core/lib/profiling/basic_timers.cc',
                       'src/core/lib/profiling/stap_timers.cc',
@@ -1038,6 +1048,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.cc',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
+                      'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc',
+                      'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h',
                       'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc',
                       'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                       'src/core/lib/security/credentials/tls/tls_credentials.cc',
@@ -1305,6 +1317,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                               'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                               'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
+                              'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
                               'src/core/ext/filters/client_channel/resolver_factory.h',
                               'src/core/ext/filters/client_channel/resolver_registry.h',
                               'src/core/ext/filters/client_channel/resolver_result_parsing.h',
@@ -1504,6 +1517,10 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.h',
                               'src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h',
                               'src/core/ext/upbdefs-generated/validate/validate.upbdefs.h',
+                              'src/core/ext/xds/certificate_provider_factory.h',
+                              'src/core/ext/xds/certificate_provider_registry.h',
+                              'src/core/ext/xds/certificate_provider_store.h',
+                              'src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h',
                               'src/core/ext/xds/xds_api.h',
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_channel_args.h',
@@ -1550,6 +1567,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/arena.h',
                               'src/core/lib/gprpp/atomic.h',
                               'src/core/lib/gprpp/debug_location.h',
+                              'src/core/lib/gprpp/dual_ref_counted.h',
                               'src/core/lib/gprpp/fork.h',
                               'src/core/lib/gprpp/global_config.h',
                               'src/core/lib/gprpp/global_config_custom.h',
@@ -1647,6 +1665,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/wakeup_fd_posix.h',
                               'src/core/lib/iomgr/work_serializer.h',
                               'src/core/lib/json/json.h',
+                              'src/core/lib/json/json_util.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/lib/security/authorization/authorization_engine.h',
                               'src/core/lib/security/authorization/evaluate_args.h',
@@ -1674,6 +1693,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/oauth2/oauth2_credentials.h',
                               'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                               'src/core/lib/security/credentials/ssl/ssl_credentials.h',
+                              'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h',
                               'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                               'src/core/lib/security/credentials/tls/tls_credentials.h',
                               'src/core/lib/security/security_connector/alts/alts_security_connector.h',
@@ -1811,6 +1831,8 @@ Pod::Spec.new do |s|
 
     ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',
                       'src/core/ext/transport/cronet/client/secure/cronet_channel_create.h',
+                      'src/core/ext/transport/cronet/transport/cronet_status.cc',
+                      'src/core/ext/transport/cronet/transport/cronet_status.h',
                       'src/core/ext/transport/cronet/transport/cronet_transport.cc',
                       'src/core/ext/transport/cronet/transport/cronet_transport.h',
                       'third_party/objective_c/Cronet/bidirectional_stream_c.h'
@@ -1821,6 +1843,9 @@ Pod::Spec.new do |s|
 
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Implementation", version
+    ss.dependency 'abseil/debugging/failure_signal_handler', abseil_version
+    ss.dependency 'abseil/debugging/stacktrace', abseil_version
+    ss.dependency 'abseil/debugging/symbolize', abseil_version
 
     ss.source_files = 'test/core/end2end/cq_verifier.cc',
                       'test/core/end2end/cq_verifier.h',
@@ -1925,6 +1950,8 @@ Pod::Spec.new do |s|
                       'test/core/util/debugger_macros.h',
                       'test/core/util/eval_args_mock_endpoint.cc',
                       'test/core/util/eval_args_mock_endpoint.h',
+                      'test/core/util/examine_stack.cc',
+                      'test/core/util/examine_stack.h',
                       'test/core/util/fuzzer_util.cc',
                       'test/core/util/fuzzer_util.h',
                       'test/core/util/grpc_profiler.cc',

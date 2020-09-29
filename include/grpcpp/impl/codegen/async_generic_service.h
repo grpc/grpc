@@ -21,37 +21,28 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpcpp/impl/codegen/async_stream_impl.h>
+#include <grpcpp/impl/codegen/async_stream.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
+#include <grpcpp/impl/codegen/server_callback.h>
 #include <grpcpp/impl/codegen/server_callback_handlers.h>
-#include <grpcpp/impl/codegen/server_callback_impl.h>
 
 struct grpc_server;
 
 namespace grpc {
 
-typedef ::grpc_impl::ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
+typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericServerAsyncReaderWriter;
-typedef ::grpc_impl::ServerAsyncResponseWriter<ByteBuffer>
-    GenericServerAsyncResponseWriter;
-typedef ::grpc_impl::ServerAsyncReader<ByteBuffer, ByteBuffer>
-    GenericServerAsyncReader;
-typedef ::grpc_impl::ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
+typedef ServerAsyncResponseWriter<ByteBuffer> GenericServerAsyncResponseWriter;
+typedef ServerAsyncReader<ByteBuffer, ByteBuffer> GenericServerAsyncReader;
+typedef ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
 
-class GenericServerContext final : public ::grpc_impl::ServerContext {
+class GenericServerContext final : public ServerContext {
  public:
   const std::string& method() const { return method_; }
   const std::string& host() const { return host_; }
 
  private:
-  friend class grpc::Server;
-  friend class grpc::ServerInterface;
-
-  void Clear() {
-    method_.clear();
-    host_.clear();
-    ::grpc_impl::ServerContext::Clear();
-  }
+  friend class ServerInterface;
 
   std::string method_;
   std::string host_;
@@ -95,24 +86,15 @@ namespace experimental {
 /// \a ServerGenericBidiReactor is the reactor class for bidi streaming RPCs
 /// invoked on a CallbackGenericService. It is just a ServerBidi reactor with
 /// ByteBuffer arguments.
-using ServerGenericBidiReactor =
-    ::grpc_impl::ServerBidiReactor<ByteBuffer, ByteBuffer>;
+using ServerGenericBidiReactor = ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
-class GenericCallbackServerContext final
-    : public ::grpc_impl::CallbackServerContext {
+class GenericCallbackServerContext final : public grpc::CallbackServerContext {
  public:
   const std::string& method() const { return method_; }
   const std::string& host() const { return host_; }
 
  private:
   friend class ::grpc::Server;
-  friend class ::grpc::ServerInterface;
-
-  void Clear() {
-    method_.clear();
-    host_.clear();
-    ::grpc_impl::CallbackServerContext::Clear();
-  }
 
   std::string method_;
   std::string host_;
@@ -142,11 +124,9 @@ class CallbackGenericService {
  private:
   friend class grpc::Server;
 
-  ::grpc_impl::internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>*
-  Handler() {
-    return new ::grpc_impl::internal::CallbackBidiHandler<ByteBuffer,
-                                                          ByteBuffer>(
-        [this](::grpc_impl::CallbackServerContext* ctx) {
+  internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>* Handler() {
+    return new internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>(
+        [this](::grpc::CallbackServerContext* ctx) {
           return CreateReactor(static_cast<GenericCallbackServerContext*>(ctx));
         });
   }

@@ -1847,7 +1847,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/eds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
@@ -2067,6 +2067,8 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c \
     src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
+    src/core/ext/xds/certificate_provider_registry.cc \
+    src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc \
     src/core/ext/xds/xds_api.cc \
     src/core/ext/xds/xds_bootstrap.cc \
     src/core/ext/xds/xds_client.cc \
@@ -2194,6 +2196,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/security/authorization/authorization_engine.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
@@ -2220,6 +2223,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
@@ -2674,6 +2678,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
@@ -2916,9 +2921,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/client_unary_call.h \
     include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
-    include/grpcpp/impl/codegen/async_stream_impl.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
-    include/grpcpp/impl/codegen/async_unary_call_impl.h \
     include/grpcpp/impl/codegen/byte_buffer.h \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
@@ -2927,7 +2930,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
-    include/grpcpp/impl/codegen/client_callback_impl.h \
     include/grpcpp/impl/codegen/client_context.h \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
@@ -2946,7 +2948,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/message_allocator.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler.h \
-    include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/proto_buffer_reader.h \
     include/grpcpp/impl/codegen/proto_buffer_writer.h \
     include/grpcpp/impl/codegen/proto_utils.h \
@@ -2956,9 +2957,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_callback.h \
     include/grpcpp/impl/codegen/server_callback_handlers.h \
-    include/grpcpp/impl/codegen/server_callback_impl.h \
     include/grpcpp/impl/codegen/server_context.h \
-    include/grpcpp/impl/codegen/server_context_impl.h \
     include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
     include/grpcpp/impl/codegen/service_type.h \
@@ -2969,7 +2968,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync.h \
     include/grpcpp/impl/codegen/sync_stream.h \
-    include/grpcpp/impl/codegen/sync_stream_impl.h \
     include/grpcpp/impl/codegen/time.h \
     include/grpcpp/impl/grpc_library.h \
     include/grpcpp/impl/method_handler_impl.h \
@@ -2993,13 +2991,10 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/server_context.h \
     include/grpcpp/server_posix.h \
     include/grpcpp/support/async_stream.h \
-    include/grpcpp/support/async_stream_impl.h \
     include/grpcpp/support/async_unary_call.h \
-    include/grpcpp/support/async_unary_call_impl.h \
     include/grpcpp/support/byte_buffer.h \
     include/grpcpp/support/channel_arguments.h \
     include/grpcpp/support/client_callback.h \
-    include/grpcpp/support/client_callback_impl.h \
     include/grpcpp/support/client_interceptor.h \
     include/grpcpp/support/config.h \
     include/grpcpp/support/interceptor.h \
@@ -3008,7 +3003,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/proto_buffer_reader.h \
     include/grpcpp/support/proto_buffer_writer.h \
     include/grpcpp/support/server_callback.h \
-    include/grpcpp/support/server_callback_impl.h \
     include/grpcpp/support/server_interceptor.h \
     include/grpcpp/support/slice.h \
     include/grpcpp/support/status.h \
@@ -3016,7 +3010,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/string_ref.h \
     include/grpcpp/support/stub_options.h \
     include/grpcpp/support/sync_stream.h \
-    include/grpcpp/support/sync_stream_impl.h \
     include/grpcpp/support/time.h \
     include/grpcpp/support/validate_service_config.h \
 
@@ -3445,9 +3438,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/client_unary_call.h \
     include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
-    include/grpcpp/impl/codegen/async_stream_impl.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
-    include/grpcpp/impl/codegen/async_unary_call_impl.h \
     include/grpcpp/impl/codegen/byte_buffer.h \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
@@ -3456,7 +3447,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
-    include/grpcpp/impl/codegen/client_callback_impl.h \
     include/grpcpp/impl/codegen/client_context.h \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
@@ -3475,7 +3465,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/message_allocator.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler.h \
-    include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/proto_buffer_reader.h \
     include/grpcpp/impl/codegen/proto_buffer_writer.h \
     include/grpcpp/impl/codegen/proto_utils.h \
@@ -3485,9 +3474,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_callback.h \
     include/grpcpp/impl/codegen/server_callback_handlers.h \
-    include/grpcpp/impl/codegen/server_callback_impl.h \
     include/grpcpp/impl/codegen/server_context.h \
-    include/grpcpp/impl/codegen/server_context_impl.h \
     include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
     include/grpcpp/impl/codegen/service_type.h \
@@ -3498,7 +3485,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync.h \
     include/grpcpp/impl/codegen/sync_stream.h \
-    include/grpcpp/impl/codegen/sync_stream_impl.h \
     include/grpcpp/impl/codegen/time.h \
     include/grpcpp/impl/grpc_library.h \
     include/grpcpp/impl/method_handler_impl.h \
@@ -3522,13 +3508,10 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/server_context.h \
     include/grpcpp/server_posix.h \
     include/grpcpp/support/async_stream.h \
-    include/grpcpp/support/async_stream_impl.h \
     include/grpcpp/support/async_unary_call.h \
-    include/grpcpp/support/async_unary_call_impl.h \
     include/grpcpp/support/byte_buffer.h \
     include/grpcpp/support/channel_arguments.h \
     include/grpcpp/support/client_callback.h \
-    include/grpcpp/support/client_callback_impl.h \
     include/grpcpp/support/client_interceptor.h \
     include/grpcpp/support/config.h \
     include/grpcpp/support/interceptor.h \
@@ -3537,7 +3520,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/proto_buffer_reader.h \
     include/grpcpp/support/proto_buffer_writer.h \
     include/grpcpp/support/server_callback.h \
-    include/grpcpp/support/server_callback_impl.h \
     include/grpcpp/support/server_interceptor.h \
     include/grpcpp/support/slice.h \
     include/grpcpp/support/status.h \
@@ -3545,7 +3527,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/string_ref.h \
     include/grpcpp/support/stub_options.h \
     include/grpcpp/support/sync_stream.h \
-    include/grpcpp/support/sync_stream_impl.h \
     include/grpcpp/support/time.h \
     include/grpcpp/support/validate_service_config.h \
 
@@ -4603,7 +4584,7 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc: $
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/eds.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc: $(OPENSSL_DEP)
+src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc: $(OPENSSL_DEP)
@@ -4735,6 +4716,8 @@ src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c: $(OPENSSL_D
 src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/validate/validate.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/xds/certificate_provider_registry.cc: $(OPENSSL_DEP)
+src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_api.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_bootstrap.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client.cc: $(OPENSSL_DEP)
@@ -4765,6 +4748,7 @@ src/core/lib/security/credentials/local/local_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/oauth2/oauth2_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/tls_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/alts/alts_security_connector.cc: $(OPENSSL_DEP)

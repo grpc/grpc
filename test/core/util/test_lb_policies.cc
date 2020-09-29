@@ -138,8 +138,9 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
         : parent_(std::move(parent)), cb_(std::move(cb)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_channel_args& args) override {
-      return parent_->channel_control_helper()->CreateSubchannel(args);
+        ServerAddress address, const grpc_channel_args& args) override {
+      return parent_->channel_control_helper()->CreateSubchannel(
+          std::move(address), args);
     }
 
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
@@ -248,8 +249,9 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
         : parent_(std::move(parent)), cb_(std::move(cb)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_channel_args& args) override {
-      return parent_->channel_control_helper()->CreateSubchannel(args);
+        ServerAddress address, const grpc_channel_args& args) override {
+      return parent_->channel_control_helper()->CreateSubchannel(
+          std::move(address), args);
     }
 
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
@@ -331,6 +333,87 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
   InterceptRecvTrailingMetadataCallback cb_;
 };
 
+//
+// AddressTestLoadBalancingPolicy
+//
+
+constexpr char kAddressTestLbPolicyName[] = "address_test_lb";
+
+class AddressTestLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
+ public:
+  AddressTestLoadBalancingPolicy(Args args, AddressTestCallback cb)
+      : ForwardingLoadBalancingPolicy(
+            absl::make_unique<Helper>(
+                RefCountedPtr<AddressTestLoadBalancingPolicy>(this),
+                std::move(cb)),
+            std::move(args),
+            /*delegate_lb_policy_name=*/"pick_first",
+            /*initial_refcount=*/2) {}
+
+  ~AddressTestLoadBalancingPolicy() override = default;
+
+  const char* name() const override { return kAddressTestLbPolicyName; }
+
+ private:
+  class Helper : public ChannelControlHelper {
+   public:
+    Helper(RefCountedPtr<AddressTestLoadBalancingPolicy> parent,
+           AddressTestCallback cb)
+        : parent_(std::move(parent)), cb_(std::move(cb)) {}
+
+    RefCountedPtr<SubchannelInterface> CreateSubchannel(
+        ServerAddress address, const grpc_channel_args& args) override {
+      cb_(address);
+      return parent_->channel_control_helper()->CreateSubchannel(
+          std::move(address), args);
+    }
+
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+                     std::unique_ptr<SubchannelPicker> picker) override {
+      parent_->channel_control_helper()->UpdateState(state, status,
+                                                     std::move(picker));
+    }
+
+    void RequestReresolution() override {
+      parent_->channel_control_helper()->RequestReresolution();
+    }
+
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override {
+      parent_->channel_control_helper()->AddTraceEvent(severity, message);
+    }
+
+   private:
+    RefCountedPtr<AddressTestLoadBalancingPolicy> parent_;
+    AddressTestCallback cb_;
+  };
+};
+
+class AddressTestConfig : public LoadBalancingPolicy::Config {
+ public:
+  const char* name() const override { return kAddressTestLbPolicyName; }
+};
+
+class AddressTestFactory : public LoadBalancingPolicyFactory {
+ public:
+  explicit AddressTestFactory(AddressTestCallback cb) : cb_(std::move(cb)) {}
+
+  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      LoadBalancingPolicy::Args args) const override {
+    return MakeOrphanable<AddressTestLoadBalancingPolicy>(std::move(args), cb_);
+  }
+
+  const char* name() const override { return kAddressTestLbPolicyName; }
+
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const Json& /*json*/, grpc_error** /*error*/) const override {
+    return MakeRefCounted<AddressTestConfig>();
+  }
+
+ private:
+  AddressTestCallback cb_;
+};
+
 }  // namespace
 
 void RegisterTestPickArgsLoadBalancingPolicy(TestPickArgsCallback cb) {
@@ -342,6 +425,11 @@ void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
     InterceptRecvTrailingMetadataCallback cb) {
   LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
       absl::make_unique<InterceptTrailingFactory>(std::move(cb)));
+}
+
+void RegisterAddressTestLoadBalancingPolicy(AddressTestCallback cb) {
+  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<AddressTestFactory>(std::move(cb)));
 }
 
 }  // namespace grpc_core

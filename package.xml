@@ -135,7 +135,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/eds.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.h" role="src" />
@@ -165,6 +165,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.h" role="src" />
@@ -572,6 +573,12 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/validate/validate.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/validate/validate.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_store.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.cc" role="src" />
@@ -677,6 +684,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/dual_ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/global_config.h" role="src" />
@@ -881,6 +889,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/json/json_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/json/json_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.cc" role="src" />
@@ -936,6 +946,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.cc" role="src" />

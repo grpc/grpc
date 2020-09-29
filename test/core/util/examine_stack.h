@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2019 gRPC authors.
+ * Copyright 2020 the gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,19 @@
  *
  */
 
-#ifndef GRPCPP_SUPPORT_ASYNC_UNARY_CALL_IMPL_H
-#define GRPCPP_SUPPORT_ASYNC_UNARY_CALL_IMPL_H
+#ifndef GRPC_TEST_CORE_UTIL_EXAMINE_STACK_H
+#define GRPC_TEST_CORE_UTIL_EXAMINE_STACK_H
 
-#include <grpcpp/impl/codegen/async_unary_call_impl.h>
+#include <grpc/support/port_platform.h>
 
-#endif  // GRPCPP_SUPPORT_ASYNC_UNARY_CALL_IMPL_H
+#include <string>
+
+namespace grpc_core {
+
+// Return the current stack trace as a string (on multiple lines, beginning with
+// "Stack trace:\n")
+std::string CurrentStackTrace();
+
+}  // namespace grpc_core
+
+#endif /* GRPC_TEST_CORE_UTIL_EXAMINE_STACK_H */

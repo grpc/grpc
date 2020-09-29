@@ -23,8 +23,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
-
 #include "src/core/ext/filters/client_channel/server_address.h"
 
 // The resolver returns a flat list of addresses.  When a hierarchy of
@@ -81,9 +79,13 @@
 
 namespace grpc_core {
 
-// Constructs a channel arg containing the hierarchical path
-// to be associated with an address.
-grpc_arg MakeHierarchicalPathArg(const std::vector<std::string>& path);
+// The attribute key to be used for hierarchical paths in ServerAddress.
+extern const char* kHierarchicalPathAttributeKey;
+
+// Constructs an address attribute containing the hierarchical path
+// to be associated with the address.
+std::unique_ptr<ServerAddress::AttributeInterface>
+MakeHierarchicalPathAttribute(std::vector<std::string> path);
 
 // A map from the next path element to the addresses that fall under
 // that path element.

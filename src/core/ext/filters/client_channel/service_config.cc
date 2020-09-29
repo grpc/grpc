@@ -202,15 +202,16 @@ std::string ServiceConfig::ParseJsonMethodName(const Json& json,
 
 const ServiceConfigParser::ParsedConfigVector*
 ServiceConfig::GetMethodParsedConfigVector(const grpc_slice& path) const {
+  if (parsed_method_configs_map_.empty()) return nullptr;
   // Try looking up the full path in the map.
   auto it = parsed_method_configs_map_.find(path);
   if (it != parsed_method_configs_map_.end()) return it->second;
   // If we didn't find a match for the path, try looking for a wildcard
   // entry (i.e., change "/service/method" to "/service/").
   UniquePtr<char> path_str(grpc_slice_to_c_string(path));
-  char* sep = strrchr(path_str.get(), '/') + 1;
+  char* sep = strrchr(path_str.get(), '/');
   if (sep == nullptr) return nullptr;  // Shouldn't ever happen.
-  *sep = '\0';
+  sep[1] = '\0';
   grpc_slice wildcard_path = grpc_slice_from_static_string(path_str.get());
   it = parsed_method_configs_map_.find(wildcard_path);
   if (it != parsed_method_configs_map_.end()) return it->second;

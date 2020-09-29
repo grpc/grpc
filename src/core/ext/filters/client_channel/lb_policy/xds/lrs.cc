@@ -119,7 +119,7 @@ class LrsLb : public LoadBalancingPolicy {
     ~Helper() { lrs_policy_.reset(DEBUG_LOCATION, "Helper"); }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_channel_args& args) override;
+        ServerAddress address, const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -196,8 +196,8 @@ LoadBalancingPolicy::PickResult LrsLb::LoadReportingPicker::Pick(
 LrsLb::LrsLb(RefCountedPtr<XdsClient> xds_client, Args args)
     : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_lrs_trace)) {
-    gpr_log(GPR_INFO, "[lrs_lb %p] created -- using xds client %p from channel",
-            this, xds_client_.get());
+    gpr_log(GPR_INFO, "[lrs_lb %p] created -- using xds client %p", this,
+            xds_client_.get());
   }
 }
 
@@ -255,11 +255,9 @@ void LrsLb::UpdateLocked(UpdateArgs args) {
         config_->eds_service_name(), config_->locality_name());
     MaybeUpdatePickerLocked();
   }
-  // Remove XdsClient from channel args, so that its presence doesn't
-  // prevent us from sharing subchannels between channels.
-  grpc_channel_args* new_args = XdsClient::RemoveFromChannelArgs(*args.args);
   // Update child policy.
-  UpdateChildPolicyLocked(std::move(args.addresses), new_args);
+  UpdateChildPolicyLocked(std::move(args.addresses), args.args);
+  args.args = nullptr;
 }
 
 void LrsLb::MaybeUpdatePickerLocked() {
@@ -324,9 +322,10 @@ void LrsLb::UpdateChildPolicyLocked(ServerAddressList addresses,
 //
 
 RefCountedPtr<SubchannelInterface> LrsLb::Helper::CreateSubchannel(
-    const grpc_channel_args& args) {
+    ServerAddress address, const grpc_channel_args& args) {
   if (lrs_policy_->shutting_down_) return nullptr;
-  return lrs_policy_->channel_control_helper()->CreateSubchannel(args);
+  return lrs_policy_->channel_control_helper()->CreateSubchannel(
+      std::move(address), args);
 }
 
 void LrsLb::Helper::UpdateState(grpc_connectivity_state state,
@@ -367,12 +366,13 @@ class LrsLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    RefCountedPtr<XdsClient> xds_client =
-        XdsClient::GetFromChannelArgs(*args.args);
-    if (xds_client == nullptr) {
+    grpc_error* error = GRPC_ERROR_NONE;
+    RefCountedPtr<XdsClient> xds_client = XdsClient::GetOrCreate(&error);
+    if (error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR,
-              "XdsClient not present in channel args -- cannot instantiate "
-              "lrs LB policy");
+              "cannot get XdsClient to instantiate lrs LB policy: %s",
+              grpc_error_string(error));
+      GRPC_ERROR_UNREF(error);
       return nullptr;
     }
     return MakeOrphanable<LrsLb>(std::move(xds_client), std::move(args));

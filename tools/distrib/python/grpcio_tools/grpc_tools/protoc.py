@@ -38,7 +38,8 @@ def main(command_arguments):
     return _protoc_compiler.run_main(command_arguments)
 
 
-if sys.version_info[0] > 2:
+# NOTE(rbellevi): importlib.abc is not supported on 3.4.
+if sys.version_info >= (3, 5, 0):
     import contextlib
     import importlib
     import importlib.machinery
@@ -145,12 +146,14 @@ if sys.version_info[0] > 2:
             self._codegen_fn = codegen_fn
 
         def find_spec(self, fullname, path, target=None):
+            if not fullname.endswith(self._suffix):
+                return None
             filepath = _module_name_to_proto_file(self._suffix, fullname)
             for search_path in sys.path:
                 try:
                     prospective_path = os.path.join(search_path, filepath)
                     os.stat(prospective_path)
-                except (FileNotFoundError, NotADirectoryError):
+                except (FileNotFoundError, NotADirectoryError, OSError):
                     continue
                 else:
                     return importlib.machinery.ModuleSpec(

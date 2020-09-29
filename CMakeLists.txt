@@ -606,7 +606,6 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c httpscli_test)
   endif()
-  add_dependencies(buildtests_c init_test)
   add_dependencies(buildtests_c inproc_callback_test)
   add_dependencies(buildtests_c invalid_call_argument_test)
   add_dependencies(buildtests_c json_token_test)
@@ -785,6 +784,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx byte_buffer_test)
   add_dependencies(buildtests_cxx byte_stream_test)
   add_dependencies(buildtests_cxx cancel_ares_query_test)
+  add_dependencies(buildtests_cxx certificate_provider_registry_test)
   add_dependencies(buildtests_cxx cfstream_test)
   add_dependencies(buildtests_cxx channel_arguments_test)
   add_dependencies(buildtests_cxx channel_filter_test)
@@ -808,6 +808,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx context_list_test)
   add_dependencies(buildtests_cxx delegating_channel_test)
   add_dependencies(buildtests_cxx destroy_grpclb_channel_with_active_connect_stress_test)
+  add_dependencies(buildtests_cxx dual_ref_counted_test)
   add_dependencies(buildtests_cxx duplicate_header_bad_client_test)
   add_dependencies(buildtests_cxx end2end_test)
   add_dependencies(buildtests_cxx error_details_test)
@@ -821,7 +822,9 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx global_config_env_test)
   endif()
   add_dependencies(buildtests_cxx global_config_test)
+  add_dependencies(buildtests_cxx google_mesh_ca_certificate_provider_factory_test)
   add_dependencies(buildtests_cxx grpc_cli)
+  add_dependencies(buildtests_cxx grpc_tls_certificate_distributor_test)
   add_dependencies(buildtests_cxx grpc_tls_credentials_options_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx grpc_tool_test)
@@ -836,6 +839,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx health_service_end2end_test)
   add_dependencies(buildtests_cxx http2_client)
   add_dependencies(buildtests_cxx hybrid_end2end_test)
+  add_dependencies(buildtests_cxx init_test)
   add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
   add_dependencies(buildtests_cxx interop_client)
   add_dependencies(buildtests_cxx interop_server)
@@ -1440,7 +1444,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
@@ -1660,6 +1664,8 @@ add_library(grpc
   src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c
   src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c
   src/core/ext/upbdefs-generated/validate/validate.upbdefs.c
+  src/core/ext/xds/certificate_provider_registry.cc
+  src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
   src/core/ext/xds/xds_api.cc
   src/core/ext/xds/xds_bootstrap.cc
   src/core/ext/xds/xds_client.cc
@@ -1787,6 +1793,7 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
+  src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/security/authorization/authorization_engine.cc
   src/core/lib/security/authorization/evaluate_args.cc
@@ -1813,6 +1820,7 @@ add_library(grpc
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   src/core/lib/security/credentials/tls/tls_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
@@ -2034,6 +2042,7 @@ add_library(grpc_test_util
   test/core/util/cmdline.cc
   test/core/util/debugger_macros.cc
   test/core/util/eval_args_mock_endpoint.cc
+  test/core/util/examine_stack.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2088,6 +2097,9 @@ target_link_libraries(grpc_test_util
   gpr
   address_sorting
   upb
+  absl::symbolize
+  absl::stacktrace
+  absl::failure_signal_handler
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util "-framework CoreFoundation")
@@ -2101,6 +2113,7 @@ add_library(grpc_test_util_unsecure
   test/core/util/cmdline.cc
   test/core/util/debugger_macros.cc
   test/core/util/eval_args_mock_endpoint.cc
+  test/core/util/examine_stack.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2155,6 +2168,9 @@ target_link_libraries(grpc_test_util_unsecure
   gpr
   address_sorting
   upb
+  absl::symbolize
+  absl::stacktrace
+  absl::failure_signal_handler
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
@@ -2400,6 +2416,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/iomgr/work_serializer.cc
   src/core/lib/json/json_reader.cc
+  src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -2779,9 +2796,7 @@ foreach(_hdr
   include/grpcpp/impl/client_unary_call.h
   include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
-  include/grpcpp/impl/codegen/async_stream_impl.h
   include/grpcpp/impl/codegen/async_unary_call.h
-  include/grpcpp/impl/codegen/async_unary_call_impl.h
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
@@ -2790,7 +2805,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
-  include/grpcpp/impl/codegen/client_callback_impl.h
   include/grpcpp/impl/codegen/client_context.h
   include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
@@ -2809,7 +2823,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler.h
-  include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/proto_buffer_reader.h
   include/grpcpp/impl/codegen/proto_buffer_writer.h
   include/grpcpp/impl/codegen/proto_utils.h
@@ -2819,9 +2832,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_callback_handlers.h
-  include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
-  include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
@@ -2832,7 +2843,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync.h
   include/grpcpp/impl/codegen/sync_stream.h
-  include/grpcpp/impl/codegen/sync_stream_impl.h
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/method_handler_impl.h
@@ -2856,13 +2866,10 @@ foreach(_hdr
   include/grpcpp/server_context.h
   include/grpcpp/server_posix.h
   include/grpcpp/support/async_stream.h
-  include/grpcpp/support/async_stream_impl.h
   include/grpcpp/support/async_unary_call.h
-  include/grpcpp/support/async_unary_call_impl.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
   include/grpcpp/support/client_callback.h
-  include/grpcpp/support/client_callback_impl.h
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
   include/grpcpp/support/interceptor.h
@@ -2871,7 +2878,6 @@ foreach(_hdr
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
   include/grpcpp/support/server_callback.h
-  include/grpcpp/support/server_callback_impl.h
   include/grpcpp/support/server_interceptor.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
@@ -2879,7 +2885,6 @@ foreach(_hdr
   include/grpcpp/support/string_ref.h
   include/grpcpp/support/stub_options.h
   include/grpcpp/support/sync_stream.h
-  include/grpcpp/support/sync_stream_impl.h
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
 )
@@ -3463,9 +3468,7 @@ foreach(_hdr
   include/grpcpp/impl/client_unary_call.h
   include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
-  include/grpcpp/impl/codegen/async_stream_impl.h
   include/grpcpp/impl/codegen/async_unary_call.h
-  include/grpcpp/impl/codegen/async_unary_call_impl.h
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
@@ -3474,7 +3477,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
-  include/grpcpp/impl/codegen/client_callback_impl.h
   include/grpcpp/impl/codegen/client_context.h
   include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
@@ -3493,7 +3495,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler.h
-  include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/proto_buffer_reader.h
   include/grpcpp/impl/codegen/proto_buffer_writer.h
   include/grpcpp/impl/codegen/proto_utils.h
@@ -3503,9 +3504,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_callback_handlers.h
-  include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
-  include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
@@ -3516,7 +3515,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync.h
   include/grpcpp/impl/codegen/sync_stream.h
-  include/grpcpp/impl/codegen/sync_stream_impl.h
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/method_handler_impl.h
@@ -3540,13 +3538,10 @@ foreach(_hdr
   include/grpcpp/server_context.h
   include/grpcpp/server_posix.h
   include/grpcpp/support/async_stream.h
-  include/grpcpp/support/async_stream_impl.h
   include/grpcpp/support/async_unary_call.h
-  include/grpcpp/support/async_unary_call_impl.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
   include/grpcpp/support/client_callback.h
-  include/grpcpp/support/client_callback_impl.h
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
   include/grpcpp/support/interceptor.h
@@ -3555,7 +3550,6 @@ foreach(_hdr
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
   include/grpcpp/support/server_callback.h
-  include/grpcpp/support/server_callback_impl.h
   include/grpcpp/support/server_interceptor.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
@@ -3563,7 +3557,6 @@ foreach(_hdr
   include/grpcpp/support/string_ref.h
   include/grpcpp/support/stub_options.h
   include/grpcpp/support/sync_stream.h
-  include/grpcpp/support/sync_stream_impl.h
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
 )
@@ -6067,36 +6060,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(init_test
-  test/core/surface/init_test.cc
-)
-
-target_include_directories(init_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(init_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
-)
-
-
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -9721,6 +9684,45 @@ target_link_libraries(cancel_ares_query_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(certificate_provider_registry_test
+  test/core/client_channel/certificate_provider_registry_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(certificate_provider_registry_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(certificate_provider_registry_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(cfstream_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -10636,6 +10638,45 @@ target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(dual_ref_counted_test
+  test/core/gprpp/dual_ref_counted_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(dual_ref_counted_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(dual_ref_counted_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(duplicate_header_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/duplicate_header.cc
@@ -11161,6 +11202,45 @@ target_link_libraries(global_config_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(google_mesh_ca_certificate_provider_factory_test
+  test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(google_mesh_ca_certificate_provider_factory_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(google_mesh_ca_certificate_provider_factory_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(grpc_cli
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
@@ -11473,6 +11553,45 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(grpc_tls_certificate_distributor_test
+  test/core/security/grpc_tls_certificate_distributor_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(grpc_tls_certificate_distributor_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_tls_certificate_distributor_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
 
 endif()
 if(gRPC_BUILD_TESTS)
@@ -11973,6 +12092,45 @@ target_link_libraries(hybrid_end2end_test
   grpc++_test_util
   grpc_test_util
   grpc++
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(init_test
+  test/core/surface/init_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(init_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(init_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
   grpc
   gpr
   address_sorting
@@ -14797,6 +14955,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/cmdline.cc
     test/core/util/debugger_macros.cc
     test/core/util/eval_args_mock_endpoint.cc
+    test/core/util/examine_stack.cc
     test/core/util/fuzzer_util.cc
     test/core/util/grpc_profiler.cc
     test/core/util/histogram.cc
@@ -14846,6 +15005,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    absl::symbolize
+    absl::stacktrace
+    absl::failure_signal_handler
     ${_gRPC_GFLAGS_LIBRARIES}
   )
 
@@ -15698,6 +15860,7 @@ install(FILES
 )
 install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findc-ares.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findre2.cmake
   DESTINATION ${gRPC_INSTALL_CMAKEDIR}/modules
 )
 

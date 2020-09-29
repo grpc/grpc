@@ -4,6 +4,12 @@
 Set-StrictMode -Version 2
 $ErrorActionPreference = 'Stop'
 
+trap {
+    $ErrorActionPreference = "Continue"
+    Write-Error $_
+    exit 1
+}
+
 # Avoid "Could not create SSL/TLS secure channel"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 

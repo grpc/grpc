@@ -45,7 +45,10 @@
 struct grpc_completion_queue;
 
 namespace grpc_impl {
+class ServerContextBase;
+}  // namespace grpc_impl
 
+namespace grpc {
 template <class R>
 class ClientReader;
 template <class W>
@@ -56,7 +59,6 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
-class ServerContextBase;
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
@@ -72,13 +74,12 @@ class TemplatedBidiStreamingHandler;
 template <::grpc::StatusCode code>
 class ErrorMethodHandler;
 }  // namespace internal
-}  // namespace grpc_impl
-namespace grpc {
 
 class Channel;
 class ChannelInterface;
 class Server;
 class ServerBuilder;
+class ServerContextBase;
 class ServerInterface;
 
 namespace internal {
@@ -257,28 +258,28 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   // Friend synchronous wrappers so that they can access Pluck(), which is
   // a semi-private API geared towards the synchronous implementation.
   template <class R>
-  friend class ::grpc_impl::ClientReader;
+  friend class ::grpc::ClientReader;
   template <class W>
-  friend class ::grpc_impl::ClientWriter;
+  friend class ::grpc::ClientWriter;
   template <class W, class R>
-  friend class ::grpc_impl::ClientReaderWriter;
+  friend class ::grpc::ClientReaderWriter;
   template <class R>
-  friend class ::grpc_impl::ServerReader;
+  friend class ::grpc::ServerReader;
   template <class W>
-  friend class ::grpc_impl::ServerWriter;
+  friend class ::grpc::ServerWriter;
   template <class W, class R>
-  friend class ::grpc_impl::internal::ServerReaderWriterBody;
+  friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::RpcMethodHandler;
+  friend class ::grpc::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::ClientStreamingHandler;
+  friend class ::grpc::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::ServerStreamingHandler;
+  friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
-  friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler;
+  friend class ::grpc::internal::TemplatedBidiStreamingHandler;
   template <::grpc::StatusCode code>
-  friend class ::grpc_impl::internal::ErrorMethodHandler;
-  friend class ::grpc_impl::ServerContextBase;
+  friend class ::grpc::internal::ErrorMethodHandler;
+  friend class ::grpc::ServerContextBase;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;

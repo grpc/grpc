@@ -628,5 +628,36 @@ class SimpleStubsPluginTest(unittest.TestCase):
             self.assertEqual(expected_response, response)
 
 
+class ModuleMainTest(unittest.TestCase):
+    """Test case for running `python -m grpc_tools.protoc`.
+    """
+
+    def test_clean_output(self):
+        if sys.executable is None:
+            raise unittest.SkipTest(
+                "Running on a interpreter that cannot be invoked from the CLI.")
+        proto_dir_path = os.path.join("src", "proto")
+        test_proto_path = os.path.join(proto_dir_path, "grpc", "testing",
+                                       "empty.proto")
+        streams = tuple(tempfile.TemporaryFile() for _ in range(2))
+        work_dir = tempfile.mkdtemp()
+        try:
+            invocation = (sys.executable, "-m", "grpc_tools.protoc",
+                          "--proto_path", proto_dir_path, "--python_out",
+                          work_dir, "--grpc_python_out", work_dir,
+                          test_proto_path)
+            proc = subprocess.Popen(invocation,
+                                    stdout=streams[0],
+                                    stderr=streams[1])
+            proc.wait()
+            outs = []
+            for stream in streams:
+                stream.seek(0)
+                self.assertEqual(0, len(stream.read()))
+            self.assertEqual(0, proc.returncode)
+        except Exception:  # pylint: disable=broad-except
+            shutil.rmtree(work_dir)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -34,6 +34,9 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/surface/init.h"
 
+#include "absl/debugging/failure_signal_handler.h"
+#include "absl/debugging/symbolize.h"
+
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
 
@@ -368,8 +371,17 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
           GPR_TIMESPAN));
 }
 
-void grpc_test_init(int /*argc*/, char** /*argv*/) {
+void grpc_test_init(int argc, char** argv) {
+#if GPR_WINDOWS
+  // Windows cannot use absl::InitializeSymbolizer until it fixes mysterious
+  // SymInitialize failure using Bazel RBE on Windows
+  // https://github.com/grpc/grpc/issues/24178
   install_crash_handler();
+#else
+  absl::InitializeSymbolizer(argv[0]);
+  absl::FailureSignalHandlerOptions options;
+  absl::InstallFailureSignalHandler(options);
+#endif
   gpr_log(GPR_DEBUG,
           "test slowdown factor: sanitizer=%" PRId64 ", fixture=%" PRId64
           ", poller=%" PRId64 ", total=%" PRId64,
@@ -378,6 +390,19 @@ void grpc_test_init(int /*argc*/, char** /*argv*/) {
   /* seed rng with pid, so we don't end up with the same random numbers as a
      concurrently running test binary */
   srand(seed());
+}
+
+bool grpc_wait_until_shutdown(int64_t time_s) {
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(time_s);
+  while (grpc_is_initialized()) {
+    grpc_maybe_wait_for_async_shutdown();
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_millis(1, GPR_TIMESPAN)));
+    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) > 0) {
+      return false;
+    }
+  }
+  return true;
 }
 
 namespace grpc {
@@ -390,15 +415,8 @@ TestEnvironment::TestEnvironment(int argc, char** argv) {
 TestEnvironment::~TestEnvironment() {
   // This will wait until gRPC shutdown has actually happened to make sure
   // no gRPC resources (such as thread) are active. (timeout = 10s)
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
-  while (grpc_is_initialized()) {
-    grpc_maybe_wait_for_async_shutdown();
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_millis(1, GPR_TIMESPAN)));
-    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) > 0) {
-      gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
-      break;
-    }
+  if (!grpc_wait_until_shutdown(10)) {
+    gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
   }
   if (BuiltUnderMsan()) {
     // This is a workaround for MSAN. MSAN doesn't like having shutdown thread
@@ -410,6 +428,15 @@ TestEnvironment::~TestEnvironment() {
                                  gpr_time_from_millis(500, GPR_TIMESPAN)));
   }
   gpr_log(GPR_INFO, "TestEnvironment ends");
+}
+
+TestGrpcScope::TestGrpcScope() { grpc_init(); }
+
+TestGrpcScope::~TestGrpcScope() {
+  grpc_shutdown();
+  if (!grpc_wait_until_shutdown(10)) {
+    gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
+  }
 }
 
 }  // namespace testing

@@ -241,17 +241,15 @@ class ChannelData {
    public:
     explicit ChannelConfigHelper(ChannelData* chand) : chand_(chand) {}
 
-    ApplyServiceConfigResult ApplyServiceConfig(
+    ChooseServiceConfigResult ChooseServiceConfig(
         const Resolver::Result& result) override;
 
-    void ApplyConfigSelector(
-        bool service_config_changed,
-        RefCountedPtr<ConfigSelector> config_selector) override;
+    void StartUsingServiceConfigForCalls() override;
 
     void ResolverTransientFailure(grpc_error* error) override;
 
    private:
-    static void ProcessLbPolicy(
+    static void ChooseLbPolicy(
         const Resolver::Result& resolver_result,
         const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
         RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config);
@@ -267,9 +265,13 @@ class ChannelData {
       const char* reason,
       std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker);
 
-  void UpdateServiceConfigInDataPlaneLocked(
-      bool service_config_changed,
-      RefCountedPtr<ConfigSelector> config_selector);
+  void UpdateServiceConfigInControlPlaneLocked(
+      RefCountedPtr<ServiceConfig> service_config,
+      RefCountedPtr<ConfigSelector> config_selector,
+      const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
+      const char* lb_policy_name);
+
+  void UpdateServiceConfigInDataPlaneLocked();
 
   void CreateResolvingLoadBalancingPolicyLocked();
 
@@ -320,7 +322,6 @@ class ChannelData {
   grpc_core::UniquePtr<char> health_check_service_name_;
   RefCountedPtr<ServiceConfig> saved_service_config_;
   RefCountedPtr<ConfigSelector> saved_config_selector_;
-  bool received_first_resolver_result_ = false;
   // The number of SubchannelWrapper instances referencing a given Subchannel.
   std::map<Subchannel*, int> subchannel_refcount_map_;
   // The set of SubchannelWrappers that currently exist.
@@ -881,6 +882,9 @@ class CallData {
 // ChannelData::SubchannelWrapper
 //
 
+using ServerAddressAttributeMap =
+    std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>;
+
 // This class is a wrapper for Subchannel that hides details of the
 // channel's implementation (such as the health check service name and
 // connected subchannel) from the LB policy API.
@@ -892,11 +896,13 @@ class CallData {
 class ChannelData::SubchannelWrapper : public SubchannelInterface {
  public:
   SubchannelWrapper(ChannelData* chand, Subchannel* subchannel,
-                    grpc_core::UniquePtr<char> health_check_service_name)
+                    grpc_core::UniquePtr<char> health_check_service_name,
+                    ServerAddressAttributeMap attributes)
       : SubchannelInterface(&grpc_client_channel_routing_trace),
         chand_(chand),
         subchannel_(subchannel),
-        health_check_service_name_(std::move(health_check_service_name)) {
+        health_check_service_name_(std::move(health_check_service_name)),
+        attributes_(std::move(attributes)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: creating subchannel wrapper %p for subchannel %p",
@@ -974,12 +980,19 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
 
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
 
-  void ThrottleKeepaliveTime(int new_keepalive_time) {
-    subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
-  }
-
   const grpc_channel_args* channel_args() override {
     return subchannel_->channel_args();
+  }
+
+  const ServerAddress::AttributeInterface* GetAttribute(
+      const char* key) const override {
+    auto it = attributes_.find(key);
+    if (it == attributes_.end()) return nullptr;
+    return it->second.get();
+  }
+
+  void ThrottleKeepaliveTime(int new_keepalive_time) {
+    subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
   }
 
   void UpdateHealthCheckServiceName(
@@ -1175,6 +1188,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   ChannelData* chand_;
   Subchannel* subchannel_;
   grpc_core::UniquePtr<char> health_check_service_name_;
+  ServerAddressAttributeMap attributes_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
   // subchannel.  This is needed so that when the LB policy calls
@@ -1349,6 +1363,18 @@ class ChannelData::ConnectivityWatcherRemover {
 // ChannelData::ClientChannelControlHelper
 //
 
+}  // namespace
+
+// Allows accessing the attributes from a ServerAddress.
+class ChannelServerAddressPeer {
+ public:
+  static ServerAddressAttributeMap GetAttributes(ServerAddress* address) {
+    return std::move(address->attributes_);
+  }
+};
+
+namespace {
+
 class ChannelData::ClientChannelControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
@@ -1362,7 +1388,8 @@ class ChannelData::ClientChannelControlHelper
   }
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      const grpc_channel_args& args) override {
+      ServerAddress address, const grpc_channel_args& args) override {
+    // Determine health check service name.
     bool inhibit_health_checking = grpc_channel_arg_get_bool(
         grpc_channel_args_find(&args, GRPC_ARG_INHIBIT_HEALTH_CHECKING), false);
     grpc_core::UniquePtr<char> health_check_service_name;
@@ -1370,21 +1397,37 @@ class ChannelData::ClientChannelControlHelper
       health_check_service_name.reset(
           gpr_strdup(chand_->health_check_service_name_.get()));
     }
+    // Remove channel args that should not affect subchannel uniqueness.
     static const char* args_to_remove[] = {
         GRPC_ARG_INHIBIT_HEALTH_CHECKING,
         GRPC_ARG_CHANNELZ_CHANNEL_NODE,
     };
-    grpc_arg arg = SubchannelPoolInterface::CreateChannelArg(
-        chand_->subchannel_pool_.get());
+    // Add channel args needed for the subchannel.
+    absl::InlinedVector<grpc_arg, 3> args_to_add = {
+        Subchannel::CreateSubchannelAddressArg(&address.address()),
+        SubchannelPoolInterface::CreateChannelArg(
+            chand_->subchannel_pool_.get()),
+    };
+    if (address.args() != nullptr) {
+      for (size_t j = 0; j < address.args()->num_args; ++j) {
+        args_to_add.emplace_back(address.args()->args[j]);
+      }
+    }
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
-        &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &arg, 1);
+        &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove),
+        args_to_add.data(), args_to_add.size());
+    gpr_free(args_to_add[0].value.string);
+    // Create subchannel.
     Subchannel* subchannel =
         chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
+    // Make sure the subchannel has updated keepalive time.
     subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
+    // Create and return wrapper for the subchannel.
     return MakeRefCounted<SubchannelWrapper>(
-        chand_, subchannel, std::move(health_check_service_name));
+        chand_, subchannel, std::move(health_check_service_name),
+        ChannelServerAddressPeer::GetAttributes(&address));
   }
 
   void UpdateState(
@@ -1433,19 +1476,19 @@ class ChannelData::ClientChannelControlHelper
 // ChannelData::ChannelConfigHelper
 //
 
-// Synchronous callback from ResolvingLoadBalancingPolicy to process a
-// resolver result update.
-ChannelData::ChannelConfigHelper::ApplyServiceConfigResult
-ChannelData::ChannelConfigHelper::ApplyServiceConfig(
+ChannelData::ChannelConfigHelper::ChooseServiceConfigResult
+ChannelData::ChannelConfigHelper::ChooseServiceConfig(
     const Resolver::Result& result) {
-  ApplyServiceConfigResult service_config_result;
+  ChooseServiceConfigResult service_config_result;
   RefCountedPtr<ServiceConfig> service_config;
-  // If resolver did not return a service config or returned an invalid service
-  // config, we need a fallback service config.
+  RefCountedPtr<ConfigSelector> config_selector;
   if (result.service_config_error != GRPC_ERROR_NONE) {
-    // If the service config was invalid, then fallback to the saved service
-    // config. If there is no saved config either, use the default service
-    // config.
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+      gpr_log(GPR_INFO, "chand=%p: resolver returned service config error: %s",
+              chand_, grpc_error_string(result.service_config_error));
+    }
+    // If the service config was invalid, then fallback to the
+    // previously returned service config.
     if (chand_->saved_service_config_ != nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
@@ -1454,99 +1497,60 @@ ChannelData::ChannelConfigHelper::ApplyServiceConfig(
                 chand_);
       }
       service_config = chand_->saved_service_config_;
-    } else if (chand_->default_service_config_ != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-        gpr_log(GPR_INFO,
-                "chand=%p: resolver returned invalid service config. Using "
-                "default service config provided by client API.",
-                chand_);
-      }
-      service_config = chand_->default_service_config_;
+      config_selector = chand_->saved_config_selector_;
+    } else {
+      // No previously returned config, so put the channel into
+      // TRANSIENT_FAILURE.
+      service_config_result.no_valid_service_config = true;
+      return service_config_result;
     }
   } else if (result.service_config == nullptr) {
-    if (chand_->default_service_config_ != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-        gpr_log(GPR_INFO,
-                "chand=%p: resolver returned no service config. Using default "
-                "service config provided by client API.",
-                chand_);
-      }
-      service_config = chand_->default_service_config_;
-    }
-  } else {
-    service_config = result.service_config;
-  }
-  service_config_result.service_config_error =
-      GRPC_ERROR_REF(result.service_config_error);
-  if (service_config == nullptr &&
-      result.service_config_error != GRPC_ERROR_NONE) {
-    service_config_result.no_valid_service_config = true;
-    return service_config_result;
-  }
-  // Process service config.
-  grpc_core::UniquePtr<char> service_config_json;
-  const internal::ClientChannelGlobalParsedConfig* parsed_service_config =
-      nullptr;
-  if (service_config != nullptr) {
-    parsed_service_config =
-        static_cast<const internal::ClientChannelGlobalParsedConfig*>(
-            service_config->GetGlobalParsedConfig(
-                internal::ClientChannelServiceConfigParser::ParserIndex()));
-  }
-  // Check if the config has changed.
-  service_config_result.service_config_changed =
-      ((service_config == nullptr) !=
-       (chand_->saved_service_config_ == nullptr)) ||
-      (service_config != nullptr &&
-       service_config->json_string() !=
-           chand_->saved_service_config_->json_string());
-  if (service_config_result.service_config_changed) {
-    service_config_json.reset(gpr_strdup(
-        service_config != nullptr ? service_config->json_string().c_str()
-                                  : ""));
+    // Resolver did not return any service config.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
-              "chand=%p: resolver returned updated service config: \"%s\"",
-              chand_, service_config_json.get());
+              "chand=%p: resolver returned no service config. Using default "
+              "service config for channel.",
+              chand_);
     }
-    // Save health check service name.
-    if (service_config != nullptr) {
-      chand_->health_check_service_name_.reset(
-          gpr_strdup(parsed_service_config->health_check_service_name()));
-    } else {
-      chand_->health_check_service_name_.reset();
-    }
-    // Update health check service name used by existing subchannel wrappers.
-    for (auto* subchannel_wrapper : chand_->subchannel_wrappers_) {
-      subchannel_wrapper->UpdateHealthCheckServiceName(
-          grpc_core::UniquePtr<char>(
-              gpr_strdup(chand_->health_check_service_name_.get())));
-    }
-    // Save service config.
-    chand_->saved_service_config_ = std::move(service_config);
+    service_config = chand_->default_service_config_;
+  } else {
+    // Use ServiceConfig and ConfigSelector returned by resolver.
+    service_config = result.service_config;
+    config_selector = ConfigSelector::GetFromChannelArgs(*result.args);
   }
+  GPR_ASSERT(service_config != nullptr);
+  // Extract global config for client channel.
+  const internal::ClientChannelGlobalParsedConfig* parsed_service_config =
+      static_cast<const internal::ClientChannelGlobalParsedConfig*>(
+          service_config->GetGlobalParsedConfig(
+              internal::ClientChannelServiceConfigParser::ParserIndex()));
   // Find LB policy config.
-  ProcessLbPolicy(result, parsed_service_config,
-                  &service_config_result.lb_policy_config);
-  grpc_core::UniquePtr<char> lb_policy_name(
-      gpr_strdup((service_config_result.lb_policy_config)->name()));
-  // Swap out the data used by GetChannelInfo().
-  {
-    MutexLock lock(&chand_->info_mu_);
-    chand_->info_lb_policy_name_ = std::move(lb_policy_name);
-    if (service_config_json != nullptr) {
-      chand_->info_service_config_json_ = std::move(service_config_json);
-    }
+  ChooseLbPolicy(result, parsed_service_config,
+                 &service_config_result.lb_policy_config);
+  // Check if the ServiceConfig has changed.
+  const bool service_config_changed =
+      chand_->saved_service_config_ == nullptr ||
+      service_config->json_string() !=
+          chand_->saved_service_config_->json_string();
+  // Check if the ConfigSelector has changed.
+  const bool config_selector_changed = !ConfigSelector::Equals(
+      chand_->saved_config_selector_.get(), config_selector.get());
+  // Indicate a change if either the ServiceConfig or ConfigSelector have
+  // changed.
+  service_config_result.service_config_changed =
+      service_config_changed || config_selector_changed;
+  // If it has, apply the global parameters now.
+  if (service_config_result.service_config_changed) {
+    chand_->UpdateServiceConfigInControlPlaneLocked(
+        std::move(service_config), std::move(config_selector),
+        parsed_service_config, service_config_result.lb_policy_config->name());
   }
   // Return results.
   return service_config_result;
 }
 
-void ChannelData::ChannelConfigHelper::ApplyConfigSelector(
-    bool service_config_changed,
-    RefCountedPtr<ConfigSelector> config_selector) {
-  chand_->UpdateServiceConfigInDataPlaneLocked(service_config_changed,
-                                               std::move(config_selector));
+void ChannelData::ChannelConfigHelper::StartUsingServiceConfigForCalls() {
+  chand_->UpdateServiceConfigInDataPlaneLocked();
 }
 
 void ChannelData::ChannelConfigHelper::ResolverTransientFailure(
@@ -1556,21 +1560,19 @@ void ChannelData::ChannelConfigHelper::ResolverTransientFailure(
   chand_->resolver_transient_failure_error_ = error;
 }
 
-void ChannelData::ChannelConfigHelper::ProcessLbPolicy(
+void ChannelData::ChannelConfigHelper::ChooseLbPolicy(
     const Resolver::Result& resolver_result,
     const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
     RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config) {
   // Prefer the LB policy config found in the service config.
-  if (parsed_service_config != nullptr &&
-      parsed_service_config->parsed_lb_config() != nullptr) {
+  if (parsed_service_config->parsed_lb_config() != nullptr) {
     *lb_policy_config = parsed_service_config->parsed_lb_config();
     return;
   }
   // Try the deprecated LB policy name from the service config.
   // If not, try the setting from channel args.
   const char* policy_name = nullptr;
-  if (parsed_service_config != nullptr &&
-      !parsed_service_config->parsed_deprecated_lb_policy().empty()) {
+  if (!parsed_service_config->parsed_deprecated_lb_policy().empty()) {
     policy_name = parsed_service_config->parsed_deprecated_lb_policy().c_str();
   } else {
     const grpc_arg* channel_arg =
@@ -1690,16 +1692,16 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
         "filter");
     return;
   }
-  // Get default service config
+  // Get default service config.  If none is specified via the client API,
+  // we use an empty config.
   const char* service_config_json = grpc_channel_arg_get_string(
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG));
-  if (service_config_json != nullptr) {
-    *error = GRPC_ERROR_NONE;
-    default_service_config_ = ServiceConfig::Create(service_config_json, error);
-    if (*error != GRPC_ERROR_NONE) {
-      default_service_config_.reset();
-      return;
-    }
+  if (service_config_json == nullptr) service_config_json = "{}";
+  *error = GRPC_ERROR_NONE;
+  default_service_config_ = ServiceConfig::Create(service_config_json, error);
+  if (*error != GRPC_ERROR_NONE) {
+    default_service_config_.reset();
+    return;
   }
   grpc_uri* uri = grpc_uri_parse(server_uri, true);
   if (uri != nullptr && uri->path[0] != '\0') {
@@ -1713,9 +1715,12 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
                                &new_args);
   target_uri_.reset(proxy_name != nullptr ? proxy_name
                                           : gpr_strdup(server_uri));
-  channel_args_ = new_args != nullptr
-                      ? new_args
-                      : grpc_channel_args_copy(args->channel_args);
+  // Strip out service config channel arg, so that it doesn't affect
+  // subchannel uniqueness when the args flow down to that layer.
+  const char* arg_to_remove = GRPC_ARG_SERVICE_CONFIG;
+  channel_args_ = grpc_channel_args_copy_and_remove(
+      new_args != nullptr ? new_args : args->channel_args, &arg_to_remove, 1);
+  grpc_channel_args_destroy(new_args);
   keepalive_time_ = grpc_channel_args_find_integer(
       channel_args_, GRPC_ARG_KEEPALIVE_TIME_MS,
       {-1 /* default value, unset */, 1, INT_MAX});
@@ -1747,11 +1752,10 @@ void ChannelData::UpdateStateAndPickerLocked(
     const char* reason,
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) {
   // Clean the control plane when entering IDLE.
-  if (picker_ == nullptr) {
+  if (picker == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
     health_check_service_name_.reset();
     saved_service_config_.reset();
     saved_config_selector_.reset();
-    received_first_resolver_result_ = false;
   }
   // Update connectivity state.
   state_tracker_.SetState(state, status, reason);
@@ -1797,7 +1801,7 @@ void ChannelData::UpdateStateAndPickerLocked(
     // Note: Original value will be destroyed after the lock is released.
     picker_.swap(picker);
     // Clean the data plane if the updated picker is nullptr.
-    if (picker_ == nullptr) {
+    if (picker_ == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
       received_service_config_data_ = false;
       // Note: We save the objects to unref until after the lock is released.
       retry_throttle_data_to_unref = std::move(retry_throttle_data_);
@@ -1819,43 +1823,72 @@ void ChannelData::UpdateStateAndPickerLocked(
   pending_subchannel_updates_.clear();
 }
 
-void ChannelData::UpdateServiceConfigInDataPlaneLocked(
-    bool service_config_changed,
-    RefCountedPtr<ConfigSelector> config_selector) {
-  // Check if ConfigSelector has changed.
-  const bool config_selector_changed =
-      saved_config_selector_ != config_selector;
-  saved_config_selector_ = config_selector;
-  // We want to set the service config at least once, even if the
-  // resolver does not return a config, because that ensures that we
-  // disable retries if they are not enabled in the service config.
-  // TODO(roth): Consider removing the received_first_resolver_result_ check
-  // when we implement transparent retries.
-  if (!service_config_changed && !config_selector_changed &&
-      received_first_resolver_result_) {
-    return;
+void ChannelData::UpdateServiceConfigInControlPlaneLocked(
+    RefCountedPtr<ServiceConfig> service_config,
+    RefCountedPtr<ConfigSelector> config_selector,
+    const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
+    const char* lb_policy_name) {
+  grpc_core::UniquePtr<char> service_config_json(
+      gpr_strdup(service_config->json_string().c_str()));
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+    gpr_log(GPR_INFO,
+            "chand=%p: resolver returned updated service config: \"%s\"", this,
+            service_config_json.get());
   }
-  received_first_resolver_result_ = true;
-  // Get retry throttle data from service config.
-  RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
-  if (saved_service_config_ != nullptr) {
-    const internal::ClientChannelGlobalParsedConfig* parsed_service_config =
-        static_cast<const internal::ClientChannelGlobalParsedConfig*>(
-            saved_service_config_->GetGlobalParsedConfig(
-                internal::ClientChannelServiceConfigParser::ParserIndex()));
-    if (parsed_service_config != nullptr) {
-      absl::optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
-          retry_throttle_config = parsed_service_config->retry_throttling();
-      if (retry_throttle_config.has_value()) {
-        retry_throttle_data =
-            internal::ServerRetryThrottleMap::GetDataForServer(
-                server_name_.get(),
-                retry_throttle_config.value().max_milli_tokens,
-                retry_throttle_config.value().milli_token_ratio);
-      }
+  // Save service config.
+  saved_service_config_ = std::move(service_config);
+  // Update health check service name if needed.
+  if (((health_check_service_name_ == nullptr) !=
+       (parsed_service_config->health_check_service_name() == nullptr)) ||
+      (health_check_service_name_ != nullptr &&
+       strcmp(health_check_service_name_.get(),
+              parsed_service_config->health_check_service_name()) != 0)) {
+    health_check_service_name_.reset(
+        gpr_strdup(parsed_service_config->health_check_service_name()));
+    // Update health check service name used by existing subchannel wrappers.
+    for (auto* subchannel_wrapper : subchannel_wrappers_) {
+      subchannel_wrapper->UpdateHealthCheckServiceName(
+          grpc_core::UniquePtr<char>(
+              gpr_strdup(health_check_service_name_.get())));
     }
   }
-  // Create default config selector if not provided by resolver.
+  // Swap out the data used by GetChannelInfo().
+  grpc_core::UniquePtr<char> lb_policy_name_owned(gpr_strdup(lb_policy_name));
+  {
+    MutexLock lock(&info_mu_);
+    info_lb_policy_name_ = std::move(lb_policy_name_owned);
+    info_service_config_json_ = std::move(service_config_json);
+  }
+  // Save config selector.
+  saved_config_selector_ = std::move(config_selector);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+    gpr_log(GPR_INFO, "chand=%p: using ConfigSelector %p", this,
+            saved_config_selector_.get());
+  }
+}
+
+void ChannelData::UpdateServiceConfigInDataPlaneLocked() {
+  // Get retry throttle data from service config.
+  const internal::ClientChannelGlobalParsedConfig* parsed_service_config =
+      static_cast<const internal::ClientChannelGlobalParsedConfig*>(
+          saved_service_config_->GetGlobalParsedConfig(
+              internal::ClientChannelServiceConfigParser::ParserIndex()));
+  absl::optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
+      retry_throttle_config = parsed_service_config->retry_throttling();
+  RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
+  if (retry_throttle_config.has_value()) {
+    retry_throttle_data = internal::ServerRetryThrottleMap::GetDataForServer(
+        server_name_.get(), retry_throttle_config.value().max_milli_tokens,
+        retry_throttle_config.value().milli_token_ratio);
+  }
+  // Grab ref to service config.
+  RefCountedPtr<ServiceConfig> service_config = saved_service_config_;
+  // Grab ref to config selector.  Use default if resolver didn't supply one.
+  RefCountedPtr<ConfigSelector> config_selector = saved_config_selector_;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+    gpr_log(GPR_INFO, "chand=%p: switching to ConfigSelector %p", this,
+            saved_config_selector_.get());
+  }
   if (config_selector == nullptr) {
     config_selector =
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
@@ -1864,9 +1897,6 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked(
   //
   // We defer unreffing the old values (and deallocating memory) until
   // after releasing the lock to keep the critical section small.
-  RefCountedPtr<ServiceConfig> service_config_to_unref = saved_service_config_;
-  RefCountedPtr<ConfigSelector> config_selector_to_unref =
-      std::move(config_selector);
   {
     MutexLock lock(&data_plane_mu_);
     GRPC_ERROR_UNREF(resolver_transient_failure_error_);
@@ -1875,8 +1905,8 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked(
     received_service_config_data_ = true;
     // Old values will be unreffed after lock is released.
     retry_throttle_data_.swap(retry_throttle_data);
-    service_config_.swap(service_config_to_unref);
-    config_selector_.swap(config_selector_to_unref);
+    service_config_.swap(service_config);
+    config_selector_.swap(config_selector);
     // Re-process queued picks.
     for (QueuedPick* pick = queued_picks_; pick != nullptr; pick = pick->next) {
       grpc_call_element* elem = pick->elem;
@@ -3873,6 +3903,7 @@ class CallData::QueuedPickCanceller {
     }
     if (calld->pick_canceller_ == self && error != GRPC_ERROR_NONE) {
       // Remove pick from list of queued picks.
+      calld->MaybeInvokeConfigSelectorCommitCallback();
       calld->MaybeRemoveCallFromQueuedPicksLocked(self->elem_);
       // Fail pending batches on the call.
       calld->PendingBatchesFail(self->elem_, GRPC_ERROR_REF(error),
@@ -4162,7 +4193,9 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
         connected_subchannel_ =
             chand->GetConnectedSubchannelInDataPlane(result.subchannel.get());
         GPR_ASSERT(connected_subchannel_ != nullptr);
-        if (retry_committed_) MaybeInvokeConfigSelectorCommitCallback();
+        if (!enable_retries_ || retry_committed_) {
+          MaybeInvokeConfigSelectorCommitCallback();
+        }
       }
       lb_recv_trailing_metadata_ready_ = result.recv_trailing_metadata_ready;
       *error = result.error;

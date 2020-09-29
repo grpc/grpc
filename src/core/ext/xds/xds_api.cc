@@ -237,8 +237,8 @@ std::string XdsApi::Route::Matchers::HeaderMatcher::ToString() const {
 std::string XdsApi::Route::Matchers::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(path_matcher.ToString());
-  for (const auto& header_it : header_matchers) {
-    contents.push_back(header_it.ToString());
+  for (const HeaderMatcher& header_matcher : header_matchers) {
+    contents.push_back(header_matcher.ToString());
   }
   if (fraction_per_million.has_value()) {
     contents.push_back(absl::StrFormat("Fraction Per Million %d",
@@ -257,8 +257,8 @@ std::string XdsApi::Route::ToString() const {
   if (!cluster_name.empty()) {
     contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
   }
-  for (const auto& weighted_it : weighted_clusters) {
-    contents.push_back(weighted_it.ToString());
+  for (const ClusterWeight& cluster_weight : weighted_clusters) {
+    contents.push_back(cluster_weight.ToString());
   }
   return absl::StrJoin(contents, "\n");
 }
@@ -342,8 +342,8 @@ MatchType DomainPatternMatchType(const std::string& domain_pattern) {
 
 }  // namespace
 
-const XdsApi::RdsUpdate::VirtualHost*
-XdsApi::RdsUpdate::FindVirtualHostForDomain(const std::string& domain) const {
+XdsApi::RdsUpdate::VirtualHost* XdsApi::RdsUpdate::FindVirtualHostForDomain(
+    const std::string& domain) {
   // Find the best matched virtual host.
   // The search order for 4 groups of domain patterns:
   //   1. Exact match.
@@ -353,12 +353,12 @@ XdsApi::RdsUpdate::FindVirtualHostForDomain(const std::string& domain) const {
   // Within each group, longest match wins.
   // If the same best matched domain pattern appears in multiple virtual hosts,
   // the first matched virtual host wins.
-  const VirtualHost* target_vhost = nullptr;
+  VirtualHost* target_vhost = nullptr;
   MatchType best_match_type = INVALID_MATCH;
   size_t longest_match = 0;
   // Check each domain pattern in each virtual host to determine the best
   // matched virtual host.
-  for (const VirtualHost& vhost : virtual_hosts) {
+  for (VirtualHost& vhost : virtual_hosts) {
     for (const std::string& domain_pattern : vhost.domains) {
       // Check the match type first. Skip the pattern if it's not better than
       // current match.
@@ -384,49 +384,42 @@ XdsApi::RdsUpdate::FindVirtualHostForDomain(const std::string& domain) const {
 }
 
 //
-// XdsApi::PriorityListUpdate
+// XdsApi::EdsUpdate
 //
 
-bool XdsApi::PriorityListUpdate::operator==(
-    const XdsApi::PriorityListUpdate& other) const {
-  if (priorities_.size() != other.priorities_.size()) return false;
-  for (size_t i = 0; i < priorities_.size(); ++i) {
-    if (priorities_[i].localities != other.priorities_[i].localities) {
-      return false;
-    }
+std::string XdsApi::EdsUpdate::Priority::Locality::ToString() const {
+  std::vector<std::string> endpoint_strings;
+  for (const ServerAddress& endpoint : endpoints) {
+    endpoint_strings.emplace_back(endpoint.ToString());
+  }
+  return absl::StrCat("{name=", name->AsHumanReadableString(),
+                      ", lb_weight=", lb_weight, ", endpoints=[",
+                      absl::StrJoin(endpoint_strings, ", "), "]}");
+}
+
+bool XdsApi::EdsUpdate::Priority::operator==(const Priority& other) const {
+  if (localities.size() != other.localities.size()) return false;
+  auto it1 = localities.begin();
+  auto it2 = other.localities.begin();
+  while (it1 != localities.end()) {
+    if (*it1->first != *it2->first) return false;
+    if (it1->second != it2->second) return false;
+    ++it1;
+    ++it2;
   }
   return true;
 }
 
-void XdsApi::PriorityListUpdate::Add(
-    XdsApi::PriorityListUpdate::LocalityMap::Locality locality) {
-  // Pad the missing priorities in case the localities are not ordered by
-  // priority.
-  if (!Contains(locality.priority)) priorities_.resize(locality.priority + 1);
-  LocalityMap& locality_map = priorities_[locality.priority];
-  locality_map.localities.emplace(locality.name, std::move(locality));
-}
-
-const XdsApi::PriorityListUpdate::LocalityMap* XdsApi::PriorityListUpdate::Find(
-    uint32_t priority) const {
-  if (!Contains(priority)) return nullptr;
-  return &priorities_[priority];
-}
-
-bool XdsApi::PriorityListUpdate::Contains(
-    const RefCountedPtr<XdsLocalityName>& name) {
-  for (size_t i = 0; i < priorities_.size(); ++i) {
-    const LocalityMap& locality_map = priorities_[i];
-    if (locality_map.Contains(name)) return true;
+std::string XdsApi::EdsUpdate::Priority::ToString() const {
+  std::vector<std::string> locality_strings;
+  for (const auto& p : localities) {
+    locality_strings.emplace_back(p.second.ToString());
   }
-  return false;
+  return absl::StrCat("[", absl::StrJoin(locality_strings, ", "), "]");
 }
 
-//
-// XdsApi::DropConfig
-//
-
-bool XdsApi::DropConfig::ShouldDrop(const std::string** category_name) const {
+bool XdsApi::EdsUpdate::DropConfig::ShouldDrop(
+    const std::string** category_name) const {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
     // Generate a random number in [0, 1000000).
@@ -437,6 +430,27 @@ bool XdsApi::DropConfig::ShouldDrop(const std::string** category_name) const {
     }
   }
   return false;
+}
+
+std::string XdsApi::EdsUpdate::DropConfig::ToString() const {
+  std::vector<std::string> category_strings;
+  for (const DropCategory& category : drop_category_list_) {
+    category_strings.emplace_back(
+        absl::StrCat(category.name, "=", category.parts_per_million));
+  }
+  return absl::StrCat("{[", absl::StrJoin(category_strings, ", "),
+                      "], drop_all=", drop_all_, "}");
+}
+
+std::string XdsApi::EdsUpdate::ToString() const {
+  std::vector<std::string> priority_strings;
+  for (size_t i = 0; i < priorities.size(); ++i) {
+    const Priority& priority = priorities[i];
+    priority_strings.emplace_back(
+        absl::StrCat("priority ", i, ": ", priority.ToString()));
+  }
+  return absl::StrCat("priorities=[", absl::StrJoin(priority_strings, ", "),
+                      "], drop_config=", drop_config->ToString());
 }
 
 //
@@ -588,7 +602,6 @@ void PopulateBuildVersion(upb_arena* arena, envoy_config_core_v3_Node* node_msg,
 void PopulateNode(upb_arena* arena, const XdsBootstrap* bootstrap,
                   const std::string& build_version,
                   const std::string& user_agent_name,
-                  const std::string& server_name,
                   envoy_config_core_v3_Node* node_msg) {
   const XdsBootstrap::Node* node = bootstrap->node();
   if (node != nullptr) {
@@ -604,16 +617,6 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap* bootstrap,
       google_protobuf_Struct* metadata =
           envoy_config_core_v3_Node_mutable_metadata(node_msg, arena);
       PopulateMetadata(arena, metadata, node->metadata.object_value());
-    }
-    if (!server_name.empty()) {
-      google_protobuf_Struct* metadata =
-          envoy_config_core_v3_Node_mutable_metadata(node_msg, arena);
-      google_protobuf_Value* value = google_protobuf_Value_new(arena);
-      google_protobuf_Value_set_string_value(value,
-                                             StdStringToUpbString(server_name));
-      google_protobuf_Struct_fields_set(
-          metadata, upb_strview_makez("PROXYLESS_CLIENT_HOSTNAME"), value,
-          arena);
     }
     if (!node->locality_region.empty() || !node->locality_zone.empty() ||
         !node->locality_subzone.empty()) {
@@ -740,7 +743,7 @@ grpc_slice XdsApi::CreateAdsRequest(
     envoy_config_core_v3_Node* node_msg =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
                                                                  arena.ptr());
-    PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_, "",
+    PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_,
                  node_msg);
   }
   // Add resource_names.
@@ -1084,7 +1087,9 @@ grpc_error* RouteConfigParse(
       std::string domain_pattern = UpbStringToStdString(domains[j]);
       const MatchType match_type = DomainPatternMatchType(domain_pattern);
       if (match_type == INVALID_MATCH) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid domain pattern.");
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("Invalid domain pattern \"", domain_pattern, "\".")
+                .c_str());
       }
       vhost.domains.emplace_back(std::move(domain_pattern));
     }
@@ -1140,8 +1145,8 @@ grpc_error* RouteConfigParse(
 grpc_error* LdsResponseParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
-    const std::string& expected_server_name,
-    absl::optional<XdsApi::LdsUpdate>* lds_update, upb_arena* arena) {
+    const std::set<absl::string_view>& expected_listener_names,
+    XdsApi::LdsUpdateMap* lds_update_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1163,9 +1168,19 @@ grpc_error* LdsResponseParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode listener.");
     }
     // Check listener name. Ignore unexpected listeners.
-    absl::string_view name =
-        UpbStringToAbsl(envoy_config_listener_v3_Listener_name(listener));
-    if (name != expected_server_name) continue;
+    std::string listener_name =
+        UpbStringToStdString(envoy_config_listener_v3_Listener_name(listener));
+    if (expected_listener_names.find(listener_name) ==
+        expected_listener_names.end()) {
+      continue;
+    }
+    // Fail if listener name is duplicated.
+    if (lds_update_map->find(listener_name) != lds_update_map->end()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate listener name \"", listener_name, "\"")
+              .c_str());
+    }
+    XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name];
     // Get api_listener and decode it to http_connection_manager.
     const envoy_config_listener_v3_ApiListener* api_listener =
         envoy_config_listener_v3_Listener_api_listener(listener);
@@ -1193,9 +1208,8 @@ grpc_error* LdsResponseParse(
       grpc_error* error =
           RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
       if (error != GRPC_ERROR_NONE) return error;
-      lds_update->emplace();
-      (*lds_update)->rds_update = std::move(rds_update);
-      return GRPC_ERROR_NONE;
+      lds_update.rds_update = std::move(rds_update);
+      continue;
     }
     // Validate that RDS must be used to get the route_config dynamically.
     if (!envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_rds(
@@ -1219,11 +1233,9 @@ grpc_error* LdsResponseParse(
           "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
     }
     // Get the route_config_name.
-    lds_update->emplace();
-    (*lds_update)->route_config_name = UpbStringToStdString(
+    lds_update.route_config_name = UpbStringToStdString(
         envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
             rds));
-    return GRPC_ERROR_NONE;
   }
   return GRPC_ERROR_NONE;
 }
@@ -1232,7 +1244,7 @@ grpc_error* RdsResponseParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_route_configuration_names,
-    absl::optional<XdsApi::RdsUpdate>* rds_update, upb_arena* arena) {
+    XdsApi::RdsUpdateMap* rds_update_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1254,19 +1266,25 @@ grpc_error* RdsResponseParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode route_config.");
     }
     // Check route_config_name. Ignore unexpected route_config.
-    absl::string_view route_config_name = UpbStringToAbsl(
+    std::string route_config_name = UpbStringToStdString(
         envoy_config_route_v3_RouteConfiguration_name(route_config));
     if (expected_route_configuration_names.find(route_config_name) ==
         expected_route_configuration_names.end()) {
       continue;
     }
+    // Fail if route config name is duplicated.
+    if (rds_update_map->find(route_config_name) != rds_update_map->end()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate route config name \"", route_config_name,
+                       "\"")
+              .c_str());
+    }
     // Parse the route_config.
-    XdsApi::RdsUpdate local_rds_update;
-    grpc_error* error = RouteConfigParse(client, tracer, symtab, route_config,
-                                         &local_rds_update);
+    XdsApi::RdsUpdate& rds_update =
+        (*rds_update_map)[std::move(route_config_name)];
+    grpc_error* error =
+        RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) return error;
-    rds_update->emplace(std::move(local_rds_update));
-    return GRPC_ERROR_NONE;
   }
   return GRPC_ERROR_NONE;
 }
@@ -1282,7 +1300,6 @@ grpc_error* CdsResponseParse(
       envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
   // Parse all the resources in the CDS response.
   for (size_t i = 0; i < size; ++i) {
-    XdsApi::CdsUpdate cds_update;
     // Check the type_url of the resource.
     absl::string_view type_url =
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
@@ -1311,6 +1328,7 @@ grpc_error* CdsResponseParse(
           absl::StrCat("duplicate resource name \"", cluster_name, "\"")
               .c_str());
     }
+    XdsApi::CdsUpdate& cds_update = (*cds_update_map)[std::move(cluster_name)];
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType not found.");
@@ -1352,7 +1370,6 @@ grpc_error* CdsResponseParse(
       }
       cds_update.lrs_load_reporting_server_name.emplace("");
     }
-    cds_update_map->emplace(std::move(cluster_name), std::move(cds_update));
   }
   return GRPC_ERROR_NONE;
 }
@@ -1390,7 +1407,7 @@ grpc_error* ServerAddressParseAndAppend(
 
 grpc_error* LocalityParse(
     const envoy_config_endpoint_v3_LocalityLbEndpoints* locality_lb_endpoints,
-    XdsApi::PriorityListUpdate::LocalityMap::Locality* output_locality) {
+    XdsApi::EdsUpdate::Priority::Locality* output_locality, size_t* priority) {
   // Parse LB weight.
   const google_protobuf_UInt32Value* lb_weight =
       envoy_config_endpoint_v3_LocalityLbEndpoints_load_balancing_weight(
@@ -1420,20 +1437,19 @@ grpc_error* LocalityParse(
           locality_lb_endpoints, &size);
   for (size_t i = 0; i < size; ++i) {
     grpc_error* error = ServerAddressParseAndAppend(
-        lb_endpoints[i], &output_locality->serverlist);
+        lb_endpoints[i], &output_locality->endpoints);
     if (error != GRPC_ERROR_NONE) return error;
   }
   // Parse the priority.
-  output_locality->priority =
-      envoy_config_endpoint_v3_LocalityLbEndpoints_priority(
-          locality_lb_endpoints);
+  *priority = envoy_config_endpoint_v3_LocalityLbEndpoints_priority(
+      locality_lb_endpoints);
   return GRPC_ERROR_NONE;
 }
 
 grpc_error* DropParseAndAppend(
     const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload*
         drop_overload,
-    XdsApi::DropConfig* drop_config) {
+    XdsApi::EdsUpdate::DropConfig* drop_config) {
   // Get the category.
   std::string category = UpbStringToStdString(
       envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_category(
@@ -1479,7 +1495,6 @@ grpc_error* EdsResponseParse(
   const google_protobuf_Any* const* resources =
       envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
   for (size_t i = 0; i < size; ++i) {
-    XdsApi::EdsUpdate eds_update;
     // Check the type_url of the resource.
     absl::string_view type_url =
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
@@ -1513,29 +1528,36 @@ grpc_error* EdsResponseParse(
           absl::StrCat("duplicate resource name \"", eds_service_name, "\"")
               .c_str());
     }
+    XdsApi::EdsUpdate& eds_update =
+        (*eds_update_map)[std::move(eds_service_name)];
     // Get the endpoints.
     size_t locality_size;
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
         envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
             cluster_load_assignment, &locality_size);
     for (size_t j = 0; j < locality_size; ++j) {
-      XdsApi::PriorityListUpdate::LocalityMap::Locality locality;
-      grpc_error* error = LocalityParse(endpoints[j], &locality);
+      size_t priority;
+      XdsApi::EdsUpdate::Priority::Locality locality;
+      grpc_error* error = LocalityParse(endpoints[j], &locality, &priority);
       if (error != GRPC_ERROR_NONE) return error;
       // Filter out locality with weight 0.
       if (locality.lb_weight == 0) continue;
-      eds_update.priority_list_update.Add(locality);
+      // Make sure prorities is big enough. Note that they might not
+      // arrive in priority order.
+      while (eds_update.priorities.size() < priority + 1) {
+        eds_update.priorities.emplace_back();
+      }
+      eds_update.priorities[priority].localities.emplace(locality.name.get(),
+                                                         std::move(locality));
     }
-    for (uint32_t priority = 0;
-         priority < eds_update.priority_list_update.size(); ++priority) {
-      auto* locality_map = eds_update.priority_list_update.Find(priority);
-      if (locality_map == nullptr || locality_map->size() == 0) {
+    for (const auto& priority : eds_update.priorities) {
+      if (priority.localities.empty()) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "EDS update includes sparse priority list");
       }
     }
     // Get the drop config.
-    eds_update.drop_config = MakeRefCounted<XdsApi::DropConfig>();
+    eds_update.drop_config = MakeRefCounted<XdsApi::EdsUpdate::DropConfig>();
     const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* policy =
         envoy_config_endpoint_v3_ClusterLoadAssignment_policy(
             cluster_load_assignment);
@@ -1551,7 +1573,6 @@ grpc_error* EdsResponseParse(
         if (error != GRPC_ERROR_NONE) return error;
       }
     }
-    eds_update_map->emplace(std::move(eds_service_name), std::move(eds_update));
   }
   return GRPC_ERROR_NONE;
 }
@@ -1572,7 +1593,8 @@ std::string TypeUrlInternalToExternal(absl::string_view type_url) {
 }  // namespace
 
 XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
-    const grpc_slice& encoded_response, const std::string& expected_server_name,
+    const grpc_slice& encoded_response,
+    const std::set<absl::string_view>& expected_listener_names,
     const std::set<absl::string_view>& expected_route_configuration_names,
     const std::set<absl::string_view>& expected_cluster_names,
     const std::set<absl::string_view>& expected_eds_service_names) {
@@ -1601,11 +1623,13 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   if (IsLds(result.type_url)) {
     result.parse_error =
         LdsResponseParse(client_, tracer_, symtab_.ptr(), response,
-                         expected_server_name, &result.lds_update, arena.ptr());
+                         expected_listener_names, &result.lds_update_map,
+                         arena.ptr());
   } else if (IsRds(result.type_url)) {
-    result.parse_error = RdsResponseParse(
-        client_, tracer_, symtab_.ptr(), response,
-        expected_route_configuration_names, &result.rds_update, arena.ptr());
+    result.parse_error =
+        RdsResponseParse(client_, tracer_, symtab_.ptr(), response,
+                         expected_route_configuration_names,
+                         &result.rds_update_map, arena.ptr());
   } else if (IsCds(result.type_url)) {
     result.parse_error = CdsResponseParse(client_, tracer_, symtab_.ptr(),
                                           response, expected_cluster_names,
@@ -1645,7 +1669,7 @@ grpc_slice SerializeLrsRequest(
 
 }  // namespace
 
-grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
+grpc_slice XdsApi::CreateLrsInitialRequest() {
   upb::Arena arena;
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
@@ -1655,7 +1679,7 @@ grpc_slice XdsApi::CreateLrsInitialRequest(const std::string& server_name) {
       envoy_service_load_stats_v3_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
   PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_,
-               server_name, node_msg);
+               node_msg);
   envoy_config_core_v3_Node_add_client_features(
       node_msg, upb_strview_makez("envoy.lrs.supports_send_all_clusters"),
       arena.ptr());
@@ -1746,7 +1770,7 @@ grpc_slice XdsApi::CreateLrsRequest(
     }
     // Add dropped requests.
     uint64_t total_dropped_requests = 0;
-    for (const auto& p : load_report.dropped_requests) {
+    for (const auto& p : load_report.dropped_requests.categorized_drops) {
       const std::string& category = p.first;
       const uint64_t count = p.second;
       envoy_config_endpoint_v3_ClusterStats_DroppedRequests* dropped_requests =
@@ -1758,6 +1782,7 @@ grpc_slice XdsApi::CreateLrsRequest(
           dropped_requests, count);
       total_dropped_requests += count;
     }
+    total_dropped_requests += load_report.dropped_requests.uncategorized_drops;
     // Set total dropped requests.
     envoy_config_endpoint_v3_ClusterStats_set_total_dropped_requests(
         cluster_stats, total_dropped_requests);
