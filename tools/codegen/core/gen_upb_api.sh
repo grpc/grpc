@@ -50,12 +50,14 @@ proto_files=( \
   "envoy/config/core/v3/base.proto" \
   "envoy/config/core/v3/config_source.proto" \
   "envoy/config/core/v3/event_service_config.proto" \
+  "envoy/config/core/v3/extension.proto" \
   "envoy/config/core/v3/grpc_service.proto" \
   "envoy/config/core/v3/health_check.proto" \
   "envoy/config/core/v3/http_uri.proto" \
   "envoy/config/core/v3/protocol.proto" \
   "envoy/config/core/v3/proxy_protocol.proto" \
   "envoy/config/core/v3/socket_option.proto" \
+  "envoy/config/core/v3/substitution_format_string.proto" \
   "envoy/config/endpoint/v3/endpoint.proto" \
   "envoy/config/endpoint/v3/endpoint_components.proto" \
   "envoy/config/endpoint/v3/load_report.proto" \
@@ -93,7 +95,6 @@ proto_files=( \
   "envoy/type/v3/percent.proto" \
   "envoy/type/v3/range.proto" \
   "envoy/type/v3/semantic_version.proto" \
-  "gogoproto/gogo.proto" \
   "google/api/annotations.proto" \
   "google/api/expr/v1alpha1/checked.proto" \
   "google/api/expr/v1alpha1/syntax.proto" \
@@ -114,9 +115,16 @@ proto_files=( \
   "third_party/istio/security/proto/providers/google/meshca.proto" \
   "udpa/data/orca/v1/orca_load_report.proto" \
   "udpa/annotations/migrate.proto" \
+  "udpa/annotations/security.proto" \
   "udpa/annotations/sensitive.proto" \
   "udpa/annotations/status.proto" \
   "udpa/annotations/versioning.proto" \
+  "udpa/core/v1/authority.proto" \
+  "udpa/core/v1/collection_entry.proto" \
+  "udpa/core/v1/context_params.proto" \
+  "udpa/core/v1/resource_locator.proto" \
+  "udpa/core/v1/resource_name.proto" \
+  "udpa/core/v1/resource.proto" \
   "validate/validate.proto")
 
 for i in "${proto_files[@]}"

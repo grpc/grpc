@@ -86,6 +86,11 @@ UPB_INLINE const upb_msgdef *envoy_config_accesslog_v3_GrpcStatusFilter_getmsgde
   return upb_symtab_lookupmsg(s, "envoy.config.accesslog.v3.GrpcStatusFilter");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_accesslog_v3_MetadataFilter_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_accesslog_v3_accesslog_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.accesslog.v3.MetadataFilter");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_accesslog_v3_ExtensionFilter_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_accesslog_v3_accesslog_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.accesslog.v3.ExtensionFilter");

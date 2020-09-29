@@ -12,6 +12,7 @@
 #include "envoy/config/core/v3/grpc_service.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "udpa/core/v1/authority.upb.h"
 #include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
@@ -48,10 +49,14 @@ const upb_msglayout envoy_config_core_v3_AggregatedConfigSource_msginit = {
   UPB_SIZE(0, 0), 0, false,
 };
 
+static const upb_msglayout_field envoy_config_core_v3_SelfConfigSource__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 14, 1},
+};
+
 const upb_msglayout envoy_config_core_v3_SelfConfigSource_msginit = {
   NULL,
-  NULL,
-  UPB_SIZE(0, 0), 0, false,
+  &envoy_config_core_v3_SelfConfigSource__fields[0],
+  UPB_SIZE(8, 8), 1, false,
 };
 
 static const upb_msglayout *const envoy_config_core_v3_RateLimitSettings_submsgs[2] = {
@@ -70,26 +75,28 @@ const upb_msglayout envoy_config_core_v3_RateLimitSettings_msginit = {
   UPB_SIZE(8, 16), 2, false,
 };
 
-static const upb_msglayout *const envoy_config_core_v3_ConfigSource_submsgs[4] = {
+static const upb_msglayout *const envoy_config_core_v3_ConfigSource_submsgs[5] = {
   &envoy_config_core_v3_AggregatedConfigSource_msginit,
   &envoy_config_core_v3_ApiConfigSource_msginit,
   &envoy_config_core_v3_SelfConfigSource_msginit,
   &google_protobuf_Duration_msginit,
+  &udpa_core_v1_Authority_msginit,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_ConfigSource__fields[6] = {
-  {1, UPB_SIZE(12, 16), UPB_SIZE(-21, -33), 0, 9, 1},
-  {2, UPB_SIZE(12, 16), UPB_SIZE(-21, -33), 1, 11, 1},
-  {3, UPB_SIZE(12, 16), UPB_SIZE(-21, -33), 0, 11, 1},
+static const upb_msglayout_field envoy_config_core_v3_ConfigSource__fields[7] = {
+  {1, UPB_SIZE(16, 24), UPB_SIZE(-25, -41), 0, 9, 1},
+  {2, UPB_SIZE(16, 24), UPB_SIZE(-25, -41), 1, 11, 1},
+  {3, UPB_SIZE(16, 24), UPB_SIZE(-25, -41), 0, 11, 1},
   {4, UPB_SIZE(8, 8), 0, 3, 11, 1},
-  {5, UPB_SIZE(12, 16), UPB_SIZE(-21, -33), 2, 11, 1},
+  {5, UPB_SIZE(16, 24), UPB_SIZE(-25, -41), 2, 11, 1},
   {6, UPB_SIZE(0, 0), 0, 0, 14, 1},
+  {7, UPB_SIZE(12, 16), 0, 4, 11, 3},
 };
 
 const upb_msglayout envoy_config_core_v3_ConfigSource_msginit = {
   &envoy_config_core_v3_ConfigSource_submsgs[0],
   &envoy_config_core_v3_ConfigSource__fields[0],
-  UPB_SIZE(24, 48), 6, false,
+  UPB_SIZE(32, 48), 7, false,
 };
 
 #include "upb/port_undef.inc"
