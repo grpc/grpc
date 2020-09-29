@@ -188,7 +188,11 @@ esac
 pip_install --upgrade setuptools==44.1.1
 pip_install --upgrade pip==19.3.1
 pip_install --upgrade cython
-pip_install --upgrade six enum34 protobuf
+if [ -z $(python -V | grep "Python 2.7") ]; then
+  pip_install --upgrade six enum34 protobuf
+else
+  pip_install --upgrade six protobuf
+fi
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then
