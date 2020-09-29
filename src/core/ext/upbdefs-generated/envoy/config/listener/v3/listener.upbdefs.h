@@ -21,6 +21,11 @@ extern "C" {
 
 extern upb_def_init envoy_config_listener_v3_listener_proto_upbdefinit;
 
+UPB_INLINE const upb_msgdef *envoy_config_listener_v3_ListenerCollection_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_listener_v3_listener_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.listener.v3.ListenerCollection");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_listener_v3_Listener_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_listener_v3_listener_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.listener.v3.Listener");

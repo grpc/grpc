@@ -14,6 +14,7 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/empty.upb.h"
 #include "google/protobuf/struct.upb.h"
+#include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/sensitive.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
@@ -41,35 +42,40 @@ const upb_msglayout envoy_config_core_v3_GrpcService_msginit = {
   UPB_SIZE(16, 32), 4, false,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_GrpcService_EnvoyGrpc__fields[1] = {
+static const upb_msglayout_field envoy_config_core_v3_GrpcService_EnvoyGrpc__fields[2] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_GrpcService_EnvoyGrpc_msginit = {
   NULL,
   &envoy_config_core_v3_GrpcService_EnvoyGrpc__fields[0],
-  UPB_SIZE(8, 16), 1, false,
+  UPB_SIZE(16, 32), 2, false,
 };
 
-static const upb_msglayout *const envoy_config_core_v3_GrpcService_GoogleGrpc_submsgs[3] = {
+static const upb_msglayout *const envoy_config_core_v3_GrpcService_GoogleGrpc_submsgs[5] = {
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_msginit,
+  &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_msginit,
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials_msginit,
   &google_protobuf_Struct_msginit,
+  &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_GrpcService_GoogleGrpc__fields[6] = {
+static const upb_msglayout_field envoy_config_core_v3_GrpcService_GoogleGrpc__fields[8] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(24, 48), 0, 1, 11, 1},
-  {3, UPB_SIZE(32, 64), 0, 0, 11, 3},
+  {2, UPB_SIZE(24, 48), 0, 2, 11, 1},
+  {3, UPB_SIZE(40, 80), 0, 0, 11, 3},
   {4, UPB_SIZE(8, 16), 0, 0, 9, 1},
   {5, UPB_SIZE(16, 32), 0, 0, 9, 1},
-  {6, UPB_SIZE(28, 56), 0, 2, 11, 1},
+  {6, UPB_SIZE(28, 56), 0, 3, 11, 1},
+  {7, UPB_SIZE(32, 64), 0, 4, 11, 1},
+  {8, UPB_SIZE(36, 72), 0, 1, 11, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_GrpcService_GoogleGrpc_msginit = {
   &envoy_config_core_v3_GrpcService_GoogleGrpc_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc__fields[0],
-  UPB_SIZE(40, 80), 6, false,
+  UPB_SIZE(48, 96), 8, false,
 };
 
 static const upb_msglayout *const envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials_submsgs[3] = {
@@ -189,6 +195,46 @@ const upb_msglayout envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_
   NULL,
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService__fields[0],
   UPB_SIZE(72, 144), 9, false,
+};
+
+static const upb_msglayout *const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_submsgs[1] = {
+  &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_msginit,
+};
+
+static const upb_msglayout_field envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_LABEL_MAP},
+};
+
+const upb_msglayout envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_msginit = {
+  &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_submsgs[0],
+  &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs__fields[0],
+  UPB_SIZE(4, 8), 1, false,
+};
+
+static const upb_msglayout_field envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value__fields[2] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 3, 1},
+};
+
+const upb_msglayout envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_msginit = {
+  NULL,
+  &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value__fields[0],
+  UPB_SIZE(16, 32), 2, false,
+};
+
+static const upb_msglayout *const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_submsgs[1] = {
+  &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_msginit,
+};
+
+static const upb_msglayout_field envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry__fields[2] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
+};
+
+const upb_msglayout envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_msginit = {
+  &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_submsgs[0],
+  &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry__fields[0],
+  UPB_SIZE(16, 32), 2, false,
 };
 
 #include "upb/port_undef.inc"

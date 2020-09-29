@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include "upb/msg.h"
 #include "envoy/config/core/v3/protocol.upb.h"
+#include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/status.upb.h"
@@ -53,23 +54,25 @@ const upb_msglayout envoy_config_core_v3_HttpProtocolOptions_msginit = {
   UPB_SIZE(24, 40), 5, false,
 };
 
-static const upb_msglayout *const envoy_config_core_v3_Http1ProtocolOptions_submsgs[2] = {
+static const upb_msglayout *const envoy_config_core_v3_Http1ProtocolOptions_submsgs[3] = {
   &envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_msginit,
   &google_protobuf_BoolValue_msginit,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_Http1ProtocolOptions__fields[5] = {
+static const upb_msglayout_field envoy_config_core_v3_Http1ProtocolOptions__fields[7] = {
   {1, UPB_SIZE(12, 24), 0, 1, 11, 1},
   {2, UPB_SIZE(0, 0), 0, 0, 8, 1},
   {3, UPB_SIZE(4, 8), 0, 0, 9, 1},
   {4, UPB_SIZE(16, 32), 0, 0, 11, 1},
   {5, UPB_SIZE(1, 1), 0, 0, 8, 1},
+  {6, UPB_SIZE(2, 2), 0, 0, 8, 1},
+  {7, UPB_SIZE(20, 40), 0, 1, 11, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_Http1ProtocolOptions_msginit = {
   &envoy_config_core_v3_Http1ProtocolOptions_submsgs[0],
   &envoy_config_core_v3_Http1ProtocolOptions__fields[0],
-  UPB_SIZE(24, 48), 5, false,
+  UPB_SIZE(24, 48), 7, false,
 };
 
 static const upb_msglayout *const envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_submsgs[1] = {
@@ -92,31 +95,52 @@ const upb_msglayout envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_Pr
   UPB_SIZE(0, 0), 0, false,
 };
 
-static const upb_msglayout *const envoy_config_core_v3_Http2ProtocolOptions_submsgs[10] = {
+static const upb_msglayout *const envoy_config_core_v3_KeepaliveSettings_submsgs[3] = {
+  &envoy_type_v3_Percent_msginit,
+  &google_protobuf_Duration_msginit,
+};
+
+static const upb_msglayout_field envoy_config_core_v3_KeepaliveSettings__fields[3] = {
+  {1, UPB_SIZE(0, 0), 0, 1, 11, 1},
+  {2, UPB_SIZE(4, 8), 0, 1, 11, 1},
+  {3, UPB_SIZE(8, 16), 0, 0, 11, 1},
+};
+
+const upb_msglayout envoy_config_core_v3_KeepaliveSettings_msginit = {
+  &envoy_config_core_v3_KeepaliveSettings_submsgs[0],
+  &envoy_config_core_v3_KeepaliveSettings__fields[0],
+  UPB_SIZE(12, 24), 3, false,
+};
+
+static const upb_msglayout *const envoy_config_core_v3_Http2ProtocolOptions_submsgs[12] = {
   &envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter_msginit,
+  &envoy_config_core_v3_KeepaliveSettings_msginit,
+  &google_protobuf_BoolValue_msginit,
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_Http2ProtocolOptions__fields[13] = {
-  {1, UPB_SIZE(4, 8), 0, 1, 11, 1},
-  {2, UPB_SIZE(8, 16), 0, 1, 11, 1},
-  {3, UPB_SIZE(12, 24), 0, 1, 11, 1},
-  {4, UPB_SIZE(16, 32), 0, 1, 11, 1},
+static const upb_msglayout_field envoy_config_core_v3_Http2ProtocolOptions__fields[15] = {
+  {1, UPB_SIZE(4, 8), 0, 3, 11, 1},
+  {2, UPB_SIZE(8, 16), 0, 3, 11, 1},
+  {3, UPB_SIZE(12, 24), 0, 3, 11, 1},
+  {4, UPB_SIZE(16, 32), 0, 3, 11, 1},
   {5, UPB_SIZE(0, 0), 0, 0, 8, 1},
   {6, UPB_SIZE(1, 1), 0, 0, 8, 1},
-  {7, UPB_SIZE(20, 40), 0, 1, 11, 1},
-  {8, UPB_SIZE(24, 48), 0, 1, 11, 1},
-  {9, UPB_SIZE(28, 56), 0, 1, 11, 1},
-  {10, UPB_SIZE(32, 64), 0, 1, 11, 1},
-  {11, UPB_SIZE(36, 72), 0, 1, 11, 1},
+  {7, UPB_SIZE(20, 40), 0, 3, 11, 1},
+  {8, UPB_SIZE(24, 48), 0, 3, 11, 1},
+  {9, UPB_SIZE(28, 56), 0, 3, 11, 1},
+  {10, UPB_SIZE(32, 64), 0, 3, 11, 1},
+  {11, UPB_SIZE(36, 72), 0, 3, 11, 1},
   {12, UPB_SIZE(2, 2), 0, 0, 8, 1},
-  {13, UPB_SIZE(40, 80), 0, 0, 11, 3},
+  {13, UPB_SIZE(48, 96), 0, 0, 11, 3},
+  {14, UPB_SIZE(40, 80), 0, 2, 11, 1},
+  {15, UPB_SIZE(44, 88), 0, 1, 11, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_Http2ProtocolOptions_msginit = {
   &envoy_config_core_v3_Http2ProtocolOptions_submsgs[0],
   &envoy_config_core_v3_Http2ProtocolOptions__fields[0],
-  UPB_SIZE(44, 88), 13, false,
+  UPB_SIZE(52, 104), 15, false,
 };
 
 static const upb_msglayout *const envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter_submsgs[2] = {
