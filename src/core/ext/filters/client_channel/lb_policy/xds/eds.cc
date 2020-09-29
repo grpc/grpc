@@ -514,12 +514,14 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
   grpc_channel_args_destroy(args_);
   args_ = args.args;
   args.args = nullptr;
+  const bool lrs_server_changed =
+      is_initial_update || config_->lrs_load_reporting_server_name() !=
+                               old_config->lrs_load_reporting_server_name();
+  const bool max_concurrent_requests_changed =
+      is_initial_update || config_->max_concurrent_requests() !=
+                               old_config->max_concurrent_requests();
   // Update drop stats for load reporting if needed.
-  if (is_initial_update ||
-      config_->lrs_load_reporting_server_name() !=
-          old_config->lrs_load_reporting_server_name() ||
-      config_->max_concurrent_requests() !=
-          old_config->max_concurrent_requests()) {
+  if (lrs_server_changed) {
     drop_stats_.reset();
     if (config_->lrs_load_reporting_server_name().has_value()) {
       const auto key = GetLrsClusterKey();
@@ -527,6 +529,8 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
           config_->lrs_load_reporting_server_name().value(),
           key.first /*cluster_name*/, key.second /*eds_service_name*/);
     }
+  }
+  if (lrs_server_changed || max_concurrent_requests_changed) {
     MaybeUpdateDropPickerLocked();
   }
   // Update child policy if needed.
