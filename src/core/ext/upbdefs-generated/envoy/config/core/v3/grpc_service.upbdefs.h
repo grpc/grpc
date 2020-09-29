@@ -76,6 +76,21 @@ UPB_INLINE const upb_msgdef *envoy_config_core_v3_GrpcService_GoogleGrpc_CallCre
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.StsService");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_grpc_service_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_grpc_service_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs.Value");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_grpc_service_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs.ArgsEntry");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

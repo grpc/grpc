@@ -51,6 +51,11 @@ UPB_INLINE const upb_msgdef *envoy_config_core_v3_Http1ProtocolOptions_HeaderKey
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.Http1ProtocolOptions.HeaderKeyFormat.ProperCaseWords");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_core_v3_KeepaliveSettings_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_protocol_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.KeepaliveSettings");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_Http2ProtocolOptions_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_core_v3_protocol_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.Http2ProtocolOptions");

@@ -26,6 +26,11 @@ UPB_INLINE const upb_msgdef *envoy_config_core_v3_Pipe_getmsgdef(upb_symtab *s) 
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.Pipe");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_core_v3_EnvoyInternalAddress_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_address_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.EnvoyInternalAddress");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_SocketAddress_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_core_v3_address_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.SocketAddress");

@@ -136,6 +136,11 @@ UPB_INLINE const upb_msgdef *envoy_config_route_v3_RouteAction_UpgradeConfig_Con
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RouteAction.UpgradeConfig.ConnectConfig");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_route_v3_RouteAction_MaxStreamDuration_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RouteAction.MaxStreamDuration");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_route_v3_RetryPolicy_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RetryPolicy");
@@ -154,6 +159,16 @@ UPB_INLINE const upb_msgdef *envoy_config_route_v3_RetryPolicy_RetryHostPredicat
 UPB_INLINE const upb_msgdef *envoy_config_route_v3_RetryPolicy_RetryBackOff_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RetryPolicy.RetryBackOff");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_route_v3_RetryPolicy_ResetHeader_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RetryPolicy.ResetHeader");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RetryPolicy.RateLimitedRetryBackOff");
 }
 
 UPB_INLINE const upb_msgdef *envoy_config_route_v3_HedgePolicy_getmsgdef(upb_symtab *s) {
@@ -226,6 +241,21 @@ UPB_INLINE const upb_msgdef *envoy_config_route_v3_RateLimit_Action_HeaderValueM
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RateLimit.Action.HeaderValueMatch");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_route_v3_RateLimit_Action_DynamicMetaData_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RateLimit.Action.DynamicMetaData");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_route_v3_RateLimit_Override_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RateLimit.Override");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_route_v3_RateLimit_Override_DynamicMetadata_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RateLimit.Override.DynamicMetadata");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_route_v3_HeaderMatcher_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.HeaderMatcher");
@@ -234,6 +264,11 @@ UPB_INLINE const upb_msgdef *envoy_config_route_v3_HeaderMatcher_getmsgdef(upb_s
 UPB_INLINE const upb_msgdef *envoy_config_route_v3_QueryParameterMatcher_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.QueryParameterMatcher");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_route_v3_InternalRedirectPolicy_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.InternalRedirectPolicy");
 }
 
 #ifdef __cplusplus

@@ -1936,12 +1936,14 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/config/core/v3/base.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/extension.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c \
     src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c \
     src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c \
     src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c \
@@ -1979,8 +1981,8 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/type/v3/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/range.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
-    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c \
     src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
@@ -1997,9 +1999,16 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
+    src/core/ext/upb-generated/udpa/annotations/security.upb.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
     src/core/ext/upb-generated/udpa/annotations/status.upb.c \
     src/core/ext/upb-generated/udpa/annotations/versioning.upb.c \
+    src/core/ext/upb-generated/udpa/core/v1/authority.upb.c \
+    src/core/ext/upb-generated/udpa/core/v1/collection_entry.upb.c \
+    src/core/ext/upb-generated/udpa/core/v1/context_params.upb.c \
+    src/core/ext/upb-generated/udpa/core/v1/resource.upb.c \
+    src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.c \
+    src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/ext/xds/certificate_provider_registry.cc \
@@ -2476,8 +2485,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
-    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c \
     src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
@@ -4519,12 +4528,14 @@ src/core/ext/upb-generated/envoy/config/core/v3/backoff.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/base.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/config/core/v3/extension.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c: $(OPENSSL_DEP)
@@ -4566,9 +4577,16 @@ src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/migrate.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/udpa/annotations/security.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/status.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/versioning.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/udpa/core/v1/authority.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/udpa/core/v1/collection_entry.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/udpa/core/v1/context_params.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/udpa/core/v1/resource.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.c: $(OPENSSL_DEP)
 src/core/ext/xds/certificate_provider_registry.cc: $(OPENSSL_DEP)
 src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_api.cc: $(OPENSSL_DEP)

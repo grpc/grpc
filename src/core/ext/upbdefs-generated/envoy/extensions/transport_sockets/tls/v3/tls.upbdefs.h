@@ -36,6 +36,16 @@ UPB_INLINE const upb_msgdef *envoy_extensions_transport_sockets_tls_v3_CommonTls
   return upb_symtab_lookupmsg(s, "envoy.extensions.transport_sockets.tls.v3.CommonTlsContext");
 }
 
+UPB_INLINE const upb_msgdef *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_extensions_transport_sockets_tls_v3_tls_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.extensions.transport_sockets.tls.v3.CommonTlsContext.CertificateProvider");
+}
+
+UPB_INLINE const upb_msgdef *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_extensions_transport_sockets_tls_v3_tls_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.extensions.transport_sockets.tls.v3.CommonTlsContext.CertificateProviderInstance");
+}
+
 UPB_INLINE const upb_msgdef *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_extensions_transport_sockets_tls_v3_tls_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.extensions.transport_sockets.tls.v3.CommonTlsContext.CombinedCertificateValidationContext");

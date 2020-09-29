@@ -28,6 +28,16 @@ const upb_msglayout envoy_config_core_v3_Pipe_msginit = {
   UPB_SIZE(16, 32), 2, false,
 };
 
+static const upb_msglayout_field envoy_config_core_v3_EnvoyInternalAddress__fields[1] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
+};
+
+const upb_msglayout envoy_config_core_v3_EnvoyInternalAddress_msginit = {
+  NULL,
+  &envoy_config_core_v3_EnvoyInternalAddress__fields[0],
+  UPB_SIZE(16, 32), 1, false,
+};
+
 static const upb_msglayout_field envoy_config_core_v3_SocketAddress__fields[6] = {
   {1, UPB_SIZE(0, 0), 0, 0, 14, 1},
   {2, UPB_SIZE(12, 16), 0, 0, 9, 1},
@@ -77,20 +87,22 @@ const upb_msglayout envoy_config_core_v3_BindConfig_msginit = {
   UPB_SIZE(12, 24), 3, false,
 };
 
-static const upb_msglayout *const envoy_config_core_v3_Address_submsgs[2] = {
+static const upb_msglayout *const envoy_config_core_v3_Address_submsgs[3] = {
+  &envoy_config_core_v3_EnvoyInternalAddress_msginit,
   &envoy_config_core_v3_Pipe_msginit,
   &envoy_config_core_v3_SocketAddress_msginit,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_Address__fields[2] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
+static const upb_msglayout_field envoy_config_core_v3_Address__fields[3] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, 1},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_Address_msginit = {
   &envoy_config_core_v3_Address_submsgs[0],
   &envoy_config_core_v3_Address__fields[0],
-  UPB_SIZE(8, 16), 2, false,
+  UPB_SIZE(8, 16), 3, false,
 };
 
 static const upb_msglayout *const envoy_config_core_v3_CidrRange_submsgs[1] = {
