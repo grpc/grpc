@@ -89,10 +89,9 @@ then
   # python
   time pip install --user virtualenv
   time pip install --user --upgrade Mako six tox setuptools==44.1.1 twisted pyyaml pyjwt cryptography requests
-  export PYTHONPATH=/Library/Python/3.4/site-packages
 
   # make sure md5sum is available (requires coreutils 8.31+)
-  brew update
+  brew update-reset
   brew upgrade coreutils
 
   # Install Python 3.7 and Python 3.8
