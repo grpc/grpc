@@ -105,11 +105,10 @@
 #endif
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #else
 #define GPR_WINDOWS_ATOMIC 1
-#define GPR_MSVC_TLS 1
 #endif
+#define GPR_STDCPP_TLS 1
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
@@ -124,7 +123,7 @@
 #endif /* _LP64 */
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_SYNC 1
-#define GPR_GCC_TLS 1
+#define GPR_STDCPP_TLS 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
 #define GPR_ANDROID_LOG 1
@@ -149,7 +148,7 @@
 #include <features.h>
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
+#define GPR_STDCPP_TLS 1
 #define GPR_LINUX 1
 #define GPR_LINUX_LOG
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
@@ -202,20 +201,14 @@
 #if TARGET_OS_IPHONE
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
-#define GPR_PTHREAD_TLS 1
+#define GPR_STDCPP_TLS 1
 #define GRPC_CFSTREAM 1
 /* the c-ares resolver isn't safe to enable on iOS */
 #define GRPC_ARES 0
 #else /* TARGET_OS_IPHONE */
 #define GPR_PLATFORM_STRING "osx"
 #define GPR_CPU_POSIX 1
-/* TODO(vjpai): Remove the following conditional and use only GPR_GCC_TLS
-   when bazelbuild/bazel#4341 is fixed */
-#ifndef GRPC_BAZEL_BUILD
-#define GPR_GCC_TLS 1
-#else /* GRPC_BAZEL_BUILD */
-#define GPR_PTHREAD_TLS 1
-#endif /* GRPC_BAZEL_BUILD */
+#define GPR_STDCPP_TLS 1
 #define GPR_POSIX_CRASH_HANDLER 1
 #endif
 #define GPR_APPLE 1
