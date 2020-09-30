@@ -413,30 +413,6 @@
 #endif
 #endif
 
-/*
- *  There are platforms for which TLS should not be used even though the
- * compiler makes it seem like it's supported (Android NDK < r12b for example).
- * This is primarily because of linker problems and toolchain misconfiguration:
- * TLS isn't supported until NDK r12b per
- * https://developer.android.com/ndk/downloads/revision_history.html
- * TLS also does not work with Android NDK if GCC is being used as the compiler
- * instead of Clang.
- * Since NDK r16, `__NDK_MAJOR__` and `__NDK_MINOR__` are defined in
- * <android/ndk-version.h>. For NDK < r16, users should define these macros,
- * e.g. `-D__NDK_MAJOR__=11 -D__NKD_MINOR__=0` for NDK r11. */
-#if defined(__ANDROID__) && defined(GPR_GCC_TLS)
-#if __has_include(<android/ndk-version.h>)
-#include <android/ndk-version.h>
-#endif /* __has_include(<android/ndk-version.h>) */
-#if (defined(__clang__) && defined(__NDK_MAJOR__) && defined(__NDK_MINOR__) && \
-     ((__NDK_MAJOR__ < 12) ||                                                  \
-      ((__NDK_MAJOR__ == 12) && (__NDK_MINOR__ < 1)))) ||                      \
-    (defined(__GNUC__) && !defined(__clang__))
-#undef GPR_GCC_TLS
-#define GPR_PTHREAD_TLS 1
-#endif
-#endif /*defined(__ANDROID__) && defined(GPR_GCC_TLS) */
-
 #if defined(__has_include)
 #if __has_include(<atomic>)
 #define GRPC_HAS_CXX11_ATOMIC
