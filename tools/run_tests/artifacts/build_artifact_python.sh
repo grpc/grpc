@@ -104,7 +104,7 @@ then
 
   if [ "$("$PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
   then
-    "${PIP}" install futures>=2.2.0 enum>=1.0.4
+    "${PIP}" install futures>=2.2.0 enum34>=1.0.4
   fi
 
   "${PIP}" install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
