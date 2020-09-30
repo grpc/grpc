@@ -101,7 +101,7 @@ class SphinxDocumentation(setuptools.Command):
         target_dir = os.path.join(GRPC_STEM, 'doc', 'build')
         exit_code = sphinx.cmd.build.build_main(
             ['-b', 'html', '-W', '--keep-going', source_dir, target_dir])
-        if exit_code is not 0:
+        if exit_code != 0:
             raise CommandError(
                 "Documentation generation has warnings or errors")
 
