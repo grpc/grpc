@@ -2287,7 +2287,6 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
     Status status_;
   };
 
-  const char* kNewClusterName = "new_cluster";
   constexpr size_t kMaxConcurrentRequests = 10;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
