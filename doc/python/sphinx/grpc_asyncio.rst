@@ -1,7 +1,7 @@
 gRPC AsyncIO API
 ================
 
-.. module:: grpc.experimental.aio
+.. module:: grpc.aio
 
 Overview
 --------
@@ -11,8 +11,8 @@ tailored to AsyncIO. Underlying, it utilizes the same C-extension, gRPC C-Core,
 as existing stack, and it replaces all gRPC IO operations with methods provided
 by the AsyncIO library.
 
-This stack currently is under active development. Feel free to offer
-suggestions by opening issues on our GitHub repo `grpc/grpc <https://github.com/grpc/grpc>`_.
+This API is stable. Feel free to open issues on our GitHub repo
+`grpc/grpc <https://github.com/grpc/grpc>`_ for bugs or suggestions.
 
 The design doc can be found here as `gRFC <https://github.com/grpc/proposal/pull/155>`_.
 
@@ -105,11 +105,6 @@ Client-Side Interceptor
 .. autoclass:: ClientCallDetails
 .. autoclass:: InterceptedUnaryUnaryCall
 .. autoclass:: UnaryUnaryClientInterceptor
-
-.. Service-Side Context
-.. ^^^^^^^^^^^^^^^^^^^^
-
-.. .. autoclass:: ServicerContext
 
 
 Multi-Callable Interfaces
