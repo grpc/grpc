@@ -2123,3 +2123,7 @@ try:
     sys.modules.update({'grpc.reflection': grpc_reflection})
 except ImportError:
     pass
+
+if sys.version_info >= (3, 6):
+    from grpc import aio
+    sys.modules.update({'grpc.aio': aio})
