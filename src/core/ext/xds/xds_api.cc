@@ -1798,22 +1798,6 @@ grpc_error* RdsResponseParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* CertificateProviderInstanceParse(
-    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
-        certificate_provider_instance_proto,
-    XdsApi::CommonTlsContext::CertificateProviderInstance*
-        certificate_provider_instance) GRPC_MUST_USE_RESULT;
-grpc_error* CertificateProviderInstanceParse(
-    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
-        certificate_provider_instance_proto,
-    XdsApi::CommonTlsContext::CertificateProviderInstance*
-        certificate_provider_instance) {
-  certificate_provider_instance->instance_name = UpbStringToStdString(
-      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
-          certificate_provider_instance_proto));
-  return GRPC_ERROR_NONE;
-}
-
 grpc_error* CommonTlsContextParse(
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
@@ -1822,22 +1806,19 @@ grpc_error* CommonTlsContextParse(
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
     XdsApi::CommonTlsContext* common_tls_context) {
-  if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_combined_validation_context(
-          common_tls_context_proto)) {
-    auto* combined_validation_context =
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_combined_validation_context(
-            common_tls_context_proto);
-    if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_has_default_validation_context(
-            combined_validation_context)) {
-      auto* default_validation_context =
-          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_default_validation_context(
-              combined_validation_context);
-      if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_match_subject_alt_names(
-              default_validation_context)) {
-        size_t len = 0;
-        auto* subject_alt_names_matchers =
-            envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_match_subject_alt_names(
-                default_validation_context, &len);
+  auto* combined_validation_context =
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_combined_validation_context(
+          common_tls_context_proto);
+  if (combined_validation_context != nullptr) {
+    auto* default_validation_context =
+        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_default_validation_context(
+            combined_validation_context);
+    if (default_validation_context != nullptr) {
+      size_t len = 0;
+      auto* subject_alt_names_matchers =
+          envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_match_subject_alt_names(
+              default_validation_context, &len);
+      if (subject_alt_names_matchers != nullptr) {
         for (size_t i = 0; i < len; ++i) {
           XdsApi::StringMatcher matcher;
           if (envoy_type_matcher_v3_StringMatcher_has_exact(
@@ -1884,27 +1865,24 @@ grpc_error* CommonTlsContextParse(
         }
       }
     }
-    if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_has_validation_context_certificate_provider_instance(
-            combined_validation_context)) {
-      auto* validation_context_certificate_provider_instance =
-          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_validation_context_certificate_provider_instance(
-              combined_validation_context);
-      grpc_error* error = CertificateProviderInstanceParse(
-          validation_context_certificate_provider_instance,
-          &common_tls_context->combined_validation_context
-               .validation_context_certificate_provider_instance);
-      if (error != GRPC_ERROR_NONE) return error;
+    auto* validation_context_certificate_provider_instance =
+        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_validation_context_certificate_provider_instance(
+            combined_validation_context);
+    if (validation_context_certificate_provider_instance != nullptr) {
+      common_tls_context->combined_validation_context
+          .validation_context_certificate_provider_instance = UpbStringToStdString(
+          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
+              validation_context_certificate_provider_instance));
     }
   }
-  if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_certificate_certificate_provider_instance(
-          common_tls_context_proto)) {
-    auto* tls_certificate_certificate_provider_instance =
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_certificate_provider_instance(
-            common_tls_context_proto);
-    grpc_error* error = CertificateProviderInstanceParse(
-        tls_certificate_certificate_provider_instance,
-        &common_tls_context->tls_certificate_certificate_provider_instance);
-    if (error != GRPC_ERROR_NONE) return error;
+  auto* tls_certificate_certificate_provider_instance =
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_certificate_provider_instance(
+          common_tls_context_proto);
+  if (tls_certificate_certificate_provider_instance != nullptr) {
+    common_tls_context
+        ->tls_certificate_certificate_provider_instance = UpbStringToStdString(
+        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
+            tls_certificate_certificate_provider_instance));
   }
   return GRPC_ERROR_NONE;
 }
@@ -1981,18 +1959,17 @@ grpc_error* CdsResponseParse(
           "LB policy is not ROUND_ROBIN.");
     }
     // Record Upstream tls context
-    if (envoy_config_cluster_v3_Cluster_has_transport_socket(cluster)) {
-      auto* transport_socket =
-          envoy_config_cluster_v3_Cluster_transport_socket(cluster);
-      upb_strview name =
-          envoy_config_core_v3_TransportSocket_name(transport_socket);
-      if (strncmp(name.data, "tls", name.size)) {
-        if (envoy_config_core_v3_TransportSocket_has_typed_config(
-                transport_socket)) {
+    auto* transport_socket =
+        envoy_config_cluster_v3_Cluster_transport_socket(cluster);
+    if (transport_socket != nullptr) {
+      absl::string_view name = UpbStringToAbsl(
+          envoy_config_core_v3_TransportSocket_name(transport_socket));
+      if (name == "tls") {
+        auto* typed_config =
+            envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
+        if (typed_config != nullptr) {
           const upb_strview encoded_upstream_tls_context =
-              google_protobuf_Any_value(
-                  envoy_config_core_v3_TransportSocket_typed_config(
-                      transport_socket));
+              google_protobuf_Any_value(typed_config);
           auto* upstream_tls_context =
               envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
                   encoded_upstream_tls_context.data,
@@ -2001,11 +1978,10 @@ grpc_error* CdsResponseParse(
             return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "Can't decode upstream tls context.");
           }
-          if (envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_has_common_tls_context(
-                  upstream_tls_context)) {
-            auto* common_tls_context =
-                envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
-                    upstream_tls_context);
+          auto* common_tls_context =
+              envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
+                  upstream_tls_context);
+          if (common_tls_context != nullptr) {
             grpc_error* error = CommonTlsContextParse(
                 common_tls_context, &cds_update.common_tls_context);
             if (error != GRPC_ERROR_NONE) return error;
