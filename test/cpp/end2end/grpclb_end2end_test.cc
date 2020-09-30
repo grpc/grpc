@@ -574,7 +574,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
         CreateLbAddressesFromAddressDataList(backend_address_data);
     grpc_error* error = GRPC_ERROR_NONE;
     result.service_config =
-        grpc_core::ServiceConfig::Create(service_config_json, &error);
+        grpc_core::ServiceConfig::Create(nullptr, service_config_json, &error);
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     grpc_core::ServerAddressList balancer_addresses =
         CreateLbAddressesFromAddressDataList(balancer_address_data);

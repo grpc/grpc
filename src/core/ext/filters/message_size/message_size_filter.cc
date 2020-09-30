@@ -66,7 +66,8 @@ const MessageSizeParsedConfig* MessageSizeParsedConfig::GetFromCallContext(
 //
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-MessageSizeParser::ParsePerMethodParams(const Json& json, grpc_error** error) {
+MessageSizeParser::ParsePerMethodParams(const grpc_channel_args* /*args*/,
+                                        const Json& json, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error*> error_list;
   // Max request size.

@@ -352,7 +352,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              this, service_config_string.c_str());
         result.service_config = ServiceConfig::Create(
-            service_config_string, &result.service_config_error);
+            channel_args_, service_config_string, &result.service_config_error);
       }
     }
     absl::InlinedVector<grpc_arg, 1> new_args;

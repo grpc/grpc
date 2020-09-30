@@ -37,8 +37,8 @@ class ServiceConfigChannelArgChannelData {
         args->channel_args, GRPC_ARG_SERVICE_CONFIG);
     if (service_config_str != nullptr) {
       grpc_error* service_config_error = GRPC_ERROR_NONE;
-      auto service_config =
-          ServiceConfig::Create(service_config_str, &service_config_error);
+      auto service_config = ServiceConfig::Create(
+          args->channel_args, service_config_str, &service_config_error);
       if (service_config_error == GRPC_ERROR_NONE) {
         service_config_ = std::move(service_config);
       } else {
