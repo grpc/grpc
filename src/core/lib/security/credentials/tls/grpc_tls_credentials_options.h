@@ -25,6 +25,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
@@ -41,17 +42,6 @@ struct grpc_tls_error_details
   std::string error_details_;
 };
 
-struct grpc_tls_certificate_provider
-    : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
- public:
-  grpc_tls_certificate_provider() = default;
-
-  virtual ~grpc_tls_certificate_provider() = default;
-
-  virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
-  distributor() const = 0;
-};
-
 /** TLS server authorization check config. **/
 struct grpc_tls_server_authorization_check_config
     : public grpc_core::RefCounted<grpc_tls_server_authorization_check_config> {
@@ -66,40 +56,12 @@ struct grpc_tls_server_authorization_check_config
   ~grpc_tls_server_authorization_check_config();
 
   void* context() const { return context_; }
+
   void set_context(void* context) { context_ = context; }
 
-  int Schedule(grpc_tls_server_authorization_check_arg* arg) const {
-    if (schedule_ == nullptr) {
-      gpr_log(GPR_ERROR, "schedule API is nullptr");
-      if (arg != nullptr) {
-        arg->status = GRPC_STATUS_NOT_FOUND;
-        arg->error_details->set_error_details(
-            "schedule API in server authorization check config is nullptr");
-      }
-      return 1;
-    }
-    if (arg != nullptr && context_ != nullptr) {
-      arg->config =
-          const_cast<grpc_tls_server_authorization_check_config*>(this);
-    }
-    return schedule_(config_user_data_, arg);
-  }
-  void Cancel(grpc_tls_server_authorization_check_arg* arg) const {
-    if (cancel_ == nullptr) {
-      gpr_log(GPR_ERROR, "cancel API is nullptr.");
-      if (arg != nullptr) {
-        arg->status = GRPC_STATUS_NOT_FOUND;
-        arg->error_details->set_error_details(
-            "schedule API in server authorization check config is nullptr");
-      }
-      return;
-    }
-    if (arg != nullptr) {
-      arg->config =
-          const_cast<grpc_tls_server_authorization_check_config*>(this);
-    }
-    cancel_(config_user_data_, arg);
-  }
+  int Schedule(grpc_tls_server_authorization_check_arg* arg) const;
+
+  void Cancel(grpc_tls_server_authorization_check_arg* arg) const;
 
  private:
   /** This is a pointer to the wrapped language implementation of
@@ -136,11 +98,7 @@ struct grpc_tls_server_authorization_check_config
 struct grpc_tls_credentials_options
     : public grpc_core::RefCounted<grpc_tls_credentials_options> {
  public:
-  ~grpc_tls_credentials_options() {
-    if (server_authorization_check_config_.get() != nullptr) {
-      server_authorization_check_config_.get()->Unref();
-    }
-  }
+  ~grpc_tls_credentials_options() = default;
 
   /* Getters for member fields. */
   grpc_ssl_client_certificate_request_type cert_request_type() const {
@@ -155,13 +113,31 @@ struct grpc_tls_credentials_options
   server_authorization_check_config() const {
     return server_authorization_check_config_.get();
   }
-  grpc_tls_certificate_provider* certificate_provider() {
-    return grpc_tls_certificate_provider_;
+//  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> certificate_provider() {
+//    return grpc_tls_certificate_provider_;
+//  }
+
+  // Will be used by security connector to get the distributor.
+  // Does the right thing in both the TlsCreds and XdsCreds cases.
+  grpc_tls_certificate_distributor* certificate_distributor() {
+    if (provider_ != nullptr) return provider_->distributor().get();
+    if (distributor_ != nullptr) return distributor_.get();
+    return nullptr;
   }
-  const absl::optional<std::string>& root_cert_name() {
+
+  bool root_cert_watched() {
+    return root_being_watched_;
+  }
+
+  const std::string& root_cert_name() {
     return root_cert_name_;
   }
-  const absl::optional<std::string>& identity_cert_name() {
+
+  bool identity_cert_watched() {
+    return identity_being_watched_;
+  }
+
+  const std::string& identity_cert_name() {
     return identity_cert_name_;
   }
 
@@ -186,12 +162,26 @@ struct grpc_tls_credentials_options
     server_authorization_check_config_ = std::move(config);
   }
 
-  void set_certificate_provider(grpc_tls_certificate_provider* provider) {
-    grpc_tls_certificate_provider_ = provider;
+  // Will be used by C-core API for TlsCreds case.
+  void set_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider) {
+    provider_ = std::move(provider);
+  }
+
+  // Will be used by xDS code for XdsCreds case.
+  void set_certificate_distributor(grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor) {
+    distributor_ = std::move(distributor);
+  }
+
+  void watch_root_certs() {
+    root_being_watched_ = true;
   }
 
   void set_root_cert_name(std::string root_cert_name) {
     root_cert_name_ = std::move(root_cert_name);
+  }
+
+  void watch_identity_certs() {
+    identity_being_watched_ = true;
   }
 
   void set_identity_cert_name(std::string identity_cert_name) {
@@ -206,9 +196,12 @@ struct grpc_tls_credentials_options
   grpc_tls_version max_tls_version_ = grpc_tls_version::TLS1_3;
   grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config>
       server_authorization_check_config_;
-  grpc_tls_certificate_provider* grpc_tls_certificate_provider_;
-  absl::optional<std::string> root_cert_name_;
-  absl::optional<std::string> identity_cert_name_;
+  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider_;
+  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  bool root_being_watched_ = false;
+  std::string root_cert_name_;
+  bool identity_being_watched_ = false;
+  std::string identity_cert_name_;
 };
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H \
