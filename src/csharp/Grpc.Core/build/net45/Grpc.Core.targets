@@ -31,7 +31,7 @@
       </Choose>
     </When>
   </Choose>
-  <ItemGroup Condition="'$(Grpc_SkipNativeLibsCopy)' != 'true'">
+  <ItemGroup>
     <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win\native\grpc_csharp_ext.x86.dll" CopyToOutputDirectory="$(Grpc_CopyNativeLibs)">
       <Link>grpc_csharp_ext.x86.dll</Link>
       <Visible>false</Visible>
