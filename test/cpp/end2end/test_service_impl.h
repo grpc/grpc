@@ -167,12 +167,17 @@ class TestMultipleServiceImpl : public RpcService {
       {
         std::unique_lock<std::mutex> lock(mu_);
         signal_client_ = true;
+        ++rpcs_waiting_for_client_cancel_;
       }
       while (!context->IsCancelled()) {
         gpr_sleep_until(gpr_time_add(
             gpr_now(GPR_CLOCK_REALTIME),
             gpr_time_from_micros(request->param().client_cancel_after_us(),
                                  GPR_TIMESPAN)));
+      }
+      {
+        std::unique_lock<std::mutex> lock(mu_);
+        --rpcs_waiting_for_client_cancel_;
       }
       return Status::CANCELLED;
     } else if (request->has_param() &&
@@ -425,12 +430,17 @@ class TestMultipleServiceImpl : public RpcService {
   }
   void ClientWaitUntilRpcStarted() { signaller_.ClientWaitUntilRpcStarted(); }
   void SignalServerToContinue() { signaller_.SignalServerToContinue(); }
+  uint64_t RpcsWaitingForClientCancel() {
+    std::unique_lock<std::mutex> lock(mu_);
+    return rpcs_waiting_for_client_cancel_;
+  }
 
  private:
   bool signal_client_;
   std::mutex mu_;
   TestServiceSignaller signaller_;
   std::unique_ptr<std::string> host_;
+  uint64_t rpcs_waiting_for_client_cancel_ = 0;
 };
 
 class CallbackTestServiceImpl
