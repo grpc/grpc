@@ -28,18 +28,42 @@
 namespace grpc_core {
 
 StaticFileCertificateProvider::StaticFileCertificateProvider(std::string root_certificate, std::string private_key, std::string identity_certificate)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
+    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()), root_certificate_(root_certificate), private_key_(private_key), identity_certificate_(identity_certificate) {
 
-  grpc_tls_certificate_distributor::PemKeyCertPairList identity_pairs;
-  grpc_ssl_pem_key_cert_pair* ssl_pair =
-      static_cast<grpc_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-  ssl_pair->private_key = gpr_strdup(private_key.c_str());
-  ssl_pair->cert_chain = gpr_strdup(identity_certificate.c_str());
-  identity_pairs.emplace_back(ssl_pair);
-  // StaticFileCertificateProvider uses the default cert name "" for root and identity
-  // certificates.
-  distributor_->SetKeyMaterials("", std::move(root_certificate), std::move(identity_pairs));
+//  grpc_tls_certificate_distributor::PemKeyCertPairList identity_pairs;
+//  grpc_ssl_pem_key_cert_pair* ssl_pair =
+//      static_cast<grpc_ssl_pem_key_cert_pair*>(
+//          gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
+//  ssl_pair->private_key = gpr_strdup(private_key_.c_str());
+//  ssl_pair->cert_chain = gpr_strdup(identity_certificate_.c_str());
+//  identity_pairs.emplace_back(ssl_pair);
+//  // StaticFileCertificateProvider uses the default cert name "" for root and identity
+//  // certificates.
+//  distributor_->SetKeyMaterials("", std::move(root_certificate_), std::move(identity_pairs));
+
+
+  distributor_->SetWatchStatusCallback([this](std::string cert_name,
+                                               bool root_being_watched,
+                                               bool identity_being_watched) {
+    gpr_log(GPR_ERROR, "callback is called - resetting the credentials");
+    gpr_log(GPR_ERROR, "cert_name: %s", cert_name.c_str());
+    gpr_log(GPR_ERROR, "root_being_watched: %d", root_being_watched);
+    gpr_log(GPR_ERROR, "identity_being_watched: %d", identity_being_watched);
+    if (root_being_watched && identity_being_watched) {
+      grpc_tls_certificate_distributor::PemKeyCertPairList identity_pairs;
+      grpc_ssl_pem_key_cert_pair* ssl_pair =
+          static_cast<grpc_ssl_pem_key_cert_pair*>(
+              gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
+      ssl_pair->private_key = gpr_strdup(private_key_.c_str());
+      ssl_pair->cert_chain = gpr_strdup(identity_certificate_.c_str());
+      identity_pairs.emplace_back(ssl_pair);
+      // StaticFileCertificateProvider uses the default cert name "" for identity
+      // certificates.
+      gpr_log(GPR_ERROR, "root not empty: %d", !root_certificate_.empty());
+      gpr_log(GPR_ERROR, "identity not empty: %d", !identity_pairs.empty());
+      distributor_->SetKeyMaterials("", root_certificate_, std::move(identity_pairs));
+    }
+  });
 
 }
 

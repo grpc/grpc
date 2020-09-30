@@ -79,7 +79,7 @@ void TlsChannelCertificateWatcher::OnCertificatesChanged(
     absl::optional<absl::string_view> root_certs,
     absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
         key_cert_pairs) {
-  gpr_log(GPR_ERROR, "%s is called", "TlsChannelCertificateWatcher::OnCertificatesChanged");
+  gpr_log(GPR_ERROR, "%s is called, security connector address: %p", "TlsChannelCertificateWatcher::OnCertificatesChanged", security_connector_);
   GPR_ASSERT(security_connector_ != nullptr);
   grpc_core::MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
@@ -178,7 +178,7 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
       static_cast<const TlsCredentials*>(channel_creds());
   grpc_tls_certificate_distributor* distributor = creds->options()->certificate_distributor();
   GPR_ASSERT(distributor != nullptr);
-  gpr_log(GPR_ERROR, "%s", "-----------------Debugging-------------------");
+  gpr_log(GPR_ERROR, "%s", "-----------------Debugging in TlsChannelSecurityConnector::TlsChannelSecurityConnector-------------------");
   gpr_log(GPR_ERROR, "HasRootCerts: %d", distributor->HasRootCerts(""));
   gpr_log(GPR_ERROR, "HasKeyCertPairs: %d",
   distributor->HasKeyCertPairs("")); gpr_log(GPR_ERROR,
