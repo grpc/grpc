@@ -483,9 +483,9 @@ typedef unsigned __int64 uint64_t;
 #endif
 
 #if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + \
-        defined(GPR_CUSTOM_TLS) !=                                            \
+        defined(GPR_STDCPP_TLS) + defined(GPR_CUSTOM_TLS) !=                  \
     1
-#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_CUSTOM_TLS
+#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_STDCPP_TLS, GPR_CUSTOM_TLS
 #endif
 
 /* maximum alignment needed for any type on this platform, rounded up to a

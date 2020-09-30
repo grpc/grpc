@@ -546,6 +546,7 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/tls_msvc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tls_pthread.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tls_pthread.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/tls_stdcpp.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_msys.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_posix.cc" role="src" />
