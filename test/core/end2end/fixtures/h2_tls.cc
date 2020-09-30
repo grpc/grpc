@@ -74,13 +74,35 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   memset(&f, 0, sizeof(f));
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
   ffd->tls_version = tls_version;
+  grpc_slice root_slice, cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(CA_CERT_PATH, 1, &root_slice)));
+  std::string root_cert = std::string(
+    reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(root_slice)),
+    GRPC_SLICE_LENGTH(root_slice));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file",
+      grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  std::string identity_cert = std::string(
+    reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(cert_slice)),
+    GRPC_SLICE_LENGTH(cert_slice));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  std::string private_key = std::string(
+    reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(key_slice)),
+    GRPC_SLICE_LENGTH(key_slice));
+
   ffd->client_provider = grpc_tls_certificate_provider_file_static_create(
-      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH);
+      root_cert.c_str(), private_key.c_str(), identity_cert.c_str());
   ffd->server_provider = grpc_tls_certificate_provider_file_static_create(
-      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH);
+      root_cert.c_str(), private_key.c_str(), identity_cert.c_str());
+  gpr_log(GPR_ERROR, "fullstack_secure_fixture_data is created");
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
+  grpc_slice_unref(root_slice);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
   return f;
 }
 
@@ -174,8 +196,8 @@ static grpc_channel_credentials* create_tls_channel_credentials(
   // Set credential provider.
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         ffd->client_provider);
-  grpc_tls_credentials_options_set_root_cert_name(options, "");
-  grpc_tls_credentials_options_set_identity_cert_name(options, "");
+  grpc_tls_credentials_options_watch_root_certs(options);
+  grpc_tls_credentials_options_watch_identity_certs(options);
 
   /* Set server authorization check config. */
   grpc_tls_server_authorization_check_config* check_config =
@@ -185,6 +207,8 @@ static grpc_channel_credentials* create_tls_channel_credentials(
       options, check_config);
   /* Create TLS channel credentials. */
   grpc_channel_credentials* creds = grpc_tls_credentials_create(options);
+  grpc_tls_server_authorization_check_config_release(check_config);
+  grpc_tls_credentials_options_release(options);
   return creds;
 }
 
@@ -197,12 +221,13 @@ static grpc_server_credentials* create_tls_server_credentials(
     // Set credential provider.
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         ffd->server_provider);
-  grpc_tls_credentials_options_set_root_cert_name(options, "");
-  grpc_tls_credentials_options_set_identity_cert_name(options, "");
+  grpc_tls_credentials_options_watch_root_certs(options);
+  grpc_tls_credentials_options_watch_identity_certs(options);
   /* Set client certificate request type. */
   grpc_tls_credentials_options_set_cert_request_type(
       options, GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   grpc_server_credentials* creds = grpc_tls_server_credentials_create(options);
+  grpc_tls_credentials_options_release(options);
   return creds;
 }
 
