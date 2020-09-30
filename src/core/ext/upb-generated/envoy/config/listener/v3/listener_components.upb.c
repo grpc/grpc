@@ -13,6 +13,7 @@
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/status.upb.h"
@@ -60,27 +61,43 @@ const upb_msglayout envoy_config_listener_v3_FilterChainMatch_msginit = {
   UPB_SIZE(56, 96), 10, false,
 };
 
-static const upb_msglayout *const envoy_config_listener_v3_FilterChain_submsgs[5] = {
+static const upb_msglayout *const envoy_config_listener_v3_FilterChain_submsgs[6] = {
   &envoy_config_core_v3_Metadata_msginit,
   &envoy_config_core_v3_TransportSocket_msginit,
   &envoy_config_listener_v3_Filter_msginit,
+  &envoy_config_listener_v3_FilterChain_OnDemandConfiguration_msginit,
   &envoy_config_listener_v3_FilterChainMatch_msginit,
   &google_protobuf_BoolValue_msginit,
 };
 
-static const upb_msglayout_field envoy_config_listener_v3_FilterChain__fields[6] = {
-  {1, UPB_SIZE(8, 16), 0, 3, 11, 1},
-  {3, UPB_SIZE(24, 48), 0, 2, 11, 3},
-  {4, UPB_SIZE(12, 24), 0, 4, 11, 1},
+static const upb_msglayout_field envoy_config_listener_v3_FilterChain__fields[7] = {
+  {1, UPB_SIZE(8, 16), 0, 4, 11, 1},
+  {3, UPB_SIZE(28, 56), 0, 2, 11, 3},
+  {4, UPB_SIZE(12, 24), 0, 5, 11, 1},
   {5, UPB_SIZE(16, 32), 0, 0, 11, 1},
   {6, UPB_SIZE(20, 40), 0, 1, 11, 1},
   {7, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {8, UPB_SIZE(24, 48), 0, 3, 11, 1},
 };
 
 const upb_msglayout envoy_config_listener_v3_FilterChain_msginit = {
   &envoy_config_listener_v3_FilterChain_submsgs[0],
   &envoy_config_listener_v3_FilterChain__fields[0],
-  UPB_SIZE(32, 64), 6, false,
+  UPB_SIZE(32, 64), 7, false,
+};
+
+static const upb_msglayout *const envoy_config_listener_v3_FilterChain_OnDemandConfiguration_submsgs[1] = {
+  &google_protobuf_Duration_msginit,
+};
+
+static const upb_msglayout_field envoy_config_listener_v3_FilterChain_OnDemandConfiguration__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
+};
+
+const upb_msglayout envoy_config_listener_v3_FilterChain_OnDemandConfiguration_msginit = {
+  &envoy_config_listener_v3_FilterChain_OnDemandConfiguration_submsgs[0],
+  &envoy_config_listener_v3_FilterChain_OnDemandConfiguration__fields[0],
+  UPB_SIZE(4, 8), 1, false,
 };
 
 static const upb_msglayout *const envoy_config_listener_v3_ListenerFilterChainMatchPredicate_submsgs[4] = {

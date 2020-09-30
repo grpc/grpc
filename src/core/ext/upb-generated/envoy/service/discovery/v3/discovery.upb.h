@@ -41,10 +41,14 @@ struct envoy_config_core_v3_ControlPlane;
 struct envoy_config_core_v3_Node;
 struct google_protobuf_Any;
 struct google_rpc_Status;
+struct udpa_core_v1_ResourceLocator;
+struct udpa_core_v1_ResourceName;
 extern const upb_msglayout envoy_config_core_v3_ControlPlane_msginit;
 extern const upb_msglayout envoy_config_core_v3_Node_msginit;
 extern const upb_msglayout google_protobuf_Any_msginit;
 extern const upb_msglayout google_rpc_Status_msginit;
+extern const upb_msglayout udpa_core_v1_ResourceLocator_msginit;
+extern const upb_msglayout udpa_core_v1_ResourceName_msginit;
 
 
 /* envoy.service.discovery.v3.DiscoveryRequest */
@@ -201,6 +205,10 @@ UPB_INLINE const envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourc
 UPB_INLINE upb_strview envoy_service_discovery_v3_DeltaDiscoveryRequest_response_nonce(const envoy_service_discovery_v3_DeltaDiscoveryRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
 UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryRequest_has_error_detail(const envoy_service_discovery_v3_DeltaDiscoveryRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(20, 40)); }
 UPB_INLINE const struct google_rpc_Status* envoy_service_discovery_v3_DeltaDiscoveryRequest_error_detail(const envoy_service_discovery_v3_DeltaDiscoveryRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct google_rpc_Status*); }
+UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryRequest_has_udpa_resources_subscribe(const envoy_service_discovery_v3_DeltaDiscoveryRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(36, 72)); }
+UPB_INLINE const struct udpa_core_v1_ResourceLocator* const* envoy_service_discovery_v3_DeltaDiscoveryRequest_udpa_resources_subscribe(const envoy_service_discovery_v3_DeltaDiscoveryRequest *msg, size_t *len) { return (const struct udpa_core_v1_ResourceLocator* const*)_upb_array_accessor(msg, UPB_SIZE(36, 72), len); }
+UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryRequest_has_udpa_resources_unsubscribe(const envoy_service_discovery_v3_DeltaDiscoveryRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(40, 80)); }
+UPB_INLINE const struct udpa_core_v1_ResourceLocator* const* envoy_service_discovery_v3_DeltaDiscoveryRequest_udpa_resources_unsubscribe(const envoy_service_discovery_v3_DeltaDiscoveryRequest *msg, size_t *len) { return (const struct udpa_core_v1_ResourceLocator* const*)_upb_array_accessor(msg, UPB_SIZE(40, 80), len); }
 
 UPB_INLINE void envoy_service_discovery_v3_DeltaDiscoveryRequest_set_node(envoy_service_discovery_v3_DeltaDiscoveryRequest *msg, struct envoy_config_core_v3_Node* value) {
   *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct envoy_config_core_v3_Node*) = value;
@@ -256,6 +264,32 @@ UPB_INLINE struct google_rpc_Status* envoy_service_discovery_v3_DeltaDiscoveryRe
   }
   return sub;
 }
+UPB_INLINE struct udpa_core_v1_ResourceLocator** envoy_service_discovery_v3_DeltaDiscoveryRequest_mutable_udpa_resources_subscribe(envoy_service_discovery_v3_DeltaDiscoveryRequest *msg, size_t *len) {
+  return (struct udpa_core_v1_ResourceLocator**)_upb_array_mutable_accessor(msg, UPB_SIZE(36, 72), len);
+}
+UPB_INLINE struct udpa_core_v1_ResourceLocator** envoy_service_discovery_v3_DeltaDiscoveryRequest_resize_udpa_resources_subscribe(envoy_service_discovery_v3_DeltaDiscoveryRequest *msg, size_t len, upb_arena *arena) {
+  return (struct udpa_core_v1_ResourceLocator**)_upb_array_resize_accessor(msg, UPB_SIZE(36, 72), len, UPB_TYPE_MESSAGE, arena);
+}
+UPB_INLINE struct udpa_core_v1_ResourceLocator* envoy_service_discovery_v3_DeltaDiscoveryRequest_add_udpa_resources_subscribe(envoy_service_discovery_v3_DeltaDiscoveryRequest *msg, upb_arena *arena) {
+  struct udpa_core_v1_ResourceLocator* sub = (struct udpa_core_v1_ResourceLocator*)_upb_msg_new(&udpa_core_v1_ResourceLocator_msginit, arena);
+  bool ok = _upb_array_append_accessor(
+      msg, UPB_SIZE(36, 72), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  if (!ok) return NULL;
+  return sub;
+}
+UPB_INLINE struct udpa_core_v1_ResourceLocator** envoy_service_discovery_v3_DeltaDiscoveryRequest_mutable_udpa_resources_unsubscribe(envoy_service_discovery_v3_DeltaDiscoveryRequest *msg, size_t *len) {
+  return (struct udpa_core_v1_ResourceLocator**)_upb_array_mutable_accessor(msg, UPB_SIZE(40, 80), len);
+}
+UPB_INLINE struct udpa_core_v1_ResourceLocator** envoy_service_discovery_v3_DeltaDiscoveryRequest_resize_udpa_resources_unsubscribe(envoy_service_discovery_v3_DeltaDiscoveryRequest *msg, size_t len, upb_arena *arena) {
+  return (struct udpa_core_v1_ResourceLocator**)_upb_array_resize_accessor(msg, UPB_SIZE(40, 80), len, UPB_TYPE_MESSAGE, arena);
+}
+UPB_INLINE struct udpa_core_v1_ResourceLocator* envoy_service_discovery_v3_DeltaDiscoveryRequest_add_udpa_resources_unsubscribe(envoy_service_discovery_v3_DeltaDiscoveryRequest *msg, upb_arena *arena) {
+  struct udpa_core_v1_ResourceLocator* sub = (struct udpa_core_v1_ResourceLocator*)_upb_msg_new(&udpa_core_v1_ResourceLocator_msginit, arena);
+  bool ok = _upb_array_append_accessor(
+      msg, UPB_SIZE(40, 80), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  if (!ok) return NULL;
+  return sub;
+}
 
 /* envoy.service.discovery.v3.DeltaDiscoveryRequest.InitialResourceVersionsEntry */
 
@@ -294,6 +328,8 @@ UPB_INLINE const envoy_service_discovery_v3_Resource* const* envoy_service_disco
 UPB_INLINE upb_strview envoy_service_discovery_v3_DeltaDiscoveryResponse_type_url(const envoy_service_discovery_v3_DeltaDiscoveryResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
 UPB_INLINE upb_strview envoy_service_discovery_v3_DeltaDiscoveryResponse_nonce(const envoy_service_discovery_v3_DeltaDiscoveryResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_strview); }
 UPB_INLINE upb_strview const* envoy_service_discovery_v3_DeltaDiscoveryResponse_removed_resources(const envoy_service_discovery_v3_DeltaDiscoveryResponse *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(28, 56), len); }
+UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryResponse_has_udpa_removed_resources(const envoy_service_discovery_v3_DeltaDiscoveryResponse *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(32, 64)); }
+UPB_INLINE const struct udpa_core_v1_ResourceName* const* envoy_service_discovery_v3_DeltaDiscoveryResponse_udpa_removed_resources(const envoy_service_discovery_v3_DeltaDiscoveryResponse *msg, size_t *len) { return (const struct udpa_core_v1_ResourceName* const*)_upb_array_accessor(msg, UPB_SIZE(32, 64), len); }
 
 UPB_INLINE void envoy_service_discovery_v3_DeltaDiscoveryResponse_set_system_version_info(envoy_service_discovery_v3_DeltaDiscoveryResponse *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
@@ -327,6 +363,19 @@ UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryResponse_add_removed_re
   return _upb_array_append_accessor(msg, UPB_SIZE(28, 56), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
       arena);
 }
+UPB_INLINE struct udpa_core_v1_ResourceName** envoy_service_discovery_v3_DeltaDiscoveryResponse_mutable_udpa_removed_resources(envoy_service_discovery_v3_DeltaDiscoveryResponse *msg, size_t *len) {
+  return (struct udpa_core_v1_ResourceName**)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 64), len);
+}
+UPB_INLINE struct udpa_core_v1_ResourceName** envoy_service_discovery_v3_DeltaDiscoveryResponse_resize_udpa_removed_resources(envoy_service_discovery_v3_DeltaDiscoveryResponse *msg, size_t len, upb_arena *arena) {
+  return (struct udpa_core_v1_ResourceName**)_upb_array_resize_accessor(msg, UPB_SIZE(32, 64), len, UPB_TYPE_MESSAGE, arena);
+}
+UPB_INLINE struct udpa_core_v1_ResourceName* envoy_service_discovery_v3_DeltaDiscoveryResponse_add_udpa_removed_resources(envoy_service_discovery_v3_DeltaDiscoveryResponse *msg, upb_arena *arena) {
+  struct udpa_core_v1_ResourceName* sub = (struct udpa_core_v1_ResourceName*)_upb_msg_new(&udpa_core_v1_ResourceName_msginit, arena);
+  bool ok = _upb_array_append_accessor(
+      msg, UPB_SIZE(32, 64), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  if (!ok) return NULL;
+  return sub;
+}
 
 /* envoy.service.discovery.v3.Resource */
 
@@ -346,7 +395,9 @@ UPB_INLINE upb_strview envoy_service_discovery_v3_Resource_version(const envoy_s
 UPB_INLINE bool envoy_service_discovery_v3_Resource_has_resource(const envoy_service_discovery_v3_Resource *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
 UPB_INLINE const struct google_protobuf_Any* envoy_service_discovery_v3_Resource_resource(const envoy_service_discovery_v3_Resource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct google_protobuf_Any*); }
 UPB_INLINE upb_strview envoy_service_discovery_v3_Resource_name(const envoy_service_discovery_v3_Resource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
-UPB_INLINE upb_strview const* envoy_service_discovery_v3_Resource_aliases(const envoy_service_discovery_v3_Resource *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(20, 40), len); }
+UPB_INLINE upb_strview const* envoy_service_discovery_v3_Resource_aliases(const envoy_service_discovery_v3_Resource *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(24, 48), len); }
+UPB_INLINE bool envoy_service_discovery_v3_Resource_has_udpa_resource_name(const envoy_service_discovery_v3_Resource *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(20, 40)); }
+UPB_INLINE const struct udpa_core_v1_ResourceName* envoy_service_discovery_v3_Resource_udpa_resource_name(const envoy_service_discovery_v3_Resource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct udpa_core_v1_ResourceName*); }
 
 UPB_INLINE void envoy_service_discovery_v3_Resource_set_version(envoy_service_discovery_v3_Resource *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
@@ -367,14 +418,26 @@ UPB_INLINE void envoy_service_discovery_v3_Resource_set_name(envoy_service_disco
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
 }
 UPB_INLINE upb_strview* envoy_service_discovery_v3_Resource_mutable_aliases(envoy_service_discovery_v3_Resource *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(20, 40), len);
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 48), len);
 }
 UPB_INLINE upb_strview* envoy_service_discovery_v3_Resource_resize_aliases(envoy_service_discovery_v3_Resource *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(20, 40), len, UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(24, 48), len, UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_service_discovery_v3_Resource_add_aliases(envoy_service_discovery_v3_Resource *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor(msg, UPB_SIZE(20, 40), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
+  return _upb_array_append_accessor(msg, UPB_SIZE(24, 48), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
       arena);
+}
+UPB_INLINE void envoy_service_discovery_v3_Resource_set_udpa_resource_name(envoy_service_discovery_v3_Resource *msg, struct udpa_core_v1_ResourceName* value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), struct udpa_core_v1_ResourceName*) = value;
+}
+UPB_INLINE struct udpa_core_v1_ResourceName* envoy_service_discovery_v3_Resource_mutable_udpa_resource_name(envoy_service_discovery_v3_Resource *msg, upb_arena *arena) {
+  struct udpa_core_v1_ResourceName* sub = (struct udpa_core_v1_ResourceName*)envoy_service_discovery_v3_Resource_udpa_resource_name(msg);
+  if (sub == NULL) {
+    sub = (struct udpa_core_v1_ResourceName*)_upb_msg_new(&udpa_core_v1_ResourceName_msginit, arena);
+    if (!sub) return NULL;
+    envoy_service_discovery_v3_Resource_set_udpa_resource_name(msg, sub);
+  }
+  return sub;
 }
 
 #ifdef __cplusplus

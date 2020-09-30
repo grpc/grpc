@@ -295,6 +295,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/extension.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/extension.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c" role="src" />
@@ -307,6 +309,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c" role="src" />
@@ -381,10 +385,10 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/v3/range.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/gogoproto/gogo.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/gogoproto/gogo.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.c" role="src" />
@@ -431,12 +435,26 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/migrate.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/migrate.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/security.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/security.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/status.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/status.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/versioning.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/versioning.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/core/v1/authority.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/core/v1/authority.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/core/v1/collection_entry.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/core/v1/collection_entry.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/core/v1/context_params.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/core/v1/context_params.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/core/v1/resource.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/core/v1/resource.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.c" role="src" />
@@ -1460,6 +1478,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/dsa/dsa.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/dsa/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_derive.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/ec_extra/hash_to_curve.c" role="src" />
@@ -1714,12 +1733,10 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pci.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcia.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcons.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pku.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pmaps.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509v3/v3_prn.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509v3/v3_purp.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509v3/v3_skey.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509v3/v3_sxnet.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509v3/v3_utl.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/aead.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/aes.h" role="src" />

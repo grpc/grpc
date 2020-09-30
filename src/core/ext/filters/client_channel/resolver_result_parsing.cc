@@ -284,8 +284,8 @@ const char* ParseHealthCheckConfig(const Json& field, grpc_error** error) {
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
-                                                    grpc_error** error) {
+ClientChannelServiceConfigParser::ParseGlobalParams(
+    const grpc_channel_args* /*args*/, const Json& json, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error*> error_list;
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
@@ -363,8 +363,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
 }
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-ClientChannelServiceConfigParser::ParsePerMethodParams(const Json& json,
-                                                       grpc_error** error) {
+ClientChannelServiceConfigParser::ParsePerMethodParams(
+    const grpc_channel_args* /*args*/, const Json& json, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error*> error_list;
   absl::optional<bool> wait_for_ready;

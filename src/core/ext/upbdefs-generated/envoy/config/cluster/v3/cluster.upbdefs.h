@@ -21,6 +21,11 @@ extern "C" {
 
 extern upb_def_init envoy_config_cluster_v3_cluster_proto_upbdefinit;
 
+UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_ClusterCollection_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.ClusterCollection");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster");
@@ -61,6 +66,11 @@ UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_RingHashLbConfig_ge
   return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.RingHashLbConfig");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_MaglevLbConfig_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.MaglevLbConfig");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.OriginalDstLbConfig");
@@ -91,6 +101,11 @@ UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_RefreshRate_getmsgd
   return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.RefreshRate");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_PrefetchPolicy_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.PrefetchPolicy");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.TypedExtensionProtocolOptionsEntry");
@@ -114,6 +129,11 @@ UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_UpstreamBindConfig_getmsgde
 UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_UpstreamConnectionOptions_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.UpstreamConnectionOptions");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_TrackClusterStats_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.TrackClusterStats");
 }
 
 #ifdef __cplusplus

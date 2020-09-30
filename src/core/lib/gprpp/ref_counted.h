@@ -242,7 +242,7 @@ class Delete<T, false> {
 // must be tracked in a registry but the object's entry in the registry
 // cannot be removed from the object's dtor due to synchronization issues.
 // In this case, the registry can be cleaned up later by identifying
-// entries for which RefIfNonZero() returns false.
+// entries for which RefIfNonZero() returns null.
 //
 // This will commonly be used by CRTP (curiously-recurring template pattern)
 // e.g., class MyClass : public RefCounted<MyClass>
@@ -299,9 +299,15 @@ class RefCounted : public Impl {
     }
   }
 
-  bool RefIfNonZero() { return refs_.RefIfNonZero(); }
-  bool RefIfNonZero(const DebugLocation& location, const char* reason) {
-    return refs_.RefIfNonZero(location, reason);
+  RefCountedPtr<Child> RefIfNonZero() GRPC_MUST_USE_RESULT {
+    return RefCountedPtr<Child>(refs_.RefIfNonZero() ? static_cast<Child*>(this)
+                                                     : nullptr);
+  }
+  RefCountedPtr<Child> RefIfNonZero(const DebugLocation& location,
+                                    const char* reason) GRPC_MUST_USE_RESULT {
+    return RefCountedPtr<Child>(refs_.RefIfNonZero(location, reason)
+                                    ? static_cast<Child*>(this)
+                                    : nullptr);
   }
 
   // Not copyable nor movable.

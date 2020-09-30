@@ -620,7 +620,7 @@ void XdsResolver::OnResourceDoesNotExist() {
           this);
   Result result;
   result.service_config =
-      ServiceConfig::Create("{}", &result.service_config_error);
+      ServiceConfig::Create(args_, "{}", &result.service_config_error);
   GPR_ASSERT(result.service_config != nullptr);
   result.args = grpc_channel_args_copy(args_);
   result_handler()->ReturnResult(std::move(result));
@@ -654,7 +654,7 @@ grpc_error* XdsResolver::CreateServiceConfig(
       "}");
   std::string json = absl::StrJoin(config_parts, "");
   grpc_error* error = GRPC_ERROR_NONE;
-  *service_config = ServiceConfig::Create(json.c_str(), &error);
+  *service_config = ServiceConfig::Create(args_, json.c_str(), &error);
   return error;
 }
 
@@ -681,8 +681,8 @@ void XdsResolver::GenerateResult() {
 void XdsResolver::MaybeRemoveUnusedClusters() {
   bool update_needed = false;
   for (auto it = cluster_state_map_.begin(); it != cluster_state_map_.end();) {
-    if (it->second->RefIfNonZero()) {
-      it->second->Unref();
+    RefCountedPtr<ClusterState> cluster_state = it->second->RefIfNonZero();
+    if (cluster_state != nullptr) {
       ++it;
     } else {
       update_needed = true;
