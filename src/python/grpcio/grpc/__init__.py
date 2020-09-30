@@ -2125,5 +2125,5 @@ except ImportError:
     pass
 
 if sys.version_info >= (3, 6):
-    from grpc import aio
+    from grpc import aio  # pylint: disable=ungrouped-imports
     sys.modules.update({'grpc.aio': aio})
