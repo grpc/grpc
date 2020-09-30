@@ -160,7 +160,7 @@ bool LockfreeEvent::SetShutdown(grpc_error* shutdown_err) {
   gpr_atm new_state = (gpr_atm)shutdown_err | kShutdownBit;
 
   while (true) {
-    gpr_atm curr = gpr_atm_no_barrier_load(&state_);
+    gpr_atm curr = gpr_atm_acq_load(&state_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG, "LockfreeEvent::SetShutdown: %p curr=%p err=%s",
               &state_, (void*)curr, grpc_error_string(shutdown_err));
@@ -168,9 +168,8 @@ bool LockfreeEvent::SetShutdown(grpc_error* shutdown_err) {
     switch (curr) {
       case kClosureReady:
       case kClosureNotReady:
-        /* Need a full barrier here so that the initial load in notify_on
-           doesn't need a barrier */
-        if (gpr_atm_full_cas(&state_, curr, new_state)) {
+        /* Need a release to pair with anything loading the shutdown state. */
+        if (gpr_atm_rel_cas(&state_, curr, new_state)) {
           return true; /* early out */
         }
         break; /* retry */
@@ -186,10 +185,8 @@ bool LockfreeEvent::SetShutdown(grpc_error* shutdown_err) {
 
         /* Fd is not shutdown. Schedule the closure and move the state to
            shutdown state.
-           Needs an acquire to pair with setting the closure (and get a
-           happens-after on that edge), and a release to pair with anything
-           loading the shutdown state. */
-        if (gpr_atm_full_cas(&state_, curr, new_state)) {
+           Need a release to pair with anything loading the shutdown state. */
+        if (gpr_atm_rel_cas(&state_, curr, new_state)) {
           ExecCtx::Run(DEBUG_LOCATION, (grpc_closure*)curr,
                        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                            "FD Shutdown", &shutdown_err, 1));
