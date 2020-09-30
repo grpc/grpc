@@ -2039,7 +2039,7 @@ class Compression(enum.IntEnum):
 
 
 from grpc._runtime_protos import protos, services, protos_and_services  # pylint: disable=wrong-import-position
-
+from grpc import aio
 ###################################  __all__  #################################
 
 __all__ = (
@@ -2103,6 +2103,7 @@ __all__ = (
     'protos',
     'services',
     'protos_and_services',
+    'aio',
 )
 
 ############################### Extension Shims ################################
