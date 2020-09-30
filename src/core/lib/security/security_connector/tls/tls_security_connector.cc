@@ -79,7 +79,7 @@ void TlsChannelCertificateWatcher::OnCertificatesChanged(
     absl::optional<absl::string_view> root_certs,
     absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
         key_cert_pairs) {
-  gpr_log(GPR_ERROR, "%s is called", "OnCertificatesChanged");
+  gpr_log(GPR_ERROR, "%s is called", "TlsChannelCertificateWatcher::OnCertificatesChanged");
   GPR_ASSERT(security_connector_ != nullptr);
   grpc_core::MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
@@ -90,10 +90,10 @@ void TlsChannelCertificateWatcher::OnCertificatesChanged(
   }
   const TlsCredentials* creds =
       static_cast<const TlsCredentials*>(security_connector_->channel_creds());
-  bool root_being_watched = creds->options()->root_cert_name().has_value();
+  bool root_being_watched = creds->options()->root_cert_watched();
   bool root_has_value = security_connector_->pem_root_certs_.has_value();
   bool identity_being_watched =
-      creds->options()->identity_cert_name().has_value();
+      creds->options()->identity_cert_watched();
   bool identity_has_value =
       security_connector_->pem_key_cert_pair_list_.has_value();
   if ((root_being_watched && root_has_value && identity_being_watched &&
@@ -129,7 +129,6 @@ TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const char* target_name, const char* overridden_target_name,
     tsi_ssl_session_cache* ssl_session_cache) {
-  gpr_log(GPR_ERROR, "%s is called", "CreateTlsChannelSecurityConnector");
   if (ch_creds == nullptr) {
     gpr_log(GPR_ERROR,
             "channel_creds is nullptr in "
@@ -163,6 +162,7 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
       overridden_target_name_(
           overridden_target_name == nullptr ? "" : overridden_target_name),
       ssl_session_cache_(ssl_session_cache) {
+  gpr_log(GPR_ERROR, "TlsChannelSecurityConnector: %p ctor is called", this);
   check_arg_ = ServerAuthorizationCheckArgCreate(this);
   absl::string_view host;
   absl::string_view port;
@@ -173,29 +173,40 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
       grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface>
       watcher_ptr = absl::make_unique<TlsChannelCertificateWatcher>(this);
   certificate_watcher_set_.insert(watcher_ptr.get());
-  // Register the watcher with the provider.
+  // Register the watcher with the distributor.
   const TlsCredentials* creds =
       static_cast<const TlsCredentials*>(channel_creds());
-  grpc_tls_certificate_provider* provider =
-      creds->options()->certificate_provider();
-  GPR_ASSERT(provider != nullptr);
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
-      provider->distributor();
+  grpc_tls_certificate_distributor* distributor = creds->options()->certificate_distributor();
+  GPR_ASSERT(distributor != nullptr);
+  gpr_log(GPR_ERROR, "%s", "-----------------Debugging-------------------");
+  gpr_log(GPR_ERROR, "HasRootCerts: %d", distributor->HasRootCerts(""));
+  gpr_log(GPR_ERROR, "HasKeyCertPairs: %d",
+  distributor->HasKeyCertPairs("")); gpr_log(GPR_ERROR,
+  "creds->options()->root_cert_name(): %s",
+  creds->options()->root_cert_name().c_str()); gpr_log(GPR_ERROR,
+  "creds->options()->identity_cert_name(): %s",
+  creds->options()->identity_cert_name().c_str()); gpr_log(GPR_ERROR,
+  "%s", "------------------------------------");
+  absl::optional<std::string> watched_root_cert_name;
+  if (creds->options()->root_cert_watched()) {
+    watched_root_cert_name = creds->options()->root_cert_name();
+  }
+  absl::optional<std::string> watched_identity_cert_name;
+  if (creds->options()->identity_cert_watched()) {
+    watched_identity_cert_name = creds->options()->identity_cert_name();
+  }
   distributor->WatchTlsCertificates(std::move(watcher_ptr),
-                                    creds->options()->root_cert_name(),
-                                    creds->options()->identity_cert_name());
+                                    watched_root_cert_name,
+                                    watched_identity_cert_name);
 }
 
 TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
-  gpr_log(GPR_ERROR, "TlsChannelSecurityConnector dtor is called");
+  gpr_log(GPR_ERROR, "TlsChannelSecurityConnector: %p dtor is called", this);
   // Cancel all the watchers.
   const TlsCredentials* creds =
       static_cast<const TlsCredentials*>(channel_creds());
-  grpc_tls_certificate_provider* provider =
-      creds->options()->certificate_provider();
-  GPR_ASSERT(provider != nullptr);
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
-      provider->distributor();
+  grpc_tls_certificate_distributor* distributor = creds->options()->certificate_distributor();
+  GPR_ASSERT(distributor != nullptr);
   for (auto* watcher_ptr : certificate_watcher_set_) {
     distributor->CancelTlsCertificatesWatch(watcher_ptr);
   }
@@ -205,7 +216,6 @@ TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
   if (check_arg_ != nullptr) {
     ServerAuthorizationCheckArgDestroy(check_arg_);
   }
-  gpr_log(GPR_ERROR, "TlsChannelSecurityConnector is destroyed");
 }
 
 void TlsChannelSecurityConnector::add_handshakers(
@@ -445,6 +455,7 @@ void TlsServerCertificateWatcher::OnCertificatesChanged(
     absl::optional<absl::string_view> root_certs,
     absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
         key_cert_pairs) {
+  gpr_log(GPR_ERROR, "%s is called", "TlsServerCertificateWatcher::OnCertificatesChanged");
   GPR_ASSERT(security_connector_ != nullptr);
   grpc_core::MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
@@ -455,10 +466,10 @@ void TlsServerCertificateWatcher::OnCertificatesChanged(
   }
   const TlsServerCredentials* creds = static_cast<const TlsServerCredentials*>(
       security_connector_->server_creds());
-  bool root_being_watched = creds->options()->root_cert_name().has_value();
+  bool root_being_watched = creds->options()->root_cert_watched();
   bool root_has_value = security_connector_->pem_root_certs_.has_value();
   bool identity_being_watched =
-      creds->options()->identity_cert_name().has_value();
+      creds->options()->identity_cert_watched();
   bool identity_has_value =
       security_connector_->pem_key_cert_pair_list_.has_value();
   if ((root_being_watched && root_has_value && identity_being_watched &&
@@ -506,33 +517,46 @@ TlsServerSecurityConnector::CreateTlsServerSecurityConnector(
 TlsServerSecurityConnector::TlsServerSecurityConnector(
     grpc_core::RefCountedPtr<grpc_server_credentials> sv_creds)
     : grpc_server_security_connector(GRPC_SSL_URL_SCHEME, std::move(sv_creds)) {
+  gpr_log(GPR_ERROR, "TlsServerSecurityConnector: %p ctor is called", this);
   // Create a watcher.
   std::unique_ptr<
       grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface>
       watcher_ptr = absl::make_unique<TlsServerCertificateWatcher>(this);
   certificate_watcher_set_.insert(watcher_ptr.get());
-  // Register the watcher with the provider.
+  // Register the watcher with the distributor.
   const TlsServerCredentials* creds =
       static_cast<const TlsServerCredentials*>(server_creds());
-  grpc_tls_certificate_provider* provider =
-      creds->options()->certificate_provider();
-  GPR_ASSERT(provider != nullptr);
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
-      provider->distributor();
+  grpc_tls_certificate_distributor* distributor = creds->options()->certificate_distributor();
+  GPR_ASSERT(distributor != nullptr);
+  gpr_log(GPR_ERROR, "%s", "-----------------Debugging-------------------");
+  gpr_log(GPR_ERROR, "HasRootCerts: %d", distributor->HasRootCerts(""));
+  gpr_log(GPR_ERROR, "HasKeyCertPairs: %d",
+  distributor->HasKeyCertPairs("")); gpr_log(GPR_ERROR,
+  "creds->options()->root_cert_name(): %s",
+  creds->options()->root_cert_name().c_str()); gpr_log(GPR_ERROR,
+  "creds->options()->identity_cert_name(): %s",
+  creds->options()->identity_cert_name().c_str()); gpr_log(GPR_ERROR,
+  "%s", "------------------------------------");
+  absl::optional<std::string> watched_root_cert_name;
+  if (creds->options()->root_cert_watched()) {
+    watched_root_cert_name = creds->options()->root_cert_name();
+  }
+  absl::optional<std::string> watched_identity_cert_name;
+  if (creds->options()->identity_cert_watched()) {
+    watched_identity_cert_name = creds->options()->identity_cert_name();
+  }
   distributor->WatchTlsCertificates(std::move(watcher_ptr),
-                                    creds->options()->root_cert_name(),
-                                    creds->options()->identity_cert_name());
+                                    watched_root_cert_name,
+                                    watched_identity_cert_name);
 }
 
 TlsServerSecurityConnector::~TlsServerSecurityConnector() {
+  gpr_log(GPR_ERROR, "TlsServerSecurityConnector: %p dtor is called", this);
   // Cancel all the watchers.
   const TlsServerCredentials* creds =
       static_cast<const TlsServerCredentials*>(server_creds());
-  grpc_tls_certificate_provider* provider =
-      creds->options()->certificate_provider();
-  GPR_ASSERT(provider != nullptr);
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
-      provider->distributor();
+  grpc_tls_certificate_distributor* distributor = creds->options()->certificate_distributor();
+  GPR_ASSERT(distributor != nullptr);
   for (auto* watcher_ptr : certificate_watcher_set_) {
     distributor->CancelTlsCertificatesWatch(watcher_ptr);
   }
