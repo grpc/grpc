@@ -1976,27 +1976,72 @@ static int external_account_creds_httpcli_post_success(
 class TestExternalAccountCredentials final
     : public grpc_core::experimental::ExternalAccountCredentials {
  public:
-  TestExternalAccountCredentials(
-      grpc_core::experimental::ExternalAccountCredentialsOptions options,
-      std::vector<std::string> scopes)
+  TestExternalAccountCredentials(ExternalAccountCredentialsOptions options,
+                                 std::vector<std::string> scopes)
       : ExternalAccountCredentials(std::move(options), std::move(scopes)) {}
 
  protected:
-  void RetrieveSubjectToken(grpc_core::experimental::TokenFetchContext* ctx) {
-    ctx->subject_token = "test_subject_token";
-    ctx->retrieve_subject_token_cb(ctx, GRPC_ERROR_NONE);
+  void RetrieveSubjectToken(const TokenFetchContext* ctx,
+                            const ExternalAccountCredentialsOptions* options) {
+    std::cout << "--- TestExternalAccountCredentials::RetrieveSubjectToken()"
+              << std::endl;
+    RetrieveSubjectTokenComplete("test_subject_token", GRPC_ERROR_NONE);
   }
 };
 
-static void test_external_account_creds(void) {
+static void test_external_account_creds_success(void) {
+  expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
+
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_core::Json credential_source("");
+  TestExternalAccountCredentials::ExternalAccountCredentialsOptions options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
+  TestExternalAccountCredentials creds(options, {});
+
+  /* Check security level. */
+  GPR_ASSERT(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+
+  /* First request: http put should be called. */
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            external_account_creds_httpcli_post_success);
+  run_request_metadata_test(&creds, auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+
+  /* Second request: the cached token should be served directly. */
+  state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  run_request_metadata_test(&creds, auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+
+  grpc_httpcli_set_override(nullptr, nullptr);
+}
+
+static void test_external_account_creds_success_service_account_impersonation(
+    void) {
   expected_md emd[] = {
       {"authorization", "Bearer service_account_impersonation_access_token"}};
 
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
-  Json credential_source("");
-  grpc_core::experimental::ExternalAccountCredentialsOptions options = {
+  grpc_core::Json credential_source("");
+  TestExternalAccountCredentials::ExternalAccountCredentialsOptions options = {
       "external_account",    // type;
       "audience",            // audience;
       "subject_token_type",  // subject_token_type;
@@ -2076,7 +2121,8 @@ int main(int argc, char** argv) {
   test_get_well_known_google_credentials_file_path();
   test_channel_creds_duplicate_without_call_creds();
   test_auth_metadata_context();
-  test_external_account_creds();
+  test_external_account_creds_success();
+  test_external_account_creds_success_service_account_impersonation();
   grpc_shutdown();
   return 0;
 }

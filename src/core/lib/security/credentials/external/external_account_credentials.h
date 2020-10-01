@@ -25,46 +25,8 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 
-using grpc_core::Json;
-
 namespace grpc_core {
 namespace experimental {
-
-// External account credentials json interface.
-struct ExternalAccountCredentialsOptions {
-  std::string type;
-  std::string audience;
-  std::string subject_token_type;
-  std::string service_account_impersonation_url;
-  std::string token_url;
-  std::string token_info_url;
-  Json credential_source;
-  std::string quota_project_id;
-  std::string client_id;
-  std::string client_secret;
-};
-
-// This is a helper struct to pass information between multiple callback based
-// asynchronous calls.
-struct TokenFetchContext {
-  // Contextual parameters passed from
-  // grpc_oauth2_token_fetcher_credentials::fetch_oauth2().
-  grpc_credentials_metadata_request* metadata_req;
-  grpc_httpcli_context* httpcli_context;
-  grpc_polling_entity* pollent;
-  grpc_iomgr_cb_func response_cb;
-  grpc_millis deadline;
-  // The options and scopes carried from external account credentials.
-  ExternalAccountCredentialsOptions options;
-  std::vector<std::string> scopes;
-  // Subclasses of base external account credentials use these 2 fields to pass
-  // the subject token back.
-  std::string subject_token;
-  grpc_iomgr_cb_func retrieve_subject_token_cb;
-  // The token fetch http responses.
-  grpc_http_response token_exchange_response;
-  grpc_http_response service_account_impersonate_response;
-};
 
 // Base external account credentials. The base class implements common logic for
 // exchanging external account credentials for GCP access token to authorize
@@ -73,18 +35,63 @@ struct TokenFetchContext {
 class ExternalAccountCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
+  // External account credentials json interface.
+  struct ExternalAccountCredentialsOptions {
+    std::string type;
+    std::string audience;
+    std::string subject_token_type;
+    std::string service_account_impersonation_url;
+    std::string token_url;
+    std::string token_info_url;
+    grpc_core::Json credential_source;
+    std::string quota_project_id;
+    std::string client_id;
+    std::string client_secret;
+  };
+
   ExternalAccountCredentials(ExternalAccountCredentialsOptions options,
                              std::vector<std::string> scopes);
   ~ExternalAccountCredentials() override;
   std::string debug_string() override;
 
  protected:
+  // This is a helper struct to pass information between multiple callback based
+  // asynchronous calls.
+  struct TokenFetchContext {
+    TokenFetchContext(grpc_httpcli_context* httpcli_context,
+                      grpc_polling_entity* pollent, grpc_millis deadline)
+        : httpcli_context(httpcli_context),
+          pollent(pollent),
+          deadline(deadline) {
+      closure = {};
+      response = {};
+    }
+    ~TokenFetchContext() { grpc_http_response_destroy(&response); }
+
+    // Contextual parameters passed from
+    // grpc_oauth2_token_fetcher_credentials::fetch_oauth2().
+    grpc_httpcli_context* httpcli_context;
+    grpc_polling_entity* pollent;
+    grpc_millis deadline;
+
+    // Reusable token fetch http responses and closure.
+    grpc_closure closure;
+    grpc_http_response response;
+  };
+
   // Subclasses of base external account credentials need to override this
   // method to implement the specific subject token retrieval logic.
-  virtual void RetrieveSubjectToken(TokenFetchContext* ctx) = 0;
+  // After the subject token is retrieved, subclasses need to invoke
+  // RetrieveSubjectTokenComplete(std::string subject_token, grpc_error* error)
+  // of base external account credentials to pass the subject token (or error)
+  // back.
+  virtual void RetrieveSubjectToken(
+      const TokenFetchContext* ctx,
+      const ExternalAccountCredentialsOptions* options) = 0;
+  void RetrieveSubjectTokenComplete(std::string subject_token,
+                                    grpc_error* error);
 
-  ExternalAccountCredentialsOptions options_;
-  std::vector<std::string> scopes_;
+  ExternalAccountCredentialsOptions options() { return options_; };
 
  private:
   // This method implements the common token fetch logic and it will be called
@@ -94,7 +101,22 @@ class ExternalAccountCredentials
                     grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
                     grpc_millis deadline) override;
 
-  TokenFetchContext* ctx_;
+  void TokenExchange(std::string subject_token);
+  static void OnTokenExchange(void* arg, grpc_error* error);
+  void OnTokenExchangeInternal(grpc_error* error);
+
+  void ServiceAccountImpersenate();
+  static void OnServiceAccountImpersenate(void* arg, grpc_error* error);
+  void OnServiceAccountImpersenateInternal(grpc_error* error);
+
+  void FinishTokenFetch(grpc_error* error);
+
+  ExternalAccountCredentialsOptions options_;
+  std::vector<std::string> scopes_;
+
+  TokenFetchContext* ctx_ = nullptr;
+  grpc_credentials_metadata_request* metadata_req_ = nullptr;
+  grpc_iomgr_cb_func response_cb_ = nullptr;
 };
 
 }  // namespace experimental
