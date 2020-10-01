@@ -1,0 +1,28 @@
+public class Numbers
+{
+    private int _number1;
+    private int _number2;
+    private int _number3;
+
+    public readonly int Highest;
+    public readonly int Lowest;
+
+    public Numbers(int num1, int num2, int num3)
+    {
+        int high;
+        int low;
+
+        _number1 = num1;
+        _number2 = num2;
+        _number3 = num3;
+
+        high = num1 > num2 ? num1 : num2;
+        high = high > num3 ? high : num3;
+
+        low = num1 < num2 ? num1 : num2;
+        low = low < num3 ? low : num3;
+
+        Highest = high;
+        Lowest = low;
+    }
+}
