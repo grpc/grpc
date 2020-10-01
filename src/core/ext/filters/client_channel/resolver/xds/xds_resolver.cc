@@ -615,9 +615,10 @@ void XdsResolver::OnError(grpc_error* error) {
 
 void XdsResolver::OnResourceDoesNotExist() {
   gpr_log(GPR_ERROR,
-          "[xds_resolver %p] LDS/RDS resource does not exist -- returning "
-          "empty service config",
+          "[xds_resolver %p] LDS/RDS resource does not exist -- clearing "
+          "update and returning empty service config",
           this);
+  current_update_.clear();
   Result result;
   result.service_config =
       ServiceConfig::Create(args_, "{}", &result.service_config_error);
@@ -659,6 +660,7 @@ grpc_error* XdsResolver::CreateServiceConfig(
 }
 
 void XdsResolver::GenerateResult() {
+  if (current_update_.empty()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
   auto config_selector =
