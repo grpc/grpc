@@ -1373,6 +1373,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     xds_channel_args_.num_args = xds_channel_args_to_add_.size();
     xds_channel_args_.args = xds_channel_args_to_add_.data();
     grpc_core::internal::SetXdsChannelArgsForTest(&xds_channel_args_);
+    // Make sure each test creates a new XdsClient instance rather than
+    // reusing the one from the previous test.  This avoids spurious failures
+    // caused when a load reporting test runs after a non-load reporting test
+    // and the XdsClient is still talking to the old LRS server, which fails
+    // because it's not expecting the client to connect.  It also
+    // ensures that each test can independently set the global channel
+    // args for the xDS channel.
+    grpc_core::internal::UnsetGlobalXdsClientForTest();
     // Start the backends.
     for (size_t i = 0; i < num_backends_; ++i) {
       backends_.emplace_back(new BackendServerThread);
@@ -1399,14 +1407,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   void TearDown() override {
     ShutdownAllBackends();
     for (auto& balancer : balancers_) balancer->Shutdown();
-    // Make sure each test creates a new XdsClient instance rather than
-    // reusing the one from the previous test.  This avoids spurious failures
-    // caused when a load reporting test runs after a non-load reporting test
-    // and the XdsClient is still talking to the old LRS server, which fails
-    // because it's not expecting the client to connect.  It also
-    // ensures that each test can independently set the global channel
-    // args for the xDS channel.
-    grpc_core::internal::UnsetGlobalXdsClientForTest();
+    // Clear global xDS channel args, since they will go out of scope
+    // when this test object is destroyed.
+    grpc_core::internal::SetXdsChannelArgsForTest(nullptr);
   }
 
   void StartAllBackends() {
