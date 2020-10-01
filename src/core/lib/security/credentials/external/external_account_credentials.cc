@@ -17,7 +17,6 @@
 
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
-#include <iostream>
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/time/clock.h"
@@ -39,10 +38,6 @@ namespace experimental {
 ExternalAccountCredentials::ExternalAccountCredentials(
     ExternalAccountCredentialsOptions options, std::vector<std::string> scopes)
     : options_(std::move(options)) {
-  std::cout << "--- "
-               "ExternalAccountCredentials::ExternalAccountCredentials()"
-            << std::endl;
-  std::cout << options_.token_url.c_str() << std::endl;
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
   }
@@ -73,7 +68,6 @@ void ExternalAccountCredentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
     grpc_iomgr_cb_func response_cb, grpc_millis deadline) {
-  std::cout << "--- ExternalAccountCredentials::fetch_oauth2() " << std::endl;
   ctx_ = new TokenFetchContext(httpcli_context, pollent, deadline);
   metadata_req_ = metadata_req;
   response_cb_ = response_cb;
@@ -81,7 +75,6 @@ void ExternalAccountCredentials::fetch_oauth2(
 }
 void ExternalAccountCredentials::RetrieveSubjectTokenComplete(
     std::string subject_token, grpc_error* error) {
-  std::cout << "--- RetrieveSubjectTokenComplete()" << std::endl;
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
   } else {
@@ -90,8 +83,6 @@ void ExternalAccountCredentials::RetrieveSubjectTokenComplete(
 }
 
 void ExternalAccountCredentials::TokenExchange(std::string subject_token) {
-  std::cout << "--- TokenExchange()" << std::endl;
-  std::cout << options_.token_url.c_str() << std::endl;
   grpc_uri* uri = grpc_uri_parse(options_.token_url, false);
   if (uri == nullptr) {
     FinishTokenFetch(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -163,7 +154,6 @@ void ExternalAccountCredentials::OnTokenExchange(void* arg, grpc_error* error) {
 }
 
 void ExternalAccountCredentials::OnTokenExchangeInternal(grpc_error* error) {
-  std::cout << "--- OnTokenExchangeInternal" << std::endl;
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
   } else {
@@ -178,7 +168,6 @@ void ExternalAccountCredentials::OnTokenExchangeInternal(grpc_error* error) {
 }
 
 void ExternalAccountCredentials::ServiceAccountImpersenate() {
-  std::cout << "--- ServiceAccountImpersenate" << std::endl;
   grpc_error* error = GRPC_ERROR_NONE;
   absl::string_view response_body(ctx_->response.body,
                                   ctx_->response.body_length);
@@ -247,7 +236,6 @@ void ExternalAccountCredentials::OnServiceAccountImpersenate(
 
 void ExternalAccountCredentials::OnServiceAccountImpersenateInternal(
     grpc_error* error) {
-  std::cout << "--- OnServiceAccountImpersenateInternal" << std::endl;
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
     return;
@@ -301,7 +289,6 @@ void ExternalAccountCredentials::OnServiceAccountImpersenateInternal(
 }
 
 void ExternalAccountCredentials::FinishTokenFetch(grpc_error* error) {
-  std::cout << "--- FinishTokenFetch" << std::endl;
   GRPC_LOG_IF_ERROR("Fetch external account credentials access token",
                     GRPC_ERROR_REF(error));
   response_cb_(metadata_req_, error);

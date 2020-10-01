@@ -91,8 +91,6 @@ class ExternalAccountCredentials
   void RetrieveSubjectTokenComplete(std::string subject_token,
                                     grpc_error* error);
 
-  ExternalAccountCredentialsOptions options() { return options_; };
-
  private:
   // This method implements the common token fetch logic and it will be called
   // when grpc_oauth2_token_fetcher_credentials request a new access token.

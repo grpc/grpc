@@ -1983,8 +1983,6 @@ class TestExternalAccountCredentials final
  protected:
   void RetrieveSubjectToken(const TokenFetchContext* ctx,
                             const ExternalAccountCredentialsOptions* options) {
-    std::cout << "--- TestExternalAccountCredentials::RetrieveSubjectToken()"
-              << std::endl;
     RetrieveSubjectTokenComplete("test_subject_token", GRPC_ERROR_NONE);
   }
 };
