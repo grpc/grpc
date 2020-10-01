@@ -571,46 +571,6 @@ class RemoteNodeLanguage(object):
         return 'grpc-node'
 
 
-class PhpLanguage(object):
-
-    def configure(self, config, args):
-        self.config = config
-        self.args = args
-        _check_compiler(self.args.compiler, ['default'])
-        self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
-
-    def test_specs(self):
-        return [
-            self.config.job_spec(['src/php/bin/run_tests.sh'],
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)
-        ]
-
-    def pre_build_steps(self):
-        return []
-
-    def make_targets(self):
-        return ['static_c', 'shared_c']
-
-    def make_options(self):
-        return self._make_options
-
-    def build_steps(self):
-        return [['tools/run_tests/helper_scripts/build_php.sh']]
-
-    def post_tests_steps(self):
-        return [['tools/run_tests/helper_scripts/post_tests_php.sh']]
-
-    def makefile_name(self):
-        return 'Makefile'
-
-    def dockerfile_dir(self):
-        return 'tools/dockerfile/test/php_jessie_%s' % _docker_arch_suffix(
-            self.args.arch)
-
-    def __str__(self):
-        return 'php'
-
-
 class Php7Language(object):
 
     def configure(self, config, args):
@@ -1288,7 +1248,6 @@ _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
     'grpc-node': RemoteNodeLanguage(),
-    'php': PhpLanguage(),
     'php7': Php7Language(),
     'python': PythonLanguage(),
     'ruby': RubyLanguage(),
