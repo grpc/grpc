@@ -150,6 +150,55 @@ class XdsApi {
     VirtualHost* FindVirtualHostForDomain(const std::string& domain);
   };
 
+  struct StringMatcher {
+    enum class StringMatcherType {
+      EXACT,       // value stored in string_matcher_field
+      PREFIX,      // value stored in string_matcher_field
+      SUFFIX,      // value stored in string_matcher_field
+      SAFE_REGEX,  // use regex_match field
+      CONTAINS,    // value stored in string_matcher_field
+    };
+    StringMatcherType type;
+    std::string string_matcher;
+    std::unique_ptr<RE2> regex_match;
+    bool ignore_case;
+
+    StringMatcher() = default;
+    StringMatcher(const StringMatcher& other);
+    StringMatcher& operator=(const StringMatcher& other);
+    bool operator==(const StringMatcher& other) const;
+  };
+
+  struct CommonTlsContext {
+    struct CertificateValidationContext {
+      std::vector<StringMatcher> match_subject_alt_names;
+
+      bool operator==(const CertificateValidationContext& other) const {
+        return match_subject_alt_names == other.match_subject_alt_names;
+      }
+    };
+
+    struct CombinedCertificateValidationContext {
+      CertificateValidationContext default_validation_context;
+      std::string validation_context_certificate_provider_instance;
+
+      bool operator==(const CombinedCertificateValidationContext& other) const {
+        return default_validation_context == other.default_validation_context &&
+               validation_context_certificate_provider_instance ==
+                   other.validation_context_certificate_provider_instance;
+      }
+    };
+
+    std::string tls_certificate_certificate_provider_instance;
+    CombinedCertificateValidationContext combined_validation_context;
+
+    bool operator==(const CommonTlsContext& other) const {
+      return tls_certificate_certificate_provider_instance ==
+                 other.tls_certificate_certificate_provider_instance &&
+             combined_validation_context == other.combined_validation_context;
+    }
+  };
+
   // TODO(roth): When we can use absl::variant<>, consider using that
   // here, to enforce the fact that only one of the two fields can be set.
   struct LdsUpdate {
@@ -173,6 +222,8 @@ class XdsApi {
     // The name to use in the EDS request.
     // If empty, the cluster name will be used.
     std::string eds_service_name;
+    // Tls Context used by clients
+    CommonTlsContext common_tls_context;
     // The LRS server to use for load reporting.
     // If not set, load reporting will be disabled.
     // If set to the empty string, will use the same server we obtained the CDS
@@ -184,6 +235,7 @@ class XdsApi {
 
     bool operator==(const CdsUpdate& other) const {
       return eds_service_name == other.eds_service_name &&
+             common_tls_context == other.common_tls_context &&
              lrs_load_reporting_server_name ==
                  other.lrs_load_reporting_server_name &&
              max_concurrent_requests == other.max_concurrent_requests;
