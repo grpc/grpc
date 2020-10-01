@@ -28,6 +28,11 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = [
+        # TSAN has a false-positive for ShutdownRefAsync
+        # https://github.com/grpc/grpc/issues/24242
+        "notsan",
+    ],
     uses_polling = False,
     deps = [
         "//:eventmanager_libuv",
