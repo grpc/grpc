@@ -113,6 +113,7 @@ cc_library(
         "ares__get_hostent.c",
         "ares__read_line.c",
         "ares__timeval.c",
+        "ares_android.c",
         "ares_cancel.c",
         "ares_create_query.c",
         "ares_data.c",
@@ -162,6 +163,7 @@ cc_library(
     ],
     hdrs = [
         "ares.h",
+        "ares_android.h",
         "ares_build.h",
         "ares_config.h",
         "ares_data.h",
