@@ -39,16 +39,6 @@ RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.6' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler"
 
-
-##################
-# PHP dependencies
-
-RUN yum -y install php5 php5-dev php-pear
-
-RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
-  mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
-  chmod +x /usr/local/bin/phpunit
-
 # Clean yum
 RUN yum clean all
 

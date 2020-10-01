@@ -160,24 +160,10 @@ Run image:
 ```sh
 $ docker run -it --rm grpc-php/php-future
 ```
-
 ### `php5`
-
-This image builds the `grpc` extension against a PHP 5 base image with ZTS
-enabled.
 
 NOTE: PHP 5.x has reached the end-of-life state and is no longer supported.
 
-Build `php5` docker image:
-```sh
-$ cd grpc
-$ docker build -t grpc-php/php5 -f ./src/php/docker/php5/Dockerfile .
-```
-
-Run image:
-```sh
-$ docker run -it --rm grpc-php/php5
-```
 
 ### `fork-support`
 
