@@ -14,8 +14,8 @@
 // limitations under the License.
 #endregion
 
-using System;
-using System.Collections.Generic;
+using System;// This statement says it is using System
+using System.Collections.Generic; // This statement is importing modules from system
 using System.Threading;
 using System.Threading.Tasks;
 
