@@ -532,7 +532,7 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
       "Global Params.*referenced_errors.*"
       "Client channel global parser.*referenced_errors.*"
       "field:loadBalancingConfig.*referenced_errors.*"
-      "No known policy");
+      "No known policies in list: unknown");
   VerifyRegexMatch(error, regex);
 }
 

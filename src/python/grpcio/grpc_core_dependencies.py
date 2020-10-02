@@ -43,6 +43,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc',
     'src/core/ext/filters/client_channel/lb_policy/xds/cds.cc',
     'src/core/ext/filters/client_channel/lb_policy/xds/eds.cc',
+    'src/core/ext/filters/client_channel/lb_policy/xds/eds_drop.cc',
     'src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc',
     'src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc',
     'src/core/ext/filters/client_channel/lb_policy_registry.cc',

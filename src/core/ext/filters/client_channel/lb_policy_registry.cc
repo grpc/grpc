@@ -23,7 +23,9 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 #include "src/core/lib/gpr/string.h"
 
@@ -126,6 +128,7 @@ grpc_error* ParseLoadBalancingConfigHelper(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("type should be array");
   }
   // Find the first LB policy that this client supports.
+  std::vector<absl::string_view> policies_tried;
   for (const Json& lb_config : lb_config_array.array_value()) {
     if (lb_config.type() != Json::Type::OBJECT) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -149,8 +152,12 @@ grpc_error* ParseLoadBalancingConfigHelper(
       *result = it;
       return GRPC_ERROR_NONE;
     }
+    policies_tried.push_back(it->first);
   }
-  return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No known policy");
+  return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      absl::StrCat("No known policies in list: ",
+                   absl::StrJoin(policies_tried, " "))
+          .c_str());
 }
 
 }  // namespace
