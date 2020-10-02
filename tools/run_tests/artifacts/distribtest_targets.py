@@ -228,14 +228,14 @@ class RubyDistribTest(object):
 
 
 class PHP7DistribTest(object):
-    """Tests PHP package"""
+    """Tests PHP7 package"""
 
     def __init__(self, platform, arch, docker_suffix=None):
         self.name = 'php7_%s_%s_%s' % (platform, arch, docker_suffix)
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ['distribtest', 'php', platform, arch]
+        self.labels = ['distribtest', 'php7', platform, arch]
         if docker_suffix:
             self.labels.append(docker_suffix)
 
@@ -373,7 +373,7 @@ def targets():
         RubyDistribTest('linux', 'x64', 'opensuse'),
         RubyDistribTest('linux', 'x64', 'ubuntu1604'),
         RubyDistribTest('linux', 'x64', 'ubuntu1804'),
-        # PHP
+        # PHP7
         PHP7DistribTest('linux', 'x64', 'stretch'),
         PHP7DistribTest('macos', 'x64'),
     ]
