@@ -180,6 +180,15 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
 
+    # supported on linux only
+    test_jobs += _generate_jobs(languages=['php7'],
+                                configs=['dbg', 'opt'],
+                                platforms=['linux'],
+                                labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
+
     # supported on all platforms.
     test_jobs += _generate_jobs(
         languages=['c'],
@@ -230,7 +239,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    test_jobs += _generate_jobs(languages=['grpc-node', 'ruby', 'php7'],
+    test_jobs += _generate_jobs(languages=['grpc-node', 'ruby', 'php'],
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos'],
                                 labels=['basictests', 'multilang'],
