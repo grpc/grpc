@@ -214,6 +214,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_tls_key_materials_config_get_version);
   printf("%lx", (unsigned long) grpc_tls_credential_reload_config_create);
   printf("%lx", (unsigned long) grpc_tls_server_authorization_check_config_create);
+  printf("%lx", (unsigned long) grpc_xds_credentials_create);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_raw_compressed_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_byte_buffer_copy);
