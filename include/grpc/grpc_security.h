@@ -19,10 +19,11 @@
 #ifndef GRPC_GRPC_SECURITY_H
 #define GRPC_GRPC_SECURITY_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
-#include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -823,8 +824,7 @@ GRPCAPI int grpc_tls_credentials_options_set_certificate_provider(
     grpc_tls_certificate_provider* provider);
 
 /**
- * Indicates whether the root certificates will be needed when doing TLS
- * handshake. If set, gRPC stack will keep watching the root certificates with
+ * If set, gRPC stack will keep watching the root certificates with
  * name |root_cert_name|. It returns 1 on success and 0 on failure. It is used
  * for experimental purpose for now and subject to change.
  */
@@ -840,8 +840,7 @@ GRPCAPI int grpc_tls_credentials_options_set_root_cert_name(
     grpc_tls_credentials_options* options, const char* root_cert_name);
 
 /**
- * Indicates whether the identity certificates will be needed when doing TLS
- * handshake. If set, gRPC stack will keep watching the identity key-cert pairs
+ * If set, gRPC stack will keep watching the identity key-cert pairs
  * with name |identity_cert_name|. It returns 1 on success and 0 on failure. It
  * is used for experimental purpose for now and subject to change.
  */
