@@ -21,7 +21,8 @@
 #include <grpcpp/security/tls_credentials_options.h>
 
 #include "absl/container/inlined_vector.h"
-// TODO(ZhenLian): remove this and only import grpc_security.h
+// TODO(ZhenLian): clean up the server authorization part and remove this.
+// Only import grpc_security.h.
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/common/tls_credentials_options_util.h"
 
