@@ -14,7 +14,7 @@
 
 FROM debian:stretch
 
-RUN apt-get update && apt-get install -y php php-dev php-pear wget
+RUN apt-get update && apt-get install -y php php-dev php-pear wget zlib1g-dev
 
 RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
   mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
