@@ -49,14 +49,8 @@ struct fullstack_secure_fixture_data {
     for (size_t ind = 0; ind < thd_list.size(); ind++) {
       thd_list[ind].Join();
     }
-    gpr_log(GPR_ERROR, "fullstack_secure_fixture_data is destroyed");
-
-    if (client_provider != nullptr) {
-      grpc_tls_certificate_provider_release(client_provider);
-    }
-    if (server_provider != nullptr) {
-      grpc_tls_certificate_provider_release(server_provider);
-    }
+    grpc_tls_certificate_provider_release(client_provider);
+    grpc_tls_certificate_provider_release(server_provider);
   }
   std::string localaddr;
   grpc_tls_version tls_version;
@@ -75,28 +69,22 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
   ffd->tls_version = tls_version;
   grpc_slice root_slice, cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &root_slice)));
+  std::string root_cert =
+      std::string(grpc_core::StringViewFromSlice(root_slice));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(CA_CERT_PATH, 1, &root_slice)));
-  std::string root_cert = std::string(
-    reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(root_slice)),
-    GRPC_SLICE_LENGTH(root_slice));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file",
-      grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-  std::string identity_cert = std::string(
-    reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(cert_slice)),
-    GRPC_SLICE_LENGTH(cert_slice));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-  std::string private_key = std::string(
-    reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(key_slice)),
-    GRPC_SLICE_LENGTH(key_slice));
-
-  ffd->client_provider = grpc_tls_certificate_provider_file_static_create(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  std::string identity_cert =
+      std::string(grpc_core::StringViewFromSlice(cert_slice));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  std::string private_key =
+      std::string(grpc_core::StringViewFromSlice(key_slice));
+  ffd->client_provider = grpc_tls_certificate_provider_static_data_create(
       root_cert.c_str(), private_key.c_str(), identity_cert.c_str());
-  ffd->server_provider = grpc_tls_certificate_provider_file_static_create(
+  ffd->server_provider = grpc_tls_certificate_provider_static_data_create(
       root_cert.c_str(), private_key.c_str(), identity_cert.c_str());
-  gpr_log(GPR_ERROR, "fullstack_secure_fixture_data is created");
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
@@ -197,8 +185,7 @@ static grpc_channel_credentials* create_tls_channel_credentials(
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         ffd->client_provider);
   grpc_tls_credentials_options_watch_root_certs(options);
-  grpc_tls_credentials_options_watch_identity_certs(options);
-
+  grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
   /* Set server authorization check config. */
   grpc_tls_server_authorization_check_config* check_config =
       grpc_tls_server_authorization_check_config_create(
@@ -218,11 +205,11 @@ static grpc_server_credentials* create_tls_server_credentials(
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   options->set_min_tls_version(ffd->tls_version);
   options->set_max_tls_version(ffd->tls_version);
-    // Set credential provider.
+  // Set credential provider.
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         ffd->server_provider);
   grpc_tls_credentials_options_watch_root_certs(options);
-  grpc_tls_credentials_options_watch_identity_certs(options);
+  grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
   /* Set client certificate request type. */
   grpc_tls_credentials_options_set_cert_request_type(
       options, GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);

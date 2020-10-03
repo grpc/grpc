@@ -14,42 +14,28 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {
 
-StaticFileCertificateProvider::StaticFileCertificateProvider(std::string root_certificate, std::string private_key, std::string identity_certificate)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()), root_certificate_(root_certificate), private_key_(private_key), identity_certificate_(identity_certificate) {
-
-//  grpc_tls_certificate_distributor::PemKeyCertPairList identity_pairs;
-//  grpc_ssl_pem_key_cert_pair* ssl_pair =
-//      static_cast<grpc_ssl_pem_key_cert_pair*>(
-//          gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-//  ssl_pair->private_key = gpr_strdup(private_key_.c_str());
-//  ssl_pair->cert_chain = gpr_strdup(identity_certificate_.c_str());
-//  identity_pairs.emplace_back(ssl_pair);
-//  // StaticFileCertificateProvider uses the default cert name "" for root and identity
-//  // certificates.
-//  distributor_->SetKeyMaterials("", std::move(root_certificate_), std::move(identity_pairs));
-
-
+StaticDataCertificateProvider::StaticDataCertificateProvider(
+    std::string root_certificate, std::string private_key,
+    std::string identity_certificate)
+    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
+      root_certificate_(std::move(root_certificate)),
+      private_key_(std::move(private_key)),
+      identity_certificate_(std::move(identity_certificate)) {
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
-                                               bool root_being_watched,
-                                               bool identity_being_watched) {
-    gpr_log(GPR_ERROR, "callback is called - resetting the credentials");
-    gpr_log(GPR_ERROR, "cert_name: %s", cert_name.c_str());
-    gpr_log(GPR_ERROR, "root_being_watched: %d", root_being_watched);
-    gpr_log(GPR_ERROR, "identity_being_watched: %d", identity_being_watched);
-    if (root_being_watched && identity_being_watched) {
+                                              bool root_being_watched,
+                                              bool identity_being_watched) {
+    if (identity_being_watched) {
       grpc_tls_certificate_distributor::PemKeyCertPairList identity_pairs;
       grpc_ssl_pem_key_cert_pair* ssl_pair =
           static_cast<grpc_ssl_pem_key_cert_pair*>(
@@ -57,25 +43,30 @@ StaticFileCertificateProvider::StaticFileCertificateProvider(std::string root_ce
       ssl_pair->private_key = gpr_strdup(private_key_.c_str());
       ssl_pair->cert_chain = gpr_strdup(identity_certificate_.c_str());
       identity_pairs.emplace_back(ssl_pair);
-      // StaticFileCertificateProvider uses the default cert name "" for identity
-      // certificates.
-      gpr_log(GPR_ERROR, "root not empty: %d", !root_certificate_.empty());
-      gpr_log(GPR_ERROR, "identity not empty: %d", !identity_pairs.empty());
-      distributor_->SetKeyMaterials("", root_certificate_, std::move(identity_pairs));
+      if (root_being_watched) {
+        distributor_->SetKeyMaterials(cert_name, root_certificate_,
+                                      std::move(identity_pairs));
+      } else {
+        distributor_->SetKeyMaterials(cert_name, absl::nullopt,
+                                      std::move(identity_pairs));
+      }
+    } else {
+      if (root_being_watched) {
+        distributor_->SetKeyMaterials(cert_name, root_certificate_,
+                                      absl::nullopt);
+      }
     }
   });
-
 }
 
 }  // namespace grpc_core
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
-grpc_tls_certificate_provider* grpc_tls_certificate_provider_file_static_create(
-    const char* root_certificate,
-    const char* private_key,
+grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
+    const char* root_certificate, const char* private_key,
     const char* identity_certificate) {
-  return new grpc_core::StaticFileCertificateProvider(
+  return new grpc_core::StaticDataCertificateProvider(
       std::string(root_certificate), std::string(private_key),
       std::string(identity_certificate));
 }
