@@ -16,16 +16,15 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
-
-#include <cstring>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+
+#include <cstring>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
@@ -78,14 +77,14 @@ TlsCredentials::create_security_connector(
   }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_core::TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
-          this->Ref(), std::move(call_creds), target_name,
+          this->Ref(), options_, std::move(call_creds), target_name,
           overridden_target_name, ssl_session_cache);
   if (sc == nullptr) {
     return nullptr;
   }
   if (args != nullptr) {
     grpc_arg new_arg = grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_HTTP2_SCHEME, (char*)"https");
+        (char*)GRPC_ARG_HTTP2_SCHEME, (char*)"https");
     *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   }
   return sc;
@@ -101,7 +100,7 @@ TlsServerCredentials::~TlsServerCredentials() {}
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 TlsServerCredentials::create_security_connector() {
   return grpc_core::TlsServerSecurityConnector::
-      CreateTlsServerSecurityConnector(this->Ref());
+      CreateTlsServerSecurityConnector(this->Ref(), options_);
 }
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
