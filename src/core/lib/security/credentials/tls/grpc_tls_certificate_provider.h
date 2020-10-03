@@ -17,8 +17,9 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
 
-#include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
+
+#include <grpc/grpc_security.h>
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
@@ -60,5 +61,4 @@ class StaticDataCertificateProvider : public grpc_tls_certificate_provider {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H \
-        */
+#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H

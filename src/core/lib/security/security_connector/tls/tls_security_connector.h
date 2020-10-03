@@ -227,5 +227,4 @@ grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer);
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_TLS_SECURITY_CONNECTOR_H \
-        */
+#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_TLS_SECURITY_CONNECTOR_H
