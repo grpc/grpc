@@ -406,6 +406,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/security/credentials/plugin/plugin_credentials.cc',
     'src/core/lib/security/credentials/ssl/ssl_credentials.cc',
     'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc',
+    'src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc',
     'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc',
     'src/core/lib/security/credentials/tls/tls_credentials.cc',
     'src/core/lib/security/security_connector/alts/alts_security_connector.cc',

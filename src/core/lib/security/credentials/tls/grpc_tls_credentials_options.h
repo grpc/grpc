@@ -19,14 +19,13 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
 
 #include "absl/container/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
 struct grpc_tls_error_details
@@ -94,13 +93,14 @@ struct grpc_tls_server_authorization_check_config
   void (*destruct_)(void* config_user_data);
 };
 
-/* TLS credentials options. */
+// Contains configurable options specified by callers to configure their certain
+// security features supported in TLS.
 struct grpc_tls_credentials_options
     : public grpc_core::RefCounted<grpc_tls_credentials_options> {
  public:
   ~grpc_tls_credentials_options() = default;
 
-  /* Getters for member fields. */
+  // Getters for member fields.
   grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;
   }
@@ -113,35 +113,22 @@ struct grpc_tls_credentials_options
   server_authorization_check_config() const {
     return server_authorization_check_config_.get();
   }
-//  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> certificate_provider() {
-//    return grpc_tls_certificate_provider_;
-//  }
-
-  // Will be used by security connector to get the distributor.
-  // Does the right thing in both the TlsCreds and XdsCreds cases.
+  // This Will be used by the security connector to get the correct distributor.
+  // It can be applied to both the Tls*Creds and the Xds*Creds cases.
+  // For Tls*Creds case, we will get the distributor from the provider;
+  // For Xds*Creds case, there will be a level of indirection between the
+  // provider and the distributor, so we will get the distributor directly.
   grpc_tls_certificate_distributor* certificate_distributor() {
     if (provider_ != nullptr) return provider_->distributor().get();
     if (distributor_ != nullptr) return distributor_.get();
     return nullptr;
   }
+  bool root_cert_watched() { return root_being_watched_; }
+  const std::string& root_cert_name() { return root_cert_name_; }
+  bool identity_cert_watched() { return identity_being_watched_; }
+  const std::string& identity_cert_name() { return identity_cert_name_; }
 
-  bool root_cert_watched() {
-    return root_being_watched_;
-  }
-
-  const std::string& root_cert_name() {
-    return root_cert_name_;
-  }
-
-  bool identity_cert_watched() {
-    return identity_being_watched_;
-  }
-
-  const std::string& identity_cert_name() {
-    return identity_cert_name_;
-  }
-
-  /* Setters for member fields. */
+  // Setters for member fields.
   void set_cert_request_type(
       const grpc_ssl_client_certificate_request_type type) {
     cert_request_type_ = type;
@@ -161,29 +148,34 @@ struct grpc_tls_credentials_options
           config) {
     server_authorization_check_config_ = std::move(config);
   }
-
-  // Will be used by C-core API for TlsCreds case.
-  void set_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider) {
+  // Sets the provider in the options.
+  // This should only be used by C-core API for Tls*Creds case.
+  void set_certificate_provider(
+      grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider) {
     provider_ = std::move(provider);
   }
-
-  // Will be used by xDS code for XdsCreds case.
-  void set_certificate_distributor(grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor) {
+  // Sets the distributor in the options.
+  // This should only be used by C-core API for Xds*Creds case.
+  void set_certificate_distributor(
+      grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor) {
     distributor_ = std::move(distributor);
   }
-
-  void watch_root_certs() {
-    root_being_watched_ = true;
-  }
-
+  // Watches the updates of root certificates with name |root_cert_name|.
+  // If used in tls_credentials, it should always be set unless the root
+  // certificates are not needed.
+  void watch_root_certs() { root_being_watched_ = true; }
+  // Sets the name of root certificates being watched, if |watch_root_certs| is
+  // called. If not set, an empty string will be used as the name.
   void set_root_cert_name(std::string root_cert_name) {
     root_cert_name_ = std::move(root_cert_name);
   }
-
-  void watch_identity_certs() {
-    identity_being_watched_ = true;
-  }
-
+  // Watches the updates of identity certificates with name
+  // |identity_cert_name|. If used in tls_credentials, it should always be set
+  // unless the identity key-cert pairs are not needed.
+  void watch_identity_key_cert_pairs() { identity_being_watched_ = true; }
+  // Sets the name of identity key-cert pairs being watched, if
+  // |watch_identity_key_cert_pairs| is called. If not set, an empty string will
+  // be used as the name.
   void set_identity_cert_name(std::string identity_cert_name) {
     identity_cert_name_ = std::move(identity_cert_name);
   }
@@ -204,5 +196,4 @@ struct grpc_tls_credentials_options
   std::string identity_cert_name_;
 };
 
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H \
-        */
+#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
