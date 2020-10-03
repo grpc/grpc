@@ -280,8 +280,7 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
       already_watching_identity_for_root_cert =
           !cert_info.identity_cert_watchers.empty();
       if (stop_watching_root_cert && !already_watching_identity_for_root_cert) {
-//        gpr_log(GPR_ERROR, "a certInfo entry in the distributor is removed");
-//        certificate_info_map_.erase(it);
+        certificate_info_map_.erase(it);
       }
     }
     if (identity_cert_name.has_value()) {
@@ -294,8 +293,7 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
           !cert_info.root_cert_watchers.empty();
       if (stop_watching_identity_cert &&
           !already_watching_root_for_identity_cert) {
-//        gpr_log(GPR_ERROR, "a certInfo entry in the distributor is removed");
-//        certificate_info_map_.erase(it);
+        certificate_info_map_.erase(it);
       }
     }
   }

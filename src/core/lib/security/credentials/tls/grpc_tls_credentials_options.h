@@ -19,10 +19,12 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
 
-#include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
+#include <grpc/grpc_security.h>
+
 #include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
@@ -113,7 +115,7 @@ struct grpc_tls_credentials_options
   server_authorization_check_config() const {
     return server_authorization_check_config_.get();
   }
-  // This Will be used by the security connector to get the correct distributor.
+  // This will be used by the security connector to get the correct distributor.
   // It can be applied to both the Tls*Creds and the Xds*Creds cases.
   // For Tls*Creds case, we will get the distributor from the provider;
   // For Xds*Creds case, there will be a level of indirection between the
