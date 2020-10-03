@@ -17,9 +17,8 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
@@ -40,9 +39,13 @@ struct grpc_tls_certificate_provider
 
 namespace grpc_core {
 
-class StaticFileCertificateProvider : public grpc_tls_certificate_provider {
+// A basic provider class that will get credentials from string during
+// initialization.
+class StaticDataCertificateProvider : public grpc_tls_certificate_provider {
  public:
-  StaticFileCertificateProvider(std::string root_certificate, std::string private_key, std::string identity_certificate);
+  StaticDataCertificateProvider(std::string root_certificate,
+                                std::string private_key,
+                                std::string identity_certificate);
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
