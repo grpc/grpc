@@ -995,6 +995,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/ssl/ssl_credentials.h )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h )
+  s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc )
+  s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h )
   s.files += %w( src/core/lib/security/credentials/tls/tls_credentials.cc )

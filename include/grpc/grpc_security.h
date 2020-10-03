@@ -19,11 +19,10 @@
 #ifndef GRPC_GRPC_SECURITY_H
 #define GRPC_GRPC_SECURITY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -748,97 +747,121 @@ typedef struct grpc_tls_error_details grpc_tls_error_details;
 typedef struct grpc_tls_server_authorization_check_config
     grpc_tls_server_authorization_check_config;
 
-/** TLS credentials options. It is used for
- *  experimental purpose for now and subject to change. */
+/**
+ * A struct that can be specified by callers to configure underlying TLS
+ * behaviors. It is used for experimental purpose for now and subject to change.
+ */
 typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
 
-/** TLS certificate provider. It is used for
- *  experimental purpose for now and subject to change. */
+/**
+ * A struct provides ways to gain credential data that will be used in the TLS
+ * handshake. It is used for experimental purpose for now and subject to change.
+ */
 typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
-/** TLS certificate distributor. It is used for
- *  experimental purpose for now and subject to change. */
-typedef struct grpc_tls_certificate_distributor
-    grpc_tls_certificate_distributor;
-
-/* Factory function for file-watcher provider (implemented inside core).
- * It is used for experimental purpose for now and subject to change.*/
+/**
+ * Creates a grpc_tls_certificate_provider that will load credential data from
+ * static string during initialization. It is used for experimental purpose for
+ * now and subject to change.
+ */
 GRPCAPI grpc_tls_certificate_provider*
-grpc_tls_certificate_provider_file_watcher_create(
-    const char* private_key_file_name,
-    const char* identity_certificate_file_name,
-    const char* root_certificate_file_name);
+grpc_tls_certificate_provider_static_data_create(
+    const char* root_certificate, const char* private_key,
+    const char* identity_certificate);
 
-/* Factory function for static file provider (implemented inside core).
- * It is used for experimental purpose for now and subject to change.*/
-GRPCAPI grpc_tls_certificate_provider*
-grpc_tls_certificate_provider_file_static_create(
-    const char* private_key_file_name,
-    const char* identity_certificate_file_name,
-    const char* root_certificate_file_name);
-
-/** Releases a grpc_tls_certificate_provider object.
-   The creator of the grpc_tls_certificate_provider object is responsible for
-   its release. It is used for experimental purpose for now and subject to
-   change.
-   */
+/**
+ * Releases a grpc_tls_certificate_provider object. The creator of the
+ * grpc_tls_certificate_provider object is responsible for its release. It is
+ * used for experimental purpose for now and subject to change.
+ */
 GRPCAPI void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider);
 
-/** Create an empty TLS credentials options. It is used for
- *  experimental purpose for now and subject to change. */
+/**
+ * Creates an grpc_tls_credentials_options.
+ * It is used for experimental purpose for now and subject to change.
+ */
 GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create(void);
 
-/** Set grpc_ssl_client_certificate_request_type field in credentials options
-    with the provided type. options should not be NULL.
-    It returns 1 on success and 0 on failure. It is used for
-    experimental purpose for now and subject to change. */
+/**
+ * Releases a grpc_tls_credentials_options object. The creator of the
+ * grpc_tls_credentials_options object is responsible for its release. It is
+ * used for experimental purpose for now and subject to change.
+ */
+GRPCAPI void grpc_tls_credentials_options_release(
+    grpc_tls_credentials_options* options);
+
+/**
+ * Sets the options of whether to request and verify client certs. This should
+ * be called only on the server side. It returns 1 on success and 0 on failure.
+ * It is used for experimental purpose for now and subject to change.
+ */
 GRPCAPI int grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type);
 
-/** Set grpc_tls_server_verification_option field in credentials options
-    with the provided server_verification_option. options should not be NULL.
-    This should be called only on the client side.
-    If grpc_tls_server_verification_option is not
-    GRPC_TLS_SERVER_VERIFICATION, use of a customer server
-    authorization check (grpc_tls_server_authorization_check_config)
-    will be mandatory.
-    It returns 1 on success and 0 on failure. It is used for
-    experimental purpose for now and subject to change. */
+/**
+ * Sets the options of whether to choose certain checks, e.g. certificate check,
+ * hostname check, etc. This should be called only on the client side. If
+ * |server_verification_option| is not GRPC_TLS_SERVER_VERIFICATION, use of a
+ * custom authorization check (grpc_tls_server_authorization_check_config) is
+ * mandatory. It returns 1 on success and 0 on failure. It is used for
+ * experimental purpose for now and subject to change.
+ */
 GRPCAPI int grpc_tls_credentials_options_set_server_verification_option(
     grpc_tls_credentials_options* options,
     grpc_tls_server_verification_option server_verification_option);
 
-/** Sets the credential provider. It is used for experimental purpose for now
- *  and subject to change.*/
+/**
+ * Sets the credential provider in the options.
+ * The |options| will implicitly take a new ref to the |provider|.
+ * It returns 1 on success and 0 on failure.
+ * It is used for experimental purpose for now and subject to change.
+ */
 GRPCAPI int grpc_tls_credentials_options_set_certificate_provider(
     grpc_tls_credentials_options* options,
     grpc_tls_certificate_provider* provider);
 
 /**
- * Sets the name of the root certificates being used in the distributor.
- * Most users don't need to set this value.
- * If not set, we will use the default name, which is an empty string.
+ * Indicates whether the root certificates will be needed when doing TLS
+ * handshake. If set, gRPC stack will keep watching the root certificates with
+ * name |root_cert_name|. It returns 1 on success and 0 on failure. It is used
+ * for experimental purpose for now and subject to change.
+ */
+GRPCAPI int grpc_tls_credentials_options_watch_root_certs(
+    grpc_tls_credentials_options* options);
+
+/**
+ * Sets the name of the root certificates being watched.
+ * If not set, We will use a default empty string as the root certificate name.
  * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI int grpc_tls_credentials_options_set_root_cert_name(
     grpc_tls_credentials_options* options, const char* root_cert_name);
 
 /**
- * Sets the name of the identity certificates being used in the distributor.
- * Most users don't need to set this value.
- * If not set, we will use the default name, which is an empty string.
- * It is used for experimental purpose for now and subject to change.
+ * Indicates whether the identity certificates will be needed when doing TLS
+ * handshake. If set, gRPC stack will keep watching the identity key-cert pairs
+ * with name |identity_cert_name|. It returns 1 on success and 0 on failure. It
+ * is used for experimental purpose for now and subject to change.
+ */
+GRPCAPI int grpc_tls_credentials_options_watch_identity_key_cert_pairs(
+    grpc_tls_credentials_options* options);
+
+/**
+ * Sets the name of the identity certificates being watched.
+ * If not set, We will use a default empty string as the identity certificate
+ * name. It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI int grpc_tls_credentials_options_set_identity_cert_name(
     grpc_tls_credentials_options* options, const char* identity_cert_name);
 
-/** Set grpc_tls_server_authorization_check_config field in credentials options
-    with the provided config struct whose ownership is transferred.
-    Both parameters should not be NULL.
-    It returns 1 on success and 0 on failure. It is used for
-    experimental purpose for now and subject to change. */
+/**
+ * Sets the configuration for a custom authorization check performed at the end
+ * of the handshake. The |options| will implicitly take a new ref to the
+ * |config|. It returns 1 on success and 0 on failure. It is used for
+ * experimental purpose for now and subject to change.
+ */
 GRPCAPI int grpc_tls_credentials_options_set_server_authorization_check_config(
     grpc_tls_credentials_options* options,
     grpc_tls_server_authorization_check_config* config);
@@ -922,31 +945,28 @@ grpc_tls_server_authorization_check_config_create(
     void (*destruct)(void* config_user_data));
 
 /**
- * This method creates a TLS channel credential object.
- * It takes ownership of the options parameter. The security level
- * of the resulting connection is GRPC_PRIVACY_AND_INTEGRITY.
- *
- * - options: grpc TLS credentials options instance.
- *
- * It returns the created credential object.
- *
- * It is used for experimental purpose for now and subject
- * to change.
+ * Releases a grpc_tls_server_authorization_check_config object. The creator of
+ * the grpc_tls_server_authorization_check_config object is responsible for its
+ * release. It is used for experimental purpose for now and subject to change.
  */
+GRPCAPI void grpc_tls_server_authorization_check_config_release(
+    grpc_tls_server_authorization_check_config* config);
 
+/**
+ * Creates a TLS channel credential object based on the
+ * grpc_tls_credentials_options specified by callers. The
+ * grpc_channel_credentials will implicitly take a new ref to the |options|. The
+ * security level of the resulting connection is GRPC_PRIVACY_AND_INTEGRITY. It
+ * is used for experimental purpose for now and subject to change.
+ */
 grpc_channel_credentials* grpc_tls_credentials_create(
     grpc_tls_credentials_options* options);
 
 /**
- * This method creates a TLS server credential object.
- * It takes ownership of the options parameter.
- *
- * - options: grpc TLS credentials options instance.
- *
- * It returns the created credential object.
- *
- * It is used for experimental purpose for now and subject
- * to change.
+ * Creates a TLS server credential object based on the
+ * grpc_tls_credentials_options specified by callers. The
+ * grpc_server_credentials will implicitly take a new ref to the |options|. It
+ * is used for experimental purpose for now and subject to change.
  */
 grpc_server_credentials* grpc_tls_server_credentials_create(
     grpc_tls_credentials_options* options);
