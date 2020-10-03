@@ -16,18 +16,21 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
 #include <stdbool.h>
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
@@ -123,7 +126,6 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   // Register the watcher with the distributor.
   grpc_tls_certificate_distributor* distributor =
       options_->certificate_distributor();
-  GPR_ASSERT(distributor != nullptr);
   absl::optional<std::string> watched_root_cert_name;
   if (options_->root_cert_watched()) {
     watched_root_cert_name = options_->root_cert_name();
@@ -144,7 +146,6 @@ TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
   // Cancel all the watchers.
   grpc_tls_certificate_distributor* distributor =
       options_->certificate_distributor();
-  GPR_ASSERT(distributor != nullptr);
   distributor->CancelTlsCertificatesWatch(certificate_watcher_);
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
@@ -463,7 +464,6 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
   // Register the watcher with the distributor.
   grpc_tls_certificate_distributor* distributor =
       options_->certificate_distributor();
-  GPR_ASSERT(distributor != nullptr);
   absl::optional<std::string> watched_root_cert_name;
   if (options_->root_cert_watched()) {
     watched_root_cert_name = options_->root_cert_name();
@@ -481,7 +481,6 @@ TlsServerSecurityConnector::~TlsServerSecurityConnector() {
   // Cancel all the watchers.
   grpc_tls_certificate_distributor* distributor =
       options_->certificate_distributor();
-  GPR_ASSERT(distributor != nullptr);
   distributor->CancelTlsCertificatesWatch(certificate_watcher_);
   if (server_handshaker_factory_ != nullptr) {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
