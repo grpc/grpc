@@ -29,7 +29,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
 
 async def serve():
-    server = grpc.aio.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.aio.server()
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     listen_addr = '[::]:50051'
     server.add_insecure_port(listen_addr)
