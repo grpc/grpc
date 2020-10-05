@@ -473,7 +473,6 @@
         'src/core/ext/filters/client_channel/lb_policy/xds/cds.cc',
         'src/core/ext/filters/client_channel/lb_policy/xds/eds.cc',
         'src/core/ext/filters/client_channel/lb_policy/xds/eds_drop.cc',
-        'src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc',
         'src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc',
         'src/core/ext/filters/client_channel/lb_policy_registry.cc',
         'src/core/ext/filters/client_channel/local_subchannel_pool.cc',
