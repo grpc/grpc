@@ -288,7 +288,7 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
   GPR_ASSERT(security_connector_ != nullptr);
   grpc_core::MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
-    security_connector_->pem_root_certs_ = std::move(root_certs);
+    security_connector_->pem_root_certs_ = root_certs;
   }
   if (key_cert_pairs.has_value()) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
@@ -536,7 +536,7 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
   GPR_ASSERT(security_connector_ != nullptr);
   grpc_core::MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
-    security_connector_->pem_root_certs_ = std::move(root_certs);
+    security_connector_->pem_root_certs_ = root_certs;
   }
   if (key_cert_pairs.has_value()) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
