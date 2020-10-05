@@ -3350,56 +3350,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/call.h \
     include/grpcpp/impl/channel_argument_option.h \
     include/grpcpp/impl/client_unary_call.h \
-    include/grpcpp/impl/codegen/async_generic_service.h \
-    include/grpcpp/impl/codegen/async_stream.h \
-    include/grpcpp/impl/codegen/async_unary_call.h \
-    include/grpcpp/impl/codegen/byte_buffer.h \
-    include/grpcpp/impl/codegen/call.h \
-    include/grpcpp/impl/codegen/call_hook.h \
-    include/grpcpp/impl/codegen/call_op_set.h \
-    include/grpcpp/impl/codegen/call_op_set_interface.h \
-    include/grpcpp/impl/codegen/callback_common.h \
-    include/grpcpp/impl/codegen/channel_interface.h \
-    include/grpcpp/impl/codegen/client_callback.h \
-    include/grpcpp/impl/codegen/client_context.h \
-    include/grpcpp/impl/codegen/client_interceptor.h \
-    include/grpcpp/impl/codegen/client_unary_call.h \
-    include/grpcpp/impl/codegen/completion_queue.h \
-    include/grpcpp/impl/codegen/completion_queue_tag.h \
-    include/grpcpp/impl/codegen/config.h \
-    include/grpcpp/impl/codegen/config_protobuf.h \
     include/grpcpp/impl/codegen/core_codegen.h \
-    include/grpcpp/impl/codegen/core_codegen_interface.h \
-    include/grpcpp/impl/codegen/create_auth_context.h \
-    include/grpcpp/impl/codegen/delegating_channel.h \
-    include/grpcpp/impl/codegen/grpc_library.h \
-    include/grpcpp/impl/codegen/intercepted_channel.h \
-    include/grpcpp/impl/codegen/interceptor.h \
-    include/grpcpp/impl/codegen/interceptor_common.h \
-    include/grpcpp/impl/codegen/message_allocator.h \
-    include/grpcpp/impl/codegen/metadata_map.h \
-    include/grpcpp/impl/codegen/method_handler.h \
-    include/grpcpp/impl/codegen/proto_buffer_reader.h \
-    include/grpcpp/impl/codegen/proto_buffer_writer.h \
-    include/grpcpp/impl/codegen/proto_utils.h \
-    include/grpcpp/impl/codegen/rpc_method.h \
-    include/grpcpp/impl/codegen/rpc_service_method.h \
-    include/grpcpp/impl/codegen/security/auth_context.h \
-    include/grpcpp/impl/codegen/serialization_traits.h \
-    include/grpcpp/impl/codegen/server_callback.h \
-    include/grpcpp/impl/codegen/server_callback_handlers.h \
-    include/grpcpp/impl/codegen/server_context.h \
-    include/grpcpp/impl/codegen/server_interceptor.h \
-    include/grpcpp/impl/codegen/server_interface.h \
-    include/grpcpp/impl/codegen/service_type.h \
-    include/grpcpp/impl/codegen/slice.h \
-    include/grpcpp/impl/codegen/status.h \
-    include/grpcpp/impl/codegen/status_code_enum.h \
-    include/grpcpp/impl/codegen/string_ref.h \
-    include/grpcpp/impl/codegen/stub_options.h \
-    include/grpcpp/impl/codegen/sync.h \
-    include/grpcpp/impl/codegen/sync_stream.h \
-    include/grpcpp/impl/codegen/time.h \
     include/grpcpp/impl/grpc_library.h \
     include/grpcpp/impl/method_handler_impl.h \
     include/grpcpp/impl/rpc_method.h \
