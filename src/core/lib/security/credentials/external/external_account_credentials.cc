@@ -53,40 +53,45 @@ std::string ExternalAccountCredentials::debug_string() {
 }
 
 // The token fetching flow:
-// 1. Retrieve subject token - Call RetrieveSubjectToken() and get the subject
-// token in OnRetrieveSubjectToken().
-// 2. Token exchange - Make a token exchange call in TokenExchange() with the
-// subject token in #1. Get the response in OnTokenExchange().
-// 3. (Optional) Service account impersonation - Make a http call in
-// ServiceAccountImpersenate() with the access token in #2. Get an impersonated
-// access token in OnServiceAccountImpersenate().
-// 4. Return back the response that contains an access token in
-// FinishTokenFetch().
+// 1. Retrieve subject token - Subclass's RetrieveSubjectToken() gets called
+// and the subject token is received in OnRetrieveSubjectTokenInternal().
+// 2. Exchange token - ExchangeToken() gets called with the
+// subject token from #1. Receive the response in OnExchangeTokenInternal().
+// 3. (Optional) Impersonate service account - ImpersenateServiceAccount() gets
+// called with the access token of the response from #2. Get an impersonated
+// access token in OnImpersenateServiceAccountInternal().
+// 4. Finish token fetch - Return back the response that contains an access
+// token in FinishTokenFetch().
 // TODO(chuanr): Avoid starting the remaining requests if the channel gets shut
 // down.
 void ExternalAccountCredentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
     grpc_iomgr_cb_func response_cb, grpc_millis deadline) {
-  ctx_ = new TokenFetchContext(httpcli_context, pollent, deadline);
+  ctx_ = new HTTPRequestContext(httpcli_context, pollent, deadline);
   metadata_req_ = metadata_req;
   response_cb_ = response_cb;
-  RetrieveSubjectToken(ctx_, &options_);
+  auto cb =
+      std::bind(&ExternalAccountCredentials::OnRetrieveSubjectTokenInternal,
+                this, std::placeholders::_1, std::placeholders::_2);
+  RetrieveSubjectToken(ctx_, options_, cb);
 }
-void ExternalAccountCredentials::RetrieveSubjectTokenComplete(
-    std::string subject_token, grpc_error* error) {
+
+void ExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
+    absl::string_view subject_token, grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
   } else {
-    TokenExchange(subject_token);
+    ExchangeToken(subject_token);
   }
 }
 
-void ExternalAccountCredentials::TokenExchange(std::string subject_token) {
+void ExternalAccountCredentials::ExchangeToken(
+    absl::string_view subject_token) {
   grpc_uri* uri = grpc_uri_parse(options_.token_url, false);
   if (uri == nullptr) {
     FinishTokenFetch(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        absl::StrFormat("Invalid token url %s", options_.token_url).c_str()));
+        absl::StrFormat("Invalid token url: %s.", options_.token_url).c_str()));
     return;
   }
   grpc_httpcli_request request;
@@ -138,7 +143,7 @@ void ExternalAccountCredentials::TokenExchange(std::string subject_token) {
   std::string body = absl::StrJoin(body_parts, "&");
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
-  GRPC_CLOSURE_INIT(&ctx_->closure, OnTokenExchange, this, nullptr);
+  GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
   grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                     &request, body.c_str(), body.size(), ctx_->deadline,
                     &ctx_->closure, &ctx_->response);
@@ -147,13 +152,13 @@ void ExternalAccountCredentials::TokenExchange(std::string subject_token) {
   grpc_uri_destroy(uri);
 }
 
-void ExternalAccountCredentials::OnTokenExchange(void* arg, grpc_error* error) {
+void ExternalAccountCredentials::OnExchangeToken(void* arg, grpc_error* error) {
   ExternalAccountCredentials* self =
       static_cast<ExternalAccountCredentials*>(arg);
-  self->OnTokenExchangeInternal(GRPC_ERROR_REF(error));
+  self->OnExchangeTokenInternal(GRPC_ERROR_REF(error));
 }
 
-void ExternalAccountCredentials::OnTokenExchangeInternal(grpc_error* error) {
+void ExternalAccountCredentials::OnExchangeTokenInternal(grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
   } else {
@@ -162,12 +167,12 @@ void ExternalAccountCredentials::OnTokenExchangeInternal(grpc_error* error) {
       metadata_req_->response.body = gpr_strdup(ctx_->response.body);
       FinishTokenFetch(GRPC_ERROR_NONE);
     } else {
-      ServiceAccountImpersenate();
+      ImpersenateServiceAccount();
     }
   }
 }
 
-void ExternalAccountCredentials::ServiceAccountImpersenate() {
+void ExternalAccountCredentials::ImpersenateServiceAccount() {
   grpc_error* error = GRPC_ERROR_NONE;
   absl::string_view response_body(ctx_->response.body,
                                   ctx_->response.body_length);
@@ -218,7 +223,7 @@ void ExternalAccountCredentials::ServiceAccountImpersenate() {
   std::string body = absl::StrFormat("%s=%s", "scope", scope);
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
-  GRPC_CLOSURE_INIT(&ctx_->closure, OnServiceAccountImpersenate, this, nullptr);
+  GRPC_CLOSURE_INIT(&ctx_->closure, OnImpersenateServiceAccount, this, nullptr);
   grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                     &request, body.c_str(), body.size(), ctx_->deadline,
                     &ctx_->closure, &ctx_->response);
@@ -227,14 +232,14 @@ void ExternalAccountCredentials::ServiceAccountImpersenate() {
   grpc_uri_destroy(uri);
 }
 
-void ExternalAccountCredentials::OnServiceAccountImpersenate(
+void ExternalAccountCredentials::OnImpersenateServiceAccount(
     void* arg, grpc_error* error) {
   ExternalAccountCredentials* self =
       static_cast<ExternalAccountCredentials*>(arg);
-  self->OnServiceAccountImpersenateInternal(GRPC_ERROR_REF(error));
+  self->OnImpersenateServiceAccountInternal(GRPC_ERROR_REF(error));
 }
 
-void ExternalAccountCredentials::OnServiceAccountImpersenateInternal(
+void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
     grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);

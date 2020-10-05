@@ -138,7 +138,7 @@ static const char test_method[] = "ThisIsNotAMethod";
 
 static const char valid_external_account_creds_token_exchange_response[] =
     "{\"access_token\":\"token_exchange_access_token\","
-    " \"expires_in\":3599, "
+    " \"expires_in\":3599,"
     " \"token_type\":\"Bearer\"}";
 
 static const char
@@ -1970,6 +1970,26 @@ static int external_account_creds_httpcli_post_success(
   return 1;
 }
 
+static int
+external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token(
+    const grpc_httpcli_request* request, const char* body, size_t body_size,
+    grpc_millis /*deadline*/, grpc_closure* on_done,
+    grpc_httpcli_response* response) {
+  if (strcmp(request->http.path, "/token") == 0) {
+    *response = http_response(200,
+                              "{\"not_access_token\":\"not_access_token\","
+                              "\"expires_in\":3599,"
+                              " \"token_type\":\"Bearer\"}");
+  } else if (strcmp(request->http.path, "/service_account_impersonation") ==
+             0) {
+    *response = http_response(
+        200,
+        valid_external_account_creds_service_account_impersonation_response);
+  }
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  return 1;
+}
+
 // The subclass of ExternalAccountCredentials for testing.
 // ExternalAccountCredentials is an abstract class so we can't directly test
 // against it.
@@ -1981,15 +2001,15 @@ class TestExternalAccountCredentials final
       : ExternalAccountCredentials(std::move(options), std::move(scopes)) {}
 
  protected:
-  void RetrieveSubjectToken(const TokenFetchContext* ctx,
-                            const ExternalAccountCredentialsOptions* options) {
-    RetrieveSubjectTokenComplete("test_subject_token", GRPC_ERROR_NONE);
+  void RetrieveSubjectToken(const HTTPRequestContext* ctx,
+                            const ExternalAccountCredentialsOptions& options,
+                            std::function<void(std::string, grpc_error*)> cb) {
+    cb("test_subject_token", GRPC_ERROR_NONE);
   }
 };
 
 static void test_external_account_creds_success(void) {
   expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
-
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -2007,10 +2027,8 @@ static void test_external_account_creds_success(void) {
       "client_secret",                    // client_secret;
   };
   TestExternalAccountCredentials creds(options, {});
-
   /* Check security level. */
   GPR_ASSERT(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-
   /* First request: http put should be called. */
   request_metadata_state* state =
       make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
@@ -2018,7 +2036,6 @@ static void test_external_account_creds_success(void) {
                             external_account_creds_httpcli_post_success);
   run_request_metadata_test(&creds, auth_md_ctx, state);
   grpc_core::ExecCtx::Get()->Flush();
-
   /* Second request: the cached token should be served directly. */
   state =
       make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
@@ -2026,15 +2043,13 @@ static void test_external_account_creds_success(void) {
                             httpcli_post_should_not_be_called);
   run_request_metadata_test(&creds, auth_md_ctx, state);
   grpc_core::ExecCtx::Get()->Flush();
-
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
-static void test_external_account_creds_success_service_account_impersonation(
-    void) {
+static void
+test_external_account_creds_success_with_service_account_impersonation(void) {
   expected_md emd[] = {
       {"authorization", "Bearer service_account_impersonation_access_token"}};
-
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -2052,10 +2067,8 @@ static void test_external_account_creds_success_service_account_impersonation(
       "client_secret",     // client_secret;
   };
   TestExternalAccountCredentials creds(options, {"scope_1", "scope_2"});
-
   /* Check security level. */
   GPR_ASSERT(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-
   /* First request: http put should be called. */
   request_metadata_state* state =
       make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
@@ -2063,7 +2076,6 @@ static void test_external_account_creds_success_service_account_impersonation(
                             external_account_creds_httpcli_post_success);
   run_request_metadata_test(&creds, auth_md_ctx, state);
   grpc_core::ExecCtx::Get()->Flush();
-
   /* Second request: the cached token should be served directly. */
   state =
       make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
@@ -2071,7 +2083,104 @@ static void test_external_account_creds_success_service_account_impersonation(
                             httpcli_post_should_not_be_called);
   run_request_metadata_test(&creds, auth_md_ctx, state);
   grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+}
 
+static void test_external_account_creds_faiure_invalid_token_url(void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_core::Json credential_source("");
+  TestExternalAccountCredentials::ExternalAccountCredentialsOptions options = {
+      "external_account",    // type;
+      "audience",            // audience;
+      "subject_token_type",  // subject_token_type;
+      "https://foo.com:5555/service_account_impersonation",  // service_account_impersonation_url;
+      "invalid_token_url",                                   // token_url;
+      "https://foo.com:5555/token_info",                     // token_info_url;
+      credential_source,   // credential_source;
+      "quota_project_id",  // quota_project_id;
+      "client_id",         // client_id;
+      "client_secret",     // client_secret;
+  };
+  TestExternalAccountCredentials creds(options, {});
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Invalid token url: invalid_token_url.");
+  grpc_error* expected_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  request_metadata_state* state =
+      make_request_metadata_state(expected_error, nullptr, 0);
+  run_request_metadata_test(&creds, auth_md_ctx, state);
+  grpc_httpcli_set_override(nullptr, nullptr);
+}
+
+static void
+test_external_account_creds_faiure_invalid_service_account_impersonation_url(
+    void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_core::Json credential_source("");
+  TestExternalAccountCredentials::ExternalAccountCredentialsOptions options = {
+      "external_account",                           // type;
+      "audience",                                   // audience;
+      "subject_token_type",                         // subject_token_type;
+      "invalid_service_account_impersonation_url",  // service_account_impersonation_url;
+      "https://foo.com:5555/token",                 // token_url;
+      "https://foo.com:5555/token_info",            // token_info_url;
+      credential_source,                            // credential_source;
+      "quota_project_id",                           // quota_project_id;
+      "client_id",                                  // client_id;
+      "client_secret",                              // client_secret;
+  };
+  TestExternalAccountCredentials creds(options, {});
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            external_account_creds_httpcli_post_success);
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Invalid service account impersonation url: "
+      "invalid_service_account_impersonation_url.");
+  grpc_error* expected_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  request_metadata_state* state =
+      make_request_metadata_state(expected_error, nullptr, 0);
+  run_request_metadata_test(&creds, auth_md_ctx, state);
+  grpc_httpcli_set_override(nullptr, nullptr);
+}
+
+static void
+test_external_account_creds_faiure_token_exchange_response_missing_access_token(
+    void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_core::Json credential_source("");
+  TestExternalAccountCredentials::ExternalAccountCredentialsOptions options = {
+      "external_account",    // type;
+      "audience",            // audience;
+      "subject_token_type",  // subject_token_type;
+      "https://foo.com:5555/service_account_impersonation",  // service_account_impersonation_url;
+      "https://foo.com:5555/token",                          // token_url;
+      "https://foo.com:5555/token_info",                     // token_info_url;
+      credential_source,   // credential_source;
+      "quota_project_id",  // quota_project_id;
+      "client_id",         // client_id;
+      "client_secret",     // client_secret;
+  };
+  TestExternalAccountCredentials creds(options, {});
+  grpc_httpcli_set_override(
+      httpcli_get_should_not_be_called,
+      external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token);
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Missing or invalid access_token in "
+      "{\"not_access_token\":\"not_access_token\",\"expires_in\":3599,\"token_"
+      "type\":\"Bearer\"}.");
+  grpc_error* expected_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  request_metadata_state* state =
+      make_request_metadata_state(expected_error, nullptr, 0);
+  run_request_metadata_test(&creds, auth_md_ctx, state);
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
@@ -2120,7 +2229,10 @@ int main(int argc, char** argv) {
   test_channel_creds_duplicate_without_call_creds();
   test_auth_metadata_context();
   test_external_account_creds_success();
-  test_external_account_creds_success_service_account_impersonation();
+  test_external_account_creds_success_with_service_account_impersonation();
+  test_external_account_creds_faiure_invalid_token_url();
+  test_external_account_creds_faiure_invalid_service_account_impersonation_url();
+  test_external_account_creds_faiure_token_exchange_response_missing_access_token();
   grpc_shutdown();
   return 0;
 }
