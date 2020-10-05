@@ -362,6 +362,10 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
   return nullptr;
 }
 
+std::shared_ptr<ChannelCredentials> InsecureChannelCredentials() {
+    return WrapChannelCredentials(grpc_insecure_credentials_create());
+}
+
 std::shared_ptr<CallCredentials> CompositeCallCredentials(
     const std::shared_ptr<CallCredentials>& creds1,
     const std::shared_ptr<CallCredentials>& creds2) {

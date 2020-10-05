@@ -54,9 +54,4 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
 };
 }  // namespace
 
-std::shared_ptr<ChannelCredentials> InsecureChannelCredentials() {
-  return std::shared_ptr<ChannelCredentials>(
-      new InsecureChannelCredentialsImpl());
-}
-
 }  // namespace grpc

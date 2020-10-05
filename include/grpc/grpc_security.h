@@ -1029,6 +1029,20 @@ grpc_channel_credentials* grpc_tls_credentials_create(
 grpc_server_credentials* grpc_tls_server_credentials_create(
     grpc_tls_credentials_options* options);
 
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * This method creates an insecure channel credentials object.
+ */
+grpc_channel_credentials* grpc_insecure_credentials_create();
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * This method creates an insecure server credentials object.
+ */
+grpc_channel_credentials* grpc_insecure_server_credentials_create();
+
 #ifdef __cplusplus
 }
 #endif
