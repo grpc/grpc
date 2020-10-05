@@ -34,4 +34,3 @@ async def run():
 if __name__ == '__main__':
     logging.basicConfig()
     asyncio.run(run())
-
