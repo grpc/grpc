@@ -79,7 +79,14 @@ class ForkInteropTest(unittest.TestCase):
                                 self._server_process.kill)
         try:
             timer.start()
-            self._port = int(self._server_process.stdout.readline())
+            while True:
+                streams[0].seek(0)
+                s = streams[0].readline()
+                if not s:
+                    continue
+                else:
+                    self._port = int(s)
+                    break
         except ValueError:
             raise Exception('Failed to get port from server')
         finally:
