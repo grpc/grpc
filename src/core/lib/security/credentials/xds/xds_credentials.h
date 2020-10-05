@@ -29,7 +29,7 @@ namespace grpc_core {
 
 class XdsCredentials final : public grpc_channel_credentials {
  public:
-  static constexpr const char kCredentialsTypeXds[] = "Xds";
+  static constexpr char kCredentialsTypeXds[] = "Xds";
 
   explicit XdsCredentials(
       grpc_core::RefCountedPtr<grpc_channel_credentials> fallback_credentials)

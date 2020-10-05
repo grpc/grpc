@@ -330,6 +330,7 @@ grpc_cc_library(
             "grpc_lb_policy_lrs",
             "grpc_lb_policy_xds_cluster_manager",
             "grpc_resolver_xds",
+            "grpc_xds_credentials",
         ],
     },
     standalone = True,
@@ -1770,7 +1771,6 @@ grpc_cc_library(
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
         "src/core/lib/security/credentials/tls/tls_credentials.cc",
-        "src/core/lib/security/credentials/xds/xds_credentials.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
         "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
         "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
@@ -1813,7 +1813,6 @@ grpc_cc_library(
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
         "src/core/lib/security/credentials/tls/tls_credentials.h",
-        "src/core/lib/security/credentials/xds/xds_credentials.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",
         "src/core/lib/security/security_connector/fake/fake_security_connector.h",
         "src/core/lib/security/security_connector/load_system_roots.h",
@@ -1837,6 +1836,19 @@ grpc_cc_library(
         "grpc_base",
         "grpc_transport_chttp2_alpn",
         "tsi",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_credentials",
+    srcs = [
+        "src/core/lib/security/credentials/xds/xds_credentials.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/credentials/xds/xds_credentials.h",
+    ],
+    deps = [
+        "grpc_secure",
     ],
 )
 

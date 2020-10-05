@@ -22,7 +22,7 @@
 
 namespace grpc_core {
 
-constexpr const char XdsCredentials::kCredentialsTypeXds[];
+constexpr char XdsCredentials::kCredentialsTypeXds[];
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 XdsCredentials::create_security_connector(
