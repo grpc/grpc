@@ -85,7 +85,3 @@ grpc_channel_credentials* grpc_insecure_credentials_create() {
   return new grpc_core::InsecureCredentials();
 }
 
-grpc_channel_credentials* grpc_insecure_server_credentials_create() {
-  return new grpc_core::InsecureServerCredentials();
-}
-
