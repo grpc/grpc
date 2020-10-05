@@ -294,6 +294,13 @@ std::shared_ptr<ChannelCredentials> TlsCredentials(
       grpc_tls_credentials_create(options.c_credentials_options()));
 }
 
+// Builds XDS Credentials
+std::shared_ptr<ChannelCredentials> XdsCredentials(
+    const std::shared_ptr<ChannelCredentials>& fallback_creds) {
+  return WrapChannelCredentials(grpc_xds_credentials_create(
+      fallback_creds->AsSecureCredentials()->GetRawCreds()));
+}
+
 }  // namespace experimental
 
 // Builds credentials for use when running in GCE

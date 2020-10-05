@@ -54,7 +54,11 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
-}
+
+/// Builds XDS Credentials.
+std::shared_ptr<ChannelCredentials> XdsCredentials(
+    const std::shared_ptr<ChannelCredentials>& fallback_creds);
+}  // namespace experimental
 
 /// A channel credentials object encapsulates all the state needed by a client
 /// to authenticate with a server for a given channel.
@@ -71,6 +75,9 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
       const std::shared_ptr<CallCredentials>& call_creds);
+
+  friend std::shared_ptr<ChannelCredentials> grpc::experimental::XdsCredentials(
+      const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 
