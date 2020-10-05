@@ -729,7 +729,7 @@ static void gsec_test_encrypt_decrypt_test_vector(
   GPR_ASSERT(status == GRPC_STATUS_OK);
   if (plaintext_bytes_written != 0) {
     GPR_ASSERT(memcmp(test_vector->plaintext, plaintext_bytes,
-                    plaintext_bytes_written) == 0);
+                      plaintext_bytes_written) == 0);
   }
 
   gpr_free(ciphertext_and_tag_bytes);
