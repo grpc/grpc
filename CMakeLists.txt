@@ -2632,10 +2632,12 @@ target_include_directories(benchmark_helpers
 target_link_libraries(benchmark_helpers
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util_unsecure
   grpc++_unsecure
+  grpc_test_util_unsecure
+  grpc++
   grpc_unsecure
   grpc++_test_config
+  grpc
   gpr
   address_sorting
   upb
@@ -3335,7 +3337,6 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
@@ -3401,7 +3402,9 @@ target_link_libraries(grpc++_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
   grpc_unsecure
+  grpc
   gpr
   address_sorting
   upb
@@ -3422,39 +3425,7 @@ foreach(_hdr
   include/grpc++/impl/call.h
   include/grpc++/impl/channel_argument_option.h
   include/grpc++/impl/client_unary_call.h
-  include/grpc++/impl/codegen/async_stream.h
-  include/grpc++/impl/codegen/async_unary_call.h
-  include/grpc++/impl/codegen/byte_buffer.h
-  include/grpc++/impl/codegen/call.h
-  include/grpc++/impl/codegen/call_hook.h
-  include/grpc++/impl/codegen/channel_interface.h
-  include/grpc++/impl/codegen/client_context.h
-  include/grpc++/impl/codegen/client_unary_call.h
-  include/grpc++/impl/codegen/completion_queue.h
-  include/grpc++/impl/codegen/completion_queue_tag.h
-  include/grpc++/impl/codegen/config.h
-  include/grpc++/impl/codegen/config_protobuf.h
   include/grpc++/impl/codegen/core_codegen.h
-  include/grpc++/impl/codegen/core_codegen_interface.h
-  include/grpc++/impl/codegen/create_auth_context.h
-  include/grpc++/impl/codegen/grpc_library.h
-  include/grpc++/impl/codegen/metadata_map.h
-  include/grpc++/impl/codegen/method_handler_impl.h
-  include/grpc++/impl/codegen/proto_utils.h
-  include/grpc++/impl/codegen/rpc_method.h
-  include/grpc++/impl/codegen/rpc_service_method.h
-  include/grpc++/impl/codegen/security/auth_context.h
-  include/grpc++/impl/codegen/serialization_traits.h
-  include/grpc++/impl/codegen/server_context.h
-  include/grpc++/impl/codegen/server_interface.h
-  include/grpc++/impl/codegen/service_type.h
-  include/grpc++/impl/codegen/slice.h
-  include/grpc++/impl/codegen/status.h
-  include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/string_ref.h
-  include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync_stream.h
-  include/grpc++/impl/codegen/time.h
   include/grpc++/impl/grpc_library.h
   include/grpc++/impl/method_handler_impl.h
   include/grpc++/impl/rpc_method.h
@@ -8184,10 +8155,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(address_sorting_test_unsecure
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -8227,9 +8200,11 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(alarm_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
+    grpc
     gpr
     address_sorting
     upb
@@ -8667,10 +8642,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -8712,10 +8689,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -8757,10 +8736,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -8802,10 +8783,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -8851,10 +8834,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -8900,10 +8885,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -8945,10 +8932,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -8990,10 +8979,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9035,10 +9026,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9080,10 +9073,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9125,10 +9120,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9170,10 +9167,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9215,10 +9214,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9260,10 +9261,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9305,10 +9308,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9350,10 +9355,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9395,10 +9402,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9440,10 +9449,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9485,10 +9496,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9530,10 +9543,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -9575,10 +9590,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
     grpc++_test_config
+    grpc
     gpr
     address_sorting
     upb
@@ -13654,9 +13671,11 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
+    grpc
     gpr
     address_sorting
     upb
@@ -13708,9 +13727,11 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_with_socket_mutator_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
+    grpc
     gpr
     address_sorting
     upb
@@ -13992,9 +14013,11 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_request_call_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util_unsecure
     grpc++_unsecure
+    grpc_test_util_unsecure
+    grpc++
     grpc_unsecure
+    grpc
     gpr
     address_sorting
     upb
@@ -16138,6 +16161,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
+  "-lgrpc++_unsecure -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_status -labsl_cord -labsl_bad_optional_access -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity -labsl_dynamic_annotations"
   ""
   "grpc++_unsecure.pc")

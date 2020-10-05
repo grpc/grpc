@@ -2240,6 +2240,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
+        "grpc++",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc_health_upb",
