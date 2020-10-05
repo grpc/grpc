@@ -33,7 +33,8 @@ namespace experimental {
 TlsServerAuthorizationCheckArg::TlsServerAuthorizationCheckArg(
     grpc_tls_server_authorization_check_arg* arg)
     : c_arg_(arg) {
-  if (c_arg_ != nullptr && c_arg_->context != nullptr) {
+  GPR_ASSERT(c_arg_ != nullptr);
+  if (c_arg_->context != nullptr) {
     gpr_log(GPR_ERROR, "c_arg context has already been set");
   }
   c_arg_->context = static_cast<void*>(this);
@@ -138,7 +139,7 @@ TlsCredentialsOptions::TlsCredentialsOptions(
           std::move(authorization_check_config)) {
   c_credentials_options_ = grpc_tls_credentials_options_create();
   grpc_tls_credentials_options_set_server_verification_option(
-      c_credentials_options_, std::move(server_verification_option));
+      c_credentials_options_, server_verification_option);
   if (certificate_provider_ != nullptr) {
     grpc_tls_credentials_options_set_certificate_provider(
         c_credentials_options_, certificate_provider_->c_provider());
@@ -154,8 +155,8 @@ TlsCredentialsOptions::TlsCredentialsOptions(
     std::shared_ptr<CertificateProviderInterface> certificate_provider)
     : certificate_provider_(std::move(certificate_provider)) {
   c_credentials_options_ = grpc_tls_credentials_options_create();
-  grpc_tls_credentials_options_set_cert_request_type(
-      c_credentials_options_, std::move(cert_request_type));
+  grpc_tls_credentials_options_set_cert_request_type(c_credentials_options_,
+                                                     cert_request_type);
   if (certificate_provider_ != nullptr) {
     grpc_tls_credentials_options_set_certificate_provider(
         c_credentials_options_, certificate_provider_->c_provider());
