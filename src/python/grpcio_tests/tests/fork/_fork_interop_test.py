@@ -16,6 +16,7 @@
 import six
 import subprocess
 import sys
+import tempfile
 import threading
 import unittest
 from grpc._cython import cygrpc
@@ -69,10 +70,11 @@ class ForkInteropTest(unittest.TestCase):
             while True:
                 time.sleep(1)
         """
+        streams = tuple(tempfile.TemporaryFile() for _ in range(2))
         self._server_process = subprocess.Popen(
             [sys.executable, '-c', start_server_script],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stdout=streams[0],
+            stderr=streams[1])
         timer = threading.Timer(_SUBPROCESS_TIMEOUT_S,
                                 self._server_process.kill)
         try:
@@ -125,26 +127,22 @@ class ForkInteropTest(unittest.TestCase):
 
     def _verifyTestCase(self, test_case):
         script = _CLIENT_FORK_SCRIPT_TEMPLATE % (test_case.name, self._port)
+        streams = tuple(tempfile.TemporaryFile() for _ in range(2))
         process = subprocess.Popen([sys.executable, '-c', script],
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+                                   stdout=streams[0],
+                                   stderr=streams[1])
         timer = threading.Timer(_SUBPROCESS_TIMEOUT_S, process.kill)
-        try:
-            timer.start()
-            try:
-                out, err = process.communicate(timeout=_SUBPROCESS_TIMEOUT_S)
-            except TypeError:
-                # The timeout parameter was added in Python 3.3.
-                out, err = process.communicate()
-        except subprocess.TimeoutExpired:
-            process.kill()
-            raise RuntimeError('Process failed to terminate')
-        finally:
-            timer.cancel()
+        timer.start()
+        process.wait()
+        timer.cancel()
+        outputs = []
+        for stream in streams:
+            stream.seek(0)
+            outputs.append(stream.read())
         self.assertEqual(
             0, process.returncode,
-            'process failed with exit code %d (stdout: %s, stderr: %s)' %
-            (process.returncode, out, err))
+            'process failed with exit code %d (stdout: "%s", stderr: "%s")' %
+            (process.returncode, outputs[0], outputs[1]))
 
 
 if __name__ == '__main__':
