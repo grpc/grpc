@@ -74,8 +74,6 @@ void grpc_lb_policy_eds_init(void);
 void grpc_lb_policy_eds_shutdown(void);
 void grpc_lb_policy_eds_drop_init(void);
 void grpc_lb_policy_eds_drop_shutdown(void);
-void grpc_lb_policy_lrs_init(void);
-void grpc_lb_policy_lrs_shutdown(void);
 void grpc_lb_policy_xds_cluster_manager_init(void);
 void grpc_lb_policy_xds_cluster_manager_shutdown(void);
 void grpc_resolver_xds_init(void);
@@ -134,8 +132,6 @@ void grpc_register_built_in_plugins(void) {
                        grpc_lb_policy_eds_shutdown);
   grpc_register_plugin(grpc_lb_policy_eds_drop_init,
                        grpc_lb_policy_eds_drop_shutdown);
-  grpc_register_plugin(grpc_lb_policy_lrs_init,
-                       grpc_lb_policy_lrs_shutdown);
   grpc_register_plugin(grpc_lb_policy_xds_cluster_manager_init,
                        grpc_lb_policy_xds_cluster_manager_shutdown);
   grpc_register_plugin(grpc_resolver_xds_init,

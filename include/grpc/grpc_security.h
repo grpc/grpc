@@ -1036,6 +1036,22 @@ grpc_server_credentials* grpc_tls_server_credentials_create(
  */
 grpc_channel_credentials* grpc_insecure_credentials_create();
 
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * This method creates an XDS channel credentials object.
+ *
+ * Creating a channel with credentials of this type indicates that an xDS
+ * channel should get credentials configuration from the xDS control plane.
+ *
+ * \a fallback_credentials are used if the channel target does not have the
+ * 'xds:///' scheme or if the xDS control plane does not provide information on
+ * how to fetch credentials dynamically. Does NOT take ownership of the \a
+ * fallback_credentials. (Internally takes a ref to the object.)
+ */
+GRPCAPI grpc_channel_credentials* grpc_xds_credentials_create(
+    grpc_channel_credentials* fallback_creds);
+
 #ifdef __cplusplus
 }
 #endif
