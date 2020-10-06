@@ -329,6 +329,7 @@ grpc_cc_library(
             "grpc_lb_policy_eds_drop",
             "grpc_lb_policy_xds_cluster_manager",
             "grpc_resolver_xds",
+            "grpc_xds_credentials",
         ],
     },
     standalone = True,
@@ -1821,6 +1822,19 @@ grpc_cc_library(
         "grpc_base",
         "grpc_transport_chttp2_alpn",
         "tsi",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_credentials",
+    srcs = [
+        "src/core/lib/security/credentials/xds/xds_credentials.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/credentials/xds/xds_credentials.h",
+    ],
+    deps = [
+        "grpc_secure",
     ],
 )
 

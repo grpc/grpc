@@ -844,6 +844,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h )
   s.files += %w( src/core/lib/security/credentials/tls/tls_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/tls/tls_credentials.h )
+  s.files += %w( src/core/lib/security/credentials/xds/xds_credentials.cc )
+  s.files += %w( src/core/lib/security/credentials/xds/xds_credentials.h )
   s.files += %w( src/core/lib/security/security_connector/alts/alts_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/alts/alts_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/fake/fake_security_connector.cc )
