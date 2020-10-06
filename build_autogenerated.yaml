@@ -1115,6 +1115,7 @@ libs:
   - src/core/lib/security/credentials/google_default/credentials_generic.cc
   - src/core/lib/security/credentials/google_default/google_default_credentials.cc
   - src/core/lib/security/credentials/iam/iam_credentials.cc
+  - src/core/lib/security/credentials/insecure/insecure_credentials.cc
   - src/core/lib/security/credentials/jwt/json_token.cc
   - src/core/lib/security/credentials/jwt/jwt_credentials.cc
   - src/core/lib/security/credentials/jwt/jwt_verifier.cc
@@ -7546,6 +7547,26 @@ targets:
   - test/core/client_channel/xds_bootstrap_test.cc
   deps:
   - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: xds_credentials_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds_credentials_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
   - grpc
   - gpr
   - address_sorting

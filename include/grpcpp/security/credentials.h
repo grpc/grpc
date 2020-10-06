@@ -109,8 +109,10 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
     return nullptr;
   }
 
-  // TODO(yashkt): This is a hack that should be removed after insecure builds are removed from gRPC.
-  virtual IsInsecure() const { return false; }
+  // TODO(yashkt): This is a hack that is needed since InsecureCredentials can
+  // not use grpc_channel_credentials internally and should be removed after
+  // insecure builds are removed from gRPC.
+  virtual bool IsInsecure() const { return false; }
 };
 
 /// A call credentials object encapsulates the state needed by a client to
@@ -233,6 +235,9 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
     const std::shared_ptr<ChannelCredentials>& channel_creds,
     const std::shared_ptr<CallCredentials>& call_creds);
 
+std::shared_ptr<ChannelCredentials> XdsCredentials(
+    const std::shared_ptr<ChannelCredentials>& fallback_creds);
+
 /// Combines two call credentials objects into a composite call credentials.
 std::shared_ptr<CallCredentials> CompositeCallCredentials(
     const std::shared_ptr<CallCredentials>& creds1,
@@ -324,10 +329,6 @@ std::shared_ptr<ChannelCredentials> LocalCredentials(
 /// Builds TLS Credentials given TLS options.
 std::shared_ptr<ChannelCredentials> TlsCredentials(
     const TlsCredentialsOptions& options);
-
-/// Builds Insecure Credentials. 
-/// TODO(yashykt): This should be removed when we remove insecure builds from gRPC.
-std::shared_ptr<ChannelCredentials> InsecureCredentialsEx();
 
 }  // namespace experimental
 }  // namespace grpc

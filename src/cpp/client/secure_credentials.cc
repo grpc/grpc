@@ -297,8 +297,15 @@ std::shared_ptr<ChannelCredentials> TlsCredentials(
 // Builds XDS Credentials
 std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds) {
-  return WrapChannelCredentials(grpc_xds_credentials_create(
-      fallback_creds->AsSecureCredentials()->GetRawCreds()));
+  if (fallback_creds->IsInsecure()) {
+    auto insecure_creds = grpc_core::RefCountedPtr<grpc_channel_credentials>(
+        grpc_insecure_credentials_create());
+    return WrapChannelCredentials(
+        grpc_xds_credentials_create(insecure_creds.get()));
+  } else {
+    return WrapChannelCredentials(grpc_xds_credentials_create(
+        fallback_creds->AsSecureCredentials()->GetRawCreds()));
+  }
 }
 
 }  // namespace experimental
@@ -367,10 +374,6 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
         s_channel_creds->GetRawCreds(), s_call_creds->GetRawCreds(), nullptr));
   }
   return nullptr;
-}
-
-std::shared_ptr<ChannelCredentials> InsecureChannelCredentials() {
-    return WrapChannelCredentials(grpc_insecure_credentials_create());
 }
 
 std::shared_ptr<CallCredentials> CompositeCallCredentials(

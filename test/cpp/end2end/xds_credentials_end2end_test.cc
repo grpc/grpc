@@ -31,7 +31,8 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class XdsCredentialsEnd2EndFallbackTest : public ::testing::Test {
+class XdsCredentialsEnd2EndFallbackTest
+    : public ::testing::TestWithParam<const char*> {
  protected:
   XdsCredentialsEnd2EndFallbackTest() {
     int port = grpc_pick_unused_port_or_die();
@@ -49,7 +50,7 @@ class XdsCredentialsEnd2EndFallbackTest : public ::testing::Test {
   std::unique_ptr<Server> server_;
 };
 
-TEST_F(XdsCredentialsEnd2EndFallbackTest, NoXdsSchemeInTarget) {
+TEST_P(XdsCredentialsEnd2EndFallbackTest, NoXdsSchemeInTarget) {
   // Target does not use 'xds:///' scheme and should result in using fallback
   // credentials.
   ChannelArguments args;
@@ -68,6 +69,11 @@ TEST_F(XdsCredentialsEnd2EndFallbackTest, NoXdsSchemeInTarget) {
   EXPECT_EQ(s.ok(), true);
   EXPECT_EQ(resp.message(), "Hello");
 }
+
+INSTANTIATE_TEST_SUITE_P(XdsCredentialsEnd2EndFallback,
+                         XdsCredentialsEnd2EndFallbackTest,
+                         ::testing::ValuesIn({kInsecureCredentialsType,
+                                              kTlsCredentialsType}));
 
 }  // namespace
 }  // namespace testing

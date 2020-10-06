@@ -398,6 +398,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/security/credentials/google_default/credentials_generic.cc',
     'src/core/lib/security/credentials/google_default/google_default_credentials.cc',
     'src/core/lib/security/credentials/iam/iam_credentials.cc',
+    'src/core/lib/security/credentials/insecure/insecure_credentials.cc',
     'src/core/lib/security/credentials/jwt/json_token.cc',
     'src/core/lib/security/credentials/jwt/jwt_credentials.cc',
     'src/core/lib/security/credentials/jwt/jwt_verifier.cc',

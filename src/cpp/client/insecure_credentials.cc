@@ -51,10 +51,11 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
   }
 
   SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
-};
 
  private:
   bool IsInsecure() const override { return true; }
+};
+
 }  // namespace
 
 std::shared_ptr<ChannelCredentials> InsecureChannelCredentials() {
