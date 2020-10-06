@@ -255,6 +255,7 @@ std::string XdsApi::Route::ToString() const {
   for (const ClusterWeight& cluster_weight : weighted_clusters) {
     contents.push_back(cluster_weight.ToString());
   }
+  contents.push_back(absl::StrFormat("timeout: %s", timeout));
   return absl::StrJoin(contents, "\n");
 }
 
@@ -1571,7 +1572,33 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
   } else {
     // No cluster or weighted_clusters found in RouteAction, ignore this route.
     *ignore_route = true;
-    return GRPC_ERROR_NONE;
+  }
+  if (!*ignore_route) {
+    if (envoy_config_route_v3_RouteAction_has_max_stream_duration(
+            route_action)) {
+      const envoy_config_route_v3_RouteAction_MaxStreamDuration*
+          max_stream_duration =
+              envoy_config_route_v3_RouteAction_max_stream_duration(
+                  route_action);
+      if (envoy_config_route_v3_RouteAction_MaxStreamDuration_has_grpc_timeout_header_max(
+              max_stream_duration)) {
+        const google_protobuf_Duration* duration =
+            envoy_config_route_v3_RouteAction_MaxStreamDuration_grpc_timeout_header_max(
+                max_stream_duration);
+        route->timeout = absl::StrFormat(
+            "%.9fs", google_protobuf_Duration_seconds(duration) +
+                         google_protobuf_Duration_nanos(duration) / 1.0e9);
+      } else if (
+          envoy_config_route_v3_RouteAction_MaxStreamDuration_has_max_stream_duration(
+              max_stream_duration)) {
+        const google_protobuf_Duration* duration =
+            envoy_config_route_v3_RouteAction_MaxStreamDuration_max_stream_duration(
+                max_stream_duration);
+        route->timeout = absl::StrFormat(
+            "%.9fs", google_protobuf_Duration_seconds(duration) +
+                         google_protobuf_Duration_nanos(duration) / 1.0e9);
+      }
+    }
   }
   return GRPC_ERROR_NONE;
 }

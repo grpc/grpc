@@ -150,6 +150,8 @@ class XdsResolver : public Resolver {
              clusters_ == other_xds->clusters_;
     }
 
+    RefCountedPtr<ServiceConfig> CreateMethodConfig(const std::string& timeout);
+
     CallConfig GetCallConfig(GetCallConfigArgs args) override;
 
    private:
@@ -157,6 +159,7 @@ class XdsResolver : public Resolver {
       XdsApi::Route route;
       absl::InlinedVector<std::pair<uint32_t, absl::string_view>, 2>
           weighted_cluster_state;
+      RefCountedPtr<ServiceConfig> method_config;
       bool operator==(const Route& other) const {
         return route == other.route &&
                weighted_cluster_state == other.weighted_cluster_state;
@@ -285,6 +288,7 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     route_table_.emplace_back();
     auto& route_entry = route_table_.back();
     route_entry.route = route;
+    route_entry.method_config = CreateMethodConfig(route.timeout);
     if (route.weighted_clusters.empty()) {
       MaybeAddCluster(route.cluster_name);
     } else {
@@ -297,6 +301,23 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
       }
     }
   }
+}
+
+RefCountedPtr<ServiceConfig> XdsResolver::XdsConfigSelector::CreateMethodConfig(
+    const std::string& timeout) {
+  std::string json = absl::StrFormat(
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      {}\n"
+      "    ],\n"
+      "    \"timeout\": \"%s\"\n"
+      "  } ]\n"
+      "}",
+      timeout.empty() ? "0s" : timeout);
+  grpc_error* error = GRPC_ERROR_NONE;
+  gpr_log(GPR_INFO, "DONNA DEBUG method config %s", json.c_str());
+  return ServiceConfig::Create(nullptr, json.c_str(), &error);
 }
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
@@ -476,6 +497,9 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         static_cast<XdsResolver*>(resolver_->Ref().release());
     ClusterState* cluster_state = it->second->Ref().release();
     CallConfig call_config;
+    call_config.method_configs =
+        entry.method_config->GetMethodParsedConfigVector(
+            grpc_slice_from_static_string("/"));
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();

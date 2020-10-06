@@ -195,7 +195,7 @@ std::string ServiceConfig::ParseJsonMethodName(const Json& json,
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:name error:method name populated without service name");
     }
-    return "";
+    return "/";
   }
   // Construct path.
   return absl::StrCat("/", *service_name, "/",

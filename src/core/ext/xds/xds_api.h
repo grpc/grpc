@@ -122,11 +122,14 @@ class XdsApi {
       std::string ToString() const;
     };
     std::vector<ClusterWeight> weighted_clusters;
+    std::string timeout = "";
+    //std::string timeout = absl::StrFormat("%.9fs", 1 + 1 / 1.0e9);
 
     bool operator==(const Route& other) const {
       return (matchers == other.matchers &&
               cluster_name == other.cluster_name &&
-              weighted_clusters == other.weighted_clusters);
+              weighted_clusters == other.weighted_clusters &&
+              timeout == other.timeout);
     }
     std::string ToString() const;
   };
