@@ -55,6 +55,9 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     // The per-method parsed configs that will be passed to
     // ServiceConfigCallData.
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
+    // A ref to the service config that contains method_configs, held by
+    // the call to ensure that method_configs lives long enough.
+    RefCountedPtr<ServiceConfig> service_config;
     // Call attributes that will be accessible to LB policy implementations.
     std::map<const char*, absl::string_view> call_attributes;
     // A callback that, if set, will be invoked when the call is
@@ -106,6 +109,7 @@ class DefaultConfigSelector : public ConfigSelector {
     CallConfig call_config;
     call_config.method_configs =
         service_config_->GetMethodParsedConfigVector(*args.path);
+    call_config.service_config = service_config_;
     return call_config;
   }
 
