@@ -129,7 +129,7 @@ class TlsChannelSecurityConnector final
   grpc_core::Mutex mu_;
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
   grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
-      certificate_watcher_;
+      certificate_watcher_ = nullptr;
   grpc_closure* on_peer_checked_ = nullptr;
   std::string target_name_;
   std::string overridden_target_name_;
@@ -208,7 +208,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   grpc_core::Mutex mu_;
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
   grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
-      certificate_watcher_;
+      certificate_watcher_ = nullptr;
 
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
   absl::optional<absl::string_view> pem_root_certs_;
